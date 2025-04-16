@@ -11,8 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { PanelLeftCloseIcon, PanelLeftIcon } from "lucide-react";
 import { SidebarNav } from "./sidebar-nav";
-import { useCompany } from "@/contexts/company-context";
-import { CompanySwitcher } from "./company-switcher";
+import { useAuth } from "@/contexts/auth-context";
 
 interface SidebarProps {
   className?: string;
@@ -22,7 +21,7 @@ export function Sidebar({ className }: SidebarProps) {
   const isMobile = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { currentCompany } = useCompany();
+  const { user } = useAuth();
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -53,9 +52,8 @@ export function Sidebar({ className }: SidebarProps) {
           <SheetContent side="left" className="w-[280px] p-0 pt-10">
             <SheetHeader className="p-4 pb-2">
               <SheetTitle className="text-left">
-                {currentCompany?.nomeFantasia || "ERP Multi-empresa"}
+                ERP Multi-empresa
               </SheetTitle>
-              <CompanySwitcher />
             </SheetHeader>
             <div className="flex flex-col h-full">
               <div className="flex-grow overflow-y-auto">
@@ -81,7 +79,7 @@ export function Sidebar({ className }: SidebarProps) {
         <div className={cn("flex flex-1 items-center", isCollapsed && "justify-center")}>
           {!isCollapsed && (
             <div className="overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
-              {currentCompany?.nomeFantasia || "ERP Multi-empresa"}
+              ERP Multi-empresa
             </div>
           )}
         </div>
@@ -94,8 +92,6 @@ export function Sidebar({ className }: SidebarProps) {
           <span className="sr-only">Alternar barra lateral</span>
         </Button>
       </div>
-      
-      {!isCollapsed && <CompanySwitcher className="mx-4 my-2" />}
       
       <div className="flex-1 overflow-y-auto">
         <SidebarNav isCollapsed={isCollapsed} />
