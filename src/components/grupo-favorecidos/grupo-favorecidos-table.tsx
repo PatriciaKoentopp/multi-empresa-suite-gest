@@ -48,7 +48,7 @@ export function GrupoFavorecidosTable({
                 <TableCell>
                   <Badge
                     variant={grupo.status === "ativo" ? "default" : "destructive"}
-                    className={grupo.status === "ativo" ? "bg-blue-500 hover:bg-blue-600" : ""}
+                    className={grupo.status === "ativo" ? "bg-green-500 hover:bg-green-600" : ""}
                   >
                     {grupo.status === "ativo" ? "Ativo" : "Inativo"}
                   </Badge>

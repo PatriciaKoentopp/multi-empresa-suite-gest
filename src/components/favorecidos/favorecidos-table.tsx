@@ -115,7 +115,7 @@ export function FavorecidosTable({
                 <TableCell>
                   <Badge
                     variant={favorecido.status === "ativo" ? "default" : "destructive"}
-                    className={favorecido.status === "ativo" ? "bg-blue-500 hover:bg-blue-600" : ""}
+                    className={favorecido.status === "ativo" ? "bg-green-500 hover:bg-green-600" : ""}
                   >
                     {favorecido.status === "ativo" ? "Ativo" : "Inativo"}
                   </Badge>

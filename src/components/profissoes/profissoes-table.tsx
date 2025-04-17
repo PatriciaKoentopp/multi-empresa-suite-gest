@@ -47,7 +47,7 @@ export function ProfissoesTable({
                 <TableCell>
                   <Badge
                     variant={profissao.status === "ativo" ? "default" : "destructive"}
-                    className={profissao.status === "ativo" ? "bg-blue-500 hover:bg-blue-600" : ""}
+                    className={profissao.status === "ativo" ? "bg-green-500 hover:bg-green-600" : ""}
                   >
                     {profissao.status === "ativo" ? "Ativo" : "Inativo"}
                   </Badge>

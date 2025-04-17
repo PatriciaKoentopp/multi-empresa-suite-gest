@@ -49,7 +49,7 @@ export function PlanoContasTable({ contas, onEdit, onDelete }: PlanoContasTableP
                 <TableCell>
                   <Badge
                     variant={conta.status === "ativo" ? "default" : "destructive"}
-                    className={conta.status === "ativo" ? "bg-blue-500 hover:bg-blue-600" : ""}
+                    className={conta.status === "ativo" ? "bg-green-500 hover:bg-green-600" : ""}
                   >
                     {conta.status === "ativo" ? "Ativo" : "Inativo"}
                   </Badge>
