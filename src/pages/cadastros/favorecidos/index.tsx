@@ -1,5 +1,6 @@
+
 import { useState, useMemo } from "react";
-import { Favorecido, GrupoFavorecido } from "@/types";
+import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Search, Filter } from "lucide-react";
@@ -44,6 +45,38 @@ const initialGrupos: GrupoFavorecido[] = [
     id: "3",
     nome: "Fornecedores Secundários",
     status: "inativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+];
+
+// Mock data para profissões
+const initialProfissoes: Profissao[] = [
+  {
+    id: "1",
+    nome: "Desenvolvedor",
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "2",
+    nome: "Designer",
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "3",
+    nome: "Contador",
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "4",
+    nome: "Advogado",
+    status: "ativo",
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -127,6 +160,7 @@ const initialFavorecidos: Favorecido[] = [
 export default function FavorecidosPage() {
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>(initialFavorecidos);
   const [grupos] = useState<GrupoFavorecido[]>(initialGrupos);
+  const [profissoes] = useState<Profissao[]>(initialProfissoes);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFavorecido, setEditingFavorecido] = useState<Favorecido | undefined>(undefined);
   const [viewingFavorecido, setViewingFavorecido] = useState<Favorecido | undefined>(undefined);
@@ -311,6 +345,7 @@ export default function FavorecidosPage() {
           <FavorecidosForm
             favorecido={viewingFavorecido || editingFavorecido}
             grupos={grupos}
+            profissoes={profissoes}
             onSubmit={handleSubmit}
             onCancel={handleCloseDialog}
             readOnly={!!viewingFavorecido}
