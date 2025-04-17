@@ -15,6 +15,7 @@ import FavorecidosPage from "./pages/cadastros/favorecidos";
 import ProfissoesPage from "./pages/cadastros/profissoes";
 import PlanoContasPage from "./pages/contabil/plano-contas";
 import ContaCorrentePage from "./pages/cadastros/conta-corrente";
+import StyleGuidePage from "./pages/style-guide";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,9 @@ const App = () => (
                 
                 {/* Contábil routes */}
                 <Route path="/contabil/plano-contas" element={<PlanoContasPage />} />
+                
+                {/* Style Guide */}
+                <Route path="/style-guide" element={<StyleGuidePage />} />
                 
                 {/* Other module placeholders */}
                 <Route path="/vendas/*" element={<p className="p-4">Módulo de Vendas</p>} />
