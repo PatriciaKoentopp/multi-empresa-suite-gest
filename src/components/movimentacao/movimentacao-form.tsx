@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format, parse } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const formSchema = z.object({
@@ -68,31 +68,28 @@ export function MovimentacaoForm() {
                 control={form.control}
                 name="dataEmissao"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>Data de Emissão</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <div className="relative">
                             <Input
-                              type="text"
-                              placeholder="DD/MM/AAAA"
-                              value={field.value ? format(field.value, 'dd/MM/yyyy') : ''}
+                              type="date"
+                              className="w-full"
+                              value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
                               onChange={(e) => {
-                                const inputValue = e.target.value;
-                                const parsedDate = parse(inputValue, 'dd/MM/yyyy', new Date());
-                                if (!isNaN(parsedDate.getTime())) {
-                                  field.onChange(parsedDate);
+                                const date = e.target.valueAsDate;
+                                if (date) {
+                                  field.onChange(date);
                                 }
                               }}
-                              className="w-full"
                             />
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
                               className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                              onClick={() => field.onChange(undefined)}
                             >
                               <CalendarIcon className="h-4 w-4 opacity-50" />
                             </Button>
