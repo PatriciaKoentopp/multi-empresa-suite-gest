@@ -497,41 +497,43 @@ export function FavorecidosForm({
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Data de Aniversário</FormLabel>
-                    <div className="flex gap-2">
-                      <Input
-                        type="date"
-                        className="w-full"
-                        value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
-                        onChange={(e) => {
-                          const date = e.target.valueAsDate;
-                          if (date) {
-                            field.onChange(date);
-                          }
-                        }}
-                        disabled={readOnly}
-                      />
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn("px-2", readOnly && "opacity-50 cursor-not-allowed")}
-                            disabled={readOnly}
-                          >
-                            <CalendarIcon className="h-4 w-4" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 bg-white shadow-lg border border-gray-200" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={readOnly}
-                            initialFocus
-                            className={cn("p-3 pointer-events-auto bg-white")}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <div className="flex gap-2">
+                            <Input
+                              type="date"
+                              className="w-full"
+                              value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                              onChange={(e) => {
+                                const date = e.target.valueAsDate;
+                                if (date) {
+                                  field.onChange(date);
+                                }
+                              }}
+                              disabled={readOnly}
+                            />
+                            <Button
+                              variant="outline"
+                              className={cn("px-2", readOnly && "opacity-50 cursor-not-allowed")}
+                              disabled={readOnly}
+                            >
+                              <CalendarIcon className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-white shadow-lg border border-gray-200" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={readOnly}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto bg-white")}
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
