@@ -14,6 +14,7 @@ import GrupoFavorecidosPage from "./pages/cadastros/grupo-favorecidos";
 import FavorecidosPage from "./pages/cadastros/favorecidos";
 import ProfissoesPage from "./pages/cadastros/profissoes";
 import PlanoContasPage from "./pages/contabil/plano-contas";
+import ContaCorrentePage from "./pages/cadastros/conta-corrente";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
                 <Route path="/cadastros/grupo-favorecidos" element={<GrupoFavorecidosPage />} />
                 <Route path="/cadastros/favorecidos" element={<FavorecidosPage />} />
                 <Route path="/cadastros/profissoes" element={<ProfissoesPage />} />
+                <Route path="/cadastros/conta-corrente" element={<ContaCorrentePage />} />
                 
                 {/* Contábil routes */}
                 <Route path="/contabil/plano-contas" element={<PlanoContasPage />} />

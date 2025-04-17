@@ -68,6 +68,11 @@ export const mainNavigation: ModuleNavItem[] = [
         name: "Profissões",
         href: "/cadastros/profissoes",
         description: "Gerenciamento de profissões"
+      },
+      {
+        name: "Conta Corrente",
+        href: "/cadastros/conta-corrente",
+        description: "Gerenciamento de contas correntes"
       }
     ]
   },
