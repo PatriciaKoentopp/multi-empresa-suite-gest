@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const formSchema = z.object({
@@ -73,35 +73,32 @@ export function MovimentacaoForm() {
                       <PopoverTrigger asChild>
                         <FormControl>
                           <div className="relative">
-                            <Button
-                              variant="outline"
-                              type="button"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "P", { locale: ptBR })
-                              ) : (
-                                <span>Selecione uma data</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
                             <Input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer"
+                              type="text"
+                              placeholder="DD/MM/AAAA"
+                              value={field.value ? format(field.value, 'dd/MM/yyyy') : ''}
                               onChange={(e) => {
-                                const date = e.target.valueAsDate;
-                                if (date) {
-                                  field.onChange(date);
+                                const inputValue = e.target.value;
+                                const parsedDate = parse(inputValue, 'dd/MM/yyyy', new Date());
+                                if (!isNaN(parsedDate.getTime())) {
+                                  field.onChange(parsedDate);
                                 }
                               }}
+                              className="w-full"
                             />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                              onClick={() => field.onChange(undefined)}
+                            >
+                              <CalendarIcon className="h-4 w-4 opacity-50" />
+                            </Button>
                           </div>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-800" align="start">
+                      <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
