@@ -16,9 +16,16 @@ export interface Company {
   razaoSocial: string;
   nomeFantasia: string;
   cnpj: string;
+  inscricaoEstadual?: string;
+  inscricaoMunicipal?: string;
+  cnae?: string;
+  email?: string;
+  site?: string;
+  telefone?: string;
   endereco?: Address;
-  contatos?: Contact[];
+  regimeTributacao?: "simples" | "lucro_presumido" | "lucro_real" | "mei";
   logo?: string;
+  contatos?: Contact[];
   theme?: CompanyTheme;
   createdAt: Date;
   updatedAt: Date;
