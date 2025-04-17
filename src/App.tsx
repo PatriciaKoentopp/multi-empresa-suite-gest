@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +10,7 @@ import { MainLayout } from "./components/layout/main-layout";
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import NotFound from "./pages/NotFound";
+import EmpresasPage from "./pages/empresas";
 
 const queryClient = new QueryClient();
 
@@ -32,8 +34,8 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 
                 {/* Admin routes */}
-                <Route path="/admin/empresas" element={<p className="p-4">Gerenciamento de Empresas</p>} />
-                <Route path="/admin/empresas/nova" element={<p className="p-4">Nova Empresa</p>} />
+                <Route path="/admin/empresas" element={<EmpresasPage />} />
+                <Route path="/admin/empresas/nova" element={<EmpresasPage />} />
                 <Route path="/admin/usuarios" element={<p className="p-4">Gerenciamento de Usuários</p>} />
                 <Route path="/admin/permissoes" element={<p className="p-4">Gestão de Permissões</p>} />
                 <Route path="/admin/parametros" element={<p className="p-4">Parâmetros do Sistema</p>} />
