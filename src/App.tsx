@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -42,10 +41,7 @@ const App = () => (
                 
                 {/* Cadastros routes */}
                 <Route path="/cadastros/grupo-favorecidos" element={<GrupoFavorecidosPage />} />
-                <Route path="/cadastros/clientes" element={<p className="p-4">Cadastro de Clientes</p>} />
-                <Route path="/cadastros/fornecedores" element={<p className="p-4">Cadastro de Fornecedores</p>} />
-                <Route path="/cadastros/funcionarios" element={<p className="p-4">Cadastro de Funcionários</p>} />
-                <Route path="/cadastros/parceiros" element={<p className="p-4">Cadastro de Parceiros</p>} />
+                <Route path="/cadastros/favorecidos" element={<p className="p-4">Cadastro de Favorecidos</p>} />
                 
                 {/* Other module placeholders */}
                 <Route path="/vendas/*" element={<p className="p-4">Módulo de Vendas</p>} />

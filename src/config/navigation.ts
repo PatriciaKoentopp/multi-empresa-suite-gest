@@ -61,24 +61,9 @@ export const mainNavigation: ModuleNavItem[] = [
         description: "Gerenciamento de grupos de favorecidos"
       },
       {
-        name: "Clientes",
-        href: "/cadastros/clientes",
-        description: "Gerenciamento de clientes"
-      },
-      {
-        name: "Fornecedores",
-        href: "/cadastros/fornecedores",
-        description: "Gerenciamento de fornecedores"
-      },
-      {
-        name: "Funcionários",
-        href: "/cadastros/funcionarios",
-        description: "Gerenciamento de funcionários"
-      },
-      {
-        name: "Parceiros",
-        href: "/cadastros/parceiros",
-        description: "Gerenciamento de parceiros"
+        name: "Favorecidos",
+        href: "/cadastros/favorecidos",
+        description: "Gerenciamento de favorecidos"
       }
     ]
   },
