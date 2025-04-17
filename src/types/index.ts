@@ -68,8 +68,8 @@ export interface Profissao {
 
 export interface Favorecido {
   id: string;
-  tipo: string;
-  tipoDocumento: string;
+  tipo: "cliente" | "fornecedor" | "publico" | "funcionario";
+  tipoDocumento: "cpf" | "cnpj";
   documento: string;
   grupoId?: string;
   nome: string;

@@ -34,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         companies: [
           {
             id: "1",
+            name: "Empresa Demonstração", // Adicionando a propriedade 'name' obrigatória
             razaoSocial: "Empresa Demonstração LTDA",
             nomeFantasia: "Demo ERP",
             cnpj: "00.000.000/0001-00",

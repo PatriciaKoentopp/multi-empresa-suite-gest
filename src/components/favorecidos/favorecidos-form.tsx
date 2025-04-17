@@ -31,7 +31,7 @@ export function FavorecidosForm({
     resolver: zodResolver(formSchema),
     defaultValues: favorecido ? {
       tipo: favorecido.tipo as "cliente" | "fornecedor" | "publico" | "funcionario",
-      tipoDocumento: favorecido.tipoDocumento,
+      tipoDocumento: favorecido.tipoDocumento as "cpf" | "cnpj",
       documento: favorecido.documento,
       grupoId: favorecido.grupoId,
       nome: favorecido.nome,
