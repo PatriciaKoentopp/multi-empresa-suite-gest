@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -25,11 +26,12 @@ import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, User, Building2, Landmark } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
+import { useEffect } from "react";
 
 // Definição do schema do formulário
 const formSchema = z.object({
-  tipo: z.enum(["cliente", "fornecedor", "funcionario", "parceiro"], {
+  tipo: z.enum(["cliente", "fornecedor", "parceiro"], {
     required_error: "Tipo de favorecido é obrigatório",
   }),
   tipoDocumento: z.enum(["cpf", "cnpj"], {
@@ -113,6 +115,21 @@ export function FavorecidosForm({
       status: "ativo",
     },
   });
+
+  // Atualizar o tipo de documento com base no tipo de favorecido selecionado
+  useEffect(() => {
+    const tipoFavorecido = form.watch("tipo");
+    const tipoDocumentoAtual = form.watch("tipoDocumento");
+    
+    // Se tipo for "cliente" (pessoa física), o documento deve ser CPF
+    if (tipoFavorecido === "cliente" && tipoDocumentoAtual !== "cpf") {
+      form.setValue("tipoDocumento", "cpf");
+    }
+    // Para os demais tipos (jurídica ou órgão público), o documento deve ser CNPJ
+    else if ((tipoFavorecido === "fornecedor" || tipoFavorecido === "parceiro") && tipoDocumentoAtual !== "cnpj") {
+      form.setValue("tipoDocumento", "cnpj");
+    }
+  }, [form.watch("tipo")]);
 
   // Manipular envio do formulário
   const handleSubmit = (data: FormValues) => {
@@ -201,16 +218,26 @@ export function FavorecidosForm({
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      disabled={readOnly}
+                      disabled={readOnly || form.watch("tipo") !== ""}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500">
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="cpf">CPF</SelectItem>
-                        <SelectItem value="cnpj">CNPJ</SelectItem>
+                      <SelectContent className="bg-white border border-gray-200 shadow-lg">
+                        <SelectItem 
+                          value="cpf" 
+                          className="hover:bg-gray-100 focus:bg-gray-100"
+                        >
+                          CPF
+                        </SelectItem>
+                        <SelectItem 
+                          value="cnpj"
+                          className="hover:bg-gray-100 focus:bg-gray-100"
+                        >
+                          CNPJ
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
