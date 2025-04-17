@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Favorecido, GrupoFavorecido } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -235,11 +236,11 @@ export default function FavorecidosPage() {
                 value={tipoFilter}
                 onValueChange={(value) => setTipoFilter(value)}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] bg-white dark:bg-gray-900">
                   <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                   <SelectItem value="todos">Todos os tipos</SelectItem>
                   <SelectItem value="cliente">Cliente</SelectItem>
                   <SelectItem value="fornecedor">Fornecedor</SelectItem>
@@ -252,11 +253,11 @@ export default function FavorecidosPage() {
                 value={statusFilter}
                 onValueChange={(value) => setStatusFilter(value as "todos" | "ativo" | "inativo")}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] bg-white dark:bg-gray-900">
                   <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                   <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="ativo" className="text-blue-600">Ativo</SelectItem>
                   <SelectItem value="inativo" className="text-red-600">Inativo</SelectItem>
