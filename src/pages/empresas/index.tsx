@@ -371,11 +371,11 @@ export default function EmpresasPage() {
                         disabled={!isEditing}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-white dark:bg-gray-900">
                             <SelectValue placeholder="Selecione um regime" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                           <SelectItem value="simples">Simples Nacional</SelectItem>
                           <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
                           <SelectItem value="lucro_real">Lucro Real</SelectItem>
