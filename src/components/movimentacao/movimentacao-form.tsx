@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const formSchema = z.object({
@@ -75,15 +75,27 @@ export function MovimentacaoForm() {
                         <FormControl>
                           <div className="relative">
                             <Input
-                              type="date"
-                              className="w-full"
-                              value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                              type="text"
+                              placeholder="DD/MM/AAAA"
+                              value={field.value ? format(field.value, 'dd/MM/yyyy') : ''}
                               onChange={(e) => {
-                                const date = e.target.valueAsDate;
-                                if (date) {
-                                  field.onChange(date);
+                                const inputValue = e.target.value.replace(/[^\d/]/g, '');
+                                
+                                // Formata automaticamente a data enquanto digita
+                                const formattedInput = inputValue
+                                  .replace(/^(\d{2})/, '$1/')
+                                  .replace(/^(\d{2})\/(\d{2})/, '$1/$2/')
+                                  .slice(0, 10);
+                                
+                                e.target.value = formattedInput;
+
+                                const parsedDate = parse(inputValue, 'dd/MM/yyyy', new Date());
+                                
+                                if (!isNaN(parsedDate.getTime())) {
+                                  field.onChange(parsedDate);
                                 }
                               }}
+                              className="w-full"
                             />
                             <Button
                               type="button"
@@ -96,7 +108,7 @@ export function MovimentacaoForm() {
                           </div>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-900" align="start">
+                      <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
@@ -105,7 +117,7 @@ export function MovimentacaoForm() {
                             date > new Date() || date < new Date("1900-01-01")
                           }
                           initialFocus
-                          className={cn("p-3 pointer-events-auto bg-white dark:bg-gray-900")}
+                          className={cn("p-3")}
                         />
                       </PopoverContent>
                     </Popover>
