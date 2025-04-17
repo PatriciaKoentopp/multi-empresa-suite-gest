@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -20,48 +19,40 @@ export default {
 		},
 		extend: {
 			colors: {
-				border: 'hsl(var(--border))',
-				input: 'hsl(var(--input))',
-				ring: 'hsl(var(--ring))',
-				background: 'hsl(var(--background))',
-				foreground: 'hsl(var(--foreground))',
+				border: 'hsl(217 20% 85%)',
+				input: 'hsl(217 20% 85%)',
+				ring: 'hsl(217 10% 45%)',
+				background: 'hsl(220 15% 98%)',
+				foreground: 'hsl(220 15% 20%)',
 				primary: {
-					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					DEFAULT: 'hsl(217 10% 35%)',
+					foreground: 'hsl(0 0% 98%)'
 				},
 				secondary: {
-					DEFAULT: 'hsl(var(--secondary))',
-					foreground: 'hsl(var(--secondary-foreground))'
-				},
-				destructive: {
-					DEFAULT: 'hsl(var(--destructive))',
-					foreground: 'hsl(var(--destructive-foreground))'
+					DEFAULT: 'hsl(220 10% 96%)',
+					foreground: 'hsl(220 10% 30%)'
 				},
 				muted: {
-					DEFAULT: 'hsl(var(--muted))',
-					foreground: 'hsl(var(--muted-foreground))'
+					DEFAULT: 'hsl(220 10% 96%)',
+					foreground: 'hsl(220 10% 50%)'
 				},
 				accent: {
-					DEFAULT: 'hsl(var(--accent))',
-					foreground: 'hsl(var(--accent-foreground))'
+					DEFAULT: 'hsl(220 15% 92%)',
+					foreground: 'hsl(220 10% 25%)'
 				},
-				popover: {
-					DEFAULT: 'hsl(var(--popover))',
-					foreground: 'hsl(var(--popover-foreground))'
-				},
-				card: {
-					DEFAULT: 'hsl(var(--card))',
-					foreground: 'hsl(var(--card-foreground))'
+				destructive: {
+					DEFAULT: 'hsl(0 70% 50%)',
+					foreground: 'hsl(210 40% 98%)'
 				},
 				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
+					DEFAULT: 'hsl(220 10% 98%)',
+					foreground: 'hsl(220 10% 30%)',
+					primary: 'hsl(217 10% 35%)',
+					'primary-foreground': 'hsl(0 0% 98%)',
+					accent: 'hsl(220 10% 94%)',
+					'accent-foreground': 'hsl(220 10% 35%)',
+					border: 'hsl(220 10% 90%)',
+					ring: 'hsl(220 10% 60%)'
 				}
 			},
 			borderRadius: {

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,20 +6,20 @@
 @layer base {
   :root {
     /* Blue/Gray palette for light mode */
-    --background: 210 20% 98%;
+    --background: 220 15% 98%;
     --foreground: 220 15% 20%;
 
-    --card: 210 20% 98%;
+    --card: 220 15% 98%;
     --card-foreground: 220 15% 20%;
 
-    --popover: 210 20% 98%;
+    --popover: 220 15% 98%;
     --popover-foreground: 220 15% 20%;
 
     /* Primary: blue with gray undertones */
     --primary: 217 10% 35%;
     --primary-foreground: 0 0% 98%;
 
-    /* Secondary: light gray with blue hint */
+    /* Secondary: soft blue-gray */
     --secondary: 220 10% 96%;
     --secondary-foreground: 220 10% 30%;
 
@@ -31,9 +32,9 @@
     --destructive: 0 70% 50%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 10% 90%;
-    --input: 220 10% 90%;
-    --ring: 220 10% 35%;
+    --border: 217 20% 85%;
+    --input: 217 20% 85%;
+    --ring: 217 10% 45%;
 
     --radius: 0.5rem;
 
@@ -59,7 +60,7 @@
     --popover: 220 15% 12%;
     --popover-foreground: 220 15% 90%;
 
-    --primary: 217 10% 80%;
+    --primary: 217 10% 70%;
     --primary-foreground: 220 15% 10%;
 
     --secondary: 220 15% 20%;
@@ -74,11 +75,11 @@
     --destructive: 0 70% 40%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 15% 25%;
-    --input: 220 15% 25%;
-    --ring: 220 15% 70%;
+    --border: 217 20% 25%;
+    --input: 217 20% 25%;
+    --ring: 217 10% 70%;
 
-    /* Sidebar dark mode colors */
+    /* Sidebar specific colors */
     --sidebar-background: 220 15% 15%;
     --sidebar-foreground: 220 15% 90%;
     --sidebar-primary: 217 10% 70%;
