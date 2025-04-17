@@ -1,7 +1,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Favorecido, GrupoFavorecido } from "@/types";
+import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { useEffect } from "react";
@@ -15,6 +15,7 @@ import { formSchema, FormValues } from "./favorecidos-form.schema";
 interface FavorecidosFormProps {
   favorecido?: Favorecido;
   grupos: GrupoFavorecido[];
+  profissoes: Profissao[];
   onSubmit: (data: Partial<Favorecido>) => void;
   onCancel: () => void;
   readOnly?: boolean;
@@ -23,6 +24,7 @@ interface FavorecidosFormProps {
 export function FavorecidosForm({
   favorecido,
   grupos,
+  profissoes,
   onSubmit,
   onCancel,
   readOnly = false,
@@ -30,10 +32,11 @@ export function FavorecidosForm({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: favorecido ? {
-      tipo: favorecido.tipo as "cliente" | "fornecedor" | "publico" | "funcionario",
-      tipoDocumento: favorecido.tipoDocumento as "cpf" | "cnpj",
+      tipo: favorecido.tipo,
+      tipoDocumento: favorecido.tipoDocumento,
       documento: favorecido.documento,
       grupoId: favorecido.grupoId,
+      profissaoId: favorecido.profissaoId,
       nome: favorecido.nome,
       nomeFantasia: favorecido.nomeFantasia || "",
       email: favorecido.email || "",
@@ -47,7 +50,7 @@ export function FavorecidosForm({
       estado: favorecido.endereco?.estado || "",
       pais: favorecido.endereco?.pais || "",
       dataAniversario: favorecido.dataAniversario,
-      status: favorecido.status || "ativo",
+      status: favorecido.status,
     } : {
       tipo: "cliente",
       tipoDocumento: "cpf",
@@ -116,22 +119,22 @@ export function FavorecidosForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Seção da esquerda */}
-          <div className="space-y-4">
-            <FavorecidoTipoRadio form={form} readOnly={readOnly} />
-            <FavorecidoDocumento form={form} readOnly={readOnly} />
-            <FavorecidoDadosBasicos form={form} grupos={grupos} readOnly={readOnly} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+              <FavorecidoTipoRadio form={form} readOnly={readOnly} />
+              <FavorecidoDocumento form={form} readOnly={readOnly} />
+            </div>
+            <FavorecidoDadosBasicos form={form} grupos={grupos} profissoes={profissoes} readOnly={readOnly} />
           </div>
 
-          {/* Seção da direita */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <FavorecidoEndereco form={form} readOnly={readOnly} />
             <FavorecidoAniversarioStatus form={form} readOnly={readOnly} />
           </div>
         </div>
 
-        {!readOnly && (
+        {!readOnly ? (
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancelar
@@ -140,9 +143,7 @@ export function FavorecidosForm({
               Salvar
             </Button>
           </div>
-        )}
-        
-        {readOnly && (
+        ) : (
           <div className="flex justify-end">
             <Button type="button" variant="outline" onClick={onCancel}>
               Fechar

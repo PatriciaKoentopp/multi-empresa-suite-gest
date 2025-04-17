@@ -10,6 +10,7 @@ export const formSchema = z.object({
   }),
   documento: z.string().min(1, { message: "Documento é obrigatório" }),
   grupoId: z.string().optional(),
+  profissaoId: z.string().optional(),
   nome: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
   nomeFantasia: z.string().optional(),
   email: z.string().email({ message: "Email inválido" }).optional().or(z.literal("")),

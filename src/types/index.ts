@@ -1,4 +1,3 @@
-
 export interface GrupoFavorecido {
   id: string;
   nome: string;
@@ -72,6 +71,7 @@ export interface Favorecido {
   tipoDocumento: "cpf" | "cnpj";
   documento: string;
   grupoId?: string;
+  profissaoId?: string;
   nome: string;
   nomeFantasia?: string;
   email?: string;

@@ -3,50 +3,93 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GrupoFavorecido } from "@/types";
+import { GrupoFavorecido, Profissao } from "@/types";
 import { FormValues } from "./favorecidos-form.schema";
 
 interface FavorecidoDadosBasicosProps {
   form: UseFormReturn<FormValues>;
   grupos: GrupoFavorecido[];
+  profissoes: Profissao[];
   readOnly?: boolean;
 }
 
-export function FavorecidoDadosBasicos({ form, grupos, readOnly }: FavorecidoDadosBasicosProps) {
+export function FavorecidoDadosBasicos({ 
+  form, 
+  grupos, 
+  profissoes,
+  readOnly 
+}: FavorecidoDadosBasicosProps) {
   return (
-    <div className="space-y-4">
-      <FormField
-        control={form.control}
-        name="grupoId"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Grupo</FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              defaultValue={field.value}
-              disabled={readOnly}
-            >
-              <FormControl>
-                <SelectTrigger className="bg-white border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500">
-                  <SelectValue placeholder="Selecione um grupo" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent className="bg-white border border-gray-200 shadow-lg">
-                {grupos.map((grupo) => (
-                  <SelectItem 
-                    key={grupo.id} 
-                    value={grupo.id}
-                    className="hover:bg-gray-100 focus:bg-gray-100"
-                  >
-                    {grupo.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+    <div className="space-y-4 bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+      <h3 className="text-lg font-medium mb-4">Dados Básicos</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="grupoId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Grupo</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={readOnly}
+              >
+                <FormControl>
+                  <SelectTrigger className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+                    <SelectValue placeholder="Selecione um grupo" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="bg-white dark:bg-gray-800">
+                  {grupos.map((grupo) => (
+                    <SelectItem 
+                      key={grupo.id} 
+                      value={grupo.id}
+                      className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      {grupo.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="profissaoId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Profissão</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={readOnly}
+              >
+                <FormControl>
+                  <SelectTrigger className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+                    <SelectValue placeholder="Selecione uma profissão" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="bg-white dark:bg-gray-800">
+                  {profissoes.map((profissao) => (
+                    <SelectItem 
+                      key={profissao.id} 
+                      value={profissao.id}
+                      className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      {profissao.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
 
       <FormField
         control={form.control}
@@ -55,7 +98,7 @@ export function FavorecidoDadosBasicos({ form, grupos, readOnly }: FavorecidoDad
           <FormItem>
             <FormLabel>Nome/Razão Social</FormLabel>
             <FormControl>
-              <Input {...field} disabled={readOnly} />
+              <Input {...field} disabled={readOnly} className="bg-white dark:bg-gray-900" />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -69,14 +112,14 @@ export function FavorecidoDadosBasicos({ form, grupos, readOnly }: FavorecidoDad
           <FormItem>
             <FormLabel>Nome Fantasia</FormLabel>
             <FormControl>
-              <Input {...field} disabled={readOnly} />
+              <Input {...field} disabled={readOnly} className="bg-white dark:bg-gray-900" />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="email"
@@ -84,7 +127,7 @@ export function FavorecidoDadosBasicos({ form, grupos, readOnly }: FavorecidoDad
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input type="email" {...field} disabled={readOnly} />
+                <Input type="email" {...field} disabled={readOnly} className="bg-white dark:bg-gray-900" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -98,7 +141,7 @@ export function FavorecidoDadosBasicos({ form, grupos, readOnly }: FavorecidoDad
             <FormItem>
               <FormLabel>Telefone</FormLabel>
               <FormControl>
-                <Input {...field} disabled={readOnly} />
+                <Input {...field} disabled={readOnly} className="bg-white dark:bg-gray-900" />
               </FormControl>
               <FormMessage />
             </FormItem>
