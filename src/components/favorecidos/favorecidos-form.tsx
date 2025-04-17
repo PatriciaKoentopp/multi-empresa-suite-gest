@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -246,13 +245,17 @@ export function FavorecidosForm({
                     disabled={readOnly}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500">
                         <SelectValue placeholder="Selecione um grupo" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg">
                       {grupos.map((grupo) => (
-                        <SelectItem key={grupo.id} value={grupo.id}>
+                        <SelectItem 
+                          key={grupo.id} 
+                          value={grupo.id}
+                          className="hover:bg-gray-100 focus:bg-gray-100"
+                        >
                           {grupo.nome}
                         </SelectItem>
                       ))}
@@ -461,7 +464,7 @@ export function FavorecidosForm({
                           <Button
                             variant={"outline"}
                             className={cn(
-                              "w-full pl-3 text-left font-normal",
+                              "w-full pl-3 text-left font-normal bg-white border-gray-300 text-gray-900 hover:bg-gray-50",
                               !field.value && "text-muted-foreground"
                             )}
                             disabled={readOnly}
@@ -475,13 +478,14 @@ export function FavorecidosForm({
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 bg-white shadow-lg border border-gray-200" align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
                           onSelect={field.onChange}
                           disabled={readOnly}
                           initialFocus
+                          className={cn("p-3 pointer-events-auto bg-white")}
                         />
                       </PopoverContent>
                     </Popover>
