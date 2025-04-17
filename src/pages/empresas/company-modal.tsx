@@ -45,7 +45,7 @@ const formSchema = z.object({
     bairro: z.string().optional(),
     cidade: z.string().optional(),
     estado: z.string().optional(),
-    cep: z.string().optional(),
+    cep: z.string().min(1, "CEP é obrigatório"), // Changed from optional to required with validation
     pais: z.string().optional(),
   }).optional(),
   regimeTributacao: z.enum(["simples", "lucro_presumido", "lucro_real", "mei"]).optional(),
@@ -83,7 +83,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
         bairro: "",
         cidade: "",
         estado: "",
-        cep: "",
+        cep: "", // Ensure this has a default value even if empty
         pais: "Brasil",
       },
       regimeTributacao: undefined,
@@ -110,7 +110,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
           bairro: "",
           cidade: "",
           estado: "",
-          cep: "",
+          cep: "", // Ensure this has a value even if resetting
           pais: "Brasil",
         },
         regimeTributacao: company.regimeTributacao || undefined,
@@ -134,7 +134,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
           bairro: "",
           cidade: "",
           estado: "",
-          cep: "",
+          cep: "", // Ensure this has a default value even if empty
           pais: "Brasil",
         },
         regimeTributacao: undefined,
@@ -144,9 +144,22 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
   }, [company, form]);
 
   const onSubmit = (values: FormValues) => {
+    // Ensure we have a valid endereco object with required fields before updating
+    const endereco = values.endereco ? {
+      cep: values.endereco.cep || "", // Ensure cep is never undefined
+      logradouro: values.endereco.logradouro || "",
+      numero: values.endereco.numero || "",
+      complemento: values.endereco.complemento,
+      bairro: values.endereco.bairro || "",
+      cidade: values.endereco.cidade || "",
+      estado: values.endereco.estado || "",
+      pais: values.endereco.pais || "Brasil",
+    } : undefined;
+
     if (company) {
       updateCompany(company.id, {
         ...values,
+        endereco, // Use the properly formed endereco object
         createdAt: company.createdAt,
         updatedAt: new Date(),
       });
@@ -158,6 +171,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
       addCompany({
         id: crypto.randomUUID(),
         ...values,
+        endereco, // Use the properly formed endereco object
         createdAt: new Date(),
         updatedAt: new Date(),
       } as Company);
