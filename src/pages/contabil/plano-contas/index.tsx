@@ -47,9 +47,29 @@ const contasIniciais: PlanoConta[] = [
     updatedAt: new Date(),
   },
   {
+    id: "1.1.1",
+    codigo: "1.1.1",
+    descricao: "Caixa e Equivalentes",
+    tipo: "ativo",
+    considerarDRE: false,
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
     id: "2",
     codigo: "2",
     descricao: "Passivo",
+    tipo: "passivo",
+    considerarDRE: false,
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "2.1",
+    codigo: "2.1",
+    descricao: "Passivo Circulante",
     tipo: "passivo",
     considerarDRE: false,
     status: "ativo",
@@ -66,6 +86,46 @@ const contasIniciais: PlanoConta[] = [
     createdAt: new Date(),
     updatedAt: new Date(),
   },
+  {
+    id: "3.1",
+    codigo: "3.1",
+    descricao: "Receitas Operacionais",
+    tipo: "receita",
+    considerarDRE: true,
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "4",
+    codigo: "4",
+    descricao: "Despesas",
+    tipo: "despesa",
+    considerarDRE: true,
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "4.1",
+    codigo: "4.1",
+    descricao: "Despesas Administrativas",
+    tipo: "despesa",
+    considerarDRE: true,
+    status: "inativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "5",
+    codigo: "5",
+    descricao: "Patrimônio Líquido",
+    tipo: "patrimonio",
+    considerarDRE: false,
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }
 ];
 
 export default function PlanoContasPage() {
@@ -148,8 +208,8 @@ export default function PlanoContasPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="mb-6 space-y-4">
-            <div className="relative">
+          <div className="mb-6 flex flex-wrap items-center gap-4">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por código ou descrição..."
@@ -159,32 +219,30 @@ export default function PlanoContasPage() {
               />
             </div>
             
-            <div className="flex gap-4">
-              <Select value={tipoFilter} onValueChange={setTipoFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filtrar por tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os tipos</SelectItem>
-                  <SelectItem value="ativo">Ativo</SelectItem>
-                  <SelectItem value="passivo">Passivo</SelectItem>
-                  <SelectItem value="receita">Receita</SelectItem>
-                  <SelectItem value="despesa">Despesa</SelectItem>
-                  <SelectItem value="patrimonio">Patrimônio</SelectItem>
-                </SelectContent>
-              </Select>
+            <Select value={tipoFilter} onValueChange={setTipoFilter}>
+              <SelectTrigger className="w-[180px] bg-background">
+                <SelectValue placeholder="Filtrar por tipo" />
+              </SelectTrigger>
+              <SelectContent className="bg-background">
+                <SelectItem value="todos">Todos os tipos</SelectItem>
+                <SelectItem value="ativo">Ativo</SelectItem>
+                <SelectItem value="passivo">Passivo</SelectItem>
+                <SelectItem value="receita">Receita</SelectItem>
+                <SelectItem value="despesa">Despesa</SelectItem>
+                <SelectItem value="patrimonio">Patrimônio</SelectItem>
+              </SelectContent>
+            </Select>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filtrar por status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os status</SelectItem>
-                  <SelectItem value="ativo">Ativo</SelectItem>
-                  <SelectItem value="inativo">Inativo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px] bg-background">
+                <SelectValue placeholder="Filtrar por status" />
+              </SelectTrigger>
+              <SelectContent className="bg-background">
+                <SelectItem value="todos">Todos os status</SelectItem>
+                <SelectItem value="ativo">Ativo</SelectItem>
+                <SelectItem value="inativo">Inativo</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <PlanoContasTable
