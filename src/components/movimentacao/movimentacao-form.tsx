@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -75,16 +75,29 @@ export function MovimentacaoForm() {
                         <FormControl>
                           <div className="relative">
                             <Input
-                              type="date"
-                              className="w-full"
-                              value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                              placeholder="DD/MM/AAAA"
+                              value={field.value ? formatDate(field.value) : ""}
                               onChange={(e) => {
-                                const date = e.target.valueAsDate;
-                                if (date) {
-                                  field.onChange(date);
+                                const value = e.target.value;
+                                if (!value) return;
+                                
+                                // Extrai dia, mês e ano do formato DD/MM/AAAA
+                                const parts = value.split('/');
+                                if (parts.length === 3) {
+                                  const day = parseInt(parts[0], 10);
+                                  const month = parseInt(parts[1], 10) - 1; // Meses em JS são 0-indexed
+                                  const year = parseInt(parts[2], 10);
+                                  
+                                  // Cria nova data se os valores são válidos
+                                  if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+                                    const date = new Date(year, month, day);
+                                    if (date instanceof Date && !isNaN(date.getTime())) {
+                                      field.onChange(date);
+                                    }
+                                  }
                                 }
                               }}
-                              disabled={form.formState.isSubmitting}
+                              className="w-full pr-10"
                             />
                             <Button
                               type="button"
@@ -222,3 +235,4 @@ export function MovimentacaoForm() {
     </Card>
   );
 }
+
