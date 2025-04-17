@@ -1,3 +1,4 @@
+
 // Authentication types
 export interface User {
   id: string;
@@ -75,8 +76,13 @@ export interface Favorecido {
   nome: string;
   documento: string;
   tipoDocumento: 'cpf' | 'cnpj';
+  grupoId?: string;
+  nomeFantasia?: string;
+  email?: string;
+  telefone?: string;
   endereco?: Address;
-  contatos?: Contact[];
+  dataAniversario?: Date;
+  status: 'ativo' | 'inativo';
   dadosBancarios?: BankAccount[];
   categorias?: string[];
   tags?: string[];
