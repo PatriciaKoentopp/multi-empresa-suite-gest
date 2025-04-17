@@ -126,7 +126,7 @@ export default function GrupoFavorecidosPage() {
         <h1 className="text-2xl font-bold">Grupo de Favorecidos</h1>
         <Button 
           onClick={() => handleOpenDialog()}
-          className="bg-primary hover:bg-primary/90 text-white"
+          variant="blue"
         >
           <PlusCircle className="mr-2 h-4 w-4" />
           Novo Grupo
@@ -156,8 +156,8 @@ export default function GrupoFavorecidosPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="ativo">Ativo</SelectItem>
-                  <SelectItem value="inativo">Inativo</SelectItem>
+                  <SelectItem value="ativo" className="text-blue-600">Ativo</SelectItem>
+                  <SelectItem value="inativo" className="text-red-600">Inativo</SelectItem>
                 </SelectContent>
               </Select>
             </div>

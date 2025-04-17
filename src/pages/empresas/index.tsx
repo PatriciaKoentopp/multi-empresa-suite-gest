@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useCompany } from "@/contexts/company-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -193,8 +192,7 @@ export default function EmpresasPage() {
         </div>
         <Button 
           onClick={handleEditToggle}
-          variant={isEditing ? "outline" : "default"}
-          className={isEditing ? "" : "bg-primary hover:bg-primary/90 text-white"}
+          variant={isEditing ? "outline" : "blue"}
         >
           {isEditing ? (
             <>Cancelar</>
@@ -488,26 +486,26 @@ export default function EmpresasPage() {
                           <FormMessage />
                         </FormItem>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="pais"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>País</FormLabel>
-                          <FormControl>
-                            <Input {...field} disabled={!isEditing} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="pais"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>País</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={!isEditing} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
 
               {isEditing && (
-                <Button type="submit" className="bg-primary hover:bg-primary/90 text-white">
+                <Button type="submit" variant="success">
                   <Save className="mr-2 h-4 w-4" />
                   Salvar Alterações
                 </Button>

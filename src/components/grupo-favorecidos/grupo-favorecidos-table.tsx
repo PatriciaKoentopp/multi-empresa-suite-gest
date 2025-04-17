@@ -47,7 +47,8 @@ export function GrupoFavorecidosTable({
                 <TableCell>{grupo.nome}</TableCell>
                 <TableCell>
                   <Badge
-                    variant={grupo.status === "ativo" ? "default" : "secondary"}
+                    variant={grupo.status === "ativo" ? "default" : "destructive"}
+                    className={grupo.status === "ativo" ? "bg-blue-500 hover:bg-blue-600" : ""}
                   >
                     {grupo.status === "ativo" ? "Ativo" : "Inativo"}
                   </Badge>
@@ -58,7 +59,7 @@ export function GrupoFavorecidosTable({
                       variant="ghost"
                       size="icon"
                       onClick={() => onEdit(grupo)}
-                      className="text-primary hover:bg-primary/10 hover:text-primary"
+                      className="text-blue-500 hover:bg-blue-100 hover:text-blue-700"
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -66,6 +67,7 @@ export function GrupoFavorecidosTable({
                       variant="ghost"
                       size="icon"
                       onClick={() => onDelete(grupo.id)}
+                      className="text-red-500 hover:bg-red-100 hover:text-red-700"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

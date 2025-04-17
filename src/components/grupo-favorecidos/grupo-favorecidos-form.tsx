@@ -81,14 +81,14 @@ export function GrupoFavorecidosForm({
                   className="flex gap-4"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="ativo" id="ativo" />
-                    <FormLabel htmlFor="ativo" className="cursor-pointer">
+                    <RadioGroupItem value="ativo" id="ativo" className="text-blue-500 border-blue-500 focus:ring-blue-500" />
+                    <FormLabel htmlFor="ativo" className="cursor-pointer text-blue-600">
                       Ativo
                     </FormLabel>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="inativo" id="inativo" />
-                    <FormLabel htmlFor="inativo" className="cursor-pointer">
+                    <RadioGroupItem value="inativo" id="inativo" className="text-red-500 border-red-500 focus:ring-red-500" />
+                    <FormLabel htmlFor="inativo" className="cursor-pointer text-red-600">
                       Inativo
                     </FormLabel>
                   </div>
@@ -103,7 +103,7 @@ export function GrupoFavorecidosForm({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit" className="bg-primary hover:bg-primary/90 text-white">
+          <Button type="submit" variant="blue">
             Salvar
           </Button>
         </div>
