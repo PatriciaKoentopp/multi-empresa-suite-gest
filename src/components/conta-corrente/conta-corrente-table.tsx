@@ -69,7 +69,7 @@ export function ContaCorrenteTable({
                   variant="ghost"
                   size="icon"
                   onClick={() => onView(conta)}
-                  className="text-primary hover:text-primary-foreground"
+                  className="text-blue-500 hover:bg-blue-100 hover:text-blue-700"
                 >
                   <EyeIcon className="h-4 w-4" />
                 </Button>
@@ -77,7 +77,7 @@ export function ContaCorrenteTable({
                   variant="ghost"
                   size="icon"
                   onClick={() => onEdit(conta)}
-                  className="text-secondary-foreground hover:text-secondary"
+                  className="text-blue-500 hover:bg-blue-100 hover:text-blue-700"
                 >
                   <PencilIcon className="h-4 w-4" />
                 </Button>
@@ -85,7 +85,7 @@ export function ContaCorrenteTable({
                   variant="ghost"
                   size="icon"
                   onClick={() => onDelete(conta.id)}
-                  className="text-destructive hover:text-destructive-foreground"
+                  className="text-red-500 hover:bg-red-100 hover:text-red-700"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </Button>
