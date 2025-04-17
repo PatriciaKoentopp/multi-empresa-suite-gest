@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Favorecido, GrupoFavorecido } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -102,7 +101,7 @@ const initialFavorecidos: Favorecido[] = [
   },
   {
     id: "3",
-    tipo: "parceiro",
+    tipo: "publico",
     nome: "Prefeitura Municipal de São Paulo",
     documento: "00.000.000/0001-00",
     tipoDocumento: "cnpj",
@@ -230,6 +229,7 @@ export default function FavorecidosPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+
             <div className="flex w-full gap-2 sm:w-auto">
               <Select
                 value={tipoFilter}
@@ -244,7 +244,7 @@ export default function FavorecidosPage() {
                   <SelectItem value="cliente">Cliente</SelectItem>
                   <SelectItem value="fornecedor">Fornecedor</SelectItem>
                   <SelectItem value="funcionario">Funcionário</SelectItem>
-                  <SelectItem value="parceiro">Parceiro</SelectItem>
+                  <SelectItem value="publico">Órgão Público</SelectItem>
                 </SelectContent>
               </Select>
               
