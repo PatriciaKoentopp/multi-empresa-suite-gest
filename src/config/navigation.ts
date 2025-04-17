@@ -116,11 +116,6 @@ export const mainNavigation: ModuleNavItem[] = [
     description: "Gestão financeira",
     subItems: [
       {
-        name: "Incluir Movimentação",
-        href: "/financeiro/incluir-movimentacao",
-        description: "Inclusão de notas fiscais de despesas e impostos"
-      },
-      {
         name: "Contas a Receber",
         href: "/financeiro/contas-receber",
         description: "Gerenciamento de recebimentos"

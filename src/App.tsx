@@ -16,7 +16,6 @@ import ProfissoesPage from "./pages/cadastros/profissoes";
 import PlanoContasPage from "./pages/contabil/plano-contas";
 import ContaCorrentePage from "./pages/cadastros/conta-corrente";
 import StyleGuidePage from "./pages/style-guide";
-import IncluirMovimentacaoPage from "./pages/financeiro/incluir-movimentacao";
 
 const queryClient = new QueryClient();
 
@@ -68,10 +67,6 @@ const App = () => (
                 <Route path="/perfil" element={<p className="p-4">Perfil do Usuário</p>} />
                 <Route path="/configuracoes" element={<p className="p-4">Configurações</p>} />
                 <Route path="/ajuda" element={<p className="p-4">Ajuda</p>} />
-                
-                {/* Financeiro routes */}
-                <Route path="/financeiro/incluir-movimentacao" element={<IncluirMovimentacaoPage />} />
-                
               </Route>
               
               {/* Catch-all route */}
