@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Save, Upload } from "lucide-react";
+import { CalendarIcon, Save } from "lucide-react";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -204,7 +204,7 @@ export function MovimentacaoForm() {
               <Button variant="outline" type="button">
                 Cancelar
               </Button>
-              <Button type="submit" variant="success">
+              <Button type="submit" variant="blue">
                 <Save className="mr-2 h-4 w-4" />
                 Salvar Movimentação
               </Button>
