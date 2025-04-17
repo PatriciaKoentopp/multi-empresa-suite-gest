@@ -194,6 +194,7 @@ export default function EmpresasPage() {
         <Button 
           onClick={handleEditToggle}
           variant={isEditing ? "outline" : "default"}
+          className={isEditing ? "" : "bg-primary hover:bg-primary/90 text-white"}
         >
           {isEditing ? (
             <>Cancelar</>
@@ -506,7 +507,7 @@ export default function EmpresasPage() {
               </div>
 
               {isEditing && (
-                <Button type="submit">
+                <Button type="submit" className="bg-primary hover:bg-primary/90 text-white">
                   <Save className="mr-2 h-4 w-4" />
                   Salvar Alterações
                 </Button>

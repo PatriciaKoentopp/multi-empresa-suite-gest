@@ -58,6 +58,7 @@ export function GrupoFavorecidosTable({
                       variant="ghost"
                       size="icon"
                       onClick={() => onEdit(grupo)}
+                      className="text-primary hover:bg-primary/10 hover:text-primary"
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>

@@ -124,7 +124,10 @@ export default function GrupoFavorecidosPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Grupo de Favorecidos</h1>
-        <Button onClick={() => handleOpenDialog()}>
+        <Button 
+          onClick={() => handleOpenDialog()}
+          className="bg-primary hover:bg-primary/90 text-white"
+        >
           <PlusCircle className="mr-2 h-4 w-4" />
           Novo Grupo
         </Button>

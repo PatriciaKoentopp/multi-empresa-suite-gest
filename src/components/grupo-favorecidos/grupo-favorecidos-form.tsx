@@ -103,7 +103,9 @@ export function GrupoFavorecidosForm({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit">Salvar</Button>
+          <Button type="submit" className="bg-primary hover:bg-primary/90 text-white">
+            Salvar
+          </Button>
         </div>
       </form>
     </Form>
