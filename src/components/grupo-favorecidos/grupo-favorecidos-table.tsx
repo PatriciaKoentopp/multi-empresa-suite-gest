@@ -38,7 +38,7 @@ export function GrupoFavorecidosTable({
           {grupos.length === 0 ? (
             <TableRow>
               <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
-                Nenhum grupo cadastrado
+                Nenhum resultado encontrado
               </TableCell>
             </TableRow>
           ) : (

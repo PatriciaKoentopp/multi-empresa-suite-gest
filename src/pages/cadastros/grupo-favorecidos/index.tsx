@@ -1,16 +1,14 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { GrupoFavorecido } from "@/types";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { PlusCircle, Search, Filter } from "lucide-react";
 import { GrupoFavorecidosForm } from "@/components/grupo-favorecidos/grupo-favorecidos-form";
 import { GrupoFavorecidosTable } from "@/components/grupo-favorecidos/grupo-favorecidos-table";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -19,6 +17,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Mock data - in a real app, this would come from a database
 const initialGrupos: GrupoFavorecido[] = [
@@ -51,6 +56,10 @@ export default function GrupoFavorecidosPage() {
   const [editingGrupo, setEditingGrupo] = useState<GrupoFavorecido | undefined>(
     undefined
   );
+  
+  // Filtros
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
 
   const handleOpenDialog = (grupo?: GrupoFavorecido) => {
     setEditingGrupo(grupo);
@@ -98,6 +107,19 @@ export default function GrupoFavorecidosPage() {
     toast.success("Grupo de favorecidos excluído com sucesso!");
   };
 
+  // Aplicar filtros aos grupos
+  const filteredGrupos = useMemo(() => {
+    return grupos.filter((grupo) => {
+      // Filtro por nome
+      const matchesSearch = grupo.nome.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Filtro por status
+      const matchesStatus = statusFilter === "todos" || grupo.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [grupos, searchTerm, statusFilter]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -109,15 +131,37 @@ export default function GrupoFavorecidosPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Grupos de Favorecidos</CardTitle>
-          <CardDescription>
-            Gerencie os grupos de favorecidos do sistema
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex w-full sm:w-[180px]">
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => setStatusFilter(value as "todos" | "ativo" | "inativo")}
+              >
+                <SelectTrigger className="w-full">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="inativo">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <GrupoFavorecidosTable
-            grupos={grupos}
+            grupos={filteredGrupos}
             onEdit={handleOpenDialog}
             onDelete={handleDelete}
           />
