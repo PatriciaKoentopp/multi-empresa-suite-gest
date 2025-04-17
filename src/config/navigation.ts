@@ -56,6 +56,11 @@ export const mainNavigation: ModuleNavItem[] = [
     description: "Cadastros gerais do sistema",
     subItems: [
       {
+        name: "Grupo de Favorecidos",
+        href: "/cadastros/grupo-favorecidos",
+        description: "Gerenciamento de grupos de favorecidos"
+      },
+      {
         name: "Clientes",
         href: "/cadastros/clientes",
         description: "Gerenciamento de clientes"

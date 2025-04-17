@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +11,7 @@ import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import NotFound from "./pages/NotFound";
 import EmpresasPage from "./pages/empresas";
+import GrupoFavorecidosPage from "./pages/cadastros/grupo-favorecidos";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,7 @@ const App = () => (
                 <Route path="/admin/parametros" element={<p className="p-4">Parâmetros do Sistema</p>} />
                 
                 {/* Cadastros routes */}
+                <Route path="/cadastros/grupo-favorecidos" element={<GrupoFavorecidosPage />} />
                 <Route path="/cadastros/clientes" element={<p className="p-4">Cadastro de Clientes</p>} />
                 <Route path="/cadastros/fornecedores" element={<p className="p-4">Cadastro de Fornecedores</p>} />
                 <Route path="/cadastros/funcionarios" element={<p className="p-4">Cadastro de Funcionários</p>} />

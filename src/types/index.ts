@@ -1,4 +1,3 @@
-
 // Authentication types
 export interface User {
   id: string;
@@ -94,6 +93,15 @@ export interface BankAccount {
   titular: string;
   documento: string;
   pix?: string;
+}
+
+// Group types
+export interface GrupoFavorecido {
+  id: string;
+  nome: string;
+  status: 'ativo' | 'inativo';
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Module navigation types
