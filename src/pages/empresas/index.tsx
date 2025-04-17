@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useCompany } from "@/contexts/company-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -486,21 +487,21 @@ export default function EmpresasPage() {
                           <FormMessage />
                         </FormItem>
                       )}
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="pais"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>País</FormLabel>
-                        <FormControl>
-                          <Input {...field} disabled={!isEditing} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    />
+                    <FormField
+                      control={form.control}
+                      name="pais"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>País</FormLabel>
+                          <FormControl>
+                            <Input {...field} disabled={!isEditing} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
               </div>
 
