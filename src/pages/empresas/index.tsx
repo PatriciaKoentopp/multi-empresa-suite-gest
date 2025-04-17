@@ -193,10 +193,8 @@ export default function EmpresasPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Dados da Empresa</CardTitle>
-          <CardDescription>
-            {isEditing ? "Edite as informações da sua empresa" : "Informações da sua empresa"}
-          </CardDescription>
+          
+          
         </CardHeader>
         <CardContent>
           <Form {...form}>
