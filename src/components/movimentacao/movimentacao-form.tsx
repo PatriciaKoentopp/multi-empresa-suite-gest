@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -98,7 +99,7 @@ export function MovimentacaoForm() {
                           </div>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-900" align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
@@ -107,7 +108,7 @@ export function MovimentacaoForm() {
                             date > new Date() || date < new Date("1900-01-01")
                           }
                           initialFocus
-                          className={cn("p-3 pointer-events-auto")}
+                          className={cn("p-3 pointer-events-auto bg-white dark:bg-gray-900")}
                         />
                       </PopoverContent>
                     </Popover>
