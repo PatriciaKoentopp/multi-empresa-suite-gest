@@ -1,4 +1,3 @@
-
 import { Favorecido, GrupoFavorecido } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,7 +42,7 @@ export function FavorecidosTable({
         return <User className="h-4 w-4 text-blue-500" />;
       case "fornecedor":
         return <Building2 className="h-4 w-4 text-green-500" />;
-      case "parceiro":
+      case "publico":
         return <Landmark className="h-4 w-4 text-purple-500" />;
       default:
         return <User className="h-4 w-4" />;
@@ -56,7 +55,7 @@ export function FavorecidosTable({
       cliente: "Cliente",
       fornecedor: "Fornecedor",
       funcionario: "Funcionário",
-      parceiro: "Parceiro"
+      publico: "Órgão Público"
     };
     return tipos[tipo as keyof typeof tipos] || tipo;
   };

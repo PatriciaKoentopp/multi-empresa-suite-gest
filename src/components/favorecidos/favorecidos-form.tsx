@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -31,7 +30,7 @@ import { useEffect } from "react";
 
 // Definição do schema do formulário
 const formSchema = z.object({
-  tipo: z.enum(["cliente", "fornecedor", "parceiro"], {
+  tipo: z.enum(["cliente", "fornecedor", "publico"], {
     required_error: "Tipo de favorecido é obrigatório",
   }),
   tipoDocumento: z.enum(["cpf", "cnpj"], {
@@ -78,7 +77,7 @@ export function FavorecidosForm({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: favorecido ? {
-      tipo: favorecido.tipo as "cliente" | "fornecedor" | "parceiro",
+      tipo: favorecido.tipo as "cliente" | "fornecedor" | "publico",
       tipoDocumento: favorecido.tipoDocumento,
       documento: favorecido.documento,
       grupoId: favorecido.grupoId,
@@ -126,7 +125,7 @@ export function FavorecidosForm({
       form.setValue("tipoDocumento", "cpf");
     }
     // Para os demais tipos (jurídica ou órgão público), o documento deve ser CNPJ
-    else if ((tipoFavorecido === "fornecedor" || tipoFavorecido === "parceiro") && tipoDocumentoAtual !== "cnpj") {
+    else if ((tipoFavorecido === "fornecedor" || tipoFavorecido === "publico") && tipoDocumentoAtual !== "cnpj") {
       form.setValue("tipoDocumento", "cnpj");
     }
   }, [form.watch("tipo")]);
@@ -195,8 +194,8 @@ export function FavorecidosForm({
                         </FormLabel>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="parceiro" id="parceiro" />
-                        <FormLabel htmlFor="parceiro" className="flex items-center cursor-pointer">
+                        <RadioGroupItem value="publico" id="publico" />
+                        <FormLabel htmlFor="publico" className="flex items-center cursor-pointer">
                           <Landmark className="mr-1 h-4 w-4" />
                           Órgão Público
                         </FormLabel>
