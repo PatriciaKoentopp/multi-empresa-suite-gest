@@ -2,11 +2,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Receipt, Upload } from "lucide-react";
+import { CalendarIcon, Save, Upload } from "lucide-react";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,13 +39,7 @@ export function MovimentacaoForm() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold flex items-center gap-2">
-          <Receipt className="h-6 w-6" />
-          Incluir Movimentação
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="py-[10px]">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -86,11 +79,11 @@ export function MovimentacaoForm() {
                     <FormLabel>Tipo de Documento</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white dark:bg-gray-900">
                           <SelectValue placeholder="Selecione o tipo" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                         <SelectItem value="nf">Nota Fiscal</SelectItem>
                         <SelectItem value="nfs">Nota Fiscal de Serviço</SelectItem>
                         <SelectItem value="recibo">Recibo</SelectItem>
@@ -172,11 +165,11 @@ export function MovimentacaoForm() {
                     <FormLabel>Categoria</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white dark:bg-gray-900">
                           <SelectValue placeholder="Selecione a categoria" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                         <SelectItem value="despesas">Despesas Operacionais</SelectItem>
                         <SelectItem value="impostos">Impostos</SelectItem>
                         <SelectItem value="servicos">Serviços</SelectItem>
@@ -211,8 +204,8 @@ export function MovimentacaoForm() {
               <Button variant="outline" type="button">
                 Cancelar
               </Button>
-              <Button type="submit">
-                <Upload className="mr-2 h-4 w-4" />
+              <Button type="submit" variant="success">
+                <Save className="mr-2 h-4 w-4" />
                 Salvar Movimentação
               </Button>
             </div>
