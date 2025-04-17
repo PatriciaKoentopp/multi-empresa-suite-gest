@@ -11,8 +11,9 @@ import Dashboard from "./pages/dashboard";
 import NotFound from "./pages/NotFound";
 import EmpresasPage from "./pages/empresas";
 import GrupoFavorecidosPage from "./pages/cadastros/grupo-favorecidos";
-import FavorecidosPage from "./pages/cadastros/favorecidos"; // Adicionar importação da página
+import FavorecidosPage from "./pages/cadastros/favorecidos";
 import ProfissoesPage from "./pages/cadastros/profissoes";
+import PlanoContasPage from "./pages/contabil/plano-contas";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,9 @@ const App = () => (
                 <Route path="/cadastros/grupo-favorecidos" element={<GrupoFavorecidosPage />} />
                 <Route path="/cadastros/favorecidos" element={<FavorecidosPage />} />
                 <Route path="/cadastros/profissoes" element={<ProfissoesPage />} />
+                
+                {/* Contábil routes */}
+                <Route path="/contabil/plano-contas" element={<PlanoContasPage />} />
                 
                 {/* Other module placeholders */}
                 <Route path="/vendas/*" element={<p className="p-4">Módulo de Vendas</p>} />

@@ -1,3 +1,4 @@
+
 export interface GrupoFavorecido {
   id: string;
   nome: string;
@@ -91,3 +92,6 @@ export interface Favorecido {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Importando e exportando a interface PlanoConta
+export * from './plano-contas';
