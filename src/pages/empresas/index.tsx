@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useCompany } from "@/contexts/company-context";
 import { useAuth } from "@/contexts/auth-context";
-import { Building2 } from "lucide-react";
+import { Building2, PenLine, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,6 +62,7 @@ export default function EmpresasPage() {
   const { currentCompany, updateCompany, isLoading } = useCompany();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -150,6 +151,12 @@ export default function EmpresasPage() {
       title: "Empresa atualizada",
       description: "Os dados da empresa foram atualizados com sucesso.",
     });
+    
+    setIsEditing(false);
+  };
+
+  const handleEditToggle = () => {
+    setIsEditing(!isEditing);
   };
 
   if (isLoading) {
@@ -177,18 +184,35 @@ export default function EmpresasPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Minha Empresa</h1>
-        <p className="text-muted-foreground">
-          Gerencie os dados da sua empresa
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Minha Empresa</h1>
+          <p className="text-muted-foreground">
+            Gerencie os dados da sua empresa
+          </p>
+        </div>
+        <Button 
+          onClick={handleEditToggle}
+          variant={isEditing ? "outline" : "default"}
+        >
+          {isEditing ? (
+            <>Cancelar</>
+          ) : (
+            <>
+              <PenLine className="mr-2 h-4 w-4" />
+              Editar
+            </>
+          )}
+        </Button>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle>Dados da Empresa</CardTitle>
           <CardDescription>
-            Preencha as informações da sua empresa
+            {isEditing 
+              ? "Edite as informações da sua empresa" 
+              : "Informações da sua empresa"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -203,7 +227,7 @@ export default function EmpresasPage() {
                       <FormItem>
                         <FormLabel>Razão Social</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -216,7 +240,7 @@ export default function EmpresasPage() {
                       <FormItem>
                         <FormLabel>Nome Fantasia</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -232,7 +256,7 @@ export default function EmpresasPage() {
                       <FormItem>
                         <FormLabel>CNPJ</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -245,7 +269,7 @@ export default function EmpresasPage() {
                       <FormItem>
                         <FormLabel>Inscrição Estadual</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -258,7 +282,7 @@ export default function EmpresasPage() {
                       <FormItem>
                         <FormLabel>Inscrição Municipal</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -274,7 +298,7 @@ export default function EmpresasPage() {
                       <FormItem>
                         <FormLabel>CNAE</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -287,7 +311,7 @@ export default function EmpresasPage() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input type="email" {...field} />
+                          <Input type="email" {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -300,7 +324,7 @@ export default function EmpresasPage() {
                       <FormItem>
                         <FormLabel>Telefone</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -315,7 +339,7 @@ export default function EmpresasPage() {
                     <FormItem>
                       <FormLabel>Site</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} disabled={!isEditing} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -329,7 +353,7 @@ export default function EmpresasPage() {
                     <FormItem>
                       <FormLabel>URL da Logo</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} disabled={!isEditing} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -345,6 +369,7 @@ export default function EmpresasPage() {
                       <Select 
                         onValueChange={field.onChange} 
                         defaultValue={field.value}
+                        disabled={!isEditing}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -373,7 +398,7 @@ export default function EmpresasPage() {
                         <FormItem>
                           <FormLabel>CEP</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -386,7 +411,7 @@ export default function EmpresasPage() {
                         <FormItem>
                           <FormLabel>Logradouro</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -402,7 +427,7 @@ export default function EmpresasPage() {
                         <FormItem>
                           <FormLabel>Número</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -415,7 +440,7 @@ export default function EmpresasPage() {
                         <FormItem>
                           <FormLabel>Complemento</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -428,7 +453,7 @@ export default function EmpresasPage() {
                         <FormItem>
                           <FormLabel>Bairro</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -444,7 +469,7 @@ export default function EmpresasPage() {
                         <FormItem>
                           <FormLabel>Cidade</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -457,7 +482,7 @@ export default function EmpresasPage() {
                         <FormItem>
                           <FormLabel>Estado</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -470,7 +495,7 @@ export default function EmpresasPage() {
                         <FormItem>
                           <FormLabel>País</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -480,9 +505,12 @@ export default function EmpresasPage() {
                 </div>
               </div>
 
-              <Button type="submit">
-                Salvar Alterações
-              </Button>
+              {isEditing && (
+                <Button type="submit">
+                  <Save className="mr-2 h-4 w-4" />
+                  Salvar Alterações
+                </Button>
+              )}
             </form>
           </Form>
         </CardContent>
