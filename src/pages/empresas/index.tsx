@@ -192,10 +192,7 @@ export default function EmpresasPage() {
       </div>
 
       <Card>
-        <CardHeader className="pb-3">
-          
-          
-        </CardHeader>
+        
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
