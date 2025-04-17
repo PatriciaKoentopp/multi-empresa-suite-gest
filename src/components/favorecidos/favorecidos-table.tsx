@@ -1,4 +1,3 @@
-
 import { Favorecido, GrupoFavorecido } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -113,12 +112,15 @@ export function FavorecidosTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    variant={favorecido.status === "ativo" ? "default" : "destructive"}
-                    className={favorecido.status === "ativo" ? "bg-green-500 hover:bg-green-600" : ""}
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                      favorecido.status === "ativo"
+                        ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20"
+                        : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
+                    }`}
                   >
                     {favorecido.status === "ativo" ? "Ativo" : "Inativo"}
-                  </Badge>
+                  </span>
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1">

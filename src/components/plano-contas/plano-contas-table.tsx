@@ -1,4 +1,3 @@
-
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,12 +46,15 @@ export function PlanoContasTable({ contas, onEdit, onDelete }: PlanoContasTableP
                 <TableCell className="capitalize">{conta.tipo}</TableCell>
                 <TableCell>{conta.considerarDRE ? "Sim" : "Não"}</TableCell>
                 <TableCell>
-                  <Badge
-                    variant={conta.status === "ativo" ? "default" : "destructive"}
-                    className={conta.status === "ativo" ? "bg-green-500 hover:bg-green-600" : ""}
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                      conta.status === "ativo"
+                        ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20"
+                        : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
+                    }`}
                   >
                     {conta.status === "ativo" ? "Ativo" : "Inativo"}
-                  </Badge>
+                  </span>
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { GrupoFavorecido } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -46,12 +45,15 @@ export function GrupoFavorecidosTable({
               <TableRow key={grupo.id}>
                 <TableCell>{grupo.nome}</TableCell>
                 <TableCell>
-                  <Badge
-                    variant={grupo.status === "ativo" ? "default" : "destructive"}
-                    className={grupo.status === "ativo" ? "bg-green-500 hover:bg-green-600" : ""}
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                      grupo.status === "ativo"
+                        ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20"
+                        : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
+                    }`}
                   >
                     {grupo.status === "ativo" ? "Ativo" : "Inativo"}
-                  </Badge>
+                  </span>
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
