@@ -72,7 +72,7 @@ export interface Role {
 // Common types
 export interface Favorecido {
   id: string;
-  tipo: 'cliente' | 'fornecedor' | 'funcionario' | 'parceiro';
+  tipo: 'cliente' | 'fornecedor' | 'parceiro';
   nome: string;
   documento: string;
   tipoDocumento: 'cpf' | 'cnpj';

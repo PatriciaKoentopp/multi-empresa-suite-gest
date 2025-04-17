@@ -78,7 +78,7 @@ export function FavorecidosForm({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: favorecido ? {
-      tipo: favorecido.tipo,
+      tipo: favorecido.tipo as "cliente" | "fornecedor" | "parceiro",
       tipoDocumento: favorecido.tipoDocumento,
       documento: favorecido.documento,
       grupoId: favorecido.grupoId,
@@ -218,7 +218,7 @@ export function FavorecidosForm({
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      disabled={readOnly || form.watch("tipo") !== ""}
+                      disabled={readOnly}
                     >
                       <FormControl>
                         <SelectTrigger className="bg-white border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500">
