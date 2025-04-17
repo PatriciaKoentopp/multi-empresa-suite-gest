@@ -1,3 +1,4 @@
+
 // Authentication types
 export interface User {
   id: string;
@@ -71,7 +72,7 @@ export interface Role {
 // Common types
 export interface Favorecido {
   id: string;
-  tipo: 'cliente' | 'fornecedor' | 'publico';
+  tipo: 'cliente' | 'fornecedor' | 'funcionario' | 'publico';
   nome: string;
   documento: string;
   tipoDocumento: 'cpf' | 'cnpj';

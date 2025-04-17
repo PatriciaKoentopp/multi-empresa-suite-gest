@@ -1,3 +1,4 @@
+
 import { Favorecido, GrupoFavorecido } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Pencil, Trash2, User, Building2, Landmark } from "lucide-react";
+import { Eye, Pencil, Trash2, User, Building2, Landmark, UserCog } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 interface FavorecidosTableProps {
@@ -38,10 +39,11 @@ export function FavorecidosTable({
   const renderTipoIcon = (tipo: string) => {
     switch (tipo) {
       case "cliente":
-      case "funcionario":
         return <User className="h-4 w-4 text-blue-500" />;
       case "fornecedor":
         return <Building2 className="h-4 w-4 text-green-500" />;
+      case "funcionario":
+        return <UserCog className="h-4 w-4 text-amber-500" />;
       case "publico":
         return <Landmark className="h-4 w-4 text-purple-500" />;
       default:

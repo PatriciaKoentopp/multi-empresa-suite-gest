@@ -136,6 +136,7 @@ export default function FavorecidosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
+  const [grupoFilter, setGrupoFilter] = useState<string>("todos");
 
   const handleOpenDialog = (favorecido?: Favorecido, isViewing = false) => {
     if (isViewing) {
@@ -201,9 +202,12 @@ export default function FavorecidosPage() {
       // Filtro por status
       const matchesStatus = statusFilter === "todos" || favorecido.status === statusFilter;
       
-      return matchesSearch && matchesTipo && matchesStatus;
+      // Filtro por grupo
+      const matchesGrupo = grupoFilter === "todos" || favorecido.grupoId === grupoFilter;
+      
+      return matchesSearch && matchesTipo && matchesStatus && matchesGrupo;
     });
-  }, [favorecidos, searchTerm, tipoFilter, statusFilter]);
+  }, [favorecidos, searchTerm, tipoFilter, statusFilter, grupoFilter]);
 
   return (
     <div className="space-y-4">
@@ -231,7 +235,7 @@ export default function FavorecidosPage() {
               />
             </div>
 
-            <div className="flex w-full gap-2 sm:w-auto">
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto">
               <Select
                 value={tipoFilter}
                 onValueChange={(value) => setTipoFilter(value)}
@@ -261,6 +265,24 @@ export default function FavorecidosPage() {
                   <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="ativo" className="text-blue-600">Ativo</SelectItem>
                   <SelectItem value="inativo" className="text-red-600">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={grupoFilter}
+                onValueChange={(value) => setGrupoFilter(value)}
+              >
+                <SelectTrigger className="w-[180px] bg-white dark:bg-gray-900">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Grupo" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                  <SelectItem value="todos">Todos os grupos</SelectItem>
+                  {grupos.map((grupo) => (
+                    <SelectItem key={grupo.id} value={grupo.id}>
+                      {grupo.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
