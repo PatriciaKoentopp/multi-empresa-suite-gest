@@ -135,7 +135,7 @@ export function PlanoContasForm({ onSubmit, onCancel, initialData }: PlanoContas
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent className="bg-background">
                   <SelectItem value="ativo">Ativo</SelectItem>
                   <SelectItem value="inativo">Inativo</SelectItem>
                 </SelectContent>
@@ -149,7 +149,9 @@ export function PlanoContasForm({ onSubmit, onCancel, initialData }: PlanoContas
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit">Salvar</Button>
+          <Button type="submit" variant="blue">
+            Salvar
+          </Button>
         </div>
       </form>
     </Form>
