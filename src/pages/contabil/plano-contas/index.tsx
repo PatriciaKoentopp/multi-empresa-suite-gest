@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { PlanoConta } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,13 @@ import { Input } from "@/components/ui/input";
 import { PlusCircle, Search } from "lucide-react";
 import { PlanoContasForm } from "@/components/plano-contas/plano-contas-form";
 import { PlanoContasTable } from "@/components/plano-contas/plano-contas-table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -67,6 +73,8 @@ export default function PlanoContasPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingConta, setEditingConta] = useState<PlanoConta | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState("");
+  const [tipoFilter, setTipoFilter] = useState<string>("todos");
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
 
   const handleOpenDialog = (conta?: PlanoConta) => {
     setEditingConta(conta);
@@ -118,11 +126,15 @@ export default function PlanoContasPage() {
     toast.success("Conta excluída com sucesso!");
   };
 
-  // Filtrar contas com base no termo de busca
-  const filteredContas = contas.filter((conta) =>
-    conta.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conta.codigo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filtrar contas com base em todos os critérios
+  const filteredContas = contas.filter((conta) => {
+    const matchesSearch = conta.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         conta.codigo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTipo = tipoFilter === "todos" || conta.tipo === tipoFilter;
+    const matchesStatus = statusFilter === "todos" || conta.status === statusFilter;
+
+    return matchesSearch && matchesTipo && matchesStatus;
+  });
 
   return (
     <div className="space-y-4">
@@ -136,7 +148,7 @@ export default function PlanoContasPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="mb-6">
+          <div className="mb-6 space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -145,6 +157,33 @@ export default function PlanoContasPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+            </div>
+            
+            <div className="flex gap-4">
+              <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrar por tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os tipos</SelectItem>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="passivo">Passivo</SelectItem>
+                  <SelectItem value="receita">Receita</SelectItem>
+                  <SelectItem value="despesa">Despesa</SelectItem>
+                  <SelectItem value="patrimonio">Patrimônio</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os status</SelectItem>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="inativo">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
