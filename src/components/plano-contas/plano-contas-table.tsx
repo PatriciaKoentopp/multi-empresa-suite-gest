@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { PlanoConta } from "@/types";
 
 interface PlanoContasTableProps {
@@ -32,43 +33,50 @@ export function PlanoContasTable({ contas, onEdit, onDelete }: PlanoContasTableP
           </TableRow>
         </TableHeader>
         <TableBody>
-          {contas.map((conta) => (
-            <TableRow key={conta.id}>
-              <TableCell>{conta.codigo}</TableCell>
-              <TableCell>{conta.descricao}</TableCell>
-              <TableCell className="capitalize">{conta.tipo}</TableCell>
-              <TableCell>{conta.considerarDRE ? "Sim" : "Não"}</TableCell>
-              <TableCell>
-                <span
-                  className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                    conta.status === "ativo"
-                      ? "bg-green-50 text-green-700"
-                      : "bg-red-50 text-red-700"
-                  }`}
-                >
-                  {conta.status === "ativo" ? "Ativo" : "Inativo"}
-                </span>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onEdit(conta)}
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onDelete(conta.id)}
-                  >
-                    <Trash2Icon className="h-4 w-4" />
-                  </Button>
-                </div>
+          {contas.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                Nenhum resultado encontrado
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            contas.map((conta) => (
+              <TableRow key={conta.id}>
+                <TableCell>{conta.codigo}</TableCell>
+                <TableCell>{conta.descricao}</TableCell>
+                <TableCell className="capitalize">{conta.tipo}</TableCell>
+                <TableCell>{conta.considerarDRE ? "Sim" : "Não"}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant={conta.status === "ativo" ? "default" : "destructive"}
+                    className={conta.status === "ativo" ? "bg-blue-500 hover:bg-blue-600" : ""}
+                  >
+                    {conta.status === "ativo" ? "Ativo" : "Inativo"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onEdit(conta)}
+                      className="text-blue-500 hover:bg-blue-100 hover:text-blue-700"
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onDelete(conta.id)}
+                      className="text-red-500 hover:bg-red-100 hover:text-red-700"
+                    >
+                      <Trash2Icon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>
