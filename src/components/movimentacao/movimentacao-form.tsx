@@ -16,14 +16,22 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const formSchema = z.object({
-  numeroNota: z.string().min(1, "Número da nota é obrigatório"),
-  fornecedor: z.string().min(1, "Fornecedor é obrigatório"),
+  numeroDocumento: z.string().min(1, "Número do documento é obrigatório"),
+  dataDocumento: z.date(),
+  fornecedorId: z.string().min(1, "Fornecedor é obrigatório"),
   tipoDocumento: z.string().min(1, "Tipo de documento é obrigatório"),
   dataEmissao: z.date(),
   valor: z.string().min(1, "Valor é obrigatório"),
   categoria: z.string().min(1, "Categoria é obrigatória"),
   observacao: z.string().optional(),
 });
+
+// Dados mockados de favorecidos para exemplo
+const favorecidos = [
+  { id: "1", nome: "Fornecedor 1" },
+  { id: "2", nome: "Fornecedor 2" },
+  { id: "3", nome: "Fornecedor 3" },
+];
 
 export function MovimentacaoForm() {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -45,12 +53,12 @@ export function MovimentacaoForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
-                name="numeroNota"
+                name="numeroDocumento"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Número da Nota</FormLabel>
+                    <FormLabel>Número do Documento</FormLabel>
                     <FormControl>
-                      <Input placeholder="Digite o número da nota" {...field} />
+                      <Input placeholder="Digite o número do documento" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -59,35 +67,69 @@ export function MovimentacaoForm() {
 
               <FormField
                 control={form.control}
-                name="fornecedor"
+                name="dataDocumento"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data do Documento</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "P", { locale: ptBR })
+                            ) : (
+                              <span>Selecione uma data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-800" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          className="bg-white dark:bg-gray-800"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="fornecedorId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Fornecedor</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Digite o nome do fornecedor" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="tipoDocumento"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Documento</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="bg-white dark:bg-gray-900">
-                          <SelectValue placeholder="Selecione o tipo" />
+                          <SelectValue placeholder="Selecione o fornecedor" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                        <SelectItem value="nf">Nota Fiscal</SelectItem>
-                        <SelectItem value="nfs">Nota Fiscal de Serviço</SelectItem>
-                        <SelectItem value="recibo">Recibo</SelectItem>
-                        <SelectItem value="fatura">Fatura</SelectItem>
+                        {favorecidos.map((fornecedor) => (
+                          <SelectItem 
+                            key={fornecedor.id} 
+                            value={fornecedor.id}
+                            className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            {fornecedor.nome}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
