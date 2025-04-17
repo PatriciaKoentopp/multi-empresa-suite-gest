@@ -1,4 +1,3 @@
-
 import { ModuleNavItem } from "@/types";
 import * as Icons from "lucide-react";
 // Make sure we have all the Lucide icons for the sidebar
@@ -64,6 +63,11 @@ export const mainNavigation: ModuleNavItem[] = [
         name: "Favorecidos",
         href: "/cadastros/favorecidos",
         description: "Gerenciamento de favorecidos"
+      },
+      {
+        name: "Profissões",
+        href: "/cadastros/profissoes",
+        description: "Gerenciamento de profissões"
       }
     ]
   },
