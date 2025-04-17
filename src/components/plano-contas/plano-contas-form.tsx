@@ -92,7 +92,7 @@ export function PlanoContasForm({ onSubmit, onCancel, initialData }: PlanoContas
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent className="bg-background">
                   <SelectItem value="ativo">Ativo</SelectItem>
                   <SelectItem value="passivo">Passivo</SelectItem>
                   <SelectItem value="receita">Receita</SelectItem>
