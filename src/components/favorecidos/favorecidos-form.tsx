@@ -24,13 +24,13 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, User, Building2, Landmark } from "lucide-react";
+import { CalendarIcon, User, Building2, Landmark, Users } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { useEffect } from "react";
 
-// Definição do schema do formulário
+// Update the schema to include 'funcionario'
 const formSchema = z.object({
-  tipo: z.enum(["cliente", "fornecedor", "publico"], {
+  tipo: z.enum(["cliente", "fornecedor", "publico", "funcionario"], {
     required_error: "Tipo de favorecido é obrigatório",
   }),
   tipoDocumento: z.enum(["cpf", "cnpj"], {
@@ -56,6 +56,7 @@ const formSchema = z.object({
   }),
 });
 
+// Update the type definition to match the schema
 type FormValues = z.infer<typeof formSchema>;
 
 interface FavorecidosFormProps {
@@ -73,11 +74,11 @@ export function FavorecidosForm({
   onCancel,
   readOnly = false,
 }: FavorecidosFormProps) {
-  // Inicializar o formulário com valores padrão ou do favorecido existente
+  // Adjust the default values to support 'funcionario'
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: favorecido ? {
-      tipo: favorecido.tipo as "cliente" | "fornecedor" | "publico",
+      tipo: favorecido.tipo as "cliente" | "fornecedor" | "publico" | "funcionario",
       tipoDocumento: favorecido.tipoDocumento,
       documento: favorecido.documento,
       grupoId: favorecido.grupoId,
@@ -115,17 +116,22 @@ export function FavorecidosForm({
     },
   });
 
-  // Atualizar o tipo de documento com base no tipo de favorecido selecionado
+  // Update the useEffect to handle the new 'funcionario' type
   useEffect(() => {
     const tipoFavorecido = form.watch("tipo");
     const tipoDocumentoAtual = form.watch("tipoDocumento");
     
-    // Se tipo for "cliente" (pessoa física), o documento deve ser CPF
+    // Adjust logic for funcionario type
     if (tipoFavorecido === "cliente" && tipoDocumentoAtual !== "cpf") {
       form.setValue("tipoDocumento", "cpf");
     }
-    // Para os demais tipos (jurídica ou órgão público), o documento deve ser CNPJ
-    else if ((tipoFavorecido === "fornecedor" || tipoFavorecido === "publico") && tipoDocumentoAtual !== "cnpj") {
+    // For tipos other than cliente, set to CNPJ
+    else if (
+      (tipoFavorecido === "fornecedor" || 
+       tipoFavorecido === "publico" || 
+       tipoFavorecido === "funcionario") && 
+      tipoDocumentoAtual !== "cnpj"
+    ) {
       form.setValue("tipoDocumento", "cnpj");
     }
   }, [form.watch("tipo")]);
@@ -198,6 +204,13 @@ export function FavorecidosForm({
                         <FormLabel htmlFor="publico" className="flex items-center cursor-pointer">
                           <Landmark className="mr-1 h-4 w-4" />
                           Órgão Público
+                        </FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="funcionario" id="funcionario" />
+                        <FormLabel htmlFor="funcionario" className="flex items-center cursor-pointer">
+                          <Users className="mr-1 h-4 w-4" />
+                          Funcionário
                         </FormLabel>
                       </div>
                     </RadioGroup>
