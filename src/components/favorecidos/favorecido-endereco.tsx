@@ -11,7 +11,7 @@ interface FavorecidoEnderecoProps {
 
 export function FavorecidoEndereco({ form, readOnly }: FavorecidoEnderecoProps) {
   return (
-    <div className="space-y-4">
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4">
       <h3 className="font-medium text-base">Endereço</h3>
       
       <div className="grid grid-cols-2 gap-4">
@@ -136,3 +136,4 @@ export function FavorecidoEndereco({ form, readOnly }: FavorecidoEnderecoProps) 
     </div>
   );
 }
+
