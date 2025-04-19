@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -299,9 +298,6 @@ export default function ServicosPage() {
       )}
 
       <Card>
-        <CardHeader>
-          <CardTitle>Serviços Cadastrados</CardTitle>
-        </CardHeader>
         <CardContent>
           {servicosFiltrados.length === 0 ? (
             <div className="text-neutral-500">Nenhum serviço cadastrado ainda.</div>
