@@ -106,8 +106,8 @@ export default function ContasAPagarPage() {
       </div>
       <Card>
         <CardContent className="pt-6">
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="relative flex-1">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end flex-wrap">
+            <div className="relative grow min-w-[240px] max-w-full basis-[300px]">
               <button
                 type="button"
                 className="absolute left-3 top-3 z-10 p-0 m-0 bg-transparent border-none cursor-pointer text-muted-foreground hover:text-blue-500"
@@ -118,11 +118,10 @@ export default function ContasAPagarPage() {
               >
                 <Search className="h-5 w-5" />
               </button>
-              {/* Campo de busca com placeholder visível */}
               <Input
                 ref={inputBuscaRef}
                 placeholder="Buscar favorecido ou descrição"
-                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white"
+                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => {
@@ -133,7 +132,6 @@ export default function ContasAPagarPage() {
                 autoComplete="off"
               />
             </div>
-            
             <Select
               value={statusFilter}
               onValueChange={(v) => setStatusFilter(v as any)}
@@ -149,12 +147,12 @@ export default function ContasAPagarPage() {
                 <SelectItem value="pago_em_atraso" className="text-red-600">Pago em Atraso</SelectItem>
               </SelectContent>
             </Select>
-            <div className="flex flex-1 flex-col gap-1 sm:flex-row sm:gap-2">
+            <div className="flex flex-1 flex-col gap-1 sm:flex-row sm:gap-2 min-w-[230px]">
               <div>
                 <label className="text-xs font-medium">Vencimento de</label>
                 <Input
                   type="date"
-                  className="min-w-[140px]"
+                  className="min-w-[120px]"
                   value={dataVencInicio}
                   max={dataVencFim || undefined}
                   onChange={e => setDataVencInicio(e.target.value)}
@@ -164,19 +162,19 @@ export default function ContasAPagarPage() {
                 <label className="text-xs font-medium">até</label>
                 <Input
                   type="date"
-                  className="min-w-[140px]"
+                  className="min-w-[120px]"
                   value={dataVencFim}
                   min={dataVencInicio || undefined}
                   onChange={e => setDataVencFim(e.target.value)}
                 />
               </div>
             </div>
-            <div className="flex flex-1 flex-col gap-1 sm:flex-row sm:gap-2">
+            <div className="flex flex-1 flex-col gap-1 sm:flex-row sm:gap-2 min-w-[230px]">
               <div>
                 <label className="text-xs font-medium">Pagamento de</label>
                 <Input
                   type="date"
-                  className="min-w-[140px]"
+                  className="min-w-[120px]"
                   value={dataPagInicio}
                   max={dataPagFim || undefined}
                   onChange={e => setDataPagInicio(e.target.value)}
@@ -186,7 +184,7 @@ export default function ContasAPagarPage() {
                 <label className="text-xs font-medium">até</label>
                 <Input
                   type="date"
-                  className="min-w-[140px]"
+                  className="min-w-[120px]"
                   value={dataPagFim}
                   min={dataPagInicio || undefined}
                   onChange={e => setDataPagFim(e.target.value)}
