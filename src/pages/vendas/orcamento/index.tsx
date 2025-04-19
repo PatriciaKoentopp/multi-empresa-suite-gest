@@ -142,7 +142,7 @@ export default function OrcamentoPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Novo Orçamento</CardTitle>
+          
         </CardHeader>
         <CardContent>
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
