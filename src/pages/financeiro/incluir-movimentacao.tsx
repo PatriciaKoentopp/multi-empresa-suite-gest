@@ -239,7 +239,29 @@ export default function IncluirMovimentacaoPage() {
           e.preventDefault();
           handleSalvar();
         }}>
-          {/* Alinhar corretamente os três campos solicitados */}
+          {/* Linha 1: Operação, Data de Emissão, Data de Lançamento */}
+          <div className="grid grid-cols-3 gap-4 items-end">
+            <div className="flex flex-col gap-1">
+              <Label>Operação</Label>
+              <Select value={operacao} onValueChange={v => setOperacao(v as Operacao)}>
+                <SelectTrigger className="bg-white z-50">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  <SelectItem value="pagar">Pagar</SelectItem>
+                  <SelectItem value="receber">Receber</SelectItem>
+                  <SelectItem value="transferencia">Transferência</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <DateInput label="Data de Emissão" value={dataEmissao} onChange={setDataEmissao} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <DateInput label="Data de Lançamento" value={dataLancamento} onChange={setDataLancamento} />
+            </div>
+          </div>
+          {/* Linha 2: Valor, Número de Parcelas, Primeiro Vencimento */}
           <div className="grid grid-cols-3 gap-4 items-end">
             <div className="flex flex-col gap-1">
               <Label>Valor</Label>
