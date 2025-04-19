@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,15 @@ interface BaixarContaPagarModalProps {
   }) => void;
 }
 
+function formatCurrencyBR(valor?: number) {
+  if (valor === undefined) return "-";
+  return valor.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+  });
+}
+
 export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: BaixarContaPagarModalProps) {
   const [dataPagamento, setDataPagamento] = useState<Date | undefined>(conta?.dataVencimento);
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("");
@@ -53,6 +62,12 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
     onBaixar({ dataPagamento, contaCorrenteId, multa, juros, desconto });
     onClose();
   }
+
+  // Calcular valor total
+  const valorTotal = useMemo(() => {
+    const valorTitulo = conta?.valor || 0;
+    return valorTitulo + (multa || 0) + (juros || 0) - (desconto || 0);
+  }, [conta, multa, juros, desconto]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -122,6 +137,16 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
               />
             </div>
           </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Valor Total</label>
+            <Input
+              type="text"
+              value={formatCurrencyBR(valorTotal)}
+              readOnly
+              className="bg-gray-100 font-semibold"
+              tabIndex={-1}
+            />
+          </div>
         </div>
         <DialogFooter>
           <DialogClose asChild>
@@ -142,4 +167,3 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
     </Dialog>
   );
 }
-
