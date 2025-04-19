@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Plus } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Utilitário para converter DD/MM/YYYY <-> Date
 function parseDateBr(input: string): Date | null {
@@ -88,6 +89,9 @@ export default function IncluirMovimentacaoPage() {
   const [dataPrimeiroVenc, setDataPrimeiroVenc] = useState<Date | undefined>(new Date());
   const [considerarDRE, setConsiderarDRE] = useState(true);
   const navigate = useNavigate();
+
+  const [isModalNovoFavorecido, setIsModalNovoFavorecido] = useState(false);
+  const [isModalNovaCategoria, setIsModalNovaCategoria] = useState(false);
 
   // Para selects, use fetch dos dados caso necessário.
   const favorecidos = [{
@@ -218,16 +222,17 @@ export default function IncluirMovimentacaoPage() {
     alert("Movimentação cadastrada!\n" + JSON.stringify(cadastrado, null, 2));
     navigate(-1); // Volta para a tela anterior ao salvar, igual a Empresa
   }
-  return <div className="max-w-4xl mx-auto px-4 py-8">
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Título principal fora do card */}
       <h1 className="text-2xl font-bold mb-2">Incluir Movimentação</h1>
       
       {/* Container branco agrupando somente o formulário */}
       <div className="bg-white shadow rounded flex flex-col gap-6">
         <form className="flex flex-col gap-4 p-6" onSubmit={e => {
-        e.preventDefault();
-        handleSalvar();
-      }}>
+          e.preventDefault();
+          handleSalvar();
+        }}>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Operação</Label>
@@ -252,27 +257,51 @@ export default function IncluirMovimentacaoPage() {
             </div>
             <div>
               <Label>Favorecido</Label>
-              <Select value={favorecido} onValueChange={setFavorecido}>
-                <SelectTrigger className="bg-white z-50">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  {favorecidos.map(f => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2 items-end">
+                <Select value={favorecido} onValueChange={setFavorecido}>
+                  <SelectTrigger className="bg-white z-50">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {favorecidos.map(f => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsModalNovoFavorecido(true)}
+                  className="border-[#0EA5E9] text-[#0EA5E9] hover:bg-[#0EA5E9]/10"
+                  aria-label="Novo favorecido"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Categoria Financeira</Label>
-              <Select value={categoria} onValueChange={setCategoria}>
-                <SelectTrigger className="bg-white z-50">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  {categorias.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2 items-end">
+                <Select value={categoria} onValueChange={setCategoria}>
+                  <SelectTrigger className="bg-white z-50">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {categorias.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsModalNovaCategoria(true)}
+                  className="border-[#0EA5E9] text-[#0EA5E9] hover:bg-[#0EA5E9]/10"
+                  aria-label="Nova categoria financeira"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div>
               <Label>Forma de Pagamento</Label>
@@ -334,7 +363,39 @@ export default function IncluirMovimentacaoPage() {
           </div>
         </form>
       </div>
-    </div>;
+      {/* Modal Novo Favorecido */}
+      <Dialog open={isModalNovoFavorecido} onOpenChange={setIsModalNovoFavorecido}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Novo Favorecido</DialogTitle>
+          </DialogHeader>
+          {/* Aqui pode ser incluido o formulário real futuramente */}
+          <div className="py-6">
+            <p>Formulário de novo favorecido simulado.<br />Implemente aqui os campos necessários.</p>
+            <div className="flex justify-end mt-4">
+              <Button variant="blue" onClick={() => setIsModalNovoFavorecido(false)}>Salvar</Button>
+              <Button variant="outline" className="ml-2" onClick={() => setIsModalNovoFavorecido(false)}>Cancelar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Modal Nova Categoria Financeira */}
+      <Dialog open={isModalNovaCategoria} onOpenChange={setIsModalNovaCategoria}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Nova Categoria Financeira</DialogTitle>
+          </DialogHeader>
+          <div className="py-6">
+            <p>Formulário de nova categoria financeira simulado.<br />Implemente aqui os campos necessários.</p>
+            <div className="flex justify-end mt-4">
+              <Button variant="blue" onClick={() => setIsModalNovaCategoria(false)}>Salvar</Button>
+              <Button variant="outline" className="ml-2" onClick={() => setIsModalNovaCategoria(false)}>Cancelar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 // AVISO: Este arquivo está ficando muito longo (mais de 300 linhas!)
 // Considere pedir para eu refatorar em componentes menores!
