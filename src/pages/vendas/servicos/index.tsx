@@ -17,7 +17,29 @@ type Servico = {
 };
 
 export default function ServicosPage() {
-  const [servicos, setServicos] = useState<Servico[]>([]);
+  const [servicos, setServicos] = useState<Servico[]>([
+    {
+      id: "1",
+      nome: "Consultoria Fiscal",
+      descricao: "Apoio especializado em rotinas fiscais mensais.",
+      valor: 700,
+      status: "ativo"
+    },
+    {
+      id: "2",
+      nome: "Abertura de Empresa",
+      descricao: "Todo suporte para abrir CNPJ e regularizar situação fiscal.",
+      valor: 1200,
+      status: "ativo"
+    },
+    {
+      id: "3",
+      nome: "Encerramento de Empresa",
+      descricao: "Processo completo e orientações para encerramento.",
+      valor: 950,
+      status: "inativo"
+    }
+  ]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<Omit<Servico, "id">>({
     nome: "",
