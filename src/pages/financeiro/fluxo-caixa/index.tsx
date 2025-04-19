@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -340,7 +339,14 @@ export default function FluxoCaixaPage() {
                         <TableCell>{linha.favorecido}</TableCell>
                         <TableCell>{linha.descricao}</TableCell>
                         <TableCell>{linha.formaPagamento}</TableCell>
-                        <TableCell>{getStatusBadge(linha.situacao)}</TableCell>
+                        {/* Aqui é feita a tipagem correta para getStatusBadge */}
+                        <TableCell>
+                          {getStatusBadge(
+                            linha.situacao === "conciliado" || linha.situacao === "nao_conciliado"
+                              ? linha.situacao
+                              : "nao_conciliado"
+                          )}
+                        </TableCell>
                         <TableCell>{formatCurrency(linha.valor)}</TableCell>
                         <TableCell>{formatCurrency(linha.saldo)}</TableCell>
                         <TableCell className="text-center">
