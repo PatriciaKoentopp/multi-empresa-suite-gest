@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -111,11 +110,10 @@ export default function FaturamentoPage() {
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
-            {/* O Select.Item deve ter valores válidos, não vazio! */}
+            {/* TODOS OS ITENS DEVEM TER VALUE != "" */}
             {tipos.map(opt => (
               <SelectItem key={opt} value={opt}>{opt}</SelectItem>
             ))}
-            <SelectItem value="">Todos</SelectItem>
           </SelectContent>
         </Select>
 
@@ -127,7 +125,6 @@ export default function FaturamentoPage() {
             {favorecidos.map(opt => (
               <SelectItem key={opt} value={opt}>{opt}</SelectItem>
             ))}
-            <SelectItem value="">Todos</SelectItem>
           </SelectContent>
         </Select>
 
