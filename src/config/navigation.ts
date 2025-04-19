@@ -93,7 +93,7 @@ export const mainNavigation: ModuleNavItem[] = [
         description: "Gerenciamento de serviços"
       },
       {
-        name: "Pedidos",
+        name: "Orçamento",
         href: "/vendas/pedidos",
         description: "Gerenciamento de pedidos"
       },
