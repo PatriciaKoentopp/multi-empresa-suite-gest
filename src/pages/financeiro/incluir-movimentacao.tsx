@@ -240,8 +240,9 @@ export default function IncluirMovimentacaoPage() {
           handleSalvar();
         }}>
           {/* Alinhar corretamente os três campos solicitados */}
-          <div className="flex flex-row gap-4">
-            <div className="flex-1 min-w-[200px]">
+          <div className="grid grid-cols-3 gap-4 items-center">
+            {/* Wrapper extra para igualar altura e alinhamento */}
+            <div className="flex flex-col gap-1 h-full justify-center">
               <Label>Operação</Label>
               <Select value={operacao} onValueChange={v => setOperacao(v as Operacao)}>
                 <SelectTrigger className="bg-white z-50">
@@ -254,10 +255,10 @@ export default function IncluirMovimentacaoPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1 min-w-[200px]">
+            <div>
               <DateInput label="Data de Emissão" value={dataEmissao} onChange={setDataEmissao} />
             </div>
-            <div className="flex-1 min-w-[200px]">
+            <div>
               <DateInput label="Data de Lançamento" value={dataLancamento} onChange={setDataLancamento} />
             </div>
           </div>
