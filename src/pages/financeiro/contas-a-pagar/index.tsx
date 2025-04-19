@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,7 +69,9 @@ export default function ContasAPagarPage() {
 
   // Ações (exemplo, pode ser desacoplado)
   const handleEdit = (conta: ContaPagar) => {
-    toast.info("Ação Editar ainda não implementada.");
+    navigate("/financeiro/incluir-movimentacao", {
+      state: { contaPagar: conta }
+    });
   };
 
   const handleBaixar = (conta: ContaPagar) => {
@@ -212,6 +213,8 @@ export default function ContasAPagarPage() {
               </div>
             </div>
           </div>
+          {/* Separador para dar respiro visual */}
+          <div className="mb-4" />
           <div className="mt-6">
             <ContasAPagarTable
               contas={filteredContas}
@@ -225,4 +228,3 @@ export default function ContasAPagarPage() {
     </div>
   );
 }
-
