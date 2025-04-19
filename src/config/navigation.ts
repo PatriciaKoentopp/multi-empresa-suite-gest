@@ -134,6 +134,11 @@ export const mainNavigation: ModuleNavItem[] = [
         name: "Conciliação",
         href: "/financeiro/conciliacao",
         description: "Conciliação bancária"
+      },
+      {
+        name: "Incluir Movimentação",
+        href: "/financeiro/incluir-movimentacao",
+        description: "Lançar nota de despesa/receita"
       }
     ]
   },
