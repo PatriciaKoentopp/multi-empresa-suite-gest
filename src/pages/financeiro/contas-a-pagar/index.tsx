@@ -1,4 +1,6 @@
+
 import { useState, useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -47,6 +49,9 @@ const initialContasAPagar: ContaPagar[] = [
 
 export default function ContasAPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>(initialContasAPagar);
+
+  // Novo: navegação
+  const navigate = useNavigate();
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
@@ -103,7 +108,10 @@ export default function ContasAPagarPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Contas a Pagar</h1>
-        <Button variant="blue" disabled>
+        <Button
+          variant="blue"
+          onClick={() => navigate("/financeiro/incluir-movimentacao")}
+        >
           Nova Conta a Pagar
         </Button>
       </div>
@@ -217,3 +225,4 @@ export default function ContasAPagarPage() {
     </div>
   );
 }
+
