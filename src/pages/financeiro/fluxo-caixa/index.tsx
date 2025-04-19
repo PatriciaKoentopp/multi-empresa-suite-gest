@@ -145,11 +145,38 @@ export default function FluxoCaixaPage() {
 
   const navigate = useNavigate();
 
-  // Substituir os valores usados nas datas para string DD/MM/YYYY
+  // Controle dos campos de data (no formato DD/MM/YYYY)
   const [dataInicialStr, setDataInicialStr] = useState("");
   const [dataFinalStr, setDataFinalStr] = useState("");
 
-  // Alinhar campos - aumentar grid para 5 colunas
+  // Corrigir atualização das datas ao mudar o período usando useEffect
+  // Sempre que o período mudar, atualizar datas e campos se não for personalizado
+  import { useEffect } from "react";
+  useEffect(() => {
+    const hoje = new Date();
+    if (periodo === "mes_atual") {
+      const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+      setDataInicial(inicio);
+      setDataInicialStr(dateToBR(inicio));
+      setDataFinal(fim);
+      setDataFinalStr(dateToBR(fim));
+    } else if (periodo === "mes_anterior") {
+      const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+      const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+      setDataInicial(inicio);
+      setDataInicialStr(dateToBR(inicio));
+      setDataFinal(fim);
+      setDataFinalStr(dateToBR(fim));
+    } else if (periodo === "personalizado") {
+      // Ao trocar para personalizado, limpa os campos (mantém o controle para digitação manual)
+      setDataInicial(undefined);
+      setDataInicialStr("");
+      setDataFinal(undefined);
+      setDataFinalStr("");
+    }
+  }, [periodo]);
+
   // Função de conciliação mockada
   function handleConciliar(id: string) {
     toast.success("Movimento conciliado!");
@@ -186,11 +213,6 @@ export default function FluxoCaixaPage() {
       setDataFinal(undefined);
       setDataFinalStr("");
     }
-  }
-
-  // Inicia com datas do mês atual
-  if (!dataInicial && !dataFinal && periodo === "mes_atual") {
-    handlePeriodoChange("mes_atual");
   }
 
   // Filtro do extrato mockado
