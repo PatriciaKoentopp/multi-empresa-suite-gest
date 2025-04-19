@@ -9,7 +9,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Download, Trash2 } from "lucide-react";
+import { Edit, Download, Trash2, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 export interface ContaPagar {
   id: string;
@@ -42,34 +48,26 @@ function formatCurrency(valor?: number) {
   });
 }
 
+// Status visual igual ao usado em Favorecidos
 function getStatusBadge(status: ContaPagar["status"]) {
   switch (status) {
     case "pago":
       return (
-        <Badge
-          className="bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20"
-          variant="secondary"
-        >
+        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
           Pago
-        </Badge>
+        </span>
       );
     case "pago_em_atraso":
       return (
-        <Badge
-          className="bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
-          variant="secondary"
-        >
+        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
           Pago em Atraso
-        </Badge>
+        </span>
       );
     case "em_aberto":
       return (
-        <Badge
-          className="bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20"
-          variant="secondary"
-        >
+        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
           Em Aberto
-        </Badge>
+        </span>
       );
     default:
       return status;
@@ -88,7 +86,7 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
             <TableHead>Descrição</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Valor</TableHead>
-            <TableHead className="w-[120px]">Ações</TableHead>
+            <TableHead className="w-[60px] text-center">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -107,33 +105,38 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
                 <TableCell>{conta.descricao}</TableCell>
                 <TableCell>{getStatusBadge(conta.status)}</TableCell>
                 <TableCell>{formatCurrency(conta.valor)}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-blue-500 hover:bg-blue-100 hover:text-blue-700"
-                      onClick={() => onEdit(conta)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-blue-500 hover:bg-blue-100 hover:text-blue-700"
-                      onClick={() => onBaixar(conta)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500 hover:bg-red-100 hover:text-red-700"
-                      onClick={() => onDelete(conta.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <TableCell className="text-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Abrir menu de ações</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
+                      <DropdownMenuItem
+                        onClick={() => onEdit(conta)}
+                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onBaixar(conta)}
+                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                      >
+                        <Download className="h-4 w-4" />
+                        Baixar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onDelete(conta.id)}
+                        className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))
@@ -143,4 +146,3 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
     </div>
   );
 }
-
