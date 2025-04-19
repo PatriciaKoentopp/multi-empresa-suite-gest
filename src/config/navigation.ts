@@ -122,7 +122,7 @@ export const mainNavigation: ModuleNavItem[] = [
       },
       {
         name: "Contas a Pagar",
-        href: "/financeiro/contas-pagar",
+        href: "/financeiro/contas-a-pagar",
         description: "Gerenciamento de pagamentos"
       },
       {
