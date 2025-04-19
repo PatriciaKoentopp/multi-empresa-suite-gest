@@ -101,6 +101,20 @@ export default function FaturamentoPage() {
     return buscaMatch && tipoMatch && favMatch && dataI_Match && dataF_Match;
   });
 
+  // Nova função para visualizar (exemplo, pode ser ajustada no futuro)
+  function handleVisualizar(item: typeof mockFaturamentos[0]) {
+    // Por enquanto só exibe um alert, pode ser ajustado para um modal/detalhe depois
+    alert(
+      `Visualizar ${item.tipo}:\n\nCódigo: ${item.codigo}\nFavorecido: ${item.favorecido}\nProjeto: ${item.projeto}\nValor: R$ ${item.valor}\nData: ${formatDateBR(item.data)}`
+    );
+  }
+
+  // Função para editar: redireciona para orçamento/venda, enviando id via rota ou query param
+  function handleEditar(item: typeof mockFaturamentos[0]) {
+    // Aqui, exemplo indo para /vendas/orcamento?codigo=XXX, adapte para sua estrutura real
+    navigate(`/vendas/orcamento?codigo=${item.codigo}`);
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {/* Filtros */}
@@ -248,24 +262,30 @@ export default function FaturamentoPage() {
                     {item.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   </TableCell>
                   <TableCell className="text-center">
-                    {/* Troca para DropdownMenu do padrão da página de serviços */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100" title="Ações">
-                          <MoreHorizontal className="w-5 h-5 text-[#333]" />
+                          <svg xmlns="http://www.w3.org/2000/svg" className="lucide lucide-eye w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="3"/><path d="M2 12C4.667 7.333 12 4 12 4s7.333 3.333 10 8c-2.667 4.667-10 8-10 8s-7.333-3.333-10-8Z"/></svg>
                           <span className="sr-only">Abrir menu de ações</span>
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
+                      <DropdownMenuContent align="end" className="w-40 z-30 bg-white border">
                         <DropdownMenuItem
-                          // Aqui adiciona ação real quando quiser
+                          onClick={() => handleVisualizar(item)}
+                          className="flex items-center gap-2 text-primary focus:bg-blue-100 focus:text-blue-700"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="lucide lucide-eye w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="3"/><path d="M2 12C4.667 7.333 12 4 12 4s7.333 3.333 10 8c-2.667 4.667-10 8-10 8s-7.333-3.333-10-8Z"/></svg>
+                          Visualizar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleEditar(item)}
                           className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
                         >
                           <Edit className="w-4 h-4" />
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          // Aqui adiciona ação real quando quiser
+                          // Mantém a Exclusão apenas visual, como estava antes
                           className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />
