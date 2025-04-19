@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -109,9 +110,9 @@ export default function ContasAPagarPage() {
       </div>
       <Card>
         <CardContent className="pt-6">
-          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-6">
-            {/* Busca */}
-            <div className="relative col-span-2 min-w-[240px]">
+          {/* Linha de cima: Busca + Status */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative col-span-1 min-w-[240px]">
               <button
                 type="button"
                 className="absolute left-3 top-3 z-10 p-0 m-0 bg-transparent border-none cursor-pointer text-muted-foreground hover:text-blue-500"
@@ -136,7 +137,6 @@ export default function ContasAPagarPage() {
                 autoComplete="off"
               />
             </div>
-            {/* Status */}
             <div className="col-span-1 min-w-[180px]">
               <Select
                 value={statusFilter}
@@ -154,55 +154,59 @@ export default function ContasAPagarPage() {
                 </SelectContent>
               </Select>
             </div>
-            {/* Filtros de Vencimento + Pagamento JUNTOS */}
-            <div className="col-span-3 flex flex-col md:flex-row gap-2">
-              {/* Vencimento */}
-              <div className="flex flex-row gap-2 flex-1">
-                <div className="flex flex-col flex-1">
-                  <label className="text-xs font-medium">Venc. de</label>
-                  <Input
-                    type="date"
-                    className="min-w-[120px] max-w-[140px]"
-                    value={dataVencInicio}
-                    max={dataVencFim || undefined}
-                    onChange={e => setDataVencInicio(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col flex-1">
-                  <label className="text-xs font-medium">até</label>
-                  <Input
-                    type="date"
-                    className="min-w-[120px] max-w-[140px]"
-                    value={dataVencFim}
-                    min={dataVencInicio || undefined}
-                    onChange={e => setDataVencFim(e.target.value)}
-                  />
-                </div>
+            <div /> {/* Espaço só para organizar em tela grande */}
+          </div>
+          {/* Linha de baixo: Todos os campos de datas, alinhados */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
+            {/* Vencimento */}
+            <div className="flex flex-row gap-2">
+              <div className="flex flex-col flex-1">
+                <label className="text-xs font-medium">Venc. de</label>
+                <Input
+                  type="date"
+                  className="min-w-[120px] max-w-[140px]"
+                  value={dataVencInicio}
+                  max={dataVencFim || undefined}
+                  onChange={e => setDataVencInicio(e.target.value)}
+                />
               </div>
-              {/* Pagamento */}
-              <div className="flex flex-row gap-2 flex-1">
-                <div className="flex flex-col flex-1">
-                  <label className="text-xs font-medium">Pagto. de</label>
-                  <Input
-                    type="date"
-                    className="min-w-[120px] max-w-[140px]"
-                    value={dataPagInicio}
-                    max={dataPagFim || undefined}
-                    onChange={e => setDataPagInicio(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col flex-1">
-                  <label className="text-xs font-medium">até</label>
-                  <Input
-                    type="date"
-                    className="min-w-[120px] max-w-[140px]"
-                    value={dataPagFim}
-                    min={dataPagInicio || undefined}
-                    onChange={e => setDataPagFim(e.target.value)}
-                  />
-                </div>
+              <div className="flex flex-col flex-1">
+                <label className="text-xs font-medium">até</label>
+                <Input
+                  type="date"
+                  className="min-w-[120px] max-w-[140px]"
+                  value={dataVencFim}
+                  min={dataVencInicio || undefined}
+                  onChange={e => setDataVencFim(e.target.value)}
+                />
               </div>
             </div>
+            {/* Pagamento */}
+            <div className="flex flex-row gap-2">
+              <div className="flex flex-col flex-1">
+                <label className="text-xs font-medium">Pagto. de</label>
+                <Input
+                  type="date"
+                  className="min-w-[120px] max-w-[140px]"
+                  value={dataPagInicio}
+                  max={dataPagFim || undefined}
+                  onChange={e => setDataPagInicio(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col flex-1">
+                <label className="text-xs font-medium">até</label>
+                <Input
+                  type="date"
+                  className="min-w-[120px] max-w-[140px]"
+                  value={dataPagFim}
+                  min={dataPagInicio || undefined}
+                  onChange={e => setDataPagFim(e.target.value)}
+                />
+              </div>
+            </div>
+            {/* Ajusta responsividade: esconde em telas pequenas */}
+            <div className="hidden md:block" />
+            <div className="hidden md:block" />
           </div>
           <ContasAPagarTable
             contas={filteredContas}
@@ -215,3 +219,4 @@ export default function ContasAPagarPage() {
     </div>
   );
 }
+
