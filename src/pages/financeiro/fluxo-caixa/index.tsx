@@ -25,6 +25,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Check } from "lucide-react";
+import { useEffect } from "react";
 
 // Dados mockados de contas correntes e extrato
 const mockContasCorrentes = [
@@ -151,7 +152,6 @@ export default function FluxoCaixaPage() {
 
   // Corrigir atualização das datas ao mudar o período usando useEffect
   // Sempre que o período mudar, atualizar datas e campos se não for personalizado
-  import { useEffect } from "react";
   useEffect(() => {
     const hoje = new Date();
     if (periodo === "mes_atual") {
