@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FavorecidosForm } from "@/components/favorecidos/favorecidos-form";
+import { PlanoContasForm } from "@/components/plano-contas/plano-contas-form";
+import { toast } from "sonner";
 
 // Utilitário para converter DD/MM/YYYY <-> Date
 function parseDateBr(input: string): Date | null {
@@ -90,40 +93,24 @@ export default function IncluirMovimentacaoPage() {
   const [considerarDRE, setConsiderarDRE] = useState(true);
   const navigate = useNavigate();
 
+  // Novo: controle do modal e dados locais de favorecidos/categorias
   const [isModalNovoFavorecido, setIsModalNovoFavorecido] = useState(false);
   const [isModalNovaCategoria, setIsModalNovaCategoria] = useState(false);
-
-  // Para selects, use fetch dos dados caso necessário.
-  const favorecidos = [{
-    id: "1",
-    nome: "João Silva"
-  }, {
-    id: "2",
-    nome: "Empresa XYZ"
-  }];
-  const categorias = [{
-    id: "1",
-    nome: "Aluguel"
-  }, {
-    id: "2",
-    nome: "Salário"
-  }, {
-    id: "3",
-    nome: "Outros"
-  }];
-  const formasPagamento = [{
-    id: "1",
-    nome: "Dinheiro"
-  }, {
-    id: "2",
-    nome: "Cartão"
-  }, {
-    id: "3",
-    nome: "Boleto"
-  }, {
-    id: "4",
-    nome: "Transferência"
-  }];
+  const [favorecidos, setFavorecidos] = useState([
+    { id: "1", nome: "João Silva" },
+    { id: "2", nome: "Empresa XYZ" }
+  ]);
+  const [categorias, setCategorias] = useState([
+    { id: "1", nome: "Aluguel" },
+    { id: "2", nome: "Salário" },
+    { id: "3", nome: "Outros" }
+  ]);
+  const formasPagamento = [
+    { id: "1", nome: "Dinheiro" },
+    { id: "2", nome: "Cartão" },
+    { id: "3", nome: "Boleto" },
+    { id: "4", nome: "Transferência" }
+  ];
 
   // Função para tratar valor no padrão PT-BR (permite , e digita R$)
   function handleValorChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -199,6 +186,25 @@ export default function IncluirMovimentacaoPage() {
     }
     setParcelas(novasParcelas);
   }
+  // Modal Favorecido
+  function handleSalvarNovoFavorecido(data: any) {
+    // Considerando que o form de favorecido retorna {nome}
+    const novoId = `temp-${Date.now()}`;
+    setFavorecidos(old => [...old, { id: novoId, nome: data.nome }]);
+    setFavorecido(novoId);
+    setIsModalNovoFavorecido(false);
+    toast.success("Favorecido cadastrado com sucesso!");
+  }
+  // Modal Categoria Financeira
+  function handleSalvarNovaCategoria(data: any) {
+    // O form de PlanoContas retorna {descricao}
+    const novoId = `temp-${Date.now()}`;
+    setCategorias(old => [...old, { id: novoId, nome: data.descricao }]);
+    setCategoria(novoId);
+    setIsModalNovaCategoria(false);
+    toast.success("Categoria cadastrada com sucesso!");
+  }
+
   function handleSalvar() {
     // Conversão correta para insert/back-end -> YYYY-MM-DD
     const cadastrado = {
@@ -363,35 +369,30 @@ export default function IncluirMovimentacaoPage() {
           </div>
         </form>
       </div>
-      {/* Modal Novo Favorecido */}
+      {/* Modal Novo Favorecido implementado de verdade */}
       <Dialog open={isModalNovoFavorecido} onOpenChange={setIsModalNovoFavorecido}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
             <DialogTitle>Novo Favorecido</DialogTitle>
           </DialogHeader>
-          {/* Aqui pode ser incluido o formulário real futuramente */}
-          <div className="py-6">
-            <p>Formulário de novo favorecido simulado.<br />Implemente aqui os campos necessários.</p>
-            <div className="flex justify-end mt-4">
-              <Button variant="blue" onClick={() => setIsModalNovoFavorecido(false)}>Salvar</Button>
-              <Button variant="outline" className="ml-2" onClick={() => setIsModalNovoFavorecido(false)}>Cancelar</Button>
-            </div>
-          </div>
+          <FavorecidosForm
+            onSubmit={handleSalvarNovoFavorecido}
+            onCancel={() => setIsModalNovoFavorecido(false)}
+            grupos={[]} // Campos não utilizados no cadastro rápido
+            profissoes={[]} // Campos não utilizados no cadastro rápido
+          />
         </DialogContent>
       </Dialog>
-      {/* Modal Nova Categoria Financeira */}
+      {/* Modal Nova Categoria Financeira implementado de verdade */}
       <Dialog open={isModalNovaCategoria} onOpenChange={setIsModalNovaCategoria}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Nova Categoria Financeira</DialogTitle>
           </DialogHeader>
-          <div className="py-6">
-            <p>Formulário de nova categoria financeira simulado.<br />Implemente aqui os campos necessários.</p>
-            <div className="flex justify-end mt-4">
-              <Button variant="blue" onClick={() => setIsModalNovaCategoria(false)}>Salvar</Button>
-              <Button variant="outline" className="ml-2" onClick={() => setIsModalNovaCategoria(false)}>Cancelar</Button>
-            </div>
-          </div>
+          <PlanoContasForm
+            onSubmit={handleSalvarNovaCategoria}
+            onCancel={() => setIsModalNovaCategoria(false)}
+          />
         </DialogContent>
       </Dialog>
     </div>
