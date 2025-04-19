@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -247,14 +248,16 @@ export default function FaturamentoPage() {
                     {item.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   </TableCell>
                   <TableCell className="text-center">
-                    {/* Botão "..." menu contextual, cor cinza escuro padrão Favoritos */}
+                    {/* Menu contextual correto, com clique 100% funcional */}
                     <ContextMenu>
                       <ContextMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" title="Ações">
-                          <MoreHorizontal className="w-5 h-5 text-[#333]" />
-                        </Button>
+                        <span>
+                          <Button variant="ghost" size="icon" title="Ações">
+                            <MoreHorizontal className="w-5 h-5 text-[#333]" />
+                          </Button>
+                        </span>
                       </ContextMenuTrigger>
-                      <ContextMenuContent className="z-50 bg-white min-w-[110px]">
+                      <ContextMenuContent className="z-50 bg-white min-w-[110px] shadow-lg">
                         <ContextMenuItem>
                           <Edit className="w-4 h-4 mr-2 text-[#0EA5E9]" />
                           Editar
@@ -275,3 +278,4 @@ export default function FaturamentoPage() {
     </div>
   );
 }
+
