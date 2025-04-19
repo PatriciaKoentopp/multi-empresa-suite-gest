@@ -6,63 +6,72 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Company } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-
 const formSchema = z.object({
-  razaoSocial: z.string().min(3, { message: "Razão Social é obrigatória" }),
-  nomeFantasia: z.string().min(3, { message: "Nome Fantasia é obrigatório" }),
-  cnpj: z.string().min(14, { message: "CNPJ inválido" }).max(18),
+  razaoSocial: z.string().min(3, {
+    message: "Razão Social é obrigatória"
+  }),
+  nomeFantasia: z.string().min(3, {
+    message: "Nome Fantasia é obrigatório"
+  }),
+  cnpj: z.string().min(14, {
+    message: "CNPJ inválido"
+  }).max(18),
   inscricaoEstadual: z.string().optional(),
   inscricaoMunicipal: z.string().optional(),
   cnae: z.string().optional(),
-  email: z.string().email({ message: "Email inválido" }).optional().or(z.literal("")),
-  site: z.string().url({ message: "URL inválida" }).optional().or(z.literal("")),
+  email: z.string().email({
+    message: "Email inválido"
+  }).optional().or(z.literal("")),
+  site: z.string().url({
+    message: "URL inválida"
+  }).optional().or(z.literal("")),
   telefone: z.string().optional(),
-  cep: z.string().min(8, { message: "CEP é obrigatório" }),
-  logradouro: z.string().min(3, { message: "Logradouro é obrigatório" }),
-  numero: z.string().min(1, { message: "Número é obrigatório" }),
+  cep: z.string().min(8, {
+    message: "CEP é obrigatório"
+  }),
+  logradouro: z.string().min(3, {
+    message: "Logradouro é obrigatório"
+  }),
+  numero: z.string().min(1, {
+    message: "Número é obrigatório"
+  }),
   complemento: z.string().optional(),
-  bairro: z.string().min(2, { message: "Bairro é obrigatório" }),
-  cidade: z.string().min(2, { message: "Cidade é obrigatória" }),
-  estado: z.string().min(2, { message: "Estado é obrigatório" }),
+  bairro: z.string().min(2, {
+    message: "Bairro é obrigatório"
+  }),
+  cidade: z.string().min(2, {
+    message: "Cidade é obrigatória"
+  }),
+  estado: z.string().min(2, {
+    message: "Estado é obrigatório"
+  }),
   pais: z.string().optional(),
   regimeTributacao: z.enum(["simples", "lucro_presumido", "lucro_real", "mei"]).optional(),
-  logo: z.string().url({ message: "URL da logo inválida" }).optional().or(z.literal("")),
+  logo: z.string().url({
+    message: "URL da logo inválida"
+  }).optional().or(z.literal(""))
 });
-
 type FormValues = z.infer<typeof formSchema>;
-
 export default function EmpresasPage() {
-  const { currentCompany, updateCompany, isLoading } = useCompany();
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const {
+    currentCompany,
+    updateCompany,
+    isLoading
+  } = useCompany();
+  const {
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -84,8 +93,8 @@ export default function EmpresasPage() {
       estado: "",
       pais: "Brasil",
       regimeTributacao: undefined,
-      logo: "",
-    },
+      logo: ""
+    }
   });
 
   // Carregar os dados da empresa atual quando disponíveis
@@ -110,14 +119,12 @@ export default function EmpresasPage() {
         estado: currentCompany.endereco?.estado || "",
         pais: currentCompany.endereco?.pais || "Brasil",
         regimeTributacao: currentCompany.regimeTributacao,
-        logo: currentCompany.logo || "",
+        logo: currentCompany.logo || ""
       });
     }
   }, [currentCompany, form]);
-
   const onSubmit = (values: FormValues) => {
     if (!currentCompany || !user) return;
-    
     const updatedCompany = {
       ...currentCompany,
       razaoSocial: values.razaoSocial,
@@ -137,239 +144,168 @@ export default function EmpresasPage() {
         bairro: values.bairro,
         cidade: values.cidade,
         estado: values.estado,
-        pais: values.pais,
+        pais: values.pais
       },
       regimeTributacao: values.regimeTributacao,
       logo: values.logo,
-      updatedAt: new Date(),
+      updatedAt: new Date()
     };
-
     updateCompany(currentCompany.id, updatedCompany);
-    
     toast({
       title: "Empresa atualizada",
-      description: "Os dados da empresa foram atualizados com sucesso.",
+      description: "Os dados da empresa foram atualizados com sucesso."
     });
-    
     setIsEditing(false);
   };
-
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
   };
-
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
+    return <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center gap-2">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-r-transparent" />
           <p className="text-sm text-muted-foreground">Carregando...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!currentCompany) {
-    return (
-      <div className="flex flex-col items-center justify-center py-8">
+    return <div className="flex flex-col items-center justify-center py-8">
         <Building2 className="h-12 w-12 text-muted-foreground" />
         <h3 className="mt-4 text-lg font-medium">Nenhuma empresa disponível</h3>
         <p className="text-sm text-muted-foreground">
           Nenhuma empresa associada ao seu usuário.
         </p>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Minha Empresa</h1>
-          <p className="text-muted-foreground">
-            Gerencie os dados da sua empresa
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">Empresa</h1>
+          
         </div>
-        <Button 
-          onClick={handleEditToggle}
-          variant={isEditing ? "outline" : "blue"}
-        >
-          {isEditing ? (
-            <>Cancelar</>
-          ) : (
-            <>
+        <Button onClick={handleEditToggle} variant={isEditing ? "outline" : "blue"}>
+          {isEditing ? <>Cancelar</> : <>
               <PenLine className="mr-2 h-4 w-4" />
               Editar
-            </>
-          )}
+            </>}
         </Button>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Dados da Empresa</CardTitle>
-          <CardDescription>
-            {isEditing 
-              ? "Edite as informações da sua empresa" 
-              : "Informações da sua empresa"}
-          </CardDescription>
+          
+          
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="razaoSocial"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={form.control} name="razaoSocial" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Razão Social</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="nomeFantasia"
-                    render={({ field }) => (
-                      <FormItem>
+                      </FormItem>} />
+                  <FormField control={form.control} name="nomeFantasia" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Nome Fantasia</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="cnpj"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={form.control} name="cnpj" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>CNPJ</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="inscricaoEstadual"
-                    render={({ field }) => (
-                      <FormItem>
+                      </FormItem>} />
+                  <FormField control={form.control} name="inscricaoEstadual" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Inscrição Estadual</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="inscricaoMunicipal"
-                    render={({ field }) => (
-                      <FormItem>
+                      </FormItem>} />
+                  <FormField control={form.control} name="inscricaoMunicipal" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Inscrição Municipal</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="cnae"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={form.control} name="cnae" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>CNAE</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
+                      </FormItem>} />
+                  <FormField control={form.control} name="email" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
                           <Input type="email" {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="telefone"
-                    render={({ field }) => (
-                      <FormItem>
+                      </FormItem>} />
+                  <FormField control={form.control} name="telefone" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Telefone</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="site"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="site" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Site</FormLabel>
                       <FormControl>
                         <Input {...field} disabled={!isEditing} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
 
-                <FormField
-                  control={form.control}
-                  name="logo"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="logo" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>URL da Logo</FormLabel>
                       <FormControl>
                         <Input {...field} disabled={!isEditing} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
 
-                <FormField
-                  control={form.control}
-                  name="regimeTributacao"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="regimeTributacao" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Regime de Tributação</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        disabled={!isEditing}
-                      >
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isEditing}>
                         <FormControl>
                           <SelectTrigger className="bg-white dark:bg-gray-900">
                             <SelectValue placeholder="Selecione um regime" />
@@ -383,137 +319,100 @@ export default function EmpresasPage() {
                         </SelectContent>
                       </Select>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
 
                 <div className="space-y-2">
                   <h3 className="font-medium text-base">Endereço</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="cep"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="cep" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>CEP</FormLabel>
                           <FormControl>
                             <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="logradouro"
-                      render={({ field }) => (
-                        <FormItem>
+                        </FormItem>} />
+                    <FormField control={form.control} name="logradouro" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Logradouro</FormLabel>
                           <FormControl>
                             <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="numero"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="numero" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Número</FormLabel>
                           <FormControl>
                             <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="complemento"
-                      render={({ field }) => (
-                        <FormItem>
+                        </FormItem>} />
+                    <FormField control={form.control} name="complemento" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Complemento</FormLabel>
                           <FormControl>
                             <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="bairro"
-                      render={({ field }) => (
-                        <FormItem>
+                        </FormItem>} />
+                    <FormField control={form.control} name="bairro" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Bairro</FormLabel>
                           <FormControl>
                             <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="cidade"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="cidade" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Cidade</FormLabel>
                           <FormControl>
                             <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="estado"
-                      render={({ field }) => (
-                        <FormItem>
+                        </FormItem>} />
+                    <FormField control={form.control} name="estado" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Estado</FormLabel>
                           <FormControl>
                             <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="pais"
-                      render={({ field }) => (
-                        <FormItem>
+                        </FormItem>} />
+                    <FormField control={form.control} name="pais" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>País</FormLabel>
                           <FormControl>
                             <Input {...field} disabled={!isEditing} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                   </div>
                 </div>
               </div>
 
-              {isEditing && (
-                <Button type="submit" variant="success">
+              {isEditing && <Button type="submit" variant="success">
                   <Save className="mr-2 h-4 w-4" />
                   Salvar Alterações
-                </Button>
-              )}
+                </Button>}
             </form>
           </Form>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 }
