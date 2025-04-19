@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -102,7 +101,7 @@ export default function FaturamentoPage() {
     <div className="flex flex-col gap-4">
       {/* Filtros */}
       <div className="flex flex-wrap gap-2 items-center bg-white border p-4 rounded-md mb-1">
-        {/* Campo de busca com ícone ao lado, como Favoritos */}
+        {/* Campo de busca com ícone ao lado */}
         <div className="relative flex items-center max-w-xs">
           <Search className="absolute left-2 text-gray-400 h-4 w-4 pointer-events-none" />
           <Input
@@ -113,13 +112,17 @@ export default function FaturamentoPage() {
           />
         </div>
 
+        {/* Select de Tipo com valores válidos */}
         <Select value={tipo} onValueChange={setTipo}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
+            {/* Só renderiza os itens se o valor não for vazio */}
             {tipos.map(opt => (
-              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              <SelectItem key={opt} value={opt}>
+                {opt}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -135,12 +138,12 @@ export default function FaturamentoPage() {
           </SelectContent>
         </Select>
 
-        {/* Data Inicial */}
+        {/* Corrigido transparência das datas: sempre bg branco! */}
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="min-w-[135px] justify-start"
+              className="min-w-[135px] justify-start bg-white"
             >
               {dataInicial ? (
                 formatDateBR(dataInicial)
@@ -149,7 +152,6 @@ export default function FaturamentoPage() {
               )}
             </Button>
           </PopoverTrigger>
-          {/* Força cor de fundo branca no PopoverContent */}
           <PopoverContent className="w-auto p-0 pointer-events-auto bg-white z-50" align="start">
             <Calendar
               mode="single"
@@ -162,12 +164,11 @@ export default function FaturamentoPage() {
           </PopoverContent>
         </Popover>
 
-        {/* Data Final */}
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="min-w-[135px] justify-start"
+              className="min-w-[135px] justify-start bg-white"
             >
               {dataFinal ? (
                 formatDateBR(dataFinal)
@@ -188,12 +189,10 @@ export default function FaturamentoPage() {
           </PopoverContent>
         </Popover>
 
-        {/* Botão de filtro - apenas ícone */}
         <Button variant="outline" size="icon" className="ml-2" title="Filtrar">
           <Filter className="w-4 h-4" />
         </Button>
 
-        {/* Botão de novo - apenas ícone + igual outras páginas */}
         <div className="ml-auto">
           <Button variant="blue" size="icon" title="Novo Faturamento">
             <span className="text-xl leading-none">+</span>
@@ -225,7 +224,10 @@ export default function FaturamentoPage() {
             ) : (
               itemsFiltrados.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>{item.tipo}</TableCell>
+                  {/* Coluna Tipo, apenas "Orçamento" ou "Venda" */}
+                  <TableCell>
+                    {item.tipo === "Orçamento" ? "Orçamento" : "Venda"}
+                  </TableCell>
                   <TableCell>{item.codigo}</TableCell>
                   <TableCell>{formatDateBR(item.data)}</TableCell>
                   <TableCell>{item.favorecido}</TableCell>
@@ -234,11 +236,11 @@ export default function FaturamentoPage() {
                     {item.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   </TableCell>
                   <TableCell className="text-center">
-                    {/* Menu contextual no lugar dos botões */}
+                    {/* Botão "..." menu contextual, cor cinza escuro padrão Favoritos */}
                     <ContextMenu>
                       <ContextMenuTrigger asChild>
                         <Button variant="ghost" size="icon" title="Ações">
-                          <MoreHorizontal className="w-5 h-5 text-[#0EA5E9]" />
+                          <MoreHorizontal className="w-5 h-5 text-[#333]" />
                         </Button>
                       </ContextMenuTrigger>
                       <ContextMenuContent className="z-50 bg-white min-w-[110px]">
