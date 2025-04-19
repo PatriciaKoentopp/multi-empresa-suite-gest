@@ -261,26 +261,7 @@ export default function IncluirMovimentacaoPage() {
               <DateInput label="Data de Lançamento" value={dataLancamento} onChange={setDataLancamento} />
             </div>
           </div>
-          {/* Linha 2: Valor, Número de Parcelas, Primeiro Vencimento */}
-          <div className="grid grid-cols-3 gap-4 items-end">
-            <div className="flex flex-col gap-1">
-              <Label>Valor</Label>
-              <div className="relative flex items-center">
-                <Input value={valor} onChange={handleValorChange} placeholder="0,00" inputMode="decimal" />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none select-none">
-                  R$
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label>Número de Parcelas</Label>
-              <Input type="number" min={1} max={36} value={numParcelas} onChange={e => setNumParcelas(Math.max(1, Math.min(36, Number(e.target.value) || 1)))} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <DateInput label="Primeiro Vencimento" value={dataPrimeiroVenc} onChange={setDataPrimeiroVenc} />
-            </div>
-          </div>
-          {/* Continua o restante do formulário como já estava */}
+          {/* Linha 2: Número do Documento, Favorecido */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Número do Documento</Label>
@@ -310,6 +291,7 @@ export default function IncluirMovimentacaoPage() {
               </div>
             </div>
           </div>
+          {/* Linha 3: Categoria Financeira, Forma de Pagamento */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Categoria Financeira</Label>
@@ -346,11 +328,31 @@ export default function IncluirMovimentacaoPage() {
               </Select>
             </div>
           </div>
+          {/* Linha 4: Descrição */}
           <div>
             <Label>Descrição</Label>
             <Input value={descricao} onChange={e => setDescricao(e.target.value)} />
           </div>
-          
+          {/* Linha 5: Valor, Número de Parcelas, Primeiro Vencimento */}
+          <div className="grid grid-cols-3 gap-4 items-end">
+            <div className="flex flex-col gap-1">
+              <Label>Valor</Label>
+              <div className="relative flex items-center">
+                <Input value={valor} onChange={handleValorChange} placeholder="0,00" inputMode="decimal" />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none select-none">
+                  R$
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label>Número de Parcelas</Label>
+              <Input type="number" min={1} max={36} value={numParcelas} onChange={e => setNumParcelas(Math.max(1, Math.min(36, Number(e.target.value) || 1)))} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <DateInput label="Primeiro Vencimento" value={dataPrimeiroVenc} onChange={setDataPrimeiroVenc} />
+            </div>
+          </div>
+          {/* Parcela */}
           <div>
             <Label>Parcelas</Label>
             <div className="border rounded p-2">
@@ -367,10 +369,12 @@ export default function IncluirMovimentacaoPage() {
                 </div>)}
             </div>
           </div>
+          {/* Checkbox DRE */}
           <div className="flex items-center gap-2">
             <Checkbox checked={considerarDRE} onCheckedChange={v => setConsiderarDRE(!!v)} id="dre" />
             <Label htmlFor="dre">Movimentação aparece no DRE?</Label>
           </div>
+          {/* Botões */}
           <div className="flex gap-2 justify-end mt-2">
             <Button type="submit" variant="blue">Salvar</Button>
             <Button variant="outline" type="button" onClick={() => navigate(-1)}>
@@ -379,7 +383,7 @@ export default function IncluirMovimentacaoPage() {
           </div>
         </form>
       </div>
-      {/* Modal Novo Favorecido implementado de verdade */}
+      {/* Modal Novo Favorecido */}
       <Dialog open={isModalNovoFavorecido} onOpenChange={setIsModalNovoFavorecido}>
         <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
@@ -393,7 +397,7 @@ export default function IncluirMovimentacaoPage() {
           />
         </DialogContent>
       </Dialog>
-      {/* Modal Nova Categoria Financeira implementado de verdade */}
+      {/* Modal Nova Categoria Financeira */}
       <Dialog open={isModalNovaCategoria} onOpenChange={setIsModalNovaCategoria}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -408,5 +412,3 @@ export default function IncluirMovimentacaoPage() {
     </div>
   );
 }
-// AVISO: Este arquivo está ficando muito longo (mais de 300 linhas!)
-// Considere pedir para eu refatorar em componentes menores!
