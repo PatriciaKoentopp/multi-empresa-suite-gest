@@ -93,10 +93,7 @@ export default function ContasAPagarPage() {
   }, [contas, searchTerm, statusFilter, dataVencInicio, dataVencFim, dataPagInicio, dataPagFim]);
 
   function handleLupaClick() {
-    // Apenas garante o foco no campo.
     inputBuscaRef.current?.focus();
-    // Como a busca já é feita automaticamente pelo valor do campo, nada adicional aqui.
-    // Se precisar tratar click, use este método!
   }
 
   return (
@@ -119,22 +116,23 @@ export default function ContasAPagarPage() {
                 tabIndex={-1}
                 aria-label="Buscar"
               >
-                <Search className="h-4 w-4" />
+                <Search className="h-5 w-5" />
               </button>
               <Input
                 ref={inputBuscaRef}
-                placeholder="Buscar favorecido ou descrição..."
-                className="pl-9"
+                placeholder="Buscar favorecido ou descrição"
+                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white" {/* Garante visibilidade */}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    // Já faz busca automaticamente, mas pode garantir foco
                     inputBuscaRef.current?.blur();
                   }
                 }}
+                autoComplete="off"
               />
             </div>
+            
             <Select
               value={statusFilter}
               onValueChange={(v) => setStatusFilter(v as any)}
