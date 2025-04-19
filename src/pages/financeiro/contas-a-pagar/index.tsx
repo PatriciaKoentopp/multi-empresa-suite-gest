@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -110,7 +109,7 @@ export default function ContasAPagarPage() {
       </div>
       <Card>
         <CardContent className="pt-6">
-          {/* Linha de cima: Busca + Status */}
+          {/* Primeira linha: Busca + Status */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative col-span-1 min-w-[240px]">
               <button
@@ -156,10 +155,10 @@ export default function ContasAPagarPage() {
             </div>
             <div /> {/* Espaço só para organizar em tela grande */}
           </div>
-          {/* Linha de baixo: Todos os campos de datas, alinhados */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
-            {/* Vencimento */}
-            <div className="flex flex-row gap-2">
+          {/* Linha única de filtros de datas, sempre abaixo da busca */}
+          <div className="mt-2 flex flex-col md:flex-row gap-2">
+            {/* Vencimento: de - até */}
+            <div className="flex flex-row gap-2 flex-1 min-w-[240px]">
               <div className="flex flex-col flex-1">
                 <label className="text-xs font-medium">Venc. de</label>
                 <Input
@@ -181,8 +180,8 @@ export default function ContasAPagarPage() {
                 />
               </div>
             </div>
-            {/* Pagamento */}
-            <div className="flex flex-row gap-2">
+            {/* Pagamento: de - até */}
+            <div className="flex flex-row gap-2 flex-1 min-w-[240px]">
               <div className="flex flex-col flex-1">
                 <label className="text-xs font-medium">Pagto. de</label>
                 <Input
@@ -204,9 +203,6 @@ export default function ContasAPagarPage() {
                 />
               </div>
             </div>
-            {/* Ajusta responsividade: esconde em telas pequenas */}
-            <div className="hidden md:block" />
-            <div className="hidden md:block" />
           </div>
           <ContasAPagarTable
             contas={filteredContas}
@@ -219,4 +215,3 @@ export default function ContasAPagarPage() {
     </div>
   );
 }
-
