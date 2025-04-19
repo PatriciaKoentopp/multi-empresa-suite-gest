@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Plus } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 type Servico = {
@@ -59,13 +58,13 @@ export default function ServicosPage() {
       setServicos((ss) =>
         ss.map((s) => (s.id === editId ? { ...s, ...form } : s))
       );
-      toast({ title: "Serviço atualizado com sucesso!", variant: "success" });
+      toast({ title: "Serviço atualizado com sucesso!" });
     } else {
       setServicos((ss) => [
         ...ss,
         { ...form, id: Date.now().toString() }
       ]);
-      toast({ title: "Serviço cadastrado com sucesso!", variant: "success" });
+      toast({ title: "Serviço cadastrado com sucesso!" });
     }
     setShowForm(false);
     resetForm();
@@ -84,7 +83,7 @@ export default function ServicosPage() {
 
   function handleExcluir(id: string) {
     setServicos((ss) => ss.filter((s) => s.id !== id));
-    toast({ title: "Serviço excluído com sucesso!", variant: "success" });
+    toast({ title: "Serviço excluído com sucesso!" });
     // Se estiver editando este serviço, cancelar edição
     if (editId === id) {
       resetForm();
