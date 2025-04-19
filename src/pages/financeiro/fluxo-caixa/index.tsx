@@ -139,19 +139,18 @@ function maskDateInput(value: string): string {
 export default function FluxoCaixaPage() {
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("1");
   const [periodo, setPeriodo] = useState<"mes_atual" | "mes_anterior" | "personalizado">("mes_atual");
+
+  // Estado base de datas: os campos "Date" controlam a data real e os string os campos do input
   const [dataInicial, setDataInicial] = useState<Date | undefined>(undefined);
   const [dataFinal, setDataFinal] = useState<Date | undefined>(undefined);
-  const [situacao, setSituacao] = useState<"todos" | "conciliado" | "nao_conciliado">("todos");
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const navigate = useNavigate();
-
-  // Controle dos campos de data (no formato DD/MM/YYYY)
   const [dataInicialStr, setDataInicialStr] = useState("");
   const [dataFinalStr, setDataFinalStr] = useState("");
 
-  // Corrigir atualização das datas ao mudar o período usando useEffect
-  // Sempre que o período mudar, atualizar datas e campos se não for personalizado
+  const [situacao, setSituacao] = useState<"todos" | "conciliado" | "nao_conciliado">("todos");
+  const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+
+  // Função para atualizar datas automáticas ao mudar período
   useEffect(() => {
     const hoje = new Date();
     if (periodo === "mes_atual") {
@@ -161,15 +160,17 @@ export default function FluxoCaixaPage() {
       setDataInicialStr(dateToBR(inicio));
       setDataFinal(fim);
       setDataFinalStr(dateToBR(fim));
-    } else if (periodo === "mes_anterior") {
+    }
+    else if (periodo === "mes_anterior") {
       const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
       const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
       setDataInicial(inicio);
       setDataInicialStr(dateToBR(inicio));
       setDataFinal(fim);
       setDataFinalStr(dateToBR(fim));
-    } else if (periodo === "personalizado") {
-      // Ao trocar para personalizado, limpa os campos (mantém o controle para digitação manual)
+    }
+    else if (periodo === "personalizado") {
+      // Limpa as datas para campos vazios
       setDataInicial(undefined);
       setDataInicialStr("");
       setDataFinal(undefined);
@@ -177,52 +178,47 @@ export default function FluxoCaixaPage() {
     }
   }, [periodo]);
 
-  // Função de conciliação mockada
-  function handleConciliar(id: string) {
-    toast.success("Movimento conciliado!");
-    // Aqui atualizaria o status no extrato real.
+  // Atualiza o estado da data inicial ao digitar (com máscara e parse)
+  function onChangeDataInicialStr(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = maskDateInput(e.target.value);
+    setDataInicialStr(val);
+    const dt = brToDate(val);
+    setDataInicial(dt);
   }
-
-  // Mantém sincronização interno quando estado muda por calendário
-  function setDataInicialBR(date?: Date) {
-    setDataInicial(date);
-    setDataInicialStr(dateToBR(date));
-  }
-  function setDataFinalBR(date?: Date) {
-    setDataFinal(date);
-    setDataFinalStr(dateToBR(date));
-  }
-
-  // Ajusta datas ao selecionar período
-  function handlePeriodoChange(v: "mes_atual" | "mes_anterior" | "personalizado") {
-    setPeriodo(v);
-    const hoje = new Date();
-    if (v === "mes_atual") {
-      const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-      const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-      setDataInicialBR(inicio);
-      setDataFinalBR(fim);
-    } else if (v === "mes_anterior") {
-      const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
-      const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
-      setDataInicialBR(inicio);
-      setDataFinalBR(fim);
-    } else {
+  function onBlurDataInicial(e: React.FocusEvent<HTMLInputElement>) {
+    if (e.target.value && !brToDate(e.target.value)) {
       setDataInicial(undefined);
       setDataInicialStr("");
+    }
+  }
+
+  function onChangeDataFinalStr(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = maskDateInput(e.target.value);
+    setDataFinalStr(val);
+    const dt = brToDate(val);
+    setDataFinal(dt);
+  }
+  function onBlurDataFinal(e: React.FocusEvent<HTMLInputElement>) {
+    if (e.target.value && !brToDate(e.target.value)) {
       setDataFinal(undefined);
       setDataFinalStr("");
     }
   }
 
-  // Filtro do extrato mockado
+  // Função para mudar período e disparar update de datas
+  function handlePeriodoChange(v: "mes_atual" | "mes_anterior" | "personalizado") {
+    setPeriodo(v);
+  }
+
+  // Filtro do extrato mockado: filtra pelo range de datas visível
   const filteredExtrato = useMemo(() => {
     return mockExtrato.filter((linha) => {
       const buscaOk =
         linha.favorecido.toLowerCase().includes(searchTerm.toLowerCase()) ||
         linha.descricao.toLowerCase().includes(searchTerm.toLowerCase());
       const sitOk = situacao === "todos" || linha.situacao === situacao;
-      // Conta corrente (mock não diferencia, mas poderia filtrar por id se necessário)
+
+      // Converter data no padrão YYYY-MM-DD para objeto Date
       const dataLinha = new Date(
         linha.data.substring(0, 4) +
           "-" +
@@ -230,11 +226,18 @@ export default function FluxoCaixaPage() {
           "-" +
           linha.data.substring(8, 10)
       );
+      // Validar range de datas
       const dataIniOk = !dataInicial || dataLinha >= dataInicial;
       const dataFimOk = !dataFinal || dataLinha <= dataFinal;
       return buscaOk && sitOk && dataIniOk && dataFimOk;
     });
   }, [searchTerm, situacao, dataInicial, dataFinal]);
+
+  // Função de conciliação mockada
+  function handleConciliar(id: string) {
+    toast.success("Movimento conciliado!");
+    // Aqui atualizaria o status no extrato real.
+  }
 
   function handleEdit(id: string) {
     toast.info("Ação de editar: " + id);
@@ -324,22 +327,11 @@ export default function FluxoCaixaPage() {
                   disabled={periodo !== "personalizado"}
                   value={dataInicialStr}
                   maxLength={10}
-                  onChange={e => {
-                    let val = maskDateInput(e.target.value);
-                    setDataInicialStr(val);
-                    const dt = brToDate(val);
-                    setDataInicial(dt);
-                  }}
+                  onChange={onChangeDataInicialStr}
                   onFocus={e => {
                     if (!dataInicialStr) setDataInicialStr("");
                   }}
-                  onBlur={e => {
-                    // Se não for válido e não vazio, limpa a data e campo
-                    if (e.target.value && !brToDate(e.target.value)) {
-                      setDataInicial(undefined);
-                      setDataInicialStr("");
-                    }
-                  }}
+                  onBlur={onBlurDataInicial}
                   style={{ minHeight: 52 }}
                   autoComplete="off"
                 />
@@ -358,21 +350,11 @@ export default function FluxoCaixaPage() {
                   disabled={periodo !== "personalizado"}
                   value={dataFinalStr}
                   maxLength={10}
-                  onChange={e => {
-                    let val = maskDateInput(e.target.value);
-                    setDataFinalStr(val);
-                    const dt = brToDate(val);
-                    setDataFinal(dt);
-                  }}
+                  onChange={onChangeDataFinalStr}
                   onFocus={e => {
                     if (!dataFinalStr) setDataFinalStr("");
                   }}
-                  onBlur={e => {
-                    if (e.target.value && !brToDate(e.target.value)) {
-                      setDataFinal(undefined);
-                      setDataFinalStr("");
-                    }
-                  }}
+                  onBlur={onBlurDataFinal}
                   style={{ minHeight: 52 }}
                   autoComplete="off"
                 />
