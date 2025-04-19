@@ -103,6 +103,36 @@ function getStatusBadge(status: "conciliado" | "nao_conciliado") {
   );
 }
 
+// Função utilitária para formatar Date para string DD/MM/YYYY
+function dateToBR(date?: Date) {
+  if (!date) return "";
+  const d = date.getDate().toString().padStart(2, "0");
+  const m = (date.getMonth() + 1).toString().padStart(2, "0");
+  const y = date.getFullYear();
+  return `${d}/${m}/${y}`;
+}
+
+// Função para parsear string DD/MM/YYYY para Date
+function brToDate(value: string): Date | undefined {
+  const [dd, mm, yyyy] = value.split("/");
+  if (!dd || !mm || !yyyy) return undefined;
+  const d = Number(dd), m = Number(mm) - 1, y = Number(yyyy);
+  if (isNaN(d) || isNaN(m) || isNaN(y) || d < 1 || d > 31 || m < 0 || m > 11 || y < 1000 || y > 3000) return undefined;
+  const dt = new Date(y, m, d);
+  // Checa se realmente bate com o digitado (para casos como 31/02 etc)
+  if (dt.getDate() !== d || dt.getMonth() !== m || dt.getFullYear() !== y) return undefined;
+  return dt;
+}
+
+// Função para aplicar máscara automaticamente
+function maskDateInput(value: string): string {
+  value = value.replace(/\D/g, "");
+  if (value.length > 8) value = value.slice(0, 8);
+  if (value.length > 4) return value.replace(/^(\d{2})(\d{2})(\d{0,4})/, "$1/$2/$3");
+  if (value.length > 2) return value.replace(/^(\d{2})(\d{0,2})/, "$1/$2");
+  return value;
+}
+
 export default function FluxoCaixaPage() {
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("1");
   const [periodo, setPeriodo] = useState<"mes_atual" | "mes_anterior" | "personalizado">("mes_atual");
@@ -113,6 +143,20 @@ export default function FluxoCaixaPage() {
 
   const navigate = useNavigate();
 
+  // Substituir os valores usados nas datas para string DD/MM/YYYY
+  const [dataInicialStr, setDataInicialStr] = useState("");
+  const [dataFinalStr, setDataFinalStr] = useState("");
+
+  // Mantém sincronização interno quando estado muda por calendário
+  function setDataInicialBR(date?: Date) {
+    setDataInicial(date);
+    setDataInicialStr(dateToBR(date));
+  }
+  function setDataFinalBR(date?: Date) {
+    setDataFinal(date);
+    setDataFinalStr(dateToBR(date));
+  }
+
   // Ajusta datas ao selecionar período
   function handlePeriodoChange(v: "mes_atual" | "mes_anterior" | "personalizado") {
     setPeriodo(v);
@@ -120,16 +164,18 @@ export default function FluxoCaixaPage() {
     if (v === "mes_atual") {
       const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
       const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-      setDataInicial(inicio);
-      setDataFinal(fim);
+      setDataInicialBR(inicio);
+      setDataFinalBR(fim);
     } else if (v === "mes_anterior") {
       const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
       const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
-      setDataInicial(inicio);
-      setDataFinal(fim);
+      setDataInicialBR(inicio);
+      setDataFinalBR(fim);
     } else {
       setDataInicial(undefined);
+      setDataInicialStr("");
       setDataFinal(undefined);
+      setDataFinalStr("");
     }
   }
 
@@ -244,12 +290,23 @@ export default function FluxoCaixaPage() {
               <label className="text-xs font-medium mb-1 ml-1">Data Inicial</label>
               <div className="relative">
                 <Input
-                  type="date"
+                  type="text"
+                  inputMode="numeric"
                   className="bg-white border rounded-lg h-[52px] pl-10 text-base font-normal"
-                  value={valueDateInput(dataInicial)}
-                  onChange={(e) => setDataInicial(parseDateFromInput(e.target.value))}
+                  placeholder="DD/MM/AAAA"
                   disabled={periodo !== "personalizado"}
-                  placeholder="dd/mm/aaaa"
+                  value={dataInicialStr}
+                  maxLength={10}
+                  onChange={e => {
+                    const masked = maskDateInput(e.target.value);
+                    setDataInicialStr(masked);
+                    const dt = brToDate(masked);
+                    setDataInicial(dt);
+                  }}
+                  onBlur={e => {
+                    // Se não for válido, limpa a data!
+                    if (!brToDate(e.target.value)) setDataInicial(undefined);
+                  }}
                   style={{ minHeight: 52 }}
                 />
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none" />
@@ -260,12 +317,22 @@ export default function FluxoCaixaPage() {
               <label className="text-xs font-medium mb-1 ml-1">Data Final</label>
               <div className="relative">
                 <Input
-                  type="date"
+                  type="text"
+                  inputMode="numeric"
                   className="bg-white border rounded-lg h-[52px] pl-10 text-base font-normal"
-                  value={valueDateInput(dataFinal)}
-                  onChange={(e) => setDataFinal(parseDateFromInput(e.target.value))}
+                  placeholder="DD/MM/AAAA"
                   disabled={periodo !== "personalizado"}
-                  placeholder="dd/mm/aaaa"
+                  value={dataFinalStr}
+                  maxLength={10}
+                  onChange={e => {
+                    const masked = maskDateInput(e.target.value);
+                    setDataFinalStr(masked);
+                    const dt = brToDate(masked);
+                    setDataFinal(dt);
+                  }}
+                  onBlur={e => {
+                    if (!brToDate(e.target.value)) setDataFinal(undefined);
+                  }}
                   style={{ minHeight: 52 }}
                 />
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none" />
