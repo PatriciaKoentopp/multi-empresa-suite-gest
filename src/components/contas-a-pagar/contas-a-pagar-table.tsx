@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Edit, Download, Trash2 } from "lucide-react";
 
 export interface ContaPagar {
@@ -17,7 +18,7 @@ export interface ContaPagar {
   dataVencimento: Date;
   dataPagamento?: Date;
   status: "pago" | "pago_em_atraso" | "em_aberto";
-  valor: number; // <- Novo campo obrigatório!
+  valor: number;
 }
 
 interface ContasAPagarTableProps {
@@ -41,14 +42,35 @@ function formatCurrency(valor?: number) {
   });
 }
 
-function getStatusLabel(status: ContaPagar["status"]) {
+function getStatusBadge(status: ContaPagar["status"]) {
   switch (status) {
     case "pago":
-      return <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700">Pago</span>
+      return (
+        <Badge
+          className="bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20"
+          variant="secondary"
+        >
+          Pago
+        </Badge>
+      );
     case "pago_em_atraso":
-      return <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-700">Pago em Atraso</span>
+      return (
+        <Badge
+          className="bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
+          variant="secondary"
+        >
+          Pago em Atraso
+        </Badge>
+      );
     case "em_aberto":
-      return <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-600">Em Aberto</span>
+      return (
+        <Badge
+          className="bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20"
+          variant="secondary"
+        >
+          Em Aberto
+        </Badge>
+      );
     default:
       return status;
   }
@@ -83,7 +105,7 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
                 <TableCell>{formatDateBR(conta.dataPagamento)}</TableCell>
                 <TableCell>{conta.favorecido}</TableCell>
                 <TableCell>{conta.descricao}</TableCell>
-                <TableCell>{getStatusLabel(conta.status)}</TableCell>
+                <TableCell>{getStatusBadge(conta.status)}</TableCell>
                 <TableCell>{formatCurrency(conta.valor)}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
