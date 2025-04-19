@@ -240,26 +240,22 @@ export default function IncluirMovimentacaoPage() {
           handleSalvar();
         }}>
           {/* Alinhar corretamente os três campos solicitados */}
-          <div className="grid grid-cols-3 gap-4 items-center">
-            {/* Wrapper extra para igualar altura e alinhamento */}
-            <div className="flex flex-col gap-1 h-full justify-center">
-              <Label>Operação</Label>
-              <Select value={operacao} onValueChange={v => setOperacao(v as Operacao)}>
-                <SelectTrigger className="bg-white z-50">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  <SelectItem value="pagar">Pagar</SelectItem>
-                  <SelectItem value="receber">Receber</SelectItem>
-                  <SelectItem value="transferencia">Transferência</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="grid grid-cols-3 gap-4 items-end">
+            <div className="flex flex-col gap-1">
+              <Label>Valor</Label>
+              <div className="relative flex items-center">
+                <Input value={valor} onChange={handleValorChange} placeholder="0,00" inputMode="decimal" />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none select-none">
+                  R$
+                </span>
+              </div>
             </div>
-            <div>
-              <DateInput label="Data de Emissão" value={dataEmissao} onChange={setDataEmissao} />
+            <div className="flex flex-col gap-1">
+              <Label>Número de Parcelas</Label>
+              <Input type="number" min={1} max={36} value={numParcelas} onChange={e => setNumParcelas(Math.max(1, Math.min(36, Number(e.target.value) || 1)))} />
             </div>
-            <div>
-              <DateInput label="Data de Lançamento" value={dataLancamento} onChange={setDataLancamento} />
+            <div className="flex flex-col gap-1">
+              <DateInput label="Primeiro Vencimento" value={dataPrimeiroVenc} onChange={setDataPrimeiroVenc} />
             </div>
           </div>
           {/* Continua o restante do formulário como já estava */}
@@ -332,22 +328,7 @@ export default function IncluirMovimentacaoPage() {
             <Label>Descrição</Label>
             <Input value={descricao} onChange={e => setDescricao(e.target.value)} />
           </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label>Valor</Label>
-              <div className="relative flex items-center">
-                <Input value={valor} onChange={handleValorChange} placeholder="0,00" inputMode="decimal" />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none select-none">
-                  R$
-                </span>
-              </div>
-            </div>
-            <div>
-              <Label>Número de Parcelas</Label>
-              <Input type="number" min={1} max={36} value={numParcelas} onChange={e => setNumParcelas(Math.max(1, Math.min(36, Number(e.target.value) || 1)))} />
-            </div>
-            <DateInput label="Primeiro Vencimento" value={dataPrimeiroVenc} onChange={setDataPrimeiroVenc} />
-          </div>
+          
           <div>
             <Label>Parcelas</Label>
             <div className="border rounded p-2">
