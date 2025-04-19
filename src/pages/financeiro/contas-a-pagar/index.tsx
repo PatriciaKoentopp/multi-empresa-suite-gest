@@ -118,10 +118,11 @@ export default function ContasAPagarPage() {
               >
                 <Search className="h-5 w-5" />
               </button>
+              {/* Campo de busca com placeholder visível */}
               <Input
                 ref={inputBuscaRef}
                 placeholder="Buscar favorecido ou descrição"
-                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white" {/* Garante visibilidade */}
+                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => {
