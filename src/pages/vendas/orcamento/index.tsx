@@ -197,9 +197,10 @@ export default function OrcamentoPage() {
                   type="button"
                   className="mb-0"
                   onClick={() => setShowFavorecidoModal(true)}
+                  size="icon"
+                  aria-label="Adicionar novo favorecido"
                 >
-                  <Plus className="mr-1 w-4 h-4" />
-                  Novo
+                  <Plus className="w-5 h-5" />
                 </Button>
               </div>
             </div>
