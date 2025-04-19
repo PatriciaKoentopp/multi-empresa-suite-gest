@@ -204,12 +204,14 @@ export default function ContasAPagarPage() {
               </div>
             </div>
           </div>
-          <ContasAPagarTable
-            contas={filteredContas}
-            onEdit={handleEdit}
-            onBaixar={handleBaixar}
-            onDelete={handleDelete}
-          />
+          <div className="mt-6">
+            <ContasAPagarTable
+              contas={filteredContas}
+              onEdit={handleEdit}
+              onBaixar={handleBaixar}
+              onDelete={handleDelete}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>
