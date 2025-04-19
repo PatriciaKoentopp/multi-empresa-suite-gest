@@ -239,8 +239,9 @@ export default function IncluirMovimentacaoPage() {
           e.preventDefault();
           handleSalvar();
         }}>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
+          {/* Alinhar corretamente os três campos solicitados */}
+          <div className="flex flex-row gap-4">
+            <div className="flex-1 min-w-[200px]">
               <Label>Operação</Label>
               <Select value={operacao} onValueChange={v => setOperacao(v as Operacao)}>
                 <SelectTrigger className="bg-white z-50">
@@ -253,9 +254,14 @@ export default function IncluirMovimentacaoPage() {
                 </SelectContent>
               </Select>
             </div>
-            <DateInput label="Data de Emissão" value={dataEmissao} onChange={setDataEmissao} />
-            <DateInput label="Data de Lançamento" value={dataLancamento} onChange={setDataLancamento} />
+            <div className="flex-1 min-w-[200px]">
+              <DateInput label="Data de Emissão" value={dataEmissao} onChange={setDataEmissao} />
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <DateInput label="Data de Lançamento" value={dataLancamento} onChange={setDataLancamento} />
+            </div>
           </div>
+          {/* Continua o restante do formulário como já estava */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Número do Documento</Label>
