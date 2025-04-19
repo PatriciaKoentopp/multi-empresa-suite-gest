@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BaixarContaPagarModal } from "@/components/contas-a-pagar/BaixarContaPagarModal";
 
 // Mock data inicial
 const initialContasAPagar: ContaPagar[] = [
@@ -67,6 +68,10 @@ export default function ContasAPagarPage() {
     return format(date, "yyyy-MM-dd");
   }
 
+  // Novo estado para modal Baixar
+  const [contaParaBaixar, setContaParaBaixar] = useState<ContaPagar | null>(null);
+  const [modalBaixarAberto, setModalBaixarAberto] = useState(false);
+
   // Ações (exemplo, pode ser desacoplado)
   const handleEdit = (conta: ContaPagar) => {
     navigate("/financeiro/incluir-movimentacao", {
@@ -75,13 +80,36 @@ export default function ContasAPagarPage() {
   };
 
   const handleBaixar = (conta: ContaPagar) => {
-    toast.info("Ação Baixar ainda não implementada.");
+    setContaParaBaixar(conta);
+    setModalBaixarAberto(true);
   };
 
   const handleDelete = (id: string) => {
     setContas((prev) => prev.filter((c) => c.id !== id));
     toast.success("Conta excluída.");
   };
+
+  function realizarBaixa({ dataPagamento, contaCorrenteId, multa, juros, desconto }: {
+    dataPagamento: Date;
+    contaCorrenteId: string;
+    multa: number;
+    juros: number;
+    desconto: number;
+  }) {
+    setContas(prev =>
+      prev.map(item =>
+        item.id === contaParaBaixar?.id
+          ? {
+              ...item,
+              dataPagamento,
+              status: "pago", // sempre define pago (por ora)
+            }
+          : item
+      )
+    );
+    // Aqui normalmente: lança no fluxo de caixa, etc — mas deixamos só atualização mock
+    toast.success("Título baixado com sucesso!");
+  }
 
   // Filtro
   const filteredContas = useMemo(() => {
@@ -225,6 +253,12 @@ export default function ContasAPagarPage() {
           </div>
         </CardContent>
       </Card>
+      <BaixarContaPagarModal
+        conta={contaParaBaixar}
+        open={modalBaixarAberto}
+        onClose={() => setModalBaixarAberto(false)}
+        onBaixar={realizarBaixa}
+      />
     </div>
   );
 }
