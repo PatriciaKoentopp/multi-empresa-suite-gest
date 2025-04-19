@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, Search, Filter, Edit, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Filter } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -13,7 +13,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 // Dados mockados de contas correntes e extrato
 const mockContasCorrentes = [
@@ -30,8 +40,8 @@ const mockExtrato = [
     descricao: "Compra de Material",
     formaPagamento: "Transferência",
     situacao: "conciliado",
-    valor: -800.00,
-    saldo: 2500.00,
+    valor: -800.0,
+    saldo: 2500.0,
   },
   {
     id: "2",
@@ -40,8 +50,8 @@ const mockExtrato = [
     descricao: "Recebimento Serviço",
     formaPagamento: "Boleto",
     situacao: "conciliado",
-    valor: 2200.00,
-    saldo: 4700.00,
+    valor: 2200.0,
+    saldo: 4700.0,
   },
   {
     id: "3",
@@ -50,8 +60,8 @@ const mockExtrato = [
     descricao: "Pagamento Manutenção",
     formaPagamento: "Pix",
     situacao: "nao_conciliado",
-    valor: -950.00,
-    saldo: 3750.00,
+    valor: -950.0,
+    saldo: 3750.0,
   },
   {
     id: "4",
@@ -60,11 +70,12 @@ const mockExtrato = [
     descricao: "Recebimento Venda",
     formaPagamento: "Dinheiro",
     situacao: "conciliado",
-    valor: 1900.00,
-    saldo: 4100.00,
-  }
+    valor: 1900.0,
+    saldo: 4100.0,
+  },
 ];
 
+// Função para formatar datas (DD/MM/YYYY)
 function formatDateBR(dateStr: string) {
   const [yyyy, mm, dd] = dateStr.split("-");
   return `${dd}/${mm}/${yyyy}`;
@@ -94,60 +105,32 @@ function getStatusBadge(status: "conciliado" | "nao_conciliado") {
 }
 
 export default function FluxoCaixaPage() {
-  const [contaCorrenteId, setContaCorrenteId] = useState<string>("todos");
+  const [contaCorrenteId, setContaCorrenteId] = useState<string>("1");
   const [periodo, setPeriodo] = useState<"mes_atual" | "mes_anterior" | "personalizado">("mes_atual");
-  const [dataInicial, setDataInicial] = useState<string>("");
-  const [dataFinal, setDataFinal] = useState<string>("");
-  const [situacao, setSituacao] = useState<"todos"|"conciliado"|"nao_conciliado">("todos");
+  const [dataInicial, setDataInicial] = useState<Date | undefined>(undefined);
+  const [dataFinal, setDataFinal] = useState<Date | undefined>(undefined);
+  const [situacao, setSituacao] = useState<"todos" | "conciliado" | "nao_conciliado">("todos");
   const [searchTerm, setSearchTerm] = useState("");
 
   const navigate = useNavigate();
 
-  // Filtro de extrato mockado apenas para exibir funcionalidade
-  const filteredExtrato = useMemo(() => {
-    return mockExtrato.filter(linha => {
-      const buscaOk = (
-        linha.favorecido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        linha.descricao.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      // Situação
-      const sitOk = situacao === "todos" || linha.situacao === situacao;
-      // Conta corrente (mock não diferencia, mas poderia filtrar por id)
-      // Data
-      const dataLinha = linha.data;
-      const dataIniOk = !dataInicial || dataLinha >= dataInicial;
-      const dataFimOk = !dataFinal || dataLinha <= dataFinal;
-      return buscaOk && sitOk && dataIniOk && dataFimOk;
-    });
-  }, [searchTerm, situacao, dataInicial, dataFinal]);
-
-  function handleEdit(id: string) {
-    toast.info("Ação de editar: " + id);
-    navigate("/financeiro/incluir-movimentacao", { state: { id } });
-  }
-
-  function handleDelete(id: string) {
-    toast.success("Lançamento excluído!");
-    // Aqui faria lógica de exclusão real do extrato, se não fosse mock.
-  }
-
-  // Manipular seleção de período para setar datas padrão
+  // Ajusta datas ao selecionar período
   function handlePeriodoChange(v: "mes_atual" | "mes_anterior" | "personalizado") {
     setPeriodo(v);
     const hoje = new Date();
     if (v === "mes_atual") {
       const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
       const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-      setDataInicial(inicio.toISOString().slice(0, 10));
-      setDataFinal(fim.toISOString().slice(0, 10));
+      setDataInicial(inicio);
+      setDataFinal(fim);
     } else if (v === "mes_anterior") {
       const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
       const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
-      setDataInicial(inicio.toISOString().slice(0, 10));
-      setDataFinal(fim.toISOString().slice(0, 10));
+      setDataInicial(inicio);
+      setDataFinal(fim);
     } else {
-      setDataInicial("");
-      setDataFinal("");
+      setDataInicial(undefined);
+      setDataFinal(undefined);
     }
   }
 
@@ -156,86 +139,147 @@ export default function FluxoCaixaPage() {
     handlePeriodoChange("mes_atual");
   }
 
+  // Filtro do extrato mockado
+  const filteredExtrato = useMemo(() => {
+    return mockExtrato.filter((linha) => {
+      const buscaOk =
+        linha.favorecido.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        linha.descricao.toLowerCase().includes(searchTerm.toLowerCase());
+      const sitOk = situacao === "todos" || linha.situacao === situacao;
+      // Conta corrente (mock não diferencia, mas poderia filtrar por id se necessário)
+      const dataLinha = new Date(
+        linha.data.substring(0, 4) +
+          "-" +
+          linha.data.substring(5, 7) +
+          "-" +
+          linha.data.substring(8, 10)
+      );
+      const dataIniOk = !dataInicial || dataLinha >= dataInicial;
+      const dataFimOk = !dataFinal || dataLinha <= dataFinal;
+      return buscaOk && sitOk && dataIniOk && dataFimOk;
+    });
+  }, [searchTerm, situacao, dataInicial, dataFinal]);
+
+  function handleEdit(id: string) {
+    toast.info("Ação de editar: " + id);
+    // Abre incluir-movimentacao para edição
+    navigate("/financeiro/incluir-movimentacao", { state: { id } });
+  }
+
+  function handleDelete(id: string) {
+    toast.success("Lançamento excluído!");
+    // Aqui faria lógica de exclusão real do extrato, se não fosse mock.
+  }
+
+  // Função para strings das datas nos inputs (formato dd/mm/aaaa)
+  function valueDateInput(date?: Date) {
+    if (!date) return "";
+    const d = date.getDate().toString().padStart(2, "0");
+    const m = (date.getMonth() + 1).toString().padStart(2, "0");
+    const y = date.getFullYear();
+    return `${y}-${m}-${d}`;
+  }
+  function valueDatePlaceholder(date?: Date) {
+    if (!date) return "";
+    return format(date, "dd/MM/yyyy");
+  }
+  function parseDateFromInput(value: string): Date | undefined {
+    if (!value) return undefined;
+    const [year, month, day] = value.split("-").map((v) => Number(v));
+    if (!year || !month || !day) return undefined;
+    return new Date(year, month - 1, day);
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Fluxo de Caixa</h1>
-        <Button 
+        <Button
           variant="blue"
+          className="rounded-md px-6 py-2 text-base font-semibold"
           onClick={() => navigate("/financeiro/incluir-movimentacao")}
         >
           Nova Movimentação
         </Button>
       </div>
       <Card>
-        <CardContent className="pt-6">
-          {/* Linha 1 filtros: conta, período, situação */}
+        <CardContent className="pt-6 pb-6">
+          {/* Filtros */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="col-span-1 min-w-[180px]">
-              <Select
-                value={contaCorrenteId}
-                onValueChange={setContaCorrenteId}
-              >
-                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Conta Corrente" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200">
-                  <SelectItem value="todos">Todas Contas</SelectItem>
-                  {mockContasCorrentes.map(cc => (
-                    <SelectItem key={cc.id} value={cc.id}>{cc.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-1 min-w-[180px]">
-              <Select
-                value={periodo}
-                onValueChange={v => handlePeriodoChange(v as any)}
-              >
-                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Período" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200">
-                  <SelectItem value="mes_atual">Mês Atual</SelectItem>
-                  <SelectItem value="mes_anterior">Mês Anterior</SelectItem>
-                  <SelectItem value="personalizado">Selecionar Período</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-1 flex flex-row gap-2">
-              <div className="flex flex-col flex-1">
-                <label className="text-xs font-medium">Data Inicial</label>
-                <Input
-                  type="date"
-                  className="min-w-[120px] max-w-[140px]"
-                  value={dataInicial}
-                  onChange={e => setDataInicial(e.target.value)}
-                  disabled={periodo !== "personalizado"}
-                />
-              </div>
-              <div className="flex flex-col flex-1">
-                <label className="text-xs font-medium">Data Final</label>
-                <Input
-                  type="date"
-                  className="min-w-[120px] max-w-[140px]"
-                  value={dataFinal}
-                  onChange={e => setDataFinal(e.target.value)}
-                  disabled={periodo !== "personalizado"}
-                />
+            {/* Conta Corrente */}
+            <div className="col-span-1">
+              <div className="flex flex-col">
+                <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
+                  <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                    <Filter className="mr-2 h-5 w-5 text-neutral-400" />
+                    <SelectValue placeholder="Conta Corrente" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border">
+                    {mockContasCorrentes.map((cc) => (
+                      <SelectItem key={cc.id} value={cc.id}>
+                        {cc.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <div className="col-span-1 min-w-[160px]">
-              <Select
-                value={situacao}
-                onValueChange={v => setSituacao(v as any)}
-              >
-                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
-                  <Filter className="mr-2 h-4 w-4" />
+            {/* Período */}
+            <div className="col-span-1">
+              <div className="flex flex-col">
+                <Select value={periodo} onValueChange={(v) => handlePeriodoChange(v as any)}>
+                  <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                    <CalendarIcon className="mr-2 h-5 w-5 text-neutral-400" />
+                    <SelectValue placeholder="Selecionar Período" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border">
+                    <SelectItem value="mes_atual">Mês Atual</SelectItem>
+                    <SelectItem value="mes_anterior">Mês Anterior</SelectItem>
+                    <SelectItem value="personalizado">Selecionar Período</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {/* Data Inicial */}
+            <div className="col-span-1 flex flex-col gap-1">
+              <label className="text-xs font-medium mb-1 ml-1">Data Inicial</label>
+              <div className="relative">
+                <Input
+                  type="date"
+                  className="bg-white border rounded-lg h-[52px] pl-10 text-base font-normal"
+                  value={valueDateInput(dataInicial)}
+                  onChange={(e) => setDataInicial(parseDateFromInput(e.target.value))}
+                  disabled={periodo !== "personalizado"}
+                  placeholder="dd/mm/aaaa"
+                />
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+              </div>
+            </div>
+            {/* Data Final */}
+            <div className="col-span-1 flex flex-col gap-1">
+              <label className="text-xs font-medium mb-1 ml-1">Data Final</label>
+              <div className="relative">
+                <Input
+                  type="date"
+                  className="bg-white border rounded-lg h-[52px] pl-10 text-base font-normal"
+                  value={valueDateInput(dataFinal)}
+                  onChange={(e) => setDataFinal(parseDateFromInput(e.target.value))}
+                  disabled={periodo !== "personalizado"}
+                  placeholder="dd/mm/aaaa"
+                />
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+            {/* Situação */}
+            <div className="col-span-1">
+              <Select value={situacao} onValueChange={v => setSituacao(v as "todos" | "conciliado" | "nao_conciliado")}>
+                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                  <Filter className="mr-2 h-5 w-5 text-neutral-400" />
                   <SelectValue placeholder="Situação" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200">
+                <SelectContent className="bg-white border">
                   <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="conciliado" className="text-green-600">Conciliados</SelectItem>
                   <SelectItem value="nao_conciliado" className="text-blue-600">Não Conciliados</SelectItem>
@@ -243,23 +287,21 @@ export default function FluxoCaixaPage() {
               </Select>
             </div>
           </div>
-          {/* Linha de busca opcional abaixo */}
+          {/* Linha de busca */}
           <div className="mt-4 flex flex-row gap-2">
             <div className="relative flex-1 min-w-[180px]">
-              <button
-                type="button"
-                className="absolute left-3 top-3 z-10 p-0 m-0 bg-transparent border-none cursor-pointer text-muted-foreground"
+              <span
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-0 m-0 bg-transparent border-none cursor-pointer text-neutral-400"
                 style={{ lineHeight: 0 }}
                 tabIndex={-1}
                 aria-label="Buscar"
-                onClick={() => document.getElementById("busca-extrato")?.focus()}
               >
                 <Search className="h-5 w-5" />
-              </button>
+              </span>
               <Input
                 id="busca-extrato"
                 placeholder="Buscar favorecido ou descrição"
-                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
+                className="pl-10 bg-white border rounded-lg h-[52px] text-base font-normal border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 autoComplete="off"
@@ -292,7 +334,7 @@ export default function FluxoCaixaPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredExtrato.map(linha => (
+                    filteredExtrato.map((linha) => (
                       <TableRow key={linha.id}>
                         <TableCell>{formatDateBR(linha.data)}</TableCell>
                         <TableCell>{linha.favorecido}</TableCell>
@@ -309,7 +351,7 @@ export default function FluxoCaixaPage() {
                               className="text-blue-500 hover:bg-blue-100"
                               onClick={() => handleEdit(linha.id)}
                             >
-                              <Edit className="h-4 w-4" />
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M16.862 4.487a2.5 2.5 0 1 1 3.535 3.536L7.5 20.918l-4.242.707.707-4.243L16.862 4.487z" /></svg>
                               <span className="sr-only">Editar</span>
                             </Button>
                             <Button
@@ -318,7 +360,7 @@ export default function FluxoCaixaPage() {
                               className="text-red-500 hover:bg-red-100"
                               onClick={() => handleDelete(linha.id)}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                               <span className="sr-only">Excluir</span>
                             </Button>
                           </div>
