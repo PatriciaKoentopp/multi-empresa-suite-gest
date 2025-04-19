@@ -21,6 +21,7 @@ import ContasAPagarPage from "./pages/financeiro/contas-a-pagar";
 import FluxoCaixaPage from "./pages/financeiro/fluxo-caixa";
 import ServicosPage from "./pages/vendas/servicos";
 import OrcamentoPage from "./pages/vendas/orcamento";
+import FaturamentoPage from "./pages/vendas/faturamento";
 
 const queryClient = new QueryClient();
 
@@ -80,8 +81,9 @@ const App = () => (
                 {/* Vendas routes */}
                 <Route path="/vendas/servicos" element={<ServicosPage />} />
                 <Route path="/vendas/orcamento" element={<OrcamentoPage />} />
+                {/* Nova página faturamento */}
+                <Route path="/vendas/faturamento" element={<FaturamentoPage />} />
               </Route>
-              
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>

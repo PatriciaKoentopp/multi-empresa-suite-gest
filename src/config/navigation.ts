@@ -100,7 +100,7 @@ export const mainNavigation: ModuleNavItem[] = [
       {
         name: "Faturamento",
         href: "/vendas/faturamento",
-        description: "Emissão de notas fiscais"
+        description: "Lista de orçamentos implantados"
       },
       {
         name: "Dashboard",
