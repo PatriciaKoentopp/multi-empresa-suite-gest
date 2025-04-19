@@ -23,6 +23,7 @@ const initialContasAPagar: ContaPagar[] = [
     dataVencimento: new Date("2024-05-05"),
     dataPagamento: new Date("2024-05-06"),
     status: "pago",
+    valor: 1800.45,
   },
   {
     id: "2",
@@ -31,6 +32,7 @@ const initialContasAPagar: ContaPagar[] = [
     dataVencimento: new Date("2024-03-25"),
     dataPagamento: undefined,
     status: "em_aberto",
+    valor: 950,
   },
   {
     id: "3",
@@ -39,6 +41,7 @@ const initialContasAPagar: ContaPagar[] = [
     dataVencimento: new Date("2024-03-10"),
     dataPagamento: new Date("2024-03-18"),
     status: "pago_em_atraso",
+    valor: 239.99,
   },
 ];
 
@@ -98,7 +101,7 @@ export default function ContasAPagarPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Contas a Pagar</h1>
         <Button variant="blue" disabled>
           Nova Conta a Pagar
@@ -106,8 +109,9 @@ export default function ContasAPagarPage() {
       </div>
       <Card>
         <CardContent className="pt-6">
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6 flex-wrap">
-            <div className="relative grow min-w-[240px] max-w-full basis-[300px]">
+          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-6">
+            {/* Busca */}
+            <div className="relative col-span-2 min-w-[240px]">
               <button
                 type="button"
                 className="absolute left-3 top-3 z-10 p-0 m-0 bg-transparent border-none cursor-pointer text-muted-foreground hover:text-blue-500"
@@ -121,7 +125,7 @@ export default function ContasAPagarPage() {
               <Input
                 ref={inputBuscaRef}
                 placeholder="Buscar favorecido ou descrição"
-                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px]"
+                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => {
@@ -132,12 +136,13 @@ export default function ContasAPagarPage() {
                 autoComplete="off"
               />
             </div>
-            <div className="w-full sm:w-auto">
+            {/* Status */}
+            <div className="col-span-1 min-w-[180px]">
               <Select
                 value={statusFilter}
                 onValueChange={(v) => setStatusFilter(v as any)}
               >
-                <SelectTrigger className="w-[180px] bg-white dark:bg-gray-900">
+                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
                   <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -149,9 +154,10 @@ export default function ContasAPagarPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex w-full sm:w-auto flex-col gap-1 sm:flex-row sm:gap-2">
-              <div>
-                <label className="text-xs font-medium">Vencimento de</label>
+            {/* Filtros de Vencimento */}
+            <div className="flex flex-row gap-2 col-span-2">
+              <div className="flex flex-col flex-1">
+                <label className="text-xs font-medium">Venc. de</label>
                 <Input
                   type="date"
                   className="min-w-[120px] max-w-[140px]"
@@ -160,7 +166,7 @@ export default function ContasAPagarPage() {
                   onChange={e => setDataVencInicio(e.target.value)}
                 />
               </div>
-              <div>
+              <div className="flex flex-col flex-1">
                 <label className="text-xs font-medium">até</label>
                 <Input
                   type="date"
@@ -171,9 +177,10 @@ export default function ContasAPagarPage() {
                 />
               </div>
             </div>
-            <div className="flex w-full sm:w-auto flex-col gap-1 sm:flex-row sm:gap-2">
-              <div>
-                <label className="text-xs font-medium">Pagamento de</label>
+            {/* Filtros de Pagamento */}
+            <div className="flex flex-row gap-2 col-span-2">
+              <div className="flex flex-col flex-1">
+                <label className="text-xs font-medium">Pagto. de</label>
                 <Input
                   type="date"
                   className="min-w-[120px] max-w-[140px]"
@@ -182,7 +189,7 @@ export default function ContasAPagarPage() {
                   onChange={e => setDataPagInicio(e.target.value)}
                 />
               </div>
-              <div>
+              <div className="flex flex-col flex-1">
                 <label className="text-xs font-medium">até</label>
                 <Input
                   type="date"

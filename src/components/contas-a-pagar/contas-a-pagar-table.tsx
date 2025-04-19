@@ -17,6 +17,7 @@ export interface ContaPagar {
   dataVencimento: Date;
   dataPagamento?: Date;
   status: "pago" | "pago_em_atraso" | "em_aberto";
+  valor: number; // <- Novo campo obrigatório!
 }
 
 interface ContasAPagarTableProps {
@@ -29,6 +30,15 @@ interface ContasAPagarTableProps {
 function formatDateBR(date?: Date) {
   if (!date) return "-";
   return date.toLocaleDateString("pt-BR");
+}
+
+function formatCurrency(valor?: number) {
+  if (valor === undefined) return "-";
+  return valor.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+  });
 }
 
 function getStatusLabel(status: ContaPagar["status"]) {
@@ -55,13 +65,14 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
             <TableHead>Favorecido</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Valor</TableHead>
             <TableHead className="w-[120px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {contas.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                 Nenhum resultado encontrado
               </TableCell>
             </TableRow>
@@ -73,6 +84,7 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
                 <TableCell>{conta.favorecido}</TableCell>
                 <TableCell>{conta.descricao}</TableCell>
                 <TableCell>{getStatusLabel(conta.status)}</TableCell>
+                <TableCell>{formatCurrency(conta.valor)}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button
@@ -109,3 +121,4 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
     </div>
   );
 }
+
