@@ -1,5 +1,4 @@
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -54,6 +53,8 @@ export default function ContasAPagarPage() {
   const [dataPagInicio, setDataPagInicio] = useState<string>("");
   const [dataPagFim, setDataPagFim] = useState<string>("");
 
+  const inputBuscaRef = useRef<HTMLInputElement>(null);
+
   function formatInputDate(date: Date | undefined) {
     if (!date) return "";
     return format(date, "yyyy-MM-dd");
@@ -91,6 +92,13 @@ export default function ContasAPagarPage() {
     });
   }, [contas, searchTerm, statusFilter, dataVencInicio, dataVencFim, dataPagInicio, dataPagFim]);
 
+  function handleLupaClick() {
+    // Apenas garante o foco no campo.
+    inputBuscaRef.current?.focus();
+    // Como a busca já é feita automaticamente pelo valor do campo, nada adicional aqui.
+    // Se precisar tratar click, use este método!
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -103,12 +111,28 @@ export default function ContasAPagarPage() {
         <CardContent className="pt-6">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <button
+                type="button"
+                className="absolute left-3 top-3 z-10 p-0 m-0 bg-transparent border-none cursor-pointer text-muted-foreground hover:text-blue-500"
+                style={{ lineHeight: 0 }}
+                onClick={handleLupaClick}
+                tabIndex={-1}
+                aria-label="Buscar"
+              >
+                <Search className="h-4 w-4" />
+              </button>
               <Input
+                ref={inputBuscaRef}
                 placeholder="Buscar favorecido ou descrição..."
                 className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    // Já faz busca automaticamente, mas pode garantir foco
+                    inputBuscaRef.current?.blur();
+                  }
+                }}
               />
             </div>
             <Select
