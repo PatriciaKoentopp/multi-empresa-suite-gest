@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
@@ -19,6 +18,77 @@ interface Parcela {
   numero: number;
   valor: number;
   vencimento: Date;
+}
+
+// Utilitário para converter DD/MM/YYYY <-> Date
+function parseDateBr(input: string): Date | null {
+  const [dia, mes, ano] = input.split("/");
+  if (!dia || !mes || !ano) return null;
+  const d = Number(dia), m = Number(mes) - 1, y = Number(ano);
+  if (
+    isNaN(d) || isNaN(m) || isNaN(y) ||
+    d < 1 || d > 31 || m < 0 || m > 11 || y < 1000
+  ) return null;
+  const dt = new Date(y, m, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== m || dt.getDate() !== d) return null;
+  return dt;
+}
+
+// Campo de input de data (igual campo aniversário)
+// Permite digitação manual DD/MM/YYYY e seleção via calendário
+function DateInput({ label, value, onChange }: { label: string, value?: Date, onChange: (d?: Date) => void }) {
+  const [inputValue, setInputValue] = React.useState(value ? format(value, "dd/MM/yyyy") : "");
+
+  React.useEffect(() => {
+    setInputValue(value ? format(value, "dd/MM/yyyy") : "");
+  }, [value]);
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    // Limita a apenas números e barra
+    let val = e.target.value.replace(/[^\d/]/g, "")
+      .replace(/^(\d{2})(\d)/, "$1/$2")
+      .replace(/^(\d{2}\/\d{2})(\d)/, "$1/$2")
+      .slice(0, 10);
+    setInputValue(val);
+    const dt = parseDateBr(val);
+    onChange(dt || undefined);
+  }
+  function handleCalendarSelect(dt?: Date) {
+    if (dt) {
+      setInputValue(format(dt, "dd/MM/yyyy"));
+      onChange(dt);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Label>{label}</Label>
+      <div className="flex items-center gap-2">
+        <Input
+          value={inputValue}
+          onChange={handleChange}
+          placeholder="DD/MM/AAAA"
+          className="w-[120px]"
+          maxLength={10}
+          inputMode="numeric"
+        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="icon" tabIndex={-1}><CalendarIcon className="w-4 h-4" /></Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 bg-white shadow-lg border border-gray-200" align="start">
+            <Calendar
+              mode="single"
+              selected={value}
+              onSelect={handleCalendarSelect}
+              initialFocus
+              className={cn("p-3 pointer-events-auto bg-white")}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
 }
 
 export default function IncluirMovimentacaoModal() {
@@ -72,62 +142,10 @@ export default function IncluirMovimentacaoModal() {
     // eslint-disable-next-line
   }, [valor, numParcelas, dataPrimeiroVenc]);
 
-  // Helpers para formatar datas DD/MM/YYYY como input e saída
-  function toDateInput(date?: Date) {
-    if (!date) return "";
-    return format(date, "dd/MM/yyyy", { locale: ptBR });
-  }
-  function fromDateInput(value: string): Date | undefined {
-    const [day, month, year] = value.split("/");
-    if (!day || !month || !year) return undefined;
-    return new Date(Number(year), Number(month) - 1, Number(day));
-  }
-
-  // Campo para digitação manual DD/MM/YYYY
-  function DateInput({ label, value, onChange }: { label: string, value?: Date, onChange: (d?: Date) => void }) {
-    const [text, setText] = useState(value ? toDateInput(value) : "");
-    React.useEffect(() => {
-      setText(value ? toDateInput(value) : "");
-    }, [value]);
-    function handleBlur() {
-      const v = fromDateInput(text);
-      if (v) onChange(v);
-    }
-    return (
-      <div className="flex flex-col gap-1">
-        <Label>{label}</Label>
-        <div className="flex items-center gap-2">
-          <Input
-            value={text}
-            onChange={e => setText(e.target.value.replace(/[^0-9/]/g, ""))}
-            onBlur={handleBlur}
-            placeholder="DD/MM/AAAA"
-            className="w-[120px]"
-            maxLength={10}
-            inputMode="numeric"
-          />
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="icon"><CalendarIcon className="w-4 h-4" /></Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={value}
-                onSelect={d => { if (d) { onChange(d); setText(toDateInput(d)); } }}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-    );
-  }
+  // Trocar helpers para manter conversão correta para YYYY-MM-DD ao salvar
 
   function handleSalvar() {
-    // Aqui faz o envio para o backend, convertendo datas para YYYY-MM-DD
-    // Exemplo:
+    // Conversão correta para insert/back-end -> YYYY-MM-DD
     const cadastrado = {
       operacao,
       dataEmissao: dataEmissao ? format(dataEmissao, "yyyy-MM-dd") : undefined,
@@ -257,7 +275,7 @@ export default function IncluirMovimentacaoModal() {
                 <div key={parc.numero} className="grid grid-cols-3 gap-2 text-sm mb-1">
                   <span>{parc.numero}</span>
                   <span>{parc.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-                  <span>{toDateInput(parc.vencimento)}</span>
+                  <span>{format(parc.vencimento, "dd/MM/yyyy")}</span>
                 </div>
               ))}
             </div>
@@ -277,3 +295,6 @@ export default function IncluirMovimentacaoModal() {
     </Dialog>
   );
 }
+
+// AVISO: Este arquivo está ficando muito longo (mais de 280 linhas!)
+// Considere pedir para eu refatorar em componentes menores!
