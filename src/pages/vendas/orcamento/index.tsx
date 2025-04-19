@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -161,10 +160,15 @@ export default function OrcamentoPage() {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Data */}
+              {/* Data - agora digitável */}
               <div className="w-full md:w-1/2">
                 <label className="block text-sm mb-1">Data</label>
-                <Input type="text" value={data} readOnly />
+                <Input
+                  type="text"
+                  value={data}
+                  onChange={e => setData(e.target.value)}
+                  placeholder="DD/MM/AAAA"
+                />
               </div>
             </div>
             <div className="flex flex-col md:flex-row gap-4">
@@ -344,4 +348,3 @@ export default function OrcamentoPage() {
     </div>
   );
 }
-
