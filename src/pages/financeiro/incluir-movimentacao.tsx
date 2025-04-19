@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CalendarIcon, DollarSign } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -295,10 +295,9 @@ export default function IncluirMovimentacaoPage() {
               <Label>Valor</Label>
               <div className="relative flex items-center">
                 <Input value={valor} onChange={handleValorChange} placeholder="0,00" inputMode="decimal" />
-                <span className="absolute right-7 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none select-none">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none select-none">
                   R$
                 </span>
-                <DollarSign className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               </div>
             </div>
             <div>
