@@ -94,7 +94,7 @@ export const mainNavigation: ModuleNavItem[] = [
       },
       {
         name: "Orçamento",
-        href: "/vendas/pedidos",
+        href: "/vendas/orcamento", // Corrigido para o caminho certo
         description: "Gerenciamento de pedidos"
       },
       {
