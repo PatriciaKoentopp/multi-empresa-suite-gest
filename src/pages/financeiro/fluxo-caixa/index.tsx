@@ -23,6 +23,8 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { MoreVertical, Check } from "lucide-react";
 
 // Dados mockados de contas correntes e extrato
 const mockContasCorrentes = [
@@ -147,6 +149,13 @@ export default function FluxoCaixaPage() {
   const [dataInicialStr, setDataInicialStr] = useState("");
   const [dataFinalStr, setDataFinalStr] = useState("");
 
+  // Alinhar campos - aumentar grid para 5 colunas
+  // Função de conciliação mockada
+  function handleConciliar(id: string) {
+    toast.success("Movimento conciliado!");
+    // Aqui atualizaria o status no extrato real.
+  }
+
   // Mantém sincronização interno quando estado muda por calendário
   function setDataInicialBR(date?: Date) {
     setDataInicial(date);
@@ -249,41 +258,37 @@ export default function FluxoCaixaPage() {
       </div>
       <Card>
         <CardContent className="pt-6 pb-6">
-          {/* Filtros */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          {/* Filtros: novo layout, grid 5 colunas, todos alinhados */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             {/* Conta Corrente */}
             <div className="col-span-1">
-              <div className="flex flex-col">
-                <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
-                  <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
-                    <Filter className="mr-2 h-5 w-5 text-neutral-400" />
-                    <SelectValue placeholder="Conta Corrente" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border">
-                    {mockContasCorrentes.map((cc) => (
-                      <SelectItem key={cc.id} value={cc.id}>
-                        {cc.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
+                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                  <Filter className="mr-2 h-5 w-5 text-neutral-400" />
+                  <SelectValue placeholder="Conta Corrente" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border">
+                  {mockContasCorrentes.map((cc) => (
+                    <SelectItem key={cc.id} value={cc.id}>
+                      {cc.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             {/* Período */}
             <div className="col-span-1">
-              <div className="flex flex-col">
-                <Select value={periodo} onValueChange={(v) => handlePeriodoChange(v as any)}>
-                  <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
-                    <CalendarIcon className="mr-2 h-5 w-5 text-neutral-400" />
-                    <SelectValue placeholder="Selecionar Período" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border">
-                    <SelectItem value="mes_atual">Mês Atual</SelectItem>
-                    <SelectItem value="mes_anterior">Mês Anterior</SelectItem>
-                    <SelectItem value="personalizado">Selecionar Período</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={periodo} onValueChange={(v) => handlePeriodoChange(v as any)}>
+                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                  <CalendarIcon className="mr-2 h-5 w-5 text-neutral-400" />
+                  <SelectValue placeholder="Selecionar Período" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border">
+                  <SelectItem value="mes_atual">Mês Atual</SelectItem>
+                  <SelectItem value="mes_anterior">Mês Anterior</SelectItem>
+                  <SelectItem value="personalizado">Selecionar Período</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {/* Data Inicial */}
             <div className="col-span-1 flex flex-col">
@@ -298,16 +303,23 @@ export default function FluxoCaixaPage() {
                   value={dataInicialStr}
                   maxLength={10}
                   onChange={e => {
-                    const masked = maskDateInput(e.target.value);
-                    setDataInicialStr(masked);
-                    const dt = brToDate(masked);
+                    let val = maskDateInput(e.target.value);
+                    setDataInicialStr(val);
+                    const dt = brToDate(val);
                     setDataInicial(dt);
                   }}
+                  onFocus={e => {
+                    if (!dataInicialStr) setDataInicialStr("");
+                  }}
                   onBlur={e => {
-                    // Se não for válido, limpa a data!
-                    if (!brToDate(e.target.value)) setDataInicial(undefined);
+                    // Se não for válido e não vazio, limpa a data e campo
+                    if (e.target.value && !brToDate(e.target.value)) {
+                      setDataInicial(undefined);
+                      setDataInicialStr("");
+                    }
                   }}
                   style={{ minHeight: 52 }}
+                  autoComplete="off"
                 />
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none" />
               </div>
@@ -325,21 +337,26 @@ export default function FluxoCaixaPage() {
                   value={dataFinalStr}
                   maxLength={10}
                   onChange={e => {
-                    const masked = maskDateInput(e.target.value);
-                    setDataFinalStr(masked);
-                    const dt = brToDate(masked);
+                    let val = maskDateInput(e.target.value);
+                    setDataFinalStr(val);
+                    const dt = brToDate(val);
                     setDataFinal(dt);
                   }}
+                  onFocus={e => {
+                    if (!dataFinalStr) setDataFinalStr("");
+                  }}
                   onBlur={e => {
-                    if (!brToDate(e.target.value)) setDataFinal(undefined);
+                    if (e.target.value && !brToDate(e.target.value)) {
+                      setDataFinal(undefined);
+                      setDataFinalStr("");
+                    }
                   }}
                   style={{ minHeight: 52 }}
+                  autoComplete="off"
                 />
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none" />
               </div>
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
             {/* Situação */}
             <div className="col-span-1">
               <Select value={situacao} onValueChange={v => setSituacao(v as "todos" | "conciliado" | "nao_conciliado")}>
@@ -408,7 +425,6 @@ export default function FluxoCaixaPage() {
                         <TableCell>{linha.favorecido}</TableCell>
                         <TableCell>{linha.descricao}</TableCell>
                         <TableCell>{linha.formaPagamento}</TableCell>
-                        {/* Observação: Corrige o erro TS2345 aqui */}
                         <TableCell>
                           {getStatusBadge(
                             linha.situacao === "conciliado"
@@ -419,26 +435,43 @@ export default function FluxoCaixaPage() {
                         <TableCell>{formatCurrency(linha.valor)}</TableCell>
                         <TableCell>{formatCurrency(linha.saldo)}</TableCell>
                         <TableCell className="text-center">
-                          <div className="flex justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-blue-500 hover:bg-blue-100"
-                              onClick={() => handleEdit(linha.id)}
-                            >
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M16.862 4.487a2.5 2.5 0 1 1 3.535 3.536L7.5 20.918l-4.242.707.707-4.243L16.862 4.487z" /></svg>
-                              <span className="sr-only">Editar</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-500 hover:bg-red-100"
-                              onClick={() => handleDelete(linha.id)}
-                            >
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                              <span className="sr-only">Excluir</span>
-                            </Button>
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-blue-500 hover:bg-blue-100"
+                                aria-label="Ações"
+                              >
+                                <MoreVertical size={20} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="bg-white z-50 min-w-[160px]">
+                              <DropdownMenuItem
+                                onClick={() => handleEdit(linha.id)}
+                                className="cursor-pointer"
+                              >
+                                <span className="text-blue-500 mr-2"><svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M16.862 4.487a2.5 2.5 0 1 1 3.535 3.536L7.5 20.918l-4.242.707.707-4.243L16.862 4.487z" /></svg></span>
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDelete(linha.id)}
+                                className="cursor-pointer"
+                              >
+                                <span className="text-red-500 mr-2"><svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></span>
+                                Excluir
+                              </DropdownMenuItem>
+                              {linha.situacao !== "conciliado" && (
+                                <DropdownMenuItem
+                                  onClick={() => handleConciliar(linha.id)}
+                                  className="cursor-pointer"
+                                >
+                                  <span className="text-green-600 mr-2"><Check className="inline" size={16} /></span>
+                                  Conciliar movimento
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))
