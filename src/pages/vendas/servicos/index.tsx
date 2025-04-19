@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
-import { Plus } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 type Servico = {
   id: string;
@@ -24,6 +26,7 @@ export default function ServicosPage() {
     valor: 0,
     status: "ativo"
   });
+  const [editId, setEditId] = useState<string | null>(null);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
@@ -47,23 +50,53 @@ export default function ServicosPage() {
       valor: 0,
       status: "ativo"
     });
+    setEditId(null);
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setServicos((ss) => [
-      ...ss,
-      { ...form, id: Date.now().toString() }
-    ]);
+    if (editId) {
+      setServicos((ss) =>
+        ss.map((s) => (s.id === editId ? { ...s, ...form } : s))
+      );
+      toast({ title: "Serviço atualizado com sucesso!", variant: "success" });
+    } else {
+      setServicos((ss) => [
+        ...ss,
+        { ...form, id: Date.now().toString() }
+      ]);
+      toast({ title: "Serviço cadastrado com sucesso!", variant: "success" });
+    }
     setShowForm(false);
     resetForm();
+  }
+
+  function handleEditar(servico: Servico) {
+    setForm({
+      nome: servico.nome,
+      descricao: servico.descricao ?? "",
+      valor: servico.valor,
+      status: servico.status
+    });
+    setEditId(servico.id);
+    setShowForm(true);
+  }
+
+  function handleExcluir(id: string) {
+    setServicos((ss) => ss.filter((s) => s.id !== id));
+    toast({ title: "Serviço excluído com sucesso!", variant: "success" });
+    // Se estiver editando este serviço, cancelar edição
+    if (editId === id) {
+      resetForm();
+      setShowForm(false);
+    }
   }
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Cadastro de Serviços</h2>
-        <Button variant="blue" onClick={() => setShowForm((s) => !s)}>
+        <Button variant="blue" onClick={() => { setShowForm((s) => !s); resetForm(); }}>
           <Plus className="mr-2" />
           Novo Serviço
         </Button>
@@ -72,7 +105,7 @@ export default function ServicosPage() {
       {showForm && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Novo Serviço</CardTitle>
+            <CardTitle>{editId ? "Editar Serviço" : "Novo Serviço"}</CardTitle>
           </CardHeader>
           <CardContent>
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -121,7 +154,7 @@ export default function ServicosPage() {
               </div>
               <div className="flex gap-2 mt-2">
                 <Button type="submit" variant="blue">
-                  Salvar
+                  {editId ? "Salvar Alterações" : "Salvar"}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => { setShowForm(false); resetForm(); }}>
                   Cancelar
@@ -147,6 +180,7 @@ export default function ServicosPage() {
                   <TableHead>Descrição</TableHead>
                   <TableHead>Valor (R$)</TableHead>
                   <TableHead>Situação</TableHead>
+                  <TableHead />
                 </TableRow>
               </thead>
               <TableBody>
@@ -161,6 +195,23 @@ export default function ServicosPage() {
                       <span className={s.status === "ativo" ? "text-green-600 font-semibold" : "text-gray-500"}>
                         {s.status === "ativo" ? "Ativo" : "Inativo"}
                       </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditar(s)}>
+                            <Edit className="mr-2" /> Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleExcluir(s.id)}>
+                            <Trash2 className="mr-2 text-red-600" /> Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
