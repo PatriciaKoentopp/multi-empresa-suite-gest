@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,14 +18,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import {
-  ContextMenu,
-  ContextMenuTrigger,
-  ContextMenuContent,
-  ContextMenuItem,
-} from "@/components/ui/context-menu";
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem
+} from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
+import { Edit, Trash2, MoreHorizontal } from "lucide-react";
 
 // Mock data corrigido para Orçamento e Venda
 const mockFaturamentos = [
@@ -248,26 +248,31 @@ export default function FaturamentoPage() {
                     {item.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   </TableCell>
                   <TableCell className="text-center">
-                    {/* Menu contextual correto, com clique 100% funcional */}
-                    <ContextMenu>
-                      <ContextMenuTrigger asChild>
-                        <span>
-                          <Button variant="ghost" size="icon" title="Ações">
-                            <MoreHorizontal className="w-5 h-5 text-[#333]" />
-                          </Button>
-                        </span>
-                      </ContextMenuTrigger>
-                      <ContextMenuContent className="z-50 bg-white min-w-[110px] shadow-lg">
-                        <ContextMenuItem>
-                          <Edit className="w-4 h-4 mr-2 text-[#0EA5E9]" />
+                    {/* Troca para DropdownMenu do padrão da página de serviços */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100" title="Ações">
+                          <MoreHorizontal className="w-5 h-5 text-[#333]" />
+                          <span className="sr-only">Abrir menu de ações</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
+                        <DropdownMenuItem
+                          // Aqui adiciona ação real quando quiser
+                          className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        >
+                          <Edit className="w-4 h-4" />
                           Editar
-                        </ContextMenuItem>
-                        <ContextMenuItem>
-                          <Trash2 className="w-4 h-4 mr-2 text-red-500" />
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          // Aqui adiciona ação real quando quiser
+                          className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
                           Excluir
-                        </ContextMenuItem>
-                      </ContextMenuContent>
-                    </ContextMenu>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
@@ -278,4 +283,3 @@ export default function FaturamentoPage() {
     </div>
   );
 }
-
