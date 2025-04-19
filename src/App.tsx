@@ -20,6 +20,7 @@ import IncluirMovimentacaoModal from "./pages/financeiro/incluir-movimentacao";
 import ContasAPagarPage from "./pages/financeiro/contas-a-pagar";
 import FluxoCaixaPage from "./pages/financeiro/fluxo-caixa";
 import ServicosPage from "./pages/vendas/servicos";
+import OrcamentoPage from "./pages/vendas/orcamento";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ const App = () => (
                 
                 {/* Vendas routes */}
                 <Route path="/vendas/servicos" element={<ServicosPage />} />
+                <Route path="/vendas/orcamento" element={<OrcamentoPage />} />
               </Route>
               
               {/* Catch-all route */}
