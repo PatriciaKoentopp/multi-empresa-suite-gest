@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -220,16 +221,25 @@ export default function ServicosPage() {
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal />
+                          <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Abrir menu de ações</span>
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditar(s)}>
-                            <Edit className="mr-2" /> Editar
+                        <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
+                          <DropdownMenuItem
+                            onClick={() => handleEditar(s)}
+                            className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                          >
+                            <Edit className="h-4 w-4" />
+                            Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleExcluir(s.id)}>
-                            <Trash2 className="mr-2 text-red-600" /> Excluir
+                          <DropdownMenuItem
+                            onClick={() => handleExcluir(s.id)}
+                            className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
