@@ -204,7 +204,7 @@ export default function FluxoCaixaPage() {
       <Card>
         <CardContent className="pt-6 pb-6">
           {/* Filtros */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             {/* Conta Corrente */}
             <div className="col-span-1">
               <div className="flex flex-col">
@@ -240,7 +240,7 @@ export default function FluxoCaixaPage() {
               </div>
             </div>
             {/* Data Inicial */}
-            <div className="col-span-1 flex flex-col gap-1">
+            <div className="col-span-1 flex flex-col">
               <label className="text-xs font-medium mb-1 ml-1">Data Inicial</label>
               <div className="relative">
                 <Input
@@ -250,12 +250,13 @@ export default function FluxoCaixaPage() {
                   onChange={(e) => setDataInicial(parseDateFromInput(e.target.value))}
                   disabled={periodo !== "personalizado"}
                   placeholder="dd/mm/aaaa"
+                  style={{ minHeight: 52 }}
                 />
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none" />
               </div>
             </div>
             {/* Data Final */}
-            <div className="col-span-1 flex flex-col gap-1">
+            <div className="col-span-1 flex flex-col">
               <label className="text-xs font-medium mb-1 ml-1">Data Final</label>
               <div className="relative">
                 <Input
@@ -265,8 +266,9 @@ export default function FluxoCaixaPage() {
                   onChange={(e) => setDataFinal(parseDateFromInput(e.target.value))}
                   disabled={periodo !== "personalizado"}
                   placeholder="dd/mm/aaaa"
+                  style={{ minHeight: 52 }}
                 />
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -339,11 +341,11 @@ export default function FluxoCaixaPage() {
                         <TableCell>{linha.favorecido}</TableCell>
                         <TableCell>{linha.descricao}</TableCell>
                         <TableCell>{linha.formaPagamento}</TableCell>
-                        {/* Aqui é feita a tipagem correta para getStatusBadge */}
+                        {/* Observação: Corrige o erro TS2345 aqui */}
                         <TableCell>
                           {getStatusBadge(
-                            linha.situacao === "conciliado" || linha.situacao === "nao_conciliado"
-                              ? linha.situacao
+                            linha.situacao === "conciliado"
+                              ? "conciliado"
                               : "nao_conciliado"
                           )}
                         </TableCell>
