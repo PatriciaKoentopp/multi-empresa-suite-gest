@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import ptBR from "date-fns/locale/pt-BR";
+import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
@@ -95,23 +95,27 @@ export default function FaturamentoPage() {
     <div className="flex flex-col gap-4">
       {/* Filtros */}
       <div className="flex flex-wrap gap-2 items-center bg-white border p-4 rounded-md mb-1">
-        <Input
-          placeholder="Buscar por código, favorecido ou projeto"
-          value={busca}
-          onChange={e => setBusca(e.target.value)}
-          className="max-w-xs"
-          startIcon={<Search className="text-gray-400" />}
-        />
+        {/* Campo de busca com ícone ao lado, como Favoritos */}
+        <div className="relative flex items-center max-w-xs">
+          <Search className="absolute left-2 text-gray-400 h-4 w-4 pointer-events-none" />
+          <Input
+            placeholder="Buscar por código, favorecido ou projeto"
+            value={busca}
+            onChange={e => setBusca(e.target.value)}
+            className="pl-8"
+          />
+        </div>
 
         <Select value={tipo} onValueChange={setTipo}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos</SelectItem>
+            {/* O Select.Item deve ter valores válidos, não vazio! */}
             {tipos.map(opt => (
               <SelectItem key={opt} value={opt}>{opt}</SelectItem>
             ))}
+            <SelectItem value="">Todos</SelectItem>
           </SelectContent>
         </Select>
 
@@ -120,10 +124,10 @@ export default function FaturamentoPage() {
             <SelectValue placeholder="Favorecido" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos</SelectItem>
             {favorecidos.map(opt => (
               <SelectItem key={opt} value={opt}>{opt}</SelectItem>
             ))}
+            <SelectItem value="">Todos</SelectItem>
           </SelectContent>
         </Select>
 
