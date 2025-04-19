@@ -52,7 +52,7 @@ const mockFaturamentos = [
 ];
 
 // Opções exemplo para Tipo e Favorecido
-const tipos = ["Produto", "Serviço"];
+const tipos = ["Orçamento", "Venda"];
 const favorecidos = Array.from(new Set(mockFaturamentos.map(f => f.favorecido)));
 
 function formatDateBR(date: Date | undefined) {
@@ -82,6 +82,7 @@ export default function FaturamentoPage() {
           item.projeto?.toLowerCase()?.includes(busca.toLowerCase())
         )
       : true;
+    // aqui troca o filtro pelo novo tipo se estiver definido
     const tipoMatch = tipo ? item.tipo === tipo : true;
     const favMatch = favorecido ? item.favorecido === favorecido : true;
     const dataI_Match = dataInicial ? item.data >= dataInicial : true;
@@ -142,7 +143,8 @@ export default function FaturamentoPage() {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+          {/* Aqui forçamos cor de fundo branca no PopoverContent */}
+          <PopoverContent className="w-auto p-0 pointer-events-auto bg-white" align="start">
             <Calendar
               mode="single"
               selected={dataInicial}
@@ -168,7 +170,7 @@ export default function FaturamentoPage() {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+          <PopoverContent className="w-auto p-0 pointer-events-auto bg-white" align="start">
             <Calendar
               mode="single"
               selected={dataFinal}
