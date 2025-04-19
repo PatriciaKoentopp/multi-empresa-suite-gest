@@ -1,13 +1,15 @@
 
-import { useState } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Trash2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { Search, Edit, Trash2, MoreHorizontal } from "lucide-react";
 
 // Função para exibir badge do status no mesmo padrão de Contas a Pagar
 function getStatusBadge(status: "ativo" | "inativo") {
@@ -88,6 +90,24 @@ export default function ServicosPage() {
   });
   const [editId, setEditId] = useState<string | null>(null);
 
+  // Novos estados para filtro
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"todas" | "ativo" | "inativo">("todas");
+  const inputBuscaRef = useRef<HTMLInputElement>(null);
+
+  // Aplica filtro na listagem
+  const servicosFiltrados = useMemo(() => {
+    return servicos.filter((servico) => {
+      // Filtro texto: nome ou descrição
+      const textoBusca = (servico.nome + " " + (servico.descricao || ""))
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      // Filtro status
+      const statusOk = statusFilter === "todas" || servico.status === statusFilter;
+      return textoBusca && statusOk;
+    });
+  }, [servicos, searchTerm, statusFilter]);
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
     setForm((f) => ({
@@ -151,6 +171,10 @@ export default function ServicosPage() {
     }
   }
 
+  function handleLupaClick() {
+    inputBuscaRef.current?.focus();
+  }
+
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-6">
       <div className="flex justify-between items-center">
@@ -160,6 +184,56 @@ export default function ServicosPage() {
           Novo Serviço
         </Button>
       </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardContent className="pt-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Campo de busca */}
+            <div className="relative w-full md:w-1/2 min-w-[220px]">
+              <button
+                type="button"
+                className="absolute left-3 top-2.5 z-10 p-0 bg-transparent border-none cursor-pointer text-muted-foreground hover:text-blue-500"
+                style={{ lineHeight: 0 }}
+                onClick={handleLupaClick}
+                tabIndex={-1}
+                aria-label="Buscar"
+              >
+                <Search className="h-5 w-5" />
+              </button>
+              <Input
+                ref={inputBuscaRef}
+                placeholder="Buscar serviço ou descrição"
+                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    inputBuscaRef.current?.blur();
+                  }
+                }}
+                autoComplete="off"
+              />
+            </div>
+            {/* Select de status */}
+            <div className="w-full md:w-40">
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => setStatusFilter(v as any)}
+              >
+                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-200">
+                  <SelectItem value="todas">Todos Status</SelectItem>
+                  <SelectItem value="ativo" className="text-green-700">Ativo</SelectItem>
+                  <SelectItem value="inativo" className="text-red-700">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {showForm && (
         <Card className="mb-6">
@@ -229,7 +303,7 @@ export default function ServicosPage() {
           <CardTitle>Serviços Cadastrados</CardTitle>
         </CardHeader>
         <CardContent>
-          {servicos.length === 0 ? (
+          {servicosFiltrados.length === 0 ? (
             <div className="text-neutral-500">Nenhum serviço cadastrado ainda.</div>
           ) : (
             <Table>
@@ -243,7 +317,7 @@ export default function ServicosPage() {
                 </TableRow>
               </thead>
               <TableBody>
-                {servicos.map(s => (
+                {servicosFiltrados.map(s => (
                   <TableRow key={s.id}>
                     <TableCell>{s.nome}</TableCell>
                     <TableCell>{s.descricao}</TableCell>
