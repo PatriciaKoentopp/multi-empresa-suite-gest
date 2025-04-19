@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
@@ -11,14 +12,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn, formatDate } from "@/lib/utils";
-
-type Operacao = "pagar" | "receber" | "transferencia";
-
-interface Parcela {
-  numero: number;
-  valor: number;
-  vencimento: Date;
-}
 
 // Utilitário para converter DD/MM/YYYY <-> Date
 function parseDateBr(input: string): Date | null {
@@ -34,8 +27,7 @@ function parseDateBr(input: string): Date | null {
   return dt;
 }
 
-// Campo de input de data (igual campo aniversário)
-// Permite digitação manual DD/MM/YYYY e seleção via calendário
+// Campo de input de data, permitindo digitação manual e seleção via calendário
 function DateInput({ label, value, onChange }: { label: string, value?: Date, onChange: (d?: Date) => void }) {
   const [inputValue, setInputValue] = React.useState(value ? format(value, "dd/MM/yyyy") : "");
 
@@ -91,6 +83,14 @@ function DateInput({ label, value, onChange }: { label: string, value?: Date, on
   );
 }
 
+type Operacao = "pagar" | "receber" | "transferencia";
+
+interface Parcela {
+  numero: number;
+  valor: number;
+  vencimento: Date;
+}
+
 export default function IncluirMovimentacaoModal() {
   const [open, setOpen] = useState(true);
   const [operacao, setOperacao] = useState<Operacao>("pagar");
@@ -124,25 +124,85 @@ export default function IncluirMovimentacaoModal() {
     { id: "4", nome: "Transferência" },
   ];
 
-  // Colunas: número, valor, vencimento (DD/MM/YYYY)
-  const calcularParcelas = () => {
-    let total = parseFloat(valor.replace(",", ".") || "0");
-    let n = Number(numParcelas) || 1;
-    let valorParcela = n > 0 ? Number((total / n).toFixed(2)) : total;
-    let vencs: Parcela[] = [];
-    for (let i = 0; i < n; i++) {
-      let dt = dataPrimeiroVenc ? addMonths(dataPrimeiroVenc, i) : new Date();
-      vencs.push({ numero: i + 1, valor: valorParcela, vencimento: dt });
+  // Função para tratar valor no padrão PT-BR (permite , e digita R$)
+  function handleValorChange(e: React.ChangeEvent<HTMLInputElement>) {
+    let val = e.target.value;
+    // Permite somente números, vírgulas e ponto para conversão interna
+    val = val.replace(/[^0-9.,]/g, "");
+    // Só permite apenas uma vírgula ou ponto decimal
+    if ((val.match(/[,.]/g) || []).length > 1) {
+      val = val.slice(0, -1);
     }
-    setParcelas(vencs);
-  };
+    setValor(val);
+  }
 
+  // Função para calcular parcelas e corrigir a última em caso de dízima
+  function calcularParcelas(vlr: string, nParc: number, primeiroVenc?: Date, vencimentos?: Date[]) {
+    let total = parseFloat(
+      vlr.replace(/\./g, "").replace(",", ".") || "0"
+    );
+    let n = Number(nParc) || 1;
+    let base = Math.floor((total / n) * 100) / 100; // Trunca com 2 casas
+    let parcelasTmp: Parcela[] = [];
+
+    // Lista de vencimentos personalizada, se vier por edição
+    let vencList: Date[] = [];
+    if (vencimentos && vencimentos.length === n) {
+      vencList = vencimentos;
+    } else {
+      for (let i = 0; i < n; i++) {
+        vencList.push(primeiroVenc ? addMonths(primeiroVenc, i) : new Date());
+      }
+    }
+
+    let soma = 0;
+    for (let i = 0; i < n; i++) {
+      let valorParc = base;
+      // Última parcela: corrige para fechar o total
+      if (i === n - 1) {
+        valorParc = +(total - soma).toFixed(2);
+      } else {
+        soma += valorParc;
+      }
+      parcelasTmp.push({ numero: i + 1, valor: valorParc, vencimento: vencList[i] });
+    }
+    return parcelasTmp;
+  }
+
+  // Alterar parcelas ao mudar valor, quantidade ou vencimento inicial
   React.useEffect(() => {
-    calcularParcelas();
+    const novasParcelas = calcularParcelas(valor, numParcelas, dataPrimeiroVenc);
+    setParcelas(novasParcelas);
     // eslint-disable-next-line
   }, [valor, numParcelas, dataPrimeiroVenc]);
 
-  // Trocar helpers para manter conversão correta para YYYY-MM-DD ao salvar
+  // Atualiza data de vencimento de uma parcela específica, recalculando lista mantendo valores fechando total
+  function handleEditarDataVencimento(indice: number, dt: Date | undefined) {
+    if (!dt) return;
+    const novosVenc = parcelas.map((p, i) => (i === indice ? dt : p.vencimento));
+    const novaLista = calcularParcelas(valor, numParcelas, dataPrimeiroVenc, novosVenc);
+    setParcelas(novaLista);
+  }
+
+  // Atualiza valor de uma parcela e redistribui valores para manter o total, caso editado manualmente
+  function handleEditarValorParcela(indice: number, valStr: string) {
+    let valLimpo = valStr.replace(/[^0-9.,]/g, "").replace(",", ".");
+    let valNum = parseFloat(valLimpo || "0");
+    let novasParcelas = [...parcelas];
+    let somaOutras = novasParcelas.reduce((acc, curr, i) => i !== indice ? acc + curr.valor : acc, 0);
+    let total = parseFloat(valor.replace(/\./g, "").replace(",", ".") || "0");
+    // Última parcela sempre ajusta para fechar
+    if (indice === novasParcelas.length - 1) {
+      novasParcelas[indice].valor = +(total - somaOutras).toFixed(2);
+    } else {
+      novasParcelas[indice].valor = valNum;
+      // Atualiza última parcela para fechar total
+      novasParcelas[novasParcelas.length - 1].valor = +(total - novasParcelas
+        .slice(0, novasParcelas.length - 1)
+        .reduce((acc, p) => acc + p.valor, 0)).toFixed(2);
+    }
+    setParcelas(novasParcelas);
+  }
 
   function handleSalvar() {
     // Conversão correta para insert/back-end -> YYYY-MM-DD
@@ -154,7 +214,7 @@ export default function IncluirMovimentacaoModal() {
       favorecido,
       categoria,
       descricao,
-      valor: parseFloat(valor.replace(",", ".")),
+      valor: parseFloat(valor.replace(/\./g, "").replace(",", ".")),
       formaPagamento,
       numParcelas,
       parcelas: parcelas.map(p => ({
@@ -186,7 +246,7 @@ export default function IncluirMovimentacaoModal() {
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white z-50">
                   <SelectItem value="pagar">Pagar</SelectItem>
                   <SelectItem value="receber">Receber</SelectItem>
                   <SelectItem value="transferencia">Transferência</SelectItem>
@@ -205,7 +265,7 @@ export default function IncluirMovimentacaoModal() {
               <Label>Favorecido</Label>
               <Select value={favorecido} onValueChange={setFavorecido}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white z-50">
                   {favorecidos.map(f => (
                     <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
                   ))}
@@ -218,7 +278,7 @@ export default function IncluirMovimentacaoModal() {
               <Label>Categoria Financeira</Label>
               <Select value={categoria} onValueChange={setCategoria}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white z-50">
                   {categorias.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                   ))}
@@ -229,7 +289,7 @@ export default function IncluirMovimentacaoModal() {
               <Label>Forma de Pagamento</Label>
               <Select value={formaPagamento} onValueChange={setFormaPagamento}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white z-50">
                   {formasPagamento.map(c => (
                     <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
                   ))}
@@ -247,9 +307,13 @@ export default function IncluirMovimentacaoModal() {
               <div className="relative flex items-center">
                 <Input
                   value={valor}
-                  onChange={e => setValor(e.target.value.replace(/[^0-9,\.]/g, ""))}
+                  onChange={handleValorChange}
                   placeholder="0,00"
+                  inputMode="decimal"
                 />
+                <span className="absolute right-7 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none select-none">
+                  R$
+                </span>
                 <DollarSign className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               </div>
             </div>
@@ -271,11 +335,20 @@ export default function IncluirMovimentacaoModal() {
               <div className="grid grid-cols-3 gap-2 font-bold mb-1">
                 <span>Parcela</span><span>Valor (R$)</span><span>Vencimento</span>
               </div>
-              {parcelas.map(parc => (
-                <div key={parc.numero} className="grid grid-cols-3 gap-2 text-sm mb-1">
+              {parcelas.map((parc, i) => (
+                <div key={parc.numero} className="grid grid-cols-3 gap-2 text-sm mb-1 items-center">
                   <span>{parc.numero}</span>
-                  <span>{parc.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-                  <span>{format(parc.vencimento, "dd/MM/yyyy")}</span>
+                  <Input
+                    className="w-[90px]"
+                    value={parc.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    onChange={e => handleEditarValorParcela(i, e.target.value)}
+                    inputMode="decimal"
+                  />
+                  <DateInput
+                    label=""
+                    value={parc.vencimento}
+                    onChange={dt => handleEditarDataVencimento(i, dt)}
+                  />
                 </div>
               ))}
             </div>
@@ -296,5 +369,5 @@ export default function IncluirMovimentacaoModal() {
   );
 }
 
-// AVISO: Este arquivo está ficando muito longo (mais de 280 linhas!)
+// AVISO: Este arquivo está ficando muito longo (mais de 300 linhas!)
 // Considere pedir para eu refatorar em componentes menores!
