@@ -25,6 +25,7 @@ import {
   ContextMenuContent,
   ContextMenuItem,
 } from "@/components/ui/context-menu";
+import { useNavigate } from "react-router-dom";
 
 // Mock data corrigido para Orçamento e Venda
 const mockFaturamentos = [
@@ -78,6 +79,8 @@ export default function FaturamentoPage() {
   const [dataFinal, setDataFinal] = useState<Date>();
 
   const [faturamentos, setFaturamentos] = useState(mockFaturamentos);
+
+  const navigate = useNavigate();
 
   // Filtros aplicados
   const itemsFiltrados = faturamentos.filter(item => {
@@ -194,8 +197,16 @@ export default function FaturamentoPage() {
         </Button>
 
         <div className="ml-auto">
-          <Button variant="blue" size="icon" title="Novo Faturamento">
-            <span className="text-xl leading-none">+</span>
+          <Button
+            variant="blue"
+            size="default"
+            title="Incluir Orçamento"
+            className="flex gap-2 items-center"
+            onClick={() => navigate("/vendas/orcamento")}
+          >
+            <span>Incluir Orçamento</span>
+            {/* Ícone sempre à direita, padrão Favoritos */}
+            <svg xmlns="http://www.w3.org/2000/svg" className="lucide lucide-file-plus w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M9 15v-6M6 12h6m9 6V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2Z" /><path d="M15 2v4a2 2 0 0 0 2 2h4"/></svg>
           </Button>
         </div>
       </div>
