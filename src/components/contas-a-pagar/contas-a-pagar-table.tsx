@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
+  TableCell,
+  TableFooter,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Download, Trash2, MoreHorizontal } from "lucide-react";
@@ -75,6 +76,9 @@ function getStatusBadge(status: ContaPagar["status"]) {
 }
 
 export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: ContasAPagarTableProps) {
+  // Soma os valores exibidos na tabela
+  const totalValor = contas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
+
   return (
     <div className="border rounded-md">
       <Table>
@@ -142,7 +146,16 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
             ))
           )}
         </TableBody>
+        {/* Rodapé TOTAL */}
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={5} className="font-bold text-right">Total</TableCell>
+            <TableCell className="font-bold">{formatCurrency(totalValor)}</TableCell>
+            <TableCell />
+          </TableRow>
+        </TableFooter>
       </Table>
     </div>
   );
 }
+
