@@ -17,6 +17,7 @@ import PlanoContasPage from "./pages/contabil/plano-contas";
 import ContaCorrentePage from "./pages/cadastros/conta-corrente";
 import StyleGuidePage from "./pages/style-guide";
 import IncluirMovimentacaoModal from "./pages/financeiro/incluir-movimentacao";
+import ContasAPagarPage from "./pages/financeiro/contas-a-pagar";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
                 <Route path="/ajuda" element={<p className="p-4">Ajuda</p>} />
                  {/* Financeiro routes */}
                 <Route path="/financeiro/incluir-movimentacao" element={<IncluirMovimentacaoModal />} />
+                <Route path="/financeiro/contas-a-pagar" element={<ContasAPagarPage />} />
               </Route>
               
               {/* Catch-all route */}
