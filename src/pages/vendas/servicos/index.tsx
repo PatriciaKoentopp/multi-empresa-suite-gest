@@ -9,6 +9,22 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { MoreHorizontal, Edit, Trash2, Plus } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
+// Função para exibir badge do status no mesmo padrão de Contas a Pagar
+function getStatusBadge(status: "ativo" | "inativo") {
+  if (status === "ativo") {
+    return (
+      <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
+        Ativo
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
+      Inativo
+    </span>
+  );
+}
+
 type Servico = {
   id: string;
   nome: string;
@@ -39,6 +55,28 @@ export default function ServicosPage() {
       descricao: "Processo completo e orientações para encerramento.",
       valor: 950,
       status: "inativo"
+    },
+    // Novos mockados
+    {
+      id: "4",
+      nome: "Auditoria Contábil",
+      descricao: "Revisão e auditoria periódica das demonstrações financeiras.",
+      valor: 3500,
+      status: "ativo"
+    },
+    {
+      id: "5",
+      nome: "BPO Financeiro",
+      descricao: "Terceirização completa da rotina financeira.",
+      valor: 2500,
+      status: "inativo"
+    },
+    {
+      id: "6",
+      nome: "Elaboração de Contrato Social",
+      descricao: "Elaboração e atualização de contratos sociais empresariais.",
+      valor: 890,
+      status: "ativo"
     }
   ]);
   const [showForm, setShowForm] = useState(false);
@@ -107,7 +145,6 @@ export default function ServicosPage() {
   function handleExcluir(id: string) {
     setServicos((ss) => ss.filter((s) => s.id !== id));
     toast({ title: "Serviço excluído com sucesso!" });
-    // Se estiver editando este serviço, cancelar edição
     if (editId === id) {
       resetForm();
       setShowForm(false);
@@ -164,7 +201,7 @@ export default function ServicosPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1">Situação</label>
+                <label className="block text-sm mb-1">Status</label>
                 <Button
                   type="button"
                   variant={form.status === "ativo" ? "blue" : "outline"}
@@ -201,7 +238,7 @@ export default function ServicosPage() {
                   <TableHead>Nome</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Valor (R$)</TableHead>
-                  <TableHead>Situação</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead />
                 </TableRow>
               </thead>
@@ -214,9 +251,7 @@ export default function ServicosPage() {
                       {s.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </TableCell>
                     <TableCell>
-                      <span className={s.status === "ativo" ? "text-green-600 font-semibold" : "text-gray-500"}>
-                        {s.status === "ativo" ? "Ativo" : "Inativo"}
-                      </span>
+                      {getStatusBadge(s.status)}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
