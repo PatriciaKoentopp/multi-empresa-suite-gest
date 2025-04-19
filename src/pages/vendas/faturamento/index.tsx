@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -18,13 +19,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Edit, Trash2 } from "lucide-react";
+import { Search, Filter, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+} from "@/components/ui/context-menu";
 
-// Mock data para simular os orçamentos
+// Mock data corrigido para Orçamento e Venda
 const mockFaturamentos = [
   {
     id: "1",
-    tipo: "Produto",
+    tipo: "Orçamento",
     codigo: "1001",
     data: new Date("2024-04-01"),
     favorecido: "Maria da Silva",
@@ -33,7 +40,7 @@ const mockFaturamentos = [
   },
   {
     id: "2",
-    tipo: "Serviço",
+    tipo: "Venda",
     codigo: "1002",
     data: new Date("2024-04-09"),
     favorecido: "João Souza LTDA",
@@ -42,7 +49,7 @@ const mockFaturamentos = [
   },
   {
     id: "3",
-    tipo: "Produto",
+    tipo: "Orçamento",
     codigo: "1003",
     data: new Date("2024-04-12"),
     favorecido: "Acme Corp",
@@ -82,7 +89,7 @@ export default function FaturamentoPage() {
           item.projeto?.toLowerCase()?.includes(busca.toLowerCase())
         )
       : true;
-    // aqui troca o filtro pelo novo tipo se estiver definido
+    // filtro por Orçamento/Venda
     const tipoMatch = tipo ? item.tipo === tipo : true;
     const favMatch = favorecido ? item.favorecido === favorecido : true;
     const dataI_Match = dataInicial ? item.data >= dataInicial : true;
@@ -111,7 +118,6 @@ export default function FaturamentoPage() {
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
-            {/* TODOS OS ITENS DEVEM TER VALUE != "" */}
             {tipos.map(opt => (
               <SelectItem key={opt} value={opt}>{opt}</SelectItem>
             ))}
@@ -143,8 +149,8 @@ export default function FaturamentoPage() {
               )}
             </Button>
           </PopoverTrigger>
-          {/* Aqui forçamos cor de fundo branca no PopoverContent */}
-          <PopoverContent className="w-auto p-0 pointer-events-auto bg-white" align="start">
+          {/* Força cor de fundo branca no PopoverContent */}
+          <PopoverContent className="w-auto p-0 pointer-events-auto bg-white z-50" align="start">
             <Calendar
               mode="single"
               selected={dataInicial}
@@ -170,7 +176,7 @@ export default function FaturamentoPage() {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 pointer-events-auto bg-white" align="start">
+          <PopoverContent className="w-auto p-0 pointer-events-auto bg-white z-50" align="start">
             <Calendar
               mode="single"
               selected={dataFinal}
@@ -227,13 +233,25 @@ export default function FaturamentoPage() {
                   <TableCell className="text-right">
                     {item.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   </TableCell>
-                  <TableCell className="flex gap-1 justify-center">
-                    <Button variant="ghost" size="icon" title="Editar">
-                      <Edit className="text-[#0EA5E9]" />
-                    </Button>
-                    <Button variant="ghost" size="icon" title="Excluir">
-                      <Trash2 className="text-red-500" />
-                    </Button>
+                  <TableCell className="text-center">
+                    {/* Menu contextual no lugar dos botões */}
+                    <ContextMenu>
+                      <ContextMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" title="Ações">
+                          <MoreHorizontal className="w-5 h-5 text-[#0EA5E9]" />
+                        </Button>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent className="z-50 bg-white min-w-[110px]">
+                        <ContextMenuItem>
+                          <Edit className="w-4 h-4 mr-2 text-[#0EA5E9]" />
+                          Editar
+                        </ContextMenuItem>
+                        <ContextMenuItem>
+                          <Trash2 className="w-4 h-4 mr-2 text-red-500" />
+                          Excluir
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
                   </TableCell>
                 </TableRow>
               ))
