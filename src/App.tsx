@@ -77,7 +77,8 @@ const App = () => (
                  {/* Financeiro routes */}
                 <Route path="/financeiro/incluir-movimentacao" element={<IncluirMovimentacaoModal />} />
                 <Route path="/financeiro/contas-a-pagar" element={<ContasAPagarPage />} />
-                <Route path="/financeiro/contas-a-receber" element={<ContasAReceberPage />} />
+                {/* Corrigido: De /contas-a-receber para /contas-receber */}
+                <Route path="/financeiro/contas-receber" element={<ContasAReceberPage />} />
                 <Route path="/financeiro/fluxo-caixa" element={<FluxoCaixaPage />} />
                 
                 {/* Vendas routes */}
