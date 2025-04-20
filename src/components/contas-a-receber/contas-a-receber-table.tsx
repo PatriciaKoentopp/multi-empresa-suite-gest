@@ -25,6 +25,7 @@ export interface ContaReceber {
   dataRecebimento?: Date;
   status: "recebido" | "recebido_em_atraso" | "em_aberto";
   valor: number;
+  numeroParcela?: string; // novo campo (opcional para retrocompatibilidade)
 }
 
 // Badge para status (igual ao padrão Favoritos/Contas a Pagar)
@@ -84,6 +85,7 @@ export function ContasAReceberTable({ contas, onEdit, onBaixar, onDelete }: Cont
           <TableRow>
             <TableHead>Data de Vencimento</TableHead>
             <TableHead>Data de Recebimento</TableHead>
+            <TableHead>Título</TableHead>
             <TableHead>Cliente</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead>Status</TableHead>
@@ -94,7 +96,7 @@ export function ContasAReceberTable({ contas, onEdit, onBaixar, onDelete }: Cont
         <TableBody>
           {contas.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                 Nenhum resultado encontrado
               </TableCell>
             </TableRow>
@@ -103,6 +105,15 @@ export function ContasAReceberTable({ contas, onEdit, onBaixar, onDelete }: Cont
               <TableRow key={conta.id}>
                 <TableCell>{formatDateBR(conta.dataVencimento)}</TableCell>
                 <TableCell>{formatDateBR(conta.dataRecebimento)}</TableCell>
+                <TableCell>
+                  {conta.numeroParcela ? (
+                    <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
+                      {conta.numeroParcela}
+                    </span>
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
                 <TableCell>{conta.cliente}</TableCell>
                 <TableCell>{conta.descricao}</TableCell>
                 <TableCell>{getStatusBadge(conta.status)}</TableCell>
@@ -147,7 +158,7 @@ export function ContasAReceberTable({ contas, onEdit, onBaixar, onDelete }: Cont
         {/* Rodapé total */}
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={5} className="font-bold text-right">Total</TableCell>
+            <TableCell colSpan={6} className="font-bold text-right">Total</TableCell>
             <TableCell className="font-bold">{formatCurrency(totalValor)}</TableCell>
             <TableCell />
           </TableRow>
@@ -156,3 +167,4 @@ export function ContasAReceberTable({ contas, onEdit, onBaixar, onDelete }: Cont
     </div>
   );
 }
+
