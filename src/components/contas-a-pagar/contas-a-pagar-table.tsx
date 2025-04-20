@@ -26,6 +26,7 @@ export interface ContaPagar {
   dataPagamento?: Date;
   status: "pago" | "pago_em_atraso" | "em_aberto";
   valor: number;
+  numeroParcela?: string; // novo campo para número/documento
 }
 
 interface ContasAPagarTableProps {
@@ -49,7 +50,6 @@ function formatCurrency(valor?: number) {
   });
 }
 
-// Status visual igual ao usado em Favorecidos
 function getStatusBadge(status: ContaPagar["status"]) {
   switch (status) {
     case "pago":
@@ -76,7 +76,6 @@ function getStatusBadge(status: ContaPagar["status"]) {
 }
 
 export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: ContasAPagarTableProps) {
-  // Soma os valores exibidos na tabela
   const totalValor = contas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
 
   return (
@@ -86,6 +85,7 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
           <TableRow>
             <TableHead>Data de Vencimento</TableHead>
             <TableHead>Data de Pagamento</TableHead>
+            <TableHead>Título</TableHead>
             <TableHead>Favorecido</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead>Status</TableHead>
@@ -96,7 +96,7 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
         <TableBody>
           {contas.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                 Nenhum resultado encontrado
               </TableCell>
             </TableRow>
@@ -105,6 +105,15 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
               <TableRow key={conta.id}>
                 <TableCell>{formatDateBR(conta.dataVencimento)}</TableCell>
                 <TableCell>{formatDateBR(conta.dataPagamento)}</TableCell>
+                <TableCell>
+                  {conta.numeroParcela ? (
+                    <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
+                      {conta.numeroParcela}
+                    </span>
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
                 <TableCell>{conta.favorecido}</TableCell>
                 <TableCell>{conta.descricao}</TableCell>
                 <TableCell>{getStatusBadge(conta.status)}</TableCell>
@@ -146,10 +155,9 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
             ))
           )}
         </TableBody>
-        {/* Rodapé TOTAL */}
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={5} className="font-bold text-right">Total</TableCell>
+            <TableCell colSpan={6} className="font-bold text-right">Total</TableCell>
             <TableCell className="font-bold">{formatCurrency(totalValor)}</TableCell>
             <TableCell />
           </TableRow>
