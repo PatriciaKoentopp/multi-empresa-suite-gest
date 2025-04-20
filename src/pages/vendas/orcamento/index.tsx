@@ -33,7 +33,7 @@ const formasPagamento = [
 
 function gerarCodigoVenda(): string {
   // Gera um código único numérico para simulação (poderia ser mais robusto em produção)
-  return `ORC${Date.now().toString().slice(-7)}`;
+  return `${Date.now().toString().slice(-7)}`;
 }
 
 export default function OrcamentoPage() {
@@ -56,7 +56,11 @@ export default function OrcamentoPage() {
   // Cálculo das parcelas
   const getParcelas = () => {
     if (numeroParcelas <= 1) {
-      return [{ valor: total, dataVencimento: "" }];
+      return [{
+        valor: total,
+        dataVencimento: "",
+        numeroParcela: `${codigoVenda}/1`
+      }];
     }
     const valorParcela = Math.floor((total / numeroParcelas) * 100) / 100;
     const parcelas = [];
@@ -68,7 +72,11 @@ export default function OrcamentoPage() {
       } else {
         soma += valor;
       }
-      parcelas.push({ valor, dataVencimento: "" });
+      parcelas.push({
+        valor,
+        dataVencimento: "",
+        numeroParcela: `${codigoVenda}/${i + 1}`,
+      });
     }
     return parcelas;
   };
@@ -83,7 +91,9 @@ export default function OrcamentoPage() {
 
   // Atualiza parcela específica
   const handleParcelaDataChange = (idx: number, data: string) => {
-    setParcelas(prev => prev.map((parcela, i) => i === idx ? { ...parcela, dataVencimento: data } : parcela));
+    setParcelas(prev => prev.map((parcela, i) =>
+      i === idx ? { ...parcela, dataVencimento: data } : parcela
+    ));
   };
 
   // Atualiza quando muda número de parcelas ou valor total
@@ -305,8 +315,8 @@ export default function OrcamentoPage() {
                     <Input
                       type="text"
                       readOnly
-                      value={`Parcela ${idx+1} - ${parcela.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`}
-                      className="w-56"
+                      value={`Parcela ${parcela.numeroParcela} - ${parcela.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`}
+                      className="w-72"
                     />
                     <Input
                       type="date"
