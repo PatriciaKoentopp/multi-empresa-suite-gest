@@ -9,7 +9,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ContaCorrente } from "@/types/conta-corrente";
-import { PencilIcon, TrashIcon, EyeIcon } from "lucide-react";
+import { Pencil, Trash2, Eye, EllipsisVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 interface ContaCorrenteTableProps {
   contas: ContaCorrente[];
@@ -64,32 +70,37 @@ export function ContaCorrenteTable({
               </span>
             </TableCell>
             <TableCell>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onView(conta)}
-                  className="text-blue-500 hover:bg-blue-100 hover:text-blue-700"
-                >
-                  <EyeIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onEdit(conta)}
-                  className="text-blue-500 hover:bg-blue-100 hover:text-blue-700"
-                >
-                  <PencilIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDelete(conta.id)}
-                  className="text-red-500 hover:bg-red-100 hover:text-red-700"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </Button>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
+                    <EllipsisVertical className="h-4 w-4" />
+                    <span className="sr-only">Abrir menu de ações</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
+                  <DropdownMenuItem
+                    onClick={() => onView(conta)}
+                    className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Visualizar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onEdit(conta)}
+                    className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onDelete(conta.id)}
+                    className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Excluir
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </TableCell>
           </TableRow>
         ))}
@@ -97,4 +108,3 @@ export function ContaCorrenteTable({
     </Table>
   );
 }
-
