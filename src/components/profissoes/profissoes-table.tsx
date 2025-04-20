@@ -1,3 +1,4 @@
+
 import { Profissao } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,8 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Pencil, Trash2 } from "lucide-react";
+// Usar o ícone correto de três pontos do lucide-react
+import { EllipsisVertical } from "lucide-react";
 
 interface ProfissoesTableProps {
   profissoes: Profissao[];
@@ -55,24 +58,30 @@ export function ProfissoesTable({
                   </span>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(profissao)}
-                      className="text-blue-500 hover:bg-blue-100 hover:text-blue-700"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(profissao.id)}
-                      className="text-red-500 hover:bg-red-100 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
+                        <EllipsisVertical className="h-4 w-4" />
+                        <span className="sr-only">Abrir menu de ações</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
+                      <DropdownMenuItem
+                        onClick={() => onEdit(profissao)}
+                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onDelete(profissao.id)}
+                        className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))
@@ -82,3 +91,4 @@ export function ProfissoesTable({
     </div>
   );
 }
+
