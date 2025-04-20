@@ -406,7 +406,7 @@ export default function EmpresasPage() {
                 </div>
               </div>
 
-              {isEditing && <Button type="submit" variant="success">
+              {isEditing && <Button type="submit" variant="blue">
                   <Save className="mr-2 h-4 w-4" />
                   Salvar Alterações
                 </Button>}
