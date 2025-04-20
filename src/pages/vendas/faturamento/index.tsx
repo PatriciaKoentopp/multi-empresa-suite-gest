@@ -293,7 +293,7 @@ export default function FaturamentoPage() {
                         >
                           <Trash2 className="w-4 h-4" />
                           Excluir
-                        DropdownMenuItem>
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
