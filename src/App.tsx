@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +25,8 @@ import OrcamentoPage from "./pages/vendas/orcamento";
 import FaturamentoPage from "./pages/vendas/faturamento";
 import ContasAReceberPage from "./pages/financeiro/contas-a-receber";
 import TabelaPrecosPage from "./pages/vendas/tabela-precos";
+// IMPORTAR A PÁGINA DE USUÁRIOS
+import UsuariosPage from "./pages/admin/usuarios";
 
 const queryClient = new QueryClient();
 
@@ -48,7 +51,7 @@ const App = () => (
                 
                 {/* Admin routes */}
                 <Route path="/admin/empresas" element={<EmpresasPage />} />
-                <Route path="/admin/usuarios" element={<p className="p-4">Gerenciamento de Usuários</p>} />
+                <Route path="/admin/usuarios" element={<UsuariosPage />} />
                 <Route path="/admin/permissoes" element={<p className="p-4">Gestão de Permissões</p>} />
                 <Route path="/admin/parametros" element={<p className="p-4">Parâmetros do Sistema</p>} />
                 
@@ -100,3 +103,4 @@ const App = () => (
 );
 
 export default App;
+
