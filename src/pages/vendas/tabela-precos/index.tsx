@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Filter, Edit, Trash2, Eye, MoreVertical, Search } from "lucide-react";
+import { Plus, Filter, Edit, Trash2, Eye, MoreVertical, Search, Check, X } from "lucide-react";
 import { Table, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
@@ -16,6 +16,7 @@ type TabelaPreco = {
   nome: string;
   vigencia: Vigencia;
   servicos: { servicoId: number; nome: string; preco: number }[];
+  status?: "ativo" | "inativo";
 };
 
 // Mock dos serviços (igual à página serviços)
@@ -38,6 +39,7 @@ const MOCK_TABELAS: TabelaPreco[] = [
       { servicoId: 1, nome: "Consultoria Fiscal", preco: 710 },
       { servicoId: 2, nome: "Auditoria Contábil", preco: 3500 },
     ],
+    status: "ativo"
   },
   {
     id: 201,
@@ -47,6 +49,7 @@ const MOCK_TABELAS: TabelaPreco[] = [
       { servicoId: 3, nome: "Abertura de Empresa", preco: 1100 },
       { servicoId: 5, nome: "BPO Financeiro", preco: 2300 },
     ],
+    status: "ativo"
   },
   {
     id: 202,
@@ -56,6 +59,7 @@ const MOCK_TABELAS: TabelaPreco[] = [
       { servicoId: 4, nome: "Encerramento de Empresa", preco: 900 },
       { servicoId: 6, nome: "Elaboração de Contrato Social", preco: 968 },
     ],
+    status: "ativo"
   },
 ];
 
@@ -103,6 +107,7 @@ export default function TabelaPrecosPage() {
         {
           ...tab,
           id: Date.now(),
+          status: "ativo",  // Sempre ativa ao criar (pode ser ajustado depois)
         },
       ]);
       toast({ title: "Tabela de Preços criada com sucesso!" });
@@ -128,6 +133,7 @@ export default function TabelaPrecosPage() {
           className="flex gap-1"
           onClick={abrirNovo}
           title="Nova Tabela de Preços"
+          data-testid="botao-nova-tabela"
         >
           <Plus className="w-4 h-4" /> Nova Tabela
         </Button>
@@ -164,6 +170,7 @@ export default function TabelaPrecosPage() {
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead>Vigência</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Qtd. Serviços</TableHead>
               <TableHead />
             </TableRow>
@@ -171,7 +178,7 @@ export default function TabelaPrecosPage() {
           <TableBody>
             {tabelasFiltradas.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   Nenhuma tabela encontrada.
                 </TableCell>
               </TableRow>
@@ -187,6 +194,17 @@ export default function TabelaPrecosPage() {
                     {tab.vigencia.dataFinal
                       ? tab.vigencia.dataFinal.toLocaleDateString("pt-BR")
                       : "-"}
+                  </TableCell>
+                  <TableCell>
+                    {tab.status === "ativo" ? (
+                      <span className="inline-flex items-center gap-1 text-green-600">
+                        <Check size={16} className="inline-block" /> Ativo
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-red-500">
+                        <X size={16} className="inline-block" /> Inativo
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {tab.servicos.length}
