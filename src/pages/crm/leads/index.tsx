@@ -228,6 +228,15 @@ export default function LeadsPage() {
     toast.success("Lead removido com sucesso!");
   };
 
+  // Agrupar leads por etapa do funil
+  const leadsByStage = etapasFunil.map(etapa => {
+    const stageLeads = filteredLeads.filter(lead => lead.etapaId === etapa.id);
+    return {
+      etapa,
+      leads: stageLeads
+    };
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -275,25 +284,41 @@ export default function LeadsPage() {
             </div>
           </div>
 
-          {/* Cards de Leads */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredLeads.length > 0 ? (
-              filteredLeads.map((lead) => (
-                <LeadCard
-                  key={lead.id}
-                  lead={lead}
-                  etapas={etapasFunil}
-                  origens={origens}
-                  usuarios={usuarios} // Passar usuários para o componente
-                  onEdit={() => handleOpenFormModal(lead)}
-                  onDelete={() => handleDeleteLead(lead.id)}
-                />
-              ))
-            ) : (
-              <div className="col-span-full text-center py-10 text-muted-foreground">
-                Nenhum lead encontrado com os filtros selecionados.
+          {/* Layout Kanban */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 overflow-auto">
+            {leadsByStage.map(({ etapa, leads }) => (
+              <div key={etapa.id} className="min-w-[250px]">
+                <div 
+                  className="text-sm font-semibold mb-2 p-2 rounded-md"
+                  style={{ backgroundColor: `${etapa.cor}20`, color: etapa.cor }}
+                >
+                  <span>{etapa.nome}</span>
+                  <span className="ml-2 px-2 py-0.5 bg-white rounded-full text-xs">
+                    {leads.length}
+                  </span>
+                </div>
+                
+                <div className="space-y-3">
+                  {leads.length > 0 ? (
+                    leads.map((lead) => (
+                      <LeadCard
+                        key={lead.id}
+                        lead={lead}
+                        etapas={etapasFunil}
+                        origens={origens}
+                        usuarios={usuarios}
+                        onEdit={() => handleOpenFormModal(lead)}
+                        onDelete={() => handleDeleteLead(lead.id)}
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground text-sm border border-dashed rounded-md">
+                      Nenhum lead nesta etapa
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -306,7 +331,7 @@ export default function LeadsPage() {
         lead={editingLead}
         etapas={etapasFunil}
         origens={origens}
-        usuarios={usuarios} // Passar usuários para o modal
+        usuarios={usuarios}
       />
     </div>
   );
