@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Pencil, Trash2 } from "lucide-react";
-// Usar o ícone correto de três pontos do lucide-react
-import { EllipsisVertical } from "lucide-react";
+import { MoreVertical } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface ProfissoesTableProps {
   profissoes: Profissao[];
@@ -47,21 +47,18 @@ export function ProfissoesTable({
               <TableRow key={profissao.id}>
                 <TableCell>{profissao.nome}</TableCell>
                 <TableCell>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                      profissao.status === "ativo"
-                        ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20"
-                        : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
-                    }`}
+                  <Badge 
+                    variant={profissao.status === "ativo" ? "success" : "destructive"}
+                    className="capitalize"
                   >
                     {profissao.status === "ativo" ? "Ativo" : "Inativo"}
-                  </span>
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
-                        <EllipsisVertical className="h-4 w-4" />
+                        <MoreVertical className="h-4 w-4" />
                         <span className="sr-only">Abrir menu de ações</span>
                       </Button>
                     </DropdownMenuTrigger>
@@ -91,4 +88,3 @@ export function ProfissoesTable({
     </div>
   );
 }
-
