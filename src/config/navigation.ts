@@ -94,13 +94,18 @@ export const mainNavigation: ModuleNavItem[] = [
       },
       {
         name: "Orçamento",
-        href: "/vendas/orcamento", // Corrigido para o caminho certo
+        href: "/vendas/orcamento",
         description: "Gerenciamento de pedidos"
       },
       {
         name: "Faturamento",
         href: "/vendas/faturamento",
         description: "Lista de orçamentos implantados"
+      },
+      {
+        name: "Tabela de Preços",
+        href: "/vendas/tabela-precos",
+        description: "Cadastro e manutenção das tabelas de preços"
       },
       {
         name: "Dashboard",

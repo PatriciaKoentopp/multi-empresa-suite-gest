@@ -23,6 +23,7 @@ import ServicosPage from "./pages/vendas/servicos";
 import OrcamentoPage from "./pages/vendas/orcamento";
 import FaturamentoPage from "./pages/vendas/faturamento";
 import ContasAReceberPage from "./pages/financeiro/contas-a-receber";
+import TabelaPrecosPage from "./pages/vendas/tabela-precos";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,7 @@ const App = () => (
                 <Route path="/vendas/orcamento" element={<OrcamentoPage />} />
                 {/* Nova página faturamento */}
                 <Route path="/vendas/faturamento" element={<FaturamentoPage />} />
+                <Route path="/vendas/tabela-precos" element={<TabelaPrecosPage />} />
               </Route>
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
