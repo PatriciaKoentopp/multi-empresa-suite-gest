@@ -27,6 +27,7 @@ import TabelaPrecosPage from "./pages/vendas/tabela-precos";
 // IMPORTAR A PÁGINA DE USUÁRIOS
 import UsuariosPage from "./pages/admin/usuarios";
 import FunilConfiguracaoPage from "./pages/crm/funil-configuracao";
+import LeadsPage from "./pages/crm/leads"; // Importamos a nova página de Leads
 
 const queryClient = new QueryClient();
 
@@ -93,7 +94,7 @@ const App = () => (
                 <Route path="/vendas/tabela-precos" element={<TabelaPrecosPage />} />
                 {/* CRM routes */}
                 <Route path="/crm/funil-configuracao" element={<FunilConfiguracaoPage />} />
-                <Route path="/crm/leads" element={<p className="p-4">Gerenciamento de leads</p>} />
+                <Route path="/crm/leads" element={<LeadsPage />} /> {/* Atualizamos a rota para usar nosso novo componente */}
                 <Route path="/crm/oportunidades" element={<p className="p-4">Funil de vendas</p>} />
                 <Route path="/crm/atendimento" element={<p className="p-4">Gestão de chamados</p>} />
                 <Route path="/crm/marketing" element={<p className="p-4">Campanhas e automações</p>} />
