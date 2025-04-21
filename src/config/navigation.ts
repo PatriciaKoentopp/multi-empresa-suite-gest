@@ -154,6 +154,11 @@ export const mainNavigation: ModuleNavItem[] = [
     description: "Gestão de relacionamento com clientes",
     subItems: [
       {
+        name: "Funil de Vendas",
+        href: "/crm/funil-configuracao",
+        description: "Etapas e configuração do funil Kanban"
+      },
+      {
         name: "Leads",
         href: "/crm/leads",
         description: "Gerenciamento de leads"

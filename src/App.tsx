@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,6 +26,7 @@ import ContasAReceberPage from "./pages/financeiro/contas-a-receber";
 import TabelaPrecosPage from "./pages/vendas/tabela-precos";
 // IMPORTAR A PÁGINA DE USUÁRIOS
 import UsuariosPage from "./pages/admin/usuarios";
+import FunilConfiguracaoPage from "./pages/crm/funil-configuracao";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +91,12 @@ const App = () => (
                 {/* Nova página faturamento */}
                 <Route path="/vendas/faturamento" element={<FaturamentoPage />} />
                 <Route path="/vendas/tabela-precos" element={<TabelaPrecosPage />} />
+                {/* CRM routes */}
+                <Route path="/crm/funil-configuracao" element={<FunilConfiguracaoPage />} />
+                <Route path="/crm/leads" element={<p className="p-4">Gerenciamento de leads</p>} />
+                <Route path="/crm/oportunidades" element={<p className="p-4">Funil de vendas</p>} />
+                <Route path="/crm/atendimento" element={<p className="p-4">Gestão de chamados</p>} />
+                <Route path="/crm/marketing" element={<p className="p-4">Campanhas e automações</p>} />
               </Route>
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
@@ -103,4 +109,3 @@ const App = () => (
 );
 
 export default App;
-
