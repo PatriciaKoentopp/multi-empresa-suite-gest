@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -315,13 +314,16 @@ type UsuarioFormProps = {
 };
 
 function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps) {
-  const [form, setForm] = useState<Partial<Usuario>>({
+  const [form, setForm] = useState<Partial<Usuario> & { confirmarSenha?: string }>({
     nome: usuario?.nome || "",
     email: usuario?.email || "",
     senha: usuario?.senha || "",
     tipo: usuario?.tipo || "Usuário",
     status: usuario?.status || "ativo",
+    confirmarSenha: "",
   });
+
+  const [erroConfirmarSenha, setErroConfirmarSenha] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm((prev) => ({
@@ -339,7 +341,19 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    setErroConfirmarSenha(null);
+
+    // Validação do campo de confirmação de senha
+    if (!readOnly) {
+      if (form.senha !== form.confirmarSenha) {
+        setErroConfirmarSenha("As senhas não coincidem.");
+        return;
+      }
+    }
+
+    // Não enviar o campo de confirmação para o onSubmit
+    const { confirmarSenha, ...data } = form;
+    onSubmit(data);
   };
 
   return (
@@ -383,6 +397,24 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
           <small className="text-xs text-muted-foreground">Mínimo 6 caracteres.</small>
         )}
       </div>
+      {/* Confirmar Senha */}
+      {!readOnly && (
+        <div>
+          <label className="block text-sm font-medium mb-1">Confirmar Senha</label>
+          <Input
+            type="password"
+            name="confirmarSenha"
+            value={form.confirmarSenha}
+            onChange={handleChange}
+            required={!readOnly}
+            minLength={6}
+            autoComplete="new-password"
+          />
+          {erroConfirmarSenha && (
+            <small className="text-xs text-red-600">{erroConfirmarSenha}</small>
+          )}
+        </div>
+      )}
       {/* Tipo */}
       <div>
         <label className="block text-sm font-medium mb-1">Tipo</label>
