@@ -266,13 +266,13 @@ export default function UsuariosPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               onClick={() => handleOpenDialog(usuario)}
-                              className="text-blue-500"
+                              className="text-blue-500 hover:bg-blue-50 hover:bg-opacity-70"
                             >
                               Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleDelete(usuario.id)}
-                              className="text-red-500"
+                              className="text-red-500 hover:bg-red-50 hover:bg-opacity-70"
                             >
                               Excluir
                             </DropdownMenuItem>
