@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -100,8 +99,6 @@ const App = () => (
                 {/* CRM routes */}
                 <Route path="/crm/funil-configuracao" element={<FunilConfiguracaoPage />} />
                 <Route path="/crm/leads" element={<LeadsPage />} /> {/* Atualizamos a rota para usar nosso novo componente */}
-                <Route path="/crm/oportunidades" element={<p className="p-4">Funil de vendas</p>} />
-                <Route path="/crm/atendimento" element={<p className="p-4">Gestão de chamados</p>} />
                 <Route path="/crm/marketing" element={<p className="p-4">Campanhas e automações</p>} />
               </Route>
               {/* Catch-all route */}
