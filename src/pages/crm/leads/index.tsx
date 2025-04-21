@@ -20,8 +20,8 @@ import {
 import { Plus, Filter, Search } from "lucide-react";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
-import { Origem, Usuario } from "@/types"; // Importar tipos Origem e Usuario
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { Origem, Usuario } from "@/types"; 
+import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 
 // Mock data para etapas do funil de vendas
 const etapasFunil = [
@@ -32,7 +32,7 @@ const etapasFunil = [
   { id: 5, nome: "Fechamento", cor: "#e74c3c", ordem: 5 },
 ];
 
-// Mock data para leads - Atualizado para usar responsavelId em vez de responsavel
+// Mock data para leads
 const initialLeads = [
   {
     id: 1,
@@ -45,7 +45,7 @@ const initialLeads = [
     origemId: "1",
     dataCriacao: "10/04/2025",
     ultimoContato: "15/04/2025",
-    responsavelId: "1", // Atualizado para usar ID do responsável
+    responsavelId: "1",
   },
   {
     id: 2,
@@ -58,7 +58,7 @@ const initialLeads = [
     origemId: "2",
     dataCriacao: "05/04/2025",
     ultimoContato: "12/04/2025",
-    responsavelId: "2", // Atualizado para usar ID do responsável
+    responsavelId: "2",
   },
   {
     id: 3,
@@ -71,7 +71,7 @@ const initialLeads = [
     origemId: "3",
     dataCriacao: "01/04/2025",
     ultimoContato: "09/04/2025",
-    responsavelId: "3", // Atualizado para usar ID do responsável
+    responsavelId: "3",
   },
 ];
 
@@ -157,9 +157,7 @@ export default function LeadsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [etapaFilter, setEtapaFilter] = useState<string>("all");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingLead, setEditingLead] = useState<typeof initialLeads[0] | null>(
-    null
-  );
+  const [editingLead, setEditingLead] = useState<typeof initialLeads[0] | null>(null);
   const [origens, setOrigens] = useState<Origem[]>(initialOrigens);
   const [usuarios, setUsuarios] = useState<Usuario[]>(initialUsuarios);
 
@@ -239,7 +237,7 @@ export default function LeadsPage() {
   };
 
   // Função para lidar com o fim do drag and drop
-  const onDragEnd = (result) => {
+  const onDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
     // Se não tiver destino ou o destino for o mesmo que a origem, não faz nada
@@ -353,6 +351,7 @@ export default function LeadsPage() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
+                                  className="cursor-grab"
                                 >
                                   <LeadCard
                                     lead={lead}
