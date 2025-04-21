@@ -7,8 +7,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import { EllipsisVertical, Phone, Mail, Building, Calendar, User, Tag } from "lucide-react";
+import { EllipsisVertical, Phone, Mail, Building, Calendar, User, Tag, MoveRight } from "lucide-react";
 import { Origem, Usuario } from "@/types";
 
 interface Lead {
@@ -36,12 +41,13 @@ interface LeadCardProps {
   lead: Lead;
   etapas: EtapaFunil[];
   origens: Origem[];
-  usuarios: Usuario[]; // Adicionado prop para usuários
+  usuarios: Usuario[];
   onEdit: () => void;
   onDelete: () => void;
+  onMove: (leadId: number, etapaId: number) => void;
 }
 
-export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete }: LeadCardProps) {
+export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, onMove }: LeadCardProps) {
   const etapa = useMemo(
     () => etapas.find((e) => e.id === lead.etapaId) || etapas[0],
     [lead.etapaId, etapas]
@@ -65,22 +71,22 @@ export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete }: 
   });
 
   return (
-    <Card className="overflow-hidden">
-      <div className="h-2" style={{ backgroundColor: etapa.cor }}></div>
-      <CardContent className="p-4">
+    <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <div className="h-1" style={{ backgroundColor: etapa.cor }}></div>
+      <CardContent className="p-3">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="font-bold text-lg">{lead.nome}</h3>
-            <div className="text-sm text-muted-foreground">{lead.empresa}</div>
+            <h3 className="font-semibold text-base">{lead.nome}</h3>
+            <p className="text-xs text-muted-foreground">{lead.empresa}</p>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
-                <EllipsisVertical className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100 h-6 w-6">
+                <EllipsisVertical className="h-3 w-3" />
                 <span className="sr-only">Abrir menu de ações</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
+            <DropdownMenuContent align="end" className="w-48 z-30 bg-white border">
               <DropdownMenuItem
                 onClick={onEdit}
                 className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
@@ -92,6 +98,32 @@ export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete }: 
                 </span>
                 Editar
               </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="flex items-center gap-2">
+                  <MoveRight className="h-3 w-3" />
+                  <span>Mover para...</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent className="bg-white">
+                    {etapas.filter(e => e.id !== lead.etapaId).map(etapa => (
+                      <DropdownMenuItem 
+                        key={etapa.id} 
+                        onClick={() => onMove(lead.id, etapa.id)}
+                        className="flex items-center gap-2"
+                      >
+                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: etapa.cor }}></div>
+                        <span>{etapa.nome}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+
+              <DropdownMenuSeparator />
+              
               <DropdownMenuItem
                 onClick={onDelete}
                 className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
@@ -107,45 +139,12 @@ export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete }: 
           </DropdownMenu>
         </div>
 
-        <div className="mt-4 space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">{lead.email}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">{lead.telefone || "Não informado"}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Tag className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Origem: {origem}</span>
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Valor:</span>
-            <span className="font-semibold">{valorFormatado}</span>
-          </div>
-          <div className="flex justify-between text-sm mt-1">
-            <span className="text-muted-foreground">Etapa:</span>
-            <span 
-              className="font-semibold rounded-full px-2 py-0.5 text-xs" 
-              style={{ 
-                backgroundColor: `${etapa.cor}20`, 
-                color: etapa.cor 
-              }}
-            >
-              {etapa.nome}
-            </span>
-          </div>
+        <div className="flex justify-between text-xs mt-2">
+          <span className="text-muted-foreground">Valor:</span>
+          <span className="font-medium">{valorFormatado}</span>
         </div>
       </CardContent>
-      <CardFooter className="bg-muted/20 p-3 flex justify-between text-xs text-muted-foreground">
-        <div className="flex items-center gap-1">
-          <Calendar className="h-3 w-3" />
-          <span>{lead.dataCriacao}</span>
-        </div>
+      <CardFooter className="bg-muted/20 p-2 flex justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
           <User className="h-3 w-3" />
           <span>{responsavel}</span>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -228,6 +229,15 @@ export default function LeadsPage() {
     toast.success("Lead removido com sucesso!");
   };
 
+  // Função para mover lead para outra etapa
+  const handleMoveLead = (leadId: number, newEtapaId: number) => {
+    const updatedLeads = leads.map(lead => 
+      lead.id === leadId ? { ...lead, etapaId: newEtapaId } : lead
+    );
+    setLeads(updatedLeads);
+    toast.success("Lead movido com sucesso!");
+  };
+
   // Agrupar leads por etapa do funil
   const leadsByStage = etapasFunil.map(etapa => {
     const stageLeads = filteredLeads.filter(lead => lead.etapaId === etapa.id);
@@ -284,21 +294,21 @@ export default function LeadsPage() {
             </div>
           </div>
 
-          {/* Layout Kanban */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 overflow-auto">
+          {/* Layout Kanban Melhorado */}
+          <div className="flex gap-4 overflow-x-auto pb-4">
             {leadsByStage.map(({ etapa, leads }) => (
-              <div key={etapa.id} className="min-w-[250px]">
+              <div key={etapa.id} className="min-w-[280px] max-w-[280px] flex-shrink-0">
                 <div 
-                  className="text-sm font-semibold mb-2 p-2 rounded-md"
+                  className="text-sm font-semibold mb-2 p-2 rounded-md flex justify-between items-center"
                   style={{ backgroundColor: `${etapa.cor}20`, color: etapa.cor }}
                 >
                   <span>{etapa.nome}</span>
-                  <span className="ml-2 px-2 py-0.5 bg-white rounded-full text-xs">
+                  <span className="px-2 py-0.5 bg-white rounded-full text-xs">
                     {leads.length}
                   </span>
                 </div>
                 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {leads.length > 0 ? (
                     leads.map((lead) => (
                       <LeadCard
@@ -309,6 +319,7 @@ export default function LeadsPage() {
                         usuarios={usuarios}
                         onEdit={() => handleOpenFormModal(lead)}
                         onDelete={() => handleDeleteLead(lead.id)}
+                        onMove={handleMoveLead}
                       />
                     ))
                   ) : (
