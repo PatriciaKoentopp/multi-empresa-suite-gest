@@ -15,6 +15,7 @@ import GrupoFavorecidosPage from "./pages/cadastros/grupo-favorecidos";
 import FavorecidosPage from "./pages/cadastros/favorecidos";
 import ProfissoesPage from "./pages/cadastros/profissoes";
 import OrigensPage from "./pages/cadastros/origens";
+import MotivosPerdaPage from "./pages/cadastros/motivos-perda";
 import PlanoContasPage from "./pages/contabil/plano-contas";
 import ContaCorrentePage from "./pages/cadastros/conta-corrente";
 import StyleGuidePage from "./pages/style-guide";
@@ -63,6 +64,7 @@ const App = () => (
                 <Route path="/cadastros/favorecidos" element={<FavorecidosPage />} />
                 <Route path="/cadastros/profissoes" element={<ProfissoesPage />} />
                 <Route path="/cadastros/origens" element={<OrigensPage />} />
+                <Route path="/cadastros/motivos-perda" element={<MotivosPerdaPage />} />
                 <Route path="/cadastros/conta-corrente" element={<ContaCorrentePage />} />
                 
                 {/* Contábil routes */}

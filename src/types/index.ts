@@ -74,6 +74,14 @@ export interface Origem {
   updatedAt: Date;
 }
 
+export interface MotivoPerda {
+  id: string;
+  nome: string;
+  status: "ativo" | "inativo";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Favorecido {
   id: string;
   tipo: "cliente" | "fornecedor" | "publico" | "funcionario";
