@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,8 +30,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-// Mock de usuários (interface simplificada)
+// Mock de usuários (interface atualizada)
 type Usuario = {
   id: string;
   nome: string;
@@ -38,11 +41,12 @@ type Usuario = {
   senha: string;
   tipo: "Administrador" | "Usuário";
   status: "ativo" | "inativo";
+  vendedor: "sim" | "nao"; // Novo campo para identificar vendedores
   createdAt: Date;
   updatedAt: Date;
 };
 
-// Mock data inicial
+// Mock data inicial atualizado com o campo vendedor
 const initialUsuarios: Usuario[] = [
   {
     id: "1",
@@ -51,6 +55,7 @@ const initialUsuarios: Usuario[] = [
     senha: "123456", // Apenas para mock/exemplo
     tipo: "Administrador",
     status: "ativo",
+    vendedor: "sim", // Adicionamos o valor para o campo vendedor
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -61,6 +66,7 @@ const initialUsuarios: Usuario[] = [
     senha: "654321",
     tipo: "Usuário",
     status: "ativo",
+    vendedor: "nao",
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -71,6 +77,7 @@ const initialUsuarios: Usuario[] = [
     senha: "senha123",
     tipo: "Usuário",
     status: "inativo",
+    vendedor: "sim",
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -305,7 +312,7 @@ export default function UsuariosPage() {
   );
 }
 
-// ======= Componente do formulário =========
+// ======= Componente do formulário atualizado com o campo vendedor =========
 type UsuarioFormProps = {
   usuario?: Partial<Usuario>;
   readOnly?: boolean;
@@ -320,6 +327,7 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
     senha: usuario?.senha || "",
     tipo: usuario?.tipo || "Usuário",
     status: usuario?.status || "ativo",
+    vendedor: usuario?.vendedor || "nao", // Inicializamos o campo vendedor
     confirmarSenha: "",
   });
 
@@ -336,6 +344,13 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
     setForm((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const handleVendedorChange = (value: "sim" | "nao") => {
+    setForm((prev) => ({
+      ...prev,
+      vendedor: value,
     }));
   };
 
@@ -448,6 +463,26 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
             <SelectItem value="inativo">Inativo</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Campo Vendedor */}
+      <div>
+        <Label className="block text-sm font-medium mb-2">Vendedor</Label>
+        <RadioGroup 
+          value={form.vendedor} 
+          onValueChange={(value) => handleVendedorChange(value as "sim" | "nao")}
+          className="flex gap-4" 
+          disabled={readOnly}
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="sim" id="vendedor-sim" />
+            <Label htmlFor="vendedor-sim">Sim</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="nao" id="vendedor-nao" />
+            <Label htmlFor="vendedor-nao">Não</Label>
+          </div>
+        </RadioGroup>
       </div>
 
       <div className="flex justify-end gap-2 mt-4">
