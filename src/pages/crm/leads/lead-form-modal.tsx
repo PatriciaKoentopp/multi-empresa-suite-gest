@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,15 @@ import {
   TabsList,
   TabsTrigger
 } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Origem, Usuario } from "@/types";
 import { format } from "date-fns";
@@ -513,55 +523,136 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                   </form>
                 </TabsContent>
 
-                <TabsContent value="interacoes" className="p-6 mt-0 space-y-6">
-                  {lead ? (
-                    <>
-                      {/* Lista de interações existentes */}
-                      <div>
-                        <h3 className="text-lg font-medium mb-4">Histórico de Interações</h3>
-                        <div className="space-y-4">
-                          {interacoes.length > 0 ? (
-                            interacoes.map((interacao) => (
-                              <div key={interacao.id} className="border rounded-lg p-4 space-y-2">
-                                <div className="flex justify-between items-center">
-                                  <div className="flex items-center gap-2">
-                                    {getIconForInteraction(interacao.tipo)}
-                                    <span className="font-medium capitalize">
-                                      {interacao.tipo}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm text-muted-foreground mr-2">{interacao.data}</span>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => visualizarInteracao(interacao)}
-                                    >
-                                      <Eye className="h-4 w-4 text-gray-500" />
-                                    </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => prepararEdicaoInteracao(interacao)}
-                                    >
-                                      <Edit className="h-4 w-4 text-blue-500" />
-                                    </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => prepararExclusaoInteracao(interacao)}
-                                    >
-                                      <Trash2 className="h-4 w-4 text-red-500" />
-                                    </Button>
-                                  </div>
-                                </div>
-                                <p className="text-sm line-clamp-2">{interacao.descricao}</p>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <UserRound className="h-3 w-3" />
-                                  <span>{getNomeResponsavel(interacao.responsavelId)}</span>
-                                </div>
+                <TabsContent value="interacoes" className="mt-0">
+                  <ScrollArea className="h-full pb-6">
+                    {lead ? (
+                      <div className="px-6 space-y-6">
+                        {/* Formulário para nova interação - Movido para o topo */}
+                        <div className="border-b pb-6">
+                          <h3 className="text-lg font-medium mb-4">Nova Interação</h3>
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="interacaoTipo">Tipo de Interação</Label>
+                                <Select
+                                  value={novaInteracao.tipo}
+                                  onValueChange={(value) => handleInteracaoSelectChange("tipo", value)}
+                                >
+                                  <SelectTrigger id="interacaoTipo" className="bg-white">
+                                    <SelectValue placeholder="Selecione o tipo" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-white z-50">
+                                    <SelectItem value="email">Email</SelectItem>
+                                    <SelectItem value="ligacao">Ligação</SelectItem>
+                                    <SelectItem value="reuniao">Reunião</SelectItem>
+                                    <SelectItem value="mensagem">Mensagem</SelectItem>
+                                    <SelectItem value="outro">Outro</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </div>
-                            ))
+                              <div className="space-y-2">
+                                <Label htmlFor="interacaoResponsavel">Responsável</Label>
+                                <Select
+                                  value={novaInteracao.responsavelId}
+                                  onValueChange={(value) => handleInteracaoSelectChange("responsavelId", value)}
+                                >
+                                  <SelectTrigger id="interacaoResponsavel" className="bg-white">
+                                    <SelectValue placeholder="Selecione o responsável" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-white z-50">
+                                    {vendedoresAtivos.map((vendedor) => (
+                                      <SelectItem key={vendedor.id} value={vendedor.id}>
+                                        {vendedor.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="interacaoDescricao">Descrição</Label>
+                              <Textarea 
+                                id="interacaoDescricao"
+                                name="descricao"
+                                value={novaInteracao.descricao}
+                                onChange={handleInteracaoChange}
+                                placeholder="Descreva a interação..."
+                                rows={4}
+                                className="resize-none"
+                              />
+                            </div>
+                            
+                            <Button
+                              type="button"
+                              onClick={adicionarInteracao}
+                              variant="blue"
+                              className="w-full sm:w-auto"
+                              disabled={novaInteracao.descricao.trim() === "" || !novaInteracao.responsavelId}
+                            >
+                              <Send className="mr-2 h-4 w-4" />
+                              Registrar Interação
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Lista de interações existentes - Modificada para linhas de tabela */}
+                        <div>
+                          <h3 className="text-lg font-medium mb-4">Histórico de Interações</h3>
+                          {interacoes.length > 0 ? (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Tipo</TableHead>
+                                  <TableHead>Descrição</TableHead>
+                                  <TableHead>Data</TableHead>
+                                  <TableHead>Responsável</TableHead>
+                                  <TableHead className="text-right">Ações</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {interacoes.map((interacao) => (
+                                  <TableRow key={interacao.id}>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2">
+                                        {getIconForInteraction(interacao.tipo)}
+                                        <span className="capitalize">{interacao.tipo}</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="max-w-[200px] truncate">
+                                      {interacao.descricao}
+                                    </TableCell>
+                                    <TableCell>{interacao.data}</TableCell>
+                                    <TableCell>{getNomeResponsavel(interacao.responsavelId)}</TableCell>
+                                    <TableCell className="text-right">
+                                      <div className="flex justify-end gap-1">
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm"
+                                          onClick={() => visualizarInteracao(interacao)}
+                                        >
+                                          <Eye className="h-4 w-4 text-gray-500" />
+                                        </Button>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm"
+                                          onClick={() => prepararEdicaoInteracao(interacao)}
+                                        >
+                                          <Edit className="h-4 w-4 text-blue-500" />
+                                        </Button>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm"
+                                          onClick={() => prepararExclusaoInteracao(interacao)}
+                                        >
+                                          <Trash2 className="h-4 w-4 text-red-500" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
                           ) : (
                             <div className="text-center py-6 text-muted-foreground">
                               Nenhuma interação registrada.
@@ -569,81 +660,12 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                           )}
                         </div>
                       </div>
-
-                      {/* Formulário para nova interação */}
-                      <div className="border-t pt-6">
-                        <h3 className="text-lg font-medium mb-4">Nova Interação</h3>
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="interacaoTipo">Tipo de Interação</Label>
-                              <Select
-                                value={novaInteracao.tipo}
-                                onValueChange={(value) => handleInteracaoSelectChange("tipo", value)}
-                              >
-                                <SelectTrigger id="interacaoTipo" className="bg-white">
-                                  <SelectValue placeholder="Selecione o tipo" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-white z-50">
-                                  <SelectItem value="email">Email</SelectItem>
-                                  <SelectItem value="ligacao">Ligação</SelectItem>
-                                  <SelectItem value="reuniao">Reunião</SelectItem>
-                                  <SelectItem value="mensagem">Mensagem</SelectItem>
-                                  <SelectItem value="outro">Outro</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="interacaoResponsavel">Responsável</Label>
-                              <Select
-                                value={novaInteracao.responsavelId}
-                                onValueChange={(value) => handleInteracaoSelectChange("responsavelId", value)}
-                              >
-                                <SelectTrigger id="interacaoResponsavel" className="bg-white">
-                                  <SelectValue placeholder="Selecione o responsável" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-white z-50">
-                                  {vendedoresAtivos.map((vendedor) => (
-                                    <SelectItem key={vendedor.id} value={vendedor.id}>
-                                      {vendedor.nome}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="interacaoDescricao">Descrição</Label>
-                            <Textarea 
-                              id="interacaoDescricao"
-                              name="descricao"
-                              value={novaInteracao.descricao}
-                              onChange={handleInteracaoChange}
-                              placeholder="Descreva a interação..."
-                              rows={4}
-                              className="resize-none"
-                            />
-                          </div>
-                          
-                          <Button
-                            type="button"
-                            onClick={adicionarInteracao}
-                            variant="blue"
-                            className="w-full sm:w-auto"
-                            disabled={novaInteracao.descricao.trim() === "" || !novaInteracao.responsavelId}
-                          >
-                            <Send className="mr-2 h-4 w-4" />
-                            Registrar Interação
-                          </Button>
-                        </div>
+                    ) : (
+                      <div className="px-6 text-center py-10 text-muted-foreground">
+                        As interações estarão disponíveis após criar o lead.
                       </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-10 text-muted-foreground">
-                      As interações estarão disponíveis após criar o lead.
-                    </div>
-                  )}
+                    )}
+                  </ScrollArea>
                 </TabsContent>
               </div>
             </Tabs>
@@ -821,3 +843,4 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     </>
   );
 }
+
