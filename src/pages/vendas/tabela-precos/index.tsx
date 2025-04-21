@@ -1,8 +1,9 @@
 
 import React, { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormItem, FormLabel, FormControl, FormMessage, FormField } from "@/components/ui/form";
+import { Form, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { CalendarIcon, Plus, Pencil, Tag } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -14,6 +15,8 @@ type Vigencia = { dataInicial: Date | null; dataFinal: Date | null };
 type Servico = { id: number; nome: string; preco: number };
 
 export default function TabelaPrecosPage() {
+  const form = useForm(); // utiliza o contexto correto do react-hook-form
+
   const [nome, setNome] = useState("");
   const [vigencia, setVigencia] = useState<Vigencia>({ dataInicial: null, dataFinal: null });
   const [servicos, setServicos] = useState<Servico[]>([]);
@@ -30,12 +33,14 @@ export default function TabelaPrecosPage() {
     }
   }
 
+  // se desejar, pode adicionar o submit handler aqui, por enquanto mantém desabilitado igual antes
+
   return (
     <div className="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md mt-8">
       <h1 className="text-lg font-bold flex items-center gap-2 mb-2">
         <Tag className="text-primary" /> Tabela de Preços
       </h1>
-      <Form>
+      <Form {...form}>
         <div className="mb-4">
           <FormItem>
             <FormLabel>Nome</FormLabel>
