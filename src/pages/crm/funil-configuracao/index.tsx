@@ -1,14 +1,15 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Trash2, ArrowRight } from "lucide-react";
+import { Plus, Edit, Trash2, ArrowRight, MoreVertical } from "lucide-react";
 import { FunilFormModal } from "./funil-form-modal";
 import { Table, TableHeader, TableBody, TableFooter, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 interface EtapaFunil {
   id: number;
@@ -297,42 +298,48 @@ export default function FunilConfiguracaoPage() {
                         <TableCell className="font-medium">{funil.nome}</TableCell>
                         <TableCell>{funil.descricao}</TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${funil.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                          <Badge 
+                            variant={funil.ativo ? "success" : "destructive"}
+                            className="capitalize"
+                          >
                             {funil.ativo ? 'Ativo' : 'Inativo'}
-                          </span>
+                          </Badge>
                         </TableCell>
                         <TableCell>{funil.dataCriacao}</TableCell>
                         <TableCell className="text-center">{funil.etapas.length}</TableCell>
                         <TableCell>
-                          <div className="flex gap-2 justify-center">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="text-blue-500 hover:bg-blue-100 focus:bg-blue-100" 
-                              onClick={() => editarFunil(funil)}
-                            >
-                              <Edit />
-                              <span className="sr-only">Editar</span>
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="text-red-500 hover:bg-red-100 focus:bg-red-100" 
-                              onClick={() => excluirFunil(funil.id)}
-                            >
-                              <Trash2 />
-                              <span className="sr-only">Excluir</span>
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="text-green-500 hover:bg-green-100 focus:bg-green-100" 
-                              onClick={() => selecionarFunil(funil)}
-                              title="Selecionar para editar etapas"
-                            >
-                              <ArrowRight />
-                              <span className="sr-only">Selecionar</span>
-                            </Button>
+                          <div className="flex justify-center">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
+                                  <MoreVertical className="h-4 w-4" />
+                                  <span className="sr-only">Abrir menu de ações</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
+                                <DropdownMenuItem
+                                  onClick={() => editarFunil(funil)}
+                                  className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => excluirFunil(funil.id)}
+                                  className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Excluir
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => selecionarFunil(funil)}
+                                  className="flex items-center gap-2 text-green-500 focus:bg-green-100 focus:text-green-700"
+                                >
+                                  <ArrowRight className="h-4 w-4" />
+                                  Selecionar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -375,38 +382,67 @@ export default function FunilConfiguracaoPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {etapas.length === 0 ? <TableRow>
+                    {etapas.length === 0 ? (
+                      <TableRow>
                         <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
                           Nenhuma etapa cadastrada
                         </TableCell>
-                      </TableRow> : etapas.sort((a, b) => a.ordem - b.ordem).map(etapa => <TableRow key={etapa.id} className="hover:bg-accent/30 transition-colors">
+                      </TableRow>
+                    ) : (
+                      etapas.sort((a, b) => a.ordem - b.ordem).map(etapa => (
+                        <TableRow key={etapa.id} className="hover:bg-accent/30 transition-colors">
                           <TableCell>{etapa.nome}</TableCell>
                           <TableCell>
-                            <span className="inline-block w-6 h-6 rounded-full border" style={{
-                        background: etapa.cor,
-                        borderColor: "#E5E7EB"
-                      }}></span>
+                            <span 
+                              className="inline-block w-6 h-6 rounded-full border" 
+                              style={{
+                                background: etapa.cor,
+                                borderColor: "#E5E7EB"
+                              }}
+                            />
                           </TableCell>
                           <TableCell>{etapa.ordem}</TableCell>
-                          <TableCell className="flex gap-2 justify-center">
-                            <Button variant="ghost" size="icon" className="text-blue-500 hover:bg-blue-100 focus:bg-blue-100" onClick={() => handleEditar(etapa)}>
-                              <Edit />
-                              <span className="sr-only">Editar</span>
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-100 focus:bg-red-100" onClick={() => handleExcluir(etapa.id)}>
-                              <Trash2 />
-                              <span className="sr-only">Excluir</span>
-                            </Button>
+                          <TableCell>
+                            <div className="flex justify-center">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
+                                    <MoreVertical className="h-4 w-4" />
+                                    <span className="sr-only">Abrir menu de ações</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
+                                  <DropdownMenuItem
+                                    onClick={() => handleEditar(etapa)}
+                                    className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleExcluir(etapa.id)}
+                                    className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    Excluir
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </TableCell>
-                        </TableRow>)}
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
-                  {etapas.length > 0 && <TableFooter>
+                  {etapas.length > 0 && (
+                    <TableFooter>
                       <TableRow>
                         <TableCell colSpan={4} className="font-normal text-right text-muted-foreground text-xs">
                           Total de etapas: <span className="font-semibold text-foreground">{etapas.length}</span>
                         </TableCell>
                       </TableRow>
-                    </TableFooter>}
+                    </TableFooter>
+                  )}
                 </Table>
               </div>
             </CardContent>
