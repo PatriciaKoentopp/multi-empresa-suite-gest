@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Dialog,
@@ -15,6 +14,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 type Servico = { id: number; nome: string; precoPadrao: number };
 type Vigencia = { dataInicial: Date | null; dataFinal: Date | null };
@@ -133,65 +137,71 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block font-medium mb-1">Vigência (início)</label>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal bg-white/60 hover:bg-white/80"
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal bg-white/60 hover:bg-white/80",
+                        !vigencia.dataInicial && "text-muted-foreground"
+                      )}
+                      type="button"
+                      disabled={somenteLeitura}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {vigencia.dataInicial
+                        ? format(vigencia.dataInicial, "dd/MM/yyyy", { locale: ptBR })
+                        : <span>Selecione...</span>
+                      }
+                    </Button>
+                  </PopoverTrigger>
+                  {!somenteLeitura && (
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={vigencia.dataInicial}
+                        onSelect={date => setVigencia(prev => ({ ...prev, dataInicial: date ?? null }))}
+                        initialFocus
+                        locale={ptBR}
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
                   )}
-                  type="button"
-                  disabled={somenteLeitura}
-                  onClick={() => {
-                    // O Calendar já está no Popover, aqui só impede interação se readonly
-                  }}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {vigencia.dataInicial
-                    ? format(vigencia.dataInicial, "dd/MM/yyyy", { locale: ptBR })
-                    : <span className="text-muted-foreground">Selecione...</span>
-                  }
-                </Button>
-                {!somenteLeitura && (
-                  <div className="mt-1">
-                    <Calendar
-                      mode="single"
-                      selected={vigencia.dataInicial}
-                      onSelect={date => setVigencia(prev => ({ ...prev, dataInicial: date ?? null }))}
-                      initialFocus
-                      locale={ptBR}
-                      className="pointer-events-auto"
-                    />
-                  </div>
-                )}
+                </Popover>
               </div>
               <div>
                 <label className="block font-medium mb-1">Vigência (final)</label>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal bg-white/60 hover:bg-white/80"
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal bg-white/60 hover:bg-white/80",
+                        !vigencia.dataFinal && "text-muted-foreground"
+                      )}
+                      type="button"
+                      disabled={somenteLeitura}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {vigencia.dataFinal
+                        ? format(vigencia.dataFinal, "dd/MM/yyyy", { locale: ptBR })
+                        : <span>Selecione...</span>
+                      }
+                    </Button>
+                  </PopoverTrigger>
+                  {!somenteLeitura && (
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={vigencia.dataFinal}
+                        onSelect={date => setVigencia(prev => ({ ...prev, dataFinal: date ?? null }))}
+                        initialFocus
+                        locale={ptBR}
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
                   )}
-                  type="button"
-                  disabled={somenteLeitura}
-                  onClick={() => { }}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {vigencia.dataFinal
-                    ? format(vigencia.dataFinal, "dd/MM/yyyy", { locale: ptBR })
-                    : <span className="text-muted-foreground">Selecione...</span>
-                  }
-                </Button>
-                {!somenteLeitura && (
-                  <div className="mt-1">
-                    <Calendar
-                      mode="single"
-                      selected={vigencia.dataFinal}
-                      onSelect={date => setVigencia(prev => ({ ...prev, dataFinal: date ?? null }))}
-                      initialFocus
-                      locale={ptBR}
-                      className="pointer-events-auto"
-                    />
-                  </div>
-                )}
+                </Popover>
               </div>
             </div>
             <div>
@@ -295,4 +305,3 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
     </Dialog>
   );
 };
-
