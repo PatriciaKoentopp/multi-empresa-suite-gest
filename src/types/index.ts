@@ -66,6 +66,14 @@ export interface Profissao {
   updatedAt: Date;
 }
 
+export interface Origem {
+  id: string;
+  nome: string;
+  status: "ativo" | "inativo";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Favorecido {
   id: string;
   tipo: "cliente" | "fornecedor" | "publico" | "funcionario";

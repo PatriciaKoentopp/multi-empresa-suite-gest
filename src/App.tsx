@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +14,7 @@ import EmpresasPage from "./pages/empresas";
 import GrupoFavorecidosPage from "./pages/cadastros/grupo-favorecidos";
 import FavorecidosPage from "./pages/cadastros/favorecidos";
 import ProfissoesPage from "./pages/cadastros/profissoes";
+import OrigensPage from "./pages/cadastros/origens";
 import PlanoContasPage from "./pages/contabil/plano-contas";
 import ContaCorrentePage from "./pages/cadastros/conta-corrente";
 import StyleGuidePage from "./pages/style-guide";
@@ -60,6 +62,7 @@ const App = () => (
                 <Route path="/cadastros/grupo-favorecidos" element={<GrupoFavorecidosPage />} />
                 <Route path="/cadastros/favorecidos" element={<FavorecidosPage />} />
                 <Route path="/cadastros/profissoes" element={<ProfissoesPage />} />
+                <Route path="/cadastros/origens" element={<OrigensPage />} />
                 <Route path="/cadastros/conta-corrente" element={<ContaCorrentePage />} />
                 
                 {/* Contábil routes */}
