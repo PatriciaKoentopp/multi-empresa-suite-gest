@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Search, Filter, User, UserCheck, UserX } from "lucide-react";
+import { EllipsisVertical } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -22,6 +23,12 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 // Mock de usuários (interface simplificada)
 type Usuario = {
@@ -243,26 +250,27 @@ export default function UsuariosPage() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-blue-500"
-                            title="Editar"
-                            onClick={() => handleOpenDialog(usuario)}
-                          >
-                            <UserCheck className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-500"
-                            title="Excluir"
-                            onClick={() => handleDelete(usuario.id)}
-                          >
-                            <UserX className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <EllipsisVertical className="w-5 h-5 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleOpenDialog(usuario)}
+                              className="text-blue-500"
+                            >
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(usuario.id)}
+                              className="text-red-500"
+                            >
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))
