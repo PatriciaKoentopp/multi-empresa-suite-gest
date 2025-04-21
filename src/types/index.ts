@@ -1,3 +1,4 @@
+
 export interface GrupoFavorecido {
   id: string;
   nome: string;
@@ -108,7 +109,20 @@ export interface Favorecido {
   updatedAt: Date;
 }
 
-// Interface de Lead atualizada para usar o id da origem
+// Interface para usuário do sistema (atualizada)
+export interface Usuario {
+  id: string;
+  nome: string;
+  email: string;
+  senha: string;
+  tipo: "Administrador" | "Usuário";
+  status: "ativo" | "inativo";
+  vendedor: "sim" | "nao";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Interface de Lead atualizada para usar o id do responsável
 export interface Lead {
   id: number;
   nome: string;
@@ -117,10 +131,10 @@ export interface Lead {
   telefone: string;
   etapaId: number;
   valor: number;
-  origemId: string; // Modificado para referenciar o ID da origem
+  origemId: string;
   dataCriacao: string;
   ultimoContato: string;
-  responsavel: string;
+  responsavelId: string; // Modificado para usar o ID do responsável
 }
 
 // Importando e exportando a interface PlanoConta

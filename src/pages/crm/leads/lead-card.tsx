@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { EllipsisVertical, Phone, Mail, Building, Calendar, User, Tag } from "lucide-react";
-import { Origem } from "@/types"; // Importar tipo Origem
+import { Origem, Usuario } from "@/types";
 
 interface Lead {
   id: number;
@@ -19,10 +19,10 @@ interface Lead {
   telefone: string;
   etapaId: number;
   valor: number;
-  origemId: string; // Atualizado para usar origemId
+  origemId: string;
   dataCriacao: string;
   ultimoContato: string;
-  responsavel: string;
+  responsavelId: string; // Atualizado para usar responsavelId
 }
 
 interface EtapaFunil {
@@ -35,12 +35,13 @@ interface EtapaFunil {
 interface LeadCardProps {
   lead: Lead;
   etapas: EtapaFunil[];
-  origens: Origem[]; // Adicionado prop para origens
+  origens: Origem[];
+  usuarios: Usuario[]; // Adicionado prop para usuários
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export function LeadCard({ lead, etapas, origens, onEdit, onDelete }: LeadCardProps) {
+export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete }: LeadCardProps) {
   const etapa = useMemo(
     () => etapas.find((e) => e.id === lead.etapaId) || etapas[0],
     [lead.etapaId, etapas]
@@ -50,6 +51,12 @@ export function LeadCard({ lead, etapas, origens, onEdit, onDelete }: LeadCardPr
   const origem = useMemo(
     () => origens.find((o) => o.id === lead.origemId)?.nome || "Desconhecida",
     [lead.origemId, origens]
+  );
+  
+  // Buscar o responsável pelo ID
+  const responsavel = useMemo(
+    () => usuarios.find((u) => u.id === lead.responsavelId)?.nome || "Não atribuído",
+    [lead.responsavelId, usuarios]
   );
 
   const valorFormatado = lead.valor.toLocaleString('pt-BR', {
@@ -141,7 +148,7 @@ export function LeadCard({ lead, etapas, origens, onEdit, onDelete }: LeadCardPr
         </div>
         <div className="flex items-center gap-1">
           <User className="h-3 w-3" />
-          <span>{lead.responsavel}</span>
+          <span>{responsavel}</span>
         </div>
       </CardFooter>
     </Card>

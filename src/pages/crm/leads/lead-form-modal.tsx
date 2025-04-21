@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Origem } from "@/types";
+import { Origem, Usuario } from "@/types";
 
 interface Lead {
   id: number;
@@ -22,10 +22,10 @@ interface Lead {
   telefone: string;
   etapaId: number;
   valor: number;
-  origemId: string; // Modificado para referenciar o ID da origem
+  origemId: string;
   dataCriacao: string;
   ultimoContato: string;
-  responsavel: string;
+  responsavelId: string; // Modificado para ID do responsável
 }
 
 interface EtapaFunil {
@@ -41,10 +41,11 @@ interface LeadFormModalProps {
   onConfirm: (lead: Omit<Lead, "id">) => void;
   lead?: Lead | null;
   etapas: EtapaFunil[];
-  origens: Origem[]; // Adicionado prop para origens
+  origens: Origem[];
+  usuarios: Usuario[]; // Adicionado prop para usuários
 }
 
-export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens }: LeadFormModalProps) {
+export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens, usuarios }: LeadFormModalProps) {
   const [formData, setFormData] = useState({
     nome: "",
     empresa: "",
@@ -52,10 +53,10 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens 
     telefone: "",
     etapaId: 1,
     valor: 0,
-    origemId: "", // Modificado para origemId
+    origemId: "",
     dataCriacao: new Date().toLocaleDateString("pt-BR"),
     ultimoContato: new Date().toLocaleDateString("pt-BR"),
-    responsavel: "",
+    responsavelId: "", // Modificado para responsavelId
   });
 
   useEffect(() => {
@@ -67,12 +68,15 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens 
         telefone: lead.telefone,
         etapaId: lead.etapaId,
         valor: lead.valor,
-        origemId: lead.origemId, // Modificado para origemId
+        origemId: lead.origemId,
         dataCriacao: lead.dataCriacao,
         ultimoContato: lead.ultimoContato,
-        responsavel: lead.responsavel,
+        responsavelId: lead.responsavelId, // Modificado para responsavelId
       });
     } else {
+      // Encontrar o primeiro usuário vendedor ativo, se existir
+      const primeiroVendedor = usuarios.find(u => u.vendedor === "sim" && u.status === "ativo")?.id || "";
+      
       setFormData({
         nome: "",
         empresa: "",
@@ -80,13 +84,13 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens 
         telefone: "",
         etapaId: etapas.length > 0 ? etapas[0].id : 1,
         valor: 0,
-        origemId: origens.length > 0 ? origens[0].id : "", // Definido valor inicial
+        origemId: origens.length > 0 ? origens[0].id : "",
         dataCriacao: new Date().toLocaleDateString("pt-BR"),
         ultimoContato: new Date().toLocaleDateString("pt-BR"),
-        responsavel: "",
+        responsavelId: primeiroVendedor, // Inicializado com o primeiro vendedor disponível
       });
     }
-  }, [lead, etapas, origens]);
+  }, [lead, etapas, origens, usuarios]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -107,6 +111,9 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens 
 
   // Filtrar apenas origens ativas
   const origensAtivas = origens.filter(origem => origem.status === "ativo");
+  
+  // Filtrar apenas usuários que são vendedores e estão ativos
+  const vendedoresAtivos = usuarios.filter(usuario => usuario.vendedor === "sim" && usuario.status === "ativo");
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -225,17 +232,24 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens 
               <div className="space-y-2">
                 <Label htmlFor="responsavel">Responsável</Label>
                 <Select
-                  value={formData.responsavel}
-                  onValueChange={(value) => handleSelectChange("responsavel", value)}
+                  value={formData.responsavelId}
+                  onValueChange={(value) => handleSelectChange("responsavelId", value)}
                 >
                   <SelectTrigger id="responsavel" className="bg-white">
                     <SelectValue placeholder="Selecione o responsável" />
                   </SelectTrigger>
                   <SelectContent className="bg-white z-50">
-                    <SelectItem value="Ana Vendas">Ana Vendas</SelectItem>
-                    <SelectItem value="Carlos Comercial">Carlos Comercial</SelectItem>
-                    <SelectItem value="Pedro Marketing">Pedro Marketing</SelectItem>
-                    <SelectItem value="Julia Atendimento">Julia Atendimento</SelectItem>
+                    {vendedoresAtivos.length > 0 ? (
+                      vendedoresAtivos.map((vendedor) => (
+                        <SelectItem key={vendedor.id} value={vendedor.id}>
+                          {vendedor.nome}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        Nenhum vendedor disponível
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
