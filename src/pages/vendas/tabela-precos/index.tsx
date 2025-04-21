@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -123,6 +122,22 @@ export default function TabelaPrecosPage() {
     inputBuscaRef.current?.focus();
   }
 
+  // Função utilitária para exibir o badge de status no padrão da tela de serviços
+  function getStatusBadge(status: "ativo" | "inativo" | undefined) {
+    if (status === "ativo") {
+      return (
+        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
+          Ativo
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
+        Inativo
+      </span>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-6 flex flex-col gap-8">
       <div className="flex items-center justify-between mb-2">
@@ -196,15 +211,7 @@ export default function TabelaPrecosPage() {
                       : "-"}
                   </TableCell>
                   <TableCell>
-                    {tab.status === "ativo" ? (
-                      <span className="inline-flex items-center gap-1 text-green-600">
-                        <Check size={16} className="inline-block" /> Ativo
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-red-500">
-                        <X size={16} className="inline-block" /> Inativo
-                      </span>
-                    )}
+                    {getStatusBadge(tab.status)}
                   </TableCell>
                   <TableCell>
                     {tab.servicos.length}
