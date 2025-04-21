@@ -111,6 +111,9 @@ export default function FaturamentoPage() {
     navigate(`/vendas/orcamento?codigo=${item.codigo}`);
   }
 
+  // Calcular total de valor dos itens filtrados (apenas os visíveis na tabela)
+  const totalValor = itemsFiltrados.reduce((acc, item) => acc + (item.valor || 0), 0);
+
   return (
     <div className="flex flex-col gap-4">
       {/* Filtros */}
@@ -301,6 +304,20 @@ export default function FaturamentoPage() {
               ))
             )}
           </TableBody>
+          {/* Rodapé total igual contas a receber */}
+          <tfoot>
+            <TableRow>
+              <TableCell colSpan={5} className="font-bold text-right">Total</TableCell>
+              <TableCell className="font-bold text-right">
+                {totalValor.toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                  minimumFractionDigits: 2,
+                })}
+              </TableCell>
+              <TableCell />
+            </TableRow>
+          </tfoot>
         </Table>
       </div>
     </div>
