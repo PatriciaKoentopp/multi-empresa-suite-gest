@@ -125,9 +125,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
               {modo === "editar" && <>Editar Tabela</>}
               {modo === "novo" && <>Nova Tabela de Preços</>}
             </DialogTitle>
-            <DialogClose asChild>
-              <Button variant="ghost" size="icon" className="absolute top-4 right-4"><X /></Button>
-            </DialogClose>
+            
           </DialogHeader>
           <div className="px-6 pt-5 pb-4 grid gap-4">
             <div>
