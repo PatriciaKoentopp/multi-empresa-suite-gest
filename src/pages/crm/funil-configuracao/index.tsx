@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, ArrowRight } from "lucide-react";
 import { FunilFormModal } from "./funil-form-modal";
 import { Table, TableHeader, TableBody, TableFooter, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -76,8 +76,8 @@ export default function FunilConfiguracaoPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editEtapa, setEditEtapa] = useState<EtapaFunil | null>(null);
   
-  // Estado para o painel lateral de criação/edição de funil
-  const [sheetOpen, setSheetOpen] = useState(false);
+  // Estado para o modal de criação/edição de funil
+  const [modalFunilOpen, setModalFunilOpen] = useState(false);
   const [nomeFunil, setNomeFunil] = useState("");
   const [descricaoFunil, setDescricaoFunil] = useState("");
   const [ativoFunil, setAtivoFunil] = useState(true);
@@ -88,24 +88,24 @@ export default function FunilConfiguracaoPage() {
     setEtapas(funil.etapas);
   }
   
-  // Função para abrir painel de novo funil
+  // Função para abrir modal de novo funil
   function criarNovoFunil() {
     setNovoFunil(true);
     setFunilSelecionado(null);
     setNomeFunil("");
     setDescricaoFunil("");
     setAtivoFunil(true);
-    setSheetOpen(true);
+    setModalFunilOpen(true);
   }
   
-  // Função para abrir painel de edição de funil
+  // Função para abrir modal de edição de funil
   function editarFunil(funil: Funil) {
     setNovoFunil(false);
     setFunilSelecionado(funil);
     setNomeFunil(funil.nome);
     setDescricaoFunil(funil.descricao);
     setAtivoFunil(funil.ativo);
-    setSheetOpen(true);
+    setModalFunilOpen(true);
   }
   
   // Função para excluir um funil
@@ -170,7 +170,7 @@ export default function FunilConfiguracaoPage() {
       toast.success("Funil atualizado com sucesso!");
     }
     
-    setSheetOpen(false);
+    setModalFunilOpen(false);
   }
   
   // Funções para gerenciar etapas do funil
@@ -328,6 +328,7 @@ export default function FunilConfiguracaoPage() {
                               size="icon" 
                               className="text-green-500 hover:bg-green-100 focus:bg-green-100" 
                               onClick={() => selecionarFunil(funil)}
+                              title="Selecionar para editar etapas"
                             >
                               <ArrowRight />
                               <span className="sr-only">Selecionar</span>
@@ -425,19 +426,19 @@ export default function FunilConfiguracaoPage() {
         } : undefined} 
       />
       
-      {/* Sheet para adicionar/editar funil */}
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{novoFunil ? 'Criar Novo Funil' : 'Editar Funil'}</SheetTitle>
-            <SheetDescription>
+      {/* Modal para adicionar/editar funil */}
+      <Dialog open={modalFunilOpen} onOpenChange={setModalFunilOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>{novoFunil ? 'Criar Novo Funil' : 'Editar Funil'}</DialogTitle>
+            <DialogDescription>
               {novoFunil 
                 ? 'Preencha os campos abaixo para criar um novo funil de vendas.' 
                 : 'Altere as informações do funil conforme necessário.'}
-            </SheetDescription>
-          </SheetHeader>
+            </DialogDescription>
+          </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-2">
             <div className="space-y-2">
               <label htmlFor="nome" className="text-sm font-medium">
                 Nome do Funil *
@@ -474,18 +475,18 @@ export default function FunilConfiguracaoPage() {
                 Funil ativo
               </label>
             </div>
-            
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setSheetOpen(false)}>
-                Cancelar
-              </Button>
-              <Button variant="blue" onClick={salvarFunil}>
-                {novoFunil ? 'Criar Funil' : 'Salvar Alterações'}
-              </Button>
-            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DialogClose>
+            <Button variant="blue" onClick={salvarFunil}>
+              {novoFunil ? 'Criar Funil' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
