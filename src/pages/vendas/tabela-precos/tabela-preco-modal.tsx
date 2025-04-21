@@ -157,13 +157,14 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
                   </PopoverTrigger>
                   {!somenteLeitura && (
                     <PopoverContent className="w-auto p-0" align="start">
+                      {/* Aplicando transparência ao calendário  */}
                       <Calendar
                         mode="single"
                         selected={vigencia.dataInicial}
                         onSelect={date => setVigencia(prev => ({ ...prev, dataInicial: date ?? null }))}
                         initialFocus
                         locale={ptBR}
-                        className={cn("p-3 pointer-events-auto")}
+                        className={cn("p-3 pointer-events-auto rounded-lg bg-white/80")}
                       />
                     </PopoverContent>
                   )}
@@ -191,13 +192,14 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
                   </PopoverTrigger>
                   {!somenteLeitura && (
                     <PopoverContent className="w-auto p-0" align="start">
+                      {/* Aplicando transparência ao calendário */}
                       <Calendar
                         mode="single"
                         selected={vigencia.dataFinal}
                         onSelect={date => setVigencia(prev => ({ ...prev, dataFinal: date ?? null }))}
                         initialFocus
                         locale={ptBR}
-                        className={cn("p-3 pointer-events-auto")}
+                        className={cn("p-3 pointer-events-auto rounded-lg bg-white/80")}
                       />
                     </PopoverContent>
                   )}
