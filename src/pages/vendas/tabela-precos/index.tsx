@@ -1,12 +1,14 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Filter } from "lucide-react";
-import { TabelaPrecoCard } from "./tabela-preco-card";
-import { TabelaPrecoModal } from "./tabela-preco-modal";
+import { Plus, Filter, Edit, Trash2, Eye, MoreVertical, Search } from "lucide-react";
+import { Table, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
+import { TabelaPrecoModal } from "./tabela-preco-modal";
 
+// Tipos
 type Servico = { id: number; nome: string; precoPadrao: number };
 type Vigencia = { dataInicial: Date | null; dataFinal: Date | null };
 type TabelaPreco = {
@@ -16,7 +18,7 @@ type TabelaPreco = {
   servicos: { servicoId: number; nome: string; preco: number }[];
 };
 
-// Mock dos serviços (como na página de serviços)
+// Mock dos serviços (igual à página serviços)
 const MOCK_SERVICOS: Servico[] = [
   { id: 1, nome: "Consultoria Fiscal", precoPadrao: 700 },
   { id: 2, nome: "Auditoria Contábil", precoPadrao: 3500 },
@@ -58,16 +60,15 @@ const MOCK_TABELAS: TabelaPreco[] = [
 ];
 
 export default function TabelaPrecosPage() {
-  // Estado para as tabelas de preço cadastradas
   const [tabelas, setTabelas] = useState<TabelaPreco[]>(MOCK_TABELAS);
-  // Filtros
   const [searchNome, setSearchNome] = useState("");
-  // Modal/estado de detalhe ou edição
   const [modalAberto, setModalAberto] = useState(false);
   const [modoModal, setModoModal] = useState<"visualizar" | "editar" | "novo">("visualizar");
   const [tabelaSelecionada, setTabelaSelecionada] = useState<TabelaPreco | null>(null);
 
-  // Filtrar pelo nome da tabela (outros filtros podem ser adicionados)
+  const inputBuscaRef = useRef<HTMLInputElement>(null);
+
+  // Filtro
   const tabelasFiltradas = useMemo(() => {
     return tabelas.filter(tab =>
       tab.nome.toLocaleLowerCase().includes(searchNome.toLocaleLowerCase())
@@ -113,6 +114,10 @@ export default function TabelaPrecosPage() {
     toast({ title: "Tabela excluída com sucesso!" });
   }
 
+  function handleLupaClick() {
+    inputBuscaRef.current?.focus();
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-6 flex flex-col gap-8">
       <div className="flex items-center justify-between mb-2">
@@ -130,34 +135,100 @@ export default function TabelaPrecosPage() {
 
       {/* Filtros */}
       <div className="flex flex-col md:flex-row items-center gap-2 bg-muted p-4 rounded-lg mb-4">
-        <div className="flex gap-2 items-center w-full md:max-w-xs">
-          <Filter className="text-blue-400" />
+        <div className="relative w-full md:max-w-xs">
+          <button
+            type="button"
+            className="absolute left-3 top-2.5 z-10 p-0 bg-transparent border-none cursor-pointer text-muted-foreground hover:text-blue-500"
+            style={{ lineHeight: 0 }}
+            onClick={handleLupaClick}
+            tabIndex={-1}
+            aria-label="Buscar"
+          >
+            <Search className="h-5 w-5" />
+          </button>
           <Input
+            ref={inputBuscaRef}
             placeholder="Filtrar por nome..."
             value={searchNome}
             onChange={e => setSearchNome(e.target.value)}
-            className="bg-white text-base"
+            className="bg-white text-base pl-10"
           />
         </div>
-        {/* Espaço para mais filtros */}
+        {/* Espaço para mais filtros no futuro */}
       </div>
 
-      {/* Listagem de tabelas (cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {tabelasFiltradas.length === 0 && (
-          <div className="col-span-full text-center text-muted-foreground py-8">
-            Nenhuma tabela encontrada.
-          </div>
-        )}
-        {tabelasFiltradas.map(tab => (
-          <TabelaPrecoCard
-            key={tab.id}
-            tabela={tab}
-            onVisualizar={abrirVisualizar}
-            onEditar={abrirEditar}
-            onExcluir={handleExcluirTabela}
-          />
-        ))}
+      {/* Listagem em tabela */}
+      <div className="bg-white rounded-xl shadow-sm border">
+        <Table>
+          <thead>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead>Vigência</TableHead>
+              <TableHead>Qtd. Serviços</TableHead>
+              <TableHead />
+            </TableRow>
+          </thead>
+          <TableBody>
+            {tabelasFiltradas.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                  Nenhuma tabela encontrada.
+                </TableCell>
+              </TableRow>
+            ) : (
+              tabelasFiltradas.map(tab => (
+                <TableRow key={tab.id}>
+                  <TableCell className="font-semibold">{tab.nome}</TableCell>
+                  <TableCell>
+                    {tab.vigencia.dataInicial
+                      ? tab.vigencia.dataInicial.toLocaleDateString("pt-BR")
+                      : "-"}{" "}
+                    até{" "}
+                    {tab.vigencia.dataFinal
+                      ? tab.vigencia.dataFinal.toLocaleDateString("pt-BR")
+                      : "-"}
+                  </TableCell>
+                  <TableCell>
+                    {tab.servicos.length}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100" aria-label="Ações">
+                          <MoreVertical className="h-4 w-4" />
+                          <span className="sr-only">Abrir menu de ações</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40 z-30 bg-white border">
+                        <DropdownMenuItem
+                          onClick={() => abrirVisualizar(tab)}
+                          className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        >
+                          <Eye className="h-4 w-4" color="#0EA5E9" />
+                          Visualizar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => abrirEditar(tab)}
+                          className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        >
+                          <Edit className="h-4 w-4" color="#0EA5E9" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleExcluirTabela(tab)}
+                          className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" color="#ea384c" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       <TabelaPrecoModal
