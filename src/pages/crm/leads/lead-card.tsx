@@ -1,8 +1,15 @@
 
-import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { useMemo } from "react";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, ArrowDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { EllipsisVertical, Phone, Mail, Building, Calendar, User, Tag } from "lucide-react";
+import { Origem } from "@/types"; // Importar tipo Origem
 
 interface Lead {
   id: number;
@@ -12,73 +19,131 @@ interface Lead {
   telefone: string;
   etapaId: number;
   valor: number;
-  origem: string;
+  origemId: string; // Atualizado para usar origemId
   dataCriacao: string;
   ultimoContato: string;
   responsavel: string;
 }
 
-interface LeadCardProps {
-  lead: Lead;
-  onEdit: () => void;
-  onDragStart: () => void;
+interface EtapaFunil {
+  id: number;
+  nome: string;
+  cor: string;
+  ordem: number;
 }
 
-export function LeadCard({ lead, onEdit, onDragStart }: LeadCardProps) {
+interface LeadCardProps {
+  lead: Lead;
+  etapas: EtapaFunil[];
+  origens: Origem[]; // Adicionado prop para origens
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+export function LeadCard({ lead, etapas, origens, onEdit, onDelete }: LeadCardProps) {
+  const etapa = useMemo(
+    () => etapas.find((e) => e.id === lead.etapaId) || etapas[0],
+    [lead.etapaId, etapas]
+  );
+
+  // Buscar a origem pelo ID
+  const origem = useMemo(
+    () => origens.find((o) => o.id === lead.origemId)?.nome || "Desconhecida",
+    [lead.origemId, origens]
+  );
+
+  const valorFormatado = lead.valor.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  });
+
   return (
-    <Card 
-      className="bg-white cursor-move hover:shadow-md transition-shadow border-l-4 border-l-blue-500 animate-fade-in"
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.effectAllowed = "move";
-        onDragStart();
-      }}
-    >
-      <CardContent className="p-3">
+    <Card className="overflow-hidden">
+      <div className="h-2" style={{ backgroundColor: etapa.cor }}></div>
+      <CardContent className="p-4">
         <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <h4 className="font-medium text-sm line-clamp-1">{lead.nome}</h4>
-            <p className="text-xs text-muted-foreground line-clamp-1">{lead.empresa}</p>
+          <div>
+            <h3 className="font-bold text-lg">{lead.nome}</h3>
+            <div className="text-sm text-muted-foreground">{lead.empresa}</div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-6 w-6 text-blue-500 hover:bg-blue-100 focus:bg-blue-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-          >
-            <Edit className="h-3 w-3" />
-            <span className="sr-only">Editar</span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
+                <EllipsisVertical className="h-4 w-4" />
+                <span className="sr-only">Abrir menu de ações</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
+              <DropdownMenuItem
+                onClick={onEdit}
+                className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+              >
+                <span className="w-4 h-4 inline-flex items-center justify-center">
+                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11.8536 1.14645C11.6583 0.951184 11.3417 0.951184 11.1465 1.14645L3.71455 8.57836C3.62459 8.66832 3.55263 8.77461 3.50251 8.89155L2.04044 12.303C1.9599 12.491 2.00189 12.709 2.14646 12.8536C2.29103 12.9981 2.50905 13.0401 2.69697 12.9596L6.10847 11.4975C6.2254 11.4474 6.3317 11.3754 6.42166 11.2855L13.8536 3.85355C14.0488 3.65829 14.0488 3.34171 13.8536 3.14645L11.8536 1.14645ZM4.42166 9.28547L11.5 2.20711L12.7929 3.5L5.71455 10.5784L4.21924 11.2192L3.78081 10.7808L4.42166 9.28547Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
+                  </svg>
+                </span>
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={onDelete}
+                className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+              >
+                <span className="w-4 h-4 inline-flex items-center justify-center">
+                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5.5 1C5.22386 1 5 1.22386 5 1.5C5 1.77614 5.22386 2 5.5 2H9.5C9.77614 2 10 1.77614 10 1.5C10 1.22386 9.77614 1 9.5 1H5.5ZM3 3.5C3 3.22386 3.22386 3 3.5 3H11.5C11.7761 3 12 3.22386 12 3.5C12 3.77614 11.7761 4 11.5 4H3.5C3.22386 4 3 3.77614 3 3.5ZM3.5 5C3.22386 5 3 5.22386 3 5.5C3 5.77614 3.22386 6 3.5 6H4V12C4 12.5523 4.44772 13 5 13H10C10.5523 13 11 12.5523 11 12V6H11.5C11.7761 6 12 5.77614 12 5.5C12 5.22386 11.7761 5 11.5 5H3.5ZM5 6H10V12H5V6Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
+                  </svg>
+                </span>
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        
-        <div className="mt-2">
-          <div className="flex justify-between text-xs">
-            <span className="text-gray-600">Valor:</span>
-            <span className="font-medium">R$ {lead.valor.toLocaleString('pt-BR')}</span>
+
+        <div className="mt-4 space-y-2 text-sm">
+          <div className="flex items-center gap-2">
+            <Mail className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">{lead.email}</span>
           </div>
-          
-          <div className="flex justify-between text-xs mt-1">
-            <span className="text-gray-600">Origem:</span>
-            <span>{lead.origem}</span>
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">{lead.telefone || "Não informado"}</span>
           </div>
-          
-          <div className="flex justify-between text-xs mt-1">
-            <span className="text-gray-600">Último contato:</span>
-            <span>{lead.ultimoContato}</span>
+          <div className="flex items-center gap-2">
+            <Tag className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Origem: {origem}</span>
           </div>
         </div>
-        
-        <div className="mt-2 pt-2 border-t border-dashed flex justify-between items-center text-xs">
-          <span className="bg-gray-100 px-1.5 py-0.5 rounded-sm">{lead.responsavel}</span>
-          <div className="flex items-center text-blue-500 gap-1 font-medium hover:underline">
-            Mover
-            <ArrowDown className="h-3 w-3" />
+
+        <div className="mt-4">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Valor:</span>
+            <span className="font-semibold">{valorFormatado}</span>
+          </div>
+          <div className="flex justify-between text-sm mt-1">
+            <span className="text-muted-foreground">Etapa:</span>
+            <span 
+              className="font-semibold rounded-full px-2 py-0.5 text-xs" 
+              style={{ 
+                backgroundColor: `${etapa.cor}20`, 
+                color: etapa.cor 
+              }}
+            >
+              {etapa.nome}
+            </span>
           </div>
         </div>
       </CardContent>
+      <CardFooter className="bg-muted/20 p-3 flex justify-between text-xs text-muted-foreground">
+        <div className="flex items-center gap-1">
+          <Calendar className="h-3 w-3" />
+          <span>{lead.dataCriacao}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <User className="h-3 w-3" />
+          <span>{lead.responsavel}</span>
+        </div>
+      </CardFooter>
     </Card>
   );
 }

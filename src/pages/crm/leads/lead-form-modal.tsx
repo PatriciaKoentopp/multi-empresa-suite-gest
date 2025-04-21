@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Origem } from "@/types";
 
 interface Lead {
   id: number;
@@ -21,7 +22,7 @@ interface Lead {
   telefone: string;
   etapaId: number;
   valor: number;
-  origem: string;
+  origemId: string; // Modificado para referenciar o ID da origem
   dataCriacao: string;
   ultimoContato: string;
   responsavel: string;
@@ -40,9 +41,10 @@ interface LeadFormModalProps {
   onConfirm: (lead: Omit<Lead, "id">) => void;
   lead?: Lead | null;
   etapas: EtapaFunil[];
+  origens: Origem[]; // Adicionado prop para origens
 }
 
-export function LeadFormModal({ open, onClose, onConfirm, lead, etapas }: LeadFormModalProps) {
+export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens }: LeadFormModalProps) {
   const [formData, setFormData] = useState({
     nome: "",
     empresa: "",
@@ -50,7 +52,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas }: LeadFo
     telefone: "",
     etapaId: 1,
     valor: 0,
-    origem: "",
+    origemId: "", // Modificado para origemId
     dataCriacao: new Date().toLocaleDateString("pt-BR"),
     ultimoContato: new Date().toLocaleDateString("pt-BR"),
     responsavel: "",
@@ -65,7 +67,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas }: LeadFo
         telefone: lead.telefone,
         etapaId: lead.etapaId,
         valor: lead.valor,
-        origem: lead.origem,
+        origemId: lead.origemId, // Modificado para origemId
         dataCriacao: lead.dataCriacao,
         ultimoContato: lead.ultimoContato,
         responsavel: lead.responsavel,
@@ -78,13 +80,13 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas }: LeadFo
         telefone: "",
         etapaId: etapas.length > 0 ? etapas[0].id : 1,
         valor: 0,
-        origem: "",
+        origemId: origens.length > 0 ? origens[0].id : "", // Definido valor inicial
         dataCriacao: new Date().toLocaleDateString("pt-BR"),
         ultimoContato: new Date().toLocaleDateString("pt-BR"),
         responsavel: "",
       });
     }
-  }, [lead, etapas]);
+  }, [lead, etapas, origens]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -92,13 +94,19 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas }: LeadFo
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: name === "etapaId" ? Number(value) : value }));
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: name === "etapaId" ? Number(value) : value
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onConfirm(formData);
   };
+
+  // Filtrar apenas origens ativas
+  const origensAtivas = origens.filter(origem => origem.status === "ativo");
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -199,18 +207,18 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas }: LeadFo
               <div className="space-y-2">
                 <Label htmlFor="origem">Origem</Label>
                 <Select 
-                  value={formData.origem}
-                  onValueChange={(value) => handleSelectChange("origem", value)}
+                  value={formData.origemId}
+                  onValueChange={(value) => handleSelectChange("origemId", value)}
                 >
-                  <SelectTrigger id="origem">
+                  <SelectTrigger id="origem" className="bg-white">
                     <SelectValue placeholder="Selecione a origem" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Site">Site</SelectItem>
-                    <SelectItem value="Indicação">Indicação</SelectItem>
-                    <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-                    <SelectItem value="Evento">Evento</SelectItem>
-                    <SelectItem value="Ligação">Ligação</SelectItem>
+                  <SelectContent className="bg-white z-50">
+                    {origensAtivas.map((origem) => (
+                      <SelectItem key={origem.id} value={origem.id}>
+                        {origem.nome}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -220,10 +228,10 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas }: LeadFo
                   value={formData.responsavel}
                   onValueChange={(value) => handleSelectChange("responsavel", value)}
                 >
-                  <SelectTrigger id="responsavel">
+                  <SelectTrigger id="responsavel" className="bg-white">
                     <SelectValue placeholder="Selecione o responsável" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white z-50">
                     <SelectItem value="Ana Vendas">Ana Vendas</SelectItem>
                     <SelectItem value="Carlos Comercial">Carlos Comercial</SelectItem>
                     <SelectItem value="Pedro Marketing">Pedro Marketing</SelectItem>

@@ -1,4 +1,3 @@
-
 export interface GrupoFavorecido {
   id: string;
   nome: string;
@@ -107,6 +106,21 @@ export interface Favorecido {
   status: "ativo" | "inativo";
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Interface de Lead atualizada para usar o id da origem
+export interface Lead {
+  id: number;
+  nome: string;
+  empresa: string;
+  email: string;
+  telefone: string;
+  etapaId: number;
+  valor: number;
+  origemId: string; // Modificado para referenciar o ID da origem
+  dataCriacao: string;
+  ultimoContato: string;
+  responsavel: string;
 }
 
 // Importando e exportando a interface PlanoConta

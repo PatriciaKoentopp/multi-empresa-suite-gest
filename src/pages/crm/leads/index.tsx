@@ -1,70 +1,39 @@
 
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Filter, Search } from "lucide-react";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
-import { useToast } from "@/components/ui/use-toast";
+import { Origem } from "@/types"; // Importar tipo Origem
 
-interface Lead {
-  id: number;
-  nome: string;
-  empresa: string;
-  email: string;
-  telefone: string;
-  etapaId: number;
-  valor: number;
-  origem: string;
-  dataCriacao: string;
-  ultimoContato: string;
-  responsavel: string;
-}
-
-interface EtapaFunil {
-  id: number;
-  nome: string;
-  cor: string;
-  ordem: number;
-}
-
-// Dados mockados para etapas do funil
-const etapasIniciais: EtapaFunil[] = [
-  {
-    id: 1,
-    nome: "Prospecção",
-    cor: "#0EA5E9",
-    ordem: 1
-  },
-  {
-    id: 2,
-    nome: "Contato Inicial",
-    cor: "#F59E0B",
-    ordem: 2
-  },
-  {
-    id: 3,
-    nome: "Proposta Enviada",
-    cor: "#10B981",
-    ordem: 3
-  },
-  {
-    id: 4,
-    nome: "Negociação",
-    cor: "#8B5CF6",
-    ordem: 4
-  },
-  {
-    id: 5,
-    nome: "Fechamento",
-    cor: "#F97316",
-    ordem: 5
-  }
+// Mock data para etapas do funil de vendas
+const etapasFunil = [
+  { id: 1, nome: "Qualificação", cor: "#3498db", ordem: 1 },
+  { id: 2, nome: "Apresentação", cor: "#2ecc71", ordem: 2 },
+  { id: 3, nome: "Proposta", cor: "#f39c12", ordem: 3 },
+  { id: 4, nome: "Negociação", cor: "#9b59b6", ordem: 4 },
+  { id: 5, nome: "Fechamento", cor: "#e74c3c", ordem: 5 },
 ];
 
-// Dados mockados para leads
-const leadsIniciais: Lead[] = [
+// Mock data para leads
+const initialLeads = [
   {
     id: 1,
     nome: "João Silva",
@@ -73,252 +42,232 @@ const leadsIniciais: Lead[] = [
     telefone: "(11) 98765-4321",
     etapaId: 1,
     valor: 5000,
-    origem: "Site",
-    dataCriacao: "15/04/2025",
+    origemId: "1", // Atualizado para usar origemId
+    dataCriacao: "10/04/2025",
     ultimoContato: "15/04/2025",
-    responsavel: "Ana Vendas"
+    responsavel: "Ana Vendas",
   },
   {
     id: 2,
     nome: "Maria Oliveira",
-    empresa: "Consultoria ABC",
-    email: "maria@consultoriaabc.com",
+    empresa: "Inovação Digital",
+    email: "maria@inovacaodigital.com",
     telefone: "(11) 91234-5678",
     etapaId: 2,
-    valor: 10000,
-    origem: "Indicação",
-    dataCriacao: "10/04/2025",
-    ultimoContato: "18/04/2025",
-    responsavel: "Carlos Comercial"
+    valor: 8500,
+    origemId: "2", // Atualizado para usar origemId
+    dataCriacao: "05/04/2025",
+    ultimoContato: "12/04/2025",
+    responsavel: "Carlos Comercial",
   },
   {
     id: 3,
-    nome: "Pedro Souza",
-    empresa: "Distribuição XYZ",
-    email: "pedro@xyzdistr.com",
-    telefone: "(11) 92222-3333",
-    etapaId: 3,
-    valor: 15000,
-    origem: "LinkedIn",
-    dataCriacao: "05/04/2025",
-    ultimoContato: "19/04/2025",
-    responsavel: "Ana Vendas"
-  },
-  {
-    id: 4,
-    nome: "Lucia Ferreira",
-    empresa: "Indústrias LF",
-    email: "lucia@lfindustrias.com",
-    telefone: "(11) 94444-5555",
-    etapaId: 4,
-    valor: 25000,
-    origem: "Evento",
-    dataCriacao: "01/04/2025",
-    ultimoContato: "17/04/2025",
-    responsavel: "Carlos Comercial"
-  },
-  {
-    id: 5,
-    nome: "Rafael Mendes",
-    empresa: "Serviços RM",
-    email: "rafael@rmservicos.com",
-    telefone: "(11) 96666-7777",
-    etapaId: 5,
-    valor: 8000,
-    origem: "Site",
-    dataCriacao: "20/03/2025",
-    ultimoContato: "16/04/2025",
-    responsavel: "Ana Vendas"
-  },
-  {
-    id: 6,
-    nome: "Carla Rodrigues",
-    empresa: "Agência Digital",
-    email: "carla@agenciadigital.com",
-    telefone: "(11) 98888-9999",
-    etapaId: 1,
-    valor: 12000,
-    origem: "Indicação",
-    dataCriacao: "25/03/2025",
-    ultimoContato: "20/04/2025",
-    responsavel: "Pedro Marketing"
-  },
-  {
-    id: 7,
-    nome: "Marcos Almeida",
-    empresa: "Construtora MA",
-    email: "marcos@construtorama.com",
+    nome: "Pedro Santos",
+    empresa: "Global Services",
+    email: "pedro@globalservices.com",
     telefone: "(11) 97777-8888",
-    etapaId: 2,
-    valor: 30000,
-    origem: "Site",
-    dataCriacao: "18/03/2025",
-    ultimoContato: "19/04/2025",
-    responsavel: "Pedro Marketing"
-  }
+    etapaId: 3,
+    valor: 12000,
+    origemId: "3", // Atualizado para usar origemId
+    dataCriacao: "01/04/2025",
+    ultimoContato: "09/04/2025",
+    responsavel: "Pedro Marketing",
+  },
+];
+
+// Mock data para origens - Agora vamos buscar do banco de dados
+const initialOrigens: Origem[] = [
+  {
+    id: "1",
+    nome: "Site",
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "2",
+    nome: "Indicação",
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "3",
+    nome: "LinkedIn",
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "4",
+    nome: "Evento",
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "5",
+    nome: "Ligação",
+    status: "ativo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
 ];
 
 export default function LeadsPage() {
-  const { toast } = useToast();
-  const [etapas, setEtapas] = useState<EtapaFunil[]>(etapasIniciais);
-  const [leads, setLeads] = useState<Lead[]>(leadsIniciais);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editLead, setEditLead] = useState<Lead | null>(null);
-  const [draggingLead, setDraggingLead] = useState<Lead | null>(null);
+  const [leads, setLeads] = useState(initialLeads);
+  const [filteredLeads, setFilteredLeads] = useState(initialLeads);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [etapaFilter, setEtapaFilter] = useState<string>("all");
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<typeof initialLeads[0] | null>(
+    null
+  );
+  const [origens, setOrigens] = useState<Origem[]>(initialOrigens);
 
-  // Buscar etapas do funil (em uma implementação real, isso viria de uma API)
+  // Função para filtrar leads
   useEffect(() => {
-    // Em uma implementação real, aqui teria uma chamada à API
-    setEtapas(etapasIniciais.sort((a, b) => a.ordem - b.ordem));
+    let filtered = [...leads];
+
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (lead) =>
+          lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          lead.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          lead.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (etapaFilter !== "all") {
+      filtered = filtered.filter(
+        (lead) => lead.etapaId === parseInt(etapaFilter)
+      );
+    }
+
+    setFilteredLeads(filtered);
+  }, [leads, searchTerm, etapaFilter]);
+
+  // Função para buscar origens (mock)
+  useEffect(() => {
+    // Em um cenário real, aqui faria uma chamada para API
+    setOrigens(initialOrigens);
   }, []);
 
-  // Manipular a criação de um novo lead
-  function handleNovoLead() {
-    setEditLead(null);
-    setModalOpen(true);
-  }
+  const handleOpenFormModal = (lead = null) => {
+    setEditingLead(lead);
+    setIsFormModalOpen(true);
+  };
 
-  // Salvar lead (novo ou editado)
-  function handleSalvarLead(lead: Omit<Lead, "id">) {
-    if (editLead) {
+  const handleCloseFormModal = () => {
+    setEditingLead(null);
+    setIsFormModalOpen(false);
+  };
+
+  // Função para salvar um novo lead ou atualizar um existente
+  const handleSaveLead = (leadData) => {
+    if (editingLead) {
       // Atualizar lead existente
-      setLeads(prev => prev.map(l => l.id === editLead.id ? { ...l, ...lead } : l));
-      toast({
-        title: "Lead atualizado",
-        description: "As informações do lead foram atualizadas com sucesso!"
-      });
+      const updatedLeads = leads.map((lead) =>
+        lead.id === editingLead.id ? { ...leadData, id: lead.id } : lead
+      );
+      setLeads(updatedLeads);
+      toast.success("Lead atualizado com sucesso!");
     } else {
       // Criar novo lead
-      const novoId = leads.length > 0 ? Math.max(...leads.map(l => l.id)) + 1 : 1;
-      setLeads(prev => [...prev, { id: novoId, ...lead }]);
-      toast({
-        title: "Lead criado",
-        description: "Novo lead adicionado com sucesso!"
-      });
+      const newLead = {
+        ...leadData,
+        id: leads.length > 0 ? Math.max(...leads.map((l) => l.id)) + 1 : 1,
+      };
+      setLeads([...leads, newLead]);
+      toast.success("Lead criado com sucesso!");
     }
-    setModalOpen(false);
-  }
-
-  // Editar lead existente
-  function handleEditarLead(lead: Lead) {
-    setEditLead(lead);
-    setModalOpen(true);
-  }
-
-  // Manipuladores para drag and drop
-  const handleDragStart = (lead: Lead) => {
-    setDraggingLead(lead);
+    handleCloseFormModal();
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent, etapaId: number) => {
-    e.preventDefault();
-    if (draggingLead && draggingLead.etapaId !== etapaId) {
-      // Atualizar a etapa do lead
-      setLeads(prev =>
-        prev.map(l =>
-          l.id === draggingLead.id ? { ...l, etapaId } : l
-        )
-      );
-
-      toast({
-        title: "Lead movido",
-        description: `Lead movido para etapa ${etapas.find(e => e.id === etapaId)?.nome}`
-      });
-    }
-    setDraggingLead(null);
-  };
-
-  // Organizar leads por etapa
-  const getLeadsPorEtapa = (etapaId: number) => {
-    return leads.filter(lead => lead.etapaId === etapaId);
-  };
-
-  // Calcular o valor total de leads em uma etapa
-  const calcularValorEtapa = (etapaId: number) => {
-    return getLeadsPorEtapa(etapaId).reduce((acc, lead) => acc + lead.valor, 0);
+  // Função para deletar um lead
+  const handleDeleteLead = (id) => {
+    setLeads(leads.filter((lead) => lead.id !== id));
+    toast.success("Lead removido com sucesso!");
   };
 
   return (
-    <div className="container mx-auto px-4 pb-10">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-3">
-        <div>
-          <h2 className="text-xl font-semibold text-foreground leading-tight">Gestão de Leads</h2>
-          <p className="text-sm text-muted-foreground">Acompanhamento de oportunidades no funil de vendas</p>
-        </div>
-        <Button variant="blue" size="sm" onClick={handleNovoLead}>
-          <Plus className="mr-1" />
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Leads</h1>
+        <Button 
+          onClick={() => handleOpenFormModal()} 
+          variant="blue"
+        >
+          <Plus className="mr-2 h-4 w-4" />
           Novo Lead
         </Button>
       </div>
 
-      <ResizablePanelGroup 
-        direction="horizontal"
-        className="min-h-[600px] w-full rounded-lg border bg-white"
-      >
-        {etapas.map((etapa, index) => (
-          <React.Fragment key={etapa.id}>
-            {index > 0 && <ResizableHandle withHandle />}
-            <ResizablePanel 
-              defaultSize={20} 
-              minSize={15}
-              className="transition-all duration-200"
-            >
-              <div 
-                className="h-full flex flex-col"
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, etapa.id)}
+      {/* Filtros */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, empresa ou email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="w-full md:w-[200px]">
+              <Select
+                value={etapaFilter}
+                onValueChange={setEtapaFilter}
               >
-                <div 
-                  className="p-3 border-b"
-                  style={{ backgroundColor: `${etapa.cor}15` }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span 
-                        className="block w-3 h-3 rounded-full border" 
-                        style={{ backgroundColor: etapa.cor }}
-                      ></span>
-                      <h3 className="font-medium">{etapa.nome}</h3>
-                    </div>
-                    <div className="flex items-center text-sm font-medium">
-                      <span className="bg-gray-100 px-2 py-1 rounded text-xs">
-                        {getLeadsPorEtapa(etapa.id).length}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Total: R$ {calcularValorEtapa(etapa.id).toLocaleString('pt-BR')}
-                  </p>
-                </div>
-                <div className="flex-1 overflow-auto p-2 space-y-2 bg-gray-50/50">
-                  {getLeadsPorEtapa(etapa.id).map(lead => (
-                    <LeadCard 
-                      key={lead.id} 
-                      lead={lead} 
-                      onEdit={() => handleEditarLead(lead)} 
-                      onDragStart={() => handleDragStart(lead)}
-                    />
+                <SelectTrigger className="w-full bg-white">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Filtrar por etapa" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  <SelectItem value="all">Todas as etapas</SelectItem>
+                  {etapasFunil.map((etapa) => (
+                    <SelectItem key={etapa.id} value={etapa.id.toString()}>
+                      {etapa.nome}
+                    </SelectItem>
                   ))}
-                </div>
-              </div>
-            </ResizablePanel>
-          </React.Fragment>
-        ))}
-      </ResizablePanelGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-      {modalOpen && (
-        <LeadFormModal 
-          open={modalOpen} 
-          onClose={() => setModalOpen(false)}
-          onConfirm={handleSalvarLead}
-          lead={editLead}
-          etapas={etapas}
-        />
-      )}
+          {/* Cards de Leads */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredLeads.length > 0 ? (
+              filteredLeads.map((lead) => (
+                <LeadCard
+                  key={lead.id}
+                  lead={lead}
+                  etapas={etapasFunil}
+                  origens={origens} // Passar origens para o componente
+                  onEdit={() => handleOpenFormModal(lead)}
+                  onDelete={() => handleDeleteLead(lead.id)}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-10 text-muted-foreground">
+                Nenhum lead encontrado com os filtros selecionados.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Modal de Formulário */}
+      <LeadFormModal
+        open={isFormModalOpen}
+        onClose={handleCloseFormModal}
+        onConfirm={handleSaveLead}
+        lead={editingLead}
+        etapas={etapasFunil}
+        origens={origens} // Passar origens para o modal
+      />
     </div>
   );
 }
