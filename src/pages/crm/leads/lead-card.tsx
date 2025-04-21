@@ -27,7 +27,7 @@ interface Lead {
   origemId: string;
   dataCriacao: string;
   ultimoContato: string;
-  responsavelId: string; // Atualizado para usar responsavelId
+  responsavelId: string;
 }
 
 interface EtapaFunil {
@@ -71,7 +71,7 @@ export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, on
   });
 
   return (
-    <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-grab">
       <div className="h-1" style={{ backgroundColor: etapa.cor }}></div>
       <CardContent className="p-3">
         <div className="flex justify-between items-start">

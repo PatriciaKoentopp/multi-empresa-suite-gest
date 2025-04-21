@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,7 @@ import { Plus, Filter, Search } from "lucide-react";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
 import { Origem, Usuario } from "@/types"; // Importar tipos Origem e Usuario
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 // Mock data para etapas do funil de vendas
 const etapasFunil = [
@@ -238,6 +238,31 @@ export default function LeadsPage() {
     toast.success("Lead movido com sucesso!");
   };
 
+  // Função para lidar com o fim do drag and drop
+  const onDragEnd = (result) => {
+    const { destination, source, draggableId } = result;
+
+    // Se não tiver destino ou o destino for o mesmo que a origem, não faz nada
+    if (!destination || 
+        (destination.droppableId === source.droppableId && 
+         destination.index === source.index)) {
+      return;
+    }
+
+    // Convertendo o id da etapa de destino para número
+    const targetEtapaId = parseInt(destination.droppableId);
+    // Convertendo o id do lead para número
+    const leadId = parseInt(draggableId);
+
+    // Atualizando o lead
+    const updatedLeads = leads.map(lead => 
+      lead.id === leadId ? { ...lead, etapaId: targetEtapaId } : lead
+    );
+
+    setLeads(updatedLeads);
+    toast.success("Lead movido com sucesso!");
+  };
+
   // Agrupar leads por etapa do funil
   const leadsByStage = etapasFunil.map(etapa => {
     const stageLeads = filteredLeads.filter(lead => lead.etapaId === etapa.id);
@@ -294,43 +319,67 @@ export default function LeadsPage() {
             </div>
           </div>
 
-          {/* Layout Kanban Melhorado */}
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {leadsByStage.map(({ etapa, leads }) => (
-              <div key={etapa.id} className="min-w-[280px] max-w-[280px] flex-shrink-0">
-                <div 
-                  className="text-sm font-semibold mb-2 p-2 rounded-md flex justify-between items-center"
-                  style={{ backgroundColor: `${etapa.cor}20`, color: etapa.cor }}
-                >
-                  <span>{etapa.nome}</span>
-                  <span className="px-2 py-0.5 bg-white rounded-full text-xs">
-                    {leads.length}
-                  </span>
+          {/* Layout Kanban com Drag and Drop */}
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {leadsByStage.map(({ etapa, leads }) => (
+                <div key={etapa.id} className="min-w-[280px] max-w-[280px] flex-shrink-0">
+                  <div 
+                    className="text-sm font-semibold mb-2 p-2 rounded-md flex justify-between items-center"
+                    style={{ backgroundColor: `${etapa.cor}20`, color: etapa.cor }}
+                  >
+                    <span>{etapa.nome}</span>
+                    <span className="px-2 py-0.5 bg-white rounded-full text-xs">
+                      {leads.length}
+                    </span>
+                  </div>
+                  
+                  <Droppable droppableId={etapa.id.toString()}>
+                    {(provided) => (
+                      <div 
+                        className="space-y-2 min-h-[50px]" 
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
+                        {leads.length > 0 ? (
+                          leads.map((lead, index) => (
+                            <Draggable 
+                              key={lead.id} 
+                              draggableId={lead.id.toString()} 
+                              index={index}
+                            >
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                >
+                                  <LeadCard
+                                    lead={lead}
+                                    etapas={etapasFunil}
+                                    origens={origens}
+                                    usuarios={usuarios}
+                                    onEdit={() => handleOpenFormModal(lead)}
+                                    onDelete={() => handleDeleteLead(lead.id)}
+                                    onMove={handleMoveLead}
+                                  />
+                                </div>
+                              )}
+                            </Draggable>
+                          ))
+                        ) : (
+                          <div className="text-center py-4 text-muted-foreground text-sm border border-dashed rounded-md">
+                            Nenhum lead nesta etapa
+                          </div>
+                        )}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
                 </div>
-                
-                <div className="space-y-2">
-                  {leads.length > 0 ? (
-                    leads.map((lead) => (
-                      <LeadCard
-                        key={lead.id}
-                        lead={lead}
-                        etapas={etapasFunil}
-                        origens={origens}
-                        usuarios={usuarios}
-                        onEdit={() => handleOpenFormModal(lead)}
-                        onDelete={() => handleDeleteLead(lead.id)}
-                        onMove={handleMoveLead}
-                      />
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-muted-foreground text-sm border border-dashed rounded-md">
-                      Nenhum lead nesta etapa
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </DragDropContext>
         </CardContent>
       </Card>
 
