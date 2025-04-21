@@ -122,7 +122,25 @@ export interface Usuario {
   updatedAt: Date;
 }
 
-// Interface de Lead atualizada para usar o id do responsável
+// Interface de etapa do funil
+export interface EtapaFunil {
+  id: number;
+  nome: string;
+  cor: string;
+  ordem: number;
+}
+
+// Interface de funil de vendas
+export interface Funil {
+  id: number;
+  nome: string;
+  descricao: string;
+  ativo: boolean;
+  dataCriacao: string;
+  etapas: EtapaFunil[];
+}
+
+// Interface de Lead atualizada para usar o id do responsável e do funil
 export interface Lead {
   id: number;
   nome: string;
@@ -130,11 +148,12 @@ export interface Lead {
   email: string;
   telefone: string;
   etapaId: number;
+  funilId: number; // Adicionado referência ao funil
   valor: number;
   origemId: string;
   dataCriacao: string;
   ultimoContato: string;
-  responsavelId: string; // Modificado para usar o ID do responsável
+  responsavelId: string; 
 }
 
 // Importando e exportando a interface PlanoConta
