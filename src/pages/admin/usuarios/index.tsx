@@ -225,18 +225,10 @@ export default function UsuariosPage() {
                   filteredUsuarios.map((usuario) => (
                     <TableRow key={usuario.id}>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-blue-500" />
-                          <span>{usuario.nome}</span>
-                        </div>
+                        <span>{usuario.nome}</span>
                       </TableCell>
                       <TableCell>{usuario.email}</TableCell>
                       <TableCell>
-                        {usuario.tipo === "Administrador" ? (
-                          <UserCheck className="inline-block w-4 h-4 mr-1 text-blue-600" />
-                        ) : (
-                          <User className="inline-block w-4 h-4 mr-1 text-gray-400" />
-                        )}
                         {usuario.tipo}
                       </TableCell>
                       <TableCell>
