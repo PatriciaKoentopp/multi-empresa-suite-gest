@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -187,7 +188,7 @@ export default function TabelaPrecosPage() {
               <TableHead>Vigência</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Qtd. Serviços</TableHead>
-              <TableHead />
+              <TableHead className="w-[120px] text-right">Ações</TableHead>
             </TableRow>
           </thead>
           <TableBody>
@@ -267,3 +268,4 @@ export default function TabelaPrecosPage() {
     </div>
   );
 }
+
