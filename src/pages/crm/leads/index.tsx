@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,7 @@ import {
 import { Plus, Filter, Search } from "lucide-react";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
-import { Origem } from "@/types"; // Importar tipo Origem
+import { Origem, Usuario } from "@/types"; // Importar tipos Origem e Usuario
 
 // Mock data para etapas do funil de vendas
 const etapasFunil = [
@@ -32,7 +31,7 @@ const etapasFunil = [
   { id: 5, nome: "Fechamento", cor: "#e74c3c", ordem: 5 },
 ];
 
-// Mock data para leads
+// Mock data para leads - Atualizado para usar responsavelId em vez de responsavel
 const initialLeads = [
   {
     id: 1,
@@ -42,10 +41,10 @@ const initialLeads = [
     telefone: "(11) 98765-4321",
     etapaId: 1,
     valor: 5000,
-    origemId: "1", // Atualizado para usar origemId
+    origemId: "1",
     dataCriacao: "10/04/2025",
     ultimoContato: "15/04/2025",
-    responsavel: "Ana Vendas",
+    responsavelId: "1", // Atualizado para usar ID do responsável
   },
   {
     id: 2,
@@ -55,10 +54,10 @@ const initialLeads = [
     telefone: "(11) 91234-5678",
     etapaId: 2,
     valor: 8500,
-    origemId: "2", // Atualizado para usar origemId
+    origemId: "2",
     dataCriacao: "05/04/2025",
     ultimoContato: "12/04/2025",
-    responsavel: "Carlos Comercial",
+    responsavelId: "2", // Atualizado para usar ID do responsável
   },
   {
     id: 3,
@@ -68,14 +67,14 @@ const initialLeads = [
     telefone: "(11) 97777-8888",
     etapaId: 3,
     valor: 12000,
-    origemId: "3", // Atualizado para usar origemId
+    origemId: "3",
     dataCriacao: "01/04/2025",
     ultimoContato: "09/04/2025",
-    responsavel: "Pedro Marketing",
+    responsavelId: "3", // Atualizado para usar ID do responsável
   },
 ];
 
-// Mock data para origens - Agora vamos buscar do banco de dados
+// Mock data para origens
 const initialOrigens: Origem[] = [
   {
     id: "1",
@@ -114,6 +113,43 @@ const initialOrigens: Origem[] = [
   },
 ];
 
+// Mock data para usuários (vendedores)
+const initialUsuarios: Usuario[] = [
+  {
+    id: "1",
+    nome: "Ana Vendas",
+    email: "ana@exemplo.com",
+    senha: "senha123",
+    tipo: "Usuário",
+    status: "ativo",
+    vendedor: "sim",
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: "2",
+    nome: "Carlos Comercial",
+    email: "carlos@exemplo.com",
+    senha: "senha123",
+    tipo: "Usuário",
+    status: "ativo",
+    vendedor: "sim",
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: "3",
+    nome: "Pedro Marketing",
+    email: "pedro@exemplo.com",
+    senha: "senha123",
+    tipo: "Usuário",
+    status: "ativo",
+    vendedor: "sim",
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
+];
+
 export default function LeadsPage() {
   const [leads, setLeads] = useState(initialLeads);
   const [filteredLeads, setFilteredLeads] = useState(initialLeads);
@@ -124,6 +160,7 @@ export default function LeadsPage() {
     null
   );
   const [origens, setOrigens] = useState<Origem[]>(initialOrigens);
+  const [usuarios, setUsuarios] = useState<Usuario[]>(initialUsuarios);
 
   // Função para filtrar leads
   useEffect(() => {
@@ -147,10 +184,11 @@ export default function LeadsPage() {
     setFilteredLeads(filtered);
   }, [leads, searchTerm, etapaFilter]);
 
-  // Função para buscar origens (mock)
+  // Função para buscar origens e usuários (mock)
   useEffect(() => {
     // Em um cenário real, aqui faria uma chamada para API
     setOrigens(initialOrigens);
+    setUsuarios(initialUsuarios);
   }, []);
 
   const handleOpenFormModal = (lead = null) => {
@@ -245,7 +283,8 @@ export default function LeadsPage() {
                   key={lead.id}
                   lead={lead}
                   etapas={etapasFunil}
-                  origens={origens} // Passar origens para o componente
+                  origens={origens}
+                  usuarios={usuarios} // Passar usuários para o componente
                   onEdit={() => handleOpenFormModal(lead)}
                   onDelete={() => handleDeleteLead(lead.id)}
                 />
@@ -266,7 +305,8 @@ export default function LeadsPage() {
         onConfirm={handleSaveLead}
         lead={editingLead}
         etapas={etapasFunil}
-        origens={origens} // Passar origens para o modal
+        origens={origens}
+        usuarios={usuarios} // Passar usuários para o modal
       />
     </div>
   );
