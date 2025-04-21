@@ -9,4 +9,6 @@ export interface ContaCorrente {
   status: "ativo" | "inativo";
   createdAt: Date;
   updatedAt: Date;
+  data?: Date; // nova data (campo opcional para cadastro)
+  saldoInicial?: number; // novo saldo inicial (campo opcional para cadastro)
 }
