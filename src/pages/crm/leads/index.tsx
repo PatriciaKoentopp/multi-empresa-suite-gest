@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,19 +21,55 @@ import {
 import { Plus, Filter, Search } from "lucide-react";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
-import { Origem, Usuario } from "@/types"; 
+import { Origem, Usuario, Funil } from "@/types"; 
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
+import { Badge } from "@/components/ui/badge";
 
-// Mock data para etapas do funil de vendas
-const etapasFunil = [
-  { id: 1, nome: "Qualificação", cor: "#3498db", ordem: 1 },
-  { id: 2, nome: "Apresentação", cor: "#2ecc71", ordem: 2 },
-  { id: 3, nome: "Proposta", cor: "#f39c12", ordem: 3 },
-  { id: 4, nome: "Negociação", cor: "#9b59b6", ordem: 4 },
-  { id: 5, nome: "Fechamento", cor: "#e74c3c", ordem: 5 },
+// Mock data para funis
+const initialFunis: Funil[] = [
+  {
+    id: 1,
+    nome: "Vendas Padrão",
+    descricao: "Funil padrão de vendas",
+    ativo: true,
+    dataCriacao: "01/04/2025",
+    etapas: [
+      { id: 1, nome: "Qualificação", cor: "#3498db", ordem: 1 },
+      { id: 2, nome: "Apresentação", cor: "#2ecc71", ordem: 2 },
+      { id: 3, nome: "Proposta", cor: "#f39c12", ordem: 3 },
+      { id: 4, nome: "Negociação", cor: "#9b59b6", ordem: 4 },
+      { id: 5, nome: "Fechamento", cor: "#e74c3c", ordem: 5 },
+    ]
+  },
+  {
+    id: 2,
+    nome: "Marketing Digital",
+    descricao: "Funil de captação via marketing digital",
+    ativo: true,
+    dataCriacao: "05/04/2025",
+    etapas: [
+      { id: 6, nome: "Interesse", cor: "#1abc9c", ordem: 1 },
+      { id: 7, nome: "Avaliação", cor: "#3498db", ordem: 2 },
+      { id: 8, nome: "Decisão", cor: "#f39c12", ordem: 3 },
+      { id: 9, nome: "Contratação", cor: "#27ae60", ordem: 4 },
+    ]
+  },
+  {
+    id: 3,
+    nome: "Suporte",
+    descricao: "Funil de suporte ao cliente",
+    ativo: true,
+    dataCriacao: "10/04/2025",
+    etapas: [
+      { id: 10, nome: "Abertura", cor: "#e74c3c", ordem: 1 },
+      { id: 11, nome: "Análise", cor: "#f39c12", ordem: 2 },
+      { id: 12, nome: "Resolução", cor: "#2ecc71", ordem: 3 },
+      { id: 13, nome: "Feedback", cor: "#3498db", ordem: 4 },
+    ]
+  }
 ];
 
-// Mock data para leads
+// Mock data para leads (atualizado com funilId)
 const initialLeads = [
   {
     id: 1,
@@ -41,6 +78,7 @@ const initialLeads = [
     email: "joao@techsolutions.com",
     telefone: "(11) 98765-4321",
     etapaId: 1,
+    funilId: 1, // Funil Vendas Padrão
     valor: 5000,
     origemId: "1",
     dataCriacao: "10/04/2025",
@@ -54,6 +92,7 @@ const initialLeads = [
     email: "maria@inovacaodigital.com",
     telefone: "(11) 91234-5678",
     etapaId: 2,
+    funilId: 1, // Funil Vendas Padrão
     valor: 8500,
     origemId: "2",
     dataCriacao: "05/04/2025",
@@ -67,10 +106,39 @@ const initialLeads = [
     email: "pedro@globalservices.com",
     telefone: "(11) 97777-8888",
     etapaId: 3,
+    funilId: 1, // Funil Vendas Padrão
     valor: 12000,
     origemId: "3",
     dataCriacao: "01/04/2025",
     ultimoContato: "09/04/2025",
+    responsavelId: "3",
+  },
+  {
+    id: 4,
+    nome: "Ana Costa",
+    empresa: "Marketing Pro",
+    email: "ana@marketingpro.com",
+    telefone: "(11) 95555-6666",
+    etapaId: 6,
+    funilId: 2, // Funil Marketing Digital
+    valor: 7500,
+    origemId: "4",
+    dataCriacao: "07/04/2025",
+    ultimoContato: "14/04/2025",
+    responsavelId: "1",
+  },
+  {
+    id: 5,
+    nome: "Carlos Mendes",
+    empresa: "Suporte Tech",
+    email: "carlos@suportetech.com",
+    telefone: "(11) 94444-3333",
+    etapaId: 10,
+    funilId: 3, // Funil Suporte
+    valor: 3000,
+    origemId: "5",
+    dataCriacao: "12/04/2025",
+    ultimoContato: "16/04/2025",
     responsavelId: "3",
   },
 ];
@@ -160,10 +228,15 @@ export default function LeadsPage() {
   const [editingLead, setEditingLead] = useState<typeof initialLeads[0] | null>(null);
   const [origens, setOrigens] = useState<Origem[]>(initialOrigens);
   const [usuarios, setUsuarios] = useState<Usuario[]>(initialUsuarios);
+  const [funis, setFunis] = useState<Funil[]>(initialFunis);
+  const [selectedFunilId, setSelectedFunilId] = useState<number>(1); // Padrão: primeiro funil
 
-  // Função para filtrar leads
+  // Obter o funil selecionado
+  const selectedFunil = funis.find(funil => funil.id === selectedFunilId) || funis[0];
+
+  // Função para filtrar leads com base no funil selecionado e outros filtros
   useEffect(() => {
-    let filtered = [...leads];
+    let filtered = [...leads].filter(lead => lead.funilId === selectedFunilId);
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -181,13 +254,14 @@ export default function LeadsPage() {
     }
 
     setFilteredLeads(filtered);
-  }, [leads, searchTerm, etapaFilter]);
+  }, [leads, searchTerm, etapaFilter, selectedFunilId]);
 
   // Função para buscar origens e usuários (mock)
   useEffect(() => {
     // Em um cenário real, aqui faria uma chamada para API
     setOrigens(initialOrigens);
     setUsuarios(initialUsuarios);
+    setFunis(initialFunis);
   }, []);
 
   const handleOpenFormModal = (lead = null) => {
@@ -202,17 +276,23 @@ export default function LeadsPage() {
 
   // Função para salvar um novo lead ou atualizar um existente
   const handleSaveLead = (leadData) => {
+    // Garantir que o lead seja salvo com o funilId selecionado
+    const leadWithFunil = {
+      ...leadData,
+      funilId: selectedFunilId
+    };
+
     if (editingLead) {
       // Atualizar lead existente
       const updatedLeads = leads.map((lead) =>
-        lead.id === editingLead.id ? { ...leadData, id: lead.id } : lead
+        lead.id === editingLead.id ? { ...leadWithFunil, id: lead.id } : lead
       );
       setLeads(updatedLeads);
       toast.success("Lead atualizado com sucesso!");
     } else {
       // Criar novo lead
       const newLead = {
-        ...leadData,
+        ...leadWithFunil,
         id: leads.length > 0 ? Math.max(...leads.map((l) => l.id)) + 1 : 1,
       };
       setLeads([...leads, newLead]);
@@ -262,13 +342,22 @@ export default function LeadsPage() {
   };
 
   // Agrupar leads por etapa do funil
-  const leadsByStage = etapasFunil.map(etapa => {
+  const leadsByStage = selectedFunil.etapas.map(etapa => {
     const stageLeads = filteredLeads.filter(lead => lead.etapaId === etapa.id);
     return {
       etapa,
       leads: stageLeads
     };
   });
+
+  // Manipulador para quando o funil é alterado
+  const handleFunilChange = (funilId: string) => {
+    setSelectedFunilId(Number(funilId));
+    setEtapaFilter("all"); // Reset do filtro de etapa quando mudar o funil
+  };
+
+  // Obter apenas etapas do funil selecionado para o filtro
+  const etapasFunilSelecionado = selectedFunil ? selectedFunil.etapas : [];
 
   return (
     <div className="space-y-4">
@@ -287,6 +376,30 @@ export default function LeadsPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
+            {/* Seletor de Funil */}
+            <div className="w-full md:w-[250px]">
+              <Select
+                value={selectedFunilId.toString()}
+                onValueChange={handleFunilChange}
+              >
+                <SelectTrigger className="w-full bg-white">
+                  <SelectValue placeholder="Selecionar funil" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  {funis.map((funil) => (
+                    <SelectItem key={funil.id} value={funil.id.toString()}>
+                      {funil.nome}
+                      {!funil.ativo && (
+                        <Badge variant="secondary" className="ml-2">
+                          Inativo
+                        </Badge>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -307,7 +420,7 @@ export default function LeadsPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-white z-50">
                   <SelectItem value="all">Todas as etapas</SelectItem>
-                  {etapasFunil.map((etapa) => (
+                  {etapasFunilSelecionado.map((etapa) => (
                     <SelectItem key={etapa.id} value={etapa.id.toString()}>
                       {etapa.nome}
                     </SelectItem>
@@ -355,7 +468,7 @@ export default function LeadsPage() {
                                 >
                                   <LeadCard
                                     lead={lead}
-                                    etapas={etapasFunil}
+                                    etapas={etapasFunilSelecionado}
                                     origens={origens}
                                     usuarios={usuarios}
                                     onEdit={() => handleOpenFormModal(lead)}
@@ -388,7 +501,7 @@ export default function LeadsPage() {
         onClose={handleCloseFormModal}
         onConfirm={handleSaveLead}
         lead={editingLead}
-        etapas={etapasFunil}
+        etapas={etapasFunilSelecionado}
         origens={origens}
         usuarios={usuarios}
       />

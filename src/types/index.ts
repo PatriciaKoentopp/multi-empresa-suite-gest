@@ -1,4 +1,3 @@
-
 export interface GrupoFavorecido {
   id: string;
   nome: string;
@@ -148,7 +147,7 @@ export interface Lead {
   email: string;
   telefone: string;
   etapaId: number;
-  funilId: number; // Adicionado referência ao funil
+  funilId: number; // Referência ao funil
   valor: number;
   origemId: string;
   dataCriacao: string;
