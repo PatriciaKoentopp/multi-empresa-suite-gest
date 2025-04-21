@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -115,7 +116,23 @@ export default function FaturamentoPage() {
   const totalValor = itemsFiltrados.reduce((acc, item) => acc + (item.valor || 0), 0);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="space-y-4">
+      {/* Título e botão de inclusão */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold">Faturamento</h1>
+        <Button
+          variant="blue"
+          size="default"
+          title="Incluir Orçamento"
+          className="flex gap-2 items-center"
+          onClick={() => navigate("/vendas/orcamento")}
+        >
+          <span>Incluir Orçamento</span>
+          {/* Ícone sempre à direita, padrão Favoritos */}
+          <svg xmlns="http://www.w3.org/2000/svg" className="lucide lucide-file-plus w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M9 15v-6M6 12h6m9 6V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2Z" /><path d="M15 2v4a2 2 0 0 0 2 2h4"/></svg>
+        </Button>
+      </div>
+
       {/* Filtros */}
       <div className="flex flex-wrap gap-2 items-center bg-white border p-4 rounded-md mb-1">
         {/* Campo de busca com ícone ao lado */}
@@ -209,20 +226,6 @@ export default function FaturamentoPage() {
         <Button variant="outline" size="icon" className="ml-2" title="Filtrar">
           <Filter className="w-4 h-4" />
         </Button>
-
-        <div className="ml-auto">
-          <Button
-            variant="blue"
-            size="default"
-            title="Incluir Orçamento"
-            className="flex gap-2 items-center"
-            onClick={() => navigate("/vendas/orcamento")}
-          >
-            <span>Incluir Orçamento</span>
-            {/* Ícone sempre à direita, padrão Favoritos */}
-            <svg xmlns="http://www.w3.org/2000/svg" className="lucide lucide-file-plus w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M9 15v-6M6 12h6m9 6V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2Z" /><path d="M15 2v4a2 2 0 0 0 2 2h4"/></svg>
-          </Button>
-        </div>
       </div>
 
       {/* Tabela */}
