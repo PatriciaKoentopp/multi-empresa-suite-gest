@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -61,7 +60,7 @@ const mockFaturamentos = [
 ];
 
 // Opções exemplo para Tipo e Favorecido
-const tipos = ["Orçamento", "Venda"];
+const tipos = ["Todos", "Orçamento", "Venda"];
 const favorecidos = Array.from(new Set(mockFaturamentos.map(f => f.favorecido)));
 
 function formatDateBR(date: Date | undefined) {
@@ -93,8 +92,8 @@ export default function FaturamentoPage() {
           item.projeto?.toLowerCase()?.includes(busca.toLowerCase())
         )
       : true;
-    // filtro por Orçamento/Venda
-    const tipoMatch = tipo ? item.tipo === tipo : true;
+    // filtro por Orçamento/Venda (considerando "Todos" como todos os tipos)
+    const tipoMatch = tipo && tipo !== "Todos" ? item.tipo === tipo : true;
     const favMatch = favorecido ? item.favorecido === favorecido : true;
     const dataI_Match = dataInicial ? item.data >= dataInicial : true;
     const dataF_Match = dataFinal ? item.data <= dataFinal : true;
@@ -146,13 +145,12 @@ export default function FaturamentoPage() {
           />
         </div>
 
-        {/* Select de Tipo com valores válidos */}
+        {/* Select de Tipo com "Todos" como primeira opção */}
         <Select value={tipo} onValueChange={setTipo}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
-            {/* Só renderiza os itens se o valor não for vazio */}
             {tipos.map(opt => (
               <SelectItem key={opt} value={opt}>
                 {opt}
