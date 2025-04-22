@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { Company } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,39 +76,59 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     setCurrentCompanyState(company);
   };
 
+  function sanitize(value: string | undefined | null, maxLength?: number): string | null {
+    if (typeof value !== "string" || value.trim() === "") return null;
+    return maxLength ? value.slice(0, maxLength) : value;
+  }
+
   // Adiciona no banco e atualiza na memória
   const addCompany = async (company: Company) => {
     setIsLoading(true);
-    // Adicionando o campo "name", garantindo datas string
+
     const toInsert = {
       id: company.id,
-      name: company.nomeFantasia || company.razaoSocial || "",
       razao_social: company.razaoSocial,
       nome_fantasia: company.nomeFantasia,
-      cnpj: company.cnpj,
-      inscricao_estadual: company.inscricaoEstadual,
-      inscricao_municipal: company.inscricaoMunicipal,
-      cnae: company.cnae,
-      email: company.email,
-      site: company.site,
-      telefone: company.telefone,
-      cep: company.endereco?.cep,
-      logradouro: company.endereco?.logradouro,
-      numero: company.endereco?.numero,
-      complemento: company.endereco?.complemento,
-      bairro: company.endereco?.bairro,
-      cidade: company.endereco?.cidade,
-      estado: company.endereco?.estado,
-      pais: company.endereco?.pais || "Brasil",
-      regime_tributacao: company.regimeTributacao,
-      logo: company.logo,
-      created_at: company.createdAt ? company.createdAt.toISOString() : new Date().toISOString(),
-      updated_at: company.updatedAt ? company.updatedAt.toISOString() : new Date().toISOString()
+      cnpj: sanitize(company.cnpj, 18) ?? "",
+      inscricao_estadual: sanitize(company.inscricaoEstadual, 20),
+      inscricao_municipal: sanitize(company.inscricaoMunicipal, 20),
+      cnae: sanitize(company.cnae, 10),
+      email: sanitize(company.email),
+      site: sanitize(company.site),
+      telefone: sanitize(company.telefone, 20),
+      logo: sanitize(company.logo),
+      regime_tributacao: sanitize(company.regimeTributacao),
+      cep: sanitize(company.endereco?.cep, 10) ?? "",
+      logradouro: company.endereco?.logradouro ?? "",
+      numero: sanitize(company.endereco?.numero, 10) ?? "",
+      complemento: sanitize(company.endereco?.complemento),
+      bairro: company.endereco?.bairro ?? "",
+      cidade: company.endereco?.cidade ?? "",
+      estado: sanitize(company.endereco?.estado, 2) ?? "",
+      pais: sanitize(company.endereco?.pais, 30) ?? "Brasil",
+      created_at: (company.createdAt || new Date()).toISOString(),
+      updated_at: (company.updatedAt || new Date()).toISOString(),
+    };
+
+    // Remover "name" do objeto (nunca enviar para o banco)
+    const { /* eslint-disable @typescript-eslint/no-unused-vars */ name, ...toInsertSemName } = toInsert;
+
+    // Limpa campos obrigatórios para garantir que não passem como null/undefined
+    Object.keys(toInsertSemName).forEach((key) => {
+      if (
+        toInsertSemName[key] === undefined &&
+        ["razao_social", "nome_fantasia", "cnpj", "cep", "logradouro", "numero", "bairro", "cidade", "estado", "pais", "created_at", "updated_at"].includes(key)
+      ) {
+        toInsertSemName[key] = "";
+      }
+    });
+
+    // Envia para o supabase (como array para insert em lote)
+    const { data, error } = await supabase.from("empresas").insert([toInsertSemName]).select().maybeSingle();
+
+    if (error) {
+      console.error("Erro ao inserir empresa:", error, toInsertSemName);
     }
-    // Remove o campo "name" pois não existe no banco
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { name, ...toInsertSemName } = toInsert;
-    const { data } = await supabase.from("empresas").insert([toInsertSemName]).select().maybeSingle();
 
     if (data) {
       const nova = supabaseToCompany(data);
@@ -122,37 +141,41 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   // Atualiza no banco e atualiza na memória
   const updateCompany = async (id: string, companyData: Partial<Company>) => {
     setIsLoading(true);
-    // Transformar para snake_case e datas para string
+
     const toUpdate: any = {};
     if (companyData.razaoSocial !== undefined) toUpdate.razao_social = companyData.razaoSocial;
     if (companyData.nomeFantasia !== undefined) toUpdate.nome_fantasia = companyData.nomeFantasia;
-    if (companyData.cnpj !== undefined) toUpdate.cnpj = companyData.cnpj;
-    if (companyData.inscricaoEstadual !== undefined) toUpdate.inscricao_estadual = companyData.inscricaoEstadual;
-    if (companyData.inscricaoMunicipal !== undefined) toUpdate.inscricao_municipal = companyData.inscricaoMunicipal;
-    if (companyData.cnae !== undefined) toUpdate.cnae = companyData.cnae;
-    if (companyData.email !== undefined) toUpdate.email = companyData.email;
-    if (companyData.site !== undefined) toUpdate.site = companyData.site;
-    if (companyData.telefone !== undefined) toUpdate.telefone = companyData.telefone;
-    if (companyData.logo !== undefined) toUpdate.logo = companyData.logo;
-    if (companyData.regimeTributacao !== undefined) toUpdate.regime_tributacao = companyData.regimeTributacao;
+    if (companyData.cnpj !== undefined) toUpdate.cnpj = sanitize(companyData.cnpj, 18) ?? "";
+    if (companyData.inscricaoEstadual !== undefined) toUpdate.inscricao_estadual = sanitize(companyData.inscricaoEstadual, 20);
+    if (companyData.inscricaoMunicipal !== undefined) toUpdate.inscricao_municipal = sanitize(companyData.inscricaoMunicipal, 20);
+    if (companyData.cnae !== undefined) toUpdate.cnae = sanitize(companyData.cnae, 10);
+    if (companyData.email !== undefined) toUpdate.email = sanitize(companyData.email);
+    if (companyData.site !== undefined) toUpdate.site = sanitize(companyData.site);
+    if (companyData.telefone !== undefined) toUpdate.telefone = sanitize(companyData.telefone, 20);
+    if (companyData.logo !== undefined) toUpdate.logo = sanitize(companyData.logo);
+    if (companyData.regimeTributacao !== undefined) toUpdate.regime_tributacao = sanitize(companyData.regimeTributacao);
     if (companyData.endereco) {
-      if (companyData.endereco.cep !== undefined) toUpdate.cep = companyData.endereco.cep;
-      if (companyData.endereco.logradouro !== undefined) toUpdate.logradouro = companyData.endereco.logradouro;
-      if (companyData.endereco.numero !== undefined) toUpdate.numero = companyData.endereco.numero;
-      if (companyData.endereco.complemento !== undefined) toUpdate.complemento = companyData.endereco.complemento;
-      if (companyData.endereco.bairro !== undefined) toUpdate.bairro = companyData.endereco.bairro;
-      if (companyData.endereco.cidade !== undefined) toUpdate.cidade = companyData.endereco.cidade;
-      if (companyData.endereco.estado !== undefined) toUpdate.estado = companyData.endereco.estado;
-      if (companyData.endereco.pais !== undefined) toUpdate.pais = companyData.endereco.pais;
+      if (companyData.endereco.cep !== undefined) toUpdate.cep = sanitize(companyData.endereco.cep, 10) ?? "";
+      if (companyData.endereco.logradouro !== undefined) toUpdate.logradouro = companyData.endereco.logradouro ?? "";
+      if (companyData.endereco.numero !== undefined) toUpdate.numero = sanitize(companyData.endereco.numero, 10) ?? "";
+      if (companyData.endereco.complemento !== undefined) toUpdate.complemento = sanitize(companyData.endereco.complemento);
+      if (companyData.endereco.bairro !== undefined) toUpdate.bairro = companyData.endereco.bairro ?? "";
+      if (companyData.endereco.cidade !== undefined) toUpdate.cidade = companyData.endereco.cidade ?? "";
+      if (companyData.endereco.estado !== undefined) toUpdate.estado = sanitize(companyData.endereco.estado, 2) ?? "";
+      if (companyData.endereco.pais !== undefined) toUpdate.pais = sanitize(companyData.endereco.pais, 30) ?? "Brasil";
     }
     toUpdate.updated_at = new Date().toISOString();
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("empresas")
       .update(toUpdate)
       .eq("id", id)
       .select()
       .maybeSingle();
+
+    if (error) {
+      console.error("Erro ao atualizar empresa:", error, toUpdate);
+    }
 
     if (data) {
       const nova = supabaseToCompany(data);
