@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
+// Arrays de meses e anos
 const meses = [
   { label: "Janeiro", value: "01" },
   { label: "Fevereiro", value: "02" },
@@ -25,11 +26,12 @@ const mesesComTodos = [
   ...meses
 ];
 
+// Array de anos (máx. últimos 5 anos)
 const anos: string[] = [];
 const anoAtual = new Date().getFullYear();
 for (let a = anoAtual; a >= 2021; a--) anos.push(a.toString());
 
-// Mock de dados contábeis (padrão DRE)
+// Mock dados contábeis padrão
 const mockDRE = [
   { tipo: "Receita Bruta", valor: 100000 },
   { tipo: "(-) Deduções", valor: -2000 },
@@ -43,13 +45,11 @@ const mockDRE = [
   { tipo: "(-) IRPJ/CSLL", valor: -3000 },
   { tipo: "Lucro Líquido do Exercício", valor: 22000 }
 ];
-
-// Contas DRE padrão (para garantir que todos os meses apareçam na horizontal)
 const contasDRE = mockDRE.map(c => c.tipo);
 
-// Mock DRE Mensal - garantir todos os meses do ano
 const mesesNumericos = meses.map(m => m.value);
 
+// Mock DRE Mensal
 const mockDREMensalBase = [
   {
     mes: "01",
@@ -83,24 +83,58 @@ const mockDREMensalBase = [
       { tipo: "Lucro Líquido do Exercício", valor: 2260 }
     ]
   }
-  // Adicione outros meses preenchidos ou zeros
+  // ... adicionar demais meses ao mock se necessário ...
 ];
 
-// Garante que mockDREMensal tenha todos os meses, preenche valores zerados se faltar algum mês
+// Mock multi anos acumulado - simular diferenças para comparar
+const mockDREPorAno: { [ano: string]: typeof mockDRE } = {
+  [anoAtual]: mockDRE,
+  [anoAtual - 1]: mockDRE.map((l, i) => ({
+    ...l,
+    valor: Math.round(l.valor * 0.93 + (i%2 === 0 ? 3500 : -1200))
+  })),
+  [anoAtual - 2]: mockDRE.map((l, i) => ({
+    ...l,
+    valor: Math.round(l.valor * 0.81 + (i%2 === 0 ? 2000 : -2200))
+  })),
+  [anoAtual - 3]: mockDRE.map((l, i) => ({
+    ...l,
+    valor: Math.round(l.valor * 1.11 + (i%2 === 0 ? 700 : +800))
+  })),
+  [anoAtual - 4]: mockDRE.map((l, i) => ({
+    ...l,
+    valor: Math.round(l.valor * 1.19 + (i%2 === 0 ? 320 : -900))
+  })),
+};
+
+// Monta todos os meses do ano para exibição horizontal
 const mockDREMensal: { mes: string, dados: { tipo: string, valor: number }[] }[] = mesesNumericos.map(mesVal => {
   const encontrado = mockDREMensalBase.find(mx => mx.mes === mesVal);
   if (encontrado) return encontrado;
-  // Se não tiver para o mês, retorna todas as contas zeradas
-  return {
-    mes: mesVal,
-    dados: contasDRE.map(c => ({ tipo: c, valor: 0 }))
-  };
+  return { mes: mesVal, dados: contasDRE.map(c => ({ tipo: c, valor: 0 })) };
 });
 
 export default function DrePage() {
-  const [visualizacao, setVisualizacao] = useState<"acumulado" | "mensal">("acumulado");
+  // NOVO: incluir modo comparar_anos
+  const [visualizacao, setVisualizacao] = useState<"acumulado" | "comparar_anos" | "mensal">("acumulado");
   const [ano, setAno] = useState(anoAtual.toString());
+  const [anosComparar, setAnosComparar] = useState<string[]>([anoAtual.toString(), (anoAtual-1).toString()]);
   const [mes, setMes] = useState("01");
+
+  function handleAnoCompararChange(anoAlterado: string) {
+    let result: string[] = [];
+    if (anosComparar.includes(anoAlterado)) {
+      // desmarca
+      result = anosComparar.filter(a => a !== anoAlterado);
+    } else {
+      // marca (até 5)
+      if (anosComparar.length < 5) result = [...anosComparar, anoAlterado];
+      else result = anosComparar;
+    }
+    // Garante pelo menos 1 ano selecionado
+    if (result.length === 0) result = [anoAlterado];
+    setAnosComparar(result);
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -112,42 +146,65 @@ export default function DrePage() {
           {/* Filtros */}
           <form className="flex flex-wrap gap-4 mb-6 items-end">
             <div>
-              <label className="block text-xs text-muted-foreground mb-1">
-                Visualização
-              </label>
+              <label className="block text-xs text-muted-foreground mb-1">Visualização</label>
               <Select
                 value={visualizacao}
-                onValueChange={v => setVisualizacao(v as "acumulado" | "mensal")}
+                onValueChange={v => setVisualizacao(v as any)}
               >
-                <SelectTrigger className="min-w-[160px] bg-white">
+                <SelectTrigger className="min-w-[180px] bg-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="acumulado">Resultado Acumulado</SelectItem>
+                  <SelectItem value="comparar_anos">Comparar Anos</SelectItem>
                   <SelectItem value="mensal">Resultado por Mês</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="block text-xs text-muted-foreground mb-1">
-                Ano
-              </label>
-              <Select value={ano} onValueChange={val => setAno(val)}>
-                <SelectTrigger className="min-w-[90px] bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
+            {/* Ano para acumulado */}
+            {visualizacao === "acumulado" && (
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Ano</label>
+                <Select value={ano} onValueChange={val => setAno(val)}>
+                  <SelectTrigger className="min-w-[90px] bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {anos.map(a => (
+                      <SelectItem value={a} key={a}>{a}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {/* Seleção múltipla de anos para comparação */}
+            {visualizacao === "comparar_anos" && (
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Anos para comparar</label>
+                <div className="flex flex-wrap gap-2">
                   {anos.map(a => (
-                    <SelectItem value={a} key={a}>{a}</SelectItem>
+                    <Button
+                      key={a}
+                      variant={anosComparar.includes(a) ? "blue" : "outline"}
+                      size="sm"
+                      type="button"
+                      className="px-3 py-1 rounded"
+                      onClick={() => handleAnoCompararChange(a)}
+                      aria-pressed={anosComparar.includes(a)}
+                    >
+                      {a}
+                    </Button>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
+                </div>
+                <span className="text-xs text-muted-foreground mt-1 block">
+                  Selecione até 5 anos
+                </span>
+              </div>
+            )}
+            {/* Se for mensal, mostra filtro do mês */}
             {visualizacao === "mensal" && (
               <div>
-                <label className="block text-xs text-muted-foreground mb-1">
-                  Mês
-                </label>
+                <label className="block text-xs text-muted-foreground mb-1">Mês</label>
                 <Select value={mes} onValueChange={val => setMes(val)}>
                   <SelectTrigger className="min-w-[140px] bg-white">
                     <SelectValue />
@@ -164,6 +221,7 @@ export default function DrePage() {
 
           {/* Exibição do DRE */}
           <div>
+            {/* Acumulado padrão */}
             {visualizacao === "acumulado" && (
               <Table>
                 <TableHeader>
@@ -173,7 +231,7 @@ export default function DrePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockDRE.map(item => (
+                  {(mockDREPorAno[ano] || mockDRE).map(item => (
                     <TableRow key={item.tipo}>
                       <TableCell>{item.tipo}</TableCell>
                       <TableCell className="text-right">
@@ -187,6 +245,41 @@ export default function DrePage() {
                 </TableBody>
               </Table>
             )}
+            {/* Comparação de anos */}
+            {visualizacao === "comparar_anos" && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Conta</TableHead>
+                    {anosComparar.map(a => (
+                      <TableHead key={a} className="text-center">{a}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contasDRE.map(conta => (
+                    <TableRow key={conta}>
+                      <TableCell>{conta}</TableCell>
+                      {anosComparar.map(a => {
+                        const dadosAno = mockDREPorAno[a] || [];
+                        const linha = dadosAno.find(i => i.tipo === conta);
+                        return (
+                          <TableCell key={a} className="text-right">
+                            {linha
+                              ? linha.valor.toLocaleString("pt-BR", {
+                                  style: "currency",
+                                  currency: "BRL"
+                                })
+                              : "R$ 0,00"}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+            {/* Mensal por mês único */}
             {visualizacao === "mensal" && mes !== "todos" && (
               (() => {
                 const dadosMes = mockDREMensal.find(mObj => mObj.mes === mes);
@@ -220,8 +313,8 @@ export default function DrePage() {
                 );
               })()
             )}
+            {/* Mensal todos os meses em colunas */}
             {visualizacao === "mensal" && mes === "todos" && (
-              // Tabela horizontal comparando todos os meses
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -262,4 +355,3 @@ export default function DrePage() {
 }
 
 // O arquivo ficou longo; recomendo considerar refatoração em componentes menores após esta alteração.
-
