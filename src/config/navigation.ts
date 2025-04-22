@@ -1,4 +1,3 @@
-
 import { ModuleNavItem } from "@/types";
 import * as Icons from "lucide-react";
 // Make sure we have all the Lucide icons for the sidebar

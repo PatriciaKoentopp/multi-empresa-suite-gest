@@ -32,6 +32,7 @@ import FunilConfiguracaoPage from "./pages/crm/funil-configuracao";
 import LeadsPage from "./pages/crm/leads"; // Importamos a nova página de Leads
 import LancamentosPage from "./pages/contabil/lancamentos"; // ADICIONADO
 import DrePage from "./pages/contabil/dre"; // <-- IMPORTAÇÃO DA NOVA PÁGINA
+import BalancoPage from "./pages/contabil/balanco"; // NOVA PÁGINA ADICIONADA
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ const App = () => (
                 <Route path="/contabil/plano-contas" element={<PlanoContasPage />} />
                 <Route path="/contabil/lancamentos" element={<LancamentosPage />} /> {/* ADICIONADO */}
                 <Route path="/contabil/dre" element={<DrePage />} /> {/* NOVA ROTA DRE */}
+                <Route path="/contabil/balanco" element={<BalancoPage />} /> {/* NOVA ROTA BALANCO */}
                 
                 {/* Style Guide */}
                 <Route path="/style-guide" element={<StyleGuidePage />} />
