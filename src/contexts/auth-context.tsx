@@ -1,14 +1,17 @@
 
-import { User } from "@/types";
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser, Session } from "@supabase/supabase-js";
+import { User } from "@/types";
 
 interface AuthContextType {
-  user: User | null;
+  user: SupabaseUser | null;
+  session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUser: (user: User) => void;
+  register: (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -18,86 +21,75 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const login = async (email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      // TODO: Implement actual login with Supabase
-      // For now, using mock data
-      const mockUser: User = {
-        id: "1",
-        email,
-        name: "Usuário de Demonstração",
-        role: "admin",
-        companies: [
-          {
-            id: "1",
-            name: "Empresa Demonstração", // Adicionando a propriedade 'name' obrigatória
-            razaoSocial: "Empresa Demonstração LTDA",
-            nomeFantasia: "Demo ERP",
-            cnpj: "00.000.000/0001-00",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }
-        ],
-        currentCompanyId: "1",
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem("erp-user", JSON.stringify(mockUser));
-    } catch (error) {
-      console.error("Erro ao fazer login:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      // TODO: Implement actual logout with Supabase
-      setUser(null);
-      localStorage.removeItem("erp-user");
-    } catch (error) {
-      console.error("Erro ao fazer logout:", error);
-      throw error;
-    }
-  };
-
-  const updateUser = (updatedUser: User) => {
-    setUser(updatedUser);
-    localStorage.setItem("erp-user", JSON.stringify(updatedUser));
-  };
-
-  // Check for existing session on load
+  // Atualizar o usuário e a sessão no início e onAuthStateChange
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const storedUser = localStorage.getItem("erp-user");
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        }
-      } catch (error) {
-        console.error("Erro ao verificar autenticação:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    checkAuth();
-  });
+    // Ouve as mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setSession(session ?? null);
+    });
+
+    // Busca sessão atual (após registrar/logar/refresh)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setSession(session ?? null);
+      setIsLoading(false);
+    });
+
+    // Cleanup subscription
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Login de usuário existente
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setIsLoading(false);
+      throw new Error(error.message);
+    }
+    setUser(data.user);
+    setSession(data.session);
+    setIsLoading(false);
+  };
+
+  // Registro de novo usuário (signup)
+  const register = async (email: string, password: string) => {
+    setIsLoading(true);
+    const { error, data } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      setIsLoading(false);
+      throw new Error(error.message);
+    }
+    setUser(data.user);
+    setSession(data.session);
+    setIsLoading(false);
+  };
+
+  // Logout
+  const logout = async () => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    setUser(null);
+    setSession(null);
+    setIsLoading(false);
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        session,
         isAuthenticated: !!user,
         isLoading,
         login,
         logout,
-        updateUser,
+        register,
       }}
     >
       {children}

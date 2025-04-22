@@ -9,7 +9,114 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      empresas: {
+        Row: {
+          bairro: string
+          cep: string
+          cidade: string
+          cnae: string | null
+          cnpj: string
+          complemento: string | null
+          created_at: string | null
+          email: string | null
+          estado: string
+          id: string
+          inscricao_estadual: string | null
+          inscricao_municipal: string | null
+          logo: string | null
+          logradouro: string
+          nome_fantasia: string
+          numero: string
+          pais: string
+          razao_social: string
+          regime_tributacao: string | null
+          site: string | null
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          bairro: string
+          cep: string
+          cidade: string
+          cnae?: string | null
+          cnpj: string
+          complemento?: string | null
+          created_at?: string | null
+          email?: string | null
+          estado: string
+          id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          logo?: string | null
+          logradouro: string
+          nome_fantasia: string
+          numero: string
+          pais?: string
+          razao_social: string
+          regime_tributacao?: string | null
+          site?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          bairro?: string
+          cep?: string
+          cidade?: string
+          cnae?: string | null
+          cnpj?: string
+          complemento?: string | null
+          created_at?: string | null
+          email?: string | null
+          estado?: string
+          id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          logo?: string | null
+          logradouro?: string
+          nome_fantasia?: string
+          numero?: string
+          pais?: string
+          razao_social?: string
+          regime_tributacao?: string | null
+          site?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      usuarios: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          nome: string
+          status: Database["public"]["Enums"]["usuario_status"]
+          tipo: Database["public"]["Enums"]["usuario_tipo"]
+          updated_at: string
+          vendedor: Database["public"]["Enums"]["usuario_vendedor"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          nome: string
+          status?: Database["public"]["Enums"]["usuario_status"]
+          tipo?: Database["public"]["Enums"]["usuario_tipo"]
+          updated_at?: string
+          vendedor?: Database["public"]["Enums"]["usuario_vendedor"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
+          status?: Database["public"]["Enums"]["usuario_status"]
+          tipo?: Database["public"]["Enums"]["usuario_tipo"]
+          updated_at?: string
+          vendedor?: Database["public"]["Enums"]["usuario_vendedor"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +125,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      usuario_status: "ativo" | "inativo"
+      usuario_tipo: "Administrador" | "Usuário"
+      usuario_vendedor: "sim" | "nao"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +242,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      usuario_status: ["ativo", "inativo"],
+      usuario_tipo: ["Administrador", "Usuário"],
+      usuario_vendedor: ["sim", "nao"],
+    },
   },
 } as const
