@@ -16,6 +16,7 @@ interface CompanyContextType {
 function supabaseToCompany(data: any): Company {
   return {
     id: data.id,
+    name: data.nome_fantasia || data.razao_social || "",
     razaoSocial: data.razao_social,
     nomeFantasia: data.nome_fantasia,
     cnpj: data.cnpj,
@@ -57,7 +58,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const fetchCompanies = async () => {
       setIsLoading(true);
-      const { data, error } = await supabase.from("empresas").select("*").limit(1);
+      const { data } = await supabase.from("empresas").select("*").limit(1);
       if (data && data.length > 0) {
         const company = supabaseToCompany(data[0]);
         setAvailableCompanies([company]);
@@ -79,7 +80,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   // Adiciona no banco e atualiza na memória
   const addCompany = async (company: Company) => {
     setIsLoading(true);
-    // Transformar para nomes snake_case para banco
+    // Transformar para nomes snake_case para banco + datas como string ISO
     const toInsert = {
       id: company.id,
       razao_social: company.razaoSocial,
@@ -98,13 +99,13 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       bairro: company.endereco?.bairro,
       cidade: company.endereco?.cidade,
       estado: company.endereco?.estado,
-      pais: company.endereco?.pais,
+      pais: company.endereco?.pais || "Brasil",
       regime_tributacao: company.regimeTributacao,
       logo: company.logo,
-      created_at: company.createdAt,
-      updated_at: company.updatedAt
+      created_at: company.createdAt ? company.createdAt.toISOString() : new Date().toISOString(),
+      updated_at: company.updatedAt ? company.updatedAt.toISOString() : new Date().toISOString()
     }
-    const { data, error } = await supabase.from("empresas").insert([toInsert]).select().single();
+    const { data } = await supabase.from("empresas").insert([toInsert]).select().maybeSingle();
 
     if (data) {
       const nova = supabaseToCompany(data);
@@ -117,7 +118,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   // Atualiza no banco e atualiza na memória
   const updateCompany = async (id: string, companyData: Partial<Company>) => {
     setIsLoading(true);
-    // Transformar para snake_case
+    // Transformar para snake_case e as datas para string
     const toUpdate: any = {};
     if (companyData.razaoSocial !== undefined) toUpdate.razao_social = companyData.razaoSocial;
     if (companyData.nomeFantasia !== undefined) toUpdate.nome_fantasia = companyData.nomeFantasia;
@@ -140,14 +141,14 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       if (companyData.endereco.estado !== undefined) toUpdate.estado = companyData.endereco.estado;
       if (companyData.endereco.pais !== undefined) toUpdate.pais = companyData.endereco.pais;
     }
-    toUpdate.updated_at = new Date();
+    toUpdate.updated_at = new Date().toISOString();
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("empresas")
       .update(toUpdate)
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (data) {
       const nova = supabaseToCompany(data);
@@ -172,3 +173,4 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     </CompanyContext.Provider>
   );
 }
+
