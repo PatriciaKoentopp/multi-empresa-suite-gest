@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useCompany } from "@/contexts/company-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -340,19 +339,29 @@ export default function EmpresasPage() {
                 field
               }) => <FormItem>
                       <FormLabel>Regime de Tributação</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isEditing}>
-                        <FormControl>
-                          <SelectTrigger className="bg-white dark:bg-gray-900">
-                            <SelectValue placeholder="Selecione um regime" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                          <SelectItem value="simples">Simples Nacional</SelectItem>
-                          <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
-                          <SelectItem value="lucro_real">Lucro Real</SelectItem>
-                          <SelectItem value="mei">MEI</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {isEditing ? (
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isEditing}>
+                          <FormControl>
+                            <SelectTrigger className="bg-white dark:bg-gray-900">
+                              <SelectValue placeholder="Selecione um regime" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                            <SelectItem value="simples">Simples Nacional</SelectItem>
+                            <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
+                            <SelectItem value="lucro_real">Lucro Real</SelectItem>
+                            <SelectItem value="mei">MEI</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="h-10 flex items-center px-3 rounded-md border bg-muted text-muted-foreground text-sm">
+                          {field.value === "simples" && "Simples Nacional"}
+                          {field.value === "lucro_presumido" && "Lucro Presumido"}
+                          {field.value === "lucro_real" && "Lucro Real"}
+                          {field.value === "mei" && "MEI"}
+                          {!field.value && <span className="text-muted-foreground">Não informado</span>}
+                        </div>
+                      )}
                       <FormMessage />
                     </FormItem>} />
 
