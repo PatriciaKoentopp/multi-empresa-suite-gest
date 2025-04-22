@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -268,14 +267,14 @@ export default function UsuariosPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Empresa</TableHead>
+                  {/* Removido TableHead Empresa */}
                   <TableHead className="w-[120px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsuarios.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
                       Nenhum usuário encontrado
                     </TableCell>
                   </TableRow>
@@ -300,9 +299,7 @@ export default function UsuariosPage() {
                           {usuario.status === "ativo" ? "Ativo" : "Inativo"}
                         </span>
                       </TableCell>
-                      <TableCell>
-                        {usuario.empresa_nome || "-"}
-                      </TableCell>
+                      {/* Removido TableCell Empresa */}
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -310,7 +307,10 @@ export default function UsuariosPage() {
                               <EllipsisVertical className="w-5 h-5 text-muted-foreground" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent 
+                            align="end" 
+                            className="bg-white border border-gray-200 shadow-lg z-50"
+                          >
                             <DropdownMenuItem
                               onClick={() => handleOpenDialog(usuario)}
                               className="text-blue-500 hover:bg-blue-50 hover:bg-opacity-70"
