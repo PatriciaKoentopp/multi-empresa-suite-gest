@@ -43,6 +43,7 @@ import { Send, UserRound, Phone, Calendar, Mail, MessageCircle, Eye, Edit, Trash
 
 import { LeadDadosTab } from "./LeadDadosTab";
 import { LeadFechamentoTab } from "./LeadFechamentoTab";
+import { LeadInteracaoDataField } from "./LeadInteracaoDataField";
 
 interface Lead {
   id: number;
@@ -105,7 +106,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
   const [novaInteracao, setNovaInteracao] = useState({
     tipo: "mensagem" as const,
     descricao: "",
-    data: new Date().toLocaleDateString("pt-BR"),
+    data: new Date(),  // agora guarda Date
     responsavelId: "",
   });
 
@@ -180,6 +181,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
       // Inicializa a nova interação com o responsável atual do lead
       setNovaInteracao(prev => ({
         ...prev,
+        data: new Date(), // agora Date
         responsavelId: lead.responsavelId
       }));
     } else {
@@ -203,6 +205,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
       // Inicializa a nova interação com o primeiro vendedor
       setNovaInteracao(prev => ({
         ...prev,
+        data: new Date(), // agora Date
         responsavelId: primeiroVendedor
       }));
     }
@@ -225,10 +228,15 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     onConfirm(formData);
   };
 
-  // Handler para mudanças no formulário de nova interação
+  // Handler para mudanças em inputs EXCETO o campo data
   const handleInteracaoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNovaInteracao(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Novo handler para data
+  const handleInteracaoDataChange = (date: Date) => {
+    setNovaInteracao(prev => ({ ...prev, data: date }));
   };
 
   // Handler para seleção no formulário de nova interação
@@ -236,35 +244,36 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     setNovaInteracao(prev => ({ ...prev, [name]: value }));
   };
 
-  // Adicionar nova interação
+  // Ao adicionar interação, formata a data para DD/MM/YYYY
   const adicionarInteracao = () => {
     if (novaInteracao.descricao.trim() === "" || !novaInteracao.responsavelId) {
       return;
     }
+    const dataFormatada = novaInteracao.data
+      ? format(novaInteracao.data, "dd/MM/yyyy")
+      : new Date().toLocaleDateString("pt-BR");
 
     const novaInteracaoCompleta: LeadInteracao = {
-      id: Date.now(), // ID temporário baseado no timestamp
+      id: Date.now(),
       leadId: lead?.id || 0,
       tipo: novaInteracao.tipo,
       descricao: novaInteracao.descricao,
-      data: novaInteracao.data,
+      data: dataFormatada,
       responsavelId: novaInteracao.responsavelId
     };
 
     setInteracoes(prev => [...prev, novaInteracaoCompleta]);
-    
-    // Resetar o formulário de nova interação, mantendo o responsável
+
     setNovaInteracao(prev => ({
       tipo: "mensagem",
       descricao: "",
-      data: new Date().toLocaleDateString("pt-BR"),
+      data: new Date(), // Volta ao hoje
       responsavelId: prev.responsavelId
     }));
-    
-    // Atualizar a data do último contato no lead
+
     setFormData(prev => ({
       ...prev,
-      ultimoContato: new Date().toLocaleDateString("pt-BR")
+      ultimoContato: dataFormatada
     }));
   };
 
@@ -397,12 +406,11 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                   </form>
                 </TabsContent>
 
-                {/* Mantém as outras tabs iguais */}
                 <TabsContent value="interacoes" className="mt-0">
                   <ScrollArea className="h-full pb-6">
                     {lead ? (
                       <div className="px-6 space-y-6">
-                        {/* Formulário para nova interação - Movido para o topo */}
+                        {/* Formulário para nova interação */}
                         <div className="border-b pb-6">
                           <h3 className="text-lg font-medium mb-4">Nova Interação</h3>
                           <div className="space-y-4">
@@ -444,10 +452,19 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                                 </Select>
                               </div>
                             </div>
-                            
+
+                            {/* Novo campo data interação */}
+                            <div className="space-y-2">
+                              <Label>Data da Interação</Label>
+                              <LeadInteracaoDataField
+                                date={novaInteracao.data || new Date()}
+                                onDateChange={handleInteracaoDataChange}
+                              />
+                            </div>
+
                             <div className="space-y-2">
                               <Label htmlFor="interacaoDescricao">Descrição</Label>
-                              <Textarea 
+                              <Textarea
                                 id="interacaoDescricao"
                                 name="descricao"
                                 value={novaInteracao.descricao}
@@ -457,7 +474,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                                 className="resize-none"
                               />
                             </div>
-                            
+
                             <Button
                               type="button"
                               onClick={adicionarInteracao}
@@ -556,7 +573,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                 </TabsContent>
               </div>
             </Tabs>
-            {/* Mantém o SheetFooter igual */}
+            
             <SheetFooter className="border-t p-6">
               <div className="flex justify-end gap-2 w-full">
                 <SheetClose asChild>
@@ -576,7 +593,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
           </div>
         </SheetContent>
       </Sheet>
-      {/* Modais auxiliares continuam iguais */}
+      
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent>
           <DialogHeader>
