@@ -11,8 +11,8 @@ interface LeadFechamentoTabProps {
   setFechamentoStatus: (status: "sucesso" | "perda" | null) => void;
   motivoPerdaSelecionado: string;
   setMotivoPerdaSelecionado: (id: string) => void;
-  descricaoPerda: string;
-  setDescricaoPerda: (valor: string) => void;
+  descricaoFechamento: string;
+  setDescricaoFechamento: (valor: string) => void;
   motivosPerda: MotivoPerda[];
 }
 
@@ -21,17 +21,16 @@ export function LeadFechamentoTab({
   setFechamentoStatus,
   motivoPerdaSelecionado,
   setMotivoPerdaSelecionado,
-  descricaoPerda,
-  setDescricaoPerda,
+  descricaoFechamento,
+  setDescricaoFechamento,
   motivosPerda,
 }: LeadFechamentoTabProps) {
-  // Limpa motivo e descrição ao trocar status para sucesso
+  // Limpa motivo ao trocar status para sucesso
   useEffect(() => {
     if (fechamentoStatus !== "perda") {
       setMotivoPerdaSelecionado("");
-      setDescricaoPerda("");
     }
-  }, [fechamentoStatus, setMotivoPerdaSelecionado, setDescricaoPerda]);
+  }, [fechamentoStatus, setMotivoPerdaSelecionado]);
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
@@ -78,18 +77,24 @@ export function LeadFechamentoTab({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="descricaoPerda">Descrição</Label>
-            <Textarea
-              id="descricaoPerda"
-              value={descricaoPerda}
-              onChange={(e) => setDescricaoPerda(e.target.value)}
-              rows={3}
-              placeholder="Descreva o motivo da perda, se desejar..."
-            />
-          </div>
         </div>
       )}
+      <div className="space-y-2">
+        <Label htmlFor="descricaoFechamento">
+          {fechamentoStatus === "sucesso" ? "Descrição (opcional)" : "Descrição"}
+        </Label>
+        <Textarea
+          id="descricaoFechamento"
+          value={descricaoFechamento}
+          onChange={(e) => setDescricaoFechamento(e.target.value)}
+          rows={3}
+          placeholder={
+            fechamentoStatus === "sucesso"
+              ? "Descreva detalhes do sucesso, se desejar..."
+              : "Descreva o motivo da perda, se desejar..."
+          }
+        />
+      </div>
       {fechamentoStatus === "sucesso" && (
         <div className="bg-green-50 border border-green-200 rounded p-3 text-green-900 text-sm">
           Parabéns! Este lead foi fechado com sucesso.

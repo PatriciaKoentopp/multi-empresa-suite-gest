@@ -120,7 +120,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
   // Estados para o fechamento do lead
   const [fechamentoStatus, setFechamentoStatus] = useState<"sucesso" | "perda" | null>(null);
   const [motivoPerdaSelecionado, setMotivoPerdaSelecionado] = useState("");
-  const [descricaoPerda, setDescricaoPerda] = useState("");
+  const [descricaoFechamento, setDescricaoFechamento] = useState("");
 
   // Carregar interações mock quando um lead é editado
   useEffect(() => {
@@ -686,8 +686,8 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                     setFechamentoStatus={setFechamentoStatus}
                     motivoPerdaSelecionado={motivoPerdaSelecionado}
                     setMotivoPerdaSelecionado={setMotivoPerdaSelecionado}
-                    descricaoPerda={descricaoPerda}
-                    setDescricaoPerda={setDescricaoPerda}
+                    descricaoFechamento={descricaoFechamento}
+                    setDescricaoFechamento={setDescricaoFechamento}
                     motivosPerda={motivosPerda || []}
                   />
                 </TabsContent>
