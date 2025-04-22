@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { useCompany } from "@/contexts/company-context";
 import { useAuth } from "@/contexts/auth-context";
-import { Building2, PenLine, Save } from "lucide-react";
+import { Building2, PenLine, Save, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +10,7 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardDescription, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Company } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -63,6 +64,7 @@ export default function EmpresasPage() {
   const {
     currentCompany,
     updateCompany,
+    addCompany,
     isLoading
   } = useCompany();
   const {
@@ -71,7 +73,9 @@ export default function EmpresasPage() {
   const {
     toast
   } = useToast();
-  const [isEditing, setIsEditing] = useState(false);
+  // Agora, se não existe empresa, mostrar o formulário em modo "criar"
+  const criandoEmpresa = !currentCompany;
+  const [isEditing, setIsEditing] = useState(criandoEmpresa ? true : false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -121,12 +125,36 @@ export default function EmpresasPage() {
         regimeTributacao: currentCompany.regimeTributacao,
         logo: currentCompany.logo || ""
       });
+    } else {
+      form.reset({
+        razaoSocial: "",
+        nomeFantasia: "",
+        cnpj: "",
+        inscricaoEstadual: "",
+        inscricaoMunicipal: "",
+        cnae: "",
+        email: "",
+        site: "",
+        telefone: "",
+        cep: "",
+        logradouro: "",
+        numero: "",
+        complemento: "",
+        bairro: "",
+        cidade: "",
+        estado: "",
+        pais: "Brasil",
+        regimeTributacao: undefined,
+        logo: ""
+      });
+      setIsEditing(true);
     }
   }, [currentCompany, form]);
+
   const onSubmit = (values: FormValues) => {
-    if (!currentCompany || !user) return;
-    const updatedCompany = {
-      ...currentCompany,
+    if (!user) return;
+    const empresaObject = {
+      id: currentCompany?.id || crypto.randomUUID(),
       razaoSocial: values.razaoSocial,
       nomeFantasia: values.nomeFantasia,
       cnpj: values.cnpj,
@@ -148,18 +176,29 @@ export default function EmpresasPage() {
       },
       regimeTributacao: values.regimeTributacao,
       logo: values.logo,
+      createdAt: currentCompany?.createdAt || new Date(),
       updatedAt: new Date()
     };
-    updateCompany(currentCompany.id, updatedCompany);
-    toast({
-      title: "Empresa atualizada",
-      description: "Os dados da empresa foram atualizados com sucesso."
-    });
-    setIsEditing(false);
+    if (criandoEmpresa || !currentCompany) {
+      addCompany(empresaObject as Company);
+      toast({
+        title: "Empresa cadastrada",
+        description: "A empresa foi cadastrada com sucesso."
+      });
+    } else {
+      updateCompany(currentCompany.id, empresaObject);
+      toast({
+        title: "Empresa atualizada",
+        description: "Os dados da empresa foram atualizados com sucesso."
+      });
+      setIsEditing(false);
+    }
   };
+
   const handleEditToggle = () => {
-    setIsEditing(!isEditing);
+    setIsEditing((editando) => !editando);
   };
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center gap-2">
@@ -168,34 +207,30 @@ export default function EmpresasPage() {
         </div>
       </div>;
   }
-  if (!currentCompany) {
-    return <div className="flex flex-col items-center justify-center py-8">
-        <Building2 className="h-12 w-12 text-muted-foreground" />
-        <h3 className="mt-4 text-lg font-medium">Nenhuma empresa disponível</h3>
-        <p className="text-sm text-muted-foreground">
-          Nenhuma empresa associada ao seu usuário.
-        </p>
-      </div>;
-  }
-  return <div className="space-y-6">
+
+  // Caso não exista empresa ainda, mostre o formulário já para cadastro inicial
+  return (
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Empresa</h1>
-          
+          {criandoEmpresa ? (
+            <h1 className="text-2xl font-bold tracking-tight">Cadastrar Empresa</h1>
+          ) : (
+            <h1 className="text-2xl font-bold tracking-tight">Empresa</h1>
+          )}
         </div>
-        <Button onClick={handleEditToggle} variant={isEditing ? "outline" : "blue"}>
-          {isEditing ? <>Cancelar</> : <>
-              <PenLine className="mr-2 h-4 w-4" />
-              Editar
-            </>}
-        </Button>
+        {!criandoEmpresa && (
+          <Button onClick={handleEditToggle} variant={isEditing ? "outline" : "blue"}>
+            {isEditing ? <>Cancelar</> : <>
+                <PenLine className="mr-2 h-4 w-4" />
+                Editar
+              </>}
+          </Button>
+        )}
       </div>
 
       <Card>
-        <CardHeader className="pb-3">
-          
-          
-        </CardHeader>
+        <CardHeader className="pb-3"></CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -406,13 +441,16 @@ export default function EmpresasPage() {
                 </div>
               </div>
 
-              {isEditing && <Button type="submit" variant="blue">
+              {isEditing && (
+                <Button type="submit" variant="blue">
                   <Save className="mr-2 h-4 w-4" />
-                  Salvar Alterações
-                </Button>}
+                  {criandoEmpresa ? "Cadastrar Empresa" : "Salvar Alterações"}
+                </Button>
+              )}
             </form>
           </Form>
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 }
