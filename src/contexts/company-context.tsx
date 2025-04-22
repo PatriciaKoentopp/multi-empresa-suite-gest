@@ -80,9 +80,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   // Adiciona no banco e atualiza na memória
   const addCompany = async (company: Company) => {
     setIsLoading(true);
-    // Transformar para nomes snake_case para banco + datas como string ISO
+    // Adicionando o campo "name", garantindo datas string
     const toInsert = {
       id: company.id,
+      name: company.nomeFantasia || company.razaoSocial || "",
       razao_social: company.razaoSocial,
       nome_fantasia: company.nomeFantasia,
       cnpj: company.cnpj,
@@ -105,7 +106,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       created_at: company.createdAt ? company.createdAt.toISOString() : new Date().toISOString(),
       updated_at: company.updatedAt ? company.updatedAt.toISOString() : new Date().toISOString()
     }
-    const { data } = await supabase.from("empresas").insert([toInsert]).select().maybeSingle();
+    // Remove o campo "name" pois não existe no banco
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { name, ...toInsertSemName } = toInsert;
+    const { data } = await supabase.from("empresas").insert([toInsertSemName]).select().maybeSingle();
 
     if (data) {
       const nova = supabaseToCompany(data);
@@ -118,7 +122,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   // Atualiza no banco e atualiza na memória
   const updateCompany = async (id: string, companyData: Partial<Company>) => {
     setIsLoading(true);
-    // Transformar para snake_case e as datas para string
+    // Transformar para snake_case e datas para string
     const toUpdate: any = {};
     if (companyData.razaoSocial !== undefined) toUpdate.razao_social = companyData.razaoSocial;
     if (companyData.nomeFantasia !== undefined) toUpdate.nome_fantasia = companyData.nomeFantasia;
@@ -173,4 +177,3 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     </CompanyContext.Provider>
   );
 }
-
