@@ -120,6 +120,14 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
   // Mock de interações para o lead atual
   const [interacoes, setInteracoes] = useState<LeadInteracao[]>([]);
 
+  // Estado para dados de fechamento (novo)
+  const [fechamento, setFechamento] = useState<{
+    status: "sucesso" | "perda";
+    motivoPerdaId?: string;
+    descricao: string;
+    data: Date;
+  } | null>(null);
+
   // Estados para o fechamento do lead
   const [fechamentoStatus, setFechamentoStatus] = useState<"sucesso" | "perda" | null>(null);
   const [motivoPerdaSelecionado, setMotivoPerdaSelecionado] = useState("");
@@ -211,6 +219,20 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     }
   }, [lead, etapas, origens, usuarios]);
 
+  useEffect(() => {
+    // Inicializa fechamento se lead existir
+    if (lead && lead.fechamento) {
+      setFechamento({
+        status: lead.fechamento.status,
+        motivoPerdaId: lead.fechamento.motivoPerdaId,
+        descricao: lead.fechamento.descricao,
+        data: new Date(lead.fechamento.data),
+      });
+    } else {
+      setFechamento(null);
+    }
+  }, [lead]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: name === "valor" ? Number(value) : value }));
@@ -223,9 +245,10 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onConfirm(formData);
+  // Handler para o campo Produto (aba dados)
+  const handleProdutoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setFormData((prev) => ({ ...prev, produto: value }));
   };
 
   // Handler para mudanças em inputs EXCETO o campo data
@@ -357,6 +380,22 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     }
   };
 
+  // Função para salvar lead (e fechamento)
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onConfirm({
+      ...formData,
+      fechamento: fechamento
+        ? {
+            status: fechamento.status,
+            motivoPerdaId: fechamento.motivoPerdaId,
+            descricao: fechamento.descricao,
+            data: fechamento.data.toISOString(),
+          }
+        : undefined,
+    });
+  };
+
   return (
     <>
       <Sheet open={open} onOpenChange={onClose}>
@@ -393,6 +432,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                 </TabsList>
               </div>
               <div className="flex-1 overflow-y-auto">
+                {/* DADOS */}
                 <TabsContent value="dados" className="p-6 mt-0">
                   <form id="dadosLeadForm" onSubmit={handleSubmit}>
                     <LeadDadosTab
@@ -402,10 +442,11 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                       etapas={etapas}
                       origensAtivas={origens.filter(origem => origem.status === "ativo")}
                       vendedoresAtivos={usuarios.filter(usuario => usuario.vendedor === "sim" && usuario.status === "ativo")}
+                      handleProdutoChange={handleProdutoChange}
                     />
                   </form>
                 </TabsContent>
-
+                {/* INTERAÇÕES */}
                 <TabsContent value="interacoes" className="mt-0">
                   <ScrollArea className="h-full pb-6">
                     {lead ? (
@@ -559,15 +600,11 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                     )}
                   </ScrollArea>
                 </TabsContent>
-                
+                {/* FECHAMENTO */}
                 <TabsContent value="fechamento" className="p-6 mt-0">
                   <LeadFechamentoTab
-                    fechamentoStatus={fechamentoStatus}
-                    setFechamentoStatus={setFechamentoStatus}
-                    motivoPerdaSelecionado={motivoPerdaSelecionado}
-                    setMotivoPerdaSelecionado={setMotivoPerdaSelecionado}
-                    descricaoFechamento={descricaoFechamento}
-                    setDescricaoFechamento={setDescricaoFechamento}
+                    fechamento={fechamento}
+                    setFechamento={setFechamento}
                     motivosPerda={motivosPerda || []}
                   />
                 </TabsContent>
