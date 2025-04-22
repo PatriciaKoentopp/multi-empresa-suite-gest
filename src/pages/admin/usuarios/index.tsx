@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +32,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale/pt-BR";
+// Removido import { ptBR } from "date-fns/locale/pt-BR";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useCompany } from "@/contexts/company-context"; // Adicionado para pegar empresa logada
@@ -336,7 +337,10 @@ export default function UsuariosPage() {
               </TableBody>
             </Table>
           </div>
-      {/* ... keep existing dialog/modal code the same ... */}
+        </CardContent>
+      </Card>
+
+      {/* Dialog de cadastro/edição/visualização */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -353,7 +357,7 @@ export default function UsuariosPage() {
             readOnly={!!viewingUsuario}
             onSubmit={handleSubmit}
             onCancel={handleCloseDialog}
-            empresaIdAtual={currentCompany?.id} // passamos aqui para formulário, se for preciso depois
+            empresaIdAtual={currentCompany?.id}
           />
         </DialogContent>
       </Dialog>
@@ -367,7 +371,7 @@ type UsuarioFormProps = {
   readOnly?: boolean;
   onSubmit: (usuario: Partial<Usuario>) => void;
   onCancel: () => void;
-  empresaIdAtual?: string | null; // Novo, mas por hora não será mais usado aqui
+  empresaIdAtual?: string | null;
 };
 
 function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps) {
@@ -544,3 +548,4 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
     </form>
   );
 }
+
