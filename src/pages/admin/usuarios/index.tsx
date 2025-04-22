@@ -34,6 +34,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { useCompany } from "@/contexts/company-context"; // Adicionado para pegar empresa logada
 
 // Interface do usuário conforme Supabase
 type Usuario = {
@@ -60,6 +61,8 @@ export default function UsuariosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [tipoFilter, setTipoFilter] = useState<"todos" | "Administrador" | "Usuário">("todos");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
+
+  const { currentCompany } = useCompany(); // pega empresa logada
 
   // Buscar usuários do supabase
   useEffect(() => {
@@ -143,7 +146,7 @@ export default function UsuariosPage() {
         )
       );
     } else {
-      // Criação
+      // Criação: utiliza sempre a empresa_id do contexto
       const { data: novoUsuario, error } = await supabase
         .from("usuarios")
         .insert([
@@ -153,7 +156,7 @@ export default function UsuariosPage() {
             tipo: data.tipo,
             status: data.status,
             vendedor: data.vendedor,
-            empresa_id: data.empresa_id,
+            empresa_id: currentCompany?.id ?? null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             id: crypto.randomUUID(),
@@ -310,6 +313,7 @@ export default function UsuariosPage() {
                           <DropdownMenuContent 
                             align="end" 
                             className="bg-white border border-gray-200 shadow-lg z-50"
+                            style={{ backgroundColor: "white", opacity: 1 }}
                           >
                             <DropdownMenuItem
                               onClick={() => handleOpenDialog(usuario)}
@@ -332,10 +336,7 @@ export default function UsuariosPage() {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Dialog de cadastro/edição/visualização */}
+      {/* ... keep existing dialog/modal code the same ... */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -352,6 +353,7 @@ export default function UsuariosPage() {
             readOnly={!!viewingUsuario}
             onSubmit={handleSubmit}
             onCancel={handleCloseDialog}
+            empresaIdAtual={currentCompany?.id} // passamos aqui para formulário, se for preciso depois
           />
         </DialogContent>
       </Dialog>
@@ -359,12 +361,13 @@ export default function UsuariosPage() {
   );
 }
 
-// ======= Componente do formulário atualizado com o campo vendedor =========
+// ======= Componente do formulário atualizado sem campo empresa =========
 type UsuarioFormProps = {
   usuario?: Partial<Usuario>;
   readOnly?: boolean;
   onSubmit: (usuario: Partial<Usuario>) => void;
   onCancel: () => void;
+  empresaIdAtual?: string | null; // Novo, mas por hora não será mais usado aqui
 };
 
 function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps) {
@@ -374,8 +377,7 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
     senha: usuario?.senha || "",
     tipo: usuario?.tipo || "Usuário",
     status: usuario?.status || "ativo",
-    vendedor: usuario?.vendedor || "nao", // Inicializamos o campo vendedor
-    empresa_id: usuario?.empresa_id || "",
+    vendedor: usuario?.vendedor || "nao",
     confirmarSenha: "",
   });
 
@@ -509,18 +511,6 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
             <SelectItem value="inativo">Inativo</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-      {/* Empresa */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Empresa (opcional)</label>
-        <Input
-          name="empresa_id"
-          value={form.empresa_id || ""}
-          onChange={handleChange}
-          disabled={readOnly}
-          placeholder="ID da empresa (UUID)"
-        />
-        {/* No futuro pode ser um select de empresas, por simplicidade mantido assim */}
       </div>
       {/* Campo Vendedor */}
       <div>
