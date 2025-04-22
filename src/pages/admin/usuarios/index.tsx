@@ -118,7 +118,7 @@ export default function UsuariosPage() {
     });
   }, [usuarios, searchTerm, tipoFilter, statusFilter]);
 
-  // Salvar/criar usuário no Supabase
+  // Salvar/criar usuário via edge function
   const handleSubmit = async (data: Partial<Usuario>) => {
     if (editingUsuario) {
       // Edição
@@ -146,56 +146,43 @@ export default function UsuariosPage() {
         )
       );
     } else {
-      // Criação de novo usuário pelo admin
+      // NOVO: Criação via edge function
       try {
-        // 1. Criação no supabase.auth (senha padrão: 123456)
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: data.email as string,
-          password: "123456",
-          email_confirm: true,
+        // Chama edge function para criar usuário de forma segura
+        const senhaTemporaria = "123456";
+        const res = await fetch("/functions/v1/criar-usuario-auth", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: data.email,
+            nome: data.nome,
+            senha: senhaTemporaria,
+            tipo: data.tipo,
+            status: data.status,
+            vendedor: data.vendedor,
+            empresa_id: currentCompany?.id ?? null,
+          }),
         });
 
-        if (authError) {
-          // Exemplo de erro: "User already registered"
-          if (authError.message?.toLowerCase().includes('already')) {
+        const resultado = await res.json();
+        if (!res.ok) {
+          if (resultado?.error?.toLowerCase?.().includes("already")) {
             toast.error("E-mail já cadastrado no sistema.");
           } else {
-            toast.error("Erro ao cadastrar no Auth: " + authError.message);
+            toast.error(`Erro ao cadastrar usuário: ${resultado?.error || "Erro desconhecido"}`);
           }
           return;
         }
-        const userId = authData.user?.id;
-        if (!userId) {
-          toast.error("Não foi possível obter o ID do usuário criado.");
-          return;
-        }
 
-        // 2. Insere usuário na tabela usuarios com o uid correto
-        const { data: novoUsuario, error: userInsertError } = await supabase
-          .from("usuarios")
-          .insert([
-            {
-              id: userId, // ID do auth
-              nome: data.nome,
-              email: data.email,
-              tipo: data.tipo,
-              status: data.status,
-              vendedor: data.vendedor,
-              empresa_id: currentCompany?.id ?? null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            }
-          ])
-          .select("*, empresas(nome_fantasia)")
-          .single();
-
-        if (userInsertError) {
-          toast.error("Erro ao salvar usuário: " + userInsertError.message);
+        const novoUsuario = resultado.usuario;
+        if (!novoUsuario) {
+          toast.error("Usuário criado no Auth, mas não foi possível obter dados para listar.");
           return;
         }
 
         toast.success("Usuário criado com sucesso! O novo usuário deve alterar sua senha no primeiro login. Senha temporária: 123456");
-
         setUsuarios((prev) => [
           ...prev,
           {
