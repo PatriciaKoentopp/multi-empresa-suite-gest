@@ -1,4 +1,3 @@
-
 import {
   Accordion,
   AccordionContent,
@@ -98,14 +97,13 @@ export function SidebarNav({ isCollapsed, closeSidebar }: SidebarNavProps) {
             <Accordion
               key={item.href}
               type="single"
-              defaultValue={isOpen ? item.href : undefined}
               className="border-none"
             >
               <AccordionItem value={item.href} className="border-none">
                 <AccordionTrigger 
                   className={cn(
                     "px-4 gap-1 hover:bg-accent/50 hover:no-underline py-2 rounded-md",
-                    isOpen ? "bg-accent/60 text-accent-foreground font-medium" : ""
+                    (pathname === item.href || pathname.startsWith(`${item.href}/`)) ? "bg-accent/60 text-accent-foreground font-medium" : ""
                   )}
                 >
                   <div className="flex items-center text-left">
