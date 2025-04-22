@@ -49,7 +49,7 @@ export function Login() {
       <div className="w-full max-w-md px-4">
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Multi-Empresa Suite Gest</CardTitle>
+            <CardTitle className="text-2xl">ERP - MJPM</CardTitle>
             <CardDescription>
               Entre com suas credenciais para acessar o sistema
             </CardDescription>
