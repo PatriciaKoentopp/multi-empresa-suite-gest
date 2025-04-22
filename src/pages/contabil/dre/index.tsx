@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -120,6 +119,8 @@ export default function DrePage() {
   const [ano, setAno] = useState(anoAtual.toString());
   const [anosComparar, setAnosComparar] = useState<string[]>([anoAtual.toString(), (anoAtual-1).toString()]);
   const [mes, setMes] = useState("01");
+  // NOVO ESTADO: ano para visualização mensal
+  const [anoMensal, setAnoMensal] = useState(anoAtual.toString());
 
   function handleAnoCompararChange(anoAlterado: string) {
     let result: string[] = [];
@@ -134,6 +135,17 @@ export default function DrePage() {
     // Garante pelo menos 1 ano selecionado
     if (result.length === 0) result = [anoAlterado];
     setAnosComparar(result);
+  }
+
+  // Ajuste para buscar dados mensais do mock base para o ano selecionado (apenas para demonstrar seleção, simula dados zerados caso não exista p/ ano)
+  function getMockDREMensalAnoSelecionado(anoSelecionado: string) {
+    // Simples: só retorna o mock fixo pois mocks não tem dados de outros anos para visualização, simula zerados nos outros anos
+    if (anoSelecionado === anoAtual.toString()) return mockDREMensal;
+    // Se quiser simular outros anos diferentes, basta criar outros arrays semelhantes.
+    return mesesNumericos.map(mesVal => ({
+      mes: mesVal,
+      dados: contasDRE.map(c => ({ tipo: c, valor: 0 })),
+    }));
   }
 
   return (
@@ -201,21 +213,36 @@ export default function DrePage() {
                 </span>
               </div>
             )}
-            {/* Se for mensal, mostra filtro do mês */}
+            {/* NOVO: Ano + mês para visualização mensal */}
             {visualizacao === "mensal" && (
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Mês</label>
-                <Select value={mes} onValueChange={val => setMes(val)}>
-                  <SelectTrigger className="min-w-[140px] bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mesesComTodos.map(m => (
-                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Ano</label>
+                  <Select value={anoMensal} onValueChange={val => setAnoMensal(val)}>
+                    <SelectTrigger className="min-w-[90px] bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {anos.map(a => (
+                        <SelectItem value={a} key={"anoMensal-"+a}>{a}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Mês</label>
+                  <Select value={mes} onValueChange={val => setMes(val)}>
+                    <SelectTrigger className="min-w-[140px] bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mesesComTodos.map(m => (
+                        <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
             )}
           </form>
 
@@ -282,7 +309,8 @@ export default function DrePage() {
             {/* Mensal por mês único */}
             {visualizacao === "mensal" && mes !== "todos" && (
               (() => {
-                const dadosMes = mockDREMensal.find(mObj => mObj.mes === mes);
+                const dadosMensalAno = getMockDREMensalAnoSelecionado(anoMensal);
+                const dadosMes = dadosMensalAno.find(mObj => mObj.mes === mes);
                 if (!dadosMes) {
                   return (
                     <div className="text-muted-foreground py-4">Sem dados para este mês.</div>
@@ -315,37 +343,42 @@ export default function DrePage() {
             )}
             {/* Mensal todos os meses em colunas */}
             {visualizacao === "mensal" && mes === "todos" && (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Conta</TableHead>
-                    {meses.map(m => (
-                      <TableHead key={m.value} className="text-center">{m.label}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {contasDRE.map(conta => (
-                    <TableRow key={conta}>
-                      <TableCell>{conta}</TableCell>
-                      {meses.map(m => {
-                        const dadoMes = mockDREMensal.find(x => x.mes === m.value);
-                        const linha = dadoMes?.dados.find(i => i.tipo === conta);
-                        return (
-                          <TableCell key={m.value} className="text-right">
-                            {linha
-                              ? linha.valor.toLocaleString("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL"
-                                })
-                              : "R$ 0,00"}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              (() => {
+                const dadosMensalAno = getMockDREMensalAnoSelecionado(anoMensal);
+                return (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Conta</TableHead>
+                        {meses.map(m => (
+                          <TableHead key={m.value} className="text-center">{m.label}</TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {contasDRE.map(conta => (
+                        <TableRow key={conta}>
+                          <TableCell>{conta}</TableCell>
+                          {meses.map(m => {
+                            const dadoMes = dadosMensalAno.find(x => x.mes === m.value);
+                            const linha = dadoMes?.dados.find(i => i.tipo === conta);
+                            return (
+                              <TableCell key={m.value} className="text-right">
+                                {linha
+                                  ? linha.valor.toLocaleString("pt-BR", {
+                                      style: "currency",
+                                      currency: "BRL"
+                                    })
+                                  : "R$ 0,00"}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                );
+              })()
             )}
           </div>
         </CardContent>
