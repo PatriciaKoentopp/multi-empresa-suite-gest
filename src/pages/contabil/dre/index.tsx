@@ -4,7 +4,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format } from "date-fns";
 
 const meses = [
   { label: "Janeiro", value: "01" },
@@ -21,9 +20,14 @@ const meses = [
   { label: "Dezembro", value: "12" },
 ];
 
+const mesesComTodos = [
+  { label: "Todos os meses", value: "todos" },
+  ...meses
+];
+
 const anos: string[] = [];
 const anoAtual = new Date().getFullYear();
-for (let a = anoAtual; a >= 2021; a--) anos.push(a.toString()); // últimos anos
+for (let a = anoAtual; a >= 2021; a--) anos.push(a.toString());
 
 // Mock de dados contábeis (padrão DRE)
 const mockDRE = [
@@ -40,8 +44,13 @@ const mockDRE = [
   { tipo: "Lucro Líquido do Exercício", valor: 22000 }
 ];
 
-// Mock DRE Mensal (simples: um array para cada mês)
-const mockDREMensal = [
+// Contas DRE padrão (para garantir que todos os meses apareçam na horizontal)
+const contasDRE = mockDRE.map(c => c.tipo);
+
+// Mock DRE Mensal - garantir todos os meses do ano
+const mesesNumericos = meses.map(m => m.value);
+
+const mockDREMensalBase = [
   {
     mes: "01",
     dados: [
@@ -74,13 +83,24 @@ const mockDREMensal = [
       { tipo: "Lucro Líquido do Exercício", valor: 2260 }
     ]
   }
-  // Adicione outros meses conforme necessário
+  // Adicione outros meses preenchidos ou zeros
 ];
+
+// Garante que mockDREMensal tenha todos os meses, preenche valores zerados se faltar algum mês
+const mockDREMensal: { mes: string, dados: { tipo: string, valor: number }[] }[] = mesesNumericos.map(mesVal => {
+  const encontrado = mockDREMensalBase.find(mx => mx.mes === mesVal);
+  if (encontrado) return encontrado;
+  // Se não tiver para o mês, retorna todas as contas zeradas
+  return {
+    mes: mesVal,
+    dados: contasDRE.map(c => ({ tipo: c, valor: 0 }))
+  };
+});
 
 export default function DrePage() {
   const [visualizacao, setVisualizacao] = useState<"acumulado" | "mensal">("acumulado");
   const [ano, setAno] = useState(anoAtual.toString());
-  const [mes, setMes] = useState(meses[0].value);
+  const [mes, setMes] = useState("01");
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -129,11 +149,11 @@ export default function DrePage() {
                   Mês
                 </label>
                 <Select value={mes} onValueChange={val => setMes(val)}>
-                  <SelectTrigger className="min-w-[120px] bg-white">
+                  <SelectTrigger className="min-w-[140px] bg-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {meses.map(m => (
+                    {mesesComTodos.map(m => (
                       <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
                     ))}
                   </SelectContent>
@@ -167,10 +187,9 @@ export default function DrePage() {
                 </TableBody>
               </Table>
             )}
-            {visualizacao === "mensal" && (
-              // Busca o mock do mês selecionado
+            {visualizacao === "mensal" && mes !== "todos" && (
               (() => {
-                const dadosMes = mockDREMensal.find(m => m.mes === mes);
+                const dadosMes = mockDREMensal.find(mObj => mObj.mes === mes);
                 if (!dadosMes) {
                   return (
                     <div className="text-muted-foreground py-4">Sem dados para este mês.</div>
@@ -201,9 +220,46 @@ export default function DrePage() {
                 );
               })()
             )}
+            {visualizacao === "mensal" && mes === "todos" && (
+              // Tabela horizontal comparando todos os meses
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Conta</TableHead>
+                    {meses.map(m => (
+                      <TableHead key={m.value} className="text-center">{m.label}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contasDRE.map(conta => (
+                    <TableRow key={conta}>
+                      <TableCell>{conta}</TableCell>
+                      {meses.map(m => {
+                        const dadoMes = mockDREMensal.find(x => x.mes === m.value);
+                        const linha = dadoMes?.dados.find(i => i.tipo === conta);
+                        return (
+                          <TableCell key={m.value} className="text-right">
+                            {linha
+                              ? linha.valor.toLocaleString("pt-BR", {
+                                  style: "currency",
+                                  currency: "BRL"
+                                })
+                              : "R$ 0,00"}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+
+// O arquivo ficou longo; recomendo considerar refatoração em componentes menores após esta alteração.
+
