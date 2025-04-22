@@ -1,9 +1,8 @@
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Search, Filter, User, UserCheck, UserX } from "lucide-react";
-import { EllipsisVertical } from "lucide-react";
+import { PlusCircle, Search, Filter, User, EllipsisVertical } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -32,59 +31,28 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { format } from "date-fns";
+import ptBR from "date-fns/locale/pt-BR";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 
-// Mock de usuários (interface atualizada)
+// Interface do usuário conforme Supabase
 type Usuario = {
   id: string;
   nome: string;
   email: string;
-  senha: string;
+  senha?: string; // não será exibida/buscada do supabase
   tipo: "Administrador" | "Usuário";
   status: "ativo" | "inativo";
-  vendedor: "sim" | "nao"; // Novo campo para identificar vendedores
+  vendedor: "sim" | "nao";
+  empresa_id?: string | null;
   createdAt: Date;
   updatedAt: Date;
+  empresa_nome?: string | null;
 };
 
-// Mock data inicial atualizado com o campo vendedor
-const initialUsuarios: Usuario[] = [
-  {
-    id: "1",
-    nome: "Marcos Almeida",
-    email: "marcos@empresa.com",
-    senha: "123456", // Apenas para mock/exemplo
-    tipo: "Administrador",
-    status: "ativo",
-    vendedor: "sim", // Adicionamos o valor para o campo vendedor
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    nome: "Amanda Torres",
-    email: "amanda@empresa.com",
-    senha: "654321",
-    tipo: "Usuário",
-    status: "ativo",
-    vendedor: "nao",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    nome: "Breno Costa",
-    email: "breno@empresa.com",
-    senha: "senha123",
-    tipo: "Usuário",
-    status: "inativo",
-    vendedor: "sim",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
-
 export default function UsuariosPage() {
-  const [usuarios, setUsuarios] = useState<Usuario[]>(initialUsuarios);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState<Usuario | undefined>(undefined);
   const [viewingUsuario, setViewingUsuario] = useState<Usuario | undefined>(undefined);
@@ -93,6 +61,35 @@ export default function UsuariosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [tipoFilter, setTipoFilter] = useState<"todos" | "Administrador" | "Usuário">("todos");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
+
+  // Buscar usuários do supabase
+  useEffect(() => {
+    const fetchUsuarios = async () => {
+      let { data, error } = await supabase
+        .from("usuarios")
+        .select("*, empresas(nome_fantasia)"); // Busca o nome da empresa relacionada
+      if (error) {
+        toast.error("Erro ao buscar usuários: " + error.message);
+        setUsuarios([]);
+        return;
+      }
+      // Mapear datas para Date e extrair nome da empresa
+      const mapped = (data || []).map((row: any) => ({
+        id: row.id,
+        nome: row.nome,
+        email: row.email,
+        tipo: row.tipo,
+        status: row.status,
+        vendedor: row.vendedor,
+        empresa_id: row.empresa_id,
+        createdAt: row.created_at ? new Date(row.created_at) : new Date(),
+        updatedAt: row.updated_at ? new Date(row.updated_at) : new Date(),
+        empresa_nome: row.empresas?.nome_fantasia || null,
+      }));
+      setUsuarios(mapped);
+    };
+    fetchUsuarios();
+  }, []);
 
   // Abrir dialog novo/editar/visualizar
   const handleOpenDialog = (usuario?: Usuario, isViewing = false) => {
@@ -113,17 +110,32 @@ export default function UsuariosPage() {
       const matchesSearch =
         user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-
       const matchesTipo = tipoFilter === "todos" || user.tipo === tipoFilter;
       const matchesStatus = statusFilter === "todos" || user.status === statusFilter;
-
       return matchesSearch && matchesTipo && matchesStatus;
     });
   }, [usuarios, searchTerm, tipoFilter, statusFilter]);
 
-  // Salvar/criar usuário
-  const handleSubmit = (data: Partial<Usuario>) => {
+  // Salvar/criar usuário no Supabase
+  const handleSubmit = async (data: Partial<Usuario>) => {
     if (editingUsuario) {
+      // Edição
+      const { error } = await supabase
+        .from("usuarios")
+        .update({
+          nome: data.nome,
+          email: data.email,
+          tipo: data.tipo,
+          status: data.status,
+          vendedor: data.vendedor,
+        })
+        .eq("id", editingUsuario.id);
+      if (error) {
+        toast.error("Erro ao atualizar usuário: " + error.message);
+        return;
+      }
+      toast.success("Usuário atualizado com sucesso!");
+      // Atualizar na tela
       setUsuarios((prev) =>
         prev.map((u) =>
           u.id === editingUsuario.id
@@ -131,22 +143,53 @@ export default function UsuariosPage() {
             : u
         )
       );
-      toast.success("Usuário atualizado com sucesso!");
     } else {
-      const novoUsuario: Usuario = {
-        id: `${Date.now()}`,
-        ...data as Usuario,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setUsuarios((prev) => [...prev, novoUsuario]);
+      // Criação
+      const { data: novoUsuario, error } = await supabase
+        .from("usuarios")
+        .insert([
+          {
+            nome: data.nome,
+            email: data.email,
+            tipo: data.tipo,
+            status: data.status,
+            vendedor: data.vendedor,
+            empresa_id: data.empresa_id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            id: crypto.randomUUID(),
+          }
+        ])
+        .select("*, empresas(nome_fantasia)")
+        .single();
+      if (error) {
+        toast.error("Erro ao criar usuário: " + error.message);
+        return;
+      }
       toast.success("Usuário criado com sucesso!");
+      setUsuarios((prev) => [
+        ...prev,
+        {
+          ...novoUsuario,
+          createdAt: novoUsuario?.created_at ? new Date(novoUsuario.created_at) : new Date(),
+          updatedAt: novoUsuario?.updated_at ? new Date(novoUsuario.updated_at) : new Date(),
+          empresa_nome: novoUsuario?.empresas?.nome_fantasia || null,
+        },
+      ]);
     }
     handleCloseDialog();
   };
 
-  // Excluir usuário
-  const handleDelete = (id: string) => {
+  // Excluir usuário no Supabase
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from("usuarios")
+      .delete()
+      .eq("id", id);
+    if (error) {
+      toast.error("Erro ao excluir usuário: " + error.message);
+      return;
+    }
     setUsuarios((prev) => prev.filter((u) => u.id !== id));
     toast.success("Usuário excluído com sucesso!");
   };
@@ -225,13 +268,14 @@ export default function UsuariosPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Empresa</TableHead>
                   <TableHead className="w-[120px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsuarios.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                       Nenhum usuário encontrado
                     </TableCell>
                   </TableRow>
@@ -255,6 +299,9 @@ export default function UsuariosPage() {
                         >
                           {usuario.status === "ativo" ? "Ativo" : "Inativo"}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        {usuario.empresa_nome || "-"}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -328,6 +375,7 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
     tipo: usuario?.tipo || "Usuário",
     status: usuario?.status || "ativo",
     vendedor: usuario?.vendedor || "nao", // Inicializamos o campo vendedor
+    empresa_id: usuario?.empresa_id || "",
     confirmarSenha: "",
   });
 
@@ -358,15 +406,13 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
     e.preventDefault();
     setErroConfirmarSenha(null);
 
-    // Validação do campo de confirmação de senha
     if (!readOnly) {
-      if (form.senha !== form.confirmarSenha) {
+      if (form.senha !== undefined && form.senha !== form.confirmarSenha) {
         setErroConfirmarSenha("As senhas não coincidem.");
         return;
       }
     }
 
-    // Não enviar o campo de confirmação para o onSubmit
     const { confirmarSenha, ...data } = form;
     onSubmit(data);
   };
@@ -464,7 +510,18 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
           </SelectContent>
         </Select>
       </div>
-
+      {/* Empresa */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Empresa (opcional)</label>
+        <Input
+          name="empresa_id"
+          value={form.empresa_id || ""}
+          onChange={handleChange}
+          disabled={readOnly}
+          placeholder="ID da empresa (UUID)"
+        />
+        {/* No futuro pode ser um select de empresas, por simplicidade mantido assim */}
+      </div>
       {/* Campo Vendedor */}
       <div>
         <Label className="block text-sm font-medium mb-2">Vendedor</Label>
@@ -484,7 +541,6 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
           </div>
         </RadioGroup>
       </div>
-
       <div className="flex justify-end gap-2 mt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
           {readOnly ? "Fechar" : "Cancelar"}
