@@ -31,6 +31,7 @@ import UsuariosPage from "./pages/admin/usuarios";
 import FunilConfiguracaoPage from "./pages/crm/funil-configuracao";
 import LeadsPage from "./pages/crm/leads"; // Importamos a nova página de Leads
 import LancamentosPage from "./pages/contabil/lancamentos"; // ADICIONADO
+import DrePage from "./pages/contabil/dre"; // <-- IMPORTAÇÃO DA NOVA PÁGINA
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
                 {/* Contábil routes */}
                 <Route path="/contabil/plano-contas" element={<PlanoContasPage />} />
                 <Route path="/contabil/lancamentos" element={<LancamentosPage />} /> {/* ADICIONADO */}
+                <Route path="/contabil/dre" element={<DrePage />} /> {/* NOVA ROTA DRE */}
                 
                 {/* Style Guide */}
                 <Route path="/style-guide" element={<StyleGuidePage />} />
