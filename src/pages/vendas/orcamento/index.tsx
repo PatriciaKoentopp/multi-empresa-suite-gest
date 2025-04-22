@@ -49,6 +49,10 @@ export default function OrcamentoPage() {
   const [servicos, setServicos] = useState([
     { servicoId: "", valor: 0 }
   ]);
+  const [dataNotaFiscal, setDataNotaFiscal] = useState("");
+  const [numeroNotaFiscal, setNumeroNotaFiscal] = useState("");
+  const [notaFiscalPdf, setNotaFiscalPdf] = useState<File | null>(null);
+  const [notaFiscalPdfUrl, setNotaFiscalPdfUrl] = useState<string>("");
 
   // Cálculo do total do orçamento
   const total = servicos.reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
@@ -126,6 +130,18 @@ export default function OrcamentoPage() {
   const handleRemoveServico = (idx: number) => {
     if (servicos.length === 1) return;
     setServicos(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleNotaFiscalPdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
+    if (file && file.type === "application/pdf") {
+      setNotaFiscalPdf(file);
+      const url = URL.createObjectURL(file);
+      setNotaFiscalPdfUrl(url);
+    } else {
+      setNotaFiscalPdf(null);
+      setNotaFiscalPdfUrl("");
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -329,6 +345,55 @@ export default function OrcamentoPage() {
                 ))}
               </div>
             </div>
+
+            {/* CAMPOS NOTA FISCAL */}
+            <div className="flex flex-col md:flex-row gap-4">
+              {/* Data Nota Fiscal */}
+              <div className="w-full md:w-1/3">
+                <label className="block text-sm mb-1">Data Nota Fiscal</label>
+                <Input
+                  type="date"
+                  value={dataNotaFiscal}
+                  onChange={e => setDataNotaFiscal(e.target.value)}
+                />
+              </div>
+              {/* Número Nota Fiscal */}
+              <div className="w-full md:w-1/3">
+                <label className="block text-sm mb-1">Número Nota Fiscal</label>
+                <Input
+                  type="text"
+                  maxLength={30}
+                  value={numeroNotaFiscal}
+                  onChange={e => setNumeroNotaFiscal(e.target.value)}
+                  placeholder="Ex: 12345"
+                />
+              </div>
+              {/* Upload Nota Fiscal PDF */}
+              <div className="w-full md:w-1/3">
+                <label className="block text-sm mb-1">Nota Fiscal (PDF)</label>
+                <Input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleNotaFiscalPdfChange}
+                />
+                {notaFiscalPdf && notaFiscalPdfUrl && (
+                  <Button
+                    variant="blue"
+                    type="button"
+                    className="mt-2"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = notaFiscalPdfUrl;
+                      link.download = notaFiscalPdf.name || "nota-fiscal.pdf";
+                      link.click();
+                    }}
+                  >
+                    Baixar Nota Fiscal
+                  </Button>
+                )}
+              </div>
+            </div>
+            {/* FIM CAMPOS NOTA FISCAL */}
 
             <div className="flex gap-2 mt-2">
               <Button type="submit" variant="blue">Salvar Orçamento</Button>
