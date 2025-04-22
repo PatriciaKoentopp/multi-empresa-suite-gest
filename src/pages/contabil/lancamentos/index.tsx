@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -98,6 +99,7 @@ function formatCurrency(val: number) {
     minimumFractionDigits: 2
   });
 }
+
 export default function LancamentosPage() {
   const [contaId, setContaId] = useState("1");
   const [periodo, setPeriodo] = useState<"mes_atual" | "mes_anterior" | "personalizado">("mes_atual");
@@ -107,7 +109,7 @@ export default function LancamentosPage() {
   const [dataFinalStr, setDataFinalStr] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [novoModalOpen, setNovoModalOpen] = useState(false);
-  const [lancamentos, setLancamentos] = useState([...mockLancamentos]); // agora editável!
+  const [lancamentos, setLancamentos] = useState([...mockLancamentos]);
   const navigate = useNavigate();
   useEffect(() => {
     const hoje = new Date();
@@ -155,12 +157,18 @@ export default function LancamentosPage() {
     }
   }
 
-  // Filtra lançamentos pelo filtro selecionado
   const filteredLancamentos = useMemo(() => {
     return lancamentos.filter(l => {
       const isConta = l.conta === contaId;
       const termoOk = searchTerm ? l.historico.toLowerCase().includes(searchTerm.toLowerCase()) : true;
-      const dataLanc = new Date(l.data.substring(0, 4) + "-" + l.data.substring(5, 7) + "-" + l.data.substring(8, 10));
+      // data salva já esperado como "YYYY-MM-DD" ou "DD/MM/YYYY"
+      let dataLanc: Date;
+      if (l.data.includes("/")) {
+        const [dd, mm, yyyy] = l.data.split("/");
+        dataLanc = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+      } else {
+        dataLanc = new Date(l.data.substring(0, 4) + "-" + l.data.substring(5, 7) + "-" + l.data.substring(8, 10));
+      }
       const dataInicioOk = !dataInicial || dataLanc >= dataInicial;
       const dataFimOk = !dataFinal || dataLanc <= dataFinal;
       return isConta && termoOk && dataInicioOk && dataFimOk;
@@ -174,19 +182,46 @@ export default function LancamentosPage() {
     toast.success("Lançamento excluído!");
   }
 
-  // Função para adicionar novo lançamento
-  function handleNovoLancamento(novo: Omit<typeof mockLancamentos[0], "id" | "saldo">) {
-    // saldo: calcula mock fictício só para o exemplo (poderia ser ajustado depois)
-    const ultSaldo = lancamentos.length > 0 ? lancamentos[lancamentos.length - 1].saldo : 0;
-    const novoSaldo = novo.tipo === "debito" ? ultSaldo - novo.valor : ultSaldo + novo.valor;
-    setLancamentos(curr => [
-      ...curr,
-      {
-        ...novo,
-        id: String(Date.now()),
-        saldo: novoSaldo >= 0 ? novoSaldo : 0
-      }
-    ]);
+  // NOVO: Função para adicionar novo lançamento - DÉBITO e CRÉDITO
+  function handleNovoLancamento(novo: { data: string; historico: string; debito: string; credito: string; valor: number }) {
+    // Adiciona 2 lançamentos: um para conta a débito e outro para conta a crédito
+    // Vamos simular o saldo: pega último saldo dos dois lados e calcula
+    // Para manter simples, vamos fazer mock: saldo do débito diminui, saldo do crédito aumenta
+
+    // Busca saldo da conta débito
+    const getLastSaldo = (conta: string) => {
+      const lancs = lancamentos.filter(l => l.conta === conta);
+      if (lancs.length === 0) return 0;
+      return lancs[lancs.length - 1].saldo || 0;
+    };
+
+    // Lançamento a débito
+    const saldoDebito = getLastSaldo(novo.debito) - novo.valor;
+    // Lançamento a crédito
+    const saldoCredito = getLastSaldo(novo.credito) + novo.valor;
+
+    const dataPadrao = novo.data; // já vem em DD/MM/YYYY
+
+    const debitoLanc = {
+      id: String(Date.now()) + "_d",
+      data: dataPadrao,
+      historico: novo.historico,
+      conta: novo.debito,
+      tipo: "debito" as const,
+      valor: novo.valor,
+      saldo: saldoDebito
+    };
+    const creditoLanc = {
+      id: String(Date.now()) + "_c",
+      data: dataPadrao,
+      historico: novo.historico,
+      conta: novo.credito,
+      tipo: "credito" as const,
+      valor: novo.valor,
+      saldo: saldoCredito
+    };
+
+    setLancamentos(curr => ([...curr, debitoLanc, creditoLanc]));
     setNovoModalOpen(false);
     toast.success("Lançamento adicionado com sucesso!");
   }
@@ -297,7 +332,7 @@ export default function LancamentosPage() {
                         Nenhum lançamento encontrado
                       </TableCell>
                     </TableRow> : filteredLancamentos.map(lanc => <TableRow key={lanc.id}>
-                        <TableCell>{dateToBR(new Date(lanc.data))}</TableCell>
+                        <TableCell>{dateToBR(lanc.data.includes("/") ? brToDate(lanc.data)! : new Date(lanc.data))}</TableCell>
                         <TableCell>{lanc.historico}</TableCell>
                         <TableCell>
                           {lanc.tipo === "debito" ? formatCurrency(lanc.valor) : "-"}
