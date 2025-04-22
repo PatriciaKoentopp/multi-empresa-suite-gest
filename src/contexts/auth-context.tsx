@@ -2,7 +2,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from "@supabase/supabase-js";
-import { User } from "@/types";
 
 interface AuthContextType {
   user: SupabaseUser | null;
@@ -11,7 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, nome: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -25,26 +24,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Atualizar o usuário e a sessão no início e onAuthStateChange
   useEffect(() => {
-    // Ouve as mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setSession(session ?? null);
     });
 
-    // Busca sessão atual (após registrar/logar/refresh)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setSession(session ?? null);
       setIsLoading(false);
     });
 
-    // Cleanup subscription
     return () => subscription.unsubscribe();
   }, []);
 
-  // Login de usuário existente
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     const { error, data } = await supabase.auth.signInWithPassword({ email, password });
@@ -57,20 +51,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   };
 
-  // Registro de novo usuário (signup)
-  const register = async (email: string, password: string) => {
+  // Novo: cadastra usuário no auth e insere na tabela usuarios
+  const register = async (email: string, password: string, nome: string) => {
     setIsLoading(true);
+
+    // Cria o usuário no auth
     const { error, data } = await supabase.auth.signUp({ email, password });
+
     if (error) {
       setIsLoading(false);
       throw new Error(error.message);
     }
+
+    // Cria o registro na tabela usuarios (campos mínimos obrigatórios)
+    const id = data.user?.id;
+    if (id) {
+      const { error: userDbError } = await supabase
+        .from("usuarios")
+        .insert([
+          {
+            id,
+            nome,
+            email,
+            status: "ativo",
+            tipo: "Administrador",
+            vendedor: "nao"
+          }
+        ]);
+      if (userDbError) {
+        setIsLoading(false);
+        throw new Error(userDbError.message);
+      }
+    } else {
+      setIsLoading(false);
+      throw new Error("Erro ao criar usuário.");
+    }
+
     setUser(data.user);
     setSession(data.session);
     setIsLoading(false);
   };
 
-  // Logout
   const logout = async () => {
     setIsLoading(true);
     const { error } = await supabase.auth.signOut();
