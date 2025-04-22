@@ -41,6 +41,7 @@ import { Origem, Usuario, MotivoPerda } from "@/types";
 import { format } from "date-fns";
 import { Send, UserRound, Phone, Calendar, Mail, MessageCircle, Eye, Edit, Trash2 } from "lucide-react";
 
+import { LeadDadosTab } from "./LeadDadosTab";
 import { LeadFechamentoTab } from "./LeadFechamentoTab";
 
 interface Lead {
@@ -89,6 +90,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
   const [formData, setFormData] = useState({
     nome: "",
     empresa: "",
+    produto: "", // campo produto adicionado
     email: "",
     telefone: "",
     etapaId: 1,
@@ -164,6 +166,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
       setFormData({
         nome: lead.nome,
         empresa: lead.empresa,
+        produto: lead.produto || "", // busca produto do lead se existir
         email: lead.email,
         telefone: lead.telefone,
         etapaId: lead.etapaId,
@@ -186,6 +189,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
       setFormData({
         nome: "",
         empresa: "",
+        produto: "",
         email: "",
         telefone: "",
         etapaId: etapas.length > 0 ? etapas[0].id : 1,
@@ -380,161 +384,20 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                 </TabsList>
               </div>
               <div className="flex-1 overflow-y-auto">
-                
                 <TabsContent value="dados" className="p-6 mt-0">
                   <form id="dadosLeadForm" onSubmit={handleSubmit}>
-                    <div className="grid gap-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="nome">Nome</Label>
-                          <Input
-                            id="nome"
-                            name="nome"
-                            value={formData.nome}
-                            onChange={handleChange}
-                            placeholder="Nome do contato"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="empresa">Empresa</Label>
-                          <Input
-                            id="empresa"
-                            name="empresa"
-                            value={formData.empresa}
-                            onChange={handleChange}
-                            placeholder="Nome da empresa"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email</Label>
-                          <Input
-                            id="email"
-                            name="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="Email"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="telefone">Telefone</Label>
-                          <Input
-                            id="telefone"
-                            name="telefone"
-                            value={formData.telefone}
-                            onChange={handleChange}
-                            placeholder="Telefone"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="etapa">Etapa do Funil</Label>
-                          <Select
-                            value={String(formData.etapaId)}
-                            onValueChange={(value) => handleSelectChange("etapaId", value)}
-                          >
-                            <SelectTrigger id="etapa" className="bg-white">
-                              <SelectValue placeholder="Selecione a etapa" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white z-50">
-                              {etapas.map((etapa) => (
-                                <SelectItem key={etapa.id} value={String(etapa.id)}>
-                                  {etapa.nome}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="valor">Valor (R$)</Label>
-                          <Input
-                            id="valor"
-                            name="valor"
-                            type="number"
-                            value={formData.valor}
-                            onChange={handleChange}
-                            placeholder="Valor"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="origem">Origem</Label>
-                          <Select 
-                            value={formData.origemId}
-                            onValueChange={(value) => handleSelectChange("origemId", value)}
-                          >
-                            <SelectTrigger id="origem" className="bg-white">
-                              <SelectValue placeholder="Selecione a origem" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white z-50">
-                              {origensAtivas.map((origem) => (
-                                <SelectItem key={origem.id} value={origem.id}>
-                                  {origem.nome}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="responsavel">Responsável</Label>
-                          <Select
-                            value={formData.responsavelId}
-                            onValueChange={(value) => handleSelectChange("responsavelId", value)}
-                          >
-                            <SelectTrigger id="responsavel" className="bg-white">
-                              <SelectValue placeholder="Selecione o responsável" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white z-50">
-                              {vendedoresAtivos.length > 0 ? (
-                                vendedoresAtivos.map((vendedor) => (
-                                  <SelectItem key={vendedor.id} value={vendedor.id}>
-                                    {vendedor.nome}
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <SelectItem value="" disabled>
-                                  Nenhum vendedor disponível
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="dataCriacao">Data de Criação</Label>
-                          <Input
-                            id="dataCriacao"
-                            value={formData.dataCriacao}
-                            readOnly
-                            disabled
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="ultimoContato">Último Contato</Label>
-                          <Input
-                            id="ultimoContato"
-                            value={formData.ultimoContato}
-                            readOnly
-                            disabled
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <LeadDadosTab
+                      formData={formData}
+                      handleChange={handleChange}
+                      handleSelectChange={handleSelectChange}
+                      etapas={etapas}
+                      origensAtivas={origens.filter(origem => origem.status === "ativo")}
+                      vendedoresAtivos={usuarios.filter(usuario => usuario.vendedor === "sim" && usuario.status === "ativo")}
+                    />
                   </form>
                 </TabsContent>
+
+                {/* Mantém as outras tabs iguais */}
                 <TabsContent value="interacoes" className="mt-0">
                   <ScrollArea className="h-full pb-6">
                     {lead ? (
@@ -693,6 +556,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                 </TabsContent>
               </div>
             </Tabs>
+            {/* Mantém o SheetFooter igual */}
             <SheetFooter className="border-t p-6">
               <div className="flex justify-end gap-2 w-full">
                 <SheetClose asChild>
@@ -712,7 +576,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
           </div>
         </SheetContent>
       </Sheet>
-      
+      {/* Modais auxiliares continuam iguais */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent>
           <DialogHeader>
