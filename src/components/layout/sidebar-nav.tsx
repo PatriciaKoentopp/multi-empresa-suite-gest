@@ -96,15 +96,16 @@ export function SidebarNav({ isCollapsed, closeSidebar }: SidebarNavProps) {
     <div className="flex flex-col gap-1 p-2">
       {mainNavigation.map((item) => {
         if (item.subItems && item.subItems.length > 0) {
-          // Se o submenu está aberto?
+          // Verifica se o submenu está aberto
           const isOpen = openSubMenu === item.href;
 
           return (
             <Accordion
               key={item.href}
               type="single"
+              collapsible
               value={isOpen ? item.href : undefined}
-              onValueChange={(val) => setOpenSubMenu(val === openSubMenu ? undefined : (val as string))}
+              onValueChange={(val) => setOpenSubMenu(val as string | undefined)}
               className="border-none"
             >
               <AccordionItem value={item.href} className="border-none">
