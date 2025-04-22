@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,9 +37,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Origem, Usuario } from "@/types";
+import { Origem, Usuario, MotivoPerda } from "@/types";
 import { format } from "date-fns";
 import { Send, UserRound, Phone, Calendar, Mail, MessageCircle, Eye, Edit, Trash2 } from "lucide-react";
+
+import { LeadFechamentoTab } from "./LeadFechamentoTab";
 
 interface Lead {
   id: number;
@@ -81,9 +82,10 @@ interface LeadFormModalProps {
   etapas: EtapaFunil[];
   origens: Origem[];
   usuarios: Usuario[];
+  motivosPerda: MotivoPerda[];
 }
 
-export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens, usuarios }: LeadFormModalProps) {
+export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens, usuarios, motivosPerda }: any) {
   const [formData, setFormData] = useState({
     nome: "",
     empresa: "",
@@ -114,6 +116,11 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
 
   // Mock de interações para o lead atual
   const [interacoes, setInteracoes] = useState<LeadInteracao[]>([]);
+
+  // Estados para o fechamento do lead
+  const [fechamentoStatus, setFechamentoStatus] = useState<"sucesso" | "perda" | null>(null);
+  const [motivoPerdaSelecionado, setMotivoPerdaSelecionado] = useState("");
+  const [descricaoPerda, setDescricaoPerda] = useState("");
 
   // Carregar interações mock quando um lead é editado
   useEffect(() => {
@@ -364,10 +371,16 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                   >
                     Interações
                   </TabsTrigger>
+                  <TabsTrigger 
+                    value="fechamento"
+                    className="pb-2 pt-2 px-4 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:text-blue-700 data-[state=active]:shadow-none data-[state=active]:bg-transparent"
+                  >
+                    Fechamento
+                  </TabsTrigger>
                 </TabsList>
               </div>
-
               <div className="flex-1 overflow-y-auto">
+                
                 <TabsContent value="dados" className="p-6 mt-0">
                   <form id="dadosLeadForm" onSubmit={handleSubmit}>
                     <div className="grid gap-4">
@@ -522,7 +535,6 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                     </div>
                   </form>
                 </TabsContent>
-
                 <TabsContent value="interacoes" className="mt-0">
                   <ScrollArea className="h-full pb-6">
                     {lead ? (
@@ -667,9 +679,20 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                     )}
                   </ScrollArea>
                 </TabsContent>
+                
+                <TabsContent value="fechamento" className="p-6 mt-0">
+                  <LeadFechamentoTab
+                    fechamentoStatus={fechamentoStatus}
+                    setFechamentoStatus={setFechamentoStatus}
+                    motivoPerdaSelecionado={motivoPerdaSelecionado}
+                    setMotivoPerdaSelecionado={setMotivoPerdaSelecionado}
+                    descricaoPerda={descricaoPerda}
+                    setDescricaoPerda={setDescricaoPerda}
+                    motivosPerda={motivosPerda || []}
+                  />
+                </TabsContent>
               </div>
             </Tabs>
-
             <SheetFooter className="border-t p-6">
               <div className="flex justify-end gap-2 w-full">
                 <SheetClose asChild>
@@ -689,8 +712,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
           </div>
         </SheetContent>
       </Sheet>
-
-      {/* Diálogo para visualizar detalhes da interação */}
+      
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -734,7 +756,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
         </DialogContent>
       </Dialog>
 
-      {/* Diálogo para editar interação */}
+      
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -809,7 +831,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
         </DialogContent>
       </Dialog>
 
-      {/* Diálogo para confirmar exclusão */}
+      
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -843,4 +865,3 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     </>
   );
 }
-
