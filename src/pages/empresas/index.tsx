@@ -59,6 +59,30 @@ const formSchema = z.object({
   }).optional().or(z.literal(""))
 });
 type FormValues = z.infer<typeof formSchema>;
+
+// Adiciona as funções utilitárias para formatação
+function formatTelefone(telefone?: string) {
+  if (!telefone) return "";
+  // Remove qualquer coisa que não seja número
+  const cleaned = telefone.replace(/\D/g, "");
+  // Celular (11 dígitos) ou fixo (10 dígitos)
+  if (cleaned.length === 11) {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+  }
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+  }
+  return telefone;
+}
+function formatCEP(cep?: string) {
+  if (!cep) return "";
+  const cleaned = cep.replace(/\D/g, "");
+  if (cleaned.length === 8) {
+    return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
+  }
+  return cep;
+}
+
 export default function EmpresasPage() {
   const {
     currentCompany,
@@ -305,14 +329,22 @@ export default function EmpresasPage() {
                         <FormMessage />
                       </FormItem>} />
                   <FormField control={form.control} name="telefone" render={({
-                  field
-                }) => <FormItem>
-                        <FormLabel>Telefone</FormLabel>
-                        <FormControl>
+                    field
+                  }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        {isEditing ? (
                           <Input {...field} disabled={!isEditing} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>} />
+                        ) : (
+                          <div className="h-10 flex items-center px-3 rounded-md border bg-muted text-muted-foreground text-sm">
+                            {formatTelefone(field.value)}
+                          </div>
+                        )}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
                 </div>
 
                 <FormField control={form.control} name="site" render={({
@@ -369,14 +401,22 @@ export default function EmpresasPage() {
                   <h3 className="font-medium text-base">Endereço</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="cep" render={({
-                    field
-                  }) => <FormItem>
-                          <FormLabel>CEP</FormLabel>
-                          <FormControl>
+                      field
+                    }) => (
+                      <FormItem>
+                        <FormLabel>CEP</FormLabel>
+                        <FormControl>
+                          {isEditing ? (
                             <Input {...field} disabled={!isEditing} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>} />
+                          ) : (
+                            <div className="h-10 flex items-center px-3 rounded-md border bg-muted text-muted-foreground text-sm">
+                              {formatCEP(field.value)}
+                            </div>
+                          )}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
                     <FormField control={form.control} name="logradouro" render={({
                     field
                   }) => <FormItem>
