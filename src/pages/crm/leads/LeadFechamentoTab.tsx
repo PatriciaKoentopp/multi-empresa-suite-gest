@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -106,7 +105,7 @@ export function LeadFechamentoTab({ fechamento, setFechamento, motivosPerda }: L
                 {data ? format(data, "dd/MM/yyyy") : <span>Selecione uma data</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 bg-white z-50" align="start">
               <Calendar
                 mode="single"
                 selected={data}
