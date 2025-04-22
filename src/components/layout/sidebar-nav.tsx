@@ -1,3 +1,4 @@
+
 import {
   Accordion,
   AccordionContent,
@@ -11,6 +12,7 @@ import { ModuleNavItem, SubNavItem } from "@/types";
 import { LucideIcon } from "lucide-react";
 import * as Icons from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
+import React, { useState } from "react";
 
 interface SidebarNavProps {
   isCollapsed: boolean;
@@ -19,6 +21,9 @@ interface SidebarNavProps {
 
 export function SidebarNav({ isCollapsed, closeSidebar }: SidebarNavProps) {
   const { pathname } = useLocation();
+
+  // Estado para controlar qual submenu está aberto
+  const [openSubMenu, setOpenSubMenu] = useState<string | undefined>(undefined);
 
   const getIcon = (iconName: string): LucideIcon => {
     // @ts-ignore - Dynamic icon access
@@ -91,16 +96,19 @@ export function SidebarNav({ isCollapsed, closeSidebar }: SidebarNavProps) {
     <div className="flex flex-col gap-1 p-2">
       {mainNavigation.map((item) => {
         if (item.subItems && item.subItems.length > 0) {
-          const isOpen = pathname === item.href || pathname.startsWith(`${item.href}/`);
-          
+          // Se o submenu está aberto?
+          const isOpen = openSubMenu === item.href;
+
           return (
             <Accordion
               key={item.href}
               type="single"
+              value={isOpen ? item.href : undefined}
+              onValueChange={(val) => setOpenSubMenu(val === openSubMenu ? undefined : (val as string))}
               className="border-none"
             >
               <AccordionItem value={item.href} className="border-none">
-                <AccordionTrigger 
+                <AccordionTrigger
                   className={cn(
                     "px-4 gap-1 hover:bg-accent/50 hover:no-underline py-2 rounded-md",
                     (pathname === item.href || pathname.startsWith(`${item.href}/`)) ? "bg-accent/60 text-accent-foreground font-medium" : ""
@@ -125,7 +133,7 @@ export function SidebarNav({ isCollapsed, closeSidebar }: SidebarNavProps) {
             </Accordion>
           );
         }
-        
+
         return <div key={item.href}>{renderLink(item)}</div>;
       })}
     </div>
