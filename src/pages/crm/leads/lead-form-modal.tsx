@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +37,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Origem, Usuario } from "@/types";
+import { Origem, Usuario, MotivoPerda } from "@/types";
 import { format } from "date-fns";
 import { Send, UserRound, Phone, Calendar, Mail, MessageCircle, Eye, Edit, Trash2 } from "lucide-react";
 
@@ -49,6 +48,7 @@ interface Lead {
   email: string;
   telefone: string;
   etapaId: number;
+  funilId: number;
   valor: number;
   origemId: string;
   dataCriacao: string;
@@ -81,15 +81,17 @@ interface LeadFormModalProps {
   etapas: EtapaFunil[];
   origens: Origem[];
   usuarios: Usuario[];
+  motivosPerda: MotivoPerda[]; // ADICIONADO: Motivos de perda
 }
 
-export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens, usuarios }: LeadFormModalProps) {
+export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens, usuarios, motivosPerda }: LeadFormModalProps) {
   const [formData, setFormData] = useState({
     nome: "",
     empresa: "",
     email: "",
     telefone: "",
     etapaId: 1,
+    funilId: 1,
     valor: 0,
     origemId: "",
     dataCriacao: new Date().toLocaleDateString("pt-BR"),
@@ -114,6 +116,11 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
 
   // Mock de interações para o lead atual
   const [interacoes, setInteracoes] = useState<LeadInteracao[]>([]);
+
+  // Estado do fechamento
+  const [fechamentoStatus, setFechamentoStatus] = useState<null | "sucesso" | "perda">(null);
+  const [motivoPerdaSelecionado, setMotivoPerdaSelecionado] = useState<string>("");
+  const [descricaoPerda, setDescricaoPerda] = useState<string>("");
 
   // Carregar interações mock quando um lead é editado
   useEffect(() => {
@@ -152,6 +159,20 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     }
   }, [lead]);
 
+  // Preencher fechamento ao editar
+  useEffect(() => {
+    if (lead) {
+      // Exemplo: Se já estiver fechado/preenchido (deve adaptar para seu backend depois)
+      setFechamentoStatus(null);
+      setMotivoPerdaSelecionado("");
+      setDescricaoPerda("");
+    } else {
+      setFechamentoStatus(null);
+      setMotivoPerdaSelecionado("");
+      setDescricaoPerda("");
+    }
+  }, [lead]);
+
   useEffect(() => {
     if (lead) {
       setFormData({
@@ -160,6 +181,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
         email: lead.email,
         telefone: lead.telefone,
         etapaId: lead.etapaId,
+        funilId: lead.funilId,
         valor: lead.valor,
         origemId: lead.origemId,
         dataCriacao: lead.dataCriacao,
@@ -182,6 +204,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
         email: "",
         telefone: "",
         etapaId: etapas.length > 0 ? etapas[0].id : 1,
+        funilId: 1,
         valor: 0,
         origemId: origens.length > 0 ? origens[0].id : "",
         dataCriacao: new Date().toLocaleDateString("pt-BR"),
@@ -363,6 +386,13 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                     className="pb-2 pt-2 px-4 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:text-blue-700 data-[state=active]:shadow-none data-[state=active]:bg-transparent"
                   >
                     Interações
+                  </TabsTrigger>
+                  {/* NOVA ABA FECHAMENTO */}
+                  <TabsTrigger 
+                    value="fechamento"
+                    className="pb-2 pt-2 px-4 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:text-blue-700 data-[state=active]:shadow-none data-[state=active]:bg-transparent"
+                  >
+                    Fechamento
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -667,6 +697,71 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                     )}
                   </ScrollArea>
                 </TabsContent>
+
+                <TabsContent value="fechamento" className="p-6 mt-0">
+                  <div className="max-w-lg mx-auto space-y-6">
+                    <div>
+                      <span className="font-semibold">Situação do fechamento:</span>
+                      <div className="flex items-center gap-4 mt-2">
+                        <Button
+                          type="button"
+                          variant={fechamentoStatus === "sucesso" ? "blue" : "outline"}
+                          className="px-4"
+                          onClick={() => setFechamentoStatus("sucesso")}
+                        >
+                          Sucesso
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={fechamentoStatus === "perda" ? "destructive" : "outline"}
+                          className="px-4"
+                          onClick={() => setFechamentoStatus("perda")}
+                        >
+                          Perda
+                        </Button>
+                      </div>
+                    </div>
+                    {fechamentoStatus === "perda" && (
+                      <div className="space-y-6 mt-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="motivoPerda">Motivo da Perda</Label>
+                          <Select
+                            value={motivoPerdaSelecionado}
+                            onValueChange={setMotivoPerdaSelecionado}
+                          >
+                            <SelectTrigger id="motivoPerda" className="bg-white">
+                              <SelectValue placeholder="Selecione o motivo" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white z-50">
+                              {motivosPerda
+                                .filter((m) => m.status === "ativo")
+                                .map((motivo) => (
+                                  <SelectItem key={motivo.id} value={motivo.id}>
+                                    {motivo.nome}
+                                  </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="descricaoPerda">Descrição</Label>
+                          <Textarea
+                            id="descricaoPerda"
+                            value={descricaoPerda}
+                            onChange={(e) => setDescricaoPerda(e.target.value)}
+                            rows={3}
+                            placeholder="Descreva o motivo da perda, se desejar..."
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {fechamentoStatus === "sucesso" && (
+                      <div className="bg-green-50 border border-green-200 rounded p-3 text-green-900 text-sm">
+                        Parabéns! Este lead foi fechado com sucesso.
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
               </div>
             </Tabs>
 
@@ -802,45 +897,4 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
             <DialogClose asChild>
               <Button variant="outline">Cancelar</Button>
             </DialogClose>
-            <Button variant="blue" onClick={confirmarEdicaoInteracao}>
-              Salvar Alterações
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Diálogo para confirmar exclusão */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar Exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir esta interação? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {interacaoSelecionada && (
-            <div className="border rounded-md p-3 bg-gray-50 my-4">
-              <p className="font-medium capitalize">
-                {interacaoSelecionada.tipo} - {interacaoSelecionada.data}
-              </p>
-              <p className="line-clamp-2 text-sm text-muted-foreground">
-                {interacaoSelecionada.descricao}
-              </p>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button variant="destructive" onClick={excluirInteracao}>
-              Excluir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
+            <Button variant
