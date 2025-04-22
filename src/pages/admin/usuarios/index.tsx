@@ -35,6 +35,19 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useCompany } from "@/contexts/company-context"; // Adicionado para pegar empresa logada
+import {
+  AlertDialog,
+  AlertDialogPortal,
+  AlertDialogOverlay,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 // Interface do usuário conforme Supabase
 type Usuario = {
@@ -56,6 +69,7 @@ export default function UsuariosPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState<Usuario | undefined>(undefined);
   const [viewingUsuario, setViewingUsuario] = useState<Usuario | undefined>(undefined);
+  const [usuarioParaExcluir, setUsuarioParaExcluir] = useState<Usuario | null>(null); // novo estado
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
@@ -203,17 +217,20 @@ export default function UsuariosPage() {
   };
 
   // Excluir usuário no Supabase
-  const handleDelete = async (id: string) => {
+  const confirmarExcluirUsuario = async () => {
+    if (!usuarioParaExcluir) return;
+
     const { error } = await supabase
       .from("usuarios")
       .delete()
-      .eq("id", id);
+      .eq("id", usuarioParaExcluir.id);
     if (error) {
       toast.error("Erro ao excluir usuário: " + error.message);
       return;
     }
-    setUsuarios((prev) => prev.filter((u) => u.id !== id));
+    setUsuarios((prev) => prev.filter((u) => u.id !== usuarioParaExcluir.id));
     toast.success("Usuário excluído com sucesso!");
+    setUsuarioParaExcluir(null);
   };
 
   return (
@@ -342,9 +359,12 @@ export default function UsuariosPage() {
                               Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => handleDelete(usuario.id)}
-                              className="text-red-500 hover:bg-red-50 hover:bg-opacity-70"
+                              onClick={() => setUsuarioParaExcluir(usuario)}
+                              className="text-red-500 hover:bg-red-50 hover:bg-opacity-70 flex items-center gap-2"
                             >
+                              <span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="inline me-1" width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 6H5H21" /><path d="M19.5 6L18.302 19.13A2 2 0 0 1 16.308 21H7.692A2 2 0 0 1 5.698 19.13L4.5 6M9.5 10V16M14.5 10V16M10 6V4A2 2 0 0 1 12 2A2 2 0 0 1 14 4V6" /></svg>
+                              </span>
                               Excluir
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -380,6 +400,36 @@ export default function UsuariosPage() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* AlertDialog de Confirmação de Exclusão */}
+      <AlertDialog open={!!usuarioParaExcluir} onOpenChange={(open) => { if (!open) setUsuarioParaExcluir(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Confirmar exclusão
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o usuário <b>{usuarioParaExcluir?.nome}</b>? Esta ação não poderá ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setUsuarioParaExcluir(null)}
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 text-white hover:bg-red-700 flex items-center gap-2"
+              onClick={confirmarExcluirUsuario}
+            >
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="inline" width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 6H5H21" /><path d="M19.5 6L18.302 19.13A2 2 0 0 1 16.308 21H7.692A2 2 0 0 1 5.698 19.13L4.5 6M9.5 10V16M14.5 10V16M10 6V4A2 2 0 0 1 12 2A2 2 0 0 1 14 4V6" /></svg>
+              </span>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
