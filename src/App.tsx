@@ -30,6 +30,7 @@ import TabelaPrecosPage from "./pages/vendas/tabela-precos";
 import UsuariosPage from "./pages/admin/usuarios";
 import FunilConfiguracaoPage from "./pages/crm/funil-configuracao";
 import LeadsPage from "./pages/crm/leads"; // Importamos a nova página de Leads
+import LancamentosPage from "./pages/contabil/lancamentos"; // ADICIONADO
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,7 @@ const App = () => (
                 
                 {/* Contábil routes */}
                 <Route path="/contabil/plano-contas" element={<PlanoContasPage />} />
+                <Route path="/contabil/lancamentos" element={<LancamentosPage />} /> {/* ADICIONADO */}
                 
                 {/* Style Guide */}
                 <Route path="/style-guide" element={<StyleGuidePage />} />
@@ -76,7 +78,6 @@ const App = () => (
                 <Route path="/vendas/*" element={<p className="p-4">Módulo de Vendas</p>} />
                 <Route path="/financeiro/*" element={<p className="p-4">Módulo Financeiro</p>} />
                 <Route path="/crm/*" element={<p className="p-4">Módulo CRM</p>} />
-                <Route path="/contabil/*" element={<p className="p-4">Módulo Contábil</p>} />
                 <Route path="/relatorios/*" element={<p className="p-4">Relatórios e BI</p>} />
                 
                 {/* User routes */}
