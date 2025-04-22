@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Company } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+// ATENÇÃO: ajustando o esquema para refletir os campos obrigatórios da tabela
 const formSchema = z.object({
   razaoSocial: z.string().min(1, "Nome da empresa é obrigatório"),
   nomeFantasia: z.string().min(1, "Nome fantasia é obrigatório"),
@@ -38,16 +39,14 @@ const formSchema = z.object({
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   site: z.string().url("URL inválida").optional().or(z.literal("")),
   telefone: z.string().optional(),
-  endereco: z.object({
-    logradouro: z.string().optional(),
-    numero: z.string().optional(),
-    complemento: z.string().optional(),
-    bairro: z.string().optional(),
-    cidade: z.string().optional(),
-    estado: z.string().optional(),
-    cep: z.string().min(1, "CEP é obrigatório"), // Changed from optional to required with validation
-    pais: z.string().optional(),
-  }).optional(),
+  cep: z.string().min(1, "CEP é obrigatório"),
+  logradouro: z.string().min(1, "Logradouro é obrigatório"),
+  numero: z.string().min(1, "Número é obrigatório"),
+  complemento: z.string().optional(),
+  bairro: z.string().min(1, "Bairro é obrigatório"),
+  cidade: z.string().min(1, "Cidade é obrigatória"),
+  estado: z.string().min(1, "Estado é obrigatório"),
+  pais: z.string().min(1, "País é obrigatório").default("Brasil"),
   regimeTributacao: z.enum(["simples", "lucro_presumido", "lucro_real", "mei"]).optional(),
   logo: z.string().url("URL inválida").optional().or(z.literal("")),
 });
@@ -60,6 +59,7 @@ interface CompanyModalProps {
   company: Company | null;
 }
 
+// O formulário agora trabalha com o formato "achatado" igual ao banco/existing page
 export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
   const { toast } = useToast();
   const { addCompany, updateCompany } = useCompany();
@@ -76,16 +76,14 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
       email: "",
       site: "",
       telefone: "",
-      endereco: {
-        logradouro: "",
-        numero: "",
-        complemento: "",
-        bairro: "",
-        cidade: "",
-        estado: "",
-        cep: "", // Ensure this has a default value even if empty
-        pais: "Brasil",
-      },
+      cep: "",
+      logradouro: "",
+      numero: "",
+      complemento: "",
+      bairro: "",
+      cidade: "",
+      estado: "",
+      pais: "Brasil",
       regimeTributacao: undefined,
       logo: "",
     },
@@ -103,16 +101,14 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
         email: company.email || "",
         site: company.site || "",
         telefone: company.telefone || "",
-        endereco: company.endereco || {
-          logradouro: "",
-          numero: "",
-          complemento: "",
-          bairro: "",
-          cidade: "",
-          estado: "",
-          cep: "", // Ensure this has a value even if resetting
-          pais: "Brasil",
-        },
+        cep: company.endereco?.cep || "",
+        logradouro: company.endereco?.logradouro || "",
+        numero: company.endereco?.numero || "",
+        complemento: company.endereco?.complemento || "",
+        bairro: company.endereco?.bairro || "",
+        cidade: company.endereco?.cidade || "",
+        estado: company.endereco?.estado || "",
+        pais: company.endereco?.pais || "Brasil",
         regimeTributacao: company.regimeTributacao || undefined,
         logo: company.logo || "",
       });
@@ -127,16 +123,14 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
         email: "",
         site: "",
         telefone: "",
-        endereco: {
-          logradouro: "",
-          numero: "",
-          complemento: "",
-          bairro: "",
-          cidade: "",
-          estado: "",
-          cep: "", // Ensure this has a default value even if empty
-          pais: "Brasil",
-        },
+        cep: "",
+        logradouro: "",
+        numero: "",
+        complemento: "",
+        bairro: "",
+        cidade: "",
+        estado: "",
+        pais: "Brasil",
         regimeTributacao: undefined,
         logo: "",
       });
@@ -144,37 +138,43 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
   }, [company, form]);
 
   const onSubmit = (values: FormValues) => {
-    // Ensure we have a valid endereco object with required fields before updating
-    const endereco = values.endereco ? {
-      cep: values.endereco.cep || "", // Ensure cep is never undefined
-      logradouro: values.endereco.logradouro || "",
-      numero: values.endereco.numero || "",
-      complemento: values.endereco.complemento,
-      bairro: values.endereco.bairro || "",
-      cidade: values.endereco.cidade || "",
-      estado: values.endereco.estado || "",
-      pais: values.endereco.pais || "Brasil",
-    } : undefined;
+    // Prepara objeto Company com endereço corretamente montado
+    const companyObj: Company = {
+      id: company?.id ?? crypto.randomUUID(),
+      razaoSocial: values.razaoSocial,
+      nomeFantasia: values.nomeFantasia,
+      cnpj: values.cnpj,
+      inscricaoEstadual: values.inscricaoEstadual,
+      inscricaoMunicipal: values.inscricaoMunicipal,
+      cnae: values.cnae,
+      email: values.email,
+      site: values.site,
+      telefone: values.telefone,
+      endereco: {
+        cep: values.cep,
+        logradouro: values.logradouro,
+        numero: values.numero,
+        complemento: values.complemento,
+        bairro: values.bairro,
+        cidade: values.cidade,
+        estado: values.estado,
+        pais: values.pais,
+      },
+      regimeTributacao: values.regimeTributacao,
+      logo: values.logo,
+      createdAt: company?.createdAt || new Date(),
+      updatedAt: new Date(),
+      name: values.nomeFantasia || values.razaoSocial // garantir compatibilidade com a tipagem
+    };
 
     if (company) {
-      updateCompany(company.id, {
-        ...values,
-        endereco, // Use the properly formed endereco object
-        createdAt: company.createdAt,
-        updatedAt: new Date(),
-      });
+      updateCompany(company.id, companyObj);
       toast({
         title: "Empresa atualizada",
         description: "As informações da empresa foram atualizadas com sucesso.",
       });
     } else {
-      addCompany({
-        id: crypto.randomUUID(),
-        ...values,
-        endereco, // Use the properly formed endereco object
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Company);
+      addCompany(companyObj);
       toast({
         title: "Empresa cadastrada",
         description: "A empresa foi cadastrada com sucesso.",
@@ -382,7 +382,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
-                    name="endereco.cep"
+                    name="cep"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>CEP</FormLabel>
@@ -396,7 +396,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                   <div className="md:col-span-2">
                     <FormField
                       control={form.control}
-                      name="endereco.logradouro"
+                      name="logradouro"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Logradouro</FormLabel>
@@ -413,7 +413,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
-                    name="endereco.numero"
+                    name="numero"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Número</FormLabel>
@@ -426,7 +426,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                   />
                   <FormField
                     control={form.control}
-                    name="endereco.complemento"
+                    name="complemento"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Complemento</FormLabel>
@@ -439,7 +439,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                   />
                   <FormField
                     control={form.control}
-                    name="endereco.bairro"
+                    name="bairro"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Bairro</FormLabel>
@@ -455,7 +455,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
-                    name="endereco.cidade"
+                    name="cidade"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Cidade</FormLabel>
@@ -468,7 +468,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                   />
                   <FormField
                     control={form.control}
-                    name="endereco.estado"
+                    name="estado"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Estado</FormLabel>
@@ -481,7 +481,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                   />
                   <FormField
                     control={form.control}
-                    name="endereco.pais"
+                    name="pais"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>País</FormLabel>
@@ -510,3 +510,4 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
     </Dialog>
   );
 }
+
