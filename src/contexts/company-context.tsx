@@ -1,8 +1,8 @@
 
+import { createContext, useContext, useState, ReactNode } from "react";
 import { Company } from "@/types";
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { useAuth } from "./auth-context";
 
+// Removemos dependências com user e updateUser, para evitar erros
 interface CompanyContextType {
   currentCompany: Company | null;
   availableCompanies: Company[];
@@ -19,89 +19,33 @@ export function useCompany() {
 }
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
-  const { user, updateUser } = useAuth();
+  // Por enquanto, tratamos empresas localmente, pois cadastro real de empresa será feito à parte em processo próprio
   const [currentCompany, setCurrentCompanyState] = useState<Company | null>(null);
   const [availableCompanies, setAvailableCompanies] = useState<Company[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Initialize companies from user data
-  useEffect(() => {
-    if (user) {
-      setAvailableCompanies(user.companies);
-      
-      // Set current company
-      if (user.currentCompanyId) {
-        const company = user.companies.find(c => c.id === user.currentCompanyId);
-        if (company) {
-          setCurrentCompanyState(company);
-        } else if (user.companies.length > 0) {
-          setCurrentCompanyState(user.companies[0]);
-          updateUser({
-            ...user,
-            currentCompanyId: user.companies[0].id
-          });
-        }
-      } else if (user.companies.length > 0) {
-        setCurrentCompanyState(user.companies[0]);
-        updateUser({
-          ...user,
-          currentCompanyId: user.companies[0].id
-        });
-      }
-      
-      setIsLoading(false);
-    }
-  }, [user]);
+  const [isLoading] = useState(false);
 
   const setCurrentCompany = (company: Company) => {
     setCurrentCompanyState(company);
-    
-    if (user) {
-      updateUser({
-        ...user,
-        currentCompanyId: company.id
-      });
-    }
   };
 
   const addCompany = (company: Company) => {
-    // Add to available companies
     const updatedCompanies = [...availableCompanies, company];
     setAvailableCompanies(updatedCompanies);
-    
-    // Update user
-    if (user) {
-      updateUser({
-        ...user,
-        companies: updatedCompanies
-      });
-    }
+    setCurrentCompanyState(company);
   };
 
   const updateCompany = (id: string, companyData: Partial<Company>) => {
     const updatedCompanies = availableCompanies.map(company => {
       if (company.id === id) {
         const updatedCompany = { ...company, ...companyData };
-        
-        // If this is the current company, update that too
         if (currentCompany && currentCompany.id === id) {
           setCurrentCompanyState(updatedCompany);
         }
-        
         return updatedCompany;
       }
       return company;
     });
-    
     setAvailableCompanies(updatedCompanies);
-    
-    // Update user
-    if (user) {
-      updateUser({
-        ...user,
-        companies: updatedCompanies
-      });
-    }
   };
 
   return (
@@ -112,7 +56,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         setCurrentCompany,
         addCompany,
         updateCompany,
-        isLoading
+        isLoading,
       }}
     >
       {children}
