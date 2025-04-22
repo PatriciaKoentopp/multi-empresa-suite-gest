@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,40 +146,73 @@ export default function UsuariosPage() {
         )
       );
     } else {
-      // Criação: utiliza sempre a empresa_id do contexto
-      const { data: novoUsuario, error } = await supabase
-        .from("usuarios")
-        .insert([
-          {
-            nome: data.nome,
-            email: data.email,
-            tipo: data.tipo,
-            status: data.status,
-            vendedor: data.vendedor,
-            empresa_id: currentCompany?.id ?? null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            id: crypto.randomUUID(),
+      // Criação de novo usuário pelo admin
+      try {
+        // 1. Criação no supabase.auth (senha padrão: 123456)
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: data.email as string,
+          password: "123456",
+          email_confirm: true,
+        });
+
+        if (authError) {
+          // Exemplo de erro: "User already registered"
+          if (authError.message?.toLowerCase().includes('already')) {
+            toast.error("E-mail já cadastrado no sistema.");
+          } else {
+            toast.error("Erro ao cadastrar no Auth: " + authError.message);
           }
-        ])
-        .select("*, empresas(nome_fantasia)")
-        .single();
-      if (error) {
-        toast.error("Erro ao criar usuário: " + error.message);
-        return;
+          return;
+        }
+        const userId = authData.user?.id;
+        if (!userId) {
+          toast.error("Não foi possível obter o ID do usuário criado.");
+          return;
+        }
+
+        // 2. Insere usuário na tabela usuarios com o uid correto
+        const { data: novoUsuario, error: userInsertError } = await supabase
+          .from("usuarios")
+          .insert([
+            {
+              id: userId, // ID do auth
+              nome: data.nome,
+              email: data.email,
+              tipo: data.tipo,
+              status: data.status,
+              vendedor: data.vendedor,
+              empresa_id: currentCompany?.id ?? null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }
+          ])
+          .select("*, empresas(nome_fantasia)")
+          .single();
+
+        if (userInsertError) {
+          toast.error("Erro ao salvar usuário: " + userInsertError.message);
+          return;
+        }
+
+        toast.success("Usuário criado com sucesso! O novo usuário deve alterar sua senha no primeiro login. Senha temporária: 123456");
+
+        setUsuarios((prev) => [
+          ...prev,
+          {
+            ...novoUsuario,
+            createdAt: novoUsuario?.created_at ? new Date(novoUsuario.created_at) : new Date(),
+            updatedAt: novoUsuario?.updated_at ? new Date(novoUsuario.updated_at) : new Date(),
+            empresa_nome: novoUsuario?.empresas?.nome_fantasia || null,
+          },
+        ]);
+        handleCloseDialog();
+      } catch (err: any) {
+        toast.error("Erro inesperado ao criar usuário.");
       }
-      toast.success("Usuário criado com sucesso!");
-      setUsuarios((prev) => [
-        ...prev,
-        {
-          ...novoUsuario,
-          createdAt: novoUsuario?.created_at ? new Date(novoUsuario.created_at) : new Date(),
-          updatedAt: novoUsuario?.updated_at ? new Date(novoUsuario.updated_at) : new Date(),
-          empresa_nome: novoUsuario?.empresas?.nome_fantasia || null,
-        },
-      ]);
     }
-    handleCloseDialog();
+    if (editingUsuario) {
+      handleCloseDialog();
+    }
   };
 
   // Excluir usuário no Supabase
@@ -548,4 +580,3 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
     </form>
   );
 }
-
