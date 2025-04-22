@@ -29,34 +29,37 @@ type Lancamento = {
 interface LancarDiarioModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (novo: Omit<Lancamento, "id" | "saldo">) => void;
+  // Ajuste: agora enviamos as duas contas e tipos
+  onSave: (novo: { data: string; historico: string; debito: string; credito: string; valor: number }) => void;
   contas: Conta[];
   contaInicalId: string;
 }
 
 export default function LancarDiarioModal({ open, onClose, onSave, contas, contaInicalId }: LancarDiarioModalProps) {
   const [data, setData] = useState<Date>(new Date());
-  const [tipo, setTipo] = useState<"debito" | "credito">("debito");
   const [valor, setValor] = useState<string>("");
   const [historico, setHistorico] = useState("");
-  const [contaId, setContaId] = useState(contaInicalId || contas[0]?.id || "");
+  const [contaDebitoId, setContaDebitoId] = useState(contaInicalId || contas[0]?.id || "");
+  const [contaCreditoId, setContaCreditoId] = useState(contas.length > 1 ? contas[1]?.id : contas[0]?.id || "");
 
   function clearForm() {
     setData(new Date());
-    setTipo("debito");
     setValor("");
     setHistorico("");
-    setContaId(contaInicalId || contas[0]?.id || "");
+    setContaDebitoId(contaInicalId || contas[0]?.id || "");
+    setContaCreditoId(contas.length > 1 ? contas[1]?.id : contas[0]?.id || "");
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!data || !historico || !valor || !contaId || isNaN(Number(valor))) return;
+    if (!data || !historico || !valor || !contaDebitoId || !contaCreditoId || isNaN(Number(valor))) return;
+    if (contaDebitoId === contaCreditoId) return; // Não permitir conta igual nos dois lados
+
     onSave({
-      data: data.toISOString().slice(0, 10),
+      data: format(data, "dd/MM/yyyy"),
       historico,
-      conta: contaId,
-      tipo,
+      debito: contaDebitoId,
+      credito: contaCreditoId,
       valor: Number(valor),
     });
     clearForm();
@@ -70,10 +73,23 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
           <div>
-            <label className="text-sm font-medium mb-1 block">Conta Contábil</label>
-            <Select value={contaId} onValueChange={setContaId}>
+            <label className="text-sm font-medium mb-1 block">Conta Débito</label>
+            <Select value={contaDebitoId} onValueChange={setContaDebitoId}>
               <SelectTrigger className="w-full bg-white border rounded">
-                <SelectValue placeholder="Conta Contábil" />
+                <SelectValue placeholder="Conta Débito" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border z-50">
+                {contas.map(cc => (
+                  <SelectItem key={cc.id} value={cc.id}>{cc.codigo} - {cc.descricao}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Conta Crédito</label>
+            <Select value={contaCreditoId} onValueChange={setContaCreditoId}>
+              <SelectTrigger className="w-full bg-white border rounded">
+                <SelectValue placeholder="Conta Crédito" />
               </SelectTrigger>
               <SelectContent className="bg-white border z-50">
                 {contas.map(cc => (
@@ -102,23 +118,9 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
               </PopoverContent>
             </Popover>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Valor</label>
-              <Input type="number" min={0} step="0.01" autoComplete="off" required value={valor} onChange={e => setValor(e.target.value.replace(",", "."))} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Tipo</label>
-              <Select value={tipo} onValueChange={v => setTipo(v as any)}>
-                <SelectTrigger className="w-full bg-white border rounded">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border z-50">
-                  <SelectItem value="debito">Débito</SelectItem>
-                  <SelectItem value="credito">Crédito</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Valor</label>
+            <Input type="number" min={0} step="0.01" autoComplete="off" required value={valor} onChange={e => setValor(e.target.value.replace(",", "."))} />
           </div>
           <div>
             <label className="text-sm font-medium mb-1 block">Histórico</label>
@@ -137,4 +139,3 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
     </Dialog>
   );
 }
-
