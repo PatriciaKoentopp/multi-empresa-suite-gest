@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from "@supabase/supabase-js";
+import { useCompany } from "./company-context"; // ADICIONADO PARA USAR O CONTEXTO DA EMPRESA
 
 interface AuthContextType {
   user: SupabaseUser | null;
@@ -23,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { currentCompany } = useCompany(); // ADICIONADO
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -75,7 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email,
             status: "ativo",
             tipo: "Administrador",
-            vendedor: "nao"
+            vendedor: "nao",
+            empresa_id: currentCompany?.id ?? null // ADICIONADO VÍNCULO COM EMPRESA
           }
         ]);
       if (userDbError) {

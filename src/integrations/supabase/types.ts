@@ -88,6 +88,7 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          empresa_id: string | null
           id: string
           nome: string
           status: Database["public"]["Enums"]["usuario_status"]
@@ -98,6 +99,7 @@ export type Database = {
         Insert: {
           created_at?: string
           email: string
+          empresa_id?: string | null
           id: string
           nome: string
           status?: Database["public"]["Enums"]["usuario_status"]
@@ -108,6 +110,7 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string
+          empresa_id?: string | null
           id?: string
           nome?: string
           status?: Database["public"]["Enums"]["usuario_status"]
@@ -115,7 +118,15 @@ export type Database = {
           updated_at?: string
           vendedor?: Database["public"]["Enums"]["usuario_vendedor"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "usuarios_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
