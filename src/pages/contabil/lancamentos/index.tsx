@@ -7,6 +7,7 @@ import { Calendar as CalendarIcon, Search, Filter, List, ChevronDown } from "luc
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import LancarDiarioModal from "./LancarDiarioModal";
 
 // Mock de plano de contas e lançamentos contábeis
 const mockPlanosContas = [{
@@ -105,6 +106,8 @@ export default function LancamentosPage() {
   const [dataInicialStr, setDataInicialStr] = useState("");
   const [dataFinalStr, setDataFinalStr] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [novoModalOpen, setNovoModalOpen] = useState(false);
+  const [lancamentos, setLancamentos] = useState([...mockLancamentos]); // agora editável!
   const navigate = useNavigate();
   useEffect(() => {
     const hoje = new Date();
@@ -154,7 +157,7 @@ export default function LancamentosPage() {
 
   // Filtra lançamentos pelo filtro selecionado
   const filteredLancamentos = useMemo(() => {
-    return mockLancamentos.filter(l => {
+    return lancamentos.filter(l => {
       const isConta = l.conta === contaId;
       const termoOk = searchTerm ? l.historico.toLowerCase().includes(searchTerm.toLowerCase()) : true;
       const dataLanc = new Date(l.data.substring(0, 4) + "-" + l.data.substring(5, 7) + "-" + l.data.substring(8, 10));
@@ -162,19 +165,47 @@ export default function LancamentosPage() {
       const dataFimOk = !dataFinal || dataLanc <= dataFinal;
       return isConta && termoOk && dataInicioOk && dataFimOk;
     });
-  }, [contaId, searchTerm, dataInicial, dataFinal]);
+  }, [contaId, searchTerm, dataInicial, dataFinal, lancamentos]);
   function handleEdit(id: string) {
     toast.info("Ação de editar lançamento: " + id);
-    // Navegaria para modal de edição
   }
   function handleDelete(id: string) {
+    setLancamentos(curr => curr.filter(l => l.id !== id));
     toast.success("Lançamento excluído!");
-    // Removeria do banco
   }
+
+  // Função para adicionar novo lançamento
+  function handleNovoLancamento(novo: Omit<typeof mockLancamentos[0], "id" | "saldo">) {
+    // saldo: calcula mock fictício só para o exemplo (poderia ser ajustado depois)
+    const ultSaldo = lancamentos.length > 0 ? lancamentos[lancamentos.length - 1].saldo : 0;
+    const novoSaldo = novo.tipo === "debito" ? ultSaldo - novo.valor : ultSaldo + novo.valor;
+    setLancamentos(curr => [
+      ...curr,
+      {
+        ...novo,
+        id: String(Date.now()),
+        saldo: novoSaldo >= 0 ? novoSaldo : 0
+      }
+    ]);
+    setNovoModalOpen(false);
+    toast.success("Lançamento adicionado com sucesso!");
+  }
+
   return <div className="space-y-4">
+      <LancarDiarioModal
+        open={novoModalOpen}
+        onClose={() => setNovoModalOpen(false)}
+        onSave={handleNovoLancamento}
+        contas={mockPlanosContas}
+        contaInicalId={contaId}
+      />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Diário Contábil</h1>
-        <Button variant="blue" className="rounded-md px-6 py-2 text-base font-semibold" onClick={() => toast.info("Funcionalidade de novo lançamento!")}>
+        <Button
+          variant="blue"
+          className="rounded-md px-6 py-2 text-base font-semibold"
+          onClick={() => setNovoModalOpen(true)}
+        >
           Novo Lançamento
         </Button>
       </div>
