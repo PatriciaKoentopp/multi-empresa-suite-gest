@@ -110,24 +110,21 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       updated_at: (company.updatedAt || new Date()).toISOString(),
     };
 
-    // Remover "name" do objeto (nunca enviar para o banco)
-    const { /* eslint-disable @typescript-eslint/no-unused-vars */ name, ...toInsertSemName } = toInsert;
-
     // Limpa campos obrigatórios para garantir que não passem como null/undefined
-    Object.keys(toInsertSemName).forEach((key) => {
+    Object.keys(toInsert).forEach((key) => {
       if (
-        toInsertSemName[key] === undefined &&
+        toInsert[key] === undefined &&
         ["razao_social", "nome_fantasia", "cnpj", "cep", "logradouro", "numero", "bairro", "cidade", "estado", "pais", "created_at", "updated_at"].includes(key)
       ) {
-        toInsertSemName[key] = "";
+        toInsert[key] = "";
       }
     });
 
     // Envia para o supabase (como array para insert em lote)
-    const { data, error } = await supabase.from("empresas").insert([toInsertSemName]).select().maybeSingle();
+    const { data, error } = await supabase.from("empresas").insert([toInsert]).select().maybeSingle();
 
     if (error) {
-      console.error("Erro ao inserir empresa:", error, toInsertSemName);
+      console.error("Erro ao inserir empresa:", error, toInsert);
     }
 
     if (data) {
