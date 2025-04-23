@@ -1,34 +1,465 @@
-
-import React, { useState, useEffect } from "react";
-import { useCompany } from "@/contexts/company-context";
-import { useToast } from "@/hooks/use-toast";
-import { Usuario } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { PlusCircle, Search, Filter, User, EllipsisVertical } from "lucide-react";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { format } from "date-fns";
+// Removido import { ptBR } from "date-fns/locale/pt-BR";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+import { useCompany } from "@/contexts/company-context"; // Adicionado para pegar empresa logada
+import {
+  AlertDialog,
+  AlertDialogPortal,
+  AlertDialogOverlay,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
-// Interface para as props do formulário de usuário
-interface UsuarioFormProps {
+// Interface do usuário conforme Supabase
+type Usuario = {
+  id: string;
+  nome: string;
+  email: string;
+  senha?: string; // não será exibida/buscada do supabase
+  tipo: "Administrador" | "Usuário";
+  status: "ativo" | "inativo";
+  vendedor: "sim" | "nao";
+  empresa_id?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  empresa_nome?: string | null;
+};
+
+export default function UsuariosPage() {
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingUsuario, setEditingUsuario] = useState<Usuario | undefined>(undefined);
+  const [viewingUsuario, setViewingUsuario] = useState<Usuario | undefined>(undefined);
+  const [usuarioParaExcluir, setUsuarioParaExcluir] = useState<Usuario | null>(null); // novo estado
+
+  // Filtros
+  const [searchTerm, setSearchTerm] = useState("");
+  const [tipoFilter, setTipoFilter] = useState<"todos" | "Administrador" | "Usuário">("todos");
+  const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
+
+  const { currentCompany } = useCompany(); // pega empresa logada
+
+  // Buscar usuários do supabase filtrando pela empresa logada
+  useEffect(() => {
+    const fetchUsuarios = async () => {
+      // Se não tem empresa selecionada, zera a lista
+      if (!currentCompany?.id) {
+        setUsuarios([]);
+        return;
+      }
+      let { data, error } = await supabase
+        .from("usuarios")
+        .select("*, empresas(nome_fantasia)")
+        .eq("empresa_id", currentCompany.id); // FILTRAR pelo empresa_id
+      if (error) {
+        toast.error("Erro ao buscar usuários: " + error.message);
+        setUsuarios([]);
+        return;
+      }
+      const mapped = (data || []).map((row: any) => ({
+        id: row.id,
+        nome: row.nome,
+        email: row.email,
+        tipo: row.tipo,
+        status: row.status,
+        vendedor: row.vendedor,
+        empresa_id: row.empresa_id,
+        createdAt: row.created_at ? new Date(row.created_at) : new Date(),
+        updatedAt: row.updated_at ? new Date(row.updated_at) : new Date(),
+        empresa_nome: row.empresas?.nome_fantasia || null,
+      }));
+      setUsuarios(mapped);
+    };
+    fetchUsuarios();
+  }, [currentCompany?.id]); // Recarregar quando trocar de empresa
+
+  // Abrir dialog novo/editar/visualizar
+  const handleOpenDialog = (usuario?: Usuario, isViewing = false) => {
+    if (isViewing) setViewingUsuario(usuario);
+    else setEditingUsuario(usuario);
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setEditingUsuario(undefined);
+    setViewingUsuario(undefined);
+    setIsDialogOpen(false);
+  };
+
+  // Filtros aplicados na tabela
+  const filteredUsuarios = useMemo(() => {
+    return usuarios.filter((user) => {
+      const matchesSearch =
+        user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTipo = tipoFilter === "todos" || user.tipo === tipoFilter;
+      const matchesStatus = statusFilter === "todos" || user.status === statusFilter;
+      return matchesSearch && matchesTipo && matchesStatus;
+    });
+  }, [usuarios, searchTerm, tipoFilter, statusFilter]);
+
+  // Salvar/criar usuário via edge function
+  const handleSubmit = async (data: Partial<Usuario>) => {
+    if (editingUsuario) {
+      // Edição
+      const { error } = await supabase
+        .from("usuarios")
+        .update({
+          nome: data.nome,
+          email: data.email,
+          tipo: data.tipo,
+          status: data.status,
+          vendedor: data.vendedor,
+        })
+        .eq("id", editingUsuario.id);
+      if (error) {
+        toast.error("Erro ao atualizar usuário: " + error.message);
+        return;
+      }
+      toast.success("Usuário atualizado com sucesso!");
+      // Atualizar na tela
+      setUsuarios((prev) =>
+        prev.map((u) =>
+          u.id === editingUsuario.id
+            ? { ...u, ...data, updatedAt: new Date() }
+            : u
+        )
+      );
+    } else {
+      // NOVO: Criação via edge function
+      try {
+        // Chama edge function para criar usuário de forma segura
+        const senhaTemporaria = "123456";
+        const res = await fetch("/functions/v1/criar-usuario-auth", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: data.email,
+            nome: data.nome,
+            senha: senhaTemporaria,
+            tipo: data.tipo,
+            status: data.status,
+            vendedor: data.vendedor,
+            empresa_id: currentCompany?.id ?? null,
+          }),
+        });
+
+        const resultado = await res.json();
+        if (!res.ok) {
+          if (resultado?.error?.toLowerCase?.().includes("already")) {
+            toast.error("E-mail já cadastrado no sistema.");
+          } else {
+            toast.error(`Erro ao cadastrar usuário: ${resultado?.error || "Erro desconhecido"}`);
+          }
+          return;
+        }
+
+        const novoUsuario = resultado.usuario;
+        if (!novoUsuario) {
+          toast.error("Usuário criado no Auth, mas não foi possível obter dados para listar.");
+          return;
+        }
+
+        toast.success("Usuário criado com sucesso! O novo usuário deve alterar sua senha no primeiro login. Senha temporária: 123456");
+        setUsuarios((prev) => [
+          ...prev,
+          {
+            ...novoUsuario,
+            createdAt: novoUsuario?.created_at ? new Date(novoUsuario.created_at) : new Date(),
+            updatedAt: novoUsuario?.updated_at ? new Date(novoUsuario.updated_at) : new Date(),
+            empresa_nome: novoUsuario?.empresas?.nome_fantasia || null,
+          },
+        ]);
+        handleCloseDialog();
+      } catch (err: any) {
+        toast.error("Erro inesperado ao criar usuário.");
+      }
+    }
+    if (editingUsuario) {
+      handleCloseDialog();
+    }
+  };
+
+  // Excluir usuário no Supabase
+  const confirmarExcluirUsuario = async () => {
+    if (!usuarioParaExcluir) return;
+
+    const { error } = await supabase
+      .from("usuarios")
+      .delete()
+      .eq("id", usuarioParaExcluir.id);
+    if (error) {
+      toast.error("Erro ao excluir usuário: " + error.message);
+      return;
+    }
+    setUsuarios((prev) => prev.filter((u) => u.id !== usuarioParaExcluir.id));
+    toast.success("Usuário excluído com sucesso!");
+    setUsuarioParaExcluir(null);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Cabeçalho padrão Favoritos */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <User className="w-6 h-6 text-blue-500" />
+            Usuários
+          </h1>
+        </div>
+        <Button
+          onClick={() => handleOpenDialog()}
+          variant="blue"
+          className="flex items-center gap-2"
+        >
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Novo Usuário
+        </Button>
+      </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou e-mail..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+              <Select
+                value={tipoFilter}
+                onValueChange={(value) => setTipoFilter(value as any)}
+              >
+                <SelectTrigger className="w-[150px] bg-white dark:bg-gray-900">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="Administrador">Administrador</SelectItem>
+                  <SelectItem value="Usuário">Usuário</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => setStatusFilter(value as any)}
+              >
+                <SelectTrigger className="w-[150px] bg-white dark:bg-gray-900">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="ativo" className="text-blue-600">Ativo</SelectItem>
+                  <SelectItem value="inativo" className="text-red-600">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Tabela de usuários */}
+          <div className="border rounded-md bg-white">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Status</TableHead>
+                  {/* Removido TableHead Empresa */}
+                  <TableHead className="w-[120px]">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredUsuarios.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                      Nenhum usuário encontrado
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsuarios.map((usuario) => (
+                    <TableRow key={usuario.id}>
+                      <TableCell>
+                        <span>{usuario.nome}</span>
+                      </TableCell>
+                      <TableCell>{usuario.email}</TableCell>
+                      <TableCell>
+                        {usuario.tipo}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                            usuario.status === "ativo"
+                              ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20"
+                              : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
+                          }`}
+                        >
+                          {usuario.status === "ativo" ? "Ativo" : "Inativo"}
+                        </span>
+                      </TableCell>
+                      {/* Removido TableCell Empresa */}
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <EllipsisVertical className="w-5 h-5 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent 
+                            align="end" 
+                            className="bg-white border border-gray-200 shadow-lg z-50"
+                            style={{ backgroundColor: "white", opacity: 1 }}
+                          >
+                            <DropdownMenuItem
+                              onClick={() => handleOpenDialog(usuario)}
+                              className="text-blue-500 hover:bg-blue-50 hover:bg-opacity-70"
+                            >
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setUsuarioParaExcluir(usuario)}
+                              className="text-red-500 hover:bg-red-50 hover:bg-opacity-70 flex items-center gap-2"
+                            >
+                              <span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="inline me-1" width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 6H5H21" /><path d="M19.5 6L18.302 19.13A2 2 0 0 1 16.308 21H7.692A2 2 0 0 1 5.698 19.13L4.5 6M9.5 10V16M14.5 10V16M10 6V4A2 2 0 0 1 12 2A2 2 0 0 1 14 4V6" /></svg>
+                              </span>
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dialog de cadastro/edição/visualização */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {viewingUsuario
+                ? "Visualizar Usuário"
+                : editingUsuario
+                ? "Editar Usuário"
+                : "Novo Usuário"}
+            </DialogTitle>
+          </DialogHeader>
+          <UsuarioForm
+            usuario={viewingUsuario || editingUsuario}
+            readOnly={!!viewingUsuario}
+            onSubmit={handleSubmit}
+            onCancel={handleCloseDialog}
+            empresaIdAtual={currentCompany?.id}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* AlertDialog de Confirmação de Exclusão */}
+      <AlertDialog open={!!usuarioParaExcluir} onOpenChange={(open) => { if (!open) setUsuarioParaExcluir(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Confirmar exclusão
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o usuário <b>{usuarioParaExcluir?.nome}</b>? Esta ação não poderá ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setUsuarioParaExcluir(null)}
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 text-white hover:bg-red-700 flex items-center gap-2"
+              onClick={confirmarExcluirUsuario}
+            >
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="inline" width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 6H5H21" /><path d="M19.5 6L18.302 19.13A2 2 0 0 1 16.308 21H7.692A2 2 0 0 1 5.698 19.13L4.5 6M9.5 10V16M14.5 10V16M10 6V4A2 2 0 0 1 12 2A2 2 0 0 1 14 4V6" /></svg>
+              </span>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+// ======= Componente do formulário atualizado sem campo empresa =========
+type UsuarioFormProps = {
   usuario?: Partial<Usuario>;
   readOnly?: boolean;
   onSubmit: (usuario: Partial<Usuario>) => void;
   onCancel: () => void;
-}
+  empresaIdAtual?: string | null;
+};
 
-// Componente de formulário do usuário
 function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps) {
-  const [form, setForm] = useState<Partial<Usuario>>({
+  const [form, setForm] = useState<Partial<Usuario> & { confirmarSenha?: string }>({
     nome: usuario?.nome || "",
     email: usuario?.email || "",
+    senha: usuario?.senha || "",
     tipo: usuario?.tipo || "Usuário",
     status: usuario?.status || "ativo",
     vendedor: usuario?.vendedor || "nao",
+    confirmarSenha: "",
   });
+
+  const [erroConfirmarSenha, setErroConfirmarSenha] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm((prev) => ({
@@ -53,7 +484,17 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    setErroConfirmarSenha(null);
+
+    if (!readOnly) {
+      if (form.senha !== undefined && form.senha !== form.confirmarSenha) {
+        setErroConfirmarSenha("As senhas não coincidem.");
+        return;
+      }
+    }
+
+    const { confirmarSenha, ...data } = form;
+    onSubmit(data);
   };
 
   return (
@@ -81,6 +522,40 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
           required
         />
       </div>
+      {/* Senha */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Senha</label>
+        <Input
+          type="password"
+          name="senha"
+          value={form.senha}
+          disabled={readOnly}
+          onChange={handleChange}
+          required={!readOnly}
+          minLength={6}
+        />
+        {!readOnly && (
+          <small className="text-xs text-muted-foreground">Mínimo 6 caracteres.</small>
+        )}
+      </div>
+      {/* Confirmar Senha */}
+      {!readOnly && (
+        <div>
+          <label className="block text-sm font-medium mb-1">Confirmar Senha</label>
+          <Input
+            type="password"
+            name="confirmarSenha"
+            value={form.confirmarSenha}
+            onChange={handleChange}
+            required={!readOnly}
+            minLength={6}
+            autoComplete="new-password"
+          />
+          {erroConfirmarSenha && (
+            <small className="text-xs text-red-600">{erroConfirmarSenha}</small>
+          )}
+        </div>
+      )}
       {/* Tipo */}
       <div>
         <label className="block text-sm font-medium mb-1">Tipo</label>
@@ -147,273 +622,3 @@ function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps
     </form>
   );
 }
-
-// Página principal de Usuários
-const UsuariosPage: React.FC = () => {
-  const { company } = useCompany();
-  const { toast } = useToast();
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [currentUsuario, setCurrentUsuario] = useState<Partial<Usuario> | null>(null);
-  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
-  
-  // Carregar usuários
-  useEffect(() => {
-    if (company) {
-      loadUsuarios();
-    }
-  }, [company]);
-
-  const loadUsuarios = async () => {
-    try {
-      setIsLoading(true);
-      // Simulação de carregamento de dados - em produção usaria Supabase ou API
-      const mockUsuarios: Usuario[] = [
-        {
-          id: '1',
-          nome: 'Administrador',
-          email: 'admin@exemplo.com',
-          tipo: 'Administrador',
-          status: 'ativo',
-          vendedor: 'nao',
-          senha: '',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: '2',
-          nome: 'Usuário Comum',
-          email: 'usuario@exemplo.com',
-          tipo: 'Usuário',
-          status: 'ativo',
-          vendedor: 'sim',
-          senha: '',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-      ];
-      
-      setUsuarios(mockUsuarios);
-    } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os usuários.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Abrir modal para criar usuário
-  const handleCreateUsuario = () => {
-    setCurrentUsuario(null);
-    setModalMode("create");
-    setModalOpen(true);
-  };
-
-  // Abrir modal para editar usuário
-  const handleEditUsuario = (usuario: Usuario) => {
-    setCurrentUsuario(usuario);
-    setModalMode("edit");
-    setModalOpen(true);
-  };
-
-  // Abrir modal para visualizar usuário
-  const handleViewUsuario = (usuario: Usuario) => {
-    setCurrentUsuario(usuario);
-    setModalMode("view");
-    setModalOpen(true);
-  };
-
-  // Salvar usuário (criar ou atualizar)
-  const handleSaveUsuario = async (usuarioData: Partial<Usuario>) => {
-    try {
-      if (modalMode === "create") {
-        // Em produção: chamar API/Supabase para criar usuário
-        const novoUsuario: Usuario = {
-          id: Math.random().toString(36).substr(2, 9),
-          ...usuarioData,
-          senha: '',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as Usuario;
-        
-        setUsuarios([...usuarios, novoUsuario]);
-        toast({
-          title: "Sucesso",
-          description: "Usuário criado com sucesso.",
-        });
-      } else if (modalMode === "edit" && currentUsuario) {
-        // Em produção: chamar API/Supabase para atualizar usuário
-        const updatedUsuarios = usuarios.map(u => 
-          u.id === currentUsuario.id 
-            ? { ...u, ...usuarioData, updatedAt: new Date() } 
-            : u
-        );
-        
-        setUsuarios(updatedUsuarios);
-        toast({
-          title: "Sucesso",
-          description: "Usuário atualizado com sucesso.",
-        });
-      }
-      
-      setModalOpen(false);
-    } catch (error) {
-      console.error('Erro ao salvar usuário:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar o usuário.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Alterar status do usuário
-  const handleToggleStatus = async (usuario: Usuario) => {
-    try {
-      const newStatus = usuario.status === 'ativo' ? 'inativo' : 'ativo';
-      // Em produção: chamar API/Supabase para atualizar status
-      
-      const updatedUsuarios = usuarios.map(u => 
-        u.id === usuario.id 
-          ? { ...u, status: newStatus, updatedAt: new Date() } 
-          : u
-      );
-      
-      setUsuarios(updatedUsuarios);
-      
-      toast({
-        title: "Sucesso",
-        description: `Usuário ${newStatus === 'ativo' ? 'ativado' : 'inativado'} com sucesso.`,
-      });
-    } catch (error) {
-      console.error('Erro ao alterar status do usuário:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível alterar o status do usuário.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getModalTitle = () => {
-    switch (modalMode) {
-      case "create":
-        return "Novo Usuário";
-      case "edit":
-        return "Editar Usuário";
-      case "view":
-        return "Detalhes do Usuário";
-    }
-  };
-
-  return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Usuários</h1>
-        <Button variant="blue" onClick={handleCreateUsuario}>
-          Novo Usuário
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Usuários</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center p-6">
-              <p>Carregando...</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Vendedor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {usuarios.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center">
-                      Nenhum usuário encontrado.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  usuarios.map((usuario) => (
-                    <TableRow key={usuario.id}>
-                      <TableCell>{usuario.nome}</TableCell>
-                      <TableCell>{usuario.email}</TableCell>
-                      <TableCell>{usuario.tipo}</TableCell>
-                      <TableCell>{usuario.vendedor === 'sim' ? 'Sim' : 'Não'}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          usuario.status === 'ativo' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {usuario.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleViewUsuario(usuario)}
-                          >
-                            Ver
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEditUsuario(usuario)}
-                          >
-                            Editar
-                          </Button>
-                          <Button 
-                            variant={usuario.status === 'ativo' ? 'warning' : 'success'} 
-                            size="sm"
-                            onClick={() => handleToggleStatus(usuario)}
-                          >
-                            {usuario.status === 'ativo' ? 'Inativar' : 'Ativar'}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Modal para criar/editar/visualizar usuário */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{getModalTitle()}</DialogTitle>
-          </DialogHeader>
-          <UsuarioForm
-            usuario={currentUsuario || {}}
-            readOnly={modalMode === "view"}
-            onSubmit={handleSaveUsuario}
-            onCancel={() => setModalOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default UsuariosPage;
