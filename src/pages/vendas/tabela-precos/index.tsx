@@ -1,76 +1,73 @@
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Filter, Edit, Trash2, Eye, MoreVertical, Search, Check, X } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, MoreVertical, Search } from "lucide-react";
 import { Table, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { TabelaPrecoModal } from "./tabela-preco-modal";
-
-// Tipos
-type Servico = { id: number; nome: string; precoPadrao: number };
-type Vigencia = { dataInicial: Date | null; dataFinal: Date | null };
-type TabelaPreco = {
-  id: number;
-  nome: string;
-  vigencia: Vigencia;
-  servicos: { servicoId: number; nome: string; preco: number }[];
-  status?: "ativo" | "inativo";
-};
-
-// Mock dos serviços (igual à página serviços)
-const MOCK_SERVICOS: Servico[] = [
-  { id: 1, nome: "Consultoria Fiscal", precoPadrao: 700 },
-  { id: 2, nome: "Auditoria Contábil", precoPadrao: 3500 },
-  { id: 3, nome: "Abertura de Empresa", precoPadrao: 1200 },
-  { id: 4, nome: "Encerramento de Empresa", precoPadrao: 950 },
-  { id: 5, nome: "BPO Financeiro", precoPadrao: 2500 },
-  { id: 6, nome: "Elaboração de Contrato Social", precoPadrao: 890 },
-];
-
-// Mock inicial de tabelas de preço exemplo
-const MOCK_TABELAS: TabelaPreco[] = [
-  {
-    id: 200,
-    nome: "Tabela 2025",
-    vigencia: { dataInicial: new Date(2025, 0, 1), dataFinal: new Date(2025, 11, 31) },
-    servicos: [
-      { servicoId: 1, nome: "Consultoria Fiscal", preco: 710 },
-      { servicoId: 2, nome: "Auditoria Contábil", preco: 3500 },
-    ],
-    status: "ativo"
-  },
-  {
-    id: 201,
-    nome: "Tabela Promocional",
-    vigencia: { dataInicial: new Date(2024, 6, 1), dataFinal: new Date(2024, 9, 30) },
-    servicos: [
-      { servicoId: 3, nome: "Abertura de Empresa", preco: 1100 },
-      { servicoId: 5, nome: "BPO Financeiro", preco: 2300 },
-    ],
-    status: "ativo"
-  },
-  {
-    id: 202,
-    nome: "Tabela Especial Empresas",
-    vigencia: { dataInicial: new Date(2024, 2, 10), dataFinal: new Date(2024, 5, 15) },
-    servicos: [
-      { servicoId: 4, nome: "Encerramento de Empresa", preco: 900 },
-      { servicoId: 6, nome: "Elaboração de Contrato Social", preco: 968 },
-    ],
-    status: "ativo"
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
+import { TabelaPreco, Servico } from "@/types";
 
 export default function TabelaPrecosPage() {
-  const [tabelas, setTabelas] = useState<TabelaPreco[]>(MOCK_TABELAS);
+  const { currentCompany } = useCompany();
+  const [tabelas, setTabelas] = useState<TabelaPreco[]>([]);
   const [searchNome, setSearchNome] = useState("");
   const [modalAberto, setModalAberto] = useState(false);
   const [modoModal, setModoModal] = useState<"visualizar" | "editar" | "novo">("visualizar");
   const [tabelaSelecionada, setTabelaSelecionada] = useState<TabelaPreco | null>(null);
+  const [servicos, setServicos] = useState<Servico[]>([]);
 
   const inputBuscaRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (currentCompany?.id) {
+      carregarTabelas();
+      carregarServicos();
+    }
+  }, [currentCompany]);
+
+  async function carregarTabelas() {
+    try {
+      const { data, error } = await supabase
+        .from('tabelas_precos')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .order('nome');
+
+      if (error) throw error;
+      setTabelas(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar tabelas de preços:', error);
+      toast({
+        title: "Erro ao carregar tabelas",
+        description: "Ocorreu um erro ao carregar a lista de tabelas de preços.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function carregarServicos() {
+    try {
+      const { data, error } = await supabase
+        .from('servicos')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .order('nome');
+
+      if (error) throw error;
+      setServicos(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar serviços:', error);
+      toast({
+        title: "Erro ao carregar serviços",
+        description: "Ocorreu um erro ao carregar a lista de serviços.",
+        variant: "destructive",
+      });
+    }
+  }
 
   // Filtro
   const tabelasFiltradas = useMemo(() => {
@@ -79,52 +76,12 @@ export default function TabelaPrecosPage() {
     );
   }, [tabelas, searchNome]);
 
-  function abrirNovo() {
-    setTabelaSelecionada(null);
-    setModoModal("novo");
-    setModalAberto(true);
-  }
-
-  function abrirVisualizar(tabela: TabelaPreco) {
-    setTabelaSelecionada(tabela);
-    setModoModal("visualizar");
-    setModalAberto(true);
-  }
-
-  function abrirEditar(tabela: TabelaPreco) {
-    setTabelaSelecionada(tabela);
-    setModoModal("editar");
-    setModalAberto(true);
-  }
-
-  function handleSalvarTabela(tab: TabelaPreco) {
-    if (modoModal === "editar" && tab.id) {
-      setTabelas(prev => prev.map(tb => (tb.id === tab.id ? { ...tab } : tb)));
-      toast({ title: "Tabela de Preços atualizada com sucesso!" });
-    } else {
-      setTabelas(prev => [
-        ...prev,
-        {
-          ...tab,
-          id: Date.now(),
-          status: "ativo",  // Sempre ativa ao criar (pode ser ajustado depois)
-        },
-      ]);
-      toast({ title: "Tabela de Preços criada com sucesso!" });
-    }
-  }
-
-  function handleExcluirTabela(tab: TabelaPreco) {
-    setTabelas(prev => prev.filter(tb => tb.id !== tab.id));
-    toast({ title: "Tabela excluída com sucesso!" });
-  }
-
   function handleLupaClick() {
     inputBuscaRef.current?.focus();
   }
 
   // Função utilitária para exibir o badge de status no padrão da tela de serviços
-  function getStatusBadge(status: "ativo" | "inativo" | undefined) {
+  function getStatusBadge(status: "ativo" | "inativo") {
     if (status === "ativo") {
       return (
         <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
@@ -139,6 +96,73 @@ export default function TabelaPrecosPage() {
     );
   }
 
+  async function handleSalvarTabela(tabela: TabelaPreco) {
+    try {
+      if (tabelaSelecionada) {
+        // Atualização
+        const { error: updateError } = await supabase
+          .from('tabelas_precos')
+          .update({
+            nome: tabela.nome,
+            vigencia_inicial: tabela.vigencia_inicial,
+            vigencia_final: tabela.vigencia_final,
+            status: tabela.status
+          })
+          .eq('id', tabelaSelecionada.id)
+          .eq('empresa_id', currentCompany?.id);
+
+        if (updateError) throw updateError;
+        toast({ title: "Tabela de Preços atualizada com sucesso!" });
+      } else {
+        // Criação
+        const { error: insertError } = await supabase
+          .from('tabelas_precos')
+          .insert({
+            empresa_id: currentCompany?.id,
+            nome: tabela.nome,
+            vigencia_inicial: tabela.vigencia_inicial,
+            vigencia_final: tabela.vigencia_final,
+            status: "ativo"
+          });
+
+        if (insertError) throw insertError;
+        toast({ title: "Tabela de Preços criada com sucesso!" });
+      }
+
+      carregarTabelas();
+      setModalAberto(false);
+    } catch (error) {
+      console.error('Erro ao salvar tabela de preços:', error);
+      toast({
+        title: "Erro ao salvar tabela",
+        description: "Ocorreu um erro ao salvar a tabela de preços.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function handleExcluirTabela(tabela: TabelaPreco) {
+    try {
+      const { error } = await supabase
+        .from('tabelas_precos')
+        .delete()
+        .eq('id', tabela.id)
+        .eq('empresa_id', currentCompany?.id);
+
+      if (error) throw error;
+      
+      toast({ title: "Tabela de Preços excluída com sucesso!" });
+      carregarTabelas();
+    } catch (error) {
+      console.error('Erro ao excluir tabela de preços:', error);
+      toast({
+        title: "Erro ao excluir tabela",
+        description: "Ocorreu um erro ao excluir a tabela de preços.",
+        variant: "destructive",
+      });
+    }
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-6 flex flex-col gap-8">
       <div className="flex items-center justify-between mb-2">
@@ -147,9 +171,12 @@ export default function TabelaPrecosPage() {
           variant="blue"
           size="sm"
           className="flex gap-1"
-          onClick={abrirNovo}
+          onClick={() => { 
+            setTabelaSelecionada(null);
+            setModoModal("novo");
+            setModalAberto(true);
+          }}
           title="Nova Tabela de Preços"
-          data-testid="botao-nova-tabela"
         >
           <Plus className="w-4 h-4" /> Nova Tabela
         </Button>
@@ -176,7 +203,6 @@ export default function TabelaPrecosPage() {
             className="bg-white text-base pl-10"
           />
         </div>
-        {/* Espaço para mais filtros no futuro */}
       </div>
 
       {/* Listagem em tabela */}
@@ -185,10 +211,10 @@ export default function TabelaPrecosPage() {
           <thead>
             <TableRow>
               <TableHead>Nome</TableHead>
-              <TableHead>Vigência</TableHead>
+              <TableHead>Vigência Inicial</TableHead>
+              <TableHead>Vigência Final</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Qtd. Serviços</TableHead>
-              <TableHead className="w-[120px] text-right">Ações</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </thead>
           <TableBody>
@@ -203,19 +229,17 @@ export default function TabelaPrecosPage() {
                 <TableRow key={tab.id}>
                   <TableCell className="font-semibold">{tab.nome}</TableCell>
                   <TableCell>
-                    {tab.vigencia.dataInicial
-                      ? tab.vigencia.dataInicial.toLocaleDateString("pt-BR")
-                      : "-"}{" "}
-                    até{" "}
-                    {tab.vigencia.dataFinal
-                      ? tab.vigencia.dataFinal.toLocaleDateString("pt-BR")
+                    {tab.vigencia_inicial
+                      ? new Date(tab.vigencia_inicial).toLocaleDateString("pt-BR")
+                      : "-"}
+                  </TableCell>
+                  <TableCell>
+                    {tab.vigencia_final
+                      ? new Date(tab.vigencia_final).toLocaleDateString("pt-BR")
                       : "-"}
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(tab.status)}
-                  </TableCell>
-                  <TableCell>
-                    {tab.servicos.length}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -227,14 +251,22 @@ export default function TabelaPrecosPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40 z-30 bg-white border">
                         <DropdownMenuItem
-                          onClick={() => abrirVisualizar(tab)}
+                          onClick={() => {
+                            setTabelaSelecionada(tab);
+                            setModoModal("visualizar");
+                            setModalAberto(true);
+                          }}
                           className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
                         >
                           <Eye className="h-4 w-4" color="#0EA5E9" />
                           Visualizar
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => abrirEditar(tab)}
+                          onClick={() => {
+                            setTabelaSelecionada(tab);
+                            setModoModal("editar");
+                            setModalAberto(true);
+                          }}
                           className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
                         >
                           <Edit className="h-4 w-4" color="#0EA5E9" />
@@ -263,9 +295,8 @@ export default function TabelaPrecosPage() {
         tabela={tabelaSelecionada}
         modo={modoModal}
         onSalvar={handleSalvarTabela}
-        servicosACadastrar={MOCK_SERVICOS}
+        servicosACadastrar={servicos}
       />
     </div>
   );
 }
-

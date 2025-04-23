@@ -415,6 +415,89 @@ export type Database = {
           },
         ]
       }
+      tabelas_precos: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          id: string
+          nome: string
+          status: string
+          updated_at: string
+          vigencia_final: string | null
+          vigencia_inicial: string | null
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nome: string
+          status?: string
+          updated_at?: string
+          vigencia_final?: string | null
+          vigencia_inicial?: string | null
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          status?: string
+          updated_at?: string
+          vigencia_final?: string | null
+          vigencia_inicial?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tabelas_precos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tabelas_precos_itens: {
+        Row: {
+          created_at: string
+          id: string
+          preco: number
+          servico_id: string
+          tabela_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          preco: number
+          servico_id: string
+          tabela_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          preco?: number
+          servico_id?: string
+          tabela_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tabelas_precos_itens_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "servicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tabelas_precos_itens_tabela_id_fkey"
+            columns: ["tabela_id"]
+            isOneToOne: false
+            referencedRelation: "tabelas_precos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuarios: {
         Row: {
           created_at: string

@@ -1,42 +1,37 @@
-import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
+
+import React, { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter, 
+  DialogClose 
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Plus, X } from "lucide-react";
+import { CalendarIcon, Plus } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
 } from "@/components/ui/popover";
-
-type Servico = { id: number; nome: string; precoPadrao: number };
-type Vigencia = { dataInicial: Date | null; dataFinal: Date | null };
-
-type TabelaPreco = {
-  id?: number;
-  nome: string;
-  vigencia: Vigencia;
-  servicos: { servicoId: number; nome: string; preco: number }[];
-};
+import { toast } from "@/components/ui/use-toast";
+import { TabelaPreco, Servico, TabelaPrecoItem } from "@/types";
+import { useCompany } from "@/contexts/company-context";
 
 interface TabelaPrecoModalProps {
   open: boolean;
   onClose: () => void;
   tabela?: TabelaPreco | null;
   servicosACadastrar: Servico[];
-  onSalvar: (tabela: TabelaPreco) => void;
   modo: "visualizar" | "editar" | "novo";
+  onSalvar: (tabela: TabelaPreco) => void;
 }
 
 export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
@@ -44,193 +39,325 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
   onClose,
   tabela,
   servicosACadastrar,
-  onSalvar,
   modo,
+  onSalvar,
 }) => {
-  // Modo visualização: campos desabilitados
+  const { currentCompany } = useCompany();
   const somenteLeitura = modo === "visualizar";
 
-  const [nome, setNome] = useState(tabela?.nome || "");
-  const [vigencia, setVigencia] = useState<Vigencia>({
-    dataInicial: tabela?.vigencia.dataInicial || null,
-    dataFinal: tabela?.vigencia.dataFinal || null,
-  });
-  const [servicosTabela, setServicosTabela] = useState<
-    { servicoId: number; nome: string; preco: number }[]
-  >(tabela?.servicos ? [...tabela.servicos] : []);
-  const [novoServicoId, setNovoServicoId] = useState<number | "">("");
+  const [nome, setNome] = useState("");
+  const [vigenciaInicial, setVigenciaInicial] = useState<Date | null>(null);
+  const [vigenciaFinal, setVigenciaFinal] = useState<Date | null>(null);
+  const [status, setStatus] = useState<"ativo" | "inativo">("ativo");
+  const [servicosTabela, setServicosTabela] = useState<TabelaPrecoItem[]>([]);
+
+  const [novoServicoId, setNovoServicoId] = useState<string>("");
   const [novoPreco, setNovoPreco] = useState<string>("");
 
-  // Resetar ao abrir outro modal (corrige bug do react de manter estados)
-  React.useEffect(() => {
-    if (tabela) {
+  useEffect(() => {
+    if (open && tabela) {
       setNome(tabela.nome);
-      setVigencia({
-        dataInicial: tabela.vigencia.dataInicial,
-        dataFinal: tabela.vigencia.dataFinal,
-      });
-      setServicosTabela([...tabela.servicos]);
+      setVigenciaInicial(tabela.vigencia_inicial ? new Date(tabela.vigencia_inicial) : null);
+      setVigenciaFinal(tabela.vigencia_final ? new Date(tabela.vigencia_final) : null);
+      setStatus(tabela.status);
+      carregarItensDaTabela(tabela.id);
     } else {
-      setNome("");
-      setVigencia({ dataInicial: null, dataFinal: null });
-      setServicosTabela([]);
+      resetForm();
     }
-    setNovoServicoId("");
-    setNovoPreco("");
   }, [open, tabela]);
 
-  function adicionarServico() {
-    if (!novoServicoId || novoPreco === "") return;
-    if (servicosTabela.find((s) => s.servicoId === novoServicoId)) return;
-    const servicoObj = servicosACadastrar.find((s) => s.id === novoServicoId);
-    if (!servicoObj) return;
-    setServicosTabela((prev) => [
-      ...prev,
-      { servicoId: servicoObj.id, nome: servicoObj.nome, preco: parseFloat(novoPreco.replace(",", ".")) },
-    ]);
+  async function carregarItensDaTabela(tabelaId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('tabelas_precos_itens')
+        .select(`
+          *,
+          servicos (
+            nome
+          )
+        `)
+        .eq('tabela_id', tabelaId);
+
+      if (error) throw error;
+
+      // Transformar os dados para o formato esperado
+      const itensComNome = data?.map(item => ({
+        ...item,
+        nome: item.servicos?.nome || ''
+      })) || [];
+
+      setServicosTabela(itensComNome);
+    } catch (error) {
+      console.error('Erro ao carregar itens da tabela:', error);
+      toast({
+        title: "Erro ao carregar itens",
+        description: "Ocorreu um erro ao carregar os serviços da tabela.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  function resetForm() {
+    setNome("");
+    setVigenciaInicial(null);
+    setVigenciaFinal(null);
+    setStatus("ativo");
+    setServicosTabela([]);
     setNovoServicoId("");
     setNovoPreco("");
   }
 
-  function removerServico(servicoId: number) {
-    setServicosTabela((prev) => prev.filter((s) => s.servicoId !== servicoId));
-  }
-
-  function handleSalvar() {
-    // Checar validade dos campos
-    if (!nome.trim() || !vigencia.dataInicial || !vigencia.dataFinal || !servicosTabela.length) {
+  async function adicionarServico() {
+    if (!novoServicoId || novoPreco === "") return;
+    
+    const servicoExistente = servicosTabela.find(s => s.servico_id === novoServicoId);
+    if (servicoExistente) {
+      toast({
+        title: "Serviço já adicionado",
+        description: "Este serviço já está na tabela de preços.",
+        variant: "destructive",
+      });
       return;
     }
-    onSalvar({
-      ...tabela,
+
+    const servicoSelecionado = servicosACadastrar.find(s => s.id === novoServicoId);
+    
+    try {
+      // Se estiver editando uma tabela existente
+      if (tabela && tabela.id) {
+        const { error } = await supabase
+          .from('tabelas_precos_itens')
+          .insert({
+            tabela_id: tabela.id,
+            servico_id: novoServicoId,
+            preco: parseFloat(novoPreco.replace(',', '.'))
+          });
+
+        if (error) throw error;
+      }
+
+      // Atualizar estado local
+      setServicosTabela(prev => [
+        ...prev,
+        {
+          id: '', // será gerado pelo banco
+          tabela_id: tabela?.id || '',
+          servico_id: novoServicoId,
+          preco: parseFloat(novoPreco.replace(',', '.')),
+          nome: servicoSelecionado?.nome || '',
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      ]);
+
+      // Limpar campos
+      setNovoServicoId("");
+      setNovoPreco("");
+
+      toast({ title: "Serviço adicionado com sucesso!" });
+    } catch (error) {
+      console.error('Erro ao adicionar serviço:', error);
+      toast({
+        title: "Erro ao adicionar serviço",
+        description: "Ocorreu um erro ao adicionar o serviço.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function removerServico(servicoId: string) {
+    try {
+      // Se estiver editando uma tabela existente, remover do banco
+      if (tabela && tabela.id) {
+        const { error } = await supabase
+          .from('tabelas_precos_itens')
+          .delete()
+          .eq('tabela_id', tabela.id)
+          .eq('servico_id', servicoId);
+
+        if (error) throw error;
+      }
+
+      // Atualizar estado local
+      setServicosTabela(prev => prev.filter(s => s.servico_id !== servicoId));
+      
+      toast({ title: "Serviço removido com sucesso!" });
+    } catch (error) {
+      console.error('Erro ao remover serviço:', error);
+      toast({
+        title: "Erro ao remover serviço",
+        description: "Ocorreu um erro ao remover o serviço.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function handleSalvar() {
+    // Validações básicas
+    if (!nome.trim()) {
+      toast({
+        title: "Nome obrigatório",
+        description: "Por favor, insira um nome para a tabela de preços.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!vigenciaInicial || !vigenciaFinal) {
+      toast({
+        title: "Vigência obrigatória",
+        description: "Por favor, selecione as datas de vigência.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (servicosTabela.length === 0) {
+      toast({
+        title: "Adicione serviços",
+        description: "Por favor, adicione pelo menos um serviço à tabela de preços.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const tabelaParaSalvar: TabelaPreco = {
+      id: tabela?.id || '',
+      empresa_id: currentCompany?.id || '',
       nome,
-      vigencia: { ...vigencia },
-      servicos: [...servicosTabela],
-    } as TabelaPreco);
-    onClose();
+      vigencia_inicial: vigenciaInicial,
+      vigencia_final: vigenciaFinal,
+      status,
+      created_at: tabela?.created_at || new Date(),
+      updated_at: new Date()
+    };
+
+    onSalvar(tabelaParaSalvar);
   }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl p-0">
-        <form
-          onSubmit={e => {
+        <DialogHeader className="border-b px-6 py-4">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            {modo === "visualizar" && "Detalhes da Tabela"}
+            {modo === "editar" && "Editar Tabela"}
+            {modo === "novo" && "Nova Tabela de Preços"}
+          </DialogTitle>
+        </DialogHeader>
+        <form 
+          onSubmit={(e) => {
             e.preventDefault();
             if (!somenteLeitura) handleSalvar();
           }}
+          className="px-6 pt-5 pb-4 grid gap-4"
         >
-          <DialogHeader className="border-b px-6 py-4">
-            <DialogTitle className="flex items-center gap-2 text-lg">
-              {modo === "visualizar" && <>Detalhes da Tabela</>}
-              {modo === "editar" && <>Editar Tabela</>}
-              {modo === "novo" && <>Nova Tabela de Preços</>}
-            </DialogTitle>
-            
-          </DialogHeader>
-          <div className="px-6 pt-5 pb-4 grid gap-4">
+          <div>
+            <label className="block font-medium mb-1">Nome</label>
+            <Input 
+              value={nome} 
+              onChange={(e) => setNome(e.target.value)} 
+              disabled={somenteLeitura} 
+              required 
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block font-medium mb-1">Nome</label>
-              <Input value={nome} onChange={e => setNome(e.target.value)} disabled={somenteLeitura} />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block font-medium mb-1">Vigência (início)</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal bg-white/60 hover:bg-white/80",
-                        !vigencia.dataInicial && "text-muted-foreground"
-                      )}
-                      type="button"
-                      disabled={somenteLeitura}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {vigencia.dataInicial
-                        ? format(vigencia.dataInicial, "dd/MM/yyyy", { locale: ptBR })
-                        : <span>Selecione...</span>
-                      }
-                    </Button>
-                  </PopoverTrigger>
-                  {!somenteLeitura && (
-                    <PopoverContent className="w-auto p-0" align="start">
-                      {/* Aplicando transparência ao calendário  */}
-                      <Calendar
-                        mode="single"
-                        selected={vigencia.dataInicial}
-                        onSelect={date => setVigencia(prev => ({ ...prev, dataInicial: date ?? null }))}
-                        initialFocus
-                        locale={ptBR}
-                        className={cn("p-3 pointer-events-auto rounded-lg bg-white/80")}
-                      />
-                    </PopoverContent>
-                  )}
-                </Popover>
-              </div>
-              <div>
-                <label className="block font-medium mb-1">Vigência (final)</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal bg-white/60 hover:bg-white/80",
-                        !vigencia.dataFinal && "text-muted-foreground"
-                      )}
-                      type="button"
-                      disabled={somenteLeitura}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {vigencia.dataFinal
-                        ? format(vigencia.dataFinal, "dd/MM/yyyy", { locale: ptBR })
-                        : <span>Selecione...</span>
-                      }
-                    </Button>
-                  </PopoverTrigger>
-                  {!somenteLeitura && (
-                    <PopoverContent className="w-auto p-0" align="start">
-                      {/* Aplicando transparência ao calendário */}
-                      <Calendar
-                        mode="single"
-                        selected={vigencia.dataFinal}
-                        onSelect={date => setVigencia(prev => ({ ...prev, dataFinal: date ?? null }))}
-                        initialFocus
-                        locale={ptBR}
-                        className={cn("p-3 pointer-events-auto rounded-lg bg-white/80")}
-                      />
-                    </PopoverContent>
-                  )}
-                </Popover>
-              </div>
+              <label className="block font-medium mb-1">Vigência (início)</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !vigenciaInicial && "text-muted-foreground"
+                    )}
+                    type="button"
+                    disabled={somenteLeitura}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {vigenciaInicial
+                      ? format(vigenciaInicial, "dd/MM/yyyy", { locale: ptBR })
+                      : <span>Selecione...</span>
+                    }
+                  </Button>
+                </PopoverTrigger>
+                {!somenteLeitura && (
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={vigenciaInicial}
+                      onSelect={(date) => setVigenciaInicial(date ?? null)}
+                      initialFocus
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                )}
+              </Popover>
             </div>
             <div>
-              <h2 className="font-semibold mb-2 flex items-center gap-2">
-                <Plus className="w-4 h-4" /> Serviços e Preços
-              </h2>
+              <label className="block font-medium mb-1">Vigência (final)</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !vigenciaFinal && "text-muted-foreground"
+                    )}
+                    type="button"
+                    disabled={somenteLeitura}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {vigenciaFinal
+                      ? format(vigenciaFinal, "dd/MM/yyyy", { locale: ptBR })
+                      : <span>Selecione...</span>
+                    }
+                  </Button>
+                </PopoverTrigger>
+                {!somenteLeitura && (
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={vigenciaFinal}
+                      onSelect={(date) => setVigenciaFinal(date ?? null)}
+                      initialFocus
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                )}
+              </Popover>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="font-semibold mb-2 flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Serviços e Preços
+            </h2>
+            {!somenteLeitura && (
               <div className="grid grid-cols-1 md:grid-cols-8 gap-2 items-center">
                 <select
                   className="border rounded px-2 py-1 md:col-span-4 bg-white"
                   value={novoServicoId}
-                  disabled={somenteLeitura}
-                  onChange={e => setNovoServicoId(Number(e.target.value) || "")}
+                  onChange={(e) => setNovoServicoId(e.target.value)}
                 >
                   <option value="">Selecione um serviço...</option>
                   {servicosACadastrar
-                    .filter(s => !servicosTabela.some(st => st.servicoId === s.id))
+                    .filter(s => !servicosTabela.some(st => st.servico_id === s.id))
                     .map(s => (
                       <option key={s.id} value={s.id}>{s.nome}</option>
                     ))}
                 </select>
                 <Input
                   placeholder="Preço (R$)"
-                  type="number"
-                  step="0.01"
-                  min={0}
+                  type="text"
                   className="md:col-span-3"
                   value={novoPreco}
-                  onChange={e => setNovoPreco(e.target.value)}
-                  disabled={!novoServicoId || somenteLeitura}
+                  onChange={(e) => {
+                    const valorSemFormatacao = e.target.value.replace(/[^\d,]/g, '');
+                    setNovoPreco(valorSemFormatacao);
+                  }}
                 />
                 <Button
                   type="button"
@@ -238,54 +365,69 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
                   className="md:col-span-1"
                   onClick={adicionarServico}
                   variant="secondary"
-                  disabled={!novoServicoId || !novoPreco || somenteLeitura}
+                  disabled={!novoServicoId || !novoPreco}
                 >
                   <Plus className="h-4 w-4 mr-1" /> Adicionar
                 </Button>
               </div>
-              {/* Listagem dos serviços adicionados */}
-              <div className="mt-3">
-                {servicosTabela.length === 0 && (
-                  <div className="text-muted-foreground text-sm">Nenhum serviço adicionado ainda.</div>
-                )}
-                {servicosTabela.length > 0 && (
-                  <table className="w-full border mt-2 rounded text-sm">
-                    <thead>
-                      <tr className="bg-muted">
-                        <th className="py-1 px-2 font-bold text-left">Serviço</th>
-                        <th className="py-1 px-2 font-bold text-left">Preço (R$)</th>
-                        <th />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {servicosTabela.map(srv => (
-                        <tr key={srv.servicoId} className="border-t">
-                          <td className="py-1 px-2">{srv.nome}</td>
-                          <td className="py-1 px-2">
-                            {srv.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 })}
-                          </td>
+            )}
+
+            {/* Listagem dos serviços adicionados */}
+            <div className="mt-3">
+              {servicosTabela.length === 0 && (
+                <div className="text-muted-foreground text-sm">Nenhum serviço adicionado ainda.</div>
+              )}
+              {servicosTabela.length > 0 && (
+                <table className="w-full border mt-2 rounded text-sm">
+                  <thead>
+                    <tr className="bg-muted">
+                      <th className="py-1 px-2 font-bold text-left">Serviço</th>
+                      <th className="py-1 px-2 font-bold text-left">Preço (R$)</th>
+                      {!somenteLeitura && <th />}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {servicosTabela.map(srv => (
+                      <tr key={srv.servico_id} className="border-t">
+                        <td className="py-1 px-2">{srv.nome}</td>
+                        <td className="py-1 px-2">
+                          {srv.preco.toLocaleString("pt-BR", { 
+                            style: "currency", 
+                            currency: "BRL", 
+                            minimumFractionDigits: 2 
+                          })}
+                        </td>
+                        {!somenteLeitura && (
                           <td>
-                            {!somenteLeitura && (
-                              <Button variant="outline" size="sm" onClick={() => removerServico(srv.servicoId)}>
-                                Remover
-                              </Button>
-                            )}
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => removerServico(srv.servico_id)}
+                            >
+                              Remover
+                            </Button>
                           </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
-          <DialogFooter className="px-6 pb-4 flex-row gap-2">
+
+          <DialogFooter className="flex-row gap-2">
             {!somenteLeitura && (
               <>
-                <Button
-                  type="submit"
+                <Button 
+                  type="submit" 
                   variant="blue"
-                  disabled={!nome || !vigencia.dataInicial || !vigencia.dataFinal || !servicosTabela.length}
+                  disabled={
+                    !nome || 
+                    !vigenciaInicial || 
+                    !vigenciaFinal || 
+                    servicosTabela.length === 0
+                  }
                 >
                   {modo === "editar" ? "Salvar Alterações" : "Salvar Tabela"}
                 </Button>
