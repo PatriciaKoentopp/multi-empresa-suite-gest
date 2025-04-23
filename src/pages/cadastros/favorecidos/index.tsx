@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,20 +24,156 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
 
 export default function FavorecidosPage() {
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
-  const [grupos] = useState<GrupoFavorecido[]>([]);
-  const [profissoes] = useState<Profissao[]>([]);
+  const [grupos, setGrupos] = useState<GrupoFavorecido[]>([]);
+  const [profissoes, setProfissoes] = useState<Profissao[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFavorecido, setEditingFavorecido] = useState<Favorecido | undefined>(undefined);
   const [viewingFavorecido, setViewingFavorecido] = useState<Favorecido | undefined>(undefined);
+  const { currentCompany } = useCompany();
+  const [isLoading, setIsLoading] = useState(true);
   
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
   const [grupoFilter, setGrupoFilter] = useState<string>("todos");
+
+  // Carregar grupos do Supabase
+  useEffect(() => {
+    const fetchGrupos = async () => {
+      if (!currentCompany) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("grupo_favorecidos")
+          .select("*")
+          .eq("empresa_id", currentCompany.id)
+          .order("nome");
+  
+        if (error) {
+          console.error("Erro ao carregar grupos:", error);
+          toast.error("Erro ao carregar grupos de favorecidos");
+          return;
+        }
+  
+        if (data) {
+          const gruposFormatados: GrupoFavorecido[] = data.map(grupo => ({
+            id: grupo.id,
+            nome: grupo.nome,
+            status: grupo.status as "ativo" | "inativo",
+            createdAt: new Date(grupo.created_at),
+            updatedAt: new Date(grupo.updated_at)
+          }));
+          setGrupos(gruposFormatados);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar grupos:", error);
+        toast.error("Erro ao carregar grupos de favorecidos");
+      }
+    };
+
+    fetchGrupos();
+  }, [currentCompany]);
+
+  // Carregar profissões do Supabase
+  useEffect(() => {
+    const fetchProfissoes = async () => {
+      if (!currentCompany) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("profissoes")
+          .select("*")
+          .eq("empresa_id", currentCompany.id)
+          .order("nome");
+  
+        if (error) {
+          console.error("Erro ao carregar profissões:", error);
+          toast.error("Erro ao carregar profissões");
+          return;
+        }
+  
+        if (data) {
+          const profissoesFormatadas: Profissao[] = data.map(profissao => ({
+            id: profissao.id,
+            nome: profissao.nome,
+            status: profissao.status as "ativo" | "inativo",
+            createdAt: new Date(profissao.created_at),
+            updatedAt: new Date(profissao.updated_at)
+          }));
+          setProfissoes(profissoesFormatadas);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar profissões:", error);
+        toast.error("Erro ao carregar profissões");
+      }
+    };
+
+    fetchProfissoes();
+  }, [currentCompany]);
+
+  // Carregar favorecidos do Supabase
+  useEffect(() => {
+    const fetchFavorecidos = async () => {
+      if (!currentCompany) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("favorecidos")
+          .select("*")
+          .eq("empresa_id", currentCompany.id)
+          .order("nome");
+  
+        if (error) {
+          console.error("Erro ao carregar favorecidos:", error);
+          toast.error("Erro ao carregar favorecidos");
+          return;
+        }
+  
+        if (data) {
+          const favorecidosFormatados: Favorecido[] = data.map(favorecido => ({
+            id: favorecido.id,
+            tipo: favorecido.tipo,
+            tipoDocumento: favorecido.tipo_documento,
+            documento: favorecido.documento,
+            grupoId: favorecido.grupo_id,
+            profissaoId: favorecido.profissao_id,
+            nome: favorecido.nome,
+            nomeFantasia: favorecido.nome_fantasia,
+            email: favorecido.email,
+            telefone: favorecido.telefone,
+            endereco: {
+              cep: favorecido.cep || "",
+              logradouro: favorecido.logradouro || "",
+              numero: favorecido.numero || "",
+              complemento: favorecido.complemento || "",
+              bairro: favorecido.bairro || "",
+              cidade: favorecido.cidade || "",
+              estado: favorecido.estado || "",
+              pais: favorecido.pais || "Brasil",
+            },
+            dataAniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
+            status: favorecido.status as "ativo" | "inativo",
+            createdAt: new Date(favorecido.created_at),
+            updatedAt: new Date(favorecido.updated_at),
+          }));
+          setFavorecidos(favorecidosFormatados);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Erro ao carregar favorecidos:", error);
+        toast.error("Erro ao carregar favorecidos");
+        setIsLoading(false);
+      }
+    };
+
+    fetchFavorecidos();
+  }, [currentCompany]);
 
   const handleOpenDialog = (favorecido?: Favorecido, isViewing = false) => {
     if (isViewing) {
@@ -54,38 +190,135 @@ export default function FavorecidosPage() {
     setIsDialogOpen(false);
   };
 
-  const handleSubmit = (data: Partial<Favorecido>) => {
-    if (editingFavorecido) {
-      // Atualizar favorecido existente
-      setFavorecidos((prev) =>
-        prev.map((f) =>
-          f.id === editingFavorecido.id
-            ? {
-                ...f,
-                ...data,
-                updatedAt: new Date(),
-              }
-            : f
-        )
-      );
-      toast.success("Favorecido atualizado com sucesso!");
-    } else {
-      // Criar novo favorecido
-      const newFavorecido: Favorecido = {
-        id: `${Date.now()}`, // Em uma aplicação real, isso seria gerado pelo backend
-        ...data as Favorecido,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setFavorecidos((prev) => [...prev, newFavorecido]);
-      toast.success("Favorecido criado com sucesso!");
+  const handleSubmit = async (data: Partial<Favorecido>) => {
+    if (!currentCompany) {
+      toast.error("Nenhuma empresa selecionada");
+      return;
     }
-    handleCloseDialog();
+
+    try {
+      const favorecidoData = {
+        empresa_id: currentCompany.id,
+        tipo: data.tipo,
+        tipo_documento: data.tipoDocumento,
+        documento: data.documento,
+        grupo_id: data.grupoId,
+        profissao_id: data.profissaoId,
+        nome: data.nome,
+        nome_fantasia: data.nomeFantasia,
+        email: data.email,
+        telefone: data.telefone,
+        cep: data.endereco?.cep,
+        logradouro: data.endereco?.logradouro,
+        numero: data.endereco?.numero,
+        complemento: data.endereco?.complemento,
+        bairro: data.endereco?.bairro,
+        cidade: data.endereco?.cidade,
+        estado: data.endereco?.estado,
+        pais: data.endereco?.pais,
+        data_aniversario: data.dataAniversario,
+        status: data.status,
+      };
+
+      if (editingFavorecido) {
+        // Atualizar favorecido existente
+        const { error } = await supabase
+          .from("favorecidos")
+          .update(favorecidoData)
+          .eq("id", editingFavorecido.id);
+
+        if (error) {
+          console.error("Erro ao atualizar favorecido:", error);
+          toast.error("Erro ao atualizar favorecido");
+          return;
+        }
+
+        setFavorecidos(prev =>
+          prev.map(f =>
+            f.id === editingFavorecido.id
+              ? {
+                  ...f,
+                  ...data,
+                  updatedAt: new Date(),
+                }
+              : f
+          )
+        );
+        toast.success("Favorecido atualizado com sucesso!");
+      } else {
+        // Criar novo favorecido
+        const { data: novoFavorecido, error } = await supabase
+          .from("favorecidos")
+          .insert([favorecidoData])
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Erro ao criar favorecido:", error);
+          toast.error("Erro ao criar favorecido");
+          return;
+        }
+
+        if (novoFavorecido) {
+          const favorecidoFormatado: Favorecido = {
+            id: novoFavorecido.id,
+            tipo: novoFavorecido.tipo,
+            tipoDocumento: novoFavorecido.tipo_documento,
+            documento: novoFavorecido.documento,
+            grupoId: novoFavorecido.grupo_id,
+            profissaoId: novoFavorecido.profissao_id,
+            nome: novoFavorecido.nome,
+            nomeFantasia: novoFavorecido.nome_fantasia,
+            email: novoFavorecido.email,
+            telefone: novoFavorecido.telefone,
+            endereco: {
+              cep: novoFavorecido.cep || "",
+              logradouro: novoFavorecido.logradouro || "",
+              numero: novoFavorecido.numero || "",
+              complemento: novoFavorecido.complemento || "",
+              bairro: novoFavorecido.bairro || "",
+              cidade: novoFavorecido.cidade || "",
+              estado: novoFavorecido.estado || "",
+              pais: novoFavorecido.pais || "Brasil",
+            },
+            dataAniversario: novoFavorecido.data_aniversario ? new Date(novoFavorecido.data_aniversario) : undefined,
+            status: novoFavorecido.status as "ativo" | "inativo",
+            createdAt: new Date(novoFavorecido.created_at),
+            updatedAt: new Date(novoFavorecido.updated_at),
+          };
+          setFavorecidos(prev => [...prev, favorecidoFormatado]);
+          toast.success("Favorecido criado com sucesso!");
+        }
+      }
+      handleCloseDialog();
+    } catch (error) {
+      console.error("Erro na operação:", error);
+      toast.error("Ocorreu um erro ao processar a solicitação");
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setFavorecidos((prev) => prev.filter((favorecido) => favorecido.id !== id));
-    toast.success("Favorecido excluído com sucesso!");
+  const handleDelete = async (id: string) => {
+    if (!currentCompany) return;
+    
+    try {
+      const { error } = await supabase
+        .from("favorecidos")
+        .delete()
+        .eq("id", id)
+        .eq("empresa_id", currentCompany.id);
+
+      if (error) {
+        console.error("Erro ao excluir favorecido:", error);
+        toast.error("Erro ao excluir favorecido");
+        return;
+      }
+
+      setFavorecidos(prev => prev.filter(favorecido => favorecido.id !== id));
+      toast.success("Favorecido excluído com sucesso!");
+    } catch (error) {
+      console.error("Erro na exclusão:", error);
+      toast.error("Ocorreu um erro ao excluir o favorecido");
+    }
   };
 
   // Aplicar filtros aos favorecidos
