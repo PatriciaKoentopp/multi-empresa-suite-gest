@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,9 @@ import { Plus } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Search, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -45,44 +47,8 @@ type Servico = {
 };
 
 export default function ServicosPage() {
-  const [servicos, setServicos] = useState<Servico[]>([
-    {
-      id: "1",
-      nome: "Consultoria Fiscal",
-      descricao: "Apoio especializado em rotinas fiscais mensais.",
-      status: "ativo"
-    },
-    {
-      id: "2",
-      nome: "Abertura de Empresa",
-      descricao: "Todo suporte para abrir CNPJ e regularizar situação fiscal.",
-      status: "ativo"
-    },
-    {
-      id: "3",
-      nome: "Encerramento de Empresa",
-      descricao: "Processo completo e orientações para encerramento.",
-      status: "inativo"
-    },
-    {
-      id: "4",
-      nome: "Auditoria Contábil",
-      descricao: "Revisão e auditoria periódica das demonstrações financeiras.",
-      status: "ativo"
-    },
-    {
-      id: "5",
-      nome: "BPO Financeiro",
-      descricao: "Terceirização completa da rotina financeira.",
-      status: "inativo"
-    },
-    {
-      id: "6",
-      nome: "Elaboração de Contrato Social",
-      descricao: "Elaboração e atualização de contratos sociais empresariais.",
-      status: "ativo"
-    }
-  ]);
+  const { currentCompany } = useCompany();
+  const [servicos, setServicos] = useState<Servico[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<Omit<Servico, "id">>({
     nome: "",
@@ -90,15 +56,38 @@ export default function ServicosPage() {
     status: "ativo"
   });
   const [editId, setEditId] = useState<string | null>(null);
-
-  // Novos estados para filtro
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todas" | "ativo" | "inativo">("todas");
   const inputBuscaRef = useRef<HTMLInputElement>(null);
-  
-  // Novo estado para diálogo de confirmação de exclusão
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingServicoId, setDeletingServicoId] = useState<string | null>(null);
+  
+  // Carregar serviços do Supabase
+  useEffect(() => {
+    if (currentCompany?.id) {
+      loadServicos();
+    }
+  }, [currentCompany]);
+
+  async function loadServicos() {
+    try {
+      const { data, error } = await supabase
+        .from('servicos')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .order('nome');
+
+      if (error) throw error;
+      setServicos(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar serviços:', error);
+      toast({
+        title: "Erro ao carregar serviços",
+        description: "Ocorreu um erro ao carregar a lista de serviços.",
+        variant: "destructive",
+      });
+    }
+  }
 
   // Aplica filtro na listagem
   const servicosFiltrados = useMemo(() => {
@@ -137,22 +126,48 @@ export default function ServicosPage() {
     setEditId(null);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (editId) {
-      setServicos((ss) =>
-        ss.map((s) => (s.id === editId ? { ...s, ...form } : s))
-      );
-      toast({ title: "Serviço atualizado com sucesso!" });
-    } else {
-      setServicos((ss) => [
-        ...ss,
-        { ...form, id: Date.now().toString() }
-      ]);
-      toast({ title: "Serviço cadastrado com sucesso!" });
+    
+    try {
+      if (editId) {
+        const { error } = await supabase
+          .from('servicos')
+          .update({
+            nome: form.nome,
+            descricao: form.descricao,
+            status: form.status
+          })
+          .eq('id', editId)
+          .eq('empresa_id', currentCompany?.id);
+
+        if (error) throw error;
+        toast({ title: "Serviço atualizado com sucesso!" });
+      } else {
+        const { error } = await supabase
+          .from('servicos')
+          .insert([{
+            nome: form.nome,
+            descricao: form.descricao,
+            status: form.status,
+            empresa_id: currentCompany?.id
+          }]);
+
+        if (error) throw error;
+        toast({ title: "Serviço cadastrado com sucesso!" });
+      }
+      
+      setShowForm(false);
+      resetForm();
+      loadServicos();
+    } catch (error) {
+      console.error('Erro ao salvar serviço:', error);
+      toast({
+        title: "Erro ao salvar serviço",
+        description: "Ocorreu um erro ao salvar o serviço.",
+        variant: "destructive",
+      });
     }
-    setShowForm(false);
-    resetForm();
   }
 
   function handleEditar(servico: Servico) {
@@ -165,25 +180,42 @@ export default function ServicosPage() {
     setShowForm(true);
   }
   
+  async function handleConfirmDelete() {
+    if (!deletingServicoId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('servicos')
+        .delete()
+        .eq('id', deletingServicoId)
+        .eq('empresa_id', currentCompany?.id);
+
+      if (error) throw error;
+      
+      toast({ title: "Serviço excluído com sucesso!" });
+      loadServicos();
+      
+      if (editId === deletingServicoId) {
+        resetForm();
+        setShowForm(false);
+      }
+    } catch (error) {
+      console.error('Erro ao excluir serviço:', error);
+      toast({
+        title: "Erro ao excluir serviço",
+        description: "Ocorreu um erro ao excluir o serviço.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setDeletingServicoId(null);
+    }
+  }
+
   function handleExcluirClick(id: string, e?: React.MouseEvent) {
     if (e) e.preventDefault();
     setDeletingServicoId(id);
     setIsDeleteDialogOpen(true);
-  }
-  
-  function handleConfirmDelete() {
-    if (!deletingServicoId) return;
-    
-    setServicos((ss) => ss.filter((s) => s.id !== deletingServicoId));
-    toast({ title: "Serviço excluído com sucesso!" });
-    
-    if (editId === deletingServicoId) {
-      resetForm();
-      setShowForm(false);
-    }
-    
-    setIsDeleteDialogOpen(false);
-    setDeletingServicoId(null);
   }
 
   function handleLupaClick() {
