@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
+import { format } from "date-fns";
 
 export default function FavorecidosPage() {
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
@@ -138,8 +139,8 @@ export default function FavorecidosPage() {
         if (data) {
           const favorecidosFormatados: Favorecido[] = data.map(favorecido => ({
             id: favorecido.id,
-            tipo: favorecido.tipo,
-            tipoDocumento: favorecido.tipo_documento,
+            tipo: favorecido.tipo as "cliente" | "fornecedor" | "publico" | "funcionario",
+            tipoDocumento: favorecido.tipo_documento as "cpf" | "cnpj",
             documento: favorecido.documento,
             grupoId: favorecido.grupo_id,
             profissaoId: favorecido.profissao_id,
@@ -197,6 +198,7 @@ export default function FavorecidosPage() {
     }
 
     try {
+      // Preparar os dados para inserção/atualização no Supabase
       const favorecidoData = {
         empresa_id: currentCompany.id,
         tipo: data.tipo,
@@ -216,7 +218,8 @@ export default function FavorecidosPage() {
         cidade: data.endereco?.cidade,
         estado: data.endereco?.estado,
         pais: data.endereco?.pais,
-        data_aniversario: data.dataAniversario,
+        // Convertendo a data para o formato string que o Supabase espera
+        data_aniversario: data.dataAniversario ? format(data.dataAniversario, "yyyy-MM-dd") : null,
         status: data.status,
       };
 
@@ -249,7 +252,7 @@ export default function FavorecidosPage() {
         // Criar novo favorecido
         const { data: novoFavorecido, error } = await supabase
           .from("favorecidos")
-          .insert([favorecidoData])
+          .insert(favorecidoData)
           .select()
           .single();
 
@@ -262,8 +265,8 @@ export default function FavorecidosPage() {
         if (novoFavorecido) {
           const favorecidoFormatado: Favorecido = {
             id: novoFavorecido.id,
-            tipo: novoFavorecido.tipo,
-            tipoDocumento: novoFavorecido.tipo_documento,
+            tipo: novoFavorecido.tipo as "cliente" | "fornecedor" | "publico" | "funcionario",
+            tipoDocumento: novoFavorecido.tipo_documento as "cpf" | "cnpj",
             documento: novoFavorecido.documento,
             grupoId: novoFavorecido.grupo_id,
             profissaoId: novoFavorecido.profissao_id,
