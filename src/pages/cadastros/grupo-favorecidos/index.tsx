@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { GrupoFavorecido } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -143,22 +142,34 @@ export default function GrupoFavorecidosPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!currentCompany) return;
+    // Mostrar toast de confirmação
+    toast.warning('Tem certeza que deseja excluir este grupo de favorecidos?', {
+      description: 'Esta ação não pode ser desfeita.',
+      cancel: {
+        label: 'Cancelar',
+      },
+      action: {
+        label: 'Excluir',
+        onClick: async () => {
+          if (!currentCompany) return;
 
-    const { error } = await supabase
-      .from("grupo_favorecidos")
-      .delete()
-      .eq("id", id)
-      .eq("empresa_id", currentCompany.id);
+          const { error } = await supabase
+            .from("grupo_favorecidos")
+            .delete()
+            .eq("id", id)
+            .eq("empresa_id", currentCompany.id);
 
-    if (error) {
-      console.error("Erro ao excluir grupo:", error);
-      toast.error("Erro ao excluir grupo de favorecidos");
-      return;
-    }
+          if (error) {
+            console.error("Erro ao excluir grupo:", error);
+            toast.error("Erro ao excluir grupo de favorecidos");
+            return;
+          }
 
-    setGrupos(prev => prev.filter(grupo => grupo.id !== id));
-    toast.success("Grupo de favorecidos excluído com sucesso!");
+          setGrupos(prev => prev.filter(grupo => grupo.id !== id));
+          toast.success("Grupo de favorecidos excluído com sucesso!");
+        }
+      }
+    });
   };
 
   // Filtrar grupos com base no termo de busca
