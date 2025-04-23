@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -143,12 +142,13 @@ const initialLeads = [
   },
 ];
 
-// Mock data para origens
+// Mock data para origens - adicionado empresa_id que estava faltando
 const initialOrigens: Origem[] = [
   {
     id: "1",
     nome: "Site",
     status: "ativo",
+    empresa_id: "1", // Adicionado o campo empresa_id
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -156,6 +156,7 @@ const initialOrigens: Origem[] = [
     id: "2",
     nome: "Indicação",
     status: "ativo",
+    empresa_id: "1", // Adicionado o campo empresa_id
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -163,6 +164,7 @@ const initialOrigens: Origem[] = [
     id: "3",
     nome: "LinkedIn",
     status: "ativo",
+    empresa_id: "1", // Adicionado o campo empresa_id
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -170,6 +172,7 @@ const initialOrigens: Origem[] = [
     id: "4",
     nome: "Evento",
     status: "ativo",
+    empresa_id: "1", // Adicionado o campo empresa_id
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -177,6 +180,7 @@ const initialOrigens: Origem[] = [
     id: "5",
     nome: "Ligação",
     status: "ativo",
+    empresa_id: "1", // Adicionado o campo empresa_id
     createdAt: new Date(),
     updatedAt: new Date(),
   },
