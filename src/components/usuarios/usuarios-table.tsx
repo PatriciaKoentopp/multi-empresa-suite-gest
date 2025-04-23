@@ -1,8 +1,7 @@
 
 import { Usuario } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -11,6 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,20 +55,6 @@ export function UsuariosTable({ usuarios, onEdit, onDelete }: UsuariosTableProps
     setDeleteConfirm({ isOpen: false, id: null });
   };
 
-  const renderStatus = (status: "ativo" | "inativo") => {
-    return status === "ativo" ? (
-      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-600">
-        <span className="h-1.5 w-1.5 rounded-full bg-green-600"></span>
-        Ativo
-      </span>
-    ) : (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-600">
-        <span className="h-1.5 w-1.5 rounded-full bg-red-600"></span>
-        Inativo
-      </span>
-    );
-  };
-
   return (
     <>
       <div className="rounded-md border">
@@ -71,18 +62,16 @@ export function UsuariosTable({ usuarios, onEdit, onDelete }: UsuariosTableProps
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
-              <TableHead>Email</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Vendedor</TableHead>
-              <TableHead>Cadastro</TableHead>
               <TableHead className="w-[100px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {usuarios.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   Nenhum usuário encontrado.
                 </TableCell>
               </TableRow>
@@ -90,30 +79,44 @@ export function UsuariosTable({ usuarios, onEdit, onDelete }: UsuariosTableProps
               usuarios.map((usuario) => (
                 <TableRow key={usuario.id}>
                   <TableCell className="font-medium">{usuario.nome}</TableCell>
-                  <TableCell>{usuario.email}</TableCell>
                   <TableCell>{usuario.tipo}</TableCell>
-                  <TableCell>{renderStatus(usuario.status)}</TableCell>
+                  <TableCell>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                        usuario.status === "ativo"
+                          ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20"
+                          : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
+                      }`}
+                    >
+                      {usuario.status === "ativo" ? "Ativo" : "Inativo"}
+                    </span>
+                  </TableCell>
                   <TableCell>{usuario.vendedor === "sim" ? "Sim" : "Não"}</TableCell>
                   <TableCell>
-                    {format(new Date(usuario.createdAt), "dd/MM/yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEdit(usuario)}
-                      >
-                        <Edit className="h-4 w-4 text-blue-600" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteClick(usuario.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </Button>
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Abrir menu de ações</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40 z-30 bg-white border">
+                        <DropdownMenuItem
+                          onClick={() => onEdit(usuario)}
+                          className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteClick(usuario.id)}
+                          className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
