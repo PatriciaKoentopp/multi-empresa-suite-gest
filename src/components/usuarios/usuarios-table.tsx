@@ -32,9 +32,10 @@ interface UsuariosTableProps {
   usuarios: Usuario[];
   onEdit: (usuario: Usuario) => void;
   onDelete: (id: string) => void;
+  isLoading?: boolean;
 }
 
-export function UsuariosTable({ usuarios, onEdit, onDelete }: UsuariosTableProps) {
+export function UsuariosTable({ usuarios, onEdit, onDelete, isLoading = false }: UsuariosTableProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({
     isOpen: false,
     id: null,
@@ -69,7 +70,13 @@ export function UsuariosTable({ usuarios, onEdit, onDelete }: UsuariosTableProps
             </TableRow>
           </TableHeader>
           <TableBody>
-            {usuarios.length === 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">
+                  Carregando usuários...
+                </TableCell>
+              </TableRow>
+            ) : usuarios.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
                   Nenhum usuário encontrado.

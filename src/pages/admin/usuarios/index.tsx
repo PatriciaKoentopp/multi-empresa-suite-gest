@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Usuario } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -32,47 +33,56 @@ export default function UsuariosPage() {
   const [editingUsuario, setEditingUsuario] = useState<Usuario | undefined>(
     undefined
   );
+  const [isLoading, setIsLoading] = useState(true);
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
   const [tipoFilter, setTipoFilter] = useState<"todos" | "Administrador" | "Usuário">("todos");
   const [vendedorFilter, setVendedorFilter] = useState<"todos" | "sim" | "nao">("todos");
-  const [refreshKey, setRefreshKey] = useState(0); // Adicionando estado para forçar recarga
+  const [refreshKey, setRefreshKey] = useState(0); // Estado para forçar recarga
 
   const { currentCompany } = useCompany();
 
   useEffect(() => {
-    fetchUsuarios();
-  }, [currentCompany, refreshKey]); // Adicionando refreshKey como dependência
+    setIsLoading(true);
+    fetchUsuarios().finally(() => setIsLoading(false));
+  }, [currentCompany, refreshKey]); // refreshKey como dependência para forçar recarga
 
   const fetchUsuarios = async () => {
     if (!currentCompany) return;
 
-    const { data, error } = await supabase
-      .from("usuarios")
-      .select("*")
-      .eq("empresa_id", currentCompany.id);
+    try {
+      console.log("Buscando usuários...");
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("empresa_id", currentCompany.id);
 
-    if (error) {
-      console.error("Erro ao carregar usuários:", error);
-      toast.error("Erro ao carregar usuários");
-      return;
-    }
+      if (error) {
+        console.error("Erro ao carregar usuários:", error);
+        toast.error("Erro ao carregar usuários");
+        return;
+      }
 
-    if (data) {
-      const usuariosFormatados: Usuario[] = data.map(usuario => ({
-        id: usuario.id,
-        nome: usuario.nome,
-        email: usuario.email,
-        senha: '', // Senha não deve ser retornada
-        tipo: usuario.tipo as "Administrador" | "Usuário",
-        status: usuario.status as "ativo" | "inativo",
-        vendedor: usuario.vendedor as "sim" | "nao",
-        createdAt: new Date(usuario.created_at),
-        updatedAt: new Date(usuario.updated_at),
-      }));
-      setUsuarios(usuariosFormatados);
+      if (data) {
+        console.log("Usuários carregados com sucesso:", data.length);
+        const usuariosFormatados: Usuario[] = data.map(usuario => ({
+          id: usuario.id,
+          nome: usuario.nome,
+          email: usuario.email,
+          senha: '', // Senha não deve ser retornada
+          tipo: usuario.tipo as "Administrador" | "Usuário",
+          status: usuario.status as "ativo" | "inativo",
+          vendedor: usuario.vendedor as "sim" | "nao",
+          createdAt: new Date(usuario.created_at),
+          updatedAt: new Date(usuario.updated_at),
+        }));
+        setUsuarios(usuariosFormatados);
+      }
+    } catch (err) {
+      console.error("Exceção ao carregar usuários:", err);
+      toast.error("Erro inesperado ao carregar usuários");
     }
   };
 
@@ -92,78 +102,101 @@ export default function UsuariosPage() {
       return;
     }
 
-    if (editingUsuario) {
-      // Update existing usuario
-      const { error } = await supabase
-        .from("usuarios")
-        .update({
-          nome: data.nome,
-          email: data.email,
-          tipo: data.tipo,
-          status: data.status,
-          vendedor: data.vendedor,
-        })
-        .eq("id", editingUsuario.id)
-        .eq("empresa_id", currentCompany.id);
-
-      if (error) {
-        console.error("Erro ao atualizar usuário:", error);
-        toast.error("Erro ao atualizar usuário");
-        return;
-      }
-
-      // Forçar recarregamento dos dados
-      setRefreshKey(prev => prev + 1);
-      toast.success("Usuário atualizado com sucesso!");
-    } else {
-      // Create new usuario
-      const { data: newUsuario, error } = await supabase
-        .from("usuarios")
-        .insert([
-          {
-            empresa_id: currentCompany.id,
+    try {
+      setIsLoading(true);
+      
+      if (editingUsuario) {
+        // Update existing usuario
+        console.log("Atualizando usuário:", data);
+        const { error } = await supabase
+          .from("usuarios")
+          .update({
             nome: data.nome,
             email: data.email,
             tipo: data.tipo,
             status: data.status,
             vendedor: data.vendedor,
-            id: data.id, // Certifique-se de que o ID seja gerado corretamente
-          },
-        ])
-        .select()
-        .single();
+          })
+          .eq("id", editingUsuario.id)
+          .eq("empresa_id", currentCompany.id);
 
-      if (error) {
-        console.error("Erro ao criar usuário:", error);
-        toast.error("Erro ao criar usuário");
-        return;
+        if (error) {
+          console.error("Erro ao atualizar usuário:", error);
+          toast.error("Erro ao atualizar usuário");
+          return;
+        }
+
+        console.log("Usuário atualizado com sucesso!");
+        // Forçar recarregamento dos dados
+        setRefreshKey(prev => prev + 1);
+        toast.success("Usuário atualizado com sucesso!");
+      } else {
+        // Create new usuario
+        console.log("Criando novo usuário:", data);
+        const { data: newUsuario, error } = await supabase
+          .from("usuarios")
+          .insert([
+            {
+              empresa_id: currentCompany.id,
+              nome: data.nome,
+              email: data.email,
+              tipo: data.tipo,
+              status: data.status,
+              vendedor: data.vendedor,
+              id: data.id, // Certifique-se de que o ID seja gerado corretamente
+            },
+          ])
+          .select();
+
+        if (error) {
+          console.error("Erro ao criar usuário:", error);
+          toast.error("Erro ao criar usuário");
+          return;
+        }
+
+        console.log("Usuário criado com sucesso:", newUsuario);
+        // Forçar recarregamento dos dados
+        setRefreshKey(prev => prev + 1);
+        toast.success("Usuário criado com sucesso!");
       }
-
-      // Forçar recarregamento dos dados
-      setRefreshKey(prev => prev + 1);
-      toast.success("Usuário criado com sucesso!");
+    } catch (err) {
+      console.error("Exceção durante operação de usuário:", err);
+      toast.error("Erro inesperado ao processar usuário");
+    } finally {
+      setIsLoading(false);
+      handleCloseDialog();
     }
-    handleCloseDialog();
   };
 
   const handleDelete = async (id: string) => {
     if (!currentCompany) return;
 
-    const { error } = await supabase
-      .from("usuarios")
-      .delete()
-      .eq("id", id)
-      .eq("empresa_id", currentCompany.id);
+    try {
+      setIsLoading(true);
+      console.log("Excluindo usuário:", id);
+      
+      const { error } = await supabase
+        .from("usuarios")
+        .delete()
+        .eq("id", id)
+        .eq("empresa_id", currentCompany.id);
 
-    if (error) {
-      console.error("Erro ao excluir usuário:", error);
-      toast.error("Erro ao excluir usuário");
-      return;
+      if (error) {
+        console.error("Erro ao excluir usuário:", error);
+        toast.error("Erro ao excluir usuário");
+        return;
+      }
+
+      console.log("Usuário excluído com sucesso!");
+      // Forçar recarregamento dos dados
+      setRefreshKey(prev => prev + 1);
+      toast.success("Usuário excluído com sucesso!");
+    } catch (err) {
+      console.error("Exceção ao excluir usuário:", err);
+      toast.error("Erro inesperado ao excluir usuário");
+    } finally {
+      setIsLoading(false);
     }
-
-    // Forçar recarregamento dos dados
-    setRefreshKey(prev => prev + 1);
-    toast.success("Usuário excluído com sucesso!");
   };
 
   // Atualizar a função filterUsuarios para usar o tipo correto
@@ -254,6 +287,7 @@ export default function UsuariosPage() {
             usuarios={filteredUsuarios}
             onEdit={handleOpenDialog}
             onDelete={handleDelete}
+            isLoading={isLoading}
           />
         </CardContent>
       </Card>
