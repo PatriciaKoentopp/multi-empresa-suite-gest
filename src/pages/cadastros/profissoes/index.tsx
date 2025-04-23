@@ -6,53 +6,63 @@ import { Input } from "@/components/ui/input";
 import { PlusCircle, Search, Filter } from "lucide-react";
 import { ProfissoesForm } from "@/components/profissoes/profissoes-form";
 import { ProfissoesTable } from "@/components/profissoes/profissoes-table";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-// Mock data - in a real app, this would come from a database
-const initialProfissoes: Profissao[] = [
-  {
-    id: "1",
-    nome: "Desenvolvedor",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    nome: "Designer",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
 
 export default function ProfissoesPage() {
-  const [profissoes, setProfissoes] = useState<Profissao[]>(initialProfissoes);
+  const [profissoes, setProfissoes] = useState<Profissao[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProfissao, setEditingProfissao] = useState<Profissao | undefined>(
-    undefined
-  );
-  
-  // Filtros
+  const [editingProfissao, setEditingProfissao] = useState<Profissao | undefined>(undefined);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingProfissaoId, setDeletingProfissaoId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
+  const { currentCompany } = useCompany();
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Carregar profissões do Supabase
+  useState(() => {
+    const fetchProfissoes = async () => {
+      if (!currentCompany) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("profissoes")
+          .select("*")
+          .eq("empresa_id", currentCompany.id)
+          .order("nome");
+
+        if (error) {
+          console.error("Erro ao carregar profissões:", error);
+          toast.error("Erro ao carregar profissões");
+          return;
+        }
+
+        if (data) {
+          const profissoesFormatadas: Profissao[] = data.map(profissao => ({
+            id: profissao.id,
+            nome: profissao.nome,
+            status: profissao.status as "ativo" | "inativo",
+            createdAt: new Date(profissao.created_at),
+            updatedAt: new Date(profissao.updated_at)
+          }));
+          setProfissoes(profissoesFormatadas);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar profissões:", error);
+        toast.error("Erro ao carregar profissões");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfissoes();
+  }, [currentCompany]);
 
   const handleOpenDialog = (profissao?: Profissao) => {
     setEditingProfissao(profissao);
@@ -64,48 +74,118 @@ export default function ProfissoesPage() {
     setIsDialogOpen(false);
   };
 
-  const handleSubmit = (data: { nome: string; status: "ativo" | "inativo" }) => {
-    if (editingProfissao) {
-      // Update existing profissao
-      setProfissoes((prev) =>
-        prev.map((p) =>
-          p.id === editingProfissao.id
-            ? {
-                ...p,
-                nome: data.nome,
-                status: data.status,
-                updatedAt: new Date(),
-              }
-            : p
-        )
-      );
-      toast.success("Profissão atualizada com sucesso!");
-    } else {
-      // Create new profissao
-      const newProfissao: Profissao = {
-        id: `${Date.now()}`,
-        nome: data.nome,
-        status: data.status,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setProfissoes((prev) => [...prev, newProfissao]);
-      toast.success("Profissão criada com sucesso!");
+  const handleSubmit = async (data: { nome: string; status: "ativo" | "inativo" }) => {
+    if (!currentCompany) {
+      toast.error("Nenhuma empresa selecionada");
+      return;
     }
-    handleCloseDialog();
+
+    try {
+      if (editingProfissao) {
+        // Atualizar profissão existente
+        const { error } = await supabase
+          .from("profissoes")
+          .update({
+            nome: data.nome,
+            status: data.status,
+          })
+          .eq("id", editingProfissao.id)
+          .eq("empresa_id", currentCompany.id);
+
+        if (error) {
+          console.error("Erro ao atualizar profissão:", error);
+          toast.error("Erro ao atualizar profissão");
+          return;
+        }
+
+        setProfissoes(prev =>
+          prev.map(p =>
+            p.id === editingProfissao.id
+              ? {
+                  ...p,
+                  nome: data.nome,
+                  status: data.status,
+                  updatedAt: new Date(),
+                }
+              : p
+          )
+        );
+        toast.success("Profissão atualizada com sucesso!");
+      } else {
+        // Criar nova profissão
+        const { data: novaProfissao, error } = await supabase
+          .from("profissoes")
+          .insert([
+            {
+              empresa_id: currentCompany.id,
+              nome: data.nome,
+              status: data.status,
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Erro ao criar profissão:", error);
+          toast.error("Erro ao criar profissão");
+          return;
+        }
+
+        if (novaProfissao) {
+          const profissaoFormatada: Profissao = {
+            id: novaProfissao.id,
+            nome: novaProfissao.nome,
+            status: novaProfissao.status as "ativo" | "inativo",
+            createdAt: new Date(novaProfissao.created_at),
+            updatedAt: new Date(novaProfissao.updated_at)
+          };
+          setProfissoes(prev => [...prev, profissaoFormatada]);
+          toast.success("Profissão criada com sucesso!");
+        }
+      }
+      handleCloseDialog();
+    } catch (error) {
+      console.error("Erro na operação:", error);
+      toast.error("Ocorreu um erro ao processar a solicitação");
+    }
   };
 
   const handleDelete = (id: string) => {
-    setProfissoes((prev) => prev.filter((profissao) => profissao.id !== id));
-    toast.success("Profissão excluída com sucesso!");
+    setDeletingProfissaoId(id);
+    setIsDeleteDialogOpen(true);
   };
 
-  // Aplicar filtros às profissoes
+  const confirmDelete = async () => {
+    if (!deletingProfissaoId || !currentCompany) return;
+
+    try {
+      const { error } = await supabase
+        .from("profissoes")
+        .delete()
+        .eq("id", deletingProfissaoId)
+        .eq("empresa_id", currentCompany.id);
+
+      if (error) {
+        console.error("Erro ao excluir profissão:", error);
+        toast.error("Erro ao excluir profissão");
+        return;
+      }
+
+      setProfissoes(prev => prev.filter(profissao => profissao.id !== deletingProfissaoId));
+      toast.success("Profissão excluída com sucesso!");
+      setIsDeleteDialogOpen(false);
+      setDeletingProfissaoId(null);
+    } catch (error) {
+      console.error("Erro na exclusão:", error);
+      toast.error("Ocorreu um erro ao excluir a profissão");
+    }
+  };
+
+  // Filtrar profissões com base no termo de busca e status
   const filteredProfissoes = useMemo(() => {
     return profissoes.filter((profissao) => {
       const matchesSearch = profissao.nome.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "todos" || profissao.status === statusFilter;
-      
       return matchesSearch && matchesStatus;
     });
   }, [profissoes, searchTerm, statusFilter]);
@@ -114,10 +194,7 @@ export default function ProfissoesPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Profissões</h1>
-        <Button 
-          onClick={() => handleOpenDialog()}
-          variant="blue"
-        >
+        <Button onClick={() => handleOpenDialog()} variant="blue">
           <PlusCircle className="mr-2 h-4 w-4" />
           Nova Profissão
         </Button>
@@ -161,7 +238,15 @@ export default function ProfissoesPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {/* Dialog para criação/edição de profissão */}
+      <Dialog 
+        open={isDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDialog();
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
@@ -169,6 +254,11 @@ export default function ProfissoesPage() {
                 ? "Editar Profissão"
                 : "Nova Profissão"}
             </DialogTitle>
+            <DialogDescription>
+              {editingProfissao 
+                ? "Edite as informações da profissão."
+                : "Preencha as informações para criar uma nova profissão."}
+            </DialogDescription>
           </DialogHeader>
           <ProfissoesForm
             profissao={editingProfissao}
@@ -177,6 +267,32 @@ export default function ProfissoesPage() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog 
+        open={isDeleteDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsDeleteDialogOpen(false);
+            setDeletingProfissaoId(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta profissão? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 text-white hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
