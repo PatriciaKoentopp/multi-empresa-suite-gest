@@ -40,7 +40,7 @@ export default function FavorecidosPage() {
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
-  const [statusFilter, setStatusFilter] = <"todos" | "ativo" | "inativo">("todos");
+  const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
   const [grupoFilter, setGrupoFilter] = useState<string>("todos");
 
   // Carregar grupos do Supabase
