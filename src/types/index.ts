@@ -69,6 +69,7 @@ export interface Origem {
   id: string;
   nome: string;
   status: "ativo" | "inativo";
+  empresa_id: string; // Adicionado o campo empresa_id
   createdAt: Date;
   updatedAt: Date;
 }

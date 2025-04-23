@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Origem } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,56 +24,61 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Mock data - in a real app, this would come from a database
-const initialOrigens: Origem[] = [
-  {
-    id: "1",
-    nome: "Site",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    nome: "Indicação",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    nome: "LinkedIn",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "4",
-    nome: "Evento",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "5",
-    nome: "Ligação",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
 
 export default function OrigensPage() {
-  const [origens, setOrigens] = useState<Origem[]>(initialOrigens);
+  const [origens, setOrigens] = useState<Origem[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingOrigem, setEditingOrigem] = useState<Origem | undefined>(
-    undefined
-  );
+  const [editingOrigem, setEditingOrigem] = useState<Origem | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
+
+  const { currentCompany } = useCompany();
+
+  // Função para buscar as origens
+  const fetchOrigens = async () => {
+    if (!currentCompany) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("origens")
+        .select("*")
+        .eq("empresa_id", currentCompany.id);
+
+      if (error) {
+        console.error("Erro ao carregar origens:", error);
+        toast.error("Erro ao carregar origens");
+        return;
+      }
+
+      if (data) {
+        const origensFormatadas: Origem[] = data.map(origem => ({
+          id: origem.id,
+          nome: origem.nome,
+          status: origem.status as "ativo" | "inativo",
+          empresa_id: origem.empresa_id,
+          createdAt: new Date(origem.created_at),
+          updatedAt: new Date(origem.updated_at),
+        }));
+        setOrigens(origensFormatadas);
+      }
+    } catch (err) {
+      console.error("Exceção ao carregar origens:", err);
+      toast.error("Erro inesperado ao carregar origens");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Efeito para carregar os dados quando a página é carregada
+  useEffect(() => {
+    fetchOrigens();
+  }, [currentCompany]);
 
   const handleOpenDialog = (origem?: Origem) => {
     setEditingOrigem(origem);
@@ -85,40 +90,97 @@ export default function OrigensPage() {
     setIsDialogOpen(false);
   };
 
-  const handleSubmit = (data: { nome: string; status: "ativo" | "inativo" }) => {
-    if (editingOrigem) {
-      // Update existing origem
-      setOrigens((prev) =>
-        prev.map((p) =>
-          p.id === editingOrigem.id
-            ? {
-                ...p,
-                nome: data.nome,
-                status: data.status,
-                updatedAt: new Date(),
-              }
-            : p
-        )
-      );
-      toast.success("Origem atualizada com sucesso!");
-    } else {
-      // Create new origem
-      const newOrigem: Origem = {
-        id: `${Date.now()}`,
-        nome: data.nome,
-        status: data.status,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setOrigens((prev) => [...prev, newOrigem]);
-      toast.success("Origem criada com sucesso!");
+  const handleSubmit = async (data: { nome: string; status: "ativo" | "inativo" }) => {
+    if (!currentCompany) {
+      toast.error("Nenhuma empresa selecionada");
+      return;
     }
-    handleCloseDialog();
+
+    try {
+      setIsLoading(true);
+      
+      if (editingOrigem) {
+        // Update existing origem
+        const { error } = await supabase
+          .from("origens")
+          .update({
+            nome: data.nome,
+            status: data.status,
+          })
+          .eq("id", editingOrigem.id)
+          .eq("empresa_id", currentCompany.id);
+
+        if (error) {
+          console.error("Erro ao atualizar origem:", error);
+          toast.error("Erro ao atualizar origem");
+          return;
+        }
+
+        toast.success("Origem atualizada com sucesso!");
+      } else {
+        // Create new origem
+        const { error } = await supabase
+          .from("origens")
+          .insert([
+            {
+              empresa_id: currentCompany.id,
+              nome: data.nome,
+              status: data.status,
+            },
+          ]);
+
+        if (error) {
+          console.error("Erro ao criar origem:", error);
+          toast.error("Erro ao criar origem");
+          return;
+        }
+
+        toast.success("Origem criada com sucesso!");
+      }
+      
+      // Fecha o modal
+      handleCloseDialog();
+      
+      // Atualiza os dados
+      fetchOrigens();
+      
+    } catch (err) {
+      console.error("Exceção durante operação de origem:", err);
+      toast.error("Erro inesperado ao processar origem");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setOrigens((prev) => prev.filter((origem) => origem.id !== id));
-    toast.success("Origem excluída com sucesso!");
+  const handleDelete = async (id: string) => {
+    if (!currentCompany) return;
+
+    try {
+      setIsLoading(true);
+      
+      const { error } = await supabase
+        .from("origens")
+        .delete()
+        .eq("id", id)
+        .eq("empresa_id", currentCompany.id);
+
+      if (error) {
+        console.error("Erro ao excluir origem:", error);
+        toast.error("Erro ao excluir origem");
+        return;
+      }
+
+      toast.success("Origem excluída com sucesso!");
+      
+      // Atualiza os dados
+      fetchOrigens();
+      
+    } catch (err) {
+      console.error("Exceção ao excluir origem:", err);
+      toast.error("Erro inesperado ao excluir origem");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Aplicar filtros às origens
