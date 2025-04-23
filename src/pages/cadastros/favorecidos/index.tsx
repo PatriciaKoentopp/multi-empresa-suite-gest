@@ -25,142 +25,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Mock data - em uma aplicação real, isso viria do banco de dados
-const initialGrupos: GrupoFavorecido[] = [
-  {
-    id: "1",
-    nome: "Fornecedores Principais",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    nome: "Clientes VIP",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    nome: "Fornecedores Secundários",
-    status: "inativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
-
-// Mock data para profissões
-const initialProfissoes: Profissao[] = [
-  {
-    id: "1",
-    nome: "Desenvolvedor",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    nome: "Designer",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    nome: "Contador",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "4",
-    nome: "Advogado",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
-
-// Mock data para favorecidos
-const initialFavorecidos: Favorecido[] = [
-  {
-    id: "1",
-    tipo: "fornecedor",
-    nome: "Empresa ABC Ltda",
-    documento: "12.345.678/0001-90",
-    tipoDocumento: "cnpj",
-    grupoId: "1",
-    nomeFantasia: "ABC Distribuidora",
-    email: "contato@abc.com",
-    telefone: "(11) 3333-4444",
-    endereco: {
-      cep: "01234-567",
-      logradouro: "Av. Paulista",
-      numero: "1000",
-      complemento: "Sala 123",
-      bairro: "Bela Vista",
-      cidade: "São Paulo",
-      estado: "SP",
-      pais: "Brasil"
-    },
-    dataAniversario: new Date("2000-01-15"),
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    tipo: "cliente",
-    nome: "João da Silva",
-    documento: "123.456.789-00",
-    tipoDocumento: "cpf",
-    grupoId: "2",
-    email: "joao@email.com",
-    telefone: "(11) 99999-8888",
-    endereco: {
-      cep: "04567-890",
-      logradouro: "Rua das Flores",
-      numero: "50",
-      bairro: "Jardim Europa",
-      cidade: "São Paulo",
-      estado: "SP",
-      pais: "Brasil"
-    },
-    dataAniversario: new Date("1985-06-20"),
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    tipo: "publico",
-    nome: "Prefeitura Municipal de São Paulo",
-    documento: "00.000.000/0001-00",
-    tipoDocumento: "cnpj",
-    grupoId: "3",
-    nomeFantasia: "PMSP",
-    email: "contato@prefeitura.sp.gov.br",
-    telefone: "(11) 2222-3333",
-    endereco: {
-      cep: "01002-020",
-      logradouro: "Viaduto do Chá",
-      numero: "15",
-      bairro: "Centro",
-      cidade: "São Paulo",
-      estado: "SP",
-      pais: "Brasil"
-    },
-    status: "inativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
-
 export default function FavorecidosPage() {
-  const [favorecidos, setFavorecidos] = useState<Favorecido[]>(initialFavorecidos);
-  const [grupos] = useState<GrupoFavorecido[]>(initialGrupos);
-  const [profissoes] = useState<Profissao[]>(initialProfissoes);
+  const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
+  const [grupos] = useState<GrupoFavorecido[]>([]);
+  const [profissoes] = useState<Profissao[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFavorecido, setEditingFavorecido] = useState<Favorecido | undefined>(undefined);
   const [viewingFavorecido, setViewingFavorecido] = useState<Favorecido | undefined>(undefined);
@@ -279,8 +147,8 @@ export default function FavorecidosPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                   <SelectItem value="todos">Todos os tipos</SelectItem>
-                  <SelectItem value="cliente">Cliente</SelectItem>
-                  <SelectItem value="fornecedor">Fornecedor</SelectItem>
+                  <SelectItem value="cliente">Física</SelectItem>
+                  <SelectItem value="fornecedor">Jurídica</SelectItem>
                   <SelectItem value="funcionario">Funcionário</SelectItem>
                   <SelectItem value="publico">Órgão Público</SelectItem>
                 </SelectContent>

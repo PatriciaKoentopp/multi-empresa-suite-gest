@@ -136,4 +136,3 @@ export function FavorecidoEndereco({ form, readOnly }: FavorecidoEnderecoProps) 
     </div>
   );
 }
-

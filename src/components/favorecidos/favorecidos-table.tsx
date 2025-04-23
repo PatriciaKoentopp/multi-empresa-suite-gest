@@ -54,8 +54,8 @@ export function FavorecidosTable({
   // Função para formatar o tipo para exibição
   const formatTipo = (tipo: string) => {
     const tipos = {
-      cliente: "Cliente",
-      fornecedor: "Fornecedor",
+      cliente: "Física",
+      fornecedor: "Jurídica",
       funcionario: "Funcionário",
       publico: "Órgão Público"
     };

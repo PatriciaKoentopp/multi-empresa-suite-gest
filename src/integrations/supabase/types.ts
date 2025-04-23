@@ -137,6 +137,106 @@ export type Database = {
         }
         Relationships: []
       }
+      favorecidos: {
+        Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
+          created_at: string
+          data_aniversario: string | null
+          documento: string
+          email: string | null
+          empresa_id: string
+          estado: string | null
+          grupo_id: string | null
+          id: string
+          logradouro: string | null
+          nome: string
+          nome_fantasia: string | null
+          numero: string | null
+          pais: string | null
+          profissao_id: string | null
+          status: string
+          telefone: string | null
+          tipo: string
+          tipo_documento: string
+          updated_at: string
+        }
+        Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          created_at?: string
+          data_aniversario?: string | null
+          documento: string
+          email?: string | null
+          empresa_id: string
+          estado?: string | null
+          grupo_id?: string | null
+          id?: string
+          logradouro?: string | null
+          nome: string
+          nome_fantasia?: string | null
+          numero?: string | null
+          pais?: string | null
+          profissao_id?: string | null
+          status?: string
+          telefone?: string | null
+          tipo: string
+          tipo_documento: string
+          updated_at?: string
+        }
+        Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          created_at?: string
+          data_aniversario?: string | null
+          documento?: string
+          email?: string | null
+          empresa_id?: string
+          estado?: string | null
+          grupo_id?: string | null
+          id?: string
+          logradouro?: string | null
+          nome?: string
+          nome_fantasia?: string | null
+          numero?: string | null
+          pais?: string | null
+          profissao_id?: string | null
+          status?: string
+          telefone?: string | null
+          tipo?: string
+          tipo_documento?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorecidos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorecidos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupo_favorecidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorecidos_profissao_id_fkey"
+            columns: ["profissao_id"]
+            isOneToOne: false
+            referencedRelation: "profissoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grupo_favorecidos: {
         Row: {
           created_at: string
