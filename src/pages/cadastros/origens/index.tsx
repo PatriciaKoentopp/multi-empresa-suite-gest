@@ -170,7 +170,9 @@ export default function OrigensPage() {
         return;
       }
 
-      toast.success("Origem excluída com sucesso!");
+      toast.success("Origem excluída com sucesso!", {
+        description: "A origem foi removida permanentemente do sistema."
+      });
       
       // Atualiza os dados
       fetchOrigens();
