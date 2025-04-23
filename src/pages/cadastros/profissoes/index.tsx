@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Profissao } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ export default function ProfissoesPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Carregar profissões do Supabase
-  useState(() => {
+  useEffect(() => {
     const fetchProfissoes = async () => {
       if (!currentCompany) return;
 
@@ -182,13 +182,11 @@ export default function ProfissoesPage() {
   };
 
   // Filtrar profissões com base no termo de busca e status
-  const filteredProfissoes = useMemo(() => {
-    return profissoes.filter((profissao) => {
-      const matchesSearch = profissao.nome.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === "todos" || profissao.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [profissoes, searchTerm, statusFilter]);
+  const filteredProfissoes = profissoes.filter((profissao) => {
+    const matchesSearch = profissao.nome.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "todos" || profissao.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-4">
