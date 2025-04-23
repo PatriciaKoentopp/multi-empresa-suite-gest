@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -344,7 +345,7 @@ export default function ServicosPage() {
                   <TableHead>Nome</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead />
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </thead>
               <TableBody>
