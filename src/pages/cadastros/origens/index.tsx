@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { Origem } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -166,7 +165,9 @@ export default function OrigensPage() {
 
       if (error) {
         console.error("Erro ao excluir origem:", error);
-        toast.error("Erro ao excluir origem");
+        toast.error("Erro ao excluir origem", {
+          description: "Não foi possível remover a origem selecionada."
+        });
         return;
       }
 
@@ -179,7 +180,9 @@ export default function OrigensPage() {
       
     } catch (err) {
       console.error("Exceção ao excluir origem:", err);
-      toast.error("Erro inesperado ao excluir origem");
+      toast.error("Erro inesperado ao excluir origem", {
+        description: "Por favor, tente novamente mais tarde."
+      });
     } finally {
       setIsLoading(false);
     }
