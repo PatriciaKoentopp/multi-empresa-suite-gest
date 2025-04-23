@@ -38,12 +38,13 @@ export default function UsuariosPage() {
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
   const [tipoFilter, setTipoFilter] = useState<"todos" | "Administrador" | "Usuário">("todos");
   const [vendedorFilter, setVendedorFilter] = useState<"todos" | "sim" | "nao">("todos");
+  const [refreshKey, setRefreshKey] = useState(0); // Adicionando estado para forçar recarga
 
   const { currentCompany } = useCompany();
 
   useEffect(() => {
     fetchUsuarios();
-  }, [currentCompany]);
+  }, [currentCompany, refreshKey]); // Adicionando refreshKey como dependência
 
   const fetchUsuarios = async () => {
     if (!currentCompany) return;
@@ -111,21 +112,8 @@ export default function UsuariosPage() {
         return;
       }
 
-      setUsuarios(prev =>
-        prev.map(u =>
-          u.id === editingUsuario.id
-            ? {
-                ...u,
-                nome: data.nome,
-                email: data.email,
-                tipo: data.tipo,
-                status: data.status,
-                vendedor: data.vendedor,
-                updatedAt: new Date(),
-              }
-            : u
-        )
-      );
+      // Forçar recarregamento dos dados
+      setRefreshKey(prev => prev + 1);
       toast.success("Usuário atualizado com sucesso!");
     } else {
       // Create new usuario
@@ -151,21 +139,9 @@ export default function UsuariosPage() {
         return;
       }
 
-      if (newUsuario) {
-        const usuarioFormatado: Usuario = {
-          id: newUsuario.id,
-          nome: newUsuario.nome,
-          email: newUsuario.email,
-          senha: '', // Senha não deve ser retornada
-          tipo: newUsuario.tipo as "Administrador" | "Usuário",
-          status: newUsuario.status as "ativo" | "inativo",
-          vendedor: newUsuario.vendedor as "sim" | "nao",
-          createdAt: new Date(newUsuario.created_at),
-          updatedAt: new Date(newUsuario.updated_at),
-        };
-        setUsuarios(prev => [...prev, usuarioFormatado]);
-        toast.success("Usuário criado com sucesso!");
-      }
+      // Forçar recarregamento dos dados
+      setRefreshKey(prev => prev + 1);
+      toast.success("Usuário criado com sucesso!");
     }
     handleCloseDialog();
   };
@@ -185,7 +161,8 @@ export default function UsuariosPage() {
       return;
     }
 
-    setUsuarios(prev => prev.filter(usuario => usuario.id !== id));
+    // Forçar recarregamento dos dados
+    setRefreshKey(prev => prev + 1);
     toast.success("Usuário excluído com sucesso!");
   };
 
