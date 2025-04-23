@@ -30,7 +30,6 @@ type Servico = {
   id: string;
   nome: string;
   descricao?: string;
-  valor: number;
   status: "ativo" | "inativo";
 };
 
@@ -40,43 +39,36 @@ export default function ServicosPage() {
       id: "1",
       nome: "Consultoria Fiscal",
       descricao: "Apoio especializado em rotinas fiscais mensais.",
-      valor: 700,
       status: "ativo"
     },
     {
       id: "2",
       nome: "Abertura de Empresa",
       descricao: "Todo suporte para abrir CNPJ e regularizar situação fiscal.",
-      valor: 1200,
       status: "ativo"
     },
     {
       id: "3",
       nome: "Encerramento de Empresa",
       descricao: "Processo completo e orientações para encerramento.",
-      valor: 950,
       status: "inativo"
     },
-    // Novos mockados
     {
       id: "4",
       nome: "Auditoria Contábil",
       descricao: "Revisão e auditoria periódica das demonstrações financeiras.",
-      valor: 3500,
       status: "ativo"
     },
     {
       id: "5",
       nome: "BPO Financeiro",
       descricao: "Terceirização completa da rotina financeira.",
-      valor: 2500,
       status: "inativo"
     },
     {
       id: "6",
       nome: "Elaboração de Contrato Social",
       descricao: "Elaboração e atualização de contratos sociais empresariais.",
-      valor: 890,
       status: "ativo"
     }
   ]);
@@ -84,7 +76,6 @@ export default function ServicosPage() {
   const [form, setForm] = useState<Omit<Servico, "id">>({
     nome: "",
     descricao: "",
-    valor: 0,
     status: "ativo"
   });
   const [editId, setEditId] = useState<string | null>(null);
@@ -111,7 +102,7 @@ export default function ServicosPage() {
     const { name, value } = e.target;
     setForm((f) => ({
       ...f,
-      [name]: name === "valor" ? Number(value.replace(",", ".")) : value,
+      [name]: value
     }));
   }
 
@@ -126,7 +117,6 @@ export default function ServicosPage() {
     setForm({
       nome: "",
       descricao: "",
-      valor: 0,
       status: "ativo"
     });
     setEditId(null);
@@ -154,7 +144,6 @@ export default function ServicosPage() {
     setForm({
       nome: servico.nome,
       descricao: servico.descricao ?? "",
-      valor: servico.valor,
       status: servico.status
     });
     setEditId(servico.id);
@@ -262,18 +251,6 @@ export default function ServicosPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1">Valor (R$) *</label>
-                <Input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  name="valor"
-                  required
-                  value={form.valor}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
                 <label className="block text-sm mb-1">Status</label>
                 <Button
                   type="button"
@@ -307,7 +284,6 @@ export default function ServicosPage() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Descrição</TableHead>
-                  <TableHead>Valor (R$)</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead />
                 </TableRow>
@@ -317,9 +293,6 @@ export default function ServicosPage() {
                   <TableRow key={s.id}>
                     <TableCell>{s.nome}</TableCell>
                     <TableCell>{s.descricao}</TableCell>
-                    <TableCell>
-                      {s.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                    </TableCell>
                     <TableCell>
                       {getStatusBadge(s.status)}
                     </TableCell>
