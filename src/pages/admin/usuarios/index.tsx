@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
@@ -40,7 +41,6 @@ export default function UsuariosPage() {
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
   const [tipoFilter, setTipoFilter] = useState<"todos" | "Administrador" | "Usuário">("todos");
   const [vendedorFilter, setVendedorFilter] = useState<"todos" | "sim" | "nao">("todos");
-  const [refreshKey, setRefreshKey] = useState(0); // Estado para forçar recarga
 
   const { currentCompany } = useCompany();
 
@@ -85,10 +85,10 @@ export default function UsuariosPage() {
     }
   };
   
-  // Efeito para carregar os dados quando a página é carregada ou quando refreshKey muda
+  // Efeito para carregar os dados quando a página é carregada
   useEffect(() => {
     fetchUsuarios();
-  }, [currentCompany, refreshKey]);
+  }, [currentCompany]);
 
   const handleOpenDialog = (usuario?: Usuario) => {
     setEditingUsuario(usuario);
@@ -159,12 +159,11 @@ export default function UsuariosPage() {
         toast.success("Usuário criado com sucesso!");
       }
       
-      // Fecha o modal e atualiza os dados
+      // Fecha o modal
       handleCloseDialog();
       
-      // Importante: Atualize o refreshKey após o fechamento do modal
-      // para garantir que a página recarregue os dados
-      setRefreshKey(prev => prev + 1);
+      // Atualiza os dados
+      fetchUsuarios();
       
     } catch (err) {
       console.error("Exceção durante operação de usuário:", err);
@@ -196,8 +195,8 @@ export default function UsuariosPage() {
       console.log("Usuário excluído com sucesso!");
       toast.success("Usuário excluído com sucesso!");
       
-      // Atualiza o refreshKey para forçar o recarregamento dos dados
-      setRefreshKey(prev => prev + 1);
+      // Atualiza os dados
+      fetchUsuarios();
       
     } catch (err) {
       console.error("Exceção ao excluir usuário:", err);
@@ -300,10 +299,14 @@ export default function UsuariosPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={(open) => {
-        if (!open) handleCloseDialog();
-        else setIsDialogOpen(open);
-      }}>
+      <Dialog 
+        open={isDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDialog();
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
@@ -311,6 +314,11 @@ export default function UsuariosPage() {
                 ? "Editar Usuário"
                 : "Novo Usuário"}
             </DialogTitle>
+            <DialogDescription>
+              {editingUsuario
+                ? "Atualize as informações do usuário abaixo."
+                : "Preencha as informações para criar um novo usuário."}
+            </DialogDescription>
           </DialogHeader>
           <UsuariosForm
             usuario={editingUsuario}
