@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { GrupoFavorecido } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -142,15 +143,13 @@ export default function GrupoFavorecidosPage() {
   };
 
   const handleDelete = async (id: string) => {
-    // Mostrar toast de confirmação
-    toast.warning('Tem certeza que deseja excluir este grupo de favorecidos?', {
-      description: 'Esta ação não pode ser desfeita.',
-      cancel: {
-        label: 'Cancelar',
-        onClick: () => {} // Adicionando onClick vazio para cancelamento
-      },
+    const { toast } = await import("sonner");
+    
+    toast({
+      title: "Confirmar exclusão",
+      description: "Tem certeza que deseja excluir este grupo? Esta ação não pode ser desfeita.",
       action: {
-        label: 'Excluir',
+        label: "Excluir",
         onClick: async () => {
           if (!currentCompany) return;
 
@@ -168,8 +167,12 @@ export default function GrupoFavorecidosPage() {
 
           setGrupos(prev => prev.filter(grupo => grupo.id !== id));
           toast.success("Grupo de favorecidos excluído com sucesso!");
-        }
-      }
+        },
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => {},
+      },
     });
   };
 
