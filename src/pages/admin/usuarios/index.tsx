@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState, useEffect } from "react";
+import { Usuario } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Search, Filter, User, EllipsisVertical } from "lucide-react";
+import { PlusCircle, Search, Filter } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -12,135 +13,86 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { format } from "date-fns";
-// Removido import { ptBR } from "date-fns/locale/pt-BR";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { UsuariosForm } from "@/components/usuarios/usuarios-form";
+import { UsuariosTable } from "@/components/usuarios/usuarios-table";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
-import { useCompany } from "@/contexts/company-context"; // Adicionado para pegar empresa logada
-import {
-  AlertDialog,
-  AlertDialogPortal,
-  AlertDialogOverlay,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogFooter,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
-
-// Interface do usuário conforme Supabase
-type Usuario = {
-  id: string;
-  nome: string;
-  email: string;
-  senha?: string; // não será exibida/buscada do supabase
-  tipo: "Administrador" | "Usuário";
-  status: "ativo" | "inativo";
-  vendedor: "sim" | "nao";
-  empresa_id?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  empresa_nome?: string | null;
-};
+import { useCompany } from "@/contexts/company-context";
 
 export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUsuario, setEditingUsuario] = useState<Usuario | undefined>(undefined);
-  const [viewingUsuario, setViewingUsuario] = useState<Usuario | undefined>(undefined);
-  const [usuarioParaExcluir, setUsuarioParaExcluir] = useState<Usuario | null>(null); // novo estado
+  const [editingUsuario, setEditingUsuario] = useState<Usuario | undefined>(
+    undefined
+  );
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
-  const [tipoFilter, setTipoFilter] = useState<"todos" | "Administrador" | "Usuário">("todos");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
+  const [tipoFilter, setTipoFilter] = useState<"todos" | "Administrador" | "Usuário">("todos");
+  const [vendedorFilter, setVendedorFilter] = useState<"todos" | "sim" | "nao">("todos");
 
-  const { currentCompany } = useCompany(); // pega empresa logada
+  const { currentCompany } = useCompany();
 
-  // Buscar usuários do supabase filtrando pela empresa logada
   useEffect(() => {
-    const fetchUsuarios = async () => {
-      // Se não tem empresa selecionada, zera a lista
-      if (!currentCompany?.id) {
-        setUsuarios([]);
-        return;
-      }
-      let { data, error } = await supabase
-        .from("usuarios")
-        .select("*, empresas(nome_fantasia)")
-        .eq("empresa_id", currentCompany.id); // FILTRAR pelo empresa_id
-      if (error) {
-        toast.error("Erro ao buscar usuários: " + error.message);
-        setUsuarios([]);
-        return;
-      }
-      const mapped = (data || []).map((row: any) => ({
-        id: row.id,
-        nome: row.nome,
-        email: row.email,
-        tipo: row.tipo,
-        status: row.status,
-        vendedor: row.vendedor,
-        empresa_id: row.empresa_id,
-        createdAt: row.created_at ? new Date(row.created_at) : new Date(),
-        updatedAt: row.updated_at ? new Date(row.updated_at) : new Date(),
-        empresa_nome: row.empresas?.nome_fantasia || null,
-      }));
-      setUsuarios(mapped);
-    };
     fetchUsuarios();
-  }, [currentCompany?.id]); // Recarregar quando trocar de empresa
+  }, [currentCompany]);
 
-  // Abrir dialog novo/editar/visualizar
-  const handleOpenDialog = (usuario?: Usuario, isViewing = false) => {
-    if (isViewing) setViewingUsuario(usuario);
-    else setEditingUsuario(usuario);
+  const fetchUsuarios = async () => {
+    if (!currentCompany) return;
+
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("*")
+      .eq("empresa_id", currentCompany.id);
+
+    if (error) {
+      console.error("Erro ao carregar usuários:", error);
+      toast.error("Erro ao carregar usuários");
+      return;
+    }
+
+    if (data) {
+      const usuariosFormatados: Usuario[] = data.map(usuario => ({
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        senha: '', // Senha não deve ser retornada
+        tipo: usuario.tipo as "Administrador" | "Usuário",
+        status: usuario.status as "ativo" | "inativo",
+        vendedor: usuario.vendedor as "sim" | "nao",
+        createdAt: new Date(usuario.created_at),
+        updatedAt: new Date(usuario.updated_at),
+      }));
+      setUsuarios(usuariosFormatados);
+    }
+  };
+
+  const handleOpenDialog = (usuario?: Usuario) => {
+    setEditingUsuario(usuario);
     setIsDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setEditingUsuario(undefined);
-    setViewingUsuario(undefined);
     setIsDialogOpen(false);
   };
 
-  // Filtros aplicados na tabela
-  const filteredUsuarios = useMemo(() => {
-    return usuarios.filter((user) => {
-      const matchesSearch =
-        user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesTipo = tipoFilter === "todos" || user.tipo === tipoFilter;
-      const matchesStatus = statusFilter === "todos" || user.status === statusFilter;
-      return matchesSearch && matchesTipo && matchesStatus;
-    });
-  }, [usuarios, searchTerm, tipoFilter, statusFilter]);
+  const handleSubmit = async (data: Usuario) => {
+    if (!currentCompany) {
+      toast.error("Nenhuma empresa selecionada");
+      return;
+    }
 
-  // Salvar/criar usuário via edge function
-  const handleSubmit = async (data: Partial<Usuario>) => {
     if (editingUsuario) {
-      // Edição
+      // Update existing usuario
       const { error } = await supabase
         .from("usuarios")
         .update({
@@ -150,133 +102,151 @@ export default function UsuariosPage() {
           status: data.status,
           vendedor: data.vendedor,
         })
-        .eq("id", editingUsuario.id);
+        .eq("id", editingUsuario.id)
+        .eq("empresa_id", currentCompany.id);
+
       if (error) {
-        toast.error("Erro ao atualizar usuário: " + error.message);
+        console.error("Erro ao atualizar usuário:", error);
+        toast.error("Erro ao atualizar usuário");
         return;
       }
-      toast.success("Usuário atualizado com sucesso!");
-      // Atualizar na tela
-      setUsuarios((prev) =>
-        prev.map((u) =>
+
+      setUsuarios(prev =>
+        prev.map(u =>
           u.id === editingUsuario.id
-            ? { ...u, ...data, updatedAt: new Date() }
+            ? {
+                ...u,
+                nome: data.nome,
+                email: data.email,
+                tipo: data.tipo,
+                status: data.status,
+                vendedor: data.vendedor,
+                updatedAt: new Date(),
+              }
             : u
         )
       );
+      toast.success("Usuário atualizado com sucesso!");
     } else {
-      // NOVO: Criação via edge function
-      try {
-        // Chama edge function para criar usuário de forma segura
-        const senhaTemporaria = "123456";
-        const res = await fetch("/functions/v1/criar-usuario-auth", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: data.email,
+      // Create new usuario
+      const { data: newUsuario, error } = await supabase
+        .from("usuarios")
+        .insert([
+          {
+            empresa_id: currentCompany.id,
             nome: data.nome,
-            senha: senhaTemporaria,
+            email: data.email,
             tipo: data.tipo,
             status: data.status,
             vendedor: data.vendedor,
-            empresa_id: currentCompany?.id ?? null,
-          }),
-        });
-
-        const resultado = await res.json();
-        if (!res.ok) {
-          if (resultado?.error?.toLowerCase?.().includes("already")) {
-            toast.error("E-mail já cadastrado no sistema.");
-          } else {
-            toast.error(`Erro ao cadastrar usuário: ${resultado?.error || "Erro desconhecido"}`);
-          }
-          return;
-        }
-
-        const novoUsuario = resultado.usuario;
-        if (!novoUsuario) {
-          toast.error("Usuário criado no Auth, mas não foi possível obter dados para listar.");
-          return;
-        }
-
-        toast.success("Usuário criado com sucesso! O novo usuário deve alterar sua senha no primeiro login. Senha temporária: 123456");
-        setUsuarios((prev) => [
-          ...prev,
-          {
-            ...novoUsuario,
-            createdAt: novoUsuario?.created_at ? new Date(novoUsuario.created_at) : new Date(),
-            updatedAt: novoUsuario?.updated_at ? new Date(novoUsuario.updated_at) : new Date(),
-            empresa_nome: novoUsuario?.empresas?.nome_fantasia || null,
+            id: data.id, // Certifique-se de que o ID seja gerado corretamente
           },
-        ]);
-        handleCloseDialog();
-      } catch (err: any) {
-        toast.error("Erro inesperado ao criar usuário.");
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Erro ao criar usuário:", error);
+        toast.error("Erro ao criar usuário");
+        return;
+      }
+
+      if (newUsuario) {
+        const usuarioFormatado: Usuario = {
+          id: newUsuario.id,
+          nome: newUsuario.nome,
+          email: newUsuario.email,
+          senha: '', // Senha não deve ser retornada
+          tipo: newUsuario.tipo as "Administrador" | "Usuário",
+          status: newUsuario.status as "ativo" | "inativo",
+          vendedor: newUsuario.vendedor as "sim" | "nao",
+          createdAt: new Date(newUsuario.created_at),
+          updatedAt: new Date(newUsuario.updated_at),
+        };
+        setUsuarios(prev => [...prev, usuarioFormatado]);
+        toast.success("Usuário criado com sucesso!");
       }
     }
-    if (editingUsuario) {
-      handleCloseDialog();
-    }
+    handleCloseDialog();
   };
 
-  // Excluir usuário no Supabase
-  const confirmarExcluirUsuario = async () => {
-    if (!usuarioParaExcluir) return;
+  const handleDelete = async (id: string) => {
+    if (!currentCompany) return;
 
     const { error } = await supabase
       .from("usuarios")
       .delete()
-      .eq("id", usuarioParaExcluir.id);
+      .eq("id", id)
+      .eq("empresa_id", currentCompany.id);
+
     if (error) {
-      toast.error("Erro ao excluir usuário: " + error.message);
+      console.error("Erro ao excluir usuário:", error);
+      toast.error("Erro ao excluir usuário");
       return;
     }
-    setUsuarios((prev) => prev.filter((u) => u.id !== usuarioParaExcluir.id));
+
+    setUsuarios(prev => prev.filter(usuario => usuario.id !== id));
     toast.success("Usuário excluído com sucesso!");
-    setUsuarioParaExcluir(null);
   };
+
+  // Atualizar a função filterUsuarios para usar o tipo correto
+  const filterUsuarios = (usuarios: Usuario[]): Usuario[] => {
+    return usuarios.filter(usuario => {
+      const matchesSearch =
+        usuario.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        usuario.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "todos" || usuario.status === statusFilter;
+      const matchesTipo = tipoFilter === "todos" || usuario.tipo === tipoFilter;
+      const matchesVendedor = vendedorFilter === "todos" || usuario.vendedor === vendedorFilter;
+
+      return matchesSearch && matchesStatus && matchesTipo && matchesVendedor;
+    });
+  };
+
+  const filteredUsuarios = filterUsuarios(usuarios);
 
   return (
     <div className="space-y-4">
-      {/* Cabeçalho padrão Favoritos */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <User className="w-6 h-6 text-blue-500" />
-            Usuários
-          </h1>
-        </div>
-        <Button
-          onClick={() => handleOpenDialog()}
-          variant="blue"
-          className="flex items-center gap-2"
-        >
+        <h1 className="text-2xl font-bold">Usuários</h1>
+        <Button onClick={() => handleOpenDialog()} variant="blue">
           <PlusCircle className="mr-2 h-4 w-4" />
           Novo Usuário
         </Button>
       </div>
 
-      {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nome ou e-mail..."
+                placeholder="Buscar por nome ou email..."
                 className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <div className="flex w-full gap-2 sm:w-auto">
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => setStatusFilter(value as "todos" | "ativo" | "inativo")}
+              >
+                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="ativo" className="text-blue-600">Ativo</SelectItem>
+                  <SelectItem value="inativo" className="text-red-600">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
               <Select
                 value={tipoFilter}
-                onValueChange={(value) => setTipoFilter(value as any)}
+                onValueChange={(value) => setTipoFilter(value as "todos" | "Administrador" | "Usuário")}
               >
-                <SelectTrigger className="w-[150px] bg-white dark:bg-gray-900">
+                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
                   <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
@@ -287,338 +257,46 @@ export default function UsuariosPage() {
                 </SelectContent>
               </Select>
               <Select
-                value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value as any)}
+                value={vendedorFilter}
+                onValueChange={(value) => setVendedorFilter(value as "todos" | "sim" | "nao")}
               >
-                <SelectTrigger className="w-[150px] bg-white dark:bg-gray-900">
+                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
                   <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder="Vendedor" />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                   <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="ativo" className="text-blue-600">Ativo</SelectItem>
-                  <SelectItem value="inativo" className="text-red-600">Inativo</SelectItem>
+                  <SelectItem value="sim">Sim</SelectItem>
+                  <SelectItem value="nao">Não</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Tabela de usuários */}
-          <div className="border rounded-md bg-white">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Status</TableHead>
-                  {/* Removido TableHead Empresa */}
-                  <TableHead className="w-[120px]">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsuarios.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                      Nenhum usuário encontrado
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredUsuarios.map((usuario) => (
-                    <TableRow key={usuario.id}>
-                      <TableCell>
-                        <span>{usuario.nome}</span>
-                      </TableCell>
-                      <TableCell>{usuario.email}</TableCell>
-                      <TableCell>
-                        {usuario.tipo}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                            usuario.status === "ativo"
-                              ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20"
-                              : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
-                          }`}
-                        >
-                          {usuario.status === "ativo" ? "Ativo" : "Inativo"}
-                        </span>
-                      </TableCell>
-                      {/* Removido TableCell Empresa */}
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <EllipsisVertical className="w-5 h-5 text-muted-foreground" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent 
-                            align="end" 
-                            className="bg-white border border-gray-200 shadow-lg z-50"
-                            style={{ backgroundColor: "white", opacity: 1 }}
-                          >
-                            <DropdownMenuItem
-                              onClick={() => handleOpenDialog(usuario)}
-                              className="text-blue-500 hover:bg-blue-50 hover:bg-opacity-70"
-                            >
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => setUsuarioParaExcluir(usuario)}
-                              className="text-red-500 hover:bg-red-50 hover:bg-opacity-70 flex items-center gap-2"
-                            >
-                              <span>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="inline me-1" width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 6H5H21" /><path d="M19.5 6L18.302 19.13A2 2 0 0 1 16.308 21H7.692A2 2 0 0 1 5.698 19.13L4.5 6M9.5 10V16M14.5 10V16M10 6V4A2 2 0 0 1 12 2A2 2 0 0 1 14 4V6" /></svg>
-                              </span>
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <UsuariosTable
+            usuarios={filteredUsuarios}
+            onEdit={handleOpenDialog}
+            onDelete={handleDelete}
+          />
         </CardContent>
       </Card>
 
-      {/* Dialog de cadastro/edição/visualização */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {viewingUsuario
-                ? "Visualizar Usuário"
-                : editingUsuario
+              {editingUsuario
                 ? "Editar Usuário"
                 : "Novo Usuário"}
             </DialogTitle>
           </DialogHeader>
-          <UsuarioForm
-            usuario={viewingUsuario || editingUsuario}
-            readOnly={!!viewingUsuario}
+          <UsuariosForm
+            usuario={editingUsuario}
             onSubmit={handleSubmit}
             onCancel={handleCloseDialog}
-            empresaIdAtual={currentCompany?.id}
           />
         </DialogContent>
       </Dialog>
-
-      {/* AlertDialog de Confirmação de Exclusão */}
-      <AlertDialog open={!!usuarioParaExcluir} onOpenChange={(open) => { if (!open) setUsuarioParaExcluir(null) }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Confirmar exclusão
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir o usuário <b>{usuarioParaExcluir?.nome}</b>? Esta ação não poderá ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => setUsuarioParaExcluir(null)}
-            >
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 text-white hover:bg-red-700 flex items-center gap-2"
-              onClick={confirmarExcluirUsuario}
-            >
-              <span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="inline" width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 6H5H21" /><path d="M19.5 6L18.302 19.13A2 2 0 0 1 16.308 21H7.692A2 2 0 0 1 5.698 19.13L4.5 6M9.5 10V16M14.5 10V16M10 6V4A2 2 0 0 1 12 2A2 2 0 0 1 14 4V6" /></svg>
-              </span>
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
-  );
-}
-
-// ======= Componente do formulário atualizado sem campo empresa =========
-type UsuarioFormProps = {
-  usuario?: Partial<Usuario>;
-  readOnly?: boolean;
-  onSubmit: (usuario: Partial<Usuario>) => void;
-  onCancel: () => void;
-  empresaIdAtual?: string | null;
-};
-
-function UsuarioForm({ usuario, readOnly, onSubmit, onCancel }: UsuarioFormProps) {
-  const [form, setForm] = useState<Partial<Usuario> & { confirmarSenha?: string }>({
-    nome: usuario?.nome || "",
-    email: usuario?.email || "",
-    senha: usuario?.senha || "",
-    tipo: usuario?.tipo || "Usuário",
-    status: usuario?.status || "ativo",
-    vendedor: usuario?.vendedor || "nao",
-    confirmarSenha: "",
-  });
-
-  const [erroConfirmarSenha, setErroConfirmarSenha] = useState<string | null>(null);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleVendedorChange = (value: "sim" | "nao") => {
-    setForm((prev) => ({
-      ...prev,
-      vendedor: value,
-    }));
-  };
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErroConfirmarSenha(null);
-
-    if (!readOnly) {
-      if (form.senha !== undefined && form.senha !== form.confirmarSenha) {
-        setErroConfirmarSenha("As senhas não coincidem.");
-        return;
-      }
-    }
-
-    const { confirmarSenha, ...data } = form;
-    onSubmit(data);
-  };
-
-  return (
-    <form onSubmit={handleFormSubmit} className="space-y-4">
-      {/* Nome */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Nome</label>
-        <Input
-          name="nome"
-          value={form.nome}
-          disabled={readOnly}
-          onChange={handleChange}
-          required
-        />
-      </div>
-      {/* Email */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Email</label>
-        <Input
-          type="email"
-          name="email"
-          value={form.email}
-          disabled={readOnly}
-          onChange={handleChange}
-          required
-        />
-      </div>
-      {/* Senha */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Senha</label>
-        <Input
-          type="password"
-          name="senha"
-          value={form.senha}
-          disabled={readOnly}
-          onChange={handleChange}
-          required={!readOnly}
-          minLength={6}
-        />
-        {!readOnly && (
-          <small className="text-xs text-muted-foreground">Mínimo 6 caracteres.</small>
-        )}
-      </div>
-      {/* Confirmar Senha */}
-      {!readOnly && (
-        <div>
-          <label className="block text-sm font-medium mb-1">Confirmar Senha</label>
-          <Input
-            type="password"
-            name="confirmarSenha"
-            value={form.confirmarSenha}
-            onChange={handleChange}
-            required={!readOnly}
-            minLength={6}
-            autoComplete="new-password"
-          />
-          {erroConfirmarSenha && (
-            <small className="text-xs text-red-600">{erroConfirmarSenha}</small>
-          )}
-        </div>
-      )}
-      {/* Tipo */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Tipo</label>
-        <Select
-          value={form.tipo}
-          onValueChange={(value) => handleSelectChange("tipo", value)}
-          disabled={readOnly}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Administrador">Administrador</SelectItem>
-            <SelectItem value="Usuário">Usuário</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      {/* Status */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Status</label>
-        <Select
-          value={form.status}
-          onValueChange={(value) => handleSelectChange("status", value)}
-          disabled={readOnly}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ativo">Ativo</SelectItem>
-            <SelectItem value="inativo">Inativo</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      {/* Campo Vendedor */}
-      <div>
-        <Label className="block text-sm font-medium mb-2">Vendedor</Label>
-        <RadioGroup 
-          value={form.vendedor} 
-          onValueChange={(value) => handleVendedorChange(value as "sim" | "nao")}
-          className="flex gap-4" 
-          disabled={readOnly}
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="sim" id="vendedor-sim" />
-            <Label htmlFor="vendedor-sim">Sim</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="nao" id="vendedor-nao" />
-            <Label htmlFor="vendedor-nao">Não</Label>
-          </div>
-        </RadioGroup>
-      </div>
-      <div className="flex justify-end gap-2 mt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          {readOnly ? "Fechar" : "Cancelar"}
-        </Button>
-        {!readOnly && (
-          <Button type="submit" variant="blue">
-            Salvar
-          </Button>
-        )}
-      </div>
-    </form>
   );
 }
