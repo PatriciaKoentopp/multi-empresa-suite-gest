@@ -44,14 +44,11 @@ export default function UsuariosPage() {
 
   const { currentCompany } = useCompany();
 
-  useEffect(() => {
-    setIsLoading(true);
-    fetchUsuarios().finally(() => setIsLoading(false));
-  }, [currentCompany, refreshKey]); // refreshKey como dependência para forçar recarga
-
+  // Função para buscar os usuários
   const fetchUsuarios = async () => {
     if (!currentCompany) return;
 
+    setIsLoading(true);
     try {
       console.log("Buscando usuários...");
       const { data, error } = await supabase
@@ -83,8 +80,15 @@ export default function UsuariosPage() {
     } catch (err) {
       console.error("Exceção ao carregar usuários:", err);
       toast.error("Erro inesperado ao carregar usuários");
+    } finally {
+      setIsLoading(false);
     }
   };
+  
+  // Efeito para carregar os dados quando a página é carregada ou quando refreshKey muda
+  useEffect(() => {
+    fetchUsuarios();
+  }, [currentCompany, refreshKey]);
 
   const handleOpenDialog = (usuario?: Usuario) => {
     setEditingUsuario(usuario);
@@ -127,13 +131,11 @@ export default function UsuariosPage() {
         }
 
         console.log("Usuário atualizado com sucesso!");
-        // Forçar recarregamento dos dados
-        setRefreshKey(prev => prev + 1);
         toast.success("Usuário atualizado com sucesso!");
       } else {
         // Create new usuario
         console.log("Criando novo usuário:", data);
-        const { data: newUsuario, error } = await supabase
+        const { error } = await supabase
           .from("usuarios")
           .insert([
             {
@@ -145,8 +147,7 @@ export default function UsuariosPage() {
               vendedor: data.vendedor,
               id: data.id, // Certifique-se de que o ID seja gerado corretamente
             },
-          ])
-          .select();
+          ]);
 
         if (error) {
           console.error("Erro ao criar usuário:", error);
@@ -154,17 +155,22 @@ export default function UsuariosPage() {
           return;
         }
 
-        console.log("Usuário criado com sucesso:", newUsuario);
-        // Forçar recarregamento dos dados
-        setRefreshKey(prev => prev + 1);
+        console.log("Usuário criado com sucesso!");
         toast.success("Usuário criado com sucesso!");
       }
+      
+      // Fecha o modal e atualiza os dados
+      handleCloseDialog();
+      
+      // Importante: Atualize o refreshKey após o fechamento do modal
+      // para garantir que a página recarregue os dados
+      setRefreshKey(prev => prev + 1);
+      
     } catch (err) {
       console.error("Exceção durante operação de usuário:", err);
       toast.error("Erro inesperado ao processar usuário");
     } finally {
       setIsLoading(false);
-      handleCloseDialog();
     }
   };
 
@@ -188,9 +194,11 @@ export default function UsuariosPage() {
       }
 
       console.log("Usuário excluído com sucesso!");
-      // Forçar recarregamento dos dados
-      setRefreshKey(prev => prev + 1);
       toast.success("Usuário excluído com sucesso!");
+      
+      // Atualiza o refreshKey para forçar o recarregamento dos dados
+      setRefreshKey(prev => prev + 1);
+      
     } catch (err) {
       console.error("Exceção ao excluir usuário:", err);
       toast.error("Erro inesperado ao excluir usuário");
@@ -292,7 +300,10 @@ export default function UsuariosPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        if (!open) handleCloseDialog();
+        else setIsDialogOpen(open);
+      }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
