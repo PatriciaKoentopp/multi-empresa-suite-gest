@@ -15,6 +15,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
   Select,
@@ -31,6 +41,10 @@ export default function OrigensPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOrigem, setEditingOrigem] = useState<Origem | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({
+    isOpen: false,
+    id: null,
+  });
   
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
@@ -151,6 +165,21 @@ export default function OrigensPage() {
     }
   };
 
+  const handleDeleteClick = (id: string) => {
+    setDeleteConfirm({ isOpen: true, id });
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirm({ isOpen: false, id: null });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+    
+    await handleDelete(deleteConfirm.id);
+    setDeleteConfirm({ isOpen: false, id: null });
+  };
+
   const handleDelete = async (id: string) => {
     if (!currentCompany) return;
 
@@ -244,7 +273,7 @@ export default function OrigensPage() {
           <OrigensTable
             origens={filteredOrigens}
             onEdit={handleOpenDialog}
-            onDelete={handleDelete}
+            onDelete={handleDeleteClick}
           />
         </CardContent>
       </Card>
@@ -265,6 +294,33 @@ export default function OrigensPage() {
           />
         </DialogContent>
       </Dialog>
+      
+      <AlertDialog
+        open={deleteConfirm.isOpen}
+        onOpenChange={(isOpen) =>
+          setDeleteConfirm({ isOpen, id: isOpen ? deleteConfirm.id : null })
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta origem? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
