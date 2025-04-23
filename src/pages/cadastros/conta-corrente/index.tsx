@@ -1,5 +1,4 @@
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ContaCorrente } from "@/types/conta-corrente";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,82 +23,97 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Mock data para contas contábeis
-const mockContasContabeis = [
-  {
-    id: "1",
-    codigo: "1.1.01",
-    descricao: "Banco do Brasil - Conta Corrente",
-    tipo: "ativo",
-    considerarDRE: false,
-    status: "ativo"
-  },
-  {
-    id: "2",
-    codigo: "1.1.02",
-    descricao: "Caixa Econômica - Conta Corrente",
-    tipo: "ativo",
-    considerarDRE: false,
-    status: "ativo"
-  },
-  {
-    id: "3",
-    codigo: "1.1.03",
-    descricao: "Bradesco - Conta Corrente",
-    tipo: "ativo",
-    considerarDRE: false,
-    status: "ativo"
-  }
-];
-
-// Mock data inicial
-const initialContas: ContaCorrente[] = [
-  {
-    id: "1",
-    nome: "Conta Principal",
-    banco: "Banco do Brasil",
-    agencia: "1234-5",
-    numero: "12345-6",
-    contaContabilId: "1",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    nome: "Conta Pagamentos",
-    banco: "Caixa Econômica",
-    agencia: "4321-5",
-    numero: "54321-6",
-    contaContabilId: "2",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    nome: "Conta Recebimentos",
-    banco: "Bradesco",
-    agencia: "5678-9",
-    numero: "98765-4",
-    contaContabilId: "3",
-    status: "inativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
 
 export default function ContaCorrentePage() {
-  const [contas, setContas] = useState<ContaCorrente[]>(initialContas);
+  const [contas, setContas] = useState<ContaCorrente[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingConta, setEditingConta] = useState<ContaCorrente | undefined>(undefined);
   const [viewingConta, setViewingConta] = useState<ContaCorrente | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Usar o contexto da empresa
+  const { currentCompany } = useCompany();
   
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
   const [bancoFilter, setBancoFilter] = useState<string>("todos");
+
+  // Mock data para contas contábeis
+  const mockContasContabeis = [
+    {
+      id: "1",
+      codigo: "1.1.01",
+      descricao: "Banco do Brasil - Conta Corrente",
+      tipo: "ativo",
+      considerarDRE: false,
+      status: "ativo"
+    },
+    {
+      id: "2",
+      codigo: "1.1.02",
+      descricao: "Caixa Econômica - Conta Corrente",
+      tipo: "ativo",
+      considerarDRE: false,
+      status: "ativo"
+    },
+    {
+      id: "3",
+      codigo: "1.1.03",
+      descricao: "Bradesco - Conta Corrente",
+      tipo: "ativo",
+      considerarDRE: false,
+      status: "ativo"
+    }
+  ];
+
+  // Buscar os dados do Supabase
+  const fetchContasCorrentes = async () => {
+    setIsLoading(true);
+    try {
+      if (!currentCompany?.id) {
+        setIsLoading(false);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('contas_correntes')
+        .select('*')
+        .eq('empresa_id', currentCompany.id);
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Converter dados para o formato ContaCorrente
+      const formattedData: ContaCorrente[] = data.map(item => ({
+        id: item.id,
+        nome: item.nome,
+        banco: item.banco,
+        agencia: item.agencia,
+        numero: item.numero,
+        contaContabilId: item.conta_contabil_id,
+        status: item.status as "ativo" | "inativo",
+        createdAt: new Date(item.created_at),
+        updatedAt: new Date(item.updated_at),
+        data: item.data ? new Date(item.data) : undefined,
+        saldoInicial: item.saldo_inicial
+      }));
+      
+      setContas(formattedData);
+    } catch (error) {
+      console.error('Erro ao buscar contas correntes:', error);
+      toast.error('Erro ao carregar as contas correntes');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchContasCorrentes();
+  }, [currentCompany?.id]);
 
   const bancos = useMemo(() => {
     const uniqueBancos = Array.from(new Set(contas.map(conta => conta.banco)));
@@ -121,38 +135,83 @@ export default function ContaCorrentePage() {
     setIsDialogOpen(false);
   };
 
-  const handleSubmit = (data: Partial<ContaCorrente>) => {
-    if (editingConta) {
-      setContas((prev) =>
-        prev.map((c) =>
-          c.id === editingConta.id
-            ? {
-                ...c,
-                ...data,
-                updatedAt: new Date(),
-              }
-            : c
-        )
-      );
-      toast.success("Conta corrente atualizada com sucesso!");
-    } else {
-      const newConta: ContaCorrente = {
-        id: `${Date.now()}`,
-        ...data as ContaCorrente,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setContas((prev) => [...prev, newConta]);
-      toast.success("Conta corrente criada com sucesso!");
+  const handleSubmit = async (data: Partial<ContaCorrente>) => {
+    if (!currentCompany?.id) {
+      toast.error('Nenhuma empresa selecionada');
+      return;
     }
-    handleCloseDialog();
+    
+    try {
+      if (editingConta) {
+        // Update existing conta corrente
+        const { error } = await supabase
+          .from('contas_correntes')
+          .update({
+            nome: data.nome,
+            banco: data.banco,
+            agencia: data.agencia,
+            numero: data.numero,
+            conta_contabil_id: data.contaContabilId,
+            status: data.status,
+            data: data.data?.toISOString(),
+            saldo_inicial: data.saldoInicial,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingConta.id);
+          
+        if (error) throw error;
+        
+        toast.success("Conta corrente atualizada com sucesso!");
+      } else {
+        // Create new conta corrente
+        const { error } = await supabase
+          .from('contas_correntes')
+          .insert({
+            empresa_id: currentCompany.id,
+            nome: data.nome,
+            banco: data.banco,
+            agencia: data.agencia,
+            numero: data.numero,
+            conta_contabil_id: data.contaContabilId,
+            status: data.status,
+            data: data.data?.toISOString(),
+            saldo_inicial: data.saldoInicial
+          });
+          
+        if (error) throw error;
+        
+        toast.success("Conta corrente criada com sucesso!");
+      }
+      
+      // Recarregar dados após sucesso
+      fetchContasCorrentes();
+      handleCloseDialog();
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error(editingConta 
+        ? "Erro ao atualizar conta corrente" 
+        : "Erro ao criar conta corrente");
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setContas((prev) => prev.filter((conta) => conta.id !== id));
-    toast.success("Conta corrente excluída com sucesso!");
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('contas_correntes')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      toast.success("Conta corrente excluída com sucesso!");
+      fetchContasCorrentes();
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+      toast.error("Erro ao excluir conta corrente");
+    }
   };
 
+  // Aplicar filtros às contas correntes
   const filteredContas = useMemo(() => {
     return contas.filter((conta) => {
       const matchesSearch = 

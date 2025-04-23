@@ -9,6 +9,59 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      contas_correntes: {
+        Row: {
+          agencia: string
+          banco: string
+          conta_contabil_id: string
+          created_at: string
+          data: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          numero: string
+          saldo_inicial: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agencia: string
+          banco: string
+          conta_contabil_id: string
+          created_at?: string
+          data?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          numero: string
+          saldo_inicial?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agencia?: string
+          banco?: string
+          conta_contabil_id?: string
+          created_at?: string
+          data?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          numero?: string
+          saldo_inicial?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_correntes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empresas: {
         Row: {
           bairro: string
