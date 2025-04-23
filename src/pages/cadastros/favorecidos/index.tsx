@@ -299,6 +299,33 @@ export default function FavorecidosPage() {
       toast.error("Ocorreu um erro ao processar a solicitação");
     }
   };
+  
+  // Adicionando a função handleDelete que estava faltando
+  const handleDelete = async (id: string) => {
+    if (!currentCompany) {
+      toast.error("Nenhuma empresa selecionada");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("favorecidos")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error("Erro ao excluir favorecido:", error);
+        toast.error("Erro ao excluir favorecido");
+        return;
+      }
+
+      setFavorecidos(prev => prev.filter(f => f.id !== id));
+      toast.success("Favorecido excluído com sucesso!");
+    } catch (error) {
+      console.error("Erro ao excluir favorecido:", error);
+      toast.error("Ocorreu um erro ao excluir o favorecido");
+    }
+  };
 
   useEffect(() => {
     const fetchFavorecidos = async () => {
