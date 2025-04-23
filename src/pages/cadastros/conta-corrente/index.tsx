@@ -15,6 +15,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
   Select,
@@ -68,6 +78,9 @@ export default function ContaCorrentePage() {
       status: "ativo"
     }
   ];
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingContaId, setDeletingContaId] = useState<string | null>(null);
 
   // Buscar os dados do Supabase
   const fetchContasCorrentes = async () => {
@@ -195,11 +208,18 @@ export default function ContaCorrentePage() {
   };
 
   const handleDelete = async (id: string) => {
+    setDeletingContaId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingContaId) return;
+
     try {
       const { error } = await supabase
         .from('contas_correntes')
         .delete()
-        .eq('id', id);
+        .eq('id', deletingContaId);
         
       if (error) throw error;
       
@@ -208,6 +228,9 @@ export default function ContaCorrentePage() {
     } catch (error) {
       console.error('Erro ao excluir:', error);
       toast.error("Erro ao excluir conta corrente");
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setDeletingContaId(null);
     }
   };
 
@@ -239,6 +262,25 @@ export default function ContaCorrentePage() {
           Nova Conta
         </Button>
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta conta corrente? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Card>
         <CardContent className="pt-6">
