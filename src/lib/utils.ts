@@ -9,8 +9,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Função para formatar datas
+// Função para formatar datas sem considerar timezone
 export function formatDate(date: Date | undefined, formatString = "dd/MM/yyyy"): string {
   if (!date) return "";
-  return format(date, formatString, { locale: ptBR });
+  return format(date, formatString);
 }

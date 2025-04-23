@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -218,7 +217,7 @@ export default function FavorecidosPage() {
         cidade: data.endereco?.cidade,
         estado: data.endereco?.estado,
         pais: data.endereco?.pais,
-        // Convertendo a data para o formato string que o Supabase espera
+        // Convertendo a data para o formato string YYYY-MM-DD sem timezone
         data_aniversario: data.dataAniversario ? format(data.dataAniversario, "yyyy-MM-dd") : null,
         status: data.status,
       };
@@ -284,6 +283,7 @@ export default function FavorecidosPage() {
               estado: novoFavorecido.estado || "",
               pais: novoFavorecido.pais || "Brasil",
             },
+            // Convertendo a string YYYY-MM-DD do banco para Date sem considerar timezone
             dataAniversario: novoFavorecido.data_aniversario ? new Date(novoFavorecido.data_aniversario) : undefined,
             status: novoFavorecido.status as "ativo" | "inativo",
             createdAt: new Date(novoFavorecido.created_at),
@@ -300,31 +300,63 @@ export default function FavorecidosPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!currentCompany) return;
-    
-    try {
-      const { error } = await supabase
-        .from("favorecidos")
-        .delete()
-        .eq("id", id)
-        .eq("empresa_id", currentCompany.id);
-
-      if (error) {
-        console.error("Erro ao excluir favorecido:", error);
-        toast.error("Erro ao excluir favorecido");
-        return;
+  useEffect(() => {
+    const fetchFavorecidos = async () => {
+      if (!currentCompany) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("favorecidos")
+          .select("*")
+          .eq("empresa_id", currentCompany.id)
+          .order("nome");
+  
+        if (error) {
+          console.error("Erro ao carregar favorecidos:", error);
+          toast.error("Erro ao carregar favorecidos");
+          return;
+        }
+  
+        if (data) {
+          const favorecidosFormatados: Favorecido[] = data.map(favorecido => ({
+            id: favorecido.id,
+            tipo: favorecido.tipo as "cliente" | "fornecedor" | "publico" | "funcionario",
+            tipoDocumento: favorecido.tipo_documento as "cpf" | "cnpj",
+            documento: favorecido.documento,
+            grupoId: favorecido.grupo_id,
+            profissaoId: favorecido.profissao_id,
+            nome: favorecido.nome,
+            nomeFantasia: favorecido.nome_fantasia,
+            email: favorecido.email,
+            telefone: favorecido.telefone,
+            endereco: {
+              cep: favorecido.cep || "",
+              logradouro: favorecido.logradouro || "",
+              numero: favorecido.numero || "",
+              complemento: favorecido.complemento || "",
+              bairro: favorecido.bairro || "",
+              cidade: favorecido.cidade || "",
+              estado: favorecido.estado || "",
+              pais: favorecido.pais || "Brasil",
+            },
+            dataAniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
+            status: favorecido.status as "ativo" | "inativo",
+            createdAt: new Date(favorecido.created_at),
+            updatedAt: new Date(favorecido.updated_at),
+          }));
+          setFavorecidos(favorecidosFormatados);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Erro ao carregar favorecidos:", error);
+        toast.error("Erro ao carregar favorecidos");
+        setIsLoading(false);
       }
+    };
 
-      setFavorecidos(prev => prev.filter(favorecido => favorecido.id !== id));
-      toast.success("Favorecido excluído com sucesso!");
-    } catch (error) {
-      console.error("Erro na exclusão:", error);
-      toast.error("Ocorreu um erro ao excluir o favorecido");
-    }
-  };
+    fetchFavorecidos();
+  }, [currentCompany]);
 
-  // Aplicar filtros aos favorecidos
   const filteredFavorecidos = useMemo(() => {
     return favorecidos.filter((favorecido) => {
       // Filtro por nome ou documento

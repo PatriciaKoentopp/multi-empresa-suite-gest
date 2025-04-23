@@ -28,7 +28,7 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
     
     if (value.length === 10) {
       try {
-        // Tenta converter dd/mm/yyyy para Date
+        // Tenta converter dd/mm/yyyy para Date sem considerar timezone
         const parsedDate = parse(value, "dd/MM/yyyy", new Date());
         
         if (isValid(parsedDate)) {
@@ -40,11 +40,14 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
     }
   };
   
-  // Quando o calendário seleciona uma data, atualiza também o campo de input
+  // Inicializa o campo de input quando o componente é montado ou quando a data muda
   React.useEffect(() => {
     const date = form.watch("dataAniversario");
     if (date) {
-      setDateInputValue(format(date, "dd/MM/yyyy", { locale: ptBR }));
+      // Formata a data para dd/MM/yyyy sem considerar timezone
+      setDateInputValue(format(date, "dd/MM/yyyy"));
+    } else {
+      setDateInputValue("");
     }
   }, [form.watch("dataAniversario")]);
 
@@ -85,7 +88,8 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
                       onSelect={(date) => {
                         field.onChange(date);
                         if (date) {
-                          setDateInputValue(format(date, "dd/MM/yyyy", { locale: ptBR }));
+                          // Formata a data para dd/MM/yyyy sem considerar timezone
+                          setDateInputValue(format(date, "dd/MM/yyyy"));
                         }
                       }}
                       disabled={readOnly}
