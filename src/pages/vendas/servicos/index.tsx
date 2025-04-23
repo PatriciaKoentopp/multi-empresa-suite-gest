@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,16 @@ import { Plus } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Search, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 // Função para exibir badge do status no mesmo padrão de Contas a Pagar
 function getStatusBadge(status: "ativo" | "inativo") {
@@ -84,6 +95,10 @@ export default function ServicosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todas" | "ativo" | "inativo">("todas");
   const inputBuscaRef = useRef<HTMLInputElement>(null);
+  
+  // Novo estado para diálogo de confirmação de exclusão
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingServicoId, setDeletingServicoId] = useState<string | null>(null);
 
   // Aplica filtro na listagem
   const servicosFiltrados = useMemo(() => {
@@ -149,14 +164,26 @@ export default function ServicosPage() {
     setEditId(servico.id);
     setShowForm(true);
   }
-
-  function handleExcluir(id: string) {
-    setServicos((ss) => ss.filter((s) => s.id !== id));
+  
+  function handleExcluirClick(id: string, e?: React.MouseEvent) {
+    if (e) e.preventDefault();
+    setDeletingServicoId(id);
+    setIsDeleteDialogOpen(true);
+  }
+  
+  function handleConfirmDelete() {
+    if (!deletingServicoId) return;
+    
+    setServicos((ss) => ss.filter((s) => s.id !== deletingServicoId));
     toast({ title: "Serviço excluído com sucesso!" });
-    if (editId === id) {
+    
+    if (editId === deletingServicoId) {
       resetForm();
       setShowForm(false);
     }
+    
+    setIsDeleteDialogOpen(false);
+    setDeletingServicoId(null);
   }
 
   function handleLupaClick() {
@@ -313,7 +340,7 @@ export default function ServicosPage() {
                             Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleExcluir(s.id)}
+                            onClick={(e) => handleExcluirClick(s.id, e)}
                             className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -329,6 +356,32 @@ export default function ServicosPage() {
           )}
         </CardContent>
       </Card>
+      
+      {/* Diálogo de confirmação de exclusão */}
+      <AlertDialog 
+        open={isDeleteDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsDeleteDialogOpen(false);
+            setDeletingServicoId(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este serviço? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 text-white hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
