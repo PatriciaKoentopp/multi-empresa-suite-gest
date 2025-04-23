@@ -78,18 +78,23 @@ export default function UsuariosPage() {
 
   const { currentCompany } = useCompany(); // pega empresa logada
 
-  // Buscar usuários do supabase
+  // Buscar usuários do supabase filtrando pela empresa logada
   useEffect(() => {
     const fetchUsuarios = async () => {
+      // Se não tem empresa selecionada, zera a lista
+      if (!currentCompany?.id) {
+        setUsuarios([]);
+        return;
+      }
       let { data, error } = await supabase
         .from("usuarios")
-        .select("*, empresas(nome_fantasia)"); // Busca o nome da empresa relacionada
+        .select("*, empresas(nome_fantasia)")
+        .eq("empresa_id", currentCompany.id); // FILTRAR pelo empresa_id
       if (error) {
         toast.error("Erro ao buscar usuários: " + error.message);
         setUsuarios([]);
         return;
       }
-      // Mapear datas para Date e extrair nome da empresa
       const mapped = (data || []).map((row: any) => ({
         id: row.id,
         nome: row.nome,
@@ -105,7 +110,7 @@ export default function UsuariosPage() {
       setUsuarios(mapped);
     };
     fetchUsuarios();
-  }, []);
+  }, [currentCompany?.id]); // Recarregar quando trocar de empresa
 
   // Abrir dialog novo/editar/visualizar
   const handleOpenDialog = (usuario?: Usuario, isViewing = false) => {
