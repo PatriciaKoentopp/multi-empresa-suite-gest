@@ -154,8 +154,10 @@ export default function GrupoFavorecidosPage() {
           toast.success("Grupo de favorecidos criado com sucesso!");
         }
       }
-    } finally {
       handleCloseDialog();
+    } catch (error) {
+      console.error("Erro na operação:", error);
+      toast.error("Ocorreu um erro ao processar a solicitação");
     }
   };
 
@@ -182,9 +184,11 @@ export default function GrupoFavorecidosPage() {
 
       setGrupos(prev => prev.filter(grupo => grupo.id !== deletingGrupoId));
       toast.success("Grupo de favorecidos excluído com sucesso!");
-    } finally {
       setIsDeleteDialogOpen(false);
       setDeletingGrupoId(null);
+    } catch (error) {
+      console.error("Erro na exclusão:", error);
+      toast.error("Ocorreu um erro ao excluir o grupo");
     }
   };
 
@@ -225,10 +229,15 @@ export default function GrupoFavorecidosPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={(open) => {
-        if (!open) handleCloseDialog();
-        else setIsDialogOpen(true);
-      }}>
+      {/* Dialog para criação/edição de grupo */}
+      <Dialog 
+        open={isDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDialog();
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
@@ -250,6 +259,7 @@ export default function GrupoFavorecidosPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog de confirmação de exclusão */}
       <AlertDialog 
         open={isDeleteDialogOpen} 
         onOpenChange={(open) => {
@@ -267,7 +277,7 @@ export default function GrupoFavorecidosPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-red-600 text-white hover:bg-red-700">
               Excluir
             </AlertDialogAction>
