@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { MotivoPerda } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,49 +34,65 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Mock data - in a real app, this would come from a database
-const initialMotivosPerda: MotivoPerda[] = [
-  {
-    id: "1",
-    nome: "Preço alto",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    nome: "Concorrência",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    nome: "Cliente indeciso",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "4",
-    nome: "Falta de recursos",
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
 
 export default function MotivosPerdaPage() {
-  const [motivosPerda, setMotivosPerda] = useState<MotivoPerda[]>(initialMotivosPerda);
+  const [motivosPerda, setMotivosPerda] = useState<MotivoPerda[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMotivoPerda, setEditingMotivoPerda] = useState<MotivoPerda | undefined>(
     undefined
   );
+  const [isLoading, setIsLoading] = useState(true);
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  const [motivoToDelete, setMotivoToDelete] = useState<string | null>(null);
+  
+  // Usar o contexto da empresa
+  const { currentCompany } = useCompany();
   
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
+
+  // Buscar os dados do Supabase
+  const fetchMotivosPerda = async () => {
+    setIsLoading(true);
+    try {
+      if (!currentCompany?.id) {
+        setIsLoading(false);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('motivos_perda')
+        .select('*')
+        .eq('empresa_id', currentCompany.id);
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Converter dados para o formato MotivoPerda
+      const formattedData: MotivoPerda[] = data.map(item => ({
+        id: item.id,
+        nome: item.nome,
+        status: item.status as "ativo" | "inativo",
+        createdAt: new Date(item.created_at),
+        updatedAt: new Date(item.updated_at)
+      }));
+      
+      setMotivosPerda(formattedData);
+    } catch (error) {
+      console.error('Erro ao buscar motivos de perda:', error);
+      toast.error('Erro ao carregar os motivos de perda');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMotivosPerda();
+  }, [currentCompany?.id]);
 
   const handleOpenDialog = (motivoPerda?: MotivoPerda) => {
     setEditingMotivoPerda(motivoPerda);
@@ -88,40 +104,78 @@ export default function MotivosPerdaPage() {
     setIsDialogOpen(false);
   };
 
-  const handleSubmit = (data: { nome: string; status: "ativo" | "inativo" }) => {
-    if (editingMotivoPerda) {
-      // Update existing motivoPerda
-      setMotivosPerda((prev) =>
-        prev.map((p) =>
-          p.id === editingMotivoPerda.id
-            ? {
-                ...p,
-                nome: data.nome,
-                status: data.status,
-                updatedAt: new Date(),
-              }
-            : p
-        )
-      );
-      toast.success("Motivo de perda atualizado com sucesso!");
-    } else {
-      // Create new motivoPerda
-      const newMotivoPerda: MotivoPerda = {
-        id: `${Date.now()}`,
-        nome: data.nome,
-        status: data.status,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setMotivosPerda((prev) => [...prev, newMotivoPerda]);
-      toast.success("Motivo de perda criado com sucesso!");
+  const handleSubmit = async (data: { nome: string; status: "ativo" | "inativo" }) => {
+    if (!currentCompany?.id) {
+      toast.error('Nenhuma empresa selecionada');
+      return;
     }
-    handleCloseDialog();
+    
+    try {
+      if (editingMotivoPerda) {
+        // Update existing motivoPerda
+        const { error } = await supabase
+          .from('motivos_perda')
+          .update({
+            nome: data.nome,
+            status: data.status,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingMotivoPerda.id);
+          
+        if (error) throw error;
+        
+        toast.success("Motivo de perda atualizado com sucesso!");
+      } else {
+        // Create new motivoPerda
+        const { error } = await supabase
+          .from('motivos_perda')
+          .insert({
+            nome: data.nome,
+            status: data.status,
+            empresa_id: currentCompany.id
+          });
+          
+        if (error) throw error;
+        
+        toast.success("Motivo de perda criado com sucesso!");
+      }
+      
+      // Recarregar dados após sucesso
+      fetchMotivosPerda();
+      handleCloseDialog();
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error(editingMotivoPerda 
+        ? "Erro ao atualizar motivo de perda" 
+        : "Erro ao criar motivo de perda");
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setMotivosPerda((prev) => prev.filter((motivoPerda) => motivoPerda.id !== id));
-    toast.success("Motivo de perda excluído com sucesso!");
+  const openDeleteConfirmation = (id: string) => {
+    setMotivoToDelete(id);
+    setAlertDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!motivoToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from('motivos_perda')
+        .delete()
+        .eq('id', motivoToDelete);
+        
+      if (error) throw error;
+      
+      toast.success("Motivo de perda excluído com sucesso!");
+      fetchMotivosPerda();
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+      toast.error("Erro ao excluir motivo de perda");
+    } finally {
+      setAlertDialogOpen(false);
+      setMotivoToDelete(null);
+    }
   };
 
   // Aplicar filtros aos motivos de perda
@@ -180,7 +234,8 @@ export default function MotivosPerdaPage() {
           <MotivosPerdaTable
             motivosPerda={filteredMotivosPerda}
             onEdit={handleOpenDialog}
-            onDelete={handleDelete}
+            onDelete={openDeleteConfirmation}
+            isLoading={isLoading}
           />
         </CardContent>
       </Card>
@@ -201,6 +256,23 @@ export default function MotivosPerdaPage() {
           />
         </DialogContent>
       </Dialog>
+      
+      <AlertDialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este motivo de perda? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 text-white hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
