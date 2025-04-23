@@ -20,6 +20,17 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+
 export default function GrupoFavorecidosPage() {
   const [grupos, setGrupos] = useState<GrupoFavorecido[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -27,6 +38,8 @@ export default function GrupoFavorecidosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const { currentCompany } = useCompany();
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingGrupoId, setDeletingGrupoId] = useState<string | null>(null);
 
   // Carregar grupos do Supabase
   useEffect(() => {
@@ -143,37 +156,29 @@ export default function GrupoFavorecidosPage() {
   };
 
   const handleDelete = async (id: string) => {
-    const { toast } = await import("sonner");
-    
-    toast({
-      title: "Confirmar exclusão",
-      description: "Tem certeza que deseja excluir este grupo? Esta ação não pode ser desfeita.",
-      action: {
-        label: "Excluir",
-        onClick: async () => {
-          if (!currentCompany) return;
+    setDeletingGrupoId(id);
+    setIsDeleteDialogOpen(true);
+  };
 
-          const { error } = await supabase
-            .from("grupo_favorecidos")
-            .delete()
-            .eq("id", id)
-            .eq("empresa_id", currentCompany.id);
+  const confirmDelete = async () => {
+    if (!deletingGrupoId || !currentCompany) return;
 
-          if (error) {
-            console.error("Erro ao excluir grupo:", error);
-            toast.error("Erro ao excluir grupo de favorecidos");
-            return;
-          }
+    const { error } = await supabase
+      .from("grupo_favorecidos")
+      .delete()
+      .eq("id", deletingGrupoId)
+      .eq("empresa_id", currentCompany.id);
 
-          setGrupos(prev => prev.filter(grupo => grupo.id !== id));
-          toast.success("Grupo de favorecidos excluído com sucesso!");
-        },
-      },
-      cancel: {
-        label: "Cancelar",
-        onClick: () => {},
-      },
-    });
+    if (error) {
+      console.error("Erro ao excluir grupo:", error);
+      toast.error("Erro ao excluir grupo de favorecidos");
+      return;
+    }
+
+    setGrupos(prev => prev.filter(grupo => grupo.id !== deletingGrupoId));
+    toast.success("Grupo de favorecidos excluído com sucesso!");
+    setIsDeleteDialogOpen(false);
+    setDeletingGrupoId(null);
   };
 
   // Filtrar grupos com base no termo de busca
@@ -229,6 +234,23 @@ export default function GrupoFavorecidosPage() {
           />
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este grupo? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 text-white hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
