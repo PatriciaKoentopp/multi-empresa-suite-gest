@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
-import { format } from "date-fns";
+import { dateToISOString, parseDateString } from "@/lib/utils";
 
 export default function FavorecidosPage() {
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
@@ -40,7 +40,7 @@ export default function FavorecidosPage() {
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
-  const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
+  const [statusFilter, setStatusFilter] = <"todos" | "ativo" | "inativo">("todos");
   const [grupoFilter, setGrupoFilter] = useState<string>("todos");
 
   // Carregar grupos do Supabase
@@ -140,12 +140,10 @@ export default function FavorecidosPage() {
             // Criar data de aniversário sem timezone para manter o dia exato
             let dataAniversario: Date | undefined = undefined;
             if (favorecido.data_aniversario) {
-              const dataParts = favorecido.data_aniversario.split('-');
-              if (dataParts.length === 3) {
-                const year = parseInt(dataParts[0], 10);
-                const month = parseInt(dataParts[1], 10) - 1; // mês em JS é 0-indexed
-                const day = parseInt(dataParts[2], 10);
-                dataAniversario = new Date(Date.UTC(year, month, day, 12, 0, 0));
+              // Usar UTC para preservar o dia exato
+              const [ano, mes, dia] = favorecido.data_aniversario.split('-').map(Number);
+              if (!isNaN(ano) && !isNaN(mes) && !isNaN(dia)) {
+                dataAniversario = new Date(Date.UTC(ano, mes - 1, dia, 12, 0, 0));
               }
             }
             
@@ -211,14 +209,8 @@ export default function FavorecidosPage() {
     }
 
     try {
-      // Preparar a data de aniversário no formato YYYY-MM-DD para o Supabase
-      let dataAniversarioFormatada = null;
-      if (data.dataAniversario) {
-        const year = data.dataAniversario.getFullYear();
-        const month = String(data.dataAniversario.getMonth() + 1).padStart(2, '0');
-        const day = String(data.dataAniversario.getDate()).padStart(2, '0');
-        dataAniversarioFormatada = `${year}-${month}-${day}`;
-      }
+      // Converter a data de aniversário para o formato YYYY-MM-DD para o Supabase
+      const dataAniversarioFormatada = dateToISOString(data.dataAniversario);
 
       // Preparar os dados para inserção/atualização no Supabase
       const favorecidoData = {

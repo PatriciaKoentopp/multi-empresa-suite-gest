@@ -6,9 +6,7 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { format, parse, isValid } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, parseDateString } from "@/lib/utils";
 import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "./favorecidos-form.schema";
 import * as React from 'react';
@@ -27,23 +25,9 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
     setDateInputValue(value);
     
     if (value.length === 10) {
-      try {
-        // Tenta converter dd/mm/yyyy para Date sem considerar timezone
-        const dateParts = value.split('/');
-        if (dateParts.length === 3) {
-          const day = parseInt(dateParts[0], 10);
-          const month = parseInt(dateParts[1], 10) - 1; // mês em JS é 0-indexed
-          const year = parseInt(dateParts[2], 10);
-          
-          // Cria a data com UTC para evitar ajustes de timezone
-          const parsedDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
-          
-          if (isValid(parsedDate)) {
-            form.setValue("dataAniversario", parsedDate);
-          }
-        }
-      } catch (error) {
-        console.error("Erro ao converter data:", error);
+      const parsedDate = parseDateString(value);
+      if (parsedDate) {
+        form.setValue("dataAniversario", parsedDate);
       }
     }
   };
@@ -52,8 +36,7 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
   React.useEffect(() => {
     const date = form.watch("dataAniversario");
     if (date) {
-      // Formata a data para dd/MM/yyyy sem considerar timezone
-      setDateInputValue(format(date, "dd/MM/yyyy"));
+      setDateInputValue(formatDate(date));
     } else {
       setDateInputValue("");
     }
@@ -95,7 +78,7 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
                       selected={field.value}
                       onSelect={(date) => {
                         if (date) {
-                          // Ajusta a data para meio-dia em UTC para evitar problemas de timezone
+                          // Preservamos o dia exato selecionado usando UTC
                           const utcDate = new Date(Date.UTC(
                             date.getFullYear(),
                             date.getMonth(),
@@ -104,8 +87,7 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
                           ));
                           
                           field.onChange(utcDate);
-                          // Formata a data para dd/MM/yyyy sem considerar timezone
-                          setDateInputValue(format(utcDate, "dd/MM/yyyy"));
+                          setDateInputValue(formatDate(utcDate));
                         } else {
                           field.onChange(undefined);
                           setDateInputValue("");
@@ -113,7 +95,7 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
                       }}
                       disabled={readOnly}
                       initialFocus
-                      className={cn("p-3 pointer-events-auto bg-white")}
+                      className="p-3 pointer-events-auto bg-white"
                     />
                   </PopoverContent>
                 </Popover>
