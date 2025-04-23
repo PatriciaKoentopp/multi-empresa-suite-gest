@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { GrupoFavorecido } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -147,6 +148,7 @@ export default function GrupoFavorecidosPage() {
       description: 'Esta ação não pode ser desfeita.',
       cancel: {
         label: 'Cancelar',
+        onClick: () => {} // Adicionando onClick vazio para cancelamento
       },
       action: {
         label: 'Excluir',
