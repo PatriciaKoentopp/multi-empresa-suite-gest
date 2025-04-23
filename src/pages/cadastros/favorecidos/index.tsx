@@ -136,32 +136,46 @@ export default function FavorecidosPage() {
         }
   
         if (data) {
-          const favorecidosFormatados: Favorecido[] = data.map(favorecido => ({
-            id: favorecido.id,
-            tipo: favorecido.tipo as "cliente" | "fornecedor" | "publico" | "funcionario",
-            tipoDocumento: favorecido.tipo_documento as "cpf" | "cnpj",
-            documento: favorecido.documento,
-            grupoId: favorecido.grupo_id,
-            profissaoId: favorecido.profissao_id,
-            nome: favorecido.nome,
-            nomeFantasia: favorecido.nome_fantasia,
-            email: favorecido.email,
-            telefone: favorecido.telefone,
-            endereco: {
-              cep: favorecido.cep || "",
-              logradouro: favorecido.logradouro || "",
-              numero: favorecido.numero || "",
-              complemento: favorecido.complemento || "",
-              bairro: favorecido.bairro || "",
-              cidade: favorecido.cidade || "",
-              estado: favorecido.estado || "",
-              pais: favorecido.pais || "Brasil",
-            },
-            dataAniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
-            status: favorecido.status as "ativo" | "inativo",
-            createdAt: new Date(favorecido.created_at),
-            updatedAt: new Date(favorecido.updated_at),
-          }));
+          const favorecidosFormatados: Favorecido[] = data.map(favorecido => {
+            // Criar data de aniversário sem timezone para manter o dia exato
+            let dataAniversario: Date | undefined = undefined;
+            if (favorecido.data_aniversario) {
+              const dataParts = favorecido.data_aniversario.split('-');
+              if (dataParts.length === 3) {
+                const year = parseInt(dataParts[0], 10);
+                const month = parseInt(dataParts[1], 10) - 1; // mês em JS é 0-indexed
+                const day = parseInt(dataParts[2], 10);
+                dataAniversario = new Date(Date.UTC(year, month, day, 12, 0, 0));
+              }
+            }
+            
+            return {
+              id: favorecido.id,
+              tipo: favorecido.tipo as "cliente" | "fornecedor" | "publico" | "funcionario",
+              tipoDocumento: favorecido.tipo_documento as "cpf" | "cnpj",
+              documento: favorecido.documento,
+              grupoId: favorecido.grupo_id,
+              profissaoId: favorecido.profissao_id,
+              nome: favorecido.nome,
+              nomeFantasia: favorecido.nome_fantasia,
+              email: favorecido.email,
+              telefone: favorecido.telefone,
+              endereco: {
+                cep: favorecido.cep || "",
+                logradouro: favorecido.logradouro || "",
+                numero: favorecido.numero || "",
+                complemento: favorecido.complemento || "",
+                bairro: favorecido.bairro || "",
+                cidade: favorecido.cidade || "",
+                estado: favorecido.estado || "",
+                pais: favorecido.pais || "Brasil",
+              },
+              dataAniversario,
+              status: favorecido.status as "ativo" | "inativo",
+              createdAt: new Date(favorecido.created_at),
+              updatedAt: new Date(favorecido.updated_at),
+            };
+          });
           setFavorecidos(favorecidosFormatados);
         }
         setIsLoading(false);
@@ -197,6 +211,15 @@ export default function FavorecidosPage() {
     }
 
     try {
+      // Preparar a data de aniversário no formato YYYY-MM-DD para o Supabase
+      let dataAniversarioFormatada = null;
+      if (data.dataAniversario) {
+        const year = data.dataAniversario.getFullYear();
+        const month = String(data.dataAniversario.getMonth() + 1).padStart(2, '0');
+        const day = String(data.dataAniversario.getDate()).padStart(2, '0');
+        dataAniversarioFormatada = `${year}-${month}-${day}`;
+      }
+
       // Preparar os dados para inserção/atualização no Supabase
       const favorecidoData = {
         empresa_id: currentCompany.id,
@@ -217,8 +240,7 @@ export default function FavorecidosPage() {
         cidade: data.endereco?.cidade,
         estado: data.endereco?.estado,
         pais: data.endereco?.pais,
-        // Convertendo a data para o formato string YYYY-MM-DD sem timezone
-        data_aniversario: data.dataAniversario ? format(data.dataAniversario, "yyyy-MM-dd") : null,
+        data_aniversario: dataAniversarioFormatada,
         status: data.status,
       };
 
@@ -300,7 +322,6 @@ export default function FavorecidosPage() {
     }
   };
   
-  // Adicionando a função handleDelete que estava faltando
   const handleDelete = async (id: string) => {
     if (!currentCompany) {
       toast.error("Nenhuma empresa selecionada");

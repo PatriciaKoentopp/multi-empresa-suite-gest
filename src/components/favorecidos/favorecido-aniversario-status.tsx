@@ -29,10 +29,18 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
     if (value.length === 10) {
       try {
         // Tenta converter dd/mm/yyyy para Date sem considerar timezone
-        const parsedDate = parse(value, "dd/MM/yyyy", new Date());
-        
-        if (isValid(parsedDate)) {
-          form.setValue("dataAniversario", parsedDate);
+        const dateParts = value.split('/');
+        if (dateParts.length === 3) {
+          const day = parseInt(dateParts[0], 10);
+          const month = parseInt(dateParts[1], 10) - 1; // mês em JS é 0-indexed
+          const year = parseInt(dateParts[2], 10);
+          
+          // Cria a data com UTC para evitar ajustes de timezone
+          const parsedDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
+          
+          if (isValid(parsedDate)) {
+            form.setValue("dataAniversario", parsedDate);
+          }
         }
       } catch (error) {
         console.error("Erro ao converter data:", error);
@@ -86,15 +94,26 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
                       mode="single"
                       selected={field.value}
                       onSelect={(date) => {
-                        field.onChange(date);
                         if (date) {
+                          // Ajusta a data para meio-dia em UTC para evitar problemas de timezone
+                          const utcDate = new Date(Date.UTC(
+                            date.getFullYear(),
+                            date.getMonth(),
+                            date.getDate(),
+                            12, 0, 0
+                          ));
+                          
+                          field.onChange(utcDate);
                           // Formata a data para dd/MM/yyyy sem considerar timezone
-                          setDateInputValue(format(date, "dd/MM/yyyy"));
+                          setDateInputValue(format(utcDate, "dd/MM/yyyy"));
+                        } else {
+                          field.onChange(undefined);
+                          setDateInputValue("");
                         }
                       }}
                       disabled={readOnly}
                       initialFocus
-                      className={cn("p-3 pointer-events-auto")}
+                      className={cn("p-3 pointer-events-auto bg-white")}
                     />
                   </PopoverContent>
                 </Popover>
