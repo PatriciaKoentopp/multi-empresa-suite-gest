@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,72 +91,75 @@ export default function GrupoFavorecidosPage() {
       return;
     }
 
-    if (editingGrupo) {
-      // Atualizar grupo existente
-      const { error } = await supabase
-        .from("grupo_favorecidos")
-        .update({
-          nome: data.nome,
-          status: data.status,
-        })
-        .eq("id", editingGrupo.id)
-        .eq("empresa_id", currentCompany.id);
-
-      if (error) {
-        console.error("Erro ao atualizar grupo:", error);
-        toast.error("Erro ao atualizar grupo de favorecidos");
-        return;
-      }
-
-      setGrupos(prev =>
-        prev.map(g =>
-          g.id === editingGrupo.id
-            ? {
-                ...g,
-                nome: data.nome,
-                status: data.status,
-                updatedAt: new Date(),
-              }
-            : g
-        )
-      );
-      toast.success("Grupo de favorecidos atualizado com sucesso!");
-    } else {
-      // Criar novo grupo
-      const { data: newGrupo, error } = await supabase
-        .from("grupo_favorecidos")
-        .insert([
-          {
-            empresa_id: currentCompany.id,
+    try {
+      if (editingGrupo) {
+        // Atualizar grupo existente
+        const { error } = await supabase
+          .from("grupo_favorecidos")
+          .update({
             nome: data.nome,
             status: data.status,
-          },
-        ])
-        .select()
-        .single();
+          })
+          .eq("id", editingGrupo.id)
+          .eq("empresa_id", currentCompany.id);
 
-      if (error) {
-        console.error("Erro ao criar grupo:", error);
-        toast.error("Erro ao criar grupo de favorecidos");
-        return;
-      }
+        if (error) {
+          console.error("Erro ao atualizar grupo:", error);
+          toast.error("Erro ao atualizar grupo de favorecidos");
+          return;
+        }
 
-      if (newGrupo) {
-        const grupoFormatado: GrupoFavorecido = {
-          id: newGrupo.id,
-          nome: newGrupo.nome,
-          status: newGrupo.status as "ativo" | "inativo",
-          createdAt: new Date(newGrupo.created_at),
-          updatedAt: new Date(newGrupo.updated_at)
-        };
-        setGrupos(prev => [...prev, grupoFormatado]);
-        toast.success("Grupo de favorecidos criado com sucesso!");
+        setGrupos(prev =>
+          prev.map(g =>
+            g.id === editingGrupo.id
+              ? {
+                  ...g,
+                  nome: data.nome,
+                  status: data.status,
+                  updatedAt: new Date(),
+                }
+              : g
+          )
+        );
+        toast.success("Grupo de favorecidos atualizado com sucesso!");
+      } else {
+        // Criar novo grupo
+        const { data: newGrupo, error } = await supabase
+          .from("grupo_favorecidos")
+          .insert([
+            {
+              empresa_id: currentCompany.id,
+              nome: data.nome,
+              status: data.status,
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Erro ao criar grupo:", error);
+          toast.error("Erro ao criar grupo de favorecidos");
+          return;
+        }
+
+        if (newGrupo) {
+          const grupoFormatado: GrupoFavorecido = {
+            id: newGrupo.id,
+            nome: newGrupo.nome,
+            status: newGrupo.status as "ativo" | "inativo",
+            createdAt: new Date(newGrupo.created_at),
+            updatedAt: new Date(newGrupo.updated_at)
+          };
+          setGrupos(prev => [...prev, grupoFormatado]);
+          toast.success("Grupo de favorecidos criado com sucesso!");
+        }
       }
+    } finally {
+      handleCloseDialog();
     }
-    handleCloseDialog();
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     setDeletingGrupoId(id);
     setIsDeleteDialogOpen(true);
   };
@@ -163,22 +167,25 @@ export default function GrupoFavorecidosPage() {
   const confirmDelete = async () => {
     if (!deletingGrupoId || !currentCompany) return;
 
-    const { error } = await supabase
-      .from("grupo_favorecidos")
-      .delete()
-      .eq("id", deletingGrupoId)
-      .eq("empresa_id", currentCompany.id);
+    try {
+      const { error } = await supabase
+        .from("grupo_favorecidos")
+        .delete()
+        .eq("id", deletingGrupoId)
+        .eq("empresa_id", currentCompany.id);
 
-    if (error) {
-      console.error("Erro ao excluir grupo:", error);
-      toast.error("Erro ao excluir grupo de favorecidos");
-      return;
+      if (error) {
+        console.error("Erro ao excluir grupo:", error);
+        toast.error("Erro ao excluir grupo de favorecidos");
+        return;
+      }
+
+      setGrupos(prev => prev.filter(grupo => grupo.id !== deletingGrupoId));
+      toast.success("Grupo de favorecidos excluído com sucesso!");
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setDeletingGrupoId(null);
     }
-
-    setGrupos(prev => prev.filter(grupo => grupo.id !== deletingGrupoId));
-    toast.success("Grupo de favorecidos excluído com sucesso!");
-    setIsDeleteDialogOpen(false);
-    setDeletingGrupoId(null);
   };
 
   // Filtrar grupos com base no termo de busca
@@ -218,7 +225,10 @@ export default function GrupoFavorecidosPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        if (!open) handleCloseDialog();
+        else setIsDialogOpen(true);
+      }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
@@ -226,6 +236,11 @@ export default function GrupoFavorecidosPage() {
                 ? "Editar Grupo de Favorecidos"
                 : "Novo Grupo de Favorecidos"}
             </DialogTitle>
+            <DialogDescription>
+              {editingGrupo 
+                ? "Edite as informações do grupo de favorecidos."
+                : "Preencha as informações para criar um novo grupo de favorecidos."}
+            </DialogDescription>
           </DialogHeader>
           <GrupoFavorecidosForm
             grupo={editingGrupo}
@@ -235,7 +250,15 @@ export default function GrupoFavorecidosPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog 
+        open={isDeleteDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsDeleteDialogOpen(false);
+            setDeletingGrupoId(null);
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
