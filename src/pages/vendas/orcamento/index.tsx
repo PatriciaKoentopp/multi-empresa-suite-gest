@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,6 +56,7 @@ export default function OrcamentoPage() {
   const [servicosDisponiveis, setServicosDisponiveis] = useState<Servico[]>([]);
   const [tabelasPreco, setTabelasPreco] = useState<TabelaPreco[]>([]);
   const [precosServicos, setPrecosServicos] = useState<TabelaPrecoItem[]>([]);
+  const [parcelas, setParcelas] = useState(getParcelas());
 
   // Buscar dados iniciais
   useEffect(() => {
@@ -117,6 +117,7 @@ export default function OrcamentoPage() {
       }
       
       setNumeroNotaFiscal(orcamento.numero_nota_fiscal || "");
+      setNotaFiscalPdfUrl(orcamento.nota_fiscal_pdf || "");
       
       // Configurar serviços
       if (itens && itens.length > 0) {
@@ -250,8 +251,6 @@ export default function OrcamentoPage() {
     return parcelas;
   };
 
-  const [parcelas, setParcelas] = useState(getParcelas());
-
   // Atualiza parcelas quando muda número ou valor total
   React.useEffect(() => {
     // Não atualizar automaticamente se estamos editando um orçamento existente
@@ -297,13 +296,39 @@ export default function OrcamentoPage() {
     setServicos(prev => prev.filter((_, i) => i !== idx));
   };
 
-  // Upload do arquivo PDF da nota fiscal
-  const handleNotaFiscalPdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Modificar a função de handleNotaFiscalPdfChange para upload no Supabase Storage
+  const handleNotaFiscalPdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files && e.target.files[0];
     if (file && file.type === "application/pdf") {
-      setNotaFiscalPdf(file);
-      const url = URL.createObjectURL(file);
-      setNotaFiscalPdfUrl(url);
+      try {
+        // Upload do arquivo para o Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('notas_fiscais')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        // Obter URL pública do arquivo
+        const { data: { publicUrl }, error: urlError } = supabase.storage
+          .from('notas_fiscais')
+          .getPublicUrl(filePath);
+
+        if (urlError) throw urlError;
+
+        setNotaFiscalPdf(file);
+        setNotaFiscalPdfUrl(publicUrl);
+        setNumeroNotaFiscal(file.name); // Definir nome do arquivo como número da nota fiscal
+      } catch (error) {
+        console.error('Erro ao fazer upload da nota fiscal:', error);
+        toast({
+          title: "Erro ao fazer upload da nota fiscal",
+          variant: "destructive",
+        });
+      }
     } else {
       setNotaFiscalPdf(null);
       setNotaFiscalPdfUrl("");
@@ -315,7 +340,7 @@ export default function OrcamentoPage() {
     navigate("/vendas/faturamento");
   };
 
-  // Salvar orçamento
+  // Modificar a função handleSubmit para incluir a URL do PDF
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!favorecidoId) {
@@ -334,7 +359,6 @@ export default function OrcamentoPage() {
     try {
       // Se for edição, atualizamos o registro existente
       if (orcamentoId) {
-        // Atualizar orçamento
         const { error: orcamentoError } = await supabase
           .from('orcamentos')
           .update({
@@ -346,6 +370,7 @@ export default function OrcamentoPage() {
             numero_parcelas: numeroParcelas,
             data_nota_fiscal: dataNotaFiscal || null,
             numero_nota_fiscal: numeroNotaFiscal || null,
+            nota_fiscal_pdf: notaFiscalPdfUrl || null,
           })
           .eq('id', orcamentoId);
 
@@ -393,9 +418,6 @@ export default function OrcamentoPage() {
           .insert(parcelasOrcamento);
 
         if (parcelasError) throw parcelasError;
-
-        toast({ title: "Orçamento atualizado com sucesso!" });
-        navigate("/vendas/faturamento");
       } else {
         // Inserir novo orçamento
         const { data: orcamento, error: orcamentoError } = await supabase
@@ -412,7 +434,8 @@ export default function OrcamentoPage() {
             numero_parcelas: numeroParcelas,
             data_nota_fiscal: dataNotaFiscal || null,
             numero_nota_fiscal: numeroNotaFiscal || null,
-            status: 'ativo'
+            status: 'ativo',
+            nota_fiscal_pdf: notaFiscalPdfUrl || null,
           })
           .select()
           .single();
@@ -445,22 +468,10 @@ export default function OrcamentoPage() {
           .insert(parcelasOrcamento);
 
         if (parcelasError) throw parcelasError;
-
-        toast({ title: "Orçamento salvo com sucesso!" });
-
-        // Resetar formulário
-        setFavorecidoId("");
-        setCodigoProjeto("");
-        setObservacoes("");
-        setFormaPagamento(formasPagamento[0].id);
-        setNumeroParcelas(1);
-        setServicos([{ servicoId: "", valor: 0 }]);
-        setDataNotaFiscal("");
-        setNumeroNotaFiscal("");
-        setNotaFiscalPdf(null);
-        setNotaFiscalPdfUrl("");
-        setCodigoVenda(gerarCodigoVenda());
       }
+
+      toast({ title: orcamentoId ? "Orçamento atualizado com sucesso!" : "Orçamento salvo com sucesso!" });
+      navigate("/vendas/faturamento");
     } catch (error) {
       console.error('Erro ao salvar orçamento:', error);
       toast({
@@ -746,12 +757,7 @@ export default function OrcamentoPage() {
                       variant="blue"
                       type="button"
                       className="mt-2"
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = notaFiscalPdfUrl;
-                        link.download = notaFiscalPdf.name || "nota-fiscal.pdf";
-                        link.click();
-                      }}
+                      onClick={() => window.open(notaFiscalPdfUrl, '_blank')}
                     >
                       Baixar Nota Fiscal
                     </Button>
