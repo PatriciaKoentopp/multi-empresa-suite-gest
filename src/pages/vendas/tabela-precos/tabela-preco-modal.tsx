@@ -53,13 +53,15 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
 
   const [novoServicoId, setNovoServicoId] = useState<string>("");
   const [novoPreco, setNovoPreco] = useState<string>("");
+  const [tabelaId, setTabelaId] = useState<string>("");
 
   useEffect(() => {
     if (open && tabela) {
       setNome(tabela.nome);
-      setVigenciaInicial(tabela.vigencia_inicial ? new Date(tabela.vigencia_inicial) : null);
-      setVigenciaFinal(tabela.vigencia_final ? new Date(tabela.vigencia_final) : null);
+      setVigenciaInicial(tabela.vigencia_inicial);
+      setVigenciaFinal(tabela.vigencia_final);
       setStatus(tabela.status);
+      setTabelaId(tabela.id);
       carregarItensDaTabela(tabela.id);
     } else {
       resetForm();
@@ -81,12 +83,17 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
       if (error) throw error;
 
       // Transformar os dados para o formato esperado
-      const itensComNome = data?.map(item => ({
-        ...item,
-        nome: item.servicos?.nome || ''
+      const itensConvertidos = data?.map(item => ({
+        id: item.id,
+        tabela_id: item.tabela_id,
+        servico_id: item.servico_id,
+        preco: item.preco,
+        created_at: new Date(item.created_at),
+        updated_at: new Date(item.updated_at),
+        nome: item.servicos?.nome // Campo adicional não persistido
       })) || [];
 
-      setServicosTabela(itensComNome);
+      setServicosTabela(itensConvertidos);
     } catch (error) {
       console.error('Erro ao carregar itens da tabela:', error);
       toast({
@@ -105,6 +112,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
     setServicosTabela([]);
     setNovoServicoId("");
     setNovoPreco("");
+    setTabelaId("");
   }
 
   async function adicionarServico() {
@@ -125,30 +133,48 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
     try {
       // Se estiver editando uma tabela existente
       if (tabela && tabela.id) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('tabelas_precos_itens')
           .insert({
             tabela_id: tabela.id,
             servico_id: novoServicoId,
             preco: parseFloat(novoPreco.replace(',', '.'))
-          });
+          })
+          .select();
 
         if (error) throw error;
-      }
 
-      // Atualizar estado local
-      setServicosTabela(prev => [
-        ...prev,
-        {
-          id: '', // será gerado pelo banco
-          tabela_id: tabela?.id || '',
-          servico_id: novoServicoId,
-          preco: parseFloat(novoPreco.replace(',', '.')),
-          nome: servicoSelecionado?.nome || '',
-          created_at: new Date(),
-          updated_at: new Date()
+        // Se inseriu com sucesso, adiciona ao estado local
+        if (data && data.length > 0) {
+          setServicosTabela(prev => [
+            ...prev,
+            {
+              id: data[0].id,
+              tabela_id: data[0].tabela_id,
+              servico_id: data[0].servico_id,
+              preco: data[0].preco,
+              created_at: new Date(data[0].created_at),
+              updated_at: new Date(data[0].updated_at),
+              nome: servicoSelecionado?.nome
+            }
+          ]);
         }
-      ]);
+      } else {
+        // Está criando uma nova tabela, então só adiciona ao estado local
+        // Os itens só serão salvos depois que a tabela for criada
+        setServicosTabela(prev => [
+          ...prev,
+          {
+            id: `temp-${Date.now()}`, // ID temporário
+            tabela_id: 'temp', // Será substituído pelo ID real da tabela
+            servico_id: novoServicoId,
+            preco: parseFloat(novoPreco.replace(',', '.')),
+            created_at: new Date(),
+            updated_at: new Date(),
+            nome: servicoSelecionado?.nome
+          }
+        ]);
+      }
 
       // Limpar campos
       setNovoServicoId("");
@@ -233,6 +259,50 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
     };
 
     onSalvar(tabelaParaSalvar);
+
+    // Se for um novo registro, precisamos salvar os itens depois que a tabela for criada
+    if (!tabela) {
+      // Buscamos a tabela recém-criada para obter seu ID
+      setTimeout(async () => {
+        try {
+          const { data: tabelasRecentes, error: errorBusca } = await supabase
+            .from('tabelas_precos')
+            .select('*')
+            .eq('empresa_id', currentCompany?.id)
+            .eq('nome', nome)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (errorBusca) throw errorBusca;
+
+          if (tabelasRecentes && tabelasRecentes.length > 0) {
+            const novaTabelaId = tabelasRecentes[0].id;
+
+            // Inserir cada item da tabela
+            for (const item of servicosTabela) {
+              const { error: errorItem } = await supabase
+                .from('tabelas_precos_itens')
+                .insert({
+                  tabela_id: novaTabelaId,
+                  servico_id: item.servico_id,
+                  preco: item.preco
+                });
+
+              if (errorItem) throw errorItem;
+            }
+
+            toast({ title: "Serviços adicionados com sucesso à tabela!" });
+          }
+        } catch (error) {
+          console.error('Erro ao salvar itens da tabela:', error);
+          toast({
+            title: "Erro ao salvar itens",
+            description: "Ocorreu um erro ao salvar os serviços da tabela.",
+            variant: "destructive",
+          });
+        }
+      }, 1000); // Espera 1 segundo para garantir que a tabela foi criada
+    }
   }
 
   return (

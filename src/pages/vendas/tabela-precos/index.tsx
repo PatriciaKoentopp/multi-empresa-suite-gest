@@ -38,7 +38,17 @@ export default function TabelaPrecosPage() {
         .order('nome');
 
       if (error) throw error;
-      setTabelas(data || []);
+      
+      // Converter datas de string para objetos Date
+      const tabelasConvertidas = data?.map(tab => ({
+        ...tab,
+        vigencia_inicial: tab.vigencia_inicial ? new Date(tab.vigencia_inicial) : null,
+        vigencia_final: tab.vigencia_final ? new Date(tab.vigencia_final) : null,
+        created_at: new Date(tab.created_at),
+        updated_at: new Date(tab.updated_at)
+      })) as TabelaPreco[];
+      
+      setTabelas(tabelasConvertidas || []);
     } catch (error) {
       console.error('Erro ao carregar tabelas de preços:', error);
       toast({
@@ -58,7 +68,16 @@ export default function TabelaPrecosPage() {
         .order('nome');
 
       if (error) throw error;
-      setServicos(data || []);
+      
+      // Converter datas de string para objetos Date
+      const servicosConvertidos = data?.map(serv => ({
+        ...serv,
+        created_at: new Date(serv.created_at),
+        updated_at: new Date(serv.updated_at),
+        status: serv.status as "ativo" | "inativo"
+      })) as Servico[];
+      
+      setServicos(servicosConvertidos || []);
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
       toast({
@@ -115,7 +134,7 @@ export default function TabelaPrecosPage() {
         toast({ title: "Tabela de Preços atualizada com sucesso!" });
       } else {
         // Criação
-        const { error: insertError } = await supabase
+        const { data: novaTabela, error: insertError } = await supabase
           .from('tabelas_precos')
           .insert({
             empresa_id: currentCompany?.id,
@@ -123,7 +142,9 @@ export default function TabelaPrecosPage() {
             vigencia_inicial: tabela.vigencia_inicial,
             vigencia_final: tabela.vigencia_final,
             status: "ativo"
-          });
+          })
+          .select()
+          .single();
 
         if (insertError) throw insertError;
         toast({ title: "Tabela de Preços criada com sucesso!" });
@@ -143,6 +164,15 @@ export default function TabelaPrecosPage() {
 
   async function handleExcluirTabela(tabela: TabelaPreco) {
     try {
+      // Primeiro excluir os itens relacionados
+      const { error: deleteItensError } = await supabase
+        .from('tabelas_precos_itens')
+        .delete()
+        .eq('tabela_id', tabela.id);
+
+      if (deleteItensError) throw deleteItensError;
+
+      // Depois excluir a tabela
       const { error } = await supabase
         .from('tabelas_precos')
         .delete()
@@ -230,12 +260,12 @@ export default function TabelaPrecosPage() {
                   <TableCell className="font-semibold">{tab.nome}</TableCell>
                   <TableCell>
                     {tab.vigencia_inicial
-                      ? new Date(tab.vigencia_inicial).toLocaleDateString("pt-BR")
+                      ? tab.vigencia_inicial.toLocaleDateString("pt-BR")
                       : "-"}
                   </TableCell>
                   <TableCell>
                     {tab.vigencia_final
-                      ? new Date(tab.vigencia_final).toLocaleDateString("pt-BR")
+                      ? tab.vigencia_final.toLocaleDateString("pt-BR")
                       : "-"}
                   </TableCell>
                   <TableCell>
