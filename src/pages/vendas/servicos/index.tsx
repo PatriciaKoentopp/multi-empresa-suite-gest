@@ -1,12 +1,12 @@
+
 import { useState, useMemo, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Table, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Plus } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Search, Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { useEffect } from "react";
@@ -22,6 +22,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { ServicosForm } from "@/components/servicos/servicos-form";
 
 // Função para exibir badge do status no mesmo padrão de Contas a Pagar
 function getStatusBadge(status: "ativo" | "inativo") {
@@ -44,18 +45,14 @@ type Servico = {
   nome: string;
   descricao?: string;
   status: "ativo" | "inativo";
+  conta_receita_id?: string;
 };
 
 export default function ServicosPage() {
   const { currentCompany } = useCompany();
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<Omit<Servico, "id">>({
-    nome: "",
-    descricao: "",
-    status: "ativo"
-  });
-  const [editId, setEditId] = useState<string | null>(null);
+  const [editingServico, setEditingServico] = useState<Servico | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todas" | "ativo" | "inativo">("todas");
   const inputBuscaRef = useRef<HTMLInputElement>(null);
@@ -81,11 +78,7 @@ export default function ServicosPage() {
       setServicos(data || []);
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
-      toast({
-        title: "Erro ao carregar serviços",
-        description: "Ocorreu um erro ao carregar a lista de serviços.",
-        variant: "destructive",
-      });
+      toast("Erro ao carregar serviços");
     }
   }
 
@@ -102,81 +95,48 @@ export default function ServicosPage() {
     });
   }, [servicos, searchTerm, statusFilter]);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    const { name, value } = e.target;
-    setForm((f) => ({
-      ...f,
-      [name]: value
-    }));
-  }
-
-  function handleStatusToggle() {
-    setForm((f) => ({
-      ...f,
-      status: f.status === "ativo" ? "inativo" : "ativo",
-    }));
-  }
-
-  function resetForm() {
-    setForm({
-      nome: "",
-      descricao: "",
-      status: "ativo"
-    });
-    setEditId(null);
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    
+  async function handleSubmitServico(formData: any) {
     try {
-      if (editId) {
+      if (formData.id) {
         const { error } = await supabase
           .from('servicos')
           .update({
-            nome: form.nome,
-            descricao: form.descricao,
-            status: form.status
+            nome: formData.nome,
+            descricao: formData.descricao,
+            status: formData.status,
+            conta_receita_id: formData.conta_receita_id
           })
-          .eq('id', editId)
+          .eq('id', formData.id)
           .eq('empresa_id', currentCompany?.id);
 
         if (error) throw error;
-        toast({ title: "Serviço atualizado com sucesso!" });
+        toast("Serviço atualizado com sucesso!");
       } else {
         const { error } = await supabase
           .from('servicos')
           .insert([{
-            nome: form.nome,
-            descricao: form.descricao,
-            status: form.status,
+            nome: formData.nome,
+            descricao: formData.descricao,
+            status: formData.status,
+            conta_receita_id: formData.conta_receita_id,
             empresa_id: currentCompany?.id
           }]);
 
         if (error) throw error;
-        toast({ title: "Serviço cadastrado com sucesso!" });
+        toast("Serviço cadastrado com sucesso!");
       }
       
       setShowForm(false);
-      resetForm();
+      setEditingServico(null);
       loadServicos();
     } catch (error) {
       console.error('Erro ao salvar serviço:', error);
-      toast({
-        title: "Erro ao salvar serviço",
-        description: "Ocorreu um erro ao salvar o serviço.",
-        variant: "destructive",
-      });
+      toast("Erro ao salvar serviço");
     }
   }
 
   function handleEditar(servico: Servico) {
-    setForm({
-      nome: servico.nome,
-      descricao: servico.descricao ?? "",
-      status: servico.status
-    });
-    setEditId(servico.id);
+    setEditingServico(servico);
     setShowForm(true);
   }
   
@@ -192,20 +152,16 @@ export default function ServicosPage() {
 
       if (error) throw error;
       
-      toast({ title: "Serviço excluído com sucesso!" });
+      toast("Serviço excluído com sucesso!");
       loadServicos();
       
-      if (editId === deletingServicoId) {
-        resetForm();
+      if (editingServico?.id === deletingServicoId) {
+        setEditingServico(null);
         setShowForm(false);
       }
     } catch (error) {
       console.error('Erro ao excluir serviço:', error);
-      toast({
-        title: "Erro ao excluir serviço",
-        description: "Ocorreu um erro ao excluir o serviço.",
-        variant: "destructive",
-      });
+      toast("Erro ao excluir serviço");
     } finally {
       setIsDeleteDialogOpen(false);
       setDeletingServicoId(null);
@@ -222,11 +178,16 @@ export default function ServicosPage() {
     inputBuscaRef.current?.focus();
   }
 
+  function handleCancelForm() {
+    setShowForm(false);
+    setEditingServico(null);
+  }
+
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Cadastro de Serviços</h2>
-        <Button variant="blue" onClick={() => { setShowForm((s) => !s); resetForm(); }}>
+        <Button variant="blue" onClick={() => { setShowForm(true); setEditingServico(null); }}>
           <Plus className="mr-2" />
           Novo Serviço
         </Button>
@@ -285,50 +246,14 @@ export default function ServicosPage() {
       {showForm && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>{editId ? "Editar Serviço" : "Novo Serviço"}</CardTitle>
+            <CardTitle>{editingServico ? "Editar Serviço" : "Novo Serviço"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-              <div>
-                <label className="block text-sm mb-1">Nome do Serviço *</label>
-                <Input
-                  type="text"
-                  name="nome"
-                  required
-                  value={form.nome}
-                  onChange={handleChange}
-                  maxLength={100}
-                />
-              </div>
-              <div>
-                <label className="block text-sm mb-1">Descrição</label>
-                <Textarea
-                  name="descricao"
-                  value={form.descricao}
-                  onChange={handleChange}
-                  maxLength={255}
-                />
-              </div>
-              <div>
-                <label className="block text-sm mb-1">Status</label>
-                <Button
-                  type="button"
-                  variant={form.status === "ativo" ? "blue" : "outline"}
-                  className="mr-2"
-                  onClick={handleStatusToggle}
-                >
-                  {form.status === "ativo" ? "Ativo" : "Inativo"}
-                </Button>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <Button type="submit" variant="blue">
-                  {editId ? "Salvar Alterações" : "Salvar"}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => { setShowForm(false); resetForm(); }}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
+            <ServicosForm 
+              initialData={editingServico || undefined}
+              onSubmit={handleSubmitServico}
+              onCancel={handleCancelForm}
+            />
           </CardContent>
         </Card>
       )}
