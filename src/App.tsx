@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,13 +27,13 @@ import OrcamentoPage from "./pages/vendas/orcamento";
 import FaturamentoPage from "./pages/vendas/faturamento";
 import ContasAReceberPage from "./pages/financeiro/contas-a-receber";
 import TabelaPrecosPage from "./pages/vendas/tabela-precos";
-// IMPORTAR A PÁGINA DE USUÁRIOS
 import UsuariosPage from "./pages/admin/usuarios";
 import FunilConfiguracaoPage from "./pages/crm/funil-configuracao";
-import LeadsPage from "./pages/crm/leads"; // Importamos a nova página de Leads
-import LancamentosPage from "./pages/contabil/lancamentos"; // ADICIONADO
-import DrePage from "./pages/contabil/dre"; // <-- IMPORTAÇÃO DA NOVA PÁGINA
-import BalancoPage from "./pages/contabil/balanco"; // NOVA PÁGINA ADICIONADA
+import LeadsPage from "./pages/crm/leads";
+import LancamentosPage from "./pages/contabil/lancamentos";
+import DrePage from "./pages/contabil/dre";
+import BalancoPage from "./pages/contabil/balanco";
+import TiposTitulosPage from "./pages/cadastros/tipos-titulos"; // Importando a página de Tipos de Títulos
 
 const queryClient = new QueryClient();
 
@@ -68,12 +69,13 @@ const App = () => (
                 <Route path="/cadastros/origens" element={<OrigensPage />} />
                 <Route path="/cadastros/motivos-perda" element={<MotivosPerdaPage />} />
                 <Route path="/cadastros/conta-corrente" element={<ContaCorrentePage />} />
+                <Route path="/cadastros/tipos-titulos" element={<TiposTitulosPage />} /> {/* Nova rota para Tipos de Títulos */}
                 
                 {/* Contábil routes */}
                 <Route path="/contabil/plano-contas" element={<PlanoContasPage />} />
-                <Route path="/contabil/lancamentos" element={<LancamentosPage />} /> {/* ADICIONADO */}
-                <Route path="/contabil/dre" element={<DrePage />} /> {/* NOVA ROTA DRE */}
-                <Route path="/contabil/balanco" element={<BalancoPage />} /> {/* NOVA ROTA BALANCO */}
+                <Route path="/contabil/lancamentos" element={<LancamentosPage />} />
+                <Route path="/contabil/dre" element={<DrePage />} />
+                <Route path="/contabil/balanco" element={<BalancoPage />} />
                 
                 {/* Style Guide */}
                 <Route path="/style-guide" element={<StyleGuidePage />} />
@@ -103,7 +105,7 @@ const App = () => (
                 <Route path="/vendas/tabela-precos" element={<TabelaPrecosPage />} />
                 {/* CRM routes */}
                 <Route path="/crm/funil-configuracao" element={<FunilConfiguracaoPage />} />
-                <Route path="/crm/leads" element={<LeadsPage />} /> {/* Atualizamos a rota para usar nosso novo componente */}
+                <Route path="/crm/leads" element={<LeadsPage />} />
                 <Route path="/crm/marketing" element={<p className="p-4">Campanhas e automações</p>} />
               </Route>
               {/* Catch-all route */}
