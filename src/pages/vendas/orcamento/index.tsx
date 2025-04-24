@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ export default function OrcamentoPage() {
   const [notaFiscalPdf, setNotaFiscalPdf] = useState<File | null>(null);
   const [notaFiscalPdfUrl, setNotaFiscalPdfUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Estados para dados do banco
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
@@ -224,7 +226,7 @@ export default function OrcamentoPage() {
   const total = servicos.reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
 
   // Cálculo das parcelas
-  const getParcelas = () => {
+  function getParcelas() {
     if (numeroParcelas <= 1) {
       return [{
         valor: total,
@@ -296,42 +298,83 @@ export default function OrcamentoPage() {
     setServicos(prev => prev.filter((_, i) => i !== idx));
   };
 
-  // Modificar a função de handleNotaFiscalPdfChange para upload no Supabase Storage
+  // Upload do arquivo PDF para o Supabase Storage
+  const uploadNotaFiscalPdf = async (file: File): Promise<string> => {
+    setIsUploading(true);
+    try {
+      // Gerar um nome único para o arquivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${currentCompany?.id}_${codigoVenda}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      console.log('Iniciando upload do arquivo:', filePath);
+      
+      // Upload do arquivo para o Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('notas_fiscais')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Erro no upload:', error);
+        throw error;
+      }
+
+      console.log('Upload realizado com sucesso:', data);
+      
+      // Obter a URL pública do arquivo
+      const { data: { publicUrl } } = supabase.storage
+        .from('notas_fiscais')
+        .getPublicUrl(filePath);
+      
+      console.log('URL pública gerada:', publicUrl);
+      
+      return publicUrl;
+    } catch (error) {
+      console.error('Erro ao fazer upload do PDF:', error);
+      toast({
+        title: "Erro ao fazer upload da nota fiscal",
+        description: "Não foi possível fazer o upload do arquivo PDF.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Manipulador de alteração do arquivo de nota fiscal
   const handleNotaFiscalPdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files && e.target.files[0];
-    if (file && file.type === "application/pdf") {
-      try {
-        // Upload do arquivo para o Supabase Storage
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('notas_fiscais')
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        // Obter URL pública do arquivo
-        const { data: { publicUrl }, error: urlError } = supabase.storage
-          .from('notas_fiscais')
-          .getPublicUrl(filePath);
-
-        if (urlError) throw urlError;
-
-        setNotaFiscalPdf(file);
-        setNotaFiscalPdfUrl(publicUrl);
-        setNumeroNotaFiscal(file.name); // Definir nome do arquivo como número da nota fiscal
-      } catch (error) {
-        console.error('Erro ao fazer upload da nota fiscal:', error);
-        toast({
-          title: "Erro ao fazer upload da nota fiscal",
-          variant: "destructive",
-        });
-      }
-    } else {
+    
+    if (!file) {
       setNotaFiscalPdf(null);
       setNotaFiscalPdfUrl("");
+      return;
+    }
+    
+    if (file.type !== "application/pdf") {
+      toast({
+        title: "Tipo de arquivo inválido",
+        description: "Por favor, selecione apenas arquivos PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setNotaFiscalPdf(file);
+    
+    try {
+      const publicUrl = await uploadNotaFiscalPdf(file);
+      setNotaFiscalPdfUrl(publicUrl);
+      toast({
+        title: "Upload da nota fiscal concluído",
+        description: "O arquivo PDF foi carregado com sucesso.",
+      });
+    } catch (error) {
+      // Erro já tratado na função uploadNotaFiscalPdf
     }
   };
 
@@ -340,9 +383,10 @@ export default function OrcamentoPage() {
     navigate("/vendas/faturamento");
   };
 
-  // Modificar a função handleSubmit para incluir a URL do PDF
+  // Enviar formulário
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!favorecidoId) {
       toast({ title: "Selecione um Favorecido para prosseguir." });
       return;
@@ -355,6 +399,8 @@ export default function OrcamentoPage() {
       toast({ title: "Preencha todas as datas de vencimento das parcelas." });
       return;
     }
+
+    setIsLoading(true);
 
     try {
       // Se for edição, atualizamos o registro existente
@@ -478,6 +524,8 @@ export default function OrcamentoPage() {
         title: "Erro ao salvar orçamento",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -749,10 +797,16 @@ export default function OrcamentoPage() {
                       type="file"
                       accept="application/pdf"
                       onChange={handleNotaFiscalPdfChange}
-                      disabled={isVisualizacao}
+                      disabled={isVisualizacao || isUploading}
                     />
                   )}
-                  {notaFiscalPdf && notaFiscalPdfUrl && (
+                  {isUploading && (
+                    <div className="mt-2 text-sm flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 mr-2 border-t-2 border-blue-500"></div>
+                      Fazendo upload...
+                    </div>
+                  )}
+                  {notaFiscalPdfUrl && (
                     <Button
                       variant="blue"
                       type="button"
@@ -767,8 +821,19 @@ export default function OrcamentoPage() {
 
               <div className="flex gap-2 mt-2">
                 {!isVisualizacao && (
-                  <Button type="submit" variant="blue">
-                    {orcamentoId ? "Atualizar Orçamento" : "Salvar Orçamento"}
+                  <Button 
+                    type="submit" 
+                    variant="blue"
+                    disabled={isLoading || isUploading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 mr-2 border-t-2 border-white"></div>
+                        Salvando...
+                      </>
+                    ) : (
+                      orcamentoId ? "Atualizar Orçamento" : "Salvar Orçamento"
+                    )}
                   </Button>
                 )}
                 <Button type="button" variant="outline" onClick={handleCancel}>
