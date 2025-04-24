@@ -75,6 +75,7 @@ function DateInput({
       </div>
     </div>;
 }
+
 type Operacao = "pagar" | "receber" | "transferencia";
 interface Parcela {
   numero: number;
@@ -82,12 +83,20 @@ interface Parcela {
   vencimento: Date;
 }
 
-// Mock para contas correntes
-const contasCorrenteMock = [
-  { id: "1", nome: "Conta Corrente Banco A" },
-  { id: "2", nome: "Conta Caixa Empresa" },
-  { id: "3", nome: "Conta Banco Digital" }
-];
+interface Favorecido {
+  id: string;
+  nome: string;
+}
+
+interface Categoria {
+  id: string;
+  nome: string;
+}
+
+interface ContaCorrente {
+  id: string;
+  nome: string;
+}
 
 export default function IncluirMovimentacaoPage() {
   const [operacao, setOperacao] = useState<Operacao>("pagar");
@@ -110,18 +119,14 @@ export default function IncluirMovimentacaoPage() {
   const [contaOrigem, setContaOrigem] = useState("");
   const [contaDestino, setContaDestino] = useState("");
 
-  // Novo: controle do modal e dados locais de favorecidos/categorias
+  // Estado para armazenar dados reais do banco
   const [isModalNovoFavorecido, setIsModalNovoFavorecido] = useState(false);
   const [isModalNovaCategoria, setIsModalNovaCategoria] = useState(false);
-  const [favorecidos, setFavorecidos] = useState([
-    { id: "1", nome: "João Silva" },
-    { id: "2", nome: "Empresa XYZ" }
-  ]);
-  const [categorias, setCategorias] = useState([
-    { id: "1", nome: "Aluguel" },
-    { id: "2", nome: "Salário" },
-    { id: "3", nome: "Outros" }
-  ]);
+  const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [contasCorrente, setContasCorrente] = useState<ContaCorrente[]>([]);
+  
+  // Formas de pagamento fixas
   const formasPagamento = [
     { id: "1", nome: "Dinheiro" },
     { id: "2", nome: "Cartão" },
@@ -179,6 +184,7 @@ export default function IncluirMovimentacaoPage() {
     setParcelas(novasParcelas);
     // eslint-disable-next-line
   }, [valor, numParcelas, dataPrimeiroVenc]);
+  
   function handleEditarDataVencimento(indice: number, dt: Date | undefined) {
     if (!dt) return;
     const novosVenc = parcelas.map((p, i) => i === indice ? dt : p.vencimento);
@@ -203,49 +209,136 @@ export default function IncluirMovimentacaoPage() {
     }
     setParcelas(novasParcelas);
   }
+
   // Modal Favorecido
-  function handleSalvarNovoFavorecido(data: any) {
-    // Considerando que o form de favorecido retorna {nome}
-    const novoId = `temp-${Date.now()}`;
-    setFavorecidos(old => [...old, { id: novoId, nome: data.nome }]);
-    setFavorecido(novoId);
-    setIsModalNovoFavorecido(false);
-    toast.success("Favorecido cadastrado com sucesso!");
+  async function handleSalvarNovoFavorecido(data: any) {
+    try {
+      if (!currentCompany?.id) {
+        toast.error("Empresa não selecionada");
+        return;
+      }
+      
+      // Inserir novo favorecido no Supabase
+      const { data: novoFavorecido, error } = await supabase
+        .from("favorecidos")
+        .insert([{
+          empresa_id: currentCompany.id,
+          nome: data.nome,
+          tipo: data.tipo || "cliente",
+          documento: data.documento || "",
+          tipo_documento: data.tipoDocumento || "cpf",
+          status: "ativo"
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Atualizar lista local de favorecidos
+      setFavorecidos(prev => [...prev, { id: novoFavorecido.id, nome: novoFavorecido.nome }]);
+      setFavorecido(novoFavorecido.id);
+      setIsModalNovoFavorecido(false);
+      toast.success("Favorecido cadastrado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar favorecido:", error);
+      toast.error("Erro ao cadastrar favorecido");
+    }
   }
+
   // Modal Categoria Financeira
-  function handleSalvarNovaCategoria(data: any) {
-    // O form de PlanoContas retorna {descricao}
-    const novoId = `temp-${Date.now()}`;
-    setCategorias(old => [...old, { id: novoId, nome: data.descricao }]);
-    setCategoria(novoId);
-    setIsModalNovaCategoria(false);
-    toast.success("Categoria cadastrada com sucesso!");
+  async function handleSalvarNovaCategoria(data: any) {
+    try {
+      if (!currentCompany?.id) {
+        toast.error("Empresa não selecionada");
+        return;
+      }
+      
+      // Inserir nova categoria no Supabase
+      const { data: novaCategoria, error } = await supabase
+        .from("plano_contas")
+        .insert([{
+          empresa_id: currentCompany.id,
+          descricao: data.descricao,
+          codigo: data.codigo || "",
+          tipo: data.tipo || "despesa",
+          status: "ativo",
+          categoria: "movimentação"
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Atualizar lista local de categorias
+      setCategorias(prev => [...prev, { id: novaCategoria.id, nome: novaCategoria.descricao }]);
+      setCategoria(novaCategoria.id);
+      setIsModalNovaCategoria(false);
+      toast.success("Categoria cadastrada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar categoria:", error);
+      toast.error("Erro ao cadastrar categoria");
+    }
   }
 
   // Novo estado para armazenar os tipos de títulos
   const [tiposTitulos, setTiposTitulos] = useState<TipoTitulo[]>([]);
   const [tipoTituloId, setTipoTituloId] = useState("");
 
-  // Buscar tipos de títulos da empresa
+  // Buscar dados do Supabase (favorecidos, categorias, contas correntes e tipos de títulos)
   useEffect(() => {
-    async function buscarTiposTitulos() {
+    async function carregarDados() {
       if (!currentCompany?.id) return;
       
-      const { data, error } = await supabase
-        .from("tipos_titulos")
-        .select("*")
-        .eq("empresa_id", currentCompany.id)
-        .eq("status", "ativo");
-
-      if (error) {
-        console.error("Erro ao buscar tipos de títulos:", error);
-        return;
+      try {
+        // Buscar favorecidos
+        const { data: favorecidosData, error: errorFavorecidos } = await supabase
+          .from("favorecidos")
+          .select("id, nome")
+          .eq("empresa_id", currentCompany.id)
+          .eq("status", "ativo");
+          
+        if (errorFavorecidos) throw errorFavorecidos;
+        
+        // Buscar categorias (plano de contas)
+        const { data: categoriasData, error: errorCategorias } = await supabase
+          .from("plano_contas")
+          .select("id, descricao")
+          .eq("empresa_id", currentCompany.id)
+          .eq("status", "ativo");
+          
+        if (errorCategorias) throw errorCategorias;
+        
+        // Buscar contas correntes
+        const { data: contasData, error: errorContas } = await supabase
+          .from("contas_correntes")
+          .select("id, nome")
+          .eq("empresa_id", currentCompany.id)
+          .eq("status", "ativo");
+          
+        if (errorContas) throw errorContas;
+        
+        // Buscar tipos de títulos
+        const { data: tiposTitulosData, error: errorTipos } = await supabase
+          .from("tipos_titulos")
+          .select("*")
+          .eq("empresa_id", currentCompany.id)
+          .eq("status", "ativo");
+          
+        if (errorTipos) throw errorTipos;
+        
+        // Atualizar estados com os dados do banco
+        setFavorecidos(favorecidosData || []);
+        setCategorias(categoriasData?.map(cat => ({ id: cat.id, nome: cat.descricao })) || []);
+        setContasCorrente(contasData || []);
+        setTiposTitulos(tiposTitulosData || []);
+        
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        toast.error("Erro ao carregar dados");
       }
-
-      setTiposTitulos(data || []);
     }
-
-    buscarTiposTitulos();
+    
+    carregarDados();
   }, [currentCompany?.id]);
 
   // Resetar tipo de título ao mudar operação
@@ -405,7 +498,7 @@ export default function IncluirMovimentacaoPage() {
                       <SelectValue placeholder="Selecione a conta origem" />
                     </SelectTrigger>
                     <SelectContent className="bg-white z-10">
-                      {contasCorrenteMock
+                      {contasCorrente
                         .filter(c => c.id !== contaDestino)
                         .map(conta =>
                           <SelectItem key={conta.id} value={conta.id}>{conta.nome}</SelectItem>
@@ -420,7 +513,7 @@ export default function IncluirMovimentacaoPage() {
                       <SelectValue placeholder="Selecione a conta destino" />
                     </SelectTrigger>
                     <SelectContent className="bg-white z-10">
-                      {contasCorrenteMock
+                      {contasCorrente
                         .filter(c => c.id !== contaOrigem)
                         .map(conta =>
                           <SelectItem key={conta.id} value={conta.id}>{conta.nome}</SelectItem>
