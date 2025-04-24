@@ -71,22 +71,56 @@ export default function ContasAPagarPage() {
     juros: number;
     desconto: number;
   }) {
-    setContas(prev =>
-      prev.map(item =>
-        item.id === contaParaBaixar?.id
-          ? {
-              ...item,
-              dataPagamento,
-              status: "pago", // sempre define pago (por ora)
-            }
-          : item
-      )
-    );
-    // Aqui normalmente: lança no fluxo de caixa, etc — mas deixamos só atualização mock
-    toast({
-      title: "Sucesso",
-      description: "Título baixado com sucesso!"
-    });
+    if (!contaParaBaixar || !currentCompany) return;
+
+    const atualizarMovimentacao = async () => {
+      try {
+        // Atualiza a parcela com os dados do pagamento
+        const { error: errorParcela } = await supabase
+          .from('movimentacoes_parcelas')
+          .update({
+            data_pagamento: format(dataPagamento, 'yyyy-MM-dd'),
+            multa,
+            juros,
+            desconto,
+            conta_corrente_id: contaCorrenteId,
+          })
+          .eq('id', contaParaBaixar.id);
+
+        if (errorParcela) throw errorParcela;
+
+        setContas(prev =>
+          prev.map(item =>
+            item.id === contaParaBaixar?.id
+              ? {
+                  ...item,
+                  dataPagamento,
+                  status: dataPagamento > item.dataVencimento ? "pago_em_atraso" : "pago",
+                }
+              : item
+          )
+        );
+
+        toast({
+          title: "Sucesso",
+          description: "Título baixado com sucesso!"
+        });
+
+        // Fecha o modal
+        setModalBaixarAberto(false);
+        setContaParaBaixar(null);
+
+      } catch (error) {
+        console.error("Erro ao baixar título:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Erro ao baixar o título"
+        });
+      }
+    };
+
+    atualizarMovimentacao();
   }
 
   // Prepara a exclusão abrindo o modal de confirmação
@@ -220,7 +254,8 @@ export default function ContasAPagarPage() {
               id,
               numero,
               valor,
-              data_vencimento
+              data_vencimento,
+              data_pagamento
             )
           `)
           .eq('tipo_operacao', 'pagar')
@@ -236,8 +271,8 @@ export default function ContasAPagarPage() {
               favorecido: mov.favorecido?.nome || 'Não informado',
               descricao: mov.descricao || '',
               dataVencimento: new Date(parcela.data_vencimento),
-              dataPagamento: undefined, // TODO: Implementar quando baixar
-              status: 'em_aberto', // TODO: Implementar lógica de status
+              dataPagamento: parcela.data_pagamento ? new Date(parcela.data_pagamento) : undefined,
+              status: parcela.data_pagamento ? (new Date(parcela.data_vencimento) < new Date(parcela.data_pagamento) ? 'pago_em_atraso' : 'pago') : 'em_aberto',
               valor: Number(parcela.valor),
               numeroParcela: parcela.numero,
               numeroTitulo: mov.numero_documento

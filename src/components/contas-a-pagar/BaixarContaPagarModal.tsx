@@ -7,18 +7,10 @@ import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { ContaPagar } from "./contas-a-pagar-table";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-
-interface ContaCorrenteOption {
-  id: string;
-  nome: string;
-}
-
-// Mock de contas correntes para o select
-const mockContasCorrentes: ContaCorrenteOption[] = [
-  { id: "1", nome: "Banco do Brasil - 1234-5" },
-  { id: "2", nome: "Caixa - 4432-1" },
-];
+import { toast } from "@/components/ui/use-toast";
+import { ContaCorrente } from "@/types/conta-corrente";
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
 
 interface BaixarContaPagarModalProps {
   conta?: ContaPagar | null;
@@ -48,6 +40,38 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
   const [multa, setMulta] = useState<number>(0);
   const [juros, setJuros] = useState<number>(0);
   const [desconto, setDesconto] = useState<number>(0);
+  const [contasCorrentes, setContasCorrentes] = useState<ContaCorrente[]>([]);
+
+  const { currentCompany } = useCompany();
+
+  useEffect(() => {
+    if (open && currentCompany) {
+      // Buscar contas correntes quando o modal abrir
+      const fetchContasCorrentes = async () => {
+        const { data, error } = await supabase
+          .from('contas_correntes')
+          .select('*')
+          .eq('empresa_id', currentCompany.id)
+          .eq('status', 'ativo');
+
+        if (error) {
+          console.error('Erro ao buscar contas correntes:', error);
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Não foi possível carregar as contas correntes"
+          });
+          return;
+        }
+
+        if (data) {
+          setContasCorrentes(data);
+        }
+      };
+
+      fetchContasCorrentes();
+    }
+  }, [open, currentCompany]);
 
   useEffect(() => {
     setDataPagamento(conta?.dataVencimento);
@@ -96,8 +120,10 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
                 <SelectValue placeholder="Selecione a conta" />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                {mockContasCorrentes.map((opt) => (
-                  <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
+                {contasCorrentes.map((conta) => (
+                  <SelectItem key={conta.id} value={conta.id}>
+                    {conta.nome} - {conta.banco} - {conta.agencia}/{conta.numero}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
