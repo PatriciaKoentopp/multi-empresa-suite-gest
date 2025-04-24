@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { FavorecidosForm } from "@/components/favorecidos/favorecidos-form";
 import { PlanoContasForm } from "@/components/plano-contas/plano-contas-form";
 import { toast } from "sonner";
+import { useCompany } from "@/contexts/company-context";
+import { supabase } from "@/integrations/supabase/client";
+import { TipoTitulo } from "@/types/tipos-titulos";
 
 // Utilitário para converter DD/MM/YYYY <-> Date
 function parseDateBr(input: string): Date | null {
@@ -100,6 +103,7 @@ export default function IncluirMovimentacaoPage() {
   const [dataPrimeiroVenc, setDataPrimeiroVenc] = useState<Date | undefined>(new Date());
   const [considerarDRE, setConsiderarDRE] = useState(true);
   const navigate = useNavigate();
+  const { currentCompany } = useCompany();
 
   // Contas para transferência
   const [contaOrigem, setContaOrigem] = useState("");
@@ -216,6 +220,44 @@ export default function IncluirMovimentacaoPage() {
     setIsModalNovaCategoria(false);
     toast.success("Categoria cadastrada com sucesso!");
   }
+
+  // Novo estado para armazenar os tipos de títulos
+  const [tiposTitulos, setTiposTitulos] = useState<TipoTitulo[]>([]);
+  const [tipoTituloId, setTipoTituloId] = useState("");
+
+  // Buscar tipos de títulos da empresa
+  useEffect(() => {
+    async function buscarTiposTitulos() {
+      if (!currentCompany?.id) return;
+      
+      const { data, error } = await supabase
+        .from("tipos_titulos")
+        .select("*")
+        .eq("empresa_id", currentCompany.id)
+        .eq("status", "ativo");
+
+      if (error) {
+        console.error("Erro ao buscar tipos de títulos:", error);
+        return;
+      }
+
+      setTiposTitulos(data || []);
+    }
+
+    buscarTiposTitulos();
+  }, [currentCompany?.id]);
+
+  // Resetar tipo de título ao mudar operação
+  useEffect(() => {
+    setTipoTituloId("");
+  }, [operacao]);
+
+  // Filtrar tipos de títulos conforme a operação
+  const tiposTitulosFiltrados = tiposTitulos.filter(tipo => {
+    if (operacao === "pagar") return tipo.tipo === "pagar";
+    if (operacao === "receber") return tipo.tipo === "receber";
+    return false; // não mostra nenhum para transferência
+  });
 
   // Nova lógica de salvar contemplando transferência
   function handleSalvar() {
@@ -375,8 +417,22 @@ export default function IncluirMovimentacaoPage() {
               {/* Linha 2: Número do Documento, Favorecido */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Número do Documento</Label>
-                  <Input value={numDoc} onChange={e => setNumDoc(e.target.value)} />
+                  <Label>Tipo do Título</Label>
+                  <Select
+                    value={tipoTituloId}
+                    onValueChange={setTipoTituloId}
+                  >
+                    <SelectTrigger className="bg-white z-50">
+                      <SelectValue placeholder="Selecione o tipo do título" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      {tiposTitulosFiltrados.map(tipo => (
+                        <SelectItem key={tipo.id} value={tipo.id}>
+                          {tipo.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>Favorecido</Label>
@@ -405,6 +461,10 @@ export default function IncluirMovimentacaoPage() {
               {/* Linha 3: Categoria Financeira, Forma de Pagamento */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <Label>Número do Documento</Label>
+                  <Input value={numDoc} onChange={e => setNumDoc(e.target.value)} />
+                </div>
+                <div>
                   <Label>Categoria Financeira</Label>
                   <div className="flex gap-2 items-end">
                     <Select value={categoria} onValueChange={setCategoria}>
@@ -427,6 +487,9 @@ export default function IncluirMovimentacaoPage() {
                     </Button>
                   </div>
                 </div>
+              </div>
+              {/* Linha 3: Categoria Financeira, Forma de Pagamento */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Forma de Pagamento</Label>
                   <Select value={formaPagamento} onValueChange={setFormaPagamento}>
