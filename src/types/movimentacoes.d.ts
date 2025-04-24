@@ -35,5 +35,6 @@ export interface MovimentacaoParcela {
 declare module "@/components/contas-a-pagar/contas-a-pagar-table" {
   interface ContaPagar {
     tipo_operacao?: 'pagar' | 'receber' | 'transferencia';
+    tipo_titulo_id?: string;
   }
 }

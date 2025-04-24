@@ -26,16 +26,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useMovimentacaoDados } from "@/hooks/useMovimentacaoDados";
 
 export default function MovimentacaoPage() {
   const [movimentacoes, setMovimentacoes] = useState<ContaPagar[]>([]);
-
-  // Novo: navegação
   const navigate = useNavigate();
+  const { tiposTitulos } = useMovimentacaoDados();
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"todas" | "pago" | "pago_em_atraso" | "em_aberto">("todas");
+  const [tipoTituloId, setTipoTituloId] = useState<string>("todos");
   const [dataVencInicio, setDataVencInicio] = useState<string>("");
   const [dataVencFim, setDataVencFim] = useState<string>("");
   const [dataPagInicio, setDataPagInicio] = useState<string>("");
@@ -141,7 +141,8 @@ export default function MovimentacaoPage() {
             status: 'em_aberto',
             valor: Number(mov.valor),
             numeroParcela: mov.numero_documento,
-            tipo_operacao: mov.tipo_operacao
+            tipo_operacao: mov.tipo_operacao,
+            tipo_titulo_id: mov.tipo_titulo_id
           }));
 
           setMovimentacoes(movimentacoesFormatadas);
@@ -159,13 +160,13 @@ export default function MovimentacaoPage() {
     carregarMovimentacoes();
   }, []);
 
-  // Filtro
+  // Filtro com o novo campo de tipo de título
   const filteredMovimentacoes = useMemo(() => {
     return movimentacoes.filter((movimentacao) => {
       const textoBusca = (movimentacao.favorecido + movimentacao.descricao)
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
-      const statusOk = statusFilter === "todas" || movimentacao.status === statusFilter;
+      const tipoTituloOk = tipoTituloId === "todos" || movimentacao.tipo_titulo_id === tipoTituloId;
       const vencimentoDentroRange =
         (!dataVencInicio || movimentacao.dataVencimento >= new Date(dataVencInicio)) &&
         (!dataVencFim || movimentacao.dataVencimento <= new Date(dataVencFim));
@@ -173,9 +174,9 @@ export default function MovimentacaoPage() {
         (!dataPagInicio || (movimentacao.dataPagamento && movimentacao.dataPagamento >= new Date(dataPagInicio))) &&
         (!dataPagFim || (movimentacao.dataPagamento && movimentacao.dataPagamento <= new Date(dataPagFim)));
 
-      return textoBusca && statusOk && vencimentoDentroRange && pagamentoDentroRange;
+      return textoBusca && tipoTituloOk && vencimentoDentroRange && pagamentoDentroRange;
     });
-  }, [movimentacoes, searchTerm, statusFilter, dataVencInicio, dataVencFim, dataPagInicio, dataPagFim]);
+  }, [movimentacoes, searchTerm, tipoTituloId, dataVencInicio, dataVencFim, dataPagInicio, dataPagFim]);
 
   // Prepara a exclusão abrindo o modal de confirmação
   const prepararExclusao = (id: string) => {
@@ -243,7 +244,6 @@ export default function MovimentacaoPage() {
       
       <Card>
         <CardContent className="pt-6">
-          {/* Primeira linha: Busca + Status */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative col-span-1 min-w-[240px]">
               <button
@@ -272,23 +272,26 @@ export default function MovimentacaoPage() {
             </div>
             <div className="col-span-1 min-w-[180px]">
               <Select
-                value={statusFilter}
-                onValueChange={(v) => setStatusFilter(v as any)}
+                value={tipoTituloId}
+                onValueChange={setTipoTituloId}
               >
                 <SelectTrigger className="w-full bg-white dark:bg-gray-900">
                   <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder="Tipo de Título" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-200">
-                  <SelectItem value="todas">Todos Status</SelectItem>
-                  <SelectItem value="em_aberto" className="text-blue-600">Em Aberto</SelectItem>
-                  <SelectItem value="pago" className="text-green-600">Pago</SelectItem>
-                  <SelectItem value="pago_em_atraso" className="text-red-600">Pago em Atraso</SelectItem>
+                  <SelectItem value="todos">Todos os Tipos</SelectItem>
+                  {tiposTitulos.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.id}>
+                      {tipo.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-            <div /> {/* Espaço só para organizar em tela grande */}
+            <div /> {/* Espaço para organizar em tela grande */}
           </div>
+
           {/* Linha única de filtros de datas, sempre abaixo da busca */}
           <div className="mt-2 flex flex-col md:flex-row gap-2">
             {/* Vencimento: de - até */}
