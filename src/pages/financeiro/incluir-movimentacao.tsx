@@ -537,7 +537,6 @@ export default function IncluirMovimentacaoPage() {
               </>
             )}
           </div>
-          
           {/* Quando for Transferência, mostra outro formulário */}
           {operacao === "transferencia" ? (
             <>
@@ -743,6 +742,5 @@ export default function IncluirMovimentacaoPage() {
           </div>
         </form>
       </div>
-      
       {/* Modal Novo Favorecido */}
-      <Dialog open={isModalNovoFavorecido} onOpenChange={setIsModalNovoFavore
+      <Dialog open={isModalNovoFavorecido} onOpenChange={setIsModalNovoFavorecido}>
