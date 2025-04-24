@@ -63,6 +63,7 @@ export default function ContasAReceberPage() {
             id,
             descricao,
             tipo_operacao,
+            numero_documento,
             favorecido:favorecidos (
               id,
               nome
@@ -75,7 +76,7 @@ export default function ContasAReceberPage() {
       if (error) throw error;
 
       const contasReceber: ContaReceber[] = (movimentacoesParcelas || [])
-        .filter(parcela => parcela.movimentacao) // Garante que temos os dados da movimentação
+        .filter(parcela => parcela.movimentacao)
         .map(parcela => ({
           id: parcela.id,
           cliente: parcela.movimentacao.favorecido?.nome || 'Cliente não identificado',
@@ -84,7 +85,7 @@ export default function ContasAReceberPage() {
           dataRecebimento: parcela.data_pagamento ? new Date(parcela.data_pagamento) : undefined,
           status: determinarStatus(parcela.data_vencimento, parcela.data_pagamento),
           valor: Number(parcela.valor),
-          numeroParcela: `${parcela.movimentacao.id}-${parcela.numero}`,
+          numeroParcela: `${parcela.movimentacao.numero_documento || '-'}/${parcela.numero}`,
         }));
 
       setContas(contasReceber);
