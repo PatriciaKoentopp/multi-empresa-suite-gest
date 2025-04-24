@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,6 +33,7 @@ import LancamentosPage from "./pages/contabil/lancamentos";
 import DrePage from "./pages/contabil/dre";
 import BalancoPage from "./pages/contabil/balanco";
 import TiposTitulosPage from "./pages/cadastros/tipos-titulos"; // Importando a página de Tipos de Títulos
+import MovimentacaoPage from "./pages/financeiro/movimentacao";
 
 const queryClient = new QueryClient();
 
@@ -93,7 +93,7 @@ const App = () => (
                  {/* Financeiro routes */}
                 <Route path="/financeiro/incluir-movimentacao" element={<IncluirMovimentacaoModal />} />
                 <Route path="/financeiro/contas-a-pagar" element={<ContasAPagarPage />} />
-                {/* Corrigido: De /contas-a-receber para /contas-receber */}
+                <Route path="/financeiro/movimentacao" element={<MovimentacaoPage />} />
                 <Route path="/financeiro/contas-receber" element={<ContasAReceberPage />} />
                 <Route path="/financeiro/fluxo-caixa" element={<FluxoCaixaPage />} />
                 
