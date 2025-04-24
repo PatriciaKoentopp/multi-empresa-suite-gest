@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,40 +15,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BaixarContaPagarModal } from "@/components/contas-a-pagar/BaixarContaPagarModal";
-
-// Mock data inicial
-const initialContasAPagar: ContaPagar[] = [
-  {
-    id: "1",
-    favorecido: "Fornecedor ABC",
-    descricao: "Compra de equipamentos",
-    dataVencimento: new Date("2024-05-05"),
-    dataPagamento: new Date("2024-05-06"),
-    status: "pago",
-    valor: 1800.45,
-  },
-  {
-    id: "2",
-    favorecido: "Fornecedor XPTO",
-    descricao: "Serviços de manutenção",
-    dataVencimento: new Date("2024-03-25"),
-    dataPagamento: undefined,
-    status: "em_aberto",
-    valor: 950,
-  },
-  {
-    id: "3",
-    favorecido: "Empresa Beta",
-    descricao: "Material de escritório",
-    dataVencimento: new Date("2024-03-10"),
-    dataPagamento: new Date("2024-03-18"),
-    status: "pago_em_atraso",
-    valor: 239.99,
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { Movimentacao, MovimentacaoParcela } from "@/types/movimentacoes";
 
 export default function ContasAPagarPage() {
-  const [contas, setContas] = useState<ContaPagar[]>(initialContasAPagar);
+  const [contas, setContas] = useState<ContaPagar[]>([]);
 
   // Novo: navegação
   const navigate = useNavigate();
@@ -110,6 +81,44 @@ export default function ContasAPagarPage() {
     // Aqui normalmente: lança no fluxo de caixa, etc — mas deixamos só atualização mock
     toast.success("Título baixado com sucesso!");
   }
+
+  // Carregar dados do Supabase
+  useEffect(() => {
+    async function carregarContasAPagar() {
+      try {
+        const { data: movimentacoes, error } = await supabase
+          .from('movimentacoes')
+          .select(`
+            *,
+            favorecido:favorecidos(nome)
+          `)
+          .eq('tipo_operacao', 'pagar');
+
+        if (error) throw error;
+
+        if (movimentacoes) {
+          // Converter movimentações em contas a pagar
+          const contasFormatadas: ContaPagar[] = movimentacoes.map((mov: any) => ({
+            id: mov.id,
+            favorecido: mov.favorecido?.nome || 'Não informado',
+            descricao: mov.descricao || '',
+            dataVencimento: new Date(mov.primeiro_vencimento),
+            dataPagamento: undefined, // TODO: Implementar quando baixar
+            status: 'em_aberto', // TODO: Implementar lógica de status
+            valor: Number(mov.valor),
+            numeroParcela: mov.numero_documento
+          }));
+
+          setContas(contasFormatadas);
+        }
+      } catch (error: any) {
+        console.error('Erro ao carregar contas:', error);
+        toast.error('Erro ao carregar as contas a pagar');
+      }
+    }
+
+    carregarContasAPagar();
+  }, []);
 
   // Filtro
   const filteredContas = useMemo(() => {

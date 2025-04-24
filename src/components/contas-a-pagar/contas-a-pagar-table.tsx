@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -9,7 +8,6 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Edit, Download, Trash2, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
@@ -17,6 +15,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { Movimentacao } from "@/types/movimentacoes";
 
 export interface ContaPagar {
   id: string;
@@ -26,7 +25,7 @@ export interface ContaPagar {
   dataPagamento?: Date;
   status: "pago" | "pago_em_atraso" | "em_aberto";
   valor: number;
-  numeroParcela?: string; // novo campo para número/documento
+  numeroParcela?: string;
 }
 
 interface ContasAPagarTableProps {
@@ -166,4 +165,3 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
     </div>
   );
 }
-
