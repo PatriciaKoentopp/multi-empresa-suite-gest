@@ -149,7 +149,7 @@ export default function ContasAPagarPage() {
           *,
           favorecido:favorecidos(id, nome)
         `)
-        .eq('id', conta.id)
+        .eq('id', conta.movimentacao_id)
         .single();
         
       if (error) throw error;
@@ -180,7 +180,7 @@ export default function ContasAPagarPage() {
           *,
           favorecido:favorecidos(id, nome)
         `)
-        .eq('id', conta.id)
+        .eq('id', conta.movimentacao_id)
         .single();
         
       if (error) throw error;
@@ -208,28 +208,38 @@ export default function ContasAPagarPage() {
   useEffect(() => {
     async function carregarContasAPagar() {
       try {
+        // Buscar movimentações e suas parcelas
         const { data: movimentacoes, error } = await supabase
           .from('movimentacoes')
           .select(`
             *,
-            favorecido:favorecidos(nome)
+            favorecido:favorecidos(nome),
+            movimentacoes_parcelas(
+              id,
+              numero,
+              valor,
+              data_vencimento
+            )
           `)
           .eq('tipo_operacao', 'pagar');
 
         if (error) throw error;
 
         if (movimentacoes) {
-          // Converter movimentações em contas a pagar
-          const contasFormatadas: ContaPagar[] = movimentacoes.map((mov: any) => ({
-            id: mov.id,
-            favorecido: mov.favorecido?.nome || 'Não informado',
-            descricao: mov.descricao || '',
-            dataVencimento: new Date(mov.primeiro_vencimento),
-            dataPagamento: undefined, // TODO: Implementar quando baixar
-            status: 'em_aberto', // TODO: Implementar lógica de status
-            valor: Number(mov.valor),
-            numeroParcela: mov.numero_documento
-          }));
+          // Converter movimentações e parcelas em contas a pagar
+          const contasFormatadas: ContaPagar[] = movimentacoes.flatMap((mov: any) => {
+            return mov.movimentacoes_parcelas.map((parcela: any) => ({
+              id: parcela.id,
+              movimentacao_id: mov.id,
+              favorecido: mov.favorecido?.nome || 'Não informado',
+              descricao: mov.descricao || '',
+              dataVencimento: new Date(parcela.data_vencimento),
+              dataPagamento: undefined, // TODO: Implementar quando baixar
+              status: 'em_aberto', // TODO: Implementar lógica de status
+              valor: Number(parcela.valor),
+              numeroParcela: parcela.numero
+            }));
+          });
 
           setContas(contasFormatadas);
         }

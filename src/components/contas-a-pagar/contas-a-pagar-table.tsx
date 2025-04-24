@@ -15,17 +15,17 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Movimentacao } from "@/types/movimentacoes";
 
 export interface ContaPagar {
   id: string;
+  movimentacao_id: string;
   favorecido: string;
   descricao: string;
   dataVencimento: Date;
   dataPagamento?: Date;
   status: "pago" | "pago_em_atraso" | "em_aberto";
   valor: number;
-  numeroParcela?: string;
+  numeroParcela: number;
 }
 
 interface ContasAPagarTableProps {
@@ -91,7 +91,7 @@ export function ContasAPagarTable({
           <TableRow>
             <TableHead>Data de Vencimento</TableHead>
             <TableHead>Data de Pagamento</TableHead>
-            <TableHead>Título</TableHead>
+            <TableHead>Nº Parcela</TableHead>
             <TableHead>Favorecido</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead>Status</TableHead>
@@ -112,13 +112,9 @@ export function ContasAPagarTable({
                 <TableCell>{formatDateBR(conta.dataVencimento)}</TableCell>
                 <TableCell>{formatDateBR(conta.dataPagamento)}</TableCell>
                 <TableCell>
-                  {conta.numeroParcela ? (
-                    <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
-                      {conta.numeroParcela}
-                    </span>
-                  ) : (
-                    "-"
-                  )}
+                  <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
+                    {conta.numeroParcela}
+                  </span>
                 </TableCell>
                 <TableCell>{conta.favorecido}</TableCell>
                 <TableCell>{conta.descricao}</TableCell>
@@ -159,7 +155,7 @@ export function ContasAPagarTable({
                         Baixar
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => onDelete(conta.id)}
+                        onClick={() => onDelete(conta.movimentacao_id)}
                         className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
