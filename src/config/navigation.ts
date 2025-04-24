@@ -79,6 +79,10 @@ export const navigationConfig: ModuleNavItem[] = [
         href: "/financeiro/fluxo-caixa",
       },
       {
+        name: "Movimentação",
+        href: "/financeiro/movimentacao",
+      },
+      {
         name: "Contas a Pagar",
         href: "/financeiro/contas-a-pagar",
       },
