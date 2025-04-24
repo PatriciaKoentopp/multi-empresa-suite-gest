@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -374,7 +375,7 @@ export default function IncluirMovimentacaoPage() {
         valor: parseFloat(valor.replace(/\./g, "").replace(",", ".")),
         descricao,
         numero_parcelas: 1,
-        considerar_dre: false,
+        considerar_dre: false, // Adicionei o valor explícito aqui
         conta_origem_id: contaOrigem,
         conta_destino_id: contaDestino
       };
@@ -404,7 +405,7 @@ export default function IncluirMovimentacaoPage() {
       forma_pagamento: formaPagamento,
       numero_parcelas: numParcelas,
       primeiro_vencimento: format(dataPrimeiroVenc, "yyyy-MM-dd"),
-      considerar_dre
+      considerar_dre: considerarDRE
     };
 
     salvarMovimentacao(movimentacao);

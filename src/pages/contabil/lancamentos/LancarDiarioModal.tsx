@@ -107,17 +107,28 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!data || !historico || !valor || !contaDebitoId || !contaCreditoId || isNaN(Number(valor))) return;
-    if (contaDebitoId === contaCreditoId) return; // Não permitir conta igual nos dois lados
+    if (!data || !historico || !valor || !contaDebitoId || !contaCreditoId || isNaN(Number(valor))) {
+      toast.error("Preencha todos os campos corretamente.");
+      return;
+    }
+    if (contaDebitoId === contaCreditoId) {
+      toast.error("A conta de débito e crédito não podem ser iguais.");
+      return;
+    }
 
-    onSave({
-      data: format(data, "dd/MM/yyyy"),
-      historico,
-      debito: contaDebitoId,
-      credito: contaCreditoId,
-      valor: Number(valor),
-    });
-    clearForm();
+    try {
+      onSave({
+        data: format(data, "dd/MM/yyyy"),
+        historico,
+        debito: contaDebitoId,
+        credito: contaCreditoId,
+        valor: Number(valor),
+      });
+      clearForm();
+    } catch (error) {
+      console.error("Erro ao salvar lançamento:", error);
+      toast.error("Erro ao salvar lançamento");
+    }
   }
 
   return (
