@@ -12,7 +12,7 @@ interface Favorecido {
 
 interface Categoria {
   id: string;
-  nome: string;
+  descricao: string;
 }
 
 interface ContaCorrente {
@@ -68,9 +68,19 @@ export function useMovimentacaoDados() {
       if (errorTipos) throw errorTipos;
       
       setFavorecidos(favorecidosData || []);
-      setCategorias(categoriasData?.map(cat => ({ id: cat.id, nome: cat.descricao })) || []);
+      setCategorias(categoriasData || []);
       setContasCorrente(contasData || []);
-      setTiposTitulos(tiposTitulosData || []);
+      
+      // Garantir que tiposTitulosData está no formato esperado
+      if (tiposTitulosData) {
+        const tiposTitulosFormatados: TipoTitulo[] = tiposTitulosData.map(tipo => ({
+          ...tipo,
+          tipo: tipo.tipo === "pagar" ? "pagar" : "receber" // Assegurando que tipo seja 'pagar' ou 'receber'
+        }));
+        setTiposTitulos(tiposTitulosFormatados);
+      } else {
+        setTiposTitulos([]);
+      }
       
     } catch (error) {
       console.error("Erro ao carregar dados:", error);

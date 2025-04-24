@@ -104,16 +104,18 @@ export function RecebimentoForm({
         <div>
           <Label>Favorecido</Label>
           <div className="flex gap-2">
-            <Select value={favorecido} onValueChange={onFavorecidoChange} className="flex-1">
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {favorecidos.map(fav => (
-                  <SelectItem key={fav.id} value={fav.id}>{fav.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex-1">
+              <Select value={favorecido} onValueChange={onFavorecidoChange}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {favorecidos.map(fav => (
+                    <SelectItem key={fav.id} value={fav.id}>{fav.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Button variant="outline" type="button" onClick={onNovoFavorecido}>+</Button>
           </div>
         </div>
@@ -121,16 +123,18 @@ export function RecebimentoForm({
         <div>
           <Label>Categoria</Label>
           <div className="flex gap-2">
-            <Select value={categoria} onValueChange={onCategoriaChange} className="flex-1">
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {categorias.map(cat => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.descricao}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex-1">
+              <Select value={categoria} onValueChange={onCategoriaChange}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categorias.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.descricao}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Button variant="outline" type="button" onClick={onNovaCategoria}>+</Button>
           </div>
         </div>
