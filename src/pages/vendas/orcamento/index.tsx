@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,7 +57,40 @@ export default function OrcamentoPage() {
   const [servicosDisponiveis, setServicosDisponiveis] = useState<Servico[]>([]);
   const [tabelasPreco, setTabelasPreco] = useState<TabelaPreco[]>([]);
   const [precosServicos, setPrecosServicos] = useState<TabelaPrecoItem[]>([]);
-  const [parcelas, setParcelas] = useState(getParcelas());
+  
+  // Cálculo do total do orçamento
+  const total = servicos.reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
+  
+  // Função para calcular as parcelas
+  function getParcelas(valorTotal: number, numParcelas: number, codigo: string) {
+    if (numParcelas <= 1) {
+      return [{
+        valor: valorTotal,
+        dataVencimento: "",
+        numeroParcela: `${codigo}/1`
+      }];
+    }
+    const valorParcela = Math.floor((valorTotal / numParcelas) * 100) / 100;
+    const parcelas = [];
+    let soma = 0;
+    for (let i = 0; i < numParcelas; i++) {
+      let valor = valorParcela;
+      if (i === numParcelas - 1) {
+        valor = Math.round((valorTotal - soma) * 100) / 100;
+      } else {
+        soma += valor;
+      }
+      parcelas.push({
+        valor,
+        dataVencimento: "",
+        numeroParcela: `${codigo}/${i + 1}`,
+      });
+    }
+    return parcelas;
+  }
+  
+  // Inicializar parcelas
+  const [parcelas, setParcelas] = useState(() => getParcelas(0, numeroParcelas, codigoVenda));
 
   // Buscar dados iniciais
   useEffect(() => {
@@ -222,45 +254,14 @@ export default function OrcamentoPage() {
     }
   }
 
-  // Cálculo do total do orçamento
-  const total = servicos.reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
-
-  // Cálculo das parcelas
-  function getParcelas() {
-    if (numeroParcelas <= 1) {
-      return [{
-        valor: total,
-        dataVencimento: "",
-        numeroParcela: `${codigoVenda}/1`
-      }];
-    }
-    const valorParcela = Math.floor((total / numeroParcelas) * 100) / 100;
-    const parcelas = [];
-    let soma = 0;
-    for (let i = 0; i < numeroParcelas; i++) {
-      let valor = valorParcela;
-      if (i === numeroParcelas - 1) {
-        valor = Math.round((total - soma) * 100) / 100;
-      } else {
-        soma += valor;
-      }
-      parcelas.push({
-        valor,
-        dataVencimento: "",
-        numeroParcela: `${codigoVenda}/${i + 1}`,
-      });
-    }
-    return parcelas;
-  };
-
   // Atualiza parcelas quando muda número ou valor total
   React.useEffect(() => {
     // Não atualizar automaticamente se estamos editando um orçamento existente
     if (!orcamentoId) {
-      const novas = getParcelas();
+      const novas = getParcelas(total, numeroParcelas, codigoVenda);
       setParcelas(novas);
     }
-  }, [numeroParcelas, total, orcamentoId]);
+  }, [numeroParcelas, total, orcamentoId, codigoVenda]);
 
   // Atualiza parcela específica
   const handleParcelaDataChange = (idx: number, data: string) => {
@@ -580,6 +581,9 @@ export default function OrcamentoPage() {
                   />
                 </div>
               </div>
+              
+              
+              
               <div className="flex flex-col md:flex-row gap-4">
                 {/* Código da Venda */}
                 <div className="w-full md:w-1/2">
