@@ -37,7 +37,7 @@ export default function ContasAPagarPage() {
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"todas" | "pago" | "pago_em_atraso" | "em_aberto">("todas");
+  const [statusFilter, setStatusFilter] = useState<"todas" | "pago" | "pago_em_atraso" | "em_aberto">("em_aberto");
   const [dataVencInicio, setDataVencInicio] = useState<string>("");
   const [dataVencFim, setDataVencFim] = useState<string>("");
   const [dataPagInicio, setDataPagInicio] = useState<string>("");
