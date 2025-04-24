@@ -95,7 +95,8 @@ export default function ContasAReceberPage() {
           )
         `)
         .eq('orcamento.empresa_id', currentCompany.id)
-        .eq('orcamento.tipo', 'venda');
+        .eq('orcamento.tipo', 'venda')
+        .eq('orcamento.status', 'ativo'); // Adicionando filtro por status ativo
 
       if (errorOrcamentos) throw errorOrcamentos;
 
