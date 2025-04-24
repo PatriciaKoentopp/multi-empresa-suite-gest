@@ -9,14 +9,13 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { Edit, Download, Trash2, MoreHorizontal, Eye } from "lucide-react";
+import { Edit, MoreHorizontal, Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Movimentacao } from "@/types/movimentacoes";
 import { ContaPagar } from "../contas-a-pagar/contas-a-pagar-table";
 
 interface MovimentacaoTableProps {
@@ -65,31 +64,6 @@ function getTipoOperacao(tipo?: string) {
   }
 }
 
-function getStatusBadge(status: ContaPagar["status"]) {
-  switch (status) {
-    case "pago":
-      return (
-        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
-          Pago
-        </span>
-      );
-    case "pago_em_atraso":
-      return (
-        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
-          Pago em Atraso
-        </span>
-      );
-    case "em_aberto":
-      return (
-        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
-          Em Aberto
-        </span>
-      );
-    default:
-      return status;
-  }
-}
-
 export function MovimentacaoTable({ 
   movimentacoes, 
   onEdit, 
@@ -103,13 +77,11 @@ export function MovimentacaoTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Data de Vencimento</TableHead>
-            <TableHead>Data de Pagamento</TableHead>
+            <TableHead>Data de Lançamento</TableHead>
             <TableHead>Título</TableHead>
             <TableHead>Favorecido</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead>Tipo</TableHead>
-            <TableHead>Status</TableHead>
             <TableHead>Valor</TableHead>
             <TableHead className="w-[60px] text-center">Ações</TableHead>
           </TableRow>
@@ -117,7 +89,7 @@ export function MovimentacaoTable({
         <TableBody>
           {movimentacoes.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                 Nenhum resultado encontrado
               </TableCell>
             </TableRow>
@@ -125,7 +97,6 @@ export function MovimentacaoTable({
             movimentacoes.map((movimentacao) => (
               <TableRow key={movimentacao.id}>
                 <TableCell>{formatDateBR(movimentacao.dataVencimento)}</TableCell>
-                <TableCell>{formatDateBR(movimentacao.dataPagamento)}</TableCell>
                 <TableCell>
                   {movimentacao.numeroParcela ? (
                     <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
@@ -138,7 +109,6 @@ export function MovimentacaoTable({
                 <TableCell>{movimentacao.favorecido}</TableCell>
                 <TableCell>{movimentacao.descricao}</TableCell>
                 <TableCell>{getTipoOperacao(movimentacao.tipo_operacao)}</TableCell>
-                <TableCell>{getStatusBadge(movimentacao.status)}</TableCell>
                 <TableCell>{formatCurrency(movimentacao.valor)}</TableCell>
                 <TableCell className="text-center">
                   <DropdownMenu>
@@ -167,13 +137,6 @@ export function MovimentacaoTable({
                         <Edit className="h-4 w-4" />
                         Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onDelete(movimentacao.id)}
-                        className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Excluir
-                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -183,7 +146,7 @@ export function MovimentacaoTable({
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={7} className="font-bold text-right">Total</TableCell>
+            <TableCell colSpan={5} className="font-bold text-right">Total</TableCell>
             <TableCell className="font-bold">{formatCurrency(totalValor)}</TableCell>
             <TableCell />
           </TableRow>
@@ -192,3 +155,4 @@ export function MovimentacaoTable({
     </div>
   );
 }
+
