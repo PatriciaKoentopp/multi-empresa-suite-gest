@@ -1,13 +1,18 @@
 
-import React from 'react';
-import { Label } from "@/components/ui/label";
+import React from "react";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { DateInput } from './DateInput';
-import { ParcelasForm } from './ParcelasForm';
-import { useParcelasCalculation } from '@/hooks/useParcelasCalculation';
-import { Plus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { DateInput } from "./DateInput";
+import { ParcelasForm } from "./ParcelasForm";
+
+interface Parcela {
+  numero: number;
+  valor: number;
+  dataVencimento: Date;
+}
 
 interface PagamentoFormProps {
   numDoc: string;
@@ -30,12 +35,13 @@ interface PagamentoFormProps {
   onDataPrimeiroVencChange: (date?: Date) => void;
   considerarDRE: boolean;
   onConsiderarDREChange: (value: boolean) => void;
-  tiposTitulos: Array<{ id: string; nome: string }>;
-  favorecidos: Array<{ id: string; nome: string }>;
-  categorias: Array<{ id: string; nome: string }>;
-  formasPagamento: Array<{ id: string; nome: string }>;
+  tiposTitulos: any[];
+  favorecidos: any[];
+  categorias: any[];
+  formasPagamento: any[];
   onNovoFavorecido: () => void;
   onNovaCategoria: () => void;
+  parcelas: Parcela[];
 }
 
 export function PagamentoForm({
@@ -64,154 +70,145 @@ export function PagamentoForm({
   categorias,
   formasPagamento,
   onNovoFavorecido,
-  onNovaCategoria
+  onNovaCategoria,
+  parcelas
 }: PagamentoFormProps) {
-  const parcelas = useParcelasCalculation(
-    parseFloat(valor.replace(',', '.')) || 0,
-    numParcelas,
-    dataPrimeiroVenc
-  );
-
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <Label>Tipo do Título</Label>
+          <Label>Nº Documento</Label>
+          <Input 
+            placeholder="Número do documento" 
+            className="bg-white" 
+            value={numDoc} 
+            onChange={onNumDocChange}
+          />
+        </div>
+        <div>
+          <Label>Tipo de Título</Label>
           <Select value={tipoTituloId} onValueChange={onTipoTituloChange}>
             <SelectTrigger className="bg-white">
-              <SelectValue placeholder="Selecione o tipo do título" />
+              <SelectValue placeholder="Selecione" />
             </SelectTrigger>
-            <SelectContent className="bg-white">
+            <SelectContent>
               {tiposTitulos.map(tipo => (
                 <SelectItem key={tipo.id} value={tipo.id}>{tipo.nome}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label>Favorecido</Label>
           <div className="flex gap-2">
-            <Select value={favorecido} onValueChange={onFavorecidoChange}>
+            <Select value={favorecido} onValueChange={onFavorecidoChange} className="flex-1">
               <SelectTrigger className="bg-white">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
-              <SelectContent className="bg-white">
-                {favorecidos.map(f => (
-                  <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
+              <SelectContent>
+                {favorecidos.map(fav => (
+                  <SelectItem key={fav.id} value={fav.id}>{fav.nome}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={onNovoFavorecido}
-              className="border-[#0EA5E9] text-[#0EA5E9] hover:bg-[#0EA5E9]/10"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <Button variant="outline" type="button" onClick={onNovoFavorecido}>+</Button>
           </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
+        
         <div>
-          <Label>Número do Documento</Label>
-          <Input value={numDoc} onChange={onNumDocChange} />
-        </div>
-        <div>
-          <Label>Categoria Financeira</Label>
+          <Label>Categoria</Label>
           <div className="flex gap-2">
-            <Select value={categoria} onValueChange={onCategoriaChange}>
+            <Select value={categoria} onValueChange={onCategoriaChange} className="flex-1">
               <SelectTrigger className="bg-white">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
-              <SelectContent className="bg-white">
-                {categorias.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+              <SelectContent>
+                {categorias.map(cat => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.descricao}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={onNovaCategoria}
-              className="border-[#0EA5E9] text-[#0EA5E9] hover:bg-[#0EA5E9]/10"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <Button variant="outline" type="button" onClick={onNovaCategoria}>+</Button>
           </div>
         </div>
       </div>
-
-      <div className="grid grid-cols-2 gap-4">
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label>Forma de Pagamento</Label>
           <Select value={formaPagamento} onValueChange={onFormaPagamentoChange}>
             <SelectTrigger className="bg-white">
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
-            <SelectContent className="bg-white">
-              {formasPagamento.map(f => (
-                <SelectItem key={f.id} value={f.nome}>{f.nome}</SelectItem>
+            <SelectContent>
+              {formasPagamento.map(forma => (
+                <SelectItem key={forma.id} value={forma.id}>{forma.nome}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
+        
+        <div>
+          <Label>Descrição</Label>
+          <Input 
+            placeholder="Descrição" 
+            className="bg-white" 
+            value={descricao} 
+            onChange={onDescricaoChange}
+          />
+        </div>
       </div>
-
-      <div>
-        <Label>Descrição</Label>
-        <Input value={descricao} onChange={onDescricaoChange} />
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
+      
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <Label>Valor</Label>
           <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2">R$</span>
             <Input 
-              value={valor} 
-              onChange={onValorChange} 
               placeholder="0,00" 
-              inputMode="decimal"
+              className="bg-white pl-10" 
+              value={valor} 
+              onChange={onValorChange}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none select-none">
-              R$
-            </span>
           </div>
         </div>
+        
         <div>
           <Label>Número de Parcelas</Label>
           <Input 
             type="number" 
-            min={1} 
-            max={36} 
+            min={1}
+            className="bg-white" 
             value={numParcelas} 
             onChange={onNumParcelasChange}
           />
         </div>
+        
         <div>
           <DateInput 
-            label="Primeiro Vencimento" 
-            value={dataPrimeiroVenc} 
+            label="Primeiro Vencimento"
+            value={dataPrimeiroVenc}
             onChange={onDataPrimeiroVencChange}
           />
         </div>
       </div>
-
-      <ParcelasForm parcelas={parcelas} />
-
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
+      
+      <div className="flex items-center space-x-2">
+        <Switch 
+          id="dre" 
           checked={considerarDRE}
-          onChange={(e) => onConsiderarDREChange(e.target.checked)}
-          className="rounded border-gray-300"
-          id="dre"
+          onCheckedChange={onConsiderarDREChange}
         />
         <Label htmlFor="dre">Movimentação aparece no DRE?</Label>
       </div>
+      
+      {/* Exibição das parcelas calculadas */}
+      {valor && numParcelas > 0 && dataPrimeiroVenc && (
+        <ParcelasForm parcelas={parcelas} />
+      )}
     </div>
   );
 }

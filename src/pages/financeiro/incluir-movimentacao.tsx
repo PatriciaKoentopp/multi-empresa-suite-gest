@@ -12,7 +12,6 @@ import { TransferenciaForm } from "@/components/movimentacao/TransferenciaForm";
 import { PagamentoForm } from "@/components/movimentacao/PagamentoForm";
 import { RecebimentoForm } from "@/components/movimentacao/RecebimentoForm";
 import { DateInput } from "@/components/movimentacao/DateInput";
-import { ParcelasForm } from "@/components/movimentacao/ParcelasForm";
 import { useNavigate, useLocation } from "react-router-dom";
 
 // Formas de pagamento fixas
@@ -159,6 +158,7 @@ export default function IncluirMovimentacaoPage() {
               formasPagamento={formasPagamento}
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
+              parcelas={parcelas}
             />
           ) : operacao === "receber" ? (
             <RecebimentoForm
@@ -188,15 +188,11 @@ export default function IncluirMovimentacaoPage() {
               formasPagamento={formasPagamento}
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
+              parcelas={parcelas}
             />
           ) : null}
           
-          {/* Exibição das parcelas calculadas */}
-          {(operacao === "pagar" || operacao === "receber") && valor && numParcelas > 0 && dataPrimeiroVenc && (
-            <div className="mt-6">
-              <ParcelasForm parcelas={parcelas} />
-            </div>
-          )}
+          {/* Removendo exibição duplicada das parcelas - essa é a seção que estava causando a duplicação */}
           
           {/* Botões de ação */}
           <div className="flex justify-end gap-2 mt-6">
