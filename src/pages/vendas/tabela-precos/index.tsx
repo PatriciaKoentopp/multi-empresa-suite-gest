@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,16 @@ import { TabelaPrecoModal } from "./tabela-preco-modal";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { TabelaPreco, Servico } from "@/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function TabelaPrecosPage() {
   const { currentCompany } = useCompany();
@@ -193,6 +202,15 @@ export default function TabelaPrecosPage() {
     }
   }
 
+  const [tabelaParaExcluir, setTabelaParaExcluir] = useState<TabelaPreco | null>(null);
+
+  async function confirmarExclusao() {
+    if (tabelaParaExcluir) {
+      await handleExcluirTabela(tabelaParaExcluir);
+      setTabelaParaExcluir(null);
+    }
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-6 flex flex-col gap-8">
       <div className="flex items-center justify-between mb-2">
@@ -303,7 +321,7 @@ export default function TabelaPrecosPage() {
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleExcluirTabela(tab)}
+                          onClick={() => setTabelaParaExcluir(tab)}
                           className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" color="#ea384c" />
@@ -327,6 +345,24 @@ export default function TabelaPrecosPage() {
         onSalvar={handleSalvarTabela}
         servicosACadastrar={servicos}
       />
+
+      {/* Diálogo de confirmação de exclusão */}
+      <AlertDialog open={!!tabelaParaExcluir} onOpenChange={() => setTabelaParaExcluir(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta tabela de preços? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setTabelaParaExcluir(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarExclusao} className="bg-red-600 hover:bg-red-700 text-white">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
