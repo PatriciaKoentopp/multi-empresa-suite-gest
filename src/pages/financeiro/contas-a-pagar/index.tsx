@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,10 +50,8 @@ export default function ContasAPagarPage() {
     setModalBaixarAberto(true);
   };
 
-  const handleDelete = (id: string) => {
-    setContas((prev) => prev.filter((c) => c.id !== id));
-    toast.success("Conta excluída.");
-  };
+  // Removemos a primeira definição de handleDelete (a versão mais simples)
+  // E mantemos apenas a implementação completa que está abaixo
 
   function realizarBaixa({ dataPagamento, contaCorrenteId, multa, juros, desconto }: {
     dataPagamento: Date;
@@ -166,8 +165,7 @@ export default function ContasAPagarPage() {
     inputBuscaRef.current?.focus();
   }
 
-  // Função para editar uma conta
-  // Função para excluir uma conta
+  // Função para excluir uma conta - mantemos só essa versão
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
