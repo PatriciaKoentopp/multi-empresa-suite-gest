@@ -34,6 +34,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,11 +70,11 @@ export default function FaturamentoPage() {
   const [dataFinal, setDataFinal] = useState<Date>();
   const [faturamentos, setFaturamentos] = useState<Orcamento[]>([]);
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
+  const [excluirId, setExcluirId] = useState<string | null>(null);
+  const [showToastConfirm, setShowToastConfirm] = useState(false);
+  const [excluirItem, setExcluirItem] = useState<Orcamento | null>(null);
 
   const navigate = useNavigate();
-
-  // Novo estado para controlar o diálogo de confirmação
-  const [excluirId, setExcluirId] = useState<string | null>(null);
 
   // Buscar orçamentos e vendas
   useEffect(() => {
@@ -126,30 +134,33 @@ export default function FaturamentoPage() {
   }
 
   // Função para abrir diálogo de confirmação
-  function handleConfirmarExclusao(id: string) {
-    setExcluirId(id);
+  function handleConfirmarExclusao(item: Orcamento) {
+    setExcluirItem(item);
+    setShowToastConfirm(true);
   }
 
   // Função para cancelar exclusão
   function handleCancelarExclusao() {
-    setExcluirId(null);
+    setExcluirItem(null);
+    setShowToastConfirm(false);
   }
 
   // Função para confirmar e excluir
   async function handleConfirmarEExcluir() {
-    if (!excluirId) return;
+    if (!excluirItem) return;
 
     try {
       const { error } = await supabase
         .from('orcamentos')
         .update({ status: 'inativo' })
-        .eq('id', excluirId);
+        .eq('id', excluirItem.id);
 
       if (error) throw error;
 
       toast({ title: "Registro excluído com sucesso!" });
       carregarFaturamentos(); // Recarrega a lista
-      setExcluirId(null); // Fecha o diálogo
+      setExcluirItem(null);
+      setShowToastConfirm(false);
     } catch (error) {
       console.error('Erro ao excluir:', error);
       toast({
@@ -163,8 +174,8 @@ export default function FaturamentoPage() {
   const itemsFiltrados = faturamentos.filter(item => {
     const buscaMatch = busca
       ? (
-          item.codigo.toLowerCase().includes(busca.toLowerCase()) ||
-          item.favorecido?.nome.toLowerCase().includes(busca.toLowerCase()) ||
+          item.codigo?.toLowerCase().includes(busca.toLowerCase()) ||
+          (item.favorecido?.nome && item.favorecido.nome.toLowerCase().includes(busca.toLowerCase())) ||
           item.codigo_projeto?.toLowerCase()?.includes(busca.toLowerCase())
         )
       : true;
@@ -179,12 +190,18 @@ export default function FaturamentoPage() {
 
   // Função Visualizar: abre orçamento em modo visualização
   function handleVisualizar(item: Orcamento) {
-    navigate(`/vendas/orcamento?id=${item.id}&visualizar=1`);
+    // Vamos garantir que estamos passando o id corretamente
+    const url = `/vendas/orcamento?id=${item.id}&visualizar=1`;
+    console.log("Redirecionando para visualização:", url);
+    navigate(url);
   }
 
   // Função Editar: abre orçamento para edição
   function handleEditar(item: Orcamento) {
-    navigate(`/vendas/orcamento?id=${item.id}`);
+    // Vamos garantir que estamos passando o id corretamente
+    const url = `/vendas/orcamento?id=${item.id}`;
+    console.log("Redirecionando para edição:", url);
+    navigate(url);
   }
 
   // Calcular total de valor dos itens filtrados
@@ -371,7 +388,7 @@ export default function FaturamentoPage() {
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleConfirmarExclusao(item.id)}
+                          onClick={() => handleConfirmarExclusao(item)}
                           className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -400,16 +417,34 @@ export default function FaturamentoPage() {
         </Table>
       </div>
 
-      {/* Diálogo de confirmação de exclusão */}
-      <AlertDialog open={!!excluirId} onOpenChange={() => setExcluirId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
+      {/* Toast de confirmação de exclusão */}
+      <Dialog open={showToastConfirm} onOpenChange={setShowToastConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogDescription>
               Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex gap-2">
+            </DialogDescription>
+          </DialogHeader>
+
+          {excluirItem && (
+            <div className="border rounded-md p-3 bg-gray-50 my-4">
+              <p className="font-medium">
+                {excluirItem.tipo === "orcamento" ? "Orçamento" : "Venda"}: {excluirItem.codigo}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {formatDateBR(excluirItem.data)} - {excluirItem.favorecido?.nome}
+              </p>
+              <p className="text-sm font-medium mt-1">
+                Valor: {Number(excluirItem.valor).toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL"
+                })}
+              </p>
+            </div>
+          )}
+          
+          <DialogFooter className="flex gap-2">
             <Button
               variant="outline"
               onClick={handleCancelarExclusao}
@@ -424,9 +459,9 @@ export default function FaturamentoPage() {
             >
               Excluir
             </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
