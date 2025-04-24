@@ -170,13 +170,38 @@ export default function ContasAPagarPage() {
     }
   };
 
-  const handleVisualizar = (conta: ContaPagar) => {
-    navigate("/financeiro/incluir-movimentacao", {
-      state: { 
-        contaPagar: conta,
-        modoVisualizacao: true
+  // Modificar a função handleVisualizar para buscar os dados completos antes de navegar
+  const handleVisualizar = async (conta: ContaPagar) => {
+    try {
+      // Buscar a movimentação completa no banco, exatamente como em handleEdit
+      const { data: movimentacao, error } = await supabase
+        .from('movimentacoes')
+        .select(`
+          *,
+          favorecido:favorecidos(id, nome)
+        `)
+        .eq('id', conta.id)
+        .single();
+        
+      if (error) throw error;
+      
+      if (movimentacao) {
+        // Navegar para a página de inclusão com os dados da movimentação e o modo visualização
+        navigate("/financeiro/incluir-movimentacao", {
+          state: { 
+            movimentacao,
+            modoVisualizacao: true
+          }
+        });
       }
-    });
+    } catch (error) {
+      console.error("Erro ao buscar movimentação:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao buscar dados da movimentação para visualização"
+      });
+    }
   };
 
   // Carregar dados do Supabase

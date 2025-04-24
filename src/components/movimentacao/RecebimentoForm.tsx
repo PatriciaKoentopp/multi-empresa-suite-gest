@@ -1,30 +1,24 @@
 
-import React from "react";
+import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { DateInput } from "./DateInput";
-import { ParcelasForm } from "./ParcelasForm";
+import { ParcelasForm } from './ParcelasForm';
 
-interface Parcela {
-  numero: number;
-  valor: number;
-  dataVencimento: Date;
-}
-
+// Mesma interface do PagamentoForm, com parâmetro readOnly adicionado
 interface RecebimentoFormProps {
   numDoc: string;
   onNumDocChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   tipoTituloId: string;
-  onTipoTituloChange: (value: string) => void;
+  onTipoTituloChange: (id: string) => void;
   favorecido: string;
-  onFavorecidoChange: (value: string) => void;
+  onFavorecidoChange: (id: string) => void;
   categoria: string;
-  onCategoriaChange: (value: string) => void;
+  onCategoriaChange: (id: string) => void;
   formaPagamento: string;
-  onFormaPagamentoChange: (value: string) => void;
+  onFormaPagamentoChange: (id: string) => void;
   descricao: string;
   onDescricaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   valor: string;
@@ -34,14 +28,15 @@ interface RecebimentoFormProps {
   dataPrimeiroVenc?: Date;
   onDataPrimeiroVencChange: (date?: Date) => void;
   considerarDRE: boolean;
-  onConsiderarDREChange: (value: boolean) => void;
+  onConsiderarDREChange: (checked: boolean) => void;
   tiposTitulos: any[];
   favorecidos: any[];
   categorias: any[];
   formasPagamento: any[];
   onNovoFavorecido: () => void;
   onNovaCategoria: () => void;
-  parcelas: Parcela[];
+  parcelas: any[];
+  readOnly?: boolean;
 }
 
 export function RecebimentoForm({
@@ -71,147 +66,185 @@ export function RecebimentoForm({
   formasPagamento,
   onNovoFavorecido,
   onNovaCategoria,
-  parcelas
+  parcelas,
+  readOnly = false
 }: RecebimentoFormProps) {
+  // Implementação similar ao PagamentoForm, mas com campos adaptados para recebimentos
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <Label>Nº Documento</Label>
+        <div className="flex flex-col gap-2">
+          <Label>Número do Documento</Label>
           <Input 
-            placeholder="Número do documento" 
-            className="bg-white" 
             value={numDoc} 
             onChange={onNumDocChange}
+            className="bg-white"
+            disabled={readOnly}
           />
         </div>
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Tipo de Título</Label>
-          <Select value={tipoTituloId} onValueChange={onTipoTituloChange}>
+          <Select 
+            value={tipoTituloId} 
+            onValueChange={onTipoTituloChange}
+            disabled={readOnly}
+          >
             <SelectTrigger className="bg-white">
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               {tiposTitulos.map(tipo => (
-                <SelectItem key={tipo.id} value={tipo.id}>{tipo.nome}</SelectItem>
+                <SelectItem key={tipo.id} value={tipo.id}>
+                  {tipo.nome}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <Label>Favorecido</Label>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <Select value={favorecido} onValueChange={onFavorecidoChange}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {favorecidos.map(fav => (
-                    <SelectItem key={fav.id} value={fav.id}>{fav.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button variant="outline" type="button" onClick={onNovoFavorecido}>+</Button>
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between">
+            <Label>Favorecido</Label>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={onNovoFavorecido}
+                className="text-blue-500 text-sm"
+              >
+                + Novo
+              </button>
+            )}
           </div>
-        </div>
-        
-        <div>
-          <Label>Categoria</Label>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <Select value={categoria} onValueChange={onCategoriaChange}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categorias.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.descricao}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button variant="outline" type="button" onClick={onNovaCategoria}>+</Button>
-          </div>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <Label>Forma de Pagamento</Label>
-          <Select value={formaPagamento} onValueChange={onFormaPagamentoChange}>
+          <Select 
+            value={favorecido} 
+            onValueChange={onFavorecidoChange}
+            disabled={readOnly}
+          >
             <SelectTrigger className="bg-white">
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
-            <SelectContent>
-              {formasPagamento.map(forma => (
-                <SelectItem key={forma.id} value={forma.id}>{forma.nome}</SelectItem>
+            <SelectContent className="bg-white">
+              {favorecidos.map(fav => (
+                <SelectItem key={fav.id} value={fav.id}>
+                  {fav.nome}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        
-        <div>
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between">
+            <Label>Categoria</Label>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={onNovaCategoria}
+                className="text-blue-500 text-sm"
+              >
+                + Nova
+              </button>
+            )}
+          </div>
+          <Select 
+            value={categoria} 
+            onValueChange={onCategoriaChange}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {categorias.map(cat => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.descricao}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-2">
+          <Label>Forma Pagamento</Label>
+          <Select 
+            value={formaPagamento} 
+            onValueChange={onFormaPagamentoChange}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {formasPagamento.map(forma => (
+                <SelectItem key={forma.id} value={forma.id}>
+                  {forma.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col col-span-2 gap-2">
           <Label>Descrição</Label>
           <Input 
-            placeholder="Descrição" 
-            className="bg-white" 
             value={descricao} 
-            onChange={onDescricaoChange}
+            onChange={onDescricaoChange} 
+            className="bg-white"
+            disabled={readOnly}
           />
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div>
-          <Label>Valor</Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2">R$</span>
-            <Input 
-              placeholder="0,00" 
-              className="bg-white pl-10" 
-              value={valor} 
-              onChange={onValorChange}
-            />
-          </div>
+        <div className="flex flex-col gap-2">
+          <Label>Valor Total (R$)</Label>
+          <Input 
+            type="text" 
+            value={valor} 
+            onChange={onValorChange} 
+            className="bg-white"
+            disabled={readOnly}
+          />
         </div>
-        
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Número de Parcelas</Label>
           <Input 
             type="number" 
-            min={1}
-            className="bg-white" 
+            min={1} 
             value={numParcelas} 
-            onChange={onNumParcelasChange}
+            onChange={onNumParcelasChange} 
+            className="bg-white"
+            disabled={readOnly}
           />
         </div>
-        
-        <div>
+        <div className="flex flex-col gap-2">
+          <Label>Data Primeiro Vencimento</Label>
           <DateInput 
-            label="Primeiro Vencimento"
-            value={dataPrimeiroVenc}
+            value={dataPrimeiroVenc} 
             onChange={onDataPrimeiroVencChange}
+            disabled={readOnly}
           />
         </div>
       </div>
-      
+
       <div className="flex items-center space-x-2">
         <Switch 
-          id="dre" 
-          checked={considerarDRE}
+          id="consider-dre" 
+          checked={considerarDRE} 
           onCheckedChange={onConsiderarDREChange}
+          disabled={readOnly}
         />
-        <Label htmlFor="dre">Movimentação aparece no DRE?</Label>
+        <Label htmlFor="consider-dre">Considerar para DRE</Label>
       </div>
-      
-      {/* Exibição das parcelas calculadas */}
-      {valor && numParcelas > 0 && dataPrimeiroVenc && (
-        <ParcelasForm parcelas={parcelas} />
+
+      {/* Tabela de parcelas */}
+      {parcelas.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-lg font-medium mb-2">Parcelas</h3>
+          <ParcelasForm parcelas={parcelas} />
+        </div>
       )}
     </div>
   );

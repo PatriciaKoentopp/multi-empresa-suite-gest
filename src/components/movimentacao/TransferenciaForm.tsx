@@ -4,27 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DateInput } from './DateInput';
-
-interface ContaCorrente {
-  id: string;
-  nome: string;
-}
+import { DateInput } from "./DateInput";
 
 interface TransferenciaFormProps {
   dataLancamento?: Date;
-  onDataLancamentoChange: (data?: Date) => void;
+  onDataLancamentoChange: (date?: Date) => void;
   contaOrigem: string;
-  onContaOrigemChange: (conta: string) => void;
+  onContaOrigemChange: (id: string) => void;
   contaDestino: string;
-  onContaDestinoChange: (conta: string) => void;
+  onContaDestinoChange: (id: string) => void;
   valor: string;
   onValorChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   descricao: string;
   onDescricaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  contasCorrente: ContaCorrente[];
+  contasCorrente: any[];
   onSalvar: () => void;
   onCancel: () => void;
+  readOnly?: boolean;
 }
 
 export function TransferenciaForm({
@@ -40,85 +36,96 @@ export function TransferenciaForm({
   onDescricaoChange,
   contasCorrente,
   onSalvar,
-  onCancel
+  onCancel,
+  readOnly = false
 }: TransferenciaFormProps) {
   return (
-    <form className="flex flex-col gap-4" onSubmit={(e) => {
-      e.preventDefault();
-      onSalvar();
-    }}>
-      <div className="grid grid-cols-3 gap-4 items-end">
-        <div className="flex flex-col gap-1 col-span-3">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+        <div className="flex flex-col gap-2">
+          <Label>Data da Transferência</Label>
           <DateInput 
-            label="Data de Lançamento" 
             value={dataLancamento} 
             onChange={onDataLancamentoChange}
+            disabled={readOnly}
+          />
+        </div>
+        <div /> {/* Espaço para alinhamento */}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+        <div className="flex flex-col gap-2">
+          <Label>Conta Origem</Label>
+          <Select 
+            value={contaOrigem} 
+            onValueChange={onContaOrigemChange}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {contasCorrente.map(conta => (
+                <SelectItem key={conta.id} value={conta.id}>
+                  {conta.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label>Conta Destino</Label>
+          <Select 
+            value={contaDestino} 
+            onValueChange={onContaDestinoChange}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {contasCorrente.map(conta => (
+                <SelectItem key={conta.id} value={conta.id}>
+                  {conta.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+        <div className="flex flex-col gap-2">
+          <Label>Valor (R$)</Label>
+          <Input 
+            type="text" 
+            value={valor} 
+            onChange={onValorChange} 
+            className="bg-white"
+            disabled={readOnly}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label>Descrição</Label>
+          <Input 
+            value={descricao} 
+            onChange={onDescricaoChange} 
+            className="bg-white"
+            disabled={readOnly}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Conta Origem</Label>
-          <Select value={contaOrigem} onValueChange={onContaOrigemChange}>
-            <SelectTrigger className="bg-white z-10">
-              <SelectValue placeholder="Selecione a conta origem" />
-            </SelectTrigger>
-            <SelectContent className="bg-white z-10">
-              {contasCorrente
-                .filter(c => c.id !== contaDestino)
-                .map(conta =>
-                  <SelectItem key={conta.id} value={conta.id}>{conta.nome}</SelectItem>
-                )}
-            </SelectContent>
-          </Select>
+      {!readOnly && (
+        <div className="flex justify-end gap-2 mt-6">
+          <Button variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button variant="blue" onClick={onSalvar}>
+            Salvar
+          </Button>
         </div>
-        <div>
-          <Label>Conta Destino</Label>
-          <Select value={contaDestino} onValueChange={onContaDestinoChange}>
-            <SelectTrigger className="bg-white z-10">
-              <SelectValue placeholder="Selecione a conta destino" />
-            </SelectTrigger>
-            <SelectContent className="bg-white z-10">
-              {contasCorrente
-                .filter(c => c.id !== contaOrigem)
-                .map(conta =>
-                  <SelectItem key={conta.id} value={conta.id}>{conta.nome}</SelectItem>
-                )}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Valor</Label>
-          <div className="relative flex items-center">
-            <Input
-              value={valor}
-              onChange={onValorChange}
-              placeholder="0,00"
-              inputMode="decimal"
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none select-none">
-              R$
-            </span>
-          </div>
-        </div>
-        <div>
-          <Label>Descrição</Label>
-          <Input value={descricao} onChange={onDescricaoChange} />
-        </div>
-      </div>
-
-      <div className="flex gap-2 justify-end mt-2">
-        <Button type="submit" variant="blue">
-          Salvar
-        </Button>
-        <Button variant="outline" type="button" onClick={onCancel}>
-          Cancelar
-        </Button>
-      </div>
-    </form>
+      )}
+    </div>
   );
 }

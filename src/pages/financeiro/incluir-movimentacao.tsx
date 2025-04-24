@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,6 +26,7 @@ export default function IncluirMovimentacaoPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const movimentacaoParaEditar = location.state?.movimentacao;
+  const modoVisualizacao = location.state?.modoVisualizacao;
 
   const {
     operacao,
@@ -65,6 +66,13 @@ export default function IncluirMovimentacaoPage() {
   const [isModalNovoFavorecido, setIsModalNovoFavorecido] = useState(false);
   const [isModalNovaCategoria, setIsModalNovaCategoria] = useState(false);
   const [tipoTituloId, setTipoTituloId] = useState("");
+  
+  // Efeito para definir o tipoTituloId quando carregamos a movimentação
+  useEffect(() => {
+    if (movimentacaoParaEditar?.tipo_titulo_id) {
+      setTipoTituloId(movimentacaoParaEditar.tipo_titulo_id);
+    }
+  }, [movimentacaoParaEditar]);
 
   const handleSalvarNovoFavorecido = () => {
     // Implementação do salvamento do novo favorecido
@@ -78,14 +86,20 @@ export default function IncluirMovimentacaoPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-2">Incluir Movimentação</h1>
+      <h1 className="text-2xl font-bold mb-2">
+        {modoVisualizacao ? "Visualizar Movimentação" : movimentacaoParaEditar ? "Editar Movimentação" : "Incluir Movimentação"}
+      </h1>
       
       <div className="bg-white shadow rounded flex flex-col gap-6">
         <div className="p-6">
           <div className="grid grid-cols-3 gap-4 items-end mb-6">
             <div className="flex flex-col gap-1">
               <Label>Operação</Label>
-              <Select value={operacao} onValueChange={v => setOperacao(v as any)}>
+              <Select 
+                value={operacao} 
+                onValueChange={v => setOperacao(v as any)}
+                disabled={modoVisualizacao}
+              >
                 <SelectTrigger className="bg-white z-50">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
@@ -102,6 +116,7 @@ export default function IncluirMovimentacaoPage() {
                 label="Data de Emissão"
                 value={dataEmissao}
                 onChange={setDataEmissao}
+                disabled={modoVisualizacao}
               />
             </div>
             
@@ -110,6 +125,7 @@ export default function IncluirMovimentacaoPage() {
                 label="Data de Lançamento"
                 value={dataLancamento}
                 onChange={setDataLancamento}
+                disabled={modoVisualizacao}
               />
             </div>
           </div>
@@ -129,6 +145,7 @@ export default function IncluirMovimentacaoPage() {
               contasCorrente={contasCorrente}
               onSalvar={handleSalvar}
               onCancel={() => navigate(-1)}
+              readOnly={modoVisualizacao}
             />
           ) : operacao === "pagar" ? (
             <PagamentoForm
@@ -159,6 +176,7 @@ export default function IncluirMovimentacaoPage() {
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
               parcelas={parcelas}
+              readOnly={modoVisualizacao}
             />
           ) : operacao === "receber" ? (
             <RecebimentoForm
@@ -189,19 +207,20 @@ export default function IncluirMovimentacaoPage() {
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
               parcelas={parcelas}
+              readOnly={modoVisualizacao}
             />
           ) : null}
-          
-          {/* Removendo exibição duplicada das parcelas - essa é a seção que estava causando a duplicação */}
           
           {/* Botões de ação */}
           <div className="flex justify-end gap-2 mt-6">
             <Button variant="outline" onClick={() => navigate(-1)}>
-              Cancelar
+              {modoVisualizacao ? "Voltar" : "Cancelar"}
             </Button>
-            <Button variant="blue" onClick={handleSalvar}>
-              Salvar
-            </Button>
+            {!modoVisualizacao && (
+              <Button variant="blue" onClick={handleSalvar}>
+                Salvar
+              </Button>
+            )}
           </div>
         </div>
       </div>
