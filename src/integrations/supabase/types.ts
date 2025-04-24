@@ -578,6 +578,7 @@ export type Database = {
       }
       servicos: {
         Row: {
+          conta_receita_id: string | null
           created_at: string
           descricao: string | null
           empresa_id: string
@@ -587,6 +588,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          conta_receita_id?: string | null
           created_at?: string
           descricao?: string | null
           empresa_id: string
@@ -596,6 +598,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          conta_receita_id?: string | null
           created_at?: string
           descricao?: string | null
           empresa_id?: string
@@ -605,6 +608,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_servicos_conta_receita"
+            columns: ["conta_receita_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "servicos_empresa_id_fkey"
             columns: ["empresa_id"]
