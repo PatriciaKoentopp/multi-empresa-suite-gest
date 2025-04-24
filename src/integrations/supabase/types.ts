@@ -237,6 +237,86 @@ export type Database = {
           },
         ]
       }
+      fluxo_caixa: {
+        Row: {
+          conta_corrente_id: string | null
+          created_at: string
+          data_movimentacao: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          movimentacao_id: string | null
+          movimentacao_parcela_id: string | null
+          origem: string
+          saldo: number
+          situacao: string
+          tipo_operacao: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          conta_corrente_id?: string | null
+          created_at?: string
+          data_movimentacao: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          movimentacao_id?: string | null
+          movimentacao_parcela_id?: string | null
+          origem: string
+          saldo: number
+          situacao?: string
+          tipo_operacao: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          conta_corrente_id?: string | null
+          created_at?: string
+          data_movimentacao?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          movimentacao_id?: string | null
+          movimentacao_parcela_id?: string | null
+          origem?: string
+          saldo?: number
+          situacao?: string
+          tipo_operacao?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fluxo_caixa_conta_corrente_id_fkey"
+            columns: ["conta_corrente_id"]
+            isOneToOne: false
+            referencedRelation: "contas_correntes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluxo_caixa_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluxo_caixa_movimentacao_id_fkey"
+            columns: ["movimentacao_id"]
+            isOneToOne: false
+            referencedRelation: "movimentacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluxo_caixa_movimentacao_parcela_id_fkey"
+            columns: ["movimentacao_parcela_id"]
+            isOneToOne: false
+            referencedRelation: "movimentacoes_parcelas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grupo_favorecidos: {
         Row: {
           created_at: string

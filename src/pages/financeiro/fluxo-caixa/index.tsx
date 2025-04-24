@@ -91,21 +91,6 @@ function formatCurrency(value: number) {
   });
 }
 
-function getStatusBadge(status: "conciliado" | "nao_conciliado") {
-  if (status === "conciliado") {
-    return (
-      <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
-        Conciliado
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
-      Não Conciliado
-    </span>
-  );
-}
-
 // Função utilitária para formatar Date para string DD/MM/YYYY
 function dateToBR(date?: Date) {
   if (!date) return "";
@@ -134,6 +119,19 @@ function maskDateInput(value: string): string {
   if (value.length > 4) return value.replace(/^(\d{2})(\d{2})(\d{0,4})/, "$1/$2/$3");
   if (value.length > 2) return value.replace(/^(\d{2})(\d{0,2})/, "$1/$2");
   return value;
+}
+
+// Função para obter badge de status
+function getStatusBadge(status: "conciliado" | "nao_conciliado") {
+  return status === "conciliado" ? (
+    <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
+      Conciliado
+    </span>
+  ) : (
+    <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+      Não Conciliado
+    </span>
+  );
 }
 
 export default function FluxoCaixaPage() {
@@ -216,6 +214,7 @@ export default function FluxoCaixaPage() {
       const buscaOk =
         linha.favorecido.toLowerCase().includes(searchTerm.toLowerCase()) ||
         linha.descricao.toLowerCase().includes(searchTerm.toLowerCase());
+      
       const sitOk = situacao === "todos" || linha.situacao === situacao;
 
       // Converter data no padrão YYYY-MM-DD para objeto Date
@@ -226,17 +225,22 @@ export default function FluxoCaixaPage() {
           "-" +
           linha.data.substring(8, 10)
       );
+      
       // Validar range de datas
       const dataIniOk = !dataInicial || dataLinha >= dataInicial;
       const dataFimOk = !dataFinal || dataLinha <= dataFinal;
+      
       return buscaOk && sitOk && dataIniOk && dataFimOk;
     });
   }, [searchTerm, situacao, dataInicial, dataFinal]);
 
   // Função de conciliação mockada
   function handleConciliar(id: string) {
-    toast.success("Movimento conciliado!");
-    // Aqui atualizaria o status no extrato real.
+    const linhaConciliada = mockExtrato.find(linha => linha.id === id);
+    if (linhaConciliada) {
+      linhaConciliada.situacao = 'conciliado';
+      toast.success("Movimento conciliado!");
+    }
   }
 
   function handleEdit(id: string) {
@@ -271,6 +275,7 @@ export default function FluxoCaixaPage() {
 
   return (
     <div className="space-y-4">
+      {/* Título e botão de nova movimentação */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Fluxo de Caixa</h1>
         <Button
@@ -281,10 +286,26 @@ export default function FluxoCaixaPage() {
           Nova Movimentação
         </Button>
       </div>
+      
       <Card>
         <CardContent className="pt-6 pb-6">
-          {/* Filtros: novo layout, grid 5 colunas, todos alinhados */}
+          {/* Filtros */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            {/* Filtro de Situação */}
+            <div className="col-span-1">
+              <Select value={situacao} onValueChange={v => setSituacao(v as "todos" | "conciliado" | "nao_conciliado")}>
+                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                  <Filter className="mr-2 h-5 w-5 text-neutral-400" />
+                  <SelectValue placeholder="Situação" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border">
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="conciliado" className="text-green-600">Conciliados</SelectItem>
+                  <SelectItem value="nao_conciliado" className="text-blue-600">Não Conciliados</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Conta Corrente */}
             <div className="col-span-1">
               <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
@@ -361,21 +382,8 @@ export default function FluxoCaixaPage() {
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none" />
               </div>
             </div>
-            {/* Situação */}
-            <div className="col-span-1">
-              <Select value={situacao} onValueChange={v => setSituacao(v as "todos" | "conciliado" | "nao_conciliado")}>
-                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
-                  <Filter className="mr-2 h-5 w-5 text-neutral-400" />
-                  <SelectValue placeholder="Situação" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border">
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="conciliado" className="text-green-600">Conciliados</SelectItem>
-                  <SelectItem value="nao_conciliado" className="text-blue-600">Não Conciliados</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
+
           {/* Linha de busca */}
           <div className="mt-4 flex flex-row gap-2">
             <div className="relative flex-1 min-w-[180px]">
@@ -399,6 +407,7 @@ export default function FluxoCaixaPage() {
           </div>
           {/* Separador */}
           <div className="mb-4" />
+
           {/* Tabela */}
           <div className="mt-6">
             <div className="border rounded-md">
