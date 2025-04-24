@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -169,6 +168,15 @@ export default function ContasAPagarPage() {
         description: "Erro ao buscar dados da movimentação"
       });
     }
+  };
+
+  const handleVisualizar = (conta: ContaPagar) => {
+    navigate("/financeiro/incluir-movimentacao", {
+      state: { 
+        contaPagar: conta,
+        modoVisualizacao: true
+      }
+    });
   };
 
   // Carregar dados do Supabase
@@ -352,6 +360,7 @@ export default function ContasAPagarPage() {
               onEdit={handleEdit}
               onBaixar={handleBaixar}
               onDelete={prepararExclusao}
+              onVisualizar={handleVisualizar}
             />
           </div>
         </CardContent>
