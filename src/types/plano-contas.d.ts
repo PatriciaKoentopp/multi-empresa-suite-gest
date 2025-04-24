@@ -1,11 +1,12 @@
 
 export interface PlanoConta {
   id: string;
+  empresa_id: string;
   codigo: string;
   descricao: string;
-  tipo: "ativo" | "passivo" | "receita" | "despesa" | "patrimonio";
-  considerarDRE: boolean;
+  tipo: string;
+  considerar_dre: boolean;
   status: "ativo" | "inativo";
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: string;
+  updated_at: string;
 }

@@ -25,7 +25,7 @@ const formSchema = z.object({
   codigo: z.string().min(1, "Código é obrigatório"),
   descricao: z.string().min(3, "Descrição deve ter no mínimo 3 caracteres"),
   tipo: z.enum(["ativo", "passivo", "receita", "despesa", "patrimonio"]),
-  considerarDRE: z.boolean(),
+  considerar_dre: z.boolean(),
   status: z.enum(["ativo", "inativo"]),
 });
 
@@ -44,7 +44,7 @@ export function PlanoContasForm({ onSubmit, onCancel, initialData }: PlanoContas
       codigo: initialData?.codigo || "",
       descricao: initialData?.descricao || "",
       tipo: initialData?.tipo || "ativo",
-      considerarDRE: initialData?.considerarDRE || false,
+      considerar_dre: initialData?.considerar_dre || false,
       status: initialData?.status || "ativo",
     },
   });
@@ -107,7 +107,7 @@ export function PlanoContasForm({ onSubmit, onCancel, initialData }: PlanoContas
 
         <FormField
           control={form.control}
-          name="considerarDRE"
+          name="considerar_dre"
           render={({ field }) => (
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">

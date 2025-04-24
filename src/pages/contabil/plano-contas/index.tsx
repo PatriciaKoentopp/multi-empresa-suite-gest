@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import { PlanoConta } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Search } from "lucide-react";
@@ -27,6 +26,7 @@ import { toast } from "sonner";
 import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { PlanoConta } from "@/types/plano-contas";
 
 export default function PlanoContasPage() {
   const { currentCompany } = useCompany();
@@ -53,27 +53,31 @@ export default function PlanoContasPage() {
         throw error;
       }
 
-      return data;
+      return data as PlanoConta[];
     },
     enabled: !!currentCompany?.id,
   });
 
   const createContaMutation = useMutation({
-    mutationFn: async (data: Omit<PlanoConta, "id" | "created_at" | "updated_at">) => {
+    mutationFn: async (data: Omit<PlanoConta, "id" | "created_at" | "updated_at" | "empresa_id">) => {
       if (!currentCompany?.id) throw new Error("Empresa não selecionada");
 
       const { error } = await supabase
         .from("plano_contas")
         .insert([{ ...data, empresa_id: currentCompany.id }]);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao criar conta:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
       toast.success("Conta criada com sucesso!");
       handleCloseDialog();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Erro detalhado:", error);
       toast.error("Erro ao criar conta");
     },
   });
