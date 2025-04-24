@@ -166,6 +166,26 @@ export default function ContasAPagarPage() {
     inputBuscaRef.current?.focus();
   }
 
+  // Função para editar uma conta
+  // Função para excluir uma conta
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("movimentacoes")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      // Atualizar a lista local removendo o item excluído
+      setContas(prevContas => prevContas.filter(conta => conta.id !== id));
+      toast.success("Conta excluída com sucesso!");
+    } catch (error) {
+      console.error("Erro ao excluir conta:", error);
+      toast.error("Erro ao excluir a conta");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -286,6 +306,7 @@ export default function ContasAPagarPage() {
           </div>
         </CardContent>
       </Card>
+
       <BaixarContaPagarModal
         conta={contaParaBaixar}
         open={modalBaixarAberto}

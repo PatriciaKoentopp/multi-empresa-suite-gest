@@ -120,7 +120,11 @@ export function ContasAPagarTable({ contas, onEdit, onBaixar, onDelete }: Contas
                 <TableCell className="text-center">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-neutral-500 hover:bg-gray-100"
+                      >
                         <MoreHorizontal className="h-4 w-4" />
                         <span className="sr-only">Abrir menu de ações</span>
                       </Button>
