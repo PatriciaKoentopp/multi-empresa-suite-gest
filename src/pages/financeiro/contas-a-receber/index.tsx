@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef } from "react";
+
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,40 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BaixarContaReceberModal } from "@/components/contas-a-receber/BaixarContaReceberModal";
-
-// Dados mock: parcelas de vendas e movimentações tipo receber
-const initialContasAReceber: ContaReceber[] = [
-  {
-    id: "1",
-    cliente: "Cliente Alfa",
-    descricao: "Venda produto A",
-    dataVencimento: new Date("2024-05-02"),
-    dataRecebimento: new Date("2024-05-04"),
-    status: "recebido",
-    valor: 1200.00,
-  },
-  {
-    id: "2",
-    cliente: "Cliente Beta",
-    descricao: "Venda serviço B",
-    dataVencimento: new Date("2024-06-10"),
-    dataRecebimento: undefined,
-    status: "em_aberto",
-    valor: 3000.99,
-  },
-  {
-    id: "3",
-    cliente: "Cliente Gama",
-    descricao: "Recebimento de parcela",
-    dataVencimento: new Date("2024-04-12"),
-    dataRecebimento: new Date("2024-04-18"),
-    status: "recebido_em_atraso",
-    valor: 482.10,
-  },
-];
+import { useCompany } from "@/contexts/company-context";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function ContasAReceberPage() {
-  const [contas, setContas] = useState<ContaReceber[]>(initialContasAReceber);
+  const { currentCompany } = useCompany();
+  const [contas, setContas] = useState<ContaReceber[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,18 +34,79 @@ export default function ContasAReceberPage() {
 
   const inputBuscaRef = useRef<HTMLInputElement>(null);
 
-  function formatInputDate(date: Date | undefined) {
-    if (!date) return "";
-    return format(date, "yyyy-MM-dd");
-  }
-
   // Modal Baixar
   const [contaParaBaixar, setContaParaBaixar] = useState<ContaReceber | null>(null);
   const [modalBaixarAberto, setModalBaixarAberto] = useState(false);
 
+  useEffect(() => {
+    if (currentCompany?.id) {
+      carregarContasReceber();
+    }
+  }, [currentCompany]);
+
+  async function carregarContasReceber() {
+    try {
+      setIsLoading(true);
+      
+      const { data: movimentacoesParcelas, error } = await supabase
+        .from('movimentacoes_parcelas')
+        .select(`
+          id,
+          numero,
+          valor,
+          data_vencimento,
+          data_pagamento,
+          multa,
+          juros,
+          desconto,
+          movimentacao:movimentacoes (
+            id,
+            descricao,
+            tipo_operacao,
+            favorecido:favorecidos (
+              id,
+              nome
+            )
+          )
+        `)
+        .eq('movimentacao.empresa_id', currentCompany.id)
+        .eq('movimentacao.tipo_operacao', 'receber');
+      
+      if (error) throw error;
+
+      const contasReceber: ContaReceber[] = (movimentacoesParcelas || [])
+        .filter(parcela => parcela.movimentacao) // Garante que temos os dados da movimentação
+        .map(parcela => ({
+          id: parcela.id,
+          cliente: parcela.movimentacao.favorecido?.nome || 'Cliente não identificado',
+          descricao: parcela.movimentacao.descricao || '',
+          dataVencimento: new Date(parcela.data_vencimento),
+          dataRecebimento: parcela.data_pagamento ? new Date(parcela.data_pagamento) : undefined,
+          status: determinarStatus(parcela.data_vencimento, parcela.data_pagamento),
+          valor: Number(parcela.valor),
+          numeroParcela: `${parcela.movimentacao.id}-${parcela.numero}`,
+        }));
+
+      setContas(contasReceber);
+    } catch (error) {
+      console.error('Erro ao carregar contas a receber:', error);
+      toast.error('Erro ao carregar as contas a receber');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function determinarStatus(dataVencimento: string, dataPagamento?: string): ContaReceber['status'] {
+    if (!dataPagamento) return "em_aberto";
+    
+    const vencimento = new Date(dataVencimento);
+    const pagamento = new Date(dataPagamento);
+    
+    return pagamento > vencimento ? "recebido_em_atraso" : "recebido";
+  }
+
   // Ações
   const handleEdit = (conta: ContaReceber) => {
-    // Simulação: navega para inclusão/edição de movimentação passando a conta
     navigate("/financeiro/incluir-movimentacao", {
       state: { contaReceber: conta }
     });
@@ -82,9 +117,22 @@ export default function ContasAReceberPage() {
     setModalBaixarAberto(true);
   };
 
-  const handleDelete = (id: string) => {
-    setContas((prev) => prev.filter((c) => c.id !== id));
-    toast.success("Conta excluída.");
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('movimentacoes_parcelas')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+
+      setContas(prev => prev.filter(c => c.id !== id));
+      toast.success("Conta excluída com sucesso");
+      
+    } catch (error) {
+      console.error('Erro ao excluir conta:', error);
+      toast.error("Erro ao excluir conta");
+    }
   };
 
   function realizarBaixa({ dataRecebimento, contaCorrenteId, multa, juros, desconto }: {
@@ -94,18 +142,45 @@ export default function ContasAReceberPage() {
     juros: number;
     desconto: number;
   }) {
-    setContas(prev =>
-      prev.map(item =>
-        item.id === contaParaBaixar?.id
-          ? {
-              ...item,
-              dataRecebimento,
-              status: "recebido", // sempre define recebido (por ora)
-            }
-          : item
-      )
-    );
-    toast.success("Recebimento efetivado com sucesso!");
+    if (!contaParaBaixar) return;
+
+    // Atualiza no banco
+    supabase
+      .from('movimentacoes_parcelas')
+      .update({
+        data_pagamento: format(dataRecebimento, 'yyyy-MM-dd'),
+        multa,
+        juros,
+        desconto,
+        conta_corrente_id: contaCorrenteId
+      })
+      .eq('id', contaParaBaixar.id)
+      .then(({ error }) => {
+        if (error) {
+          console.error('Erro ao baixar conta:', error);
+          toast.error("Erro ao baixar conta");
+          return;
+        }
+
+        // Atualiza estado local
+        setContas(prev =>
+          prev.map(conta =>
+            conta.id === contaParaBaixar.id
+              ? {
+                  ...conta,
+                  dataRecebimento,
+                  status: determinarStatus(
+                    conta.dataVencimento.toISOString(),
+                    dataRecebimento.toISOString()
+                  ),
+                }
+              : conta
+          )
+        );
+        
+        toast.success("Recebimento registrado com sucesso!");
+        setModalBaixarAberto(false);
+      });
   }
 
   // Filtro
@@ -138,6 +213,14 @@ export default function ContasAReceberPage() {
       }
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Carregando contas a receber...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
