@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -43,6 +42,7 @@ import { Orcamento, Favorecido } from "@/types";
 
 // Opções de tipo
 const tipos = ["Todos", "Orçamento", "Venda"];
+const statusOptions = ["ativo", "inativo", "todos"];
 
 function formatDateBR(date: Date | string | undefined) {
   if (!date) return "";
@@ -64,6 +64,7 @@ export default function FaturamentoPage() {
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
   const [showToastConfirm, setShowToastConfirm] = useState(false);
   const [excluirItem, setExcluirItem] = useState<Orcamento | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"ativo" | "inativo" | "todos">("ativo");
 
   const navigate = useNavigate();
 
@@ -77,15 +78,21 @@ export default function FaturamentoPage() {
 
   async function carregarFaturamentos() {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('orcamentos')
         .select(`
           *,
           favorecido:favorecidos(nome),
           itens:orcamentos_itens(valor)
         `)
-        .eq('empresa_id', currentCompany?.id)
-        .eq('status', 'ativo');
+        .eq('empresa_id', currentCompany?.id);
+
+      // Aplica filtro de status se não for "todos"
+      if (statusFilter !== "todos") {
+        query = query.eq('status', statusFilter);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -225,6 +232,21 @@ export default function FaturamentoPage() {
             className="pl-8"
           />
         </div>
+
+        {/* Select de Status */}
+        <Select value={statusFilter} onValueChange={(value: "ativo" | "inativo" | "todos") => {
+          setStatusFilter(value);
+          carregarFaturamentos();
+        }}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos Status</SelectItem>
+            <SelectItem value="ativo">Ativos</SelectItem>
+            <SelectItem value="inativo">Inativos</SelectItem>
+          </SelectContent>
+        </Select>
 
         {/* Select de Tipo */}
         <Select value={tipo} onValueChange={setTipo}>
