@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -86,8 +85,38 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
 
   function handleConfirmar() {
     if (!dataPagamento || !contaCorrenteId) return;
-    onBaixar({ dataPagamento, contaCorrenteId, multa, juros, desconto });
-    onClose();
+
+    const inserirFluxoCaixa = async () => {
+      const { error: errorFluxo } = await supabase
+        .from('fluxo_caixa')
+        .insert({
+          empresa_id: currentCompany?.id,
+          data_movimentacao: dataPagamento.toISOString().split('T')[0],
+          valor: -(conta?.valor || 0) - (multa || 0) - (juros || 0) + (desconto || 0), // Valor negativo pois é uma saída
+          origem: 'contas_pagar',
+          tipo_operacao: 'pagar',
+          movimentacao_id: conta?.movimentacao_id,
+          movimentacao_parcela_id: conta?.id,
+          conta_corrente_id: contaCorrenteId,
+          situacao: 'nao_conciliado',
+          descricao: conta?.descricao || ''
+        });
+
+      if (errorFluxo) {
+        console.error('Erro ao inserir no fluxo de caixa:', errorFluxo);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível registrar o movimento no fluxo de caixa"
+        });
+        return;
+      }
+
+      onBaixar({ dataPagamento, contaCorrenteId, multa, juros, desconto });
+      onClose();
+    };
+
+    inserirFluxoCaixa();
   }
 
   function formatCurrencyBR(valor?: number) {
