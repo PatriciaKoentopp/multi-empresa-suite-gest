@@ -30,3 +30,10 @@ export interface MovimentacaoParcela {
   created_at: string;
   updated_at: string;
 }
+
+// Extensão para compatibilidade com ContaPagar
+declare module "@/components/contas-a-pagar/contas-a-pagar-table" {
+  interface ContaPagar {
+    tipo_operacao?: 'pagar' | 'receber' | 'transferencia';
+  }
+}

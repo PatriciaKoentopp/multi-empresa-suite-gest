@@ -9,7 +9,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { Edit, MoreHorizontal, Eye } from "lucide-react";
+import { Edit, MoreHorizontal, Eye, Trash } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -137,6 +137,13 @@ export function MovimentacaoTable({
                         <Edit className="h-4 w-4" />
                         Editar
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onDelete(movimentacao.id)}
+                        className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                      >
+                        <Trash className="h-4 w-4" />
+                        Excluir
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -155,4 +162,3 @@ export function MovimentacaoTable({
     </div>
   );
 }
-
