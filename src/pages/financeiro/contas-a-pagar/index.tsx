@@ -44,12 +44,6 @@ export default function ContasAPagarPage() {
   const [modalBaixarAberto, setModalBaixarAberto] = useState(false);
 
   // Ações (exemplo, pode ser desacoplado)
-  const handleEdit = (conta: ContaPagar) => {
-    navigate("/financeiro/incluir-movimentacao", {
-      state: { contaPagar: conta }
-    });
-  };
-
   const handleBaixar = (conta: ContaPagar) => {
     setContaParaBaixar(conta);
     setModalBaixarAberto(true);
@@ -81,6 +75,36 @@ export default function ContasAPagarPage() {
     // Aqui normalmente: lança no fluxo de caixa, etc — mas deixamos só atualização mock
     toast.success("Título baixado com sucesso!");
   }
+
+  // Novo estado para controlar a movimentação selecionada para edição
+  const [movimentacaoParaEditar, setMovimentacaoParaEditar] = useState<Movimentacao | null>(null);
+
+  // Adapta a função handleEdit para passar a movimentação completa
+  const handleEdit = async (conta: ContaPagar) => {
+    try {
+      // Buscar a movimentação completa no banco
+      const { data: movimentacao, error } = await supabase
+        .from('movimentacoes')
+        .select(`
+          *,
+          favorecido:favorecidos(id, nome)
+        `)
+        .eq('id', conta.id)
+        .single();
+        
+      if (error) throw error;
+      
+      if (movimentacao) {
+        // Navega para a página de edição com os dados da movimentação
+        navigate("/financeiro/incluir-movimentacao", {
+          state: { movimentacao }
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao buscar movimentação:", error);
+      toast.error("Erro ao buscar dados da movimentação");
+    }
+  };
 
   // Carregar dados do Supabase
   useEffect(() => {

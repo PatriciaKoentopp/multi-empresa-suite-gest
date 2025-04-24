@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FavorecidosForm } from "@/components/favorecidos/favorecidos-form";
 import { PlanoContasForm } from "@/components/plano-contas/plano-contas-form";
@@ -100,6 +99,9 @@ interface ContaCorrente {
 }
 
 export default function IncluirMovimentacaoPage() {
+  const location = useLocation();
+  const movimentacaoParaEditar = location.state?.movimentacao;
+
   const [operacao, setOperacao] = useState<Operacao>("pagar");
   const [dataEmissao, setDataEmissao] = useState<Date | undefined>(new Date());
   const [dataLancamento, setDataLancamento] = useState<Date | undefined>(new Date());
@@ -413,19 +415,39 @@ export default function IncluirMovimentacaoPage() {
 
   async function salvarMovimentacao(movimentacao: any) {
     try {
-      // Inserir a movimentação
-      const { data: novaMovimentacao, error: errorMovimentacao } = await supabase
-        .from("movimentacoes")
-        .insert([movimentacao])
-        .select()
-        .single();
+      let response;
+      
+      if (movimentacaoParaEditar) {
+        // Atualizar movimentação existente
+        response = await supabase
+          .from("movimentacoes")
+          .update(movimentacao)
+          .eq('id', movimentacaoParaEditar.id)
+          .select()
+          .single();
+      } else {
+        // Inserir nova movimentação
+        response = await supabase
+          .from("movimentacoes")
+          .insert([movimentacao])
+          .select()
+          .single();
+      }
 
-      if (errorMovimentacao) throw errorMovimentacao;
+      if (response.error) throw response.error;
 
-      // Se não for transferência e tiver parcelas, inserir as parcelas
+      // Atualizar parcelas se não for transferência
       if (movimentacao.tipo_operacao !== "transferencia" && parcelas.length > 0) {
+        if (movimentacaoParaEditar) {
+          // Deletar parcelas antigas
+          await supabase
+            .from("movimentacoes_parcelas")
+            .delete()
+            .eq('movimentacao_id', movimentacaoParaEditar.id);
+        }
+
         const parcelasParaInserir = parcelas.map(p => ({
-          movimentacao_id: novaMovimentacao.id,
+          movimentacao_id: response.data.id,
           numero: p.numero,
           valor: p.valor,
           data_vencimento: format(p.vencimento, "yyyy-MM-dd")
@@ -438,13 +460,40 @@ export default function IncluirMovimentacaoPage() {
         if (errorParcelas) throw errorParcelas;
       }
 
-      toast.success("Movimentação salva com sucesso!");
+      toast.success(movimentacaoParaEditar ? "Movimentação atualizada com sucesso!" : "Movimentação salva com sucesso!");
       navigate(-1);
     } catch (error) {
       console.error("Erro ao salvar movimentação:", error);
       toast.error("Erro ao salvar movimentação");
     }
   }
+
+  useEffect(() => {
+    if (movimentacaoParaEditar) {
+      setOperacao(movimentacaoParaEditar.tipo_operacao);
+      setDataEmissao(movimentacaoParaEditar.data_emissao ? new Date(movimentacaoParaEditar.data_emissao) : undefined);
+      setDataLancamento(movimentacaoParaEditar.data_lancamento ? new Date(movimentacaoParaEditar.data_lancamento) : undefined);
+      setNumDoc(movimentacaoParaEditar.numero_documento || "");
+      setFavorecido(movimentacaoParaEditar.favorecido_id || "");
+      setCategoria(movimentacaoParaEditar.categoria_id || "");
+      setDescricao(movimentacaoParaEditar.descricao || "");
+      setValor(movimentacaoParaEditar.valor?.toString().replace(".", ",") || "");
+      setFormaPagamento(movimentacaoParaEditar.forma_pagamento || "");
+      setNumParcelas(movimentacaoParaEditar.numero_parcelas || 1);
+      setDataPrimeiroVenc(movimentacaoParaEditar.primeiro_vencimento ? new Date(movimentacaoParaEditar.primeiro_vencimento) : undefined);
+      setConsiderarDRE(movimentacaoParaEditar.considerar_dre);
+      
+      if (movimentacaoParaEditar.tipo_titulo_id) {
+        setTipoTituloId(movimentacaoParaEditar.tipo_titulo_id);
+      }
+
+      // Se for transferência, carrega as contas
+      if (movimentacaoParaEditar.tipo_operacao === "transferencia") {
+        setContaOrigem(movimentacaoParaEditar.conta_origem_id || "");
+        setContaDestino(movimentacaoParaEditar.conta_destino_id || "");
+      }
+    }
+  }, [movimentacaoParaEditar]);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -695,30 +744,3 @@ export default function IncluirMovimentacaoPage() {
       </div>
       {/* Modal Novo Favorecido */}
       <Dialog open={isModalNovoFavorecido} onOpenChange={setIsModalNovoFavorecido}>
-        <DialogContent className="sm:max-w-[700px]">
-          <DialogHeader>
-            <DialogTitle>Novo Favorecido</DialogTitle>
-          </DialogHeader>
-          <FavorecidosForm
-            onSubmit={handleSalvarNovoFavorecido}
-            onCancel={() => setIsModalNovoFavorecido(false)}
-            grupos={[]} // Campos não utilizados no cadastro rápido
-            profissoes={[]} // Campos não utilizados no cadastro rápido
-          />
-        </DialogContent>
-      </Dialog>
-      {/* Modal Nova Categoria Financeira */}
-      <Dialog open={isModalNovaCategoria} onOpenChange={setIsModalNovaCategoria}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Nova Categoria Financeira</DialogTitle>
-          </DialogHeader>
-          <PlanoContasForm
-            onSubmit={handleSalvarNovaCategoria}
-            onCancel={() => setIsModalNovaCategoria(false)}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
