@@ -41,7 +41,7 @@ const mockExtrato = [
     favorecido: "Fornecedor ABC",
     descricao: "Compra de Material",
     formaPagamento: "Transferência",
-    situacao: "conciliado",
+    situacao: "nao_conciliado",
     valor: -800.0,
     saldo: 2500.0,
   },
@@ -144,7 +144,9 @@ export default function FluxoCaixaPage() {
   const [dataInicialStr, setDataInicialStr] = useState("");
   const [dataFinalStr, setDataFinalStr] = useState("");
 
+  // Novo estado para filtro de situação
   const [situacao, setSituacao] = useState<"todos" | "conciliado" | "nao_conciliado">("todos");
+
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
@@ -215,6 +217,7 @@ export default function FluxoCaixaPage() {
         linha.favorecido.toLowerCase().includes(searchTerm.toLowerCase()) ||
         linha.descricao.toLowerCase().includes(searchTerm.toLowerCase());
       
+      // Filtro de situação
       const sitOk = situacao === "todos" || linha.situacao === situacao;
 
       // Converter data no padrão YYYY-MM-DD para objeto Date
