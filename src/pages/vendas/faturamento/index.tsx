@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -27,45 +28,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
+import { toast } from "@/hooks/use-toast";
+import { Orcamento, Favorecido } from "@/types";
 
-// Mock data corrigido para Orçamento e Venda
-const mockFaturamentos = [
-  {
-    id: "1",
-    tipo: "Orçamento",
-    codigo: "1001",
-    data: new Date("2024-04-01"),
-    favorecido: "Maria da Silva",
-    projeto: "PJT-001",
-    valor: 2500.75,
-  },
-  {
-    id: "2",
-    tipo: "Venda",
-    codigo: "1002",
-    data: new Date("2024-04-09"),
-    favorecido: "João Souza LTDA",
-    projeto: "PJT-002",
-    valor: 3300,
-  },
-  {
-    id: "3",
-    tipo: "Orçamento",
-    codigo: "1003",
-    data: new Date("2024-04-12"),
-    favorecido: "Acme Corp",
-    projeto: "PJT-003",
-    valor: 1800.55,
-  },
-];
-
-// Opções exemplo para Tipo e Favorecido
+// Opções de tipo
 const tipos = ["Todos", "Orçamento", "Venda"];
-const favorecidos = Array.from(new Set(mockFaturamentos.map(f => f.favorecido)));
 
-function formatDateBR(date: Date | undefined) {
+function formatDateBR(date: Date | string | undefined) {
   if (!date) return "";
-  const d = date;
+  const d = new Date(date);
   const day = d.getDate().toString().padStart(2, "0");
   const month = (d.getMonth() + 1).toString().padStart(2, "0");
   const year = d.getFullYear().toString();
@@ -73,46 +46,125 @@ function formatDateBR(date: Date | undefined) {
 }
 
 export default function FaturamentoPage() {
+  const { currentCompany } = useCompany();
   const [busca, setBusca] = useState("");
   const [tipo, setTipo] = useState("");
   const [favorecido, setFavorecido] = useState("");
   const [dataInicial, setDataInicial] = useState<Date>();
   const [dataFinal, setDataFinal] = useState<Date>();
-
-  const [faturamentos, setFaturamentos] = useState(mockFaturamentos);
+  const [faturamentos, setFaturamentos] = useState<Orcamento[]>([]);
+  const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
 
   const navigate = useNavigate();
+
+  // Buscar orçamentos e vendas
+  useEffect(() => {
+    if (currentCompany?.id) {
+      carregarFaturamentos();
+      carregarFavorecidos();
+    }
+  }, [currentCompany?.id]);
+
+  async function carregarFaturamentos() {
+    try {
+      const { data, error } = await supabase
+        .from('orcamentos')
+        .select(`
+          *,
+          favorecido:favorecidos(nome),
+          itens:orcamentos_itens(valor)
+        `)
+        .eq('empresa_id', currentCompany?.id)
+        .eq('status', 'ativo');
+
+      if (error) throw error;
+
+      // Calcular valor total somando os itens
+      const faturamentosComValor = data?.map(fat => ({
+        ...fat,
+        valor: fat.itens?.reduce((sum, item) => sum + Number(item.valor), 0) || 0
+      })) || [];
+
+      setFaturamentos(faturamentosComValor);
+    } catch (error) {
+      console.error('Erro ao carregar faturamentos:', error);
+      toast({
+        title: "Erro ao carregar faturamentos",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function carregarFavorecidos() {
+    try {
+      const { data, error } = await supabase
+        .from('favorecidos')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .eq('status', 'ativo');
+
+      if (error) throw error;
+      setFavorecidos(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar favorecidos:', error);
+      toast({
+        title: "Erro ao carregar favorecidos",
+        variant: "destructive",
+      });
+    }
+  }
 
   // Filtros aplicados
   const itemsFiltrados = faturamentos.filter(item => {
     const buscaMatch = busca
       ? (
           item.codigo.toLowerCase().includes(busca.toLowerCase()) ||
-          item.favorecido.toLowerCase().includes(busca.toLowerCase()) ||
-          item.projeto?.toLowerCase()?.includes(busca.toLowerCase())
+          item.favorecido?.nome.toLowerCase().includes(busca.toLowerCase()) ||
+          item.codigo_projeto?.toLowerCase()?.includes(busca.toLowerCase())
         )
       : true;
-    // filtro por Orçamento/Venda (considerando "Todos" como todos os tipos)
-    const tipoMatch = tipo && tipo !== "Todos" ? item.tipo === tipo : true;
-    const favMatch = favorecido ? item.favorecido === favorecido : true;
-    const dataI_Match = dataInicial ? item.data >= dataInicial : true;
-    const dataF_Match = dataFinal ? item.data <= dataFinal : true;
+    
+    const tipoMatch = tipo && tipo !== "Todos" ? item.tipo === tipo.toLowerCase() : true;
+    const favMatch = favorecido ? item.favorecido_id === favorecido : true;
+    const dataI_Match = dataInicial ? new Date(item.data) >= dataInicial : true;
+    const dataF_Match = dataFinal ? new Date(item.data) <= dataFinal : true;
 
     return buscaMatch && tipoMatch && favMatch && dataI_Match && dataF_Match;
   });
 
   // Função Visualizar: abre orçamento em modo visualização
-  function handleVisualizar(item: typeof mockFaturamentos[0]) {
+  function handleVisualizar(item: typeof faturamentos[0]) {
     navigate(`/vendas/orcamento?codigo=${item.codigo}&visualizar=1`);
   }
 
   // Função Editar: abre orçamento para edição
-  function handleEditar(item: typeof mockFaturamentos[0]) {
+  function handleEditar(item: typeof faturamentos[0]) {
     navigate(`/vendas/orcamento?codigo=${item.codigo}`);
   }
 
-  // Calcular total de valor dos itens filtrados (apenas os visíveis na tabela)
-  const totalValor = itemsFiltrados.reduce((acc, item) => acc + (item.valor || 0), 0);
+  // Função Excluir: marca orçamento como inativo
+  async function handleExcluir(item: typeof faturamentos[0]) {
+    try {
+      const { error } = await supabase
+        .from('orcamentos')
+        .update({ status: 'inativo' })
+        .eq('id', item.id);
+
+      if (error) throw error;
+
+      toast({ title: "Registro excluído com sucesso!" });
+      carregarFaturamentos(); // Recarrega a lista
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+      toast({
+        title: "Erro ao excluir registro",
+        variant: "destructive",
+      });
+    }
+  }
+
+  // Calcular total de valor dos itens filtrados
+  const totalValor = itemsFiltrados.reduce((acc, item) => acc + Number(item.valor || 0), 0);
 
   return (
     <div className="space-y-4">
@@ -127,7 +179,6 @@ export default function FaturamentoPage() {
           onClick={() => navigate("/vendas/orcamento")}
         >
           <span>Incluir Orçamento</span>
-          {/* Ícone sempre à direita, padrão Favoritos */}
           <svg xmlns="http://www.w3.org/2000/svg" className="lucide lucide-file-plus w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M9 15v-6M6 12h6m9 6V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2Z" /><path d="M15 2v4a2 2 0 0 0 2 2h4"/></svg>
         </Button>
       </div>
@@ -145,7 +196,7 @@ export default function FaturamentoPage() {
           />
         </div>
 
-        {/* Select de Tipo com "Todos" como primeira opção */}
+        {/* Select de Tipo */}
         <Select value={tipo} onValueChange={setTipo}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Tipo" />
@@ -159,18 +210,21 @@ export default function FaturamentoPage() {
           </SelectContent>
         </Select>
 
+        {/* Select de Favorecido */}
         <Select value={favorecido} onValueChange={setFavorecido}>
           <SelectTrigger className="w-[170px]">
             <SelectValue placeholder="Favorecido" />
           </SelectTrigger>
           <SelectContent>
-            {favorecidos.map(opt => (
-              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+            {favorecidos.map(f => (
+              <SelectItem key={f.id} value={f.id}>
+                {f.nome}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Corrigido transparência das datas: sempre bg branco! */}
+        {/* Data Inicial */}
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -196,6 +250,7 @@ export default function FaturamentoPage() {
           </PopoverContent>
         </Popover>
 
+        {/* Data Final */}
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -250,16 +305,18 @@ export default function FaturamentoPage() {
             ) : (
               itemsFiltrados.map((item) => (
                 <TableRow key={item.id}>
-                  {/* Coluna Tipo, apenas "Orçamento" ou "Venda" */}
                   <TableCell>
-                    {item.tipo === "Orçamento" ? "Orçamento" : "Venda"}
+                    {item.tipo === "orcamento" ? "Orçamento" : "Venda"}
                   </TableCell>
                   <TableCell>{item.codigo}</TableCell>
                   <TableCell>{formatDateBR(item.data)}</TableCell>
-                  <TableCell>{item.favorecido}</TableCell>
-                  <TableCell>{item.projeto}</TableCell>
+                  <TableCell>{item.favorecido?.nome}</TableCell>
+                  <TableCell>{item.codigo_projeto}</TableCell>
                   <TableCell className="text-right">
-                    {item.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    {Number(item.valor).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL"
+                    })}
                   </TableCell>
                   <TableCell className="text-center">
                     <DropdownMenu>
@@ -270,7 +327,6 @@ export default function FaturamentoPage() {
                           className="text-neutral-500 hover:bg-gray-100"
                           title="Ações"
                         >
-                          {/* Ícone padrão de ações (três pontos) */}
                           <MoreHorizontal className="w-5 h-5 text-[#333]" />
                           <span className="sr-only">Abrir menu de ações</span>
                         </Button>
@@ -280,7 +336,6 @@ export default function FaturamentoPage() {
                           onClick={() => handleVisualizar(item)}
                           className="flex items-center gap-2 text-primary focus:bg-blue-100 focus:text-blue-700"
                         >
-                          {/* Ícone olho padrão Favoritos */}
                           <svg xmlns="http://www.w3.org/2000/svg" className="lucide lucide-eye w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="3"/><path d="M2 12C4.667 7.333 12 4 12 4s7.333 3.333 10 8c-2.667 4.667-10 8-10 8s-7.333-3.333-10-8Z"/></svg>
                           Visualizar
                         </DropdownMenuItem>
@@ -292,7 +347,7 @@ export default function FaturamentoPage() {
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          // Excluir ainda somente visual
+                          onClick={() => handleExcluir(item)}
                           className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -305,7 +360,6 @@ export default function FaturamentoPage() {
               ))
             )}
           </TableBody>
-          {/* Rodapé total igual contas a receber */}
           <tfoot>
             <TableRow>
               <TableCell colSpan={5} className="font-bold text-right">Total</TableCell>
