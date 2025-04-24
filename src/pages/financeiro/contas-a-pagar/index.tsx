@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -99,6 +100,15 @@ export default function ContasAPagarPage() {
     if (!contaParaExcluir) return;
     
     try {
+      // Primeiro, excluir as parcelas associadas à movimentação
+      const { error: errorParcelas } = await supabase
+        .from("movimentacoes_parcelas")
+        .delete()
+        .eq("movimentacao_id", contaParaExcluir);
+
+      if (errorParcelas) throw errorParcelas;
+      
+      // Depois de excluir as parcelas, excluir a movimentação principal
       const { error } = await supabase
         .from("movimentacoes")
         .delete()
