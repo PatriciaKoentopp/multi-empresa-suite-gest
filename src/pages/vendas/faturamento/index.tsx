@@ -27,14 +27,6 @@ import {
   DropdownMenuItem
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -70,7 +62,6 @@ export default function FaturamentoPage() {
   const [dataFinal, setDataFinal] = useState<Date>();
   const [faturamentos, setFaturamentos] = useState<Orcamento[]>([]);
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
-  const [excluirId, setExcluirId] = useState<string | null>(null);
   const [showToastConfirm, setShowToastConfirm] = useState(false);
   const [excluirItem, setExcluirItem] = useState<Orcamento | null>(null);
 
@@ -190,7 +181,6 @@ export default function FaturamentoPage() {
 
   // Função Visualizar: abre orçamento em modo visualização
   function handleVisualizar(item: Orcamento) {
-    // Vamos garantir que estamos passando o id corretamente
     const url = `/vendas/orcamento?id=${item.id}&visualizar=1`;
     console.log("Redirecionando para visualização:", url);
     navigate(url);
@@ -198,7 +188,6 @@ export default function FaturamentoPage() {
 
   // Função Editar: abre orçamento para edição
   function handleEditar(item: Orcamento) {
-    // Vamos garantir que estamos passando o id corretamente
     const url = `/vendas/orcamento?id=${item.id}`;
     console.log("Redirecionando para edição:", url);
     navigate(url);
@@ -417,7 +406,7 @@ export default function FaturamentoPage() {
         </Table>
       </div>
 
-      {/* Toast de confirmação de exclusão */}
+      {/* Dialog de confirmação de exclusão */}
       <Dialog open={showToastConfirm} onOpenChange={setShowToastConfirm}>
         <DialogContent className="max-w-md">
           <DialogHeader>

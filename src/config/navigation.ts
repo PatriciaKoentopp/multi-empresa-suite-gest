@@ -1,22 +1,10 @@
+
 import { ModuleNavItem } from "@/types";
-import * as Icons from "lucide-react";
-// Make sure we have all the Lucide icons for the sidebar
-// These will be dynamically accessed by the sidebar component
-const {
-  LayoutDashboard, 
-  Settings, 
-  Users, 
-  ShoppingCart, 
-  Banknote,
-  Calculator, 
-  BarChart,
-  HeartHandshake
-} = Icons;
 
 export const mainNavigation: ModuleNavItem[] = [
   {
     name: "Dashboard",
-    icon: "layout-dashboard",
+    icon: "layoutDashboard",
     href: "/dashboard",
     description: "Visão geral do sistema"
   },
@@ -88,7 +76,7 @@ export const mainNavigation: ModuleNavItem[] = [
   },
   {
     name: "Vendas",
-    icon: "shopping-cart",
+    icon: "shoppingCart",
     href: "/vendas",
     description: "Gestão de vendas e faturamento",
     subItems: [
@@ -159,7 +147,7 @@ export const mainNavigation: ModuleNavItem[] = [
   },
   {
     name: "CRM",
-    icon: "heart-handshake",
+    icon: "heartHandshake",
     href: "/crm",
     description: "Gestão de relacionamento com clientes",
     subItems: [
@@ -210,7 +198,7 @@ export const mainNavigation: ModuleNavItem[] = [
   },
   {
     name: "Relatórios",
-    icon: "bar-chart",
+    icon: "barChart",
     href: "/relatorios",
     description: "Relatórios e análises",
     subItems: [

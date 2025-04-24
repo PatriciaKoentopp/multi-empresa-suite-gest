@@ -43,7 +43,7 @@ export function GrupoFavorecidosForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: grupo?.nome || "",
-      status: grupo?.status || "ativo",
+      status: (grupo?.status as "ativo" | "inativo") || "ativo",
     },
   });
 

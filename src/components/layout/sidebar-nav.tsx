@@ -25,7 +25,8 @@ export function SidebarNav({ isCollapsed, closeSidebar }: SidebarNavProps) {
   // Estado para controlar qual submenu está aberto
   const [openSubMenu, setOpenSubMenu] = useState<string | undefined>(undefined);
 
-  const getIcon = (iconName: string): LucideIcon => {
+  const getIcon = (iconName: string | undefined): LucideIcon => {
+    if (!iconName) return Icons.Circle;
     // @ts-ignore - Dynamic icon access
     const Icon = Icons[iconName.charAt(0).toUpperCase() + iconName.slice(1)] || Icons.Circle;
     return Icon;
@@ -39,7 +40,7 @@ export function SidebarNav({ isCollapsed, closeSidebar }: SidebarNavProps) {
 
   const renderLink = (item: ModuleNavItem | SubNavItem, isSubItem = false) => {
     const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-    const Icon = getIcon((item as ModuleNavItem).icon || "circle");
+    const Icon = getIcon(isSubItem ? undefined : (item as ModuleNavItem).icon);
 
     return (
       <Button
@@ -52,7 +53,7 @@ export function SidebarNav({ isCollapsed, closeSidebar }: SidebarNavProps) {
           isSubItem && "pl-8"
         )}
       >
-        <Link to={item.href} onClick={onNavigate}>
+        <Link to={item.href || ""} onClick={onNavigate}>
           {!isSubItem && (
             <Icon className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />
           )}
@@ -79,7 +80,7 @@ export function SidebarNav({ isCollapsed, closeSidebar }: SidebarNavProps) {
               )}
               title={item.name}
             >
-              <Link to={item.href} onClick={onNavigate}>
+              <Link to={item.href || ""} onClick={onNavigate}>
                 {(() => {
                   const Icon = getIcon(item.icon);
                   return <Icon className="h-4 w-4" />;
@@ -108,7 +109,7 @@ export function SidebarNav({ isCollapsed, closeSidebar }: SidebarNavProps) {
               onValueChange={(val) => setOpenSubMenu(val as string | undefined)}
               className="border-none"
             >
-              <AccordionItem value={item.href} className="border-none">
+              <AccordionItem value={item.href || ""} className="border-none">
                 <AccordionTrigger
                   className={cn(
                     "px-4 gap-1 hover:bg-accent/50 hover:no-underline py-2 rounded-md",

@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { Company } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,10 +16,9 @@ interface CompanyContextType {
 function supabaseToCompany(data: any): Company {
   return {
     id: data.id,
-    name: data.nome_fantasia || data.razao_social || "",
-    razaoSocial: data.razao_social,
-    nomeFantasia: data.nome_fantasia,
-    cnpj: data.cnpj,
+    razaoSocial: data.razao_social || "",
+    nomeFantasia: data.nome_fantasia || "",
+    cnpj: data.cnpj || "",
     inscricaoEstadual: data.inscricao_estadual,
     inscricaoMunicipal: data.inscricao_municipal,
     cnae: data.cnae,
@@ -26,16 +26,16 @@ function supabaseToCompany(data: any): Company {
     site: data.site,
     telefone: data.telefone,
     endereco: {
-      cep: data.cep,
-      logradouro: data.logradouro,
-      numero: data.numero,
+      cep: data.cep || "",
+      logradouro: data.logradouro || "",
+      numero: data.numero || "",
       complemento: data.complemento,
-      bairro: data.bairro,
-      cidade: data.cidade,
-      estado: data.estado,
-      pais: data.pais,
+      bairro: data.bairro || "",
+      cidade: data.cidade || "",
+      estado: data.estado || "",
+      pais: data.pais || "Brasil",
     },
-    regimeTributacao: data.regime_tributacao as Company["regimeTributacao"],
+    regimeTributacao: data.regime_tributacao,
     logo: data.logo,
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()

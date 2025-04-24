@@ -1,3 +1,4 @@
+
 export interface TabelaPreco {
   id: string;
   empresa_id: string;
@@ -34,7 +35,7 @@ export interface GrupoFavorecido {
   id: string;
   empresa_id: string;
   nome: string;
-  status: string;
+  status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
 }
@@ -43,7 +44,7 @@ export interface Profissao {
   id: string;
   empresa_id: string;
   nome: string;
-  status: string;
+  status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
 }
@@ -101,6 +102,7 @@ export interface PlanoConta {
   status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
+  considerarDRE?: boolean;
 }
 
 export interface Usuario {
@@ -117,27 +119,39 @@ export interface Usuario {
 
 export interface Company {
   id: string;
-  razao_social: string;
-  nome_fantasia: string;
+  name?: string;
+  razaoSocial: string;
+  nomeFantasia: string;
   cnpj: string;
-  inscricao_estadual: string | null;
-  inscricao_municipal: string | null;
-  logradouro: string;
-  numero: string;
-  complemento: string | null;
-  bairro: string;
-  cidade: string;
-  estado: string;
-  cep: string;
-  pais: string;
-  telefone: string | null;
+  inscricaoEstadual: string | null;
+  inscricaoMunicipal: string | null;
   email: string | null;
   site: string | null;
+  telefone: string | null;
   cnae: string | null;
-  regime_tributacao: string | null;
+  regimeTributacao: string | null;
   logo: string | null;
-  created_at: Date | null;
-  updated_at: Date | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  endereco: {
+    cep: string;
+    logradouro: string;
+    numero: string;
+    complemento: string | null;
+    bairro: string;
+    cidade: string;
+    estado: string;
+    pais: string;
+  };
+  
+  // Campos originais do banco
+  razao_social?: string;
+  nome_fantasia?: string;
+  inscricao_estadual?: string | null;
+  inscricao_municipal?: string | null;
+  regime_tributacao?: string | null;
+  created_at?: Date | null;
+  updated_at?: Date | null;
 }
 
 export interface Funil {
@@ -161,21 +175,21 @@ export interface EtapaFunil {
 }
 
 export interface ModuleNavItem {
-  title: string;
+  name: string;
   href?: string;
-  icon?: JSX.Element;
+  icon?: string;
   disabled?: boolean;
   external?: boolean;
-  label?: string;
-  items?: SubNavItem[];
+  description?: string;
+  subItems?: SubNavItem[];
 }
 
 export interface SubNavItem {
-  title: string;
+  name: string;
   href: string;
   disabled?: boolean;
   external?: boolean;
-  label?: string;
+  description?: string;
 }
 
 export interface Orcamento {
@@ -195,6 +209,11 @@ export interface Orcamento {
   status: string;
   created_at: Date;
   updated_at: Date;
+  favorecido?: {
+    nome: string;
+  };
+  valor?: number;
+  itens?: Array<{valor: number}>;
 }
 
 export interface OrcamentoItem {
