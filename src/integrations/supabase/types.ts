@@ -418,33 +418,55 @@ export type Database = {
       }
       movimentacoes_parcelas: {
         Row: {
+          conta_corrente_id: string | null
           created_at: string
+          data_pagamento: string | null
           data_vencimento: string
+          desconto: number | null
           id: string
+          juros: number | null
           movimentacao_id: string
+          multa: number | null
           numero: number
           updated_at: string
           valor: number
         }
         Insert: {
+          conta_corrente_id?: string | null
           created_at?: string
+          data_pagamento?: string | null
           data_vencimento: string
+          desconto?: number | null
           id?: string
+          juros?: number | null
           movimentacao_id: string
+          multa?: number | null
           numero: number
           updated_at?: string
           valor: number
         }
         Update: {
+          conta_corrente_id?: string | null
           created_at?: string
+          data_pagamento?: string | null
           data_vencimento?: string
+          desconto?: number | null
           id?: string
+          juros?: number | null
           movimentacao_id?: string
+          multa?: number | null
           numero?: number
           updated_at?: string
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "movimentacoes_parcelas_conta_corrente_id_fkey"
+            columns: ["conta_corrente_id"]
+            isOneToOne: false
+            referencedRelation: "contas_correntes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "movimentacoes_parcelas_movimentacao_id_fkey"
             columns: ["movimentacao_id"]

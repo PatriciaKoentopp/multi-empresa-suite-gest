@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,15 +25,6 @@ interface BaixarContaPagarModalProps {
   }) => void;
 }
 
-function formatCurrencyBR(valor?: number) {
-  if (valor === undefined) return "-";
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  });
-}
-
 export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: BaixarContaPagarModalProps) {
   const [dataPagamento, setDataPagamento] = useState<Date | undefined>(conta?.dataVencimento);
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("");
@@ -46,7 +37,6 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
 
   useEffect(() => {
     if (open && currentCompany) {
-      // Buscar contas correntes quando o modal abrir
       const fetchContasCorrentes = async () => {
         const { data, error } = await supabase
           .from('contas_correntes')
@@ -64,9 +54,16 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
           return;
         }
 
-        if (data) {
-          setContasCorrentes(data);
-        }
+        // Mapear para o tipo ContaCorrente antes de setar o estado
+        const contasCorrentesFormatadas: ContaCorrente[] = (data || []).map(conta => ({
+          ...conta,
+          contaContabilId: conta.conta_contabil_id,
+          createdAt: new Date(conta.created_at),
+          updatedAt: new Date(conta.updated_at),
+          data: conta.data ? new Date(conta.data) : undefined,
+        }));
+
+        setContasCorrentes(contasCorrentesFormatadas);
       };
 
       fetchContasCorrentes();
@@ -85,6 +82,15 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
     if (!dataPagamento || !contaCorrenteId) return;
     onBaixar({ dataPagamento, contaCorrenteId, multa, juros, desconto });
     onClose();
+  }
+
+  function formatCurrencyBR(valor?: number) {
+    if (valor === undefined) return "-";
+    return valor.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 2,
+    });
   }
 
   // Calcular valor total

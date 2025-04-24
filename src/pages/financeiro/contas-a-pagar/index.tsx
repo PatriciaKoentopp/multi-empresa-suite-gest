@@ -31,11 +31,9 @@ import { useCompany } from "@/contexts/company-context";
 
 export default function ContasAPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>([]);
-
-  // Novo: navegação
   const navigate = useNavigate();
 
-  // Filtros
+  // Filtros com valor padrão definido para "em_aberto"
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todas" | "pago" | "pago_em_atraso" | "em_aberto">("em_aberto");
   const [dataVencInicio, setDataVencInicio] = useState<string>("");
@@ -43,22 +41,16 @@ export default function ContasAPagarPage() {
   const [dataPagInicio, setDataPagInicio] = useState<string>("");
   const [dataPagFim, setDataPagFim] = useState<string>("");
 
-  // Estado para o modal de confirmação de exclusão
   const [contaParaExcluir, setContaParaExcluir] = useState<string | null>(null);
   const [confirmarExclusaoAberto, setConfirmarExclusaoAberto] = useState(false);
 
   const inputBuscaRef = useRef<HTMLInputElement>(null);
 
-  function formatInputDate(date: Date | undefined) {
-    if (!date) return "";
-    return format(date, "yyyy-MM-dd");
-  }
-
-  // Novo estado para modal Baixar
   const [contaParaBaixar, setContaParaBaixar] = useState<ContaPagar | null>(null);
   const [modalBaixarAberto, setModalBaixarAberto] = useState(false);
 
-  // Ações (exemplo, pode ser desacoplado)
+  const { currentCompany } = useCompany();
+
   const handleBaixar = (conta: ContaPagar) => {
     setContaParaBaixar(conta);
     setModalBaixarAberto(true);
@@ -89,17 +81,8 @@ export default function ContasAPagarPage() {
 
         if (errorParcela) throw errorParcela;
 
-        setContas(prev =>
-          prev.map(item =>
-            item.id === contaParaBaixar?.id
-              ? {
-                  ...item,
-                  dataPagamento,
-                  status: dataPagamento > item.dataVencimento ? "pago_em_atraso" : "pago",
-                }
-              : item
-          )
-        );
+        // Recarregar as contas após a baixa
+        await carregarContasAPagar();
 
         toast({
           title: "Sucesso",
@@ -123,13 +106,11 @@ export default function ContasAPagarPage() {
     atualizarMovimentacao();
   }
 
-  // Prepara a exclusão abrindo o modal de confirmação
   const prepararExclusao = (id: string) => {
     setContaParaExcluir(id);
     setConfirmarExclusaoAberto(true);
   };
 
-  // Função para excluir uma conta após confirmação
   const confirmarExclusao = async () => {
     if (!contaParaExcluir) return;
     
@@ -150,8 +131,8 @@ export default function ContasAPagarPage() {
 
       if (error) throw error;
 
-      // Atualizar a lista local removendo o item excluído
-      setContas(prevContas => prevContas.filter(conta => conta.id !== contaParaExcluir));
+      // Recarregar as contas após a exclusão
+      await carregarContasAPagar();
       
       toast({
         title: "Sucesso",
@@ -171,10 +152,6 @@ export default function ContasAPagarPage() {
     }
   };
 
-  // Novo estado para controlar a movimentação selecionada para edição
-  const [movimentacaoParaEditar, setMovimentacaoParaEditar] = useState<Movimentacao | null>(null);
-
-  // Adapta a função handleEdit para passar a movimentação completa
   const handleEdit = async (conta: ContaPagar) => {
     try {
       // Buscar a movimentação completa no banco
@@ -205,7 +182,6 @@ export default function ContasAPagarPage() {
     }
   };
 
-  // Modificar a função handleVisualizar para buscar os dados completos antes de navegar
   const handleVisualizar = async (conta: ContaPagar) => {
     try {
       // Buscar a movimentação completa no banco, exatamente como em handleEdit
@@ -239,62 +215,72 @@ export default function ContasAPagarPage() {
     }
   };
 
-  const { currentCompany } = useCompany();
-
   // Carregar dados do Supabase
-  useEffect(() => {
-    async function carregarContasAPagar() {
-      try {
-        const { data: movimentacoes, error } = await supabase
-          .from('movimentacoes')
-          .select(`
-            *,
-            favorecido:favorecidos(nome),
-            movimentacoes_parcelas(
-              id,
-              numero,
-              valor,
-              data_vencimento,
-              data_pagamento
-            )
-          `)
-          .eq('tipo_operacao', 'pagar')
-          .eq('empresa_id', currentCompany?.id);
+  const carregarContasAPagar = async () => {
+    try {
+      const { data: movimentacoes, error } = await supabase
+        .from('movimentacoes')
+        .select(`
+          *,
+          favorecido:favorecidos(nome),
+          movimentacoes_parcelas(
+            id,
+            numero,
+            valor,
+            data_vencimento,
+            data_pagamento,
+            multa,
+            juros,
+            desconto,
+            conta_corrente_id
+          )
+        `)
+        .eq('tipo_operacao', 'pagar')
+        .eq('empresa_id', currentCompany?.id);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        if (movimentacoes) {
-          const contasFormatadas: ContaPagar[] = movimentacoes.flatMap((mov: any) => {
-            return mov.movimentacoes_parcelas.map((parcela: any) => ({
-              id: parcela.id,
-              movimentacao_id: mov.id,
-              favorecido: mov.favorecido?.nome || 'Não informado',
-              descricao: mov.descricao || '',
-              dataVencimento: new Date(parcela.data_vencimento),
-              dataPagamento: parcela.data_pagamento ? new Date(parcela.data_pagamento) : undefined,
-              status: parcela.data_pagamento ? (new Date(parcela.data_vencimento) < new Date(parcela.data_pagamento) ? 'pago_em_atraso' : 'pago') : 'em_aberto',
-              valor: Number(parcela.valor),
-              numeroParcela: parcela.numero,
-              numeroTitulo: mov.numero_documento
-            }));
-          });
-
-          setContas(contasFormatadas);
-        }
-      } catch (error: any) {
-        console.error('Erro ao carregar contas:', error);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: 'Erro ao carregar as contas a pagar'
+      if (movimentacoes) {
+        const contasFormatadas: ContaPagar[] = movimentacoes.flatMap((mov: any) => {
+          return mov.movimentacoes_parcelas.map((parcela: any) => ({
+            id: parcela.id,
+            movimentacao_id: mov.id,
+            favorecido: mov.favorecido?.nome || 'Não informado',
+            descricao: mov.descricao || '',
+            dataVencimento: new Date(parcela.data_vencimento),
+            dataPagamento: parcela.data_pagamento ? new Date(parcela.data_pagamento) : undefined,
+            status: parcela.data_pagamento 
+              ? (new Date(parcela.data_vencimento) < new Date(parcela.data_pagamento) ? 'pago_em_atraso' : 'pago') 
+              : 'em_aberto',
+            valor: Number(parcela.valor),
+            multa: Number(parcela.multa || 0),
+            juros: Number(parcela.juros || 0),
+            desconto: Number(parcela.desconto || 0),
+            numeroParcela: parcela.numero,
+            numeroTitulo: mov.numero_documento
+          }));
         });
-      }
-    }
 
-    carregarContasAPagar();
+        setContas(contasFormatadas);
+      }
+    } catch (error: any) {
+      console.error('Erro ao carregar contas:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: 'Erro ao carregar as contas a pagar'
+      });
+    }
+  };
+
+  // Carregar dados quando o componente montar ou a empresa mudar
+  useEffect(() => {
+    if (currentCompany) {
+      carregarContasAPagar();
+    }
   }, [currentCompany]);
 
-  // Filtro
+  // Filtro de contas
   const filteredContas = useMemo(() => {
     return contas.filter((conta) => {
       const textoBusca = (conta.favorecido + conta.descricao)
@@ -311,6 +297,11 @@ export default function ContasAPagarPage() {
       return textoBusca && statusOk && vencimentoDentroRange && pagamentoDentroRange;
     });
   }, [contas, searchTerm, statusFilter, dataVencInicio, dataVencFim, dataPagInicio, dataPagFim]);
+
+  function formatInputDate(date: Date | undefined) {
+    if (!date) return "";
+    return format(date, "yyyy-MM-dd");
+  }
 
   function handleLupaClick() {
     inputBuscaRef.current?.focus();
