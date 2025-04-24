@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -742,5 +743,38 @@ export default function IncluirMovimentacaoPage() {
           </div>
         </form>
       </div>
+      
       {/* Modal Novo Favorecido */}
       <Dialog open={isModalNovoFavorecido} onOpenChange={setIsModalNovoFavorecido}>
+        <DialogContent className="bg-white p-0">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>Novo Favorecido</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            <FavorecidosForm 
+              grupos={[]} 
+              profissoes={[]} 
+              onSubmit={handleSalvarNovoFavorecido} 
+              onCancel={() => setIsModalNovoFavorecido(false)} 
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Nova Categoria */}
+      <Dialog open={isModalNovaCategoria} onOpenChange={setIsModalNovaCategoria}>
+        <DialogContent className="bg-white p-0">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>Nova Categoria Financeira</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            <PlanoContasForm 
+              onSubmit={handleSalvarNovaCategoria} 
+              onCancel={() => setIsModalNovaCategoria(false)} 
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
