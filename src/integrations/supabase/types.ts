@@ -496,6 +496,7 @@ export type Database = {
       }
       plano_contas: {
         Row: {
+          categoria: string
           codigo: string
           considerar_dre: boolean
           created_at: string
@@ -507,6 +508,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          categoria?: string
           codigo: string
           considerar_dre?: boolean
           created_at?: string
@@ -518,6 +520,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          categoria?: string
           codigo?: string
           considerar_dre?: boolean
           created_at?: string

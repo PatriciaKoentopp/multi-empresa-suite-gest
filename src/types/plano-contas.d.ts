@@ -5,6 +5,7 @@ export interface PlanoConta {
   codigo: string;
   descricao: string;
   tipo: string;
+  categoria: "título" | "movimentação";
   considerar_dre: boolean;
   status: "ativo" | "inativo";
   created_at: string;

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { PlanoConta } from "@/types/plano-contas";
 import {
@@ -56,6 +55,7 @@ export function PlanoContasTable({
             <TableHead className="w-[100px]">Código</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead>Tipo</TableHead>
+            <TableHead>Categoria</TableHead>
             <TableHead className="w-[150px]">Considerar no DRE</TableHead>
             <TableHead className="w-[100px]">Status</TableHead>
             <TableHead className="w-[80px] text-right">Ações</TableHead>
@@ -74,6 +74,7 @@ export function PlanoContasTable({
                 <TableCell className="font-medium">{conta.codigo}</TableCell>
                 <TableCell>{conta.descricao}</TableCell>
                 <TableCell className="capitalize">{conta.tipo}</TableCell>
+                <TableCell className="capitalize">{conta.categoria}</TableCell>
                 <TableCell>
                   {conta.considerar_dre ? "Sim" : "Não"}
                 </TableCell>

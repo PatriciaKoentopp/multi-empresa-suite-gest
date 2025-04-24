@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,14 +140,17 @@ export default function PlanoContasPage() {
     deleteContaMutation.mutate(id);
   };
 
-  // Filtrar contas
+  const [categoriaFilter, setCategoriaFilter] = useState<string>("todos");
+
+  // Alterar a lógica de filtro para incluir categoria
   const filteredContas = contas.filter((conta) => {
     const matchesSearch = conta.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          conta.codigo.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTipo = tipoFilter === "todos" || conta.tipo === tipoFilter;
     const matchesStatus = statusFilter === "todos" || conta.status === statusFilter;
+    const matchesCategoria = categoriaFilter === "todos" || conta.categoria === categoriaFilter;
 
-    return matchesSearch && matchesTipo && matchesStatus;
+    return matchesSearch && matchesTipo && matchesStatus && matchesCategoria;
   });
 
   return (
@@ -196,6 +198,17 @@ export default function PlanoContasPage() {
                 <SelectItem value="todos">Todos os status</SelectItem>
                 <SelectItem value="ativo">Ativo</SelectItem>
                 <SelectItem value="inativo">Inativo</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
+              <SelectTrigger className="w-[180px] bg-background">
+                <SelectValue placeholder="Filtrar por categoria" />
+              </SelectTrigger>
+              <SelectContent className="bg-background">
+                <SelectItem value="todos">Todas as categorias</SelectItem>
+                <SelectItem value="título">Título</SelectItem>
+                <SelectItem value="movimentação">Movimentação</SelectItem>
               </SelectContent>
             </Select>
           </div>

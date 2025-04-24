@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -25,6 +24,7 @@ const formSchema = z.object({
   codigo: z.string().min(1, "Código é obrigatório"),
   descricao: z.string().min(3, "Descrição deve ter no mínimo 3 caracteres"),
   tipo: z.enum(["ativo", "passivo", "receita", "despesa", "patrimonio"]),
+  categoria: z.enum(["título", "movimentação"]),
   considerar_dre: z.boolean(),
   status: z.enum(["ativo", "inativo"]),
 });
@@ -44,6 +44,7 @@ export function PlanoContasForm({ onSubmit, onCancel, initialData }: PlanoContas
       codigo: initialData?.codigo || "",
       descricao: initialData?.descricao || "",
       tipo: initialData?.tipo || "ativo",
+      categoria: initialData?.categoria || "movimentação",
       considerar_dre: initialData?.considerar_dre || false,
       status: initialData?.status || "ativo",
     },
@@ -98,6 +99,28 @@ export function PlanoContasForm({ onSubmit, onCancel, initialData }: PlanoContas
                   <SelectItem value="receita">Receita</SelectItem>
                   <SelectItem value="despesa">Despesa</SelectItem>
                   <SelectItem value="patrimonio">Patrimônio</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="categoria"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Categoria</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a categoria" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="bg-background">
+                  <SelectItem value="título">Título</SelectItem>
+                  <SelectItem value="movimentação">Movimentação</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
