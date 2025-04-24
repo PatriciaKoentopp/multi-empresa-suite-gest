@@ -15,7 +15,7 @@ export function FavorecidoDocumento({ form, readOnly }: FavorecidoDocumentoProps
     <div className="grid grid-cols-2 gap-4">
       <FormField
         control={form.control}
-        name="tipoDocumento"
+        name="tipo_documento"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Tipo de Documento</FormLabel>

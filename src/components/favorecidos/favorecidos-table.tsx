@@ -95,13 +95,13 @@ export function FavorecidosTable({
                 <TableCell>
                   <div>
                     <div className="font-medium">{favorecido.nome}</div>
-                    {favorecido.nomeFantasia && (
-                      <div className="text-xs text-muted-foreground">{favorecido.nomeFantasia}</div>
+                    {favorecido.nome_fantasia && (
+                      <div className="text-xs text-muted-foreground">{favorecido.nome_fantasia}</div>
                     )}
                   </div>
                 </TableCell>
                 <TableCell>{favorecido.documento}</TableCell>
-                <TableCell>{getGrupoNome(favorecido.grupoId)}</TableCell>
+                <TableCell>{getGrupoNome(favorecido.grupo_id)}</TableCell>
                 <TableCell>
                   <div className="text-sm">
                     {favorecido.email && (

@@ -60,12 +60,12 @@ export function UsuariosForm({ usuario, onSubmit, onCancel }: UsuariosFormProps)
         id: usuario?.id || crypto.randomUUID(),
         nome: data.nome,
         email: data.email,
-        senha: data.senha || "",
         tipo: data.tipo,
         status: data.status,
         vendedor: data.vendedor,
-        createdAt: usuario?.createdAt || new Date(),
-        updatedAt: new Date(),
+        created_at: usuario?.created_at || new Date(),
+        updated_at: new Date(),
+        empresa_id: usuario?.empresa_id || null
       };
       
       onSubmit(usuarioData);

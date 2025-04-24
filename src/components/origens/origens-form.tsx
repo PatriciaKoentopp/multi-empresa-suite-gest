@@ -42,7 +42,7 @@ export function OrigensForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: origem?.nome || "",
-      status: origem?.status || "ativo",
+      status: (origem?.status || "ativo") as "ativo" | "inativo",
     },
   });
 

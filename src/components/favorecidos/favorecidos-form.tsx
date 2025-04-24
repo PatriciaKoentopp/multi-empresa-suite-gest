@@ -32,31 +32,31 @@ export function FavorecidosForm({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: favorecido ? {
-      tipo: favorecido.tipo,
-      tipoDocumento: favorecido.tipoDocumento,
+      tipo: favorecido.tipo as "cliente" | "fornecedor" | "publico" | "funcionario",
+      tipo_documento: favorecido.tipo_documento as "cpf" | "cnpj",
       documento: favorecido.documento,
-      grupoId: favorecido.grupoId,
-      profissaoId: favorecido.profissaoId,
+      grupo_id: favorecido.grupo_id,
+      profissao_id: favorecido.profissao_id,
       nome: favorecido.nome,
-      nomeFantasia: favorecido.nomeFantasia || "",
+      nome_fantasia: favorecido.nome_fantasia || "",
       email: favorecido.email || "",
       telefone: favorecido.telefone || "",
-      cep: favorecido.endereco?.cep || "",
-      logradouro: favorecido.endereco?.logradouro || "",
-      numero: favorecido.endereco?.numero || "",
-      complemento: favorecido.endereco?.complemento || "",
-      bairro: favorecido.endereco?.bairro || "",
-      cidade: favorecido.endereco?.cidade || "",
-      estado: favorecido.endereco?.estado || "",
-      pais: favorecido.endereco?.pais || "",
-      dataAniversario: favorecido.dataAniversario,
-      status: favorecido.status,
+      cep: favorecido.cep || "",
+      logradouro: favorecido.logradouro || "",
+      numero: favorecido.numero || "",
+      complemento: favorecido.complemento || "",
+      bairro: favorecido.bairro || "",
+      cidade: favorecido.cidade || "",
+      estado: favorecido.estado || "",
+      pais: favorecido.pais || "",
+      data_aniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
+      status: favorecido.status as "ativo" | "inativo",
     } : {
       tipo: "cliente",
-      tipoDocumento: "cpf",
+      tipo_documento: "cpf",
       documento: "",
       nome: "",
-      nomeFantasia: "",
+      nome_fantasia: "",
       email: "",
       telefone: "",
       cep: "",
@@ -74,10 +74,10 @@ export function FavorecidosForm({
   // Atualizar tipo de documento baseado no tipo de favorecido
   useEffect(() => {
     const tipoFavorecido = form.watch("tipo");
-    const tipoDocumentoAtual = form.watch("tipoDocumento");
+    const tipoDocumentoAtual = form.watch("tipo_documento");
     
     if (tipoFavorecido === "cliente" && tipoDocumentoAtual !== "cpf") {
-      form.setValue("tipoDocumento", "cpf");
+      form.setValue("tipo_documento", "cpf");
     }
     else if (
       (tipoFavorecido === "fornecedor" || 
@@ -85,33 +85,33 @@ export function FavorecidosForm({
        tipoFavorecido === "funcionario") && 
       tipoDocumentoAtual !== "cnpj"
     ) {
-      form.setValue("tipoDocumento", "cnpj");
+      form.setValue("tipo_documento", "cnpj");
     }
   }, [form.watch("tipo")]);
 
   const handleSubmit = (data: FormValues) => {
     const formattedData: Partial<Favorecido> = {
       ...data,
-      endereco: {
-        cep: data.cep || "",
-        logradouro: data.logradouro || "",
-        numero: data.numero || "",
-        complemento: data.complemento,
-        bairro: data.bairro || "",
-        cidade: data.cidade || "",
-        estado: data.estado || "",
-        pais: data.pais || "",
-      }
+      tipo: data.tipo,
+      tipo_documento: data.tipo_documento,
+      documento: data.documento,
+      grupo_id: data.grupo_id,
+      profissao_id: data.profissao_id,
+      nome: data.nome,
+      nome_fantasia: data.nome_fantasia,
+      email: data.email,
+      telefone: data.telefone,
+      cep: data.cep,
+      logradouro: data.logradouro,
+      numero: data.numero,
+      complemento: data.complemento,
+      bairro: data.bairro,
+      cidade: data.cidade,
+      estado: data.estado,
+      pais: data.pais,
+      data_aniversario: data.data_aniversario,
+      status: data.status,
     };
-
-    delete (formattedData as any).cep;
-    delete (formattedData as any).logradouro;
-    delete (formattedData as any).numero;
-    delete (formattedData as any).complemento;
-    delete (formattedData as any).bairro;
-    delete (formattedData as any).cidade;
-    delete (formattedData as any).estado;
-    delete (formattedData as any).pais;
     
     onSubmit(formattedData);
   };

@@ -20,7 +20,7 @@ export function FavorecidoDadosBasicos({ form, grupos, profissoes, readOnly }: F
       
       <FormField
         control={form.control}
-        name="grupoId"
+        name="grupo_id"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Grupo</FormLabel>
@@ -53,7 +53,7 @@ export function FavorecidoDadosBasicos({ form, grupos, profissoes, readOnly }: F
 
       <FormField
         control={form.control}
-        name="profissaoId"
+        name="profissao_id"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Profissão</FormLabel>
@@ -101,7 +101,7 @@ export function FavorecidoDadosBasicos({ form, grupos, profissoes, readOnly }: F
 
         <FormField
           control={form.control}
-          name="nomeFantasia"
+          name="nome_fantasia"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Nome Fantasia</FormLabel>

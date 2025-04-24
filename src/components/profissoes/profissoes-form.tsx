@@ -42,7 +42,7 @@ export function ProfissoesForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: profissao?.nome || "",
-      status: profissao?.status || "ativo",
+      status: (profissao?.status || "ativo") as "ativo" | "inativo",
     },
   });
 

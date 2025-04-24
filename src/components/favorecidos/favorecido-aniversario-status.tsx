@@ -27,20 +27,20 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
     if (value.length === 10) {
       const parsedDate = parseDateString(value);
       if (parsedDate) {
-        form.setValue("dataAniversario", parsedDate);
+        form.setValue("data_aniversario", parsedDate);
       }
     }
   };
   
   // Inicializa o campo de input quando o componente é montado ou quando a data muda
   React.useEffect(() => {
-    const date = form.watch("dataAniversario");
+    const date = form.watch("data_aniversario");
     if (date) {
       setDateInputValue(formatDate(date));
     } else {
       setDateInputValue("");
     }
-  }, [form.watch("dataAniversario")]);
+  }, [form.watch("data_aniversario")]);
 
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4">
@@ -49,7 +49,7 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
       <div className="space-y-4">
         <FormField
           control={form.control}
-          name="dataAniversario"
+          name="data_aniversario"
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Data de Aniversário</FormLabel>

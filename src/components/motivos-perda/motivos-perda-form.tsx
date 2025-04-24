@@ -42,7 +42,7 @@ export function MotivosPerdaForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: motivoPerda?.nome || "",
-      status: motivoPerda?.status || "ativo",
+      status: (motivoPerda?.status || "ativo") as "ativo" | "inativo",
     },
   });
 

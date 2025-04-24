@@ -1,5 +1,4 @@
 
-
 export interface TabelaPreco {
   id: string;
   empresa_id: string;
@@ -80,7 +79,7 @@ export interface MotivoPerda {
   id: string;
   empresa_id: string;
   nome: string;
-  status: string;
+  status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
 }
@@ -89,7 +88,7 @@ export interface Origem {
   id: string;
   empresa_id: string;
   nome: string;
-  status: string;
+  status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
 }
@@ -100,7 +99,7 @@ export interface PlanoConta {
   codigo: string;
   descricao: string;
   tipo: string;
-  status: string;
+  status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
 }
@@ -110,9 +109,9 @@ export interface Usuario {
   nome: string;
   email: string;
   empresa_id: string | null;
-  status: string;
-  tipo: string;
-  vendedor: string;
+  status: "ativo" | "inativo";
+  tipo: "Administrador" | "Usuário";
+  vendedor: "sim" | "nao";
   created_at: Date;
   updated_at: Date;
 }
@@ -179,4 +178,3 @@ export interface SubNavItem {
   external?: boolean;
   label?: string;
 }
-
