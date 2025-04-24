@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,8 @@ export default function PlanoContasPage() {
       const { data, error } = await supabase
         .from("plano_contas")
         .select("*")
-        .eq("empresa_id", currentCompany.id);
+        .eq("empresa_id", currentCompany.id)
+        .order("codigo", { ascending: true }); // Add order by codigo
 
       if (error) {
         toast.error("Erro ao carregar plano de contas");
