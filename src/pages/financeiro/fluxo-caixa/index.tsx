@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,57 +25,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Check } from "lucide-react";
-import { useEffect } from "react";
-
-// Dados mockados de contas correntes e extrato
-const mockContasCorrentes = [
-  { id: "1", nome: "Conta Principal" },
-  { id: "2", nome: "Conta Pagamentos" },
-  { id: "3", nome: "Conta Recebimentos" },
-];
-
-const mockExtrato = [
-  {
-    id: "1",
-    data: "2024-04-01",
-    favorecido: "Fornecedor ABC",
-    descricao: "Compra de Material",
-    formaPagamento: "Transferência",
-    situacao: "nao_conciliado",
-    valor: -800.0,
-    saldo: 2500.0,
-  },
-  {
-    id: "2",
-    data: "2024-04-03",
-    favorecido: "Cliente Gama",
-    descricao: "Recebimento Serviço",
-    formaPagamento: "Boleto",
-    situacao: "conciliado",
-    valor: 2200.0,
-    saldo: 4700.0,
-  },
-  {
-    id: "3",
-    data: "2024-04-05",
-    favorecido: "Fornecedor XPTO",
-    descricao: "Pagamento Manutenção",
-    formaPagamento: "Pix",
-    situacao: "nao_conciliado",
-    valor: -950.0,
-    saldo: 3750.0,
-  },
-  {
-    id: "4",
-    data: "2024-03-25",
-    favorecido: "Empresa Beta",
-    descricao: "Recebimento Venda",
-    formaPagamento: "Dinheiro",
-    situacao: "conciliado",
-    valor: 1900.0,
-    saldo: 4100.0,
-  },
-];
+import { useCompany } from "@/contexts/company-context";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Função para formatar datas (DD/MM/YYYY)
 function formatDateBR(dateStr: string) {
@@ -135,20 +87,81 @@ function getStatusBadge(status: "conciliado" | "nao_conciliado") {
 }
 
 export default function FluxoCaixaPage() {
-  const [contaCorrenteId, setContaCorrenteId] = useState<string>("1");
+  const [contaCorrenteId, setContaCorrenteId] = useState<string>("");
   const [periodo, setPeriodo] = useState<"mes_atual" | "mes_anterior" | "personalizado">("mes_atual");
-
-  // Estado base de datas: os campos "Date" controlam a data real e os string os campos do input
   const [dataInicial, setDataInicial] = useState<Date | undefined>(undefined);
   const [dataFinal, setDataFinal] = useState<Date | undefined>(undefined);
   const [dataInicialStr, setDataInicialStr] = useState("");
   const [dataFinalStr, setDataFinalStr] = useState("");
-
-  // Novo estado para filtro de situação
   const [situacao, setSituacao] = useState<"todos" | "conciliado" | "nao_conciliado">("todos");
-
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+  const { currentCompany } = useCompany();
+  const queryClient = useQueryClient();
+
+  // Buscar contas correntes
+  const { data: contasCorrentes = [] } = useQuery({
+    queryKey: ["contas-correntes", currentCompany?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contas_correntes")
+        .select("*")
+        .eq("empresa_id", currentCompany?.id)
+        .eq("status", "ativo");
+
+      if (error) {
+        toast.error("Erro ao carregar contas correntes");
+        console.error(error);
+        return [];
+      }
+
+      return data;
+    },
+    enabled: !!currentCompany?.id,
+  });
+
+  // Buscar movimentações do fluxo de caixa
+  const { data: movimentacoes = [], isLoading } = useQuery({
+    queryKey: ["fluxo-caixa", currentCompany?.id, contaCorrenteId, dataInicial, dataFinal],
+    queryFn: async () => {
+      let query = supabase
+        .from("fluxo_caixa")
+        .select(`
+          *,
+          movimentacoes (
+            favorecido_id,
+            descricao
+          ),
+          movimentacoes_parcelas (
+            numero
+          )
+        `)
+        .eq("empresa_id", currentCompany?.id);
+
+      if (contaCorrenteId) {
+        query = query.eq("conta_corrente_id", contaCorrenteId);
+      }
+
+      if (dataInicial) {
+        query = query.gte("data_movimentacao", dataInicial.toISOString().split("T")[0]);
+      }
+
+      if (dataFinal) {
+        query = query.lte("data_movimentacao", dataFinal.toISOString().split("T")[0]);
+      }
+
+      const { data, error } = await query.order("data_movimentacao", { ascending: false });
+
+      if (error) {
+        toast.error("Erro ao carregar movimentações");
+        console.error(error);
+        return [];
+      }
+
+      return data;
+    },
+    enabled: !!currentCompany?.id,
+  });
 
   // Função para atualizar datas automáticas ao mudar período
   useEffect(() => {
@@ -205,75 +218,56 @@ export default function FluxoCaixaPage() {
     }
   }
 
-  // Função para mudar período e disparar update de datas
-  function handlePeriodoChange(v: "mes_atual" | "mes_anterior" | "personalizado") {
-    setPeriodo(v);
-  }
-
-  // Filtro do extrato mockado: filtra pelo range de datas visível
-  const filteredExtrato = useMemo(() => {
-    return mockExtrato.filter((linha) => {
+  // Filtro das movimentações
+  const filteredMovimentacoes = useMemo(() => {
+    return movimentacoes.filter((linha) => {
       const buscaOk =
-        linha.favorecido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        linha.descricao.toLowerCase().includes(searchTerm.toLowerCase());
+        !searchTerm ||
+        linha.movimentacoes?.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Filtro de situação
       const sitOk = situacao === "todos" || linha.situacao === situacao;
-
-      // Converter data no padrão YYYY-MM-DD para objeto Date
-      const dataLinha = new Date(
-        linha.data.substring(0, 4) +
-          "-" +
-          linha.data.substring(5, 7) +
-          "-" +
-          linha.data.substring(8, 10)
-      );
       
-      // Validar range de datas
-      const dataIniOk = !dataInicial || dataLinha >= dataInicial;
-      const dataFimOk = !dataFinal || dataLinha <= dataFinal;
-      
-      return buscaOk && sitOk && dataIniOk && dataFimOk;
+      return buscaOk && sitOk;
     });
-  }, [searchTerm, situacao, dataInicial, dataFinal]);
+  }, [movimentacoes, searchTerm, situacao]);
 
-  // Função de conciliação mockada
-  function handleConciliar(id: string) {
-    const linhaConciliada = mockExtrato.find(linha => linha.id === id);
-    if (linhaConciliada) {
-      linhaConciliada.situacao = 'conciliado';
-      toast.success("Movimento conciliado!");
+  // Função para conciliar movimento
+  async function handleConciliar(id: string) {
+    try {
+      const { error } = await supabase
+        .from("fluxo_caixa")
+        .update({ situacao: "conciliado" })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast.success("Movimento conciliado com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["fluxo-caixa"] });
+    } catch (error) {
+      console.error("Erro ao conciliar:", error);
+      toast.error("Erro ao conciliar movimento");
     }
   }
 
   function handleEdit(id: string) {
-    toast.info("Ação de editar: " + id);
-    // Abre incluir-movimentacao para edição
     navigate("/financeiro/incluir-movimentacao", { state: { id } });
   }
 
-  function handleDelete(id: string) {
-    toast.success("Lançamento excluído!");
-    // Aqui faria lógica de exclusão real do extrato, se não fosse mock.
-  }
+  async function handleDelete(id: string) {
+    try {
+      const { error } = await supabase
+        .from("fluxo_caixa")
+        .delete()
+        .eq("id", id);
 
-  // Função para strings das datas nos inputs (formato dd/mm/aaaa)
-  function valueDateInput(date?: Date) {
-    if (!date) return "";
-    const d = date.getDate().toString().padStart(2, "0");
-    const m = (date.getMonth() + 1).toString().padStart(2, "0");
-    const y = date.getFullYear();
-    return `${y}-${m}-${d}`;
-  }
-  function valueDatePlaceholder(date?: Date) {
-    if (!date) return "";
-    return format(date, "dd/MM/yyyy");
-  }
-  function parseDateFromInput(value: string): Date | undefined {
-    if (!value) return undefined;
-    const [year, month, day] = value.split("-").map((v) => Number(v));
-    if (!year || !month || !day) return undefined;
-    return new Date(year, month - 1, day);
+      if (error) throw error;
+
+      toast.success("Movimento excluído com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["fluxo-caixa"] });
+    } catch (error) {
+      console.error("Erro ao excluir:", error);
+      toast.error("Erro ao excluir movimento");
+    }
   }
 
   return (
@@ -317,7 +311,7 @@ export default function FluxoCaixaPage() {
                   <SelectValue placeholder="Conta Corrente" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border">
-                  {mockContasCorrentes.map((cc) => (
+                  {contasCorrentes.map((cc) => (
                     <SelectItem key={cc.id} value={cc.id}>
                       {cc.nome}
                     </SelectItem>
@@ -327,7 +321,7 @@ export default function FluxoCaixaPage() {
             </div>
             {/* Período */}
             <div className="col-span-1">
-              <Select value={periodo} onValueChange={(v) => handlePeriodoChange(v as any)}>
+              <Select value={periodo} onValueChange={(v) => setPeriodo(v as any)}>
                 <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
                   <CalendarIcon className="mr-2 h-5 w-5 text-neutral-400" />
                   <SelectValue placeholder="Selecionar Período" />
@@ -428,19 +422,19 @@ export default function FluxoCaixaPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredExtrato.length === 0 ? (
+                  {filteredMovimentacoes.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                         Nenhum resultado encontrado
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredExtrato.map((linha) => (
+                    filteredMovimentacoes.map((linha) => (
                       <TableRow key={linha.id}>
-                        <TableCell>{formatDateBR(linha.data)}</TableCell>
-                        <TableCell>{linha.favorecido}</TableCell>
-                        <TableCell>{linha.descricao}</TableCell>
-                        <TableCell>{linha.formaPagamento}</TableCell>
+                        <TableCell>{formatDateBR(linha.data_movimentacao)}</TableCell>
+                        <TableCell>{linha.movimentacoes?.descricao}</TableCell>
+                        <TableCell>{linha.movimentacoes?.descricao}</TableCell>
+                        <TableCell>{linha.forma_pagamento}</TableCell>
                         <TableCell>
                           {getStatusBadge(
                             linha.situacao === "conciliado"
