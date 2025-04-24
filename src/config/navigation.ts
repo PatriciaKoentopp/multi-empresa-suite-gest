@@ -1,4 +1,3 @@
-
 import { ModuleNavItem } from "@/types";
 import React from "react";
 
@@ -153,3 +152,23 @@ export const navigationConfig: ModuleNavItem[] = [
     href: "/relatorios",
   },
 ];
+
+export const userNavigation: ModuleNavItem[] = [
+  {
+    name: "Perfil",
+    href: "/perfil",
+    icon: stringToIcon("User"),
+  },
+  {
+    name: "Configurações",
+    href: "/configuracoes",
+    icon: stringToIcon("Settings"),
+  },
+  {
+    name: "Ajuda",
+    href: "/ajuda",
+    icon: stringToIcon("HelpCircle"),
+  }
+];
+
+export { navigationConfig, stringToIcon };
