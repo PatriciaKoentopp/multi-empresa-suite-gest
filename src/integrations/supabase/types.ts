@@ -307,6 +307,158 @@ export type Database = {
           },
         ]
       }
+      orcamentos: {
+        Row: {
+          codigo: string
+          codigo_projeto: string | null
+          created_at: string
+          data: string
+          data_nota_fiscal: string | null
+          empresa_id: string
+          favorecido_id: string
+          forma_pagamento: string
+          id: string
+          nota_fiscal_pdf: string | null
+          numero_nota_fiscal: string | null
+          numero_parcelas: number
+          observacoes: string | null
+          status: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          codigo_projeto?: string | null
+          created_at?: string
+          data?: string
+          data_nota_fiscal?: string | null
+          empresa_id: string
+          favorecido_id: string
+          forma_pagamento: string
+          id?: string
+          nota_fiscal_pdf?: string | null
+          numero_nota_fiscal?: string | null
+          numero_parcelas?: number
+          observacoes?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          codigo_projeto?: string | null
+          created_at?: string
+          data?: string
+          data_nota_fiscal?: string | null
+          empresa_id?: string
+          favorecido_id?: string
+          forma_pagamento?: string
+          id?: string
+          nota_fiscal_pdf?: string | null
+          numero_nota_fiscal?: string | null
+          numero_parcelas?: number
+          observacoes?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_favorecido_id_fkey"
+            columns: ["favorecido_id"]
+            isOneToOne: false
+            referencedRelation: "favorecidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamentos_itens: {
+        Row: {
+          created_at: string
+          id: string
+          orcamento_id: string
+          servico_id: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          orcamento_id: string
+          servico_id: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          orcamento_id?: string
+          servico_id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_itens_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_itens_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "servicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamentos_parcelas: {
+        Row: {
+          created_at: string
+          data_vencimento: string
+          id: string
+          numero_parcela: string
+          orcamento_id: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data_vencimento: string
+          id?: string
+          numero_parcela: string
+          orcamento_id: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          data_vencimento?: string
+          id?: string
+          numero_parcela?: string
+          orcamento_id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_parcelas_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       origens: {
         Row: {
           created_at: string

@@ -1,4 +1,3 @@
-
 export interface TabelaPreco {
   id: string;
   empresa_id: string;
@@ -177,4 +176,42 @@ export interface SubNavItem {
   disabled?: boolean;
   external?: boolean;
   label?: string;
+}
+
+export interface Orcamento {
+  id: string;
+  empresa_id: string;
+  favorecido_id: string;
+  codigo: string;
+  tipo: string;
+  data: Date;
+  codigo_projeto?: string | null;
+  observacoes?: string | null;
+  forma_pagamento: string;
+  numero_parcelas: number;
+  data_nota_fiscal?: Date | null;
+  numero_nota_fiscal?: string | null;
+  nota_fiscal_pdf?: string | null;
+  status: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface OrcamentoItem {
+  id: string;
+  orcamento_id: string;
+  servico_id: string;
+  valor: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface OrcamentoParcela {
+  id: string;
+  orcamento_id: string;
+  numero_parcela: string;
+  valor: number;
+  data_vencimento: Date;
+  created_at: Date;
+  updated_at: Date;
 }
