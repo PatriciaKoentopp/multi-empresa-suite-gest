@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -131,6 +130,15 @@ export default function ContasAReceberPage() {
     inputBuscaRef.current?.focus();
   }
 
+  const handleVisualizar = (conta: ContaReceber) => {
+    navigate("/financeiro/incluir-movimentacao", {
+      state: { 
+        contaReceber: conta,
+        modoVisualizacao: true
+      }
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -244,6 +252,7 @@ export default function ContasAReceberPage() {
               onEdit={handleEdit}
               onBaixar={handleBaixar}
               onDelete={handleDelete}
+              onVisualizar={handleVisualizar}
             />
           </div>
         </CardContent>

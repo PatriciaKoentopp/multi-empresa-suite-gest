@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -9,7 +8,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { Edit, Download, Trash2, MoreHorizontal } from "lucide-react";
+import { Edit, Download, Trash2, MoreHorizontal, Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -73,9 +72,16 @@ interface ContasAReceberTableProps {
   onEdit: (conta: ContaReceber) => void;
   onBaixar: (conta: ContaReceber) => void;
   onDelete: (id: string) => void;
+  onVisualizar: (conta: ContaReceber) => void;
 }
 
-export function ContasAReceberTable({ contas, onEdit, onBaixar, onDelete }: ContasAReceberTableProps) {
+export function ContasAReceberTable({ 
+  contas, 
+  onEdit, 
+  onBaixar, 
+  onDelete,
+  onVisualizar 
+}: ContasAReceberTableProps) {
   const totalValor = contas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
 
   return (
@@ -128,6 +134,13 @@ export function ContasAReceberTable({ contas, onEdit, onBaixar, onDelete }: Cont
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
                       <DropdownMenuItem
+                        onClick={() => onVisualizar(conta)}
+                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Visualizar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         onClick={() => onEdit(conta)}
                         className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
                       >
@@ -167,4 +180,3 @@ export function ContasAReceberTable({ contas, onEdit, onBaixar, onDelete }: Cont
     </div>
   );
 }
-
