@@ -707,6 +707,54 @@ export type Database = {
           },
         ]
       }
+      tipos_titulos: {
+        Row: {
+          conta_contabil_id: string
+          created_at: string
+          empresa_id: string
+          id: string
+          nome: string
+          status: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          conta_contabil_id: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nome: string
+          status?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          conta_contabil_id?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tipos_titulos_conta_contabil_id_fkey"
+            columns: ["conta_contabil_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tipos_titulos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuarios: {
         Row: {
           created_at: string

@@ -64,6 +64,10 @@ export const navigationConfig: ModuleNavItem[] = [
         name: "Conta Corrente",
         href: "/cadastros/conta-corrente",
       },
+      {
+        name: "Tipos de Títulos",
+        href: "/cadastros/tipos-titulos",
+      },
     ],
   },
   {
