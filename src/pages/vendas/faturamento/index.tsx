@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -26,6 +25,14 @@ import {
   DropdownMenuContent,
   DropdownMenuItem
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
 import { Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,6 +63,9 @@ export default function FaturamentoPage() {
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
 
   const navigate = useNavigate();
+
+  // Novo estado para controlar o diálogo de confirmação
+  const [excluirId, setExcluirId] = useState<string | null>(null);
 
   // Buscar orçamentos e vendas
   useEffect(() => {
@@ -109,6 +119,40 @@ export default function FaturamentoPage() {
       console.error('Erro ao carregar favorecidos:', error);
       toast({
         title: "Erro ao carregar favorecidos",
+        variant: "destructive",
+      });
+    }
+  }
+
+  // Função para abrir diálogo de confirmação
+  function handleConfirmarExclusao(id: string) {
+    setExcluirId(id);
+  }
+
+  // Função para cancelar exclusão
+  function handleCancelarExclusao() {
+    setExcluirId(null);
+  }
+
+  // Função para confirmar e excluir
+  async function handleConfirmarEExcluir() {
+    if (!excluirId) return;
+
+    try {
+      const { error } = await supabase
+        .from('orcamentos')
+        .update({ status: 'inativo' })
+        .eq('id', excluirId);
+
+      if (error) throw error;
+
+      toast({ title: "Registro excluído com sucesso!" });
+      carregarFaturamentos(); // Recarrega a lista
+      setExcluirId(null); // Fecha o diálogo
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+      toast({
+        title: "Erro ao excluir registro",
         variant: "destructive",
       });
     }
@@ -347,7 +391,7 @@ export default function FaturamentoPage() {
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleExcluir(item)}
+                          onClick={() => handleConfirmarExclusao(item.id)}
                           className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -375,6 +419,34 @@ export default function FaturamentoPage() {
           </tfoot>
         </Table>
       </div>
+
+      {/* Diálogo de confirmação de exclusão */}
+      <AlertDialog open={!!excluirId} onOpenChange={() => setExcluirId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCancelarExclusao}
+              className="flex-1 sm:flex-none"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmarEExcluir}
+              className="flex-1 sm:flex-none"
+            >
+              Excluir
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
