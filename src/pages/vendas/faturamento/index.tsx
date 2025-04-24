@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -177,34 +178,13 @@ export default function FaturamentoPage() {
   });
 
   // Função Visualizar: abre orçamento em modo visualização
-  function handleVisualizar(item: typeof faturamentos[0]) {
-    navigate(`/vendas/orcamento?codigo=${item.codigo}&visualizar=1`);
+  function handleVisualizar(item: Orcamento) {
+    navigate(`/vendas/orcamento?id=${item.id}&visualizar=1`);
   }
 
   // Função Editar: abre orçamento para edição
-  function handleEditar(item: typeof faturamentos[0]) {
-    navigate(`/vendas/orcamento?codigo=${item.codigo}`);
-  }
-
-  // Função Excluir: marca orçamento como inativo
-  async function handleExcluir(item: typeof faturamentos[0]) {
-    try {
-      const { error } = await supabase
-        .from('orcamentos')
-        .update({ status: 'inativo' })
-        .eq('id', item.id);
-
-      if (error) throw error;
-
-      toast({ title: "Registro excluído com sucesso!" });
-      carregarFaturamentos(); // Recarrega a lista
-    } catch (error) {
-      console.error('Erro ao excluir:', error);
-      toast({
-        title: "Erro ao excluir registro",
-        variant: "destructive",
-      });
-    }
+  function handleEditar(item: Orcamento) {
+    navigate(`/vendas/orcamento?id=${item.id}`);
   }
 
   // Calcular total de valor dos itens filtrados
