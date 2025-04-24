@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,11 +56,17 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
 
         // Mapear para o tipo ContaCorrente antes de setar o estado
         const contasCorrentesFormatadas: ContaCorrente[] = (data || []).map(conta => ({
-          ...conta,
+          id: conta.id,
+          nome: conta.nome,
+          banco: conta.banco,
+          agencia: conta.agencia,
+          numero: conta.numero,
           contaContabilId: conta.conta_contabil_id,
+          status: conta.status as "ativo" | "inativo",
           createdAt: new Date(conta.created_at),
           updatedAt: new Date(conta.updated_at),
           data: conta.data ? new Date(conta.data) : undefined,
+          saldoInicial: conta.saldo_inicial
         }));
 
         setContasCorrentes(contasCorrentesFormatadas);
