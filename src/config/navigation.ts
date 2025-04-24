@@ -1,228 +1,155 @@
 
 import { ModuleNavItem } from "@/types";
+import React from "react";
 
-export const mainNavigation: ModuleNavItem[] = [
+// Esta função é usada para converter strings em ícones ao carregar
+const stringToIcon = (iconName: string): React.ReactNode => {
+  // Esta é apenas uma função auxiliar para compatibilidade
+  // Na prática, precisaria mapear strings para componentes reais de ícones
+  return iconName as unknown as React.ReactNode;
+};
+
+export const navigationConfig: ModuleNavItem[] = [
   {
     name: "Dashboard",
-    icon: "layoutDashboard",
     href: "/dashboard",
-    description: "Visão geral do sistema"
+    icon: stringToIcon("Grid"),
   },
   {
-    name: "Administração",
-    icon: "settings",
-    href: "/admin",
-    description: "Gerenciamento e configurações do sistema",
+    name: "Administrativo",
+    icon: stringToIcon("Settings"),
     subItems: [
       {
         name: "Empresas",
         href: "/admin/empresas",
-        description: "Gerenciamento de empresas"
       },
       {
         name: "Usuários",
         href: "/admin/usuarios",
-        description: "Gerenciamento de usuários"
       },
       {
         name: "Permissões",
         href: "/admin/permissoes",
-        description: "Controle de acesso e permissões"
       },
       {
         name: "Parâmetros",
         href: "/admin/parametros",
-        description: "Configurações gerais do sistema"
-      }
-    ]
+      },
+    ],
   },
   {
     name: "Cadastros",
-    icon: "users",
-    href: "/cadastros",
-    description: "Cadastros gerais do sistema",
+    icon: stringToIcon("List"),
     subItems: [
       {
         name: "Grupo de Favorecidos",
         href: "/cadastros/grupo-favorecidos",
-        description: "Gerenciamento de grupos de favorecidos"
       },
       {
         name: "Favorecidos",
         href: "/cadastros/favorecidos",
-        description: "Gerenciamento de favorecidos"
       },
       {
         name: "Profissões",
         href: "/cadastros/profissoes",
-        description: "Gerenciamento de profissões"
       },
       {
         name: "Origens",
         href: "/cadastros/origens",
-        description: "Gerenciamento de origens"
       },
       {
         name: "Motivos de Perda",
         href: "/cadastros/motivos-perda",
-        description: "Gerenciamento de motivos de perda"
       },
       {
         name: "Conta Corrente",
         href: "/cadastros/conta-corrente",
-        description: "Gerenciamento de contas correntes"
-      }
-    ]
-  },
-  {
-    name: "Vendas",
-    icon: "shoppingCart",
-    href: "/vendas",
-    description: "Gestão de vendas e faturamento",
-    subItems: [
-      {
-        name: "Produtos",
-        href: "/vendas/produtos",
-        description: "Gerenciamento de produtos"
       },
-      {
-        name: "Serviços",
-        href: "/vendas/servicos",
-        description: "Gerenciamento de serviços"
-      },
-      {
-        name: "Orçamento",
-        href: "/vendas/orcamento",
-        description: "Gerenciamento de pedidos"
-      },
-      {
-        name: "Faturamento",
-        href: "/vendas/faturamento",
-        description: "Lista de orçamentos implantados"
-      },
-      {
-        name: "Tabela de Preços",
-        href: "/vendas/tabela-precos",
-        description: "Cadastro e manutenção das tabelas de preços"
-      },
-      {
-        name: "Dashboard",
-        href: "/vendas/dashboard",
-        description: "Estatísticas de vendas"
-      }
-    ]
+    ],
   },
   {
     name: "Financeiro",
-    icon: "banknote",
-    href: "/financeiro",
-    description: "Gestão financeira",
+    icon: stringToIcon("DollarSign"),
     subItems: [
       {
-        name: "Incluir Movimentação",
-        href: "/financeiro/incluir-movimentacao",
-        description: "Lançar nota de despesa/receita"
-      },
-      {
-        name: "Contas a Receber",
-        href: "/financeiro/contas-receber",
-        description: "Gerenciamento de recebimentos"
+        name: "Fluxo de Caixa",
+        href: "/financeiro/fluxo-caixa",
       },
       {
         name: "Contas a Pagar",
         href: "/financeiro/contas-a-pagar",
-        description: "Gerenciamento de pagamentos"
       },
       {
-        name: "Fluxo de Caixa",
-        href: "/financeiro/fluxo-caixa",
-        description: "Controle de entradas e saídas"
+        name: "Contas a Receber",
+        href: "/financeiro/contas-receber",
       },
-      {
-        name: "Conciliação",
-        href: "/financeiro/conciliacao",
-        description: "Conciliação bancária"
-      }
-    ]
-  },
-  {
-    name: "CRM",
-    icon: "heartHandshake",
-    href: "/crm",
-    description: "Gestão de relacionamento com clientes",
-    subItems: [
-      {
-        name: "Funil de Vendas",
-        href: "/crm/funil-configuracao",
-        description: "Etapas e configuração do funil Kanban"
-      },
-      {
-        name: "Leads",
-        href: "/crm/leads",
-        description: "Gerenciamento de leads"
-      },
-      {
-        name: "Marketing",
-        href: "/crm/marketing",
-        description: "Campanhas e automações"
-      }
-    ]
+    ],
   },
   {
     name: "Contábil",
-    icon: "calculator",
-    href: "/contabil",
-    description: "Gestão contábil",
+    icon: stringToIcon("Calculator"),
     subItems: [
       {
         name: "Plano de Contas",
         href: "/contabil/plano-contas",
-        description: "Gerenciamento de contas contábeis"
       },
       {
         name: "Lançamentos",
         href: "/contabil/lancamentos",
-        description: "Lançamentos contábeis"
       },
       {
         name: "DRE",
         href: "/contabil/dre",
-        description: "Demonstrativo de resultados"
       },
       {
         name: "Balanço",
         href: "/contabil/balanco",
-        description: "Balanço patrimonial"
-      }
-    ]
+      },
+    ],
+  },
+  {
+    name: "Vendas",
+    icon: stringToIcon("ShoppingBag"),
+    subItems: [
+      {
+        name: "Serviços",
+        href: "/vendas/servicos",
+      },
+      {
+        name: "Tabela de Preços",
+        href: "/vendas/tabela-precos",
+      },
+      {
+        name: "Orçamentos",
+        href: "/vendas/orcamento",
+      },
+      {
+        name: "Faturamento",
+        href: "/vendas/faturamento",
+      },
+    ],
+  },
+  {
+    name: "CRM",
+    icon: stringToIcon("Users"),
+    subItems: [
+      {
+        name: "Leads",
+        href: "/crm/leads",
+      },
+      {
+        name: "Conf. do Funil",
+        href: "/crm/funil-configuracao",
+      },
+      {
+        name: "Marketing",
+        href: "/crm/marketing",
+      },
+    ],
   },
   {
     name: "Relatórios",
-    icon: "barChart",
+    icon: stringToIcon("BarChart"),
     href: "/relatorios",
-    description: "Relatórios e análises",
-    subItems: [
-      {
-        name: "Operacionais",
-        href: "/relatorios/operacionais",
-        description: "Relatórios operacionais"
-      },
-      {
-        name: "Dashboards",
-        href: "/relatorios/dashboards",
-        description: "Painéis analíticos"
-      },
-      {
-        name: "BI",
-        href: "/relatorios/bi",
-        description: "Business Intelligence"
-      }
-    ]
-  }
-];
-
-export const userNavigation = [
-  { name: "Perfil", href: "/perfil" },
-  { name: "Configurações", href: "/configuracoes" },
-  { name: "Ajuda", href: "/ajuda" }
+  },
 ];

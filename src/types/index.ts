@@ -8,6 +8,10 @@ export interface TabelaPreco {
   status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface TabelaPrecoItem {
@@ -18,6 +22,10 @@ export interface TabelaPrecoItem {
   created_at: Date;
   updated_at: Date;
   nome?: string; // Adicionado para compatibilidade com o serviço
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Servico {
@@ -28,6 +36,10 @@ export interface Servico {
   status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // Outros tipos necessários para resolver erros
@@ -38,6 +50,10 @@ export interface GrupoFavorecido {
   status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Profissao {
@@ -47,6 +63,10 @@ export interface Profissao {
   status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Favorecido {
@@ -73,6 +93,27 @@ export interface Favorecido {
   nome_fantasia: string | null;
   created_at: Date;
   updated_at: Date;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
+  tipoDocumento?: string;
+  grupoId?: string | null;
+  profissaoId?: string | null;
+  dataAniversario?: Date | null;
+  nomeFantasia?: string | null;
+  
+  // Para compatibilidade com componentes que esperam object.endereco
+  endereco?: {
+    cep: string | null;
+    logradouro: string | null;
+    numero: string | null;
+    complemento: string | null;
+    bairro: string | null;
+    cidade: string | null;
+    estado: string | null;
+    pais: string | null;
+  };
 }
 
 export interface MotivoPerda {
@@ -82,6 +123,10 @@ export interface MotivoPerda {
   status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Origem {
@@ -91,6 +136,10 @@ export interface Origem {
   status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface PlanoConta {
@@ -103,6 +152,10 @@ export interface PlanoConta {
   created_at: Date;
   updated_at: Date;
   considerarDRE?: boolean;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Usuario {
@@ -115,25 +168,48 @@ export interface Usuario {
   vendedor: "sim" | "nao";
   created_at: Date;
   updated_at: Date;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Company {
   id: string;
-  name?: string;
-  razaoSocial: string;
-  nomeFantasia: string;
+  razao_social: string;
+  nome_fantasia: string;
   cnpj: string;
-  inscricaoEstadual: string | null;
-  inscricaoMunicipal: string | null;
+  inscricao_estadual: string | null;
+  inscricao_municipal: string | null;
   email: string | null;
   site: string | null;
   telefone: string | null;
   cnae: string | null;
-  regimeTributacao: string | null;
+  regime_tributacao: string | null;
   logo: string | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  endereco: {
+  created_at: Date | null;
+  updated_at: Date | null;
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string | null;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  pais: string;
+  
+  // Aliases em camelCase para compatibilidade
+  name?: string;
+  razaoSocial?: string;
+  nomeFantasia?: string;
+  inscricaoEstadual?: string | null;
+  inscricaoMunicipal?: string | null;
+  regimeTributacao?: string | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+  
+  // Para compatibilidade com componentes que esperam object.endereco
+  endereco?: {
     cep: string;
     logradouro: string;
     numero: string;
@@ -143,15 +219,6 @@ export interface Company {
     estado: string;
     pais: string;
   };
-  
-  // Campos originais do banco
-  razao_social?: string;
-  nome_fantasia?: string;
-  inscricao_estadual?: string | null;
-  inscricao_municipal?: string | null;
-  regime_tributacao?: string | null;
-  created_at?: Date | null;
-  updated_at?: Date | null;
 }
 
 export interface Funil {
@@ -162,6 +229,10 @@ export interface Funil {
   updated_at: Date;
   empresa_id: string;
   status: string;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface EtapaFunil {
@@ -172,12 +243,16 @@ export interface EtapaFunil {
   cor: string;
   created_at: Date;
   updated_at: Date;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface ModuleNavItem {
   name: string;
   href?: string;
-  icon?: string;
+  icon?: React.ReactNode | string;
   disabled?: boolean;
   external?: boolean;
   description?: string;
@@ -214,6 +289,10 @@ export interface Orcamento {
   };
   valor?: number;
   itens?: Array<{valor: number}>;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface OrcamentoItem {
@@ -223,6 +302,10 @@ export interface OrcamentoItem {
   valor: number;
   created_at: Date;
   updated_at: Date;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface OrcamentoParcela {
@@ -233,4 +316,8 @@ export interface OrcamentoParcela {
   data_vencimento: Date;
   created_at: Date;
   updated_at: Date;
+  
+  // Aliases em camelCase para compatibilidade
+  createdAt?: Date;
+  updatedAt?: Date;
 }

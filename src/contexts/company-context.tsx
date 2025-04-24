@@ -1,199 +1,241 @@
 
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { Company } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface CompanyContextType {
+  companies: Company[];
   currentCompany: Company | null;
-  availableCompanies: Company[];
   setCurrentCompany: (company: Company) => void;
-  addCompany: (company: Company) => Promise<void>;
+  fetchCompanies: () => Promise<void>;
+  createCompany: (company: Partial<Company>) => Promise<void>;
   updateCompany: (id: string, company: Partial<Company>) => Promise<void>;
-  isLoading: boolean;
+  loading: boolean;
 }
 
-// Ajustando para Company padrão do projeto (evitar conflitos de tipos)
-function supabaseToCompany(data: any): Company {
-  return {
-    id: data.id,
-    razaoSocial: data.razao_social || "",
-    nomeFantasia: data.nome_fantasia || "",
-    cnpj: data.cnpj || "",
-    inscricaoEstadual: data.inscricao_estadual,
-    inscricaoMunicipal: data.inscricao_municipal,
-    cnae: data.cnae,
-    email: data.email,
-    site: data.site,
-    telefone: data.telefone,
-    endereco: {
-      cep: data.cep || "",
-      logradouro: data.logradouro || "",
-      numero: data.numero || "",
-      complemento: data.complemento,
-      bairro: data.bairro || "",
-      cidade: data.cidade || "",
-      estado: data.estado || "",
-      pais: data.pais || "Brasil",
-    },
-    regimeTributacao: data.regime_tributacao,
-    logo: data.logo,
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
-  }
-}
+const CompanyContext = createContext<CompanyContextType>({
+  companies: [],
+  currentCompany: null,
+  setCurrentCompany: () => {},
+  fetchCompanies: async () => {},
+  createCompany: async () => {},
+  updateCompany: async () => {},
+  loading: false,
+});
 
-const CompanyContext = createContext<CompanyContextType>({} as CompanyContextType);
+export function CompanyProvider({ children }: { children: React.ReactNode }) {
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
+  const [loading, setLoading] = useState(false);
 
-export function useCompany() {
-  return useContext(CompanyContext);
-}
-
-export function CompanyProvider({ children }: { children: ReactNode }) {
-  const [currentCompany, setCurrentCompanyState] = useState<Company | null>(null);
-  const [availableCompanies, setAvailableCompanies] = useState<Company[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Carregar empresas do Supabase ao iniciar
   useEffect(() => {
-    const fetchCompanies = async () => {
-      setIsLoading(true);
-      const { data } = await supabase.from("empresas").select("*").limit(1);
-      if (data && data.length > 0) {
-        const company = supabaseToCompany(data[0]);
-        setAvailableCompanies([company]);
-        setCurrentCompanyState(company);
-      } else {
-        setAvailableCompanies([]);
-        setCurrentCompanyState(null);
-      }
-      setIsLoading(false);
-    };
-
     fetchCompanies();
   }, []);
 
-  const setCurrentCompany = (company: Company) => {
-    setCurrentCompanyState(company);
-  };
-
-  function sanitize(value: string | undefined | null, maxLength?: number): string | null {
-    if (typeof value !== "string" || value.trim() === "") return null;
-    return maxLength ? value.slice(0, maxLength) : value;
-  }
-
-  // Adiciona no banco e atualiza na memória
-  const addCompany = async (company: Company) => {
-    setIsLoading(true);
-
-    const toInsert = {
-      id: company.id,
-      razao_social: company.razaoSocial,
-      nome_fantasia: company.nomeFantasia,
-      cnpj: sanitize(company.cnpj, 18) ?? "",
-      inscricao_estadual: sanitize(company.inscricaoEstadual, 20),
-      inscricao_municipal: sanitize(company.inscricaoMunicipal, 20),
-      cnae: sanitize(company.cnae, 10),
-      email: sanitize(company.email),
-      site: sanitize(company.site),
-      telefone: sanitize(company.telefone, 20),
-      logo: sanitize(company.logo),
-      regime_tributacao: sanitize(company.regimeTributacao),
-      cep: sanitize(company.endereco?.cep, 10) ?? "",
-      logradouro: company.endereco?.logradouro ?? "",
-      numero: sanitize(company.endereco?.numero, 10) ?? "",
-      complemento: sanitize(company.endereco?.complemento),
-      bairro: company.endereco?.bairro ?? "",
-      cidade: company.endereco?.cidade ?? "",
-      estado: sanitize(company.endereco?.estado, 2) ?? "",
-      pais: sanitize(company.endereco?.pais, 30) ?? "Brasil",
-      created_at: (company.createdAt || new Date()).toISOString(),
-      updated_at: (company.updatedAt || new Date()).toISOString(),
-    };
-
-    // Limpa campos obrigatórios para garantir que não passem como null/undefined
-    Object.keys(toInsert).forEach((key) => {
-      if (
-        toInsert[key] === undefined &&
-        ["razao_social", "nome_fantasia", "cnpj", "cep", "logradouro", "numero", "bairro", "cidade", "estado", "pais", "created_at", "updated_at"].includes(key)
-      ) {
-        toInsert[key] = "";
+  useEffect(() => {
+    // Carregar a empresa dos cookies sempre que a lista de empresas mudar
+    const savedCompanyId = localStorage.getItem("currentCompanyId");
+    if (savedCompanyId && companies.length > 0 && !currentCompany) {
+      const company = companies.find((c) => c.id === savedCompanyId);
+      if (company) {
+        setCurrentCompany(company);
+      } else if (companies.length > 0) {
+        // Se não encontrou a empresa salva, usa a primeira da lista
+        setCurrentCompany(companies[0]);
+        localStorage.setItem("currentCompanyId", companies[0].id);
       }
-    });
-
-    // Envia para o supabase (como array para insert em lote)
-    const { data, error } = await supabase.from("empresas").insert([toInsert]).select().maybeSingle();
-
-    if (error) {
-      console.error("Erro ao inserir empresa:", error, toInsert);
+    } else if (companies.length > 0 && !currentCompany) {
+      // Se não tem empresa salva, usa a primeira da lista
+      setCurrentCompany(companies[0]);
+      localStorage.setItem("currentCompanyId", companies[0].id);
     }
+  }, [companies, currentCompany]);
 
-    if (data) {
-      const nova = supabaseToCompany(data);
-      setAvailableCompanies([nova]);
-      setCurrentCompanyState(nova);
+  const fetchCompanies = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.from("empresas").select("*");
+
+      if (error) {
+        console.error("Erro ao carregar empresas:", error);
+        toast.error("Erro ao carregar empresas");
+        return;
+      }
+
+      if (data) {
+        // Mapear os dados do banco para o formato da aplicação
+        const formattedCompanies: Company[] = data.map((company) => ({
+          id: company.id,
+          razao_social: company.razao_social,
+          nome_fantasia: company.nome_fantasia,
+          cnpj: company.cnpj,
+          inscricao_estadual: company.inscricao_estadual,
+          inscricao_municipal: company.inscricao_municipal,
+          email: company.email,
+          telefone: company.telefone,
+          site: company.site,
+          cnae: company.cnae,
+          regime_tributacao: company.regime_tributacao,
+          logo: company.logo,
+          cep: company.cep,
+          logradouro: company.logradouro,
+          numero: company.numero,
+          complemento: company.complemento,
+          bairro: company.bairro,
+          cidade: company.cidade,
+          estado: company.estado,
+          pais: company.pais,
+          created_at: company.created_at ? new Date(company.created_at) : null,
+          updated_at: company.updated_at ? new Date(company.updated_at) : null,
+          
+          // Adicionar aliases em camelCase para compatibilidade
+          razaoSocial: company.razao_social,
+          nomeFantasia: company.nome_fantasia,
+          inscricaoEstadual: company.inscricao_estadual,
+          inscricaoMunicipal: company.inscricao_municipal,
+          regimeTributacao: company.regime_tributacao,
+          createdAt: company.created_at ? new Date(company.created_at) : null,
+          updatedAt: company.updated_at ? new Date(company.updated_at) : null,
+          
+          // Adicionar objeto endereco para compatibilidade
+          endereco: {
+            cep: company.cep,
+            logradouro: company.logradouro,
+            numero: company.numero,
+            complemento: company.complemento,
+            bairro: company.bairro,
+            cidade: company.cidade,
+            estado: company.estado,
+            pais: company.pais,
+          },
+        }));
+
+        setCompanies(formattedCompanies);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar empresas:", error);
+      toast.error("Erro ao carregar empresas");
+    } finally {
+      setLoading(false);
     }
-    setIsLoading(false);
   };
 
-  // Atualiza no banco e atualiza na memória
-  const updateCompany = async (id: string, companyData: Partial<Company>) => {
-    setIsLoading(true);
+  const createCompany = async (company: Partial<Company>) => {
+    try {
+      setLoading(true);
+      // Mapear os dados da aplicação para o formato do banco
+      const { data, error } = await supabase.from("empresas").insert([
+        {
+          razao_social: company.razao_social || company.razaoSocial,
+          nome_fantasia: company.nome_fantasia || company.nomeFantasia,
+          cnpj: company.cnpj,
+          inscricao_estadual: company.inscricao_estadual || company.inscricaoEstadual,
+          inscricao_municipal: company.inscricao_municipal || company.inscricaoMunicipal,
+          email: company.email,
+          telefone: company.telefone,
+          site: company.site,
+          cnae: company.cnae,
+          regime_tributacao: company.regime_tributacao || company.regimeTributacao,
+          logo: company.logo,
+          cep: company.cep || (company.endereco ? company.endereco.cep : ""),
+          logradouro: company.logradouro || (company.endereco ? company.endereco.logradouro : ""),
+          numero: company.numero || (company.endereco ? company.endereco.numero : ""),
+          complemento: company.complemento || (company.endereco ? company.endereco.complemento : null),
+          bairro: company.bairro || (company.endereco ? company.endereco.bairro : ""),
+          cidade: company.cidade || (company.endereco ? company.endereco.cidade : ""),
+          estado: company.estado || (company.endereco ? company.endereco.estado : ""),
+          pais: company.pais || (company.endereco ? company.endereco.pais : "Brasil"),
+        },
+      ]);
 
-    const toUpdate: any = {};
-    if (companyData.razaoSocial !== undefined) toUpdate.razao_social = companyData.razaoSocial;
-    if (companyData.nomeFantasia !== undefined) toUpdate.nome_fantasia = companyData.nomeFantasia;
-    if (companyData.cnpj !== undefined) toUpdate.cnpj = sanitize(companyData.cnpj, 18) ?? "";
-    if (companyData.inscricaoEstadual !== undefined) toUpdate.inscricao_estadual = sanitize(companyData.inscricaoEstadual, 20);
-    if (companyData.inscricaoMunicipal !== undefined) toUpdate.inscricao_municipal = sanitize(companyData.inscricaoMunicipal, 20);
-    if (companyData.cnae !== undefined) toUpdate.cnae = sanitize(companyData.cnae, 10);
-    if (companyData.email !== undefined) toUpdate.email = sanitize(companyData.email);
-    if (companyData.site !== undefined) toUpdate.site = sanitize(companyData.site);
-    if (companyData.telefone !== undefined) toUpdate.telefone = sanitize(companyData.telefone, 20);
-    if (companyData.logo !== undefined) toUpdate.logo = sanitize(companyData.logo);
-    if (companyData.regimeTributacao !== undefined) toUpdate.regime_tributacao = sanitize(companyData.regimeTributacao);
-    if (companyData.endereco) {
-      if (companyData.endereco.cep !== undefined) toUpdate.cep = sanitize(companyData.endereco.cep, 10) ?? "";
-      if (companyData.endereco.logradouro !== undefined) toUpdate.logradouro = companyData.endereco.logradouro ?? "";
-      if (companyData.endereco.numero !== undefined) toUpdate.numero = sanitize(companyData.endereco.numero, 10) ?? "";
-      if (companyData.endereco.complemento !== undefined) toUpdate.complemento = sanitize(companyData.endereco.complemento);
-      if (companyData.endereco.bairro !== undefined) toUpdate.bairro = companyData.endereco.bairro ?? "";
-      if (companyData.endereco.cidade !== undefined) toUpdate.cidade = companyData.endereco.cidade ?? "";
-      if (companyData.endereco.estado !== undefined) toUpdate.estado = sanitize(companyData.endereco.estado, 2) ?? "";
-      if (companyData.endereco.pais !== undefined) toUpdate.pais = sanitize(companyData.endereco.pais, 30) ?? "Brasil";
+      if (error) {
+        console.error("Erro ao criar empresa:", error);
+        toast.error("Erro ao criar empresa");
+        return;
+      }
+
+      toast.success("Empresa criada com sucesso!");
+      await fetchCompanies();
+    } catch (error) {
+      console.error("Erro ao criar empresa:", error);
+      toast.error("Erro ao criar empresa");
+    } finally {
+      setLoading(false);
     }
-    toUpdate.updated_at = new Date().toISOString();
+  };
 
-    const { data, error } = await supabase
-      .from("empresas")
-      .update(toUpdate)
-      .eq("id", id)
-      .select()
-      .maybeSingle();
+  const updateCompany = async (id: string, company: Partial<Company>) => {
+    try {
+      setLoading(true);
+      // Mapear os dados da aplicação para o formato do banco
+      const { data, error } = await supabase
+        .from("empresas")
+        .update({
+          razao_social: company.razao_social || company.razaoSocial,
+          nome_fantasia: company.nome_fantasia || company.nomeFantasia,
+          cnpj: company.cnpj,
+          inscricao_estadual: company.inscricao_estadual || company.inscricaoEstadual,
+          inscricao_municipal: company.inscricao_municipal || company.inscricaoMunicipal,
+          email: company.email,
+          telefone: company.telefone,
+          site: company.site,
+          cnae: company.cnae,
+          regime_tributacao: company.regime_tributacao || company.regimeTributacao,
+          logo: company.logo,
+          cep: company.cep || (company.endereco ? company.endereco.cep : ""),
+          logradouro: company.logradouro || (company.endereco ? company.endereco.logradouro : ""),
+          numero: company.numero || (company.endereco ? company.endereco.numero : ""),
+          complemento: company.complemento || (company.endereco ? company.endereco.complemento : null),
+          bairro: company.bairro || (company.endereco ? company.endereco.bairro : ""),
+          cidade: company.cidade || (company.endereco ? company.endereco.cidade : ""),
+          estado: company.estado || (company.endereco ? company.endereco.estado : ""),
+          pais: company.pais || (company.endereco ? company.endereco.pais : "Brasil"),
+        })
+        .eq("id", id);
 
-    if (error) {
-      console.error("Erro ao atualizar empresa:", error, toUpdate);
+      if (error) {
+        console.error("Erro ao atualizar empresa:", error);
+        toast.error("Erro ao atualizar empresa");
+        return;
+      }
+
+      toast.success("Empresa atualizada com sucesso!");
+      await fetchCompanies();
+
+      // Se a empresa atualizada for a atual, atualize-a
+      if (currentCompany && currentCompany.id === id) {
+        const updatedCompany = companies.find((c) => c.id === id);
+        if (updatedCompany) {
+          setCurrentCompany(updatedCompany);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar empresa:", error);
+      toast.error("Erro ao atualizar empresa");
+    } finally {
+      setLoading(false);
     }
-
-    if (data) {
-      const nova = supabaseToCompany(data);
-      setAvailableCompanies([nova]);
-      setCurrentCompanyState(nova);
-    }
-    setIsLoading(false);
   };
 
   return (
     <CompanyContext.Provider
       value={{
+        companies,
         currentCompany,
-        availableCompanies,
-        setCurrentCompany,
-        addCompany,
+        setCurrentCompany: (company) => {
+          setCurrentCompany(company);
+          localStorage.setItem("currentCompanyId", company.id);
+        },
+        fetchCompanies,
+        createCompany,
         updateCompany,
-        isLoading,
+        loading,
       }}
     >
       {children}
     </CompanyContext.Provider>
   );
 }
+
+export const useCompany = () => useContext(CompanyContext);
