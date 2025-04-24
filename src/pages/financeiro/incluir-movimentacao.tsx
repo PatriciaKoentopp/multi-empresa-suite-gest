@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -64,6 +64,16 @@ export default function IncluirMovimentacaoPage() {
   const [isModalNovoFavorecido, setIsModalNovoFavorecido] = useState(false);
   const [isModalNovaCategoria, setIsModalNovaCategoria] = useState(false);
   const [tipoTituloId, setTipoTituloId] = useState("");
+
+  const handleSalvarNovoFavorecido = () => {
+    // Implementação do salvamento do novo favorecido
+    setIsModalNovoFavorecido(false);
+  };
+  
+  const handleSalvarNovaCategoria = () => {
+    // Implementação do salvamento da nova categoria
+    setIsModalNovaCategoria(false);
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
