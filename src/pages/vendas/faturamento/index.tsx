@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -344,13 +343,14 @@ export default function FaturamentoPage() {
               <TableHead>Favorecido</TableHead>
               <TableHead>Projeto</TableHead>
               <TableHead className="text-right">Valor (R$)</TableHead>
+              <TableHead className="w-[100px] text-center">Status</TableHead>
               <TableHead className="w-20 text-center">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {itemsFiltrados.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
                   Nenhum faturamento encontrado.
                 </TableCell>
               </TableRow>
@@ -369,6 +369,15 @@ export default function FaturamentoPage() {
                       style: "currency",
                       currency: "BRL"
                     })}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+                      item.status === 'ativo'
+                        ? 'bg-blue-50 text-blue-700 ring-blue-700/10'
+                        : 'bg-red-50 text-red-700 ring-red-600/10'
+                    }`}>
+                      {item.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                    </span>
                   </TableCell>
                   <TableCell className="text-center">
                     <DropdownMenu>
@@ -422,7 +431,7 @@ export default function FaturamentoPage() {
                   minimumFractionDigits: 2,
                 })}
               </TableCell>
-              <TableCell />
+              <TableCell colSpan={2} />
             </TableRow>
           </tfoot>
         </Table>
