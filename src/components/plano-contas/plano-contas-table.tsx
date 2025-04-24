@@ -1,6 +1,6 @@
 
-import React from "react";
-import { PlanoConta } from "@/types";
+import React, { useState } from "react";
+import { PlanoConta } from "@/types/plano-contas";
 import {
   Table,
   TableBody,
@@ -17,6 +17,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PlanoContasTableProps {
   contas: PlanoConta[];
@@ -29,6 +39,15 @@ export function PlanoContasTable({
   onEdit,
   onDelete,
 }: PlanoContasTableProps) {
+  const [contaToDelete, setContaToDelete] = useState<PlanoConta | null>(null);
+
+  const handleDelete = () => {
+    if (contaToDelete) {
+      onDelete(contaToDelete.id);
+      setContaToDelete(null);
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -77,13 +96,17 @@ export function PlanoContasTable({
                         <span className="sr-only">Abrir menu</span>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem className="flex gap-2 items-center cursor-pointer" 
-                        onClick={() => onEdit(conta)}>
+                    <DropdownMenuContent align="end" className="bg-white">
+                      <DropdownMenuItem
+                        onClick={() => onEdit(conta)}
+                        className="flex gap-2 items-center cursor-pointer text-blue-500 focus:text-blue-500 focus:bg-blue-50"
+                      >
                         <Pencil className="h-4 w-4" /> Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="flex gap-2 items-center cursor-pointer text-red-500" 
-                        onClick={() => onDelete(conta.id)}>
+                      <DropdownMenuItem
+                        onClick={() => setContaToDelete(conta)}
+                        className="flex gap-2 items-center cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50"
+                      >
                         <Trash2 className="h-4 w-4" /> Excluir
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -94,6 +117,26 @@ export function PlanoContasTable({
           )}
         </TableBody>
       </Table>
+
+      <AlertDialog open={!!contaToDelete} onOpenChange={() => setContaToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta conta? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-white hover:bg-gray-100">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-red-600 text-white hover:bg-red-700 focus:ring-red-500"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
