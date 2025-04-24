@@ -27,6 +27,7 @@ import {
 import { BaixarContaPagarModal } from "@/components/contas-a-pagar/BaixarContaPagarModal";
 import { supabase } from "@/integrations/supabase/client";
 import { Movimentacao, MovimentacaoParcela } from "@/types/movimentacoes";
+import { useCompany } from "@/contexts/company-context";
 
 export default function ContasAPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>([]);
@@ -204,11 +205,12 @@ export default function ContasAPagarPage() {
     }
   };
 
+  const { currentCompany } = useCompany();
+
   // Carregar dados do Supabase
   useEffect(() => {
     async function carregarContasAPagar() {
       try {
-        // Buscar movimentações e suas parcelas
         const { data: movimentacoes, error } = await supabase
           .from('movimentacoes')
           .select(`
@@ -221,12 +223,12 @@ export default function ContasAPagarPage() {
               data_vencimento
             )
           `)
-          .eq('tipo_operacao', 'pagar');
+          .eq('tipo_operacao', 'pagar')
+          .eq('empresa_id', currentCompany?.id);
 
         if (error) throw error;
 
         if (movimentacoes) {
-          // Converter movimentações e parcelas em contas a pagar
           const contasFormatadas: ContaPagar[] = movimentacoes.flatMap((mov: any) => {
             return mov.movimentacoes_parcelas.map((parcela: any) => ({
               id: parcela.id,
@@ -237,7 +239,8 @@ export default function ContasAPagarPage() {
               dataPagamento: undefined, // TODO: Implementar quando baixar
               status: 'em_aberto', // TODO: Implementar lógica de status
               valor: Number(parcela.valor),
-              numeroParcela: parcela.numero
+              numeroParcela: parcela.numero,
+              numeroTitulo: mov.numero_documento
             }));
           });
 
@@ -254,7 +257,7 @@ export default function ContasAPagarPage() {
     }
 
     carregarContasAPagar();
-  }, []);
+  }, [currentCompany]);
 
   // Filtro
   const filteredContas = useMemo(() => {

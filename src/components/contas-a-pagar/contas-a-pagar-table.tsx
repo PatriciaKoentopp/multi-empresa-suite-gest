@@ -26,6 +26,7 @@ export interface ContaPagar {
   status: "pago" | "pago_em_atraso" | "em_aberto";
   valor: number;
   numeroParcela: number;
+  numeroTitulo?: string;
 }
 
 interface ContasAPagarTableProps {
@@ -91,6 +92,7 @@ export function ContasAPagarTable({
           <TableRow>
             <TableHead>Data de Vencimento</TableHead>
             <TableHead>Data de Pagamento</TableHead>
+            <TableHead>Título</TableHead>
             <TableHead>Nº Parcela</TableHead>
             <TableHead>Favorecido</TableHead>
             <TableHead>Descrição</TableHead>
@@ -102,7 +104,7 @@ export function ContasAPagarTable({
         <TableBody>
           {contas.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
                 Nenhum resultado encontrado
               </TableCell>
             </TableRow>
@@ -111,6 +113,15 @@ export function ContasAPagarTable({
               <TableRow key={conta.id}>
                 <TableCell>{formatDateBR(conta.dataVencimento)}</TableCell>
                 <TableCell>{formatDateBR(conta.dataPagamento)}</TableCell>
+                <TableCell>
+                  {conta.numeroTitulo ? (
+                    <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
+                      {conta.numeroTitulo}
+                    </span>
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
                 <TableCell>
                   <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
                     {conta.numeroParcela}
@@ -170,7 +181,7 @@ export function ContasAPagarTable({
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={6} className="font-bold text-right">Total</TableCell>
+            <TableCell colSpan={7} className="font-bold text-right">Total</TableCell>
             <TableCell className="font-bold">{formatCurrency(totalValor)}</TableCell>
             <TableCell />
           </TableRow>
