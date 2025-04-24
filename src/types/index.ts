@@ -1,4 +1,3 @@
-
 export interface TabelaPreco {
   id: string;
   empresa_id: string;
@@ -151,7 +150,7 @@ export interface PlanoConta {
   status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
-  considerarDRE?: boolean;
+  considerarDRE: boolean;
   
   // Aliases em camelCase para compatibilidade
   createdAt?: Date;

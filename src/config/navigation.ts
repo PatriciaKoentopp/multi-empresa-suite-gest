@@ -171,4 +171,5 @@ export const userNavigation: ModuleNavItem[] = [
   }
 ];
 
-export { navigationConfig, stringToIcon };
+// Exportar apenas uma vez
+export { stringToIcon };

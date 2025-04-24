@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { PanelLeftCloseIcon, PanelLeftIcon } from "lucide-react";
 import { SidebarNav } from "./sidebar-nav";
 import { useAuth } from "@/contexts/auth-context";
+import { navigationConfig } from "@/config/navigation";
 
 interface SidebarProps {
   className?: string;
@@ -57,7 +58,11 @@ export function Sidebar({ className }: SidebarProps) {
             </SheetHeader>
             <div className="flex flex-col h-full">
               <div className="flex-grow overflow-y-auto">
-                <SidebarNav isCollapsed={false} closeSidebar={closeMobileSidebar} />
+                <SidebarNav 
+                  isCollapsed={false} 
+                  closeSidebar={closeMobileSidebar}
+                  items={navigationConfig}
+                />
               </div>
             </div>
           </SheetContent>
@@ -94,7 +99,10 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
       
       <div className="flex-1 overflow-y-auto">
-        <SidebarNav isCollapsed={isCollapsed} />
+        <SidebarNav 
+          isCollapsed={isCollapsed}
+          items={navigationConfig}
+        />
       </div>
       
       <div className="flex items-center justify-center border-t p-2">
