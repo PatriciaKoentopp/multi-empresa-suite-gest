@@ -303,6 +303,25 @@ export default function OrcamentoPage() {
   const uploadNotaFiscalPdf = async (file: File): Promise<string> => {
     setIsUploading(true);
     try {
+      // Validações adicionais de arquivo
+      if (!file) {
+        toast({
+          title: "Erro no Upload",
+          description: "Nenhum arquivo selecionado.",
+          variant: "destructive"
+        });
+        throw new Error("Nenhum arquivo selecionado");
+      }
+
+      if (file.type !== "application/pdf") {
+        toast({
+          title: "Tipo de Arquivo Inválido",
+          description: "Por favor, selecione apenas arquivos PDF.",
+          variant: "destructive"
+        });
+        throw new Error("Arquivo não é um PDF");
+      }
+
       // Gerar um nome único para o arquivo
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}_${currentCompany?.id}_${codigoVenda}.${fileExt}`;
@@ -320,6 +339,11 @@ export default function OrcamentoPage() {
 
       if (error) {
         console.error('Erro no upload:', error);
+        toast({
+          title: "Erro no Upload",
+          description: error.message,
+          variant: "destructive"
+        });
         throw error;
       }
 
@@ -356,19 +380,9 @@ export default function OrcamentoPage() {
       return;
     }
     
-    if (file.type !== "application/pdf") {
-      toast({
-        title: "Tipo de arquivo inválido",
-        description: "Por favor, selecione apenas arquivos PDF.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setNotaFiscalPdf(file);
-    
     try {
       const publicUrl = await uploadNotaFiscalPdf(file);
+      setNotaFiscalPdf(file);
       setNotaFiscalPdfUrl(publicUrl);
       toast({
         title: "Upload da nota fiscal concluído",
@@ -376,6 +390,8 @@ export default function OrcamentoPage() {
       });
     } catch (error) {
       // Erro já tratado na função uploadNotaFiscalPdf
+      setNotaFiscalPdf(null);
+      setNotaFiscalPdfUrl("");
     }
   };
 
