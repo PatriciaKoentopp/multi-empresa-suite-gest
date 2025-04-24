@@ -38,6 +38,7 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
   const [numDoc, setNumDoc] = useState("");
   const [favorecido, setFavorecido] = useState("");
   const [categoria, setCategoria] = useState("");
+  const [tipoTitulo, setTipoTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState<string>("");
   const [formaPagamento, setFormaPagamento] = useState("");
@@ -64,6 +65,7 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
       setNumDoc(movimentacaoParaEditar.numero_documento || "");
       setFavorecido(movimentacaoParaEditar.favorecido_id || "");
       setCategoria(movimentacaoParaEditar.categoria_id || "");
+      setTipoTitulo(movimentacaoParaEditar.tipo_titulo_id || "");
       setDescricao(movimentacaoParaEditar.descricao || "");
       setValor(movimentacaoParaEditar.valor?.toString().replace(".", ",") || "");
       setFormaPagamento(movimentacaoParaEditar.forma_pagamento || "");
@@ -125,6 +127,7 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
           data_emissao: dataEmissao ? format(dataEmissao, "yyyy-MM-dd") : undefined,
           data_lancamento: format(dataLancamento, "yyyy-MM-dd"),
           numero_documento: numDoc || undefined,
+          tipo_titulo_id: tipoTitulo || undefined,
           favorecido_id: favorecido,
           categoria_id: categoria,
           descricao,
@@ -207,6 +210,8 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
     setFavorecido,
     categoria,
     setCategoria,
+    tipoTitulo,
+    setTipoTitulo,
     descricao,
     setDescricao,
     valor,

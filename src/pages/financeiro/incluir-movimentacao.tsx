@@ -41,6 +41,8 @@ export default function IncluirMovimentacaoPage() {
     setFavorecido,
     categoria,
     setCategoria,
+    tipoTitulo,
+    setTipoTitulo,
     descricao,
     setDescricao,
     valor,
@@ -65,14 +67,13 @@ export default function IncluirMovimentacaoPage() {
 
   const [isModalNovoFavorecido, setIsModalNovoFavorecido] = useState(false);
   const [isModalNovaCategoria, setIsModalNovaCategoria] = useState(false);
-  const [tipoTituloId, setTipoTituloId] = useState("");
   
-  // Efeito para definir o tipoTituloId quando carregamos a movimentação
+  // Efeito para definir o tipoTitulo quando carregamos a movimentação
   useEffect(() => {
     if (movimentacaoParaEditar?.tipo_titulo_id) {
-      setTipoTituloId(movimentacaoParaEditar.tipo_titulo_id);
+      setTipoTitulo(movimentacaoParaEditar.tipo_titulo_id);
     }
-  }, [movimentacaoParaEditar]);
+  }, [movimentacaoParaEditar, setTipoTitulo]);
 
   const handleSalvarNovoFavorecido = () => {
     // Implementação do salvamento do novo favorecido
@@ -151,8 +152,8 @@ export default function IncluirMovimentacaoPage() {
             <PagamentoForm
               numDoc={numDoc}
               onNumDocChange={(e) => setNumDoc(e.target.value)}
-              tipoTituloId={tipoTituloId}
-              onTipoTituloChange={setTipoTituloId}
+              tipoTituloId={tipoTitulo}
+              onTipoTituloChange={setTipoTitulo}
               favorecido={favorecido}
               onFavorecidoChange={setFavorecido}
               categoria={categoria}
@@ -182,8 +183,8 @@ export default function IncluirMovimentacaoPage() {
             <RecebimentoForm
               numDoc={numDoc}
               onNumDocChange={(e) => setNumDoc(e.target.value)}
-              tipoTituloId={tipoTituloId}
-              onTipoTituloChange={setTipoTituloId}
+              tipoTituloId={tipoTitulo}
+              onTipoTituloChange={setTipoTitulo}
               favorecido={favorecido}
               onFavorecidoChange={setFavorecido}
               categoria={categoria}
