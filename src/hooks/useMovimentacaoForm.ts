@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useParcelasCalculation } from "./useParcelasCalculation";
 
 export type Operacao = "pagar" | "receber" | "transferencia";
 
@@ -45,6 +46,10 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
   const [considerarDRE, setConsiderarDRE] = useState(true);
   const [contaOrigem, setContaOrigem] = useState("");
   const [contaDestino, setContaDestino] = useState("");
+
+  // Calcular parcelas com base no valor total, número de parcelas e data do primeiro vencimento
+  const valorNumerico = parseValor(valor);
+  const parcelas = useParcelasCalculation(valorNumerico, numParcelas, dataPrimeiroVenc);
 
   useEffect(() => {
     if (movimentacaoParaEditar) {
@@ -125,29 +130,60 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
           valor: parseValor(valor),
           forma_pagamento: formaPagamento,
           numero_parcelas: numParcelas,
-          primeiro_vencimento: format(dataPrimeiroVenc, "yyyy-MM-dd"),
+          primeiro_vencimento: dataPrimeiroVenc ? format(dataPrimeiroVenc, "yyyy-MM-dd") : undefined,
           considerar_dre: considerarDRE
         };
       }
 
       let response;
+      let movimentacaoId;
       
       if (movimentacaoParaEditar) {
+        // Atualizar movimentação existente
         response = await supabase
           .from("movimentacoes")
           .update(movimentacaoData)
           .eq('id', movimentacaoParaEditar.id)
           .select()
           .single();
+
+        if (response.error) throw response.error;
+        movimentacaoId = movimentacaoParaEditar.id;
+
+        // Excluir parcelas anteriores antes de inserir as novas
+        const { error: deleteError } = await supabase
+          .from("movimentacoes_parcelas")
+          .delete()
+          .eq('movimentacao_id', movimentacaoId);
+          
+        if (deleteError) throw deleteError;
       } else {
+        // Inserir nova movimentação
         response = await supabase
           .from("movimentacoes")
           .insert([movimentacaoData])
           .select()
           .single();
+
+        if (response.error) throw response.error;
+        movimentacaoId = response.data.id;
       }
 
-      if (response.error) throw response.error;
+      // Inserir parcelas se não for transferência
+      if (operacao !== "transferencia" && parcelas.length > 0) {
+        const parcelasData = parcelas.map(parcela => ({
+          movimentacao_id: movimentacaoId,
+          numero: parcela.numero,
+          valor: parcela.valor,
+          data_vencimento: format(parcela.dataVencimento, "yyyy-MM-dd")
+        }));
+
+        const { error: parcelasError } = await supabase
+          .from("movimentacoes_parcelas")
+          .insert(parcelasData);
+
+        if (parcelasError) throw parcelasError;
+      }
 
       toast.success(movimentacaoParaEditar ? "Movimentação atualizada com sucesso!" : "Movimentação salva com sucesso!");
       navigate(-1);
@@ -186,6 +222,7 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
     setContaOrigem,
     contaDestino,
     setContaDestino,
-    handleSalvar
+    handleSalvar,
+    parcelas
   };
 }
