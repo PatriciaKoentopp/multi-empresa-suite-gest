@@ -494,6 +494,50 @@ export type Database = {
           },
         ]
       }
+      plano_contas: {
+        Row: {
+          codigo: string
+          considerar_dre: boolean
+          created_at: string
+          descricao: string
+          empresa_id: string
+          id: string
+          status: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          considerar_dre?: boolean
+          created_at?: string
+          descricao: string
+          empresa_id: string
+          id?: string
+          status?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          considerar_dre?: boolean
+          created_at?: string
+          descricao?: string
+          empresa_id?: string
+          id?: string
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_contas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profissoes: {
         Row: {
           created_at: string

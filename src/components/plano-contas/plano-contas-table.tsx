@@ -56,7 +56,7 @@ export function PlanoContasTable({
                 <TableCell>{conta.descricao}</TableCell>
                 <TableCell className="capitalize">{conta.tipo}</TableCell>
                 <TableCell>
-                  {conta.considerarDRE ? "Sim" : "Não"}
+                  {conta.considerar_dre ? "Sim" : "Não"}
                 </TableCell>
                 <TableCell>
                   <span

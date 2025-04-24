@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import React, { useState } from "react";
 import { PlanoConta } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,118 +24,96 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-
-// Dados de exemplo - em uma aplicação real, isso viria de uma API
-const contasIniciais: PlanoConta[] = [
-  {
-    id: "1",
-    codigo: "1",
-    descricao: "Ativo",
-    tipo: "ativo",
-    considerarDRE: false,
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "1.1",
-    codigo: "1.1",
-    descricao: "Ativo Circulante",
-    tipo: "ativo",
-    considerarDRE: false,
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "1.1.1",
-    codigo: "1.1.1",
-    descricao: "Caixa e Equivalentes",
-    tipo: "ativo",
-    considerarDRE: false,
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    codigo: "2",
-    descricao: "Passivo",
-    tipo: "passivo",
-    considerarDRE: false,
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2.1",
-    codigo: "2.1",
-    descricao: "Passivo Circulante",
-    tipo: "passivo",
-    considerarDRE: false,
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    codigo: "3",
-    descricao: "Receitas",
-    tipo: "receita",
-    considerarDRE: true,
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3.1",
-    codigo: "3.1",
-    descricao: "Receitas Operacionais",
-    tipo: "receita",
-    considerarDRE: true,
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "4",
-    codigo: "4",
-    descricao: "Despesas",
-    tipo: "despesa",
-    considerarDRE: true,
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "4.1",
-    codigo: "4.1",
-    descricao: "Despesas Administrativas",
-    tipo: "despesa",
-    considerarDRE: true,
-    status: "inativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "5",
-    codigo: "5",
-    descricao: "Patrimônio Líquido",
-    tipo: "patrimonio",
-    considerarDRE: false,
-    status: "ativo",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }
-];
+import { useCompany } from "@/contexts/company-context";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function PlanoContasPage() {
-  const [contas, setContas] = useState<PlanoConta[]>(contasIniciais);
+  const { currentCompany } = useCompany();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingConta, setEditingConta] = useState<PlanoConta | undefined>(undefined);
+  const [editingConta, setEditingConta] = useState<PlanoConta | undefined>();
   const [searchTerm, setSearchTerm] = useState("");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const queryClient = useQueryClient();
+
+  // Buscar contas do plano de contas
+  const { data: contas = [] } = useQuery({
+    queryKey: ["plano-contas", currentCompany?.id],
+    queryFn: async () => {
+      if (!currentCompany?.id) return [];
+      
+      const { data, error } = await supabase
+        .from("plano_contas")
+        .select("*")
+        .eq("empresa_id", currentCompany.id);
+
+      if (error) {
+        toast.error("Erro ao carregar plano de contas");
+        throw error;
+      }
+
+      return data;
+    },
+    enabled: !!currentCompany?.id,
+  });
+
+  const createContaMutation = useMutation({
+    mutationFn: async (data: Omit<PlanoConta, "id" | "created_at" | "updated_at">) => {
+      if (!currentCompany?.id) throw new Error("Empresa não selecionada");
+
+      const { error } = await supabase
+        .from("plano_contas")
+        .insert([{ ...data, empresa_id: currentCompany.id }]);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
+      toast.success("Conta criada com sucesso!");
+      handleCloseDialog();
+    },
+    onError: () => {
+      toast.error("Erro ao criar conta");
+    },
+  });
+
+  const updateContaMutation = useMutation({
+    mutationFn: async ({ id, ...data }: Partial<PlanoConta> & { id: string }) => {
+      const { error } = await supabase
+        .from("plano_contas")
+        .update(data)
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
+      toast.success("Conta atualizada com sucesso!");
+      handleCloseDialog();
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar conta");
+    },
+  });
+
+  const deleteContaMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("plano_contas")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
+      toast.success("Conta excluída com sucesso!");
+    },
+    onError: () => {
+      toast.error("Erro ao excluir conta");
+    },
+  });
 
   const handleOpenDialog = (conta?: PlanoConta) => {
     setEditingConta(conta);
@@ -146,47 +125,19 @@ export default function PlanoContasPage() {
     setIsDialogOpen(false);
   };
 
-  const handleSubmit = (data: { 
-    codigo: string; 
-    descricao: string; 
-    tipo: "ativo" | "passivo" | "receita" | "despesa" | "patrimonio";
-    considerarDRE: boolean;
-    status: "ativo" | "inativo";
-  }) => {
+  const handleSubmit = (data: any) => {
     if (editingConta) {
-      // Atualizar conta existente
-      setContas((prev) =>
-        prev.map((c) =>
-          c.id === editingConta.id
-            ? {
-                ...c,
-                ...data,
-                updatedAt: new Date(),
-              }
-            : c
-        )
-      );
-      toast.success("Conta atualizada com sucesso!");
+      updateContaMutation.mutate({ id: editingConta.id, ...data });
     } else {
-      // Criar nova conta
-      const newConta: PlanoConta = {
-        id: `${Date.now()}`,
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setContas((prev) => [...prev, newConta]);
-      toast.success("Conta criada com sucesso!");
+      createContaMutation.mutate(data);
     }
-    handleCloseDialog();
   };
 
   const handleDelete = (id: string) => {
-    setContas((prev) => prev.filter((conta) => conta.id !== id));
-    toast.success("Conta excluída com sucesso!");
+    deleteContaMutation.mutate(id);
   };
 
-  // Filtrar contas com base em todos os critérios
+  // Filtrar contas
   const filteredContas = contas.filter((conta) => {
     const matchesSearch = conta.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          conta.codigo.toLowerCase().includes(searchTerm.toLowerCase());
