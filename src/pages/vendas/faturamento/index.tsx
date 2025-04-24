@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -74,7 +75,7 @@ export default function FaturamentoPage() {
       carregarFaturamentos();
       carregarFavorecidos();
     }
-  }, [currentCompany?.id]);
+  }, [currentCompany?.id, statusFilter]);
 
   async function carregarFaturamentos() {
     try {
@@ -236,7 +237,6 @@ export default function FaturamentoPage() {
         {/* Select de Status */}
         <Select value={statusFilter} onValueChange={(value: "ativo" | "inativo" | "todos") => {
           setStatusFilter(value);
-          carregarFaturamentos();
         }}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Status" />
