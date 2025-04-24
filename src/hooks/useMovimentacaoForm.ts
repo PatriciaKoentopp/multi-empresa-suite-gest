@@ -47,6 +47,11 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
   const [contaOrigem, setContaOrigem] = useState("");
   const [contaDestino, setContaDestino] = useState("");
 
+  // Define a função parseValor antes de usá-la
+  const parseValor = (valorStr: string): number => {
+    return parseFloat(valorStr.replace(/\./g, "").replace(",", ".") || "0");
+  };
+
   // Calcular parcelas com base no valor total, número de parcelas e data do primeiro vencimento
   const valorNumerico = parseValor(valor);
   const parcelas = useParcelasCalculation(valorNumerico, numParcelas, dataPrimeiroVenc);
@@ -79,10 +84,6 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
       val = val.slice(0, -1);
     }
     setValor(val);
-  };
-
-  const parseValor = (valorStr: string): number => {
-    return parseFloat(valorStr.replace(/\./g, "").replace(",", ".") || "0");
   };
 
   const handleSalvar = async () => {
