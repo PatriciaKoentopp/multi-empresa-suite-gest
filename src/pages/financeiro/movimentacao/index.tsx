@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,9 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BaixarContaPagarModal } from "@/components/contas-a-pagar/BaixarContaPagarModal";
 import { supabase } from "@/integrations/supabase/client";
-import { Movimentacao, MovimentacaoParcela } from "@/types/movimentacoes";
 
 export default function MovimentacaoPage() {
   const [movimentacoes, setMovimentacoes] = useState<ContaPagar[]>([]);
@@ -54,89 +51,6 @@ export default function MovimentacaoPage() {
     if (!date) return "";
     return format(date, "yyyy-MM-dd");
   }
-
-  // Novo estado para modal Baixar
-  const [movimentacaoParaBaixar, setMovimentacaoParaBaixar] = useState<ContaPagar | null>(null);
-  const [modalBaixarAberto, setModalBaixarAberto] = useState(false);
-
-  // Ações (exemplo, pode ser desacoplado)
-  const handleBaixar = (movimentacao: ContaPagar) => {
-    setMovimentacaoParaBaixar(movimentacao);
-    setModalBaixarAberto(true);
-  };
-
-  function realizarBaixa({ dataPagamento, contaCorrenteId, multa, juros, desconto }: {
-    dataPagamento: Date;
-    contaCorrenteId: string;
-    multa: number;
-    juros: number;
-    desconto: number;
-  }) {
-    setMovimentacoes(prev =>
-      prev.map(item =>
-        item.id === movimentacaoParaBaixar?.id
-          ? {
-              ...item,
-              dataPagamento,
-              status: "pago", // sempre define pago (por ora)
-            }
-          : item
-      )
-    );
-    // Aqui normalmente: lança no fluxo de caixa, etc — mas deixamos só atualização mock
-    toast({
-      title: "Sucesso",
-      description: "Título baixado com sucesso!"
-    });
-  }
-
-  // Prepara a exclusão abrindo o modal de confirmação
-  const prepararExclusao = (id: string) => {
-    setMovimentacaoParaExcluir(id);
-    setConfirmarExclusaoAberto(true);
-  };
-
-  // Função para excluir uma movimentacao após confirmação
-  const confirmarExclusao = async () => {
-    if (!movimentacaoParaExcluir) return;
-    
-    try {
-      // Primeiro, excluir as parcelas associadas à movimentação
-      const { error: errorParcelas } = await supabase
-        .from("movimentacoes_parcelas")
-        .delete()
-        .eq("movimentacao_id", movimentacaoParaExcluir);
-
-      if (errorParcelas) throw errorParcelas;
-      
-      // Depois de excluir as parcelas, excluir a movimentação principal
-      const { error } = await supabase
-        .from("movimentacoes")
-        .delete()
-        .eq("id", movimentacaoParaExcluir);
-
-      if (error) throw error;
-
-      // Atualizar a lista local removendo o item excluído
-      setMovimentacoes(prevMovimentacoes => prevMovimentacoes.filter(movimentacao => movimentacao.id !== movimentacaoParaExcluir));
-      
-      toast({
-        title: "Sucesso",
-        description: "Movimentação excluída com sucesso!"
-      });
-    } catch (error) {
-      console.error("Erro ao excluir movimentação:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao excluir a movimentação"
-      });
-    } finally {
-      // Fechar o modal e limpar o estado
-      setConfirmarExclusaoAberto(false);
-      setMovimentacaoParaExcluir(null);
-    }
-  };
 
   // Adapta a função handleEdit para passar a movimentação completa
   const handleEdit = async (movimentacao: ContaPagar) => {
@@ -217,16 +131,17 @@ export default function MovimentacaoPage() {
         if (error) throw error;
 
         if (movimentacoesData) {
-          // Converter movimentações em movimentacoes a pagar
+          // Converter movimentações para o formato esperado
           const movimentacoesFormatadas: ContaPagar[] = movimentacoesData.map((mov: any) => ({
             id: mov.id,
             favorecido: mov.favorecido?.nome || 'Não informado',
             descricao: mov.descricao || '',
-            dataVencimento: new Date(mov.primeiro_vencimento),
+            dataVencimento: mov.primeiro_vencimento ? new Date(mov.primeiro_vencimento) : undefined,
             dataPagamento: undefined,
             status: 'em_aberto',
             valor: Number(mov.valor),
-            numeroParcela: mov.numero_documento
+            numeroParcela: mov.numero_documento,
+            tipo_operacao: mov.tipo_operacao
           }));
 
           setMovimentacoes(movimentacoesFormatadas);
@@ -262,6 +177,54 @@ export default function MovimentacaoPage() {
     });
   }, [movimentacoes, searchTerm, statusFilter, dataVencInicio, dataVencFim, dataPagInicio, dataPagFim]);
 
+  // Prepara a exclusão abrindo o modal de confirmação
+  const prepararExclusao = (id: string) => {
+    setMovimentacaoParaExcluir(id);
+    setConfirmarExclusaoAberto(true);
+  };
+
+  // Função para excluir uma movimentacao após confirmação
+  const confirmarExclusao = async () => {
+    if (!movimentacaoParaExcluir) return;
+    
+    try {
+      // Primeiro, excluir as parcelas associadas à movimentação
+      const { error: errorParcelas } = await supabase
+        .from("movimentacoes_parcelas")
+        .delete()
+        .eq("movimentacao_id", movimentacaoParaExcluir);
+
+      if (errorParcelas) throw errorParcelas;
+      
+      // Depois de excluir as parcelas, excluir a movimentação principal
+      const { error } = await supabase
+        .from("movimentacoes")
+        .delete()
+        .eq("id", movimentacaoParaExcluir);
+
+      if (error) throw error;
+
+      // Atualizar a lista local removendo o item excluído
+      setMovimentacoes(prevMovimentacoes => prevMovimentacoes.filter(movimentacao => movimentacao.id !== movimentacaoParaExcluir));
+      
+      toast({
+        title: "Sucesso",
+        description: "Movimentação excluída com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir movimentação:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao excluir a movimentação"
+      });
+    } finally {
+      // Fechar o modal e limpar o estado
+      setConfirmarExclusaoAberto(false);
+      setMovimentacaoParaExcluir(null);
+    }
+  };
+
   function handleLupaClick() {
     inputBuscaRef.current?.focus();
   }
@@ -277,6 +240,7 @@ export default function MovimentacaoPage() {
           Nova Movimentação
         </Button>
       </div>
+      
       <Card>
         <CardContent className="pt-6">
           {/* Primeira linha: Busca + Status */}
@@ -381,20 +345,12 @@ export default function MovimentacaoPage() {
             <MovimentacaoTable
               movimentacoes={filteredMovimentacoes}
               onEdit={handleEdit}
-              onBaixar={handleBaixar}
               onDelete={prepararExclusao}
               onVisualizar={handleVisualizar}
             />
           </div>
         </CardContent>
       </Card>
-
-      <BaixarContaPagarModal
-        conta={movimentacaoParaBaixar}
-        open={modalBaixarAberto}
-        onClose={() => setModalBaixarAberto(false)}
-        onBaixar={realizarBaixa}
-      />
 
       {/* Modal de confirmação de exclusão */}
       <AlertDialog open={confirmarExclusaoAberto} onOpenChange={setConfirmarExclusaoAberto}>

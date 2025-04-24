@@ -22,7 +22,6 @@ import { ContaPagar } from "../contas-a-pagar/contas-a-pagar-table";
 interface MovimentacaoTableProps {
   movimentacoes: ContaPagar[];
   onEdit: (movimentacao: ContaPagar) => void;
-  onBaixar: (movimentacao: ContaPagar) => void;
   onDelete: (id: string) => void;
   onVisualizar: (movimentacao: ContaPagar) => void;
 }
@@ -39,6 +38,31 @@ function formatCurrency(valor?: number) {
     currency: "BRL",
     minimumFractionDigits: 2,
   });
+}
+
+function getTipoOperacao(tipo?: string) {
+  switch (tipo) {
+    case "pagar":
+      return (
+        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
+          Pagar
+        </span>
+      );
+    case "receber":
+      return (
+        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
+          Receber
+        </span>
+      );
+    case "transferencia":
+      return (
+        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+          Transferência
+        </span>
+      );
+    default:
+      return tipo;
+  }
 }
 
 function getStatusBadge(status: ContaPagar["status"]) {
@@ -69,7 +93,6 @@ function getStatusBadge(status: ContaPagar["status"]) {
 export function MovimentacaoTable({ 
   movimentacoes, 
   onEdit, 
-  onBaixar, 
   onDelete,
   onVisualizar 
 }: MovimentacaoTableProps) {
@@ -85,6 +108,7 @@ export function MovimentacaoTable({
             <TableHead>Título</TableHead>
             <TableHead>Favorecido</TableHead>
             <TableHead>Descrição</TableHead>
+            <TableHead>Tipo</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Valor</TableHead>
             <TableHead className="w-[60px] text-center">Ações</TableHead>
@@ -93,7 +117,7 @@ export function MovimentacaoTable({
         <TableBody>
           {movimentacoes.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
                 Nenhum resultado encontrado
               </TableCell>
             </TableRow>
@@ -113,6 +137,7 @@ export function MovimentacaoTable({
                 </TableCell>
                 <TableCell>{movimentacao.favorecido}</TableCell>
                 <TableCell>{movimentacao.descricao}</TableCell>
+                <TableCell>{getTipoOperacao(movimentacao.tipo_operacao)}</TableCell>
                 <TableCell>{getStatusBadge(movimentacao.status)}</TableCell>
                 <TableCell>{formatCurrency(movimentacao.valor)}</TableCell>
                 <TableCell className="text-center">
@@ -143,13 +168,6 @@ export function MovimentacaoTable({
                         Editar
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => onBaixar(movimentacao)}
-                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
-                      >
-                        <Download className="h-4 w-4" />
-                        Baixar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
                         onClick={() => onDelete(movimentacao.id)}
                         className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                       >
@@ -165,7 +183,7 @@ export function MovimentacaoTable({
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={6} className="font-bold text-right">Total</TableCell>
+            <TableCell colSpan={7} className="font-bold text-right">Total</TableCell>
             <TableCell className="font-bold">{formatCurrency(totalValor)}</TableCell>
             <TableCell />
           </TableRow>
