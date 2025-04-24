@@ -1,13 +1,22 @@
-
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar, Search, Filter } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { ContasAPagarTable, ContaPagar } from "@/components/contas-a-pagar/contas-a-pagar-table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -33,6 +42,10 @@ export default function ContasAPagarPage() {
   const [dataPagInicio, setDataPagInicio] = useState<string>("");
   const [dataPagFim, setDataPagFim] = useState<string>("");
 
+  // Estado para o modal de confirmação de exclusão
+  const [contaParaExcluir, setContaParaExcluir] = useState<string | null>(null);
+  const [confirmarExclusaoAberto, setConfirmarExclusaoAberto] = useState(false);
+
   const inputBuscaRef = useRef<HTMLInputElement>(null);
 
   function formatInputDate(date: Date | undefined) {
@@ -49,9 +62,6 @@ export default function ContasAPagarPage() {
     setContaParaBaixar(conta);
     setModalBaixarAberto(true);
   };
-
-  // Removemos a primeira definição de handleDelete (a versão mais simples)
-  // E mantemos apenas a implementação completa que está abaixo
 
   function realizarBaixa({ dataPagamento, contaCorrenteId, multa, juros, desconto }: {
     dataPagamento: Date;
@@ -72,8 +82,50 @@ export default function ContasAPagarPage() {
       )
     );
     // Aqui normalmente: lança no fluxo de caixa, etc — mas deixamos só atualização mock
-    toast.success("Título baixado com sucesso!");
+    toast({
+      title: "Sucesso",
+      description: "Título baixado com sucesso!"
+    });
   }
+
+  // Prepara a exclusão abrindo o modal de confirmação
+  const prepararExclusao = (id: string) => {
+    setContaParaExcluir(id);
+    setConfirmarExclusaoAberto(true);
+  };
+
+  // Função para excluir uma conta após confirmação
+  const confirmarExclusao = async () => {
+    if (!contaParaExcluir) return;
+    
+    try {
+      const { error } = await supabase
+        .from("movimentacoes")
+        .delete()
+        .eq("id", contaParaExcluir);
+
+      if (error) throw error;
+
+      // Atualizar a lista local removendo o item excluído
+      setContas(prevContas => prevContas.filter(conta => conta.id !== contaParaExcluir));
+      
+      toast({
+        title: "Sucesso",
+        description: "Conta excluída com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir conta:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao excluir a conta"
+      });
+    } finally {
+      // Fechar o modal e limpar o estado
+      setConfirmarExclusaoAberto(false);
+      setContaParaExcluir(null);
+    }
+  };
 
   // Novo estado para controlar a movimentação selecionada para edição
   const [movimentacaoParaEditar, setMovimentacaoParaEditar] = useState<Movimentacao | null>(null);
@@ -101,7 +153,11 @@ export default function ContasAPagarPage() {
       }
     } catch (error) {
       console.error("Erro ao buscar movimentação:", error);
-      toast.error("Erro ao buscar dados da movimentação");
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao buscar dados da movimentação"
+      });
     }
   };
 
@@ -136,7 +192,11 @@ export default function ContasAPagarPage() {
         }
       } catch (error: any) {
         console.error('Erro ao carregar contas:', error);
-        toast.error('Erro ao carregar as contas a pagar');
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: 'Erro ao carregar as contas a pagar'
+        });
       }
     }
 
@@ -164,25 +224,6 @@ export default function ContasAPagarPage() {
   function handleLupaClick() {
     inputBuscaRef.current?.focus();
   }
-
-  // Função para excluir uma conta - mantemos só essa versão
-  const handleDelete = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from("movimentacoes")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      // Atualizar a lista local removendo o item excluído
-      setContas(prevContas => prevContas.filter(conta => conta.id !== id));
-      toast.success("Conta excluída com sucesso!");
-    } catch (error) {
-      console.error("Erro ao excluir conta:", error);
-      toast.error("Erro ao excluir a conta");
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -292,6 +333,7 @@ export default function ContasAPagarPage() {
               </div>
             </div>
           </div>
+          
           {/* Separador para dar respiro visual */}
           <div className="mb-4" />
           <div className="mt-6">
@@ -299,7 +341,7 @@ export default function ContasAPagarPage() {
               contas={filteredContas}
               onEdit={handleEdit}
               onBaixar={handleBaixar}
-              onDelete={handleDelete}
+              onDelete={prepararExclusao}
             />
           </div>
         </CardContent>
@@ -311,6 +353,27 @@ export default function ContasAPagarPage() {
         onClose={() => setModalBaixarAberto(false)}
         onBaixar={realizarBaixa}
       />
+
+      {/* Modal de confirmação de exclusão */}
+      <AlertDialog open={confirmarExclusaoAberto} onOpenChange={setConfirmarExclusaoAberto}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta conta? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="px-6">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmarExclusao} 
+              className="bg-red-600 hover:bg-red-700 text-white px-6"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
