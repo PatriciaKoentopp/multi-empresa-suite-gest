@@ -96,7 +96,15 @@ export default function IncluirMovimentacaoPage() {
               </Select>
             </div>
             
-            <div className="col-span-2">
+            <div>
+              <DateInput
+                label="Data de Emissão"
+                value={dataEmissao}
+                onChange={setDataEmissao}
+              />
+            </div>
+            
+            <div>
               <DateInput
                 label="Data de Lançamento"
                 value={dataLancamento}
@@ -180,6 +188,16 @@ export default function IncluirMovimentacaoPage() {
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
             />
           ) : null}
+          
+          {/* Botões de ação */}
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              Cancelar
+            </Button>
+            <Button variant="blue" onClick={handleSalvar}>
+              Salvar
+            </Button>
+          </div>
         </div>
       </div>
       
