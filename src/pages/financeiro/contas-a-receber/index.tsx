@@ -48,7 +48,8 @@ export default function ContasAReceberPage() {
     try {
       setIsLoading(true);
       
-      const { data: movimentacoesParcelas, error } = await supabase
+      // Buscar movimentações parcelas (contas a receber)
+      const { data: movimentacoesParcelas, error: errorMovimentacoes } = await supabase
         .from('movimentacoes_parcelas')
         .select(`
           id,
@@ -73,9 +74,33 @@ export default function ContasAReceberPage() {
         .eq('movimentacao.empresa_id', currentCompany.id)
         .eq('movimentacao.tipo_operacao', 'receber');
       
-      if (error) throw error;
+      if (errorMovimentacoes) throw errorMovimentacoes;
 
-      const contasReceber: ContaReceber[] = (movimentacoesParcelas || [])
+      // Buscar parcelas de orçamentos do tipo venda
+      const { data: orcamentosParcelas, error: errorOrcamentos } = await supabase
+        .from('orcamentos_parcelas')
+        .select(`
+          id,
+          numero_parcela,
+          valor,
+          data_vencimento,
+          orcamento:orcamentos (
+            id,
+            codigo,
+            tipo,
+            favorecido:favorecidos (
+              id,
+              nome
+            )
+          )
+        `)
+        .eq('orcamento.empresa_id', currentCompany.id)
+        .eq('orcamento.tipo', 'venda');
+
+      if (errorOrcamentos) throw errorOrcamentos;
+
+      // Converter movimentações parcelas para ContaReceber
+      const contasReceberMovimentacoes: ContaReceber[] = (movimentacoesParcelas || [])
         .filter(parcela => parcela.movimentacao)
         .map(parcela => ({
           id: parcela.id,
@@ -86,9 +111,27 @@ export default function ContasAReceberPage() {
           status: determinarStatus(parcela.data_vencimento, parcela.data_pagamento),
           valor: Number(parcela.valor),
           numeroParcela: `${parcela.movimentacao.numero_documento || '-'}/${parcela.numero}`,
+          origem: 'movimentacao'
         }));
 
-      setContas(contasReceber);
+      // Converter orçamentos parcelas para ContaReceber
+      const contasReceberOrcamentos: ContaReceber[] = (orcamentosParcelas || [])
+        .filter(parcela => parcela.orcamento)
+        .map(parcela => ({
+          id: parcela.id,
+          cliente: parcela.orcamento.favorecido?.nome || 'Cliente não identificado',
+          descricao: `Venda ${parcela.orcamento.codigo || ''}`,
+          dataVencimento: new Date(parcela.data_vencimento),
+          dataRecebimento: undefined, // Implementar quando houver o campo de pagamento
+          status: "em_aberto", // Implementar quando houver o status de pagamento
+          valor: Number(parcela.valor),
+          numeroParcela: `${parcela.orcamento.codigo || '-'}/${parcela.numero_parcela}`,
+          origem: 'venda'
+        }));
+
+      // Combinar os dois arrays
+      setContas([...contasReceberMovimentacoes, ...contasReceberOrcamentos]);
+
     } catch (error) {
       console.error('Erro ao carregar contas a receber:', error);
       toast.error('Erro ao carregar as contas a receber');
