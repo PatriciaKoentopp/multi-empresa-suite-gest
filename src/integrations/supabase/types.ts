@@ -307,6 +307,153 @@ export type Database = {
           },
         ]
       }
+      movimentacoes: {
+        Row: {
+          categoria_id: string | null
+          considerar_dre: boolean
+          conta_destino_id: string | null
+          conta_origem_id: string | null
+          created_at: string
+          data_emissao: string | null
+          data_lancamento: string
+          descricao: string | null
+          empresa_id: string
+          favorecido_id: string | null
+          forma_pagamento: string | null
+          id: string
+          numero_documento: string | null
+          numero_parcelas: number
+          primeiro_vencimento: string | null
+          tipo_operacao: string
+          tipo_titulo_id: string | null
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          categoria_id?: string | null
+          considerar_dre?: boolean
+          conta_destino_id?: string | null
+          conta_origem_id?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          data_lancamento: string
+          descricao?: string | null
+          empresa_id: string
+          favorecido_id?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          numero_documento?: string | null
+          numero_parcelas?: number
+          primeiro_vencimento?: string | null
+          tipo_operacao: string
+          tipo_titulo_id?: string | null
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          categoria_id?: string | null
+          considerar_dre?: boolean
+          conta_destino_id?: string | null
+          conta_origem_id?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          data_lancamento?: string
+          descricao?: string | null
+          empresa_id?: string
+          favorecido_id?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          numero_documento?: string | null
+          numero_parcelas?: number
+          primeiro_vencimento?: string | null
+          tipo_operacao?: string
+          tipo_titulo_id?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_conta_destino_id_fkey"
+            columns: ["conta_destino_id"]
+            isOneToOne: false
+            referencedRelation: "contas_correntes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_conta_origem_id_fkey"
+            columns: ["conta_origem_id"]
+            isOneToOne: false
+            referencedRelation: "contas_correntes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_favorecido_id_fkey"
+            columns: ["favorecido_id"]
+            isOneToOne: false
+            referencedRelation: "favorecidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_tipo_titulo_id_fkey"
+            columns: ["tipo_titulo_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_titulos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movimentacoes_parcelas: {
+        Row: {
+          created_at: string
+          data_vencimento: string
+          id: string
+          movimentacao_id: string
+          numero: number
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data_vencimento: string
+          id?: string
+          movimentacao_id: string
+          numero: number
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          data_vencimento?: string
+          id?: string
+          movimentacao_id?: string
+          numero?: number
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_parcelas_movimentacao_id_fkey"
+            columns: ["movimentacao_id"]
+            isOneToOne: false
+            referencedRelation: "movimentacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orcamentos: {
         Row: {
           codigo: string

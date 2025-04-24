@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { TipoTitulo } from "@/types/tipos-titulos";
+import { Movimentacao } from "@/types/movimentacoes";
 
 // Utilitário para converter DD/MM/YYYY <-> Date
 function parseDateBr(input: string): Date | null {
@@ -261,59 +262,96 @@ export default function IncluirMovimentacaoPage() {
 
   // Nova lógica de salvar contemplando transferência
   function handleSalvar() {
+    if (!currentCompany?.id) {
+      toast.error("Nenhuma empresa selecionada");
+      return;
+    }
+
     if (operacao === "transferencia") {
-      // Validação extra transferência
       if (!contaOrigem || !contaDestino || contaOrigem === contaDestino || !valor || !dataLancamento) {
         toast.error("Preencha todos os campos corretamente para Transferência.");
         return;
       }
-      // Simula dois lançamentos: saída na origem e entrada na destino
-      const dataTransf = format(dataLancamento, "yyyy-MM-dd");
-      const valorNum = parseFloat(valor.replace(/\./g, "").replace(",", "."));
 
-      const movSaida = {
-        tipo: "Saída",
-        conta: contaOrigem,
-        data: dataTransf,
-        valor: valorNum,
+      // Criar movimentação de transferência
+      const movimentacao = {
+        empresa_id: currentCompany.id,
+        tipo_operacao: operacao,
+        data_lancamento: format(dataLancamento, "yyyy-MM-dd"),
+        valor: parseFloat(valor.replace(/\./g, "").replace(",", ".")),
         descricao,
+        numero_parcelas: 1,
+        considerar_dre: false,
+        conta_origem_id: contaOrigem,
+        conta_destino_id: contaDestino
       };
-      const movEntrada = {
-        tipo: "Entrada",
-        conta: contaDestino,
-        data: dataTransf,
-        valor: valorNum,
-        descricao,
-      };
-      alert(
-        "Transferência registrada!\n" +
-        JSON.stringify({ movSaida, movEntrada }, null, 2)
-      );
-      navigate(-1);
+
+      salvarMovimentacao(movimentacao);
       return;
     }
 
-    const cadastrado = {
-      operacao,
-      dataEmissao: dataEmissao ? format(dataEmissao, "yyyy-MM-dd") : undefined,
-      dataLancamento: dataLancamento ? format(dataLancamento, "yyyy-MM-dd") : undefined,
-      numDoc,
-      favorecido,
-      categoria,
+    // Validar campos obrigatórios para pagar/receber
+    if (!valor || !dataLancamento || !tipoTituloId || !favorecido || !categoria || !formaPagamento || !dataPrimeiroVenc) {
+      toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    // Criar movimentação de pagamento/recebimento
+    const movimentacao = {
+      empresa_id: currentCompany.id,
+      tipo_operacao: operacao,
+      data_emissao: dataEmissao ? format(dataEmissao, "yyyy-MM-dd") : null,
+      data_lancamento: format(dataLancamento, "yyyy-MM-dd"),
+      numero_documento: numDoc || null,
+      tipo_titulo_id: tipoTituloId,
+      favorecido_id: favorecido,
+      categoria_id: categoria,
       descricao,
       valor: parseFloat(valor.replace(/\./g, "").replace(",", ".")),
-      formaPagamento,
-      numParcelas,
-      parcelas: parcelas.map(p => ({
-        numero: p.numero,
-        valor: p.valor,
-        vencimento: format(p.vencimento, "yyyy-MM-dd")
-      })),
-      considerarDRE
+      forma_pagamento: formaPagamento,
+      numero_parcelas: numParcelas,
+      primeiro_vencimento: format(dataPrimeiroVenc, "yyyy-MM-dd"),
+      considerar_dre
     };
-    alert("Movimentação cadastrada!\n" + JSON.stringify(cadastrado, null, 2));
-    navigate(-1); // Volta para a tela anterior ao salvar, igual a Empresa
+
+    salvarMovimentacao(movimentacao);
   }
+
+  async function salvarMovimentacao(movimentacao: any) {
+    try {
+      // Inserir a movimentação
+      const { data: novaMovimentacao, error: errorMovimentacao } = await supabase
+        .from("movimentacoes")
+        .insert([movimentacao])
+        .select()
+        .single();
+
+      if (errorMovimentacao) throw errorMovimentacao;
+
+      // Se não for transferência e tiver parcelas, inserir as parcelas
+      if (movimentacao.tipo_operacao !== "transferencia" && parcelas.length > 0) {
+        const parcelasParaInserir = parcelas.map(p => ({
+          movimentacao_id: novaMovimentacao.id,
+          numero: p.numero,
+          valor: p.valor,
+          data_vencimento: format(p.vencimento, "yyyy-MM-dd")
+        }));
+
+        const { error: errorParcelas } = await supabase
+          .from("movimentacoes_parcelas")
+          .insert(parcelasParaInserir);
+
+        if (errorParcelas) throw errorParcelas;
+      }
+
+      toast.success("Movimentação salva com sucesso!");
+      navigate(-1);
+    } catch (error) {
+      console.error("Erro ao salvar movimentação:", error);
+      toast.error("Erro ao salvar movimentação");
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Título principal fora do card */}
