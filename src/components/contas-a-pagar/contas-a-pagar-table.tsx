@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -9,7 +8,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { Edit, Download, Trash2, MoreHorizontal, Eye, RotateCcw } from "lucide-react";
+import { Edit, Download, Trash2, MoreHorizontal, Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -36,7 +35,6 @@ interface ContasAPagarTableProps {
   onBaixar: (conta: ContaPagar) => void;
   onDelete: (id: string) => void;
   onVisualizar: (conta: ContaPagar) => void;
-  onDesfazerBaixa?: (conta: ContaPagar) => void;
 }
 
 function formatDateBR(date?: Date) {
@@ -83,8 +81,7 @@ export function ContasAPagarTable({
   onEdit, 
   onBaixar, 
   onDelete,
-  onVisualizar,
-  onDesfazerBaixa
+  onVisualizar 
 }: ContasAPagarTableProps) {
   const totalValor = contas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
 
@@ -161,23 +158,13 @@ export function ContasAPagarTable({
                         <Edit className="h-4 w-4" />
                         Editar
                       </DropdownMenuItem>
-                      {conta.status === "em_aberto" ? (
-                        <DropdownMenuItem
-                          onClick={() => onBaixar(conta)}
-                          className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
-                        >
-                          <Download className="h-4 w-4" />
-                          Baixar
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem
-                          onClick={() => onDesfazerBaixa && onDesfazerBaixa(conta)}
-                          className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                          Desfazer Baixa
-                        </DropdownMenuItem>
-                      )}
+                      <DropdownMenuItem
+                        onClick={() => onBaixar(conta)}
+                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                      >
+                        <Download className="h-4 w-4" />
+                        Baixar
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onDelete(conta.movimentacao_id)}
                         className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
