@@ -1,13 +1,15 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Orcamento } from "@/types";
+import { Orcamento, TipoTitulo } from "@/types";
 import { useCompany } from "@/contexts/company-context";
+import { Label } from "@/components/ui/label";
 
 interface EfetivarVendaModalProps {
   open: boolean;
@@ -20,9 +22,40 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
   const { currentCompany } = useCompany();
   const [dataVenda, setDataVenda] = useState(format(new Date(), "yyyy-MM-dd"));
   const [isLoading, setIsLoading] = useState(false);
+  const [tipoTitulos, setTipoTitulos] = useState<TipoTitulo[]>([]);
+  const [tipoTituloId, setTipoTituloId] = useState<string>("");
+
+  useEffect(() => {
+    if (open && currentCompany?.id) {
+      carregarTiposTitulos();
+    }
+  }, [open, currentCompany?.id]);
+
+  async function carregarTiposTitulos() {
+    try {
+      const { data, error } = await supabase
+        .from('tipos_titulos')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .eq('tipo', 'receber')
+        .eq('status', 'ativo');
+
+      if (error) throw error;
+      setTipoTitulos(data || []);
+      if (data && data.length > 0) {
+        setTipoTituloId(data[0].id); // Seleciona o primeiro tipo por padrão
+      }
+    } catch (error) {
+      console.error('Erro ao carregar tipos de títulos:', error);
+      toast.error("Erro ao carregar tipos de títulos");
+    }
+  }
 
   async function handleConfirmar() {
-    if (!orcamento || !currentCompany?.id) return;
+    if (!orcamento || !currentCompany?.id || !tipoTituloId) {
+      toast.error("Selecione um tipo de título");
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -41,7 +74,7 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
 
       if (parcelasError) throw parcelasError;
 
-      // 2. Criar movimentação
+      // 2. Criar movimentação com as novas informações
       const valorTotal = itens.reduce((sum, item) => sum + Number(item.valor), 0);
       
       const { data: movimentacao, error: movError } = await supabase
@@ -57,7 +90,9 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
           numero_parcelas: parcelas.length,
           primeiro_vencimento: parcelas[0]?.data_vencimento,
           descricao: `Venda ${orcamento.codigo}`,
-          considerar_dre: true
+          considerar_dre: true,
+          numero_documento: orcamento.codigo,
+          tipo_titulo_id: tipoTituloId
         })
         .select()
         .single();
@@ -109,13 +144,29 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Data da Venda *</label>
+            <Label className="block text-sm font-medium mb-1">Data da Venda *</Label>
             <Input
               type="date"
               value={dataVenda}
               onChange={(e) => setDataVenda(e.target.value)}
               required
             />
+          </div>
+
+          <div>
+            <Label className="block text-sm font-medium mb-1">Tipo de Título *</Label>
+            <Select value={tipoTituloId} onValueChange={setTipoTituloId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo de título" />
+              </SelectTrigger>
+              <SelectContent>
+                {tipoTitulos.map((tipo) => (
+                  <SelectItem key={tipo.id} value={tipo.id}>
+                    {tipo.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {orcamento && (
