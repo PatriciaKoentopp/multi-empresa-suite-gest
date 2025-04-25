@@ -3,7 +3,7 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import { MoreHorizontal, Eye, Edit, Download, Trash2 } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Download, Trash2, RotateCcw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -30,6 +30,7 @@ interface ContasAReceberTableProps {
   onBaixar: (conta: ContaReceber) => void;
   onDelete: (id: string) => void;
   onVisualizar: (conta: ContaReceber) => void;
+  onDesfazerBaixa?: (conta: ContaReceber) => void;
 }
 
 function getStatusBadge(status: ContaReceber["status"]) {
@@ -62,7 +63,8 @@ export function ContasAReceberTable({
   onEdit, 
   onBaixar, 
   onDelete,
-  onVisualizar 
+  onVisualizar,
+  onDesfazerBaixa
 }: ContasAReceberTableProps) {
   function formatData(data?: Date) {
     if (!data) return "-";
@@ -140,14 +142,23 @@ export function ContasAReceberTable({
                         <Edit className="h-4 w-4" />
                         Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onBaixar(conta)}
-                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
-                        disabled={conta.status === "recebido" || conta.status === "recebido_em_atraso"}
-                      >
-                        <Download className="h-4 w-4" />
-                        Baixar
-                      </DropdownMenuItem>
+                      {conta.status === "em_aberto" ? (
+                        <DropdownMenuItem
+                          onClick={() => onBaixar(conta)}
+                          className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        >
+                          <Download className="h-4 w-4" />
+                          Baixar
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem
+                          onClick={() => onDesfazerBaixa && onDesfazerBaixa(conta)}
+                          className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          Desfazer Baixa
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         onClick={() => onDelete(conta.id)}
                         className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
