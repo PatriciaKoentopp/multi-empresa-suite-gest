@@ -216,7 +216,7 @@ export default function FavorecidosPage() {
       const favorecidoData = {
         empresa_id: currentCompany.id,
         tipo: data.tipo,
-        tipo_documento: data.tipoDocumento, // Garantir que este valor não seja nulo
+        tipo_documento: data.tipoDocumento,
         documento: data.documento,
         grupo_id: data.grupoId,
         profissao_id: data.profissaoId,
@@ -256,7 +256,27 @@ export default function FavorecidosPage() {
             f.id === editingFavorecido.id
               ? {
                   ...f,
-                  ...data,
+                  tipo: favorecidoData.tipo,
+                  tipoDocumento: favorecidoData.tipo_documento,
+                  documento: favorecidoData.documento,
+                  grupoId: favorecidoData.grupo_id,
+                  profissaoId: favorecidoData.profissao_id,
+                  nome: favorecidoData.nome,
+                  nomeFantasia: favorecidoData.nome_fantasia,
+                  email: favorecidoData.email,
+                  telefone: favorecidoData.telefone,
+                  endereco: {
+                    cep: favorecidoData.cep || "",
+                    logradouro: favorecidoData.logradouro || "",
+                    numero: favorecidoData.numero || "",
+                    complemento: favorecidoData.complemento || "",
+                    bairro: favorecidoData.bairro || "",
+                    cidade: favorecidoData.cidade || "",
+                    estado: favorecidoData.estado || "",
+                    pais: favorecidoData.pais || "Brasil",
+                  },
+                  dataAniversario: dataAniversarioFormatada ? new Date(dataAniversarioFormatada) : undefined,
+                  status: favorecidoData.status,
                   updatedAt: new Date(),
                 }
               : f

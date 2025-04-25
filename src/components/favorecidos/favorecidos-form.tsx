@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
@@ -33,23 +32,23 @@ export function FavorecidosForm({
     resolver: zodResolver(formSchema),
     defaultValues: favorecido ? {
       tipo: favorecido.tipo as "cliente" | "fornecedor" | "publico" | "funcionario",
-      tipo_documento: favorecido.tipo_documento as "cpf" | "cnpj",
+      tipo_documento: favorecido.tipoDocumento as "cpf" | "cnpj",
       documento: favorecido.documento,
-      grupo_id: favorecido.grupo_id,
-      profissao_id: favorecido.profissao_id,
+      grupo_id: favorecido.grupoId,
+      profissao_id: favorecido.profissaoId,
       nome: favorecido.nome,
-      nome_fantasia: favorecido.nome_fantasia || "",
+      nome_fantasia: favorecido.nomeFantasia || "",
       email: favorecido.email || "",
       telefone: favorecido.telefone || "",
-      cep: favorecido.cep || "",
-      logradouro: favorecido.logradouro || "",
-      numero: favorecido.numero || "",
-      complemento: favorecido.complemento || "",
-      bairro: favorecido.bairro || "",
-      cidade: favorecido.cidade || "",
-      estado: favorecido.estado || "",
-      pais: favorecido.pais || "",
-      data_aniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
+      cep: favorecido.endereco?.cep || "",
+      logradouro: favorecido.endereco?.logradouro || "",
+      numero: favorecido.endereco?.numero || "",
+      complemento: favorecido.endereco?.complemento || "",
+      bairro: favorecido.endereco?.bairro || "",
+      cidade: favorecido.endereco?.cidade || "",
+      estado: favorecido.endereco?.estado || "",
+      pais: favorecido.endereco?.pais || "",
+      data_aniversario: favorecido.dataAniversario ? new Date(favorecido.dataAniversario) : undefined,
       status: favorecido.status as "ativo" | "inativo",
     } : {
       tipo: "cliente",
@@ -71,28 +70,10 @@ export function FavorecidosForm({
     },
   });
 
-  // Atualizar tipo de documento baseado no tipo de favorecido
-  useEffect(() => {
-    const tipoFavorecido = form.watch("tipo");
-    const tipoDocumentoAtual = form.watch("tipo_documento");
-    
-    if (tipoFavorecido === "cliente" && tipoDocumentoAtual !== "cpf") {
-      form.setValue("tipo_documento", "cpf");
-    }
-    else if (
-      (tipoFavorecido === "fornecedor" || 
-       tipoFavorecido === "publico" || 
-       tipoFavorecido === "funcionario") && 
-      tipoDocumentoAtual !== "cnpj"
-    ) {
-      form.setValue("tipo_documento", "cnpj");
-    }
-  }, [form.watch("tipo")]);
-
   const handleSubmit = (data: FormValues) => {
     const formattedData: Partial<Favorecido> = {
       tipo: data.tipo,
-      tipoDocumento: data.tipo_documento, // Garantir que o tipoDocumento seja passado corretamente
+      tipoDocumento: data.tipo_documento,
       documento: data.documento,
       grupoId: data.grupo_id,
       profissaoId: data.profissao_id,
@@ -117,6 +98,24 @@ export function FavorecidosForm({
     console.log('Dados formatados para envio:', formattedData);
     onSubmit(formattedData);
   };
+
+  // Atualizar tipo de documento baseado no tipo de favorecido
+  useEffect(() => {
+    const tipoFavorecido = form.watch("tipo");
+    const tipoDocumentoAtual = form.watch("tipo_documento");
+    
+    if (tipoFavorecido === "cliente" && tipoDocumentoAtual !== "cpf") {
+      form.setValue("tipo_documento", "cpf");
+    }
+    else if (
+      (tipoFavorecido === "fornecedor" || 
+       tipoFavorecido === "publico" || 
+       tipoFavorecido === "funcionario") && 
+      tipoDocumentoAtual !== "cnpj"
+    ) {
+      form.setValue("tipo_documento", "cnpj");
+    }
+  }, [form.watch("tipo")]);
 
   return (
     <Form {...form}>
