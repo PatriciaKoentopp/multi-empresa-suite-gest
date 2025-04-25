@@ -75,32 +75,21 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
 
     try {
       // 1. Atualiza a parcela com os dados do recebimento
-      if (conta?.origem === 'movimentacao') {
-        const { error: updateError } = await supabase
-          .from("movimentacoes_parcelas")
-          .update({
-            data_pagamento: format(dataRecebimento, "yyyy-MM-dd"),
-            conta_corrente_id: contaCorrenteId,
-            multa,
-            juros,
-            desconto
-          })
-          .eq("id", conta.id);
+      const { error: updateError } = await supabase
+        .from("movimentacoes_parcelas")
+        .update({
+          data_pagamento: format(dataRecebimento, "yyyy-MM-dd"),
+          conta_corrente_id: contaCorrenteId,
+          multa,
+          juros,
+          desconto
+        })
+        .eq("id", conta?.id);
 
-        if (updateError) throw updateError;
-      }
+      if (updateError) throw updateError;
 
       // 2. Insere o registro no fluxo de caixa
-      const { data: contaCorrenteData, error: contaCorrenteError } = await supabase
-        .from("contas_correntes")
-        .select("saldo")
-        .eq("id", contaCorrenteId)
-        .single();
-
-      if (contaCorrenteError) throw contaCorrenteError;
-
       const valorTotal = (conta?.valor || 0) + multa + juros - desconto;
-      const novoSaldo = (contaCorrenteData?.saldo || 0) + valorTotal;
 
       const { error: fluxoError } = await supabase
         .from("fluxo_caixa")
@@ -109,22 +98,14 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
           conta_corrente_id: contaCorrenteId,
           data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
           valor: valorTotal,
-          saldo: novoSaldo,
+          saldo: valorTotal, // Usa o valorTotal como saldo do fluxo
           tipo_operacao: "receber",
-          origem: conta?.origem || "movimentacao",
+          origem: "movimentacao",
           movimentacao_parcela_id: conta?.id,
           situacao: "nao_conciliado"
         });
 
       if (fluxoError) throw fluxoError;
-
-      // 3. Atualiza o saldo da conta corrente
-      const { error: saldoError } = await supabase
-        .from("contas_correntes")
-        .update({ saldo: novoSaldo })
-        .eq("id", contaCorrenteId);
-
-      if (saldoError) throw saldoError;
 
       onBaixar({ dataRecebimento, contaCorrenteId, multa, juros, desconto });
       onClose();

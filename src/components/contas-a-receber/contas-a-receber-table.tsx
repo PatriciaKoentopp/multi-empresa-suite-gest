@@ -1,20 +1,9 @@
+
+import React from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableCell,
-  TableFooter,
-} from "@/components/ui/table";
-import { Edit, Download, Trash2, MoreHorizontal, Eye } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+import { format } from "date-fns";
+import { formatCurrency } from "@/utils";
 
 export interface ContaReceber {
   id: string;
@@ -22,49 +11,10 @@ export interface ContaReceber {
   descricao: string;
   dataVencimento: Date;
   dataRecebimento?: Date;
-  status: "recebido" | "recebido_em_atraso" | "em_aberto";
   valor: number;
-  numeroParcela?: string; // novo campo (opcional para retrocompatibilidade)
-}
-
-// Badge para status (igual ao padrão Favoritos/Contas a Pagar)
-function getStatusBadge(status: ContaReceber["status"]) {
-  switch (status) {
-    case "recebido":
-      return (
-        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
-          Recebido
-        </span>
-      );
-    case "recebido_em_atraso":
-      return (
-        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
-          Recebido em Atraso
-        </span>
-      );
-    case "em_aberto":
-      return (
-        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
-          Em Aberto
-        </span>
-      );
-    default:
-      return status;
-  }
-}
-
-function formatDateBR(date?: Date) {
-  if (!date) return "-";
-  return date.toLocaleDateString("pt-BR");
-}
-
-function formatCurrency(valor?: number) {
-  if (valor === undefined) return "-";
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  });
+  status: "recebido" | "recebido_em_atraso" | "em_aberto";
+  numeroParcela: string;
+  origem?: string;
 }
 
 interface ContasAReceberTableProps {
@@ -75,107 +25,180 @@ interface ContasAReceberTableProps {
   onVisualizar: (conta: ContaReceber) => void;
 }
 
-export function ContasAReceberTable({ 
-  contas, 
-  onEdit, 
-  onBaixar, 
+export function ContasAReceberTable({
+  contas,
+  onEdit,
+  onBaixar,
   onDelete,
-  onVisualizar 
+  onVisualizar,
 }: ContasAReceberTableProps) {
-  const totalValor = contas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
+  function formatData(data?: Date) {
+    if (!data) return "-";
+    return format(data, "dd/MM/yyyy");
+  }
+
+  function getStatusColor(status: ContaReceber["status"]) {
+    switch (status) {
+      case "recebido":
+        return "text-green-600";
+      case "recebido_em_atraso":
+        return "text-red-600";
+      case "em_aberto":
+        return "text-blue-600";
+    }
+  }
+
+  function getStatusText(status: ContaReceber["status"]) {
+    switch (status) {
+      case "recebido":
+        return "Recebido";
+      case "recebido_em_atraso":
+        return "Recebido em Atraso";
+      case "em_aberto":
+        return "Em Aberto";
+    }
+  }
 
   return (
     <div className="border rounded-md">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Data de Vencimento</TableHead>
-            <TableHead>Data de Recebimento</TableHead>
-            <TableHead>Título</TableHead>
+            <TableHead className="w-[120px]">Data Venc.</TableHead>
+            <TableHead className="w-[120px]">Data Rec.</TableHead>
             <TableHead>Cliente</TableHead>
             <TableHead>Descrição</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Valor</TableHead>
-            <TableHead className="w-[60px] text-center">Ações</TableHead>
+            <TableHead className="text-right w-[120px]">Valor</TableHead>
+            <TableHead className="w-[140px]">Status</TableHead>
+            <TableHead className="w-[120px]">Parcela</TableHead>
+            <TableHead className="text-center w-[140px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {contas.length === 0 ? (
             <TableRow>
               <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                Nenhum resultado encontrado
+                Nenhuma conta a receber encontrada
               </TableCell>
             </TableRow>
           ) : (
             contas.map((conta) => (
               <TableRow key={conta.id}>
-                <TableCell>{formatDateBR(conta.dataVencimento)}</TableCell>
-                <TableCell>{formatDateBR(conta.dataRecebimento)}</TableCell>
-                <TableCell>
-                  {conta.numeroParcela ? (
-                    <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
-                      {conta.numeroParcela}
-                    </span>
-                  ) : (
-                    "-"
-                  )}
-                </TableCell>
-                <TableCell>{conta.cliente}</TableCell>
+                <TableCell className="text-center">{formatData(conta.dataVencimento)}</TableCell>
+                <TableCell className="text-center">{formatData(conta.dataRecebimento)}</TableCell>
+                <TableCell className="font-medium">{conta.cliente}</TableCell>
                 <TableCell>{conta.descricao}</TableCell>
-                <TableCell>{getStatusBadge(conta.status)}</TableCell>
-                <TableCell>{formatCurrency(conta.valor)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(conta.valor)}</TableCell>
+                <TableCell>
+                  <span className={getStatusColor(conta.status)}>
+                    {getStatusText(conta.status)}
+                  </span>
+                </TableCell>
+                <TableCell className="text-center">{conta.numeroParcela}</TableCell>
                 <TableCell className="text-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Abrir menu de ações</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
-                      <DropdownMenuItem
-                        onClick={() => onVisualizar(conta)}
-                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                  <div className="flex items-center gap-2 justify-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-blue-500 hover:bg-blue-100"
+                      onClick={() => onVisualizar(conta)}
+                      title="Visualizar"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
                       >
-                        <Eye className="h-4 w-4" />
-                        Visualizar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onEdit(conta)}
-                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-green-500 hover:bg-green-100"
+                      onClick={() => onBaixar(conta)}
+                      title="Receber"
+                      disabled={conta.status === "recebido" || conta.status === "recebido_em_atraso"}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
                       >
-                        <Edit className="h-4 w-4" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onBaixar(conta)}
-                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                        />
+                      </svg>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-yellow-500 hover:bg-yellow-100"
+                      onClick={() => onEdit(conta)}
+                      title="Editar"
+                      disabled={conta.status === "recebido" || conta.status === "recebido_em_atraso"}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
                       >
-                        <Download className="h-4 w-4" />
-                        Baixar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onDelete(conta.id)}
-                        className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
+                      </svg>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500 hover:bg-red-100"
+                      onClick={() => onDelete(conta.id)}
+                      title="Excluir"
+                      disabled={conta.status === "recebido" || conta.status === "recebido_em_atraso"}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
                       >
-                        <Trash2 className="h-4 w-4" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))
           )}
         </TableBody>
-        {/* Rodapé total */}
-        <TableFooter>
-          <TableRow>
-            <TableCell colSpan={6} className="font-bold text-right">Total</TableCell>
-            <TableCell className="font-bold">{formatCurrency(totalValor)}</TableCell>
-            <TableCell />
-          </TableRow>
-        </TableFooter>
       </Table>
     </div>
   );
