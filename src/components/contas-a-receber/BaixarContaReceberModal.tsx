@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -266,3 +265,6 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     </Dialog>
   );
 }
+
+// Adicionando exportação padrão para o componente
+export default BaixarContaReceberModal;

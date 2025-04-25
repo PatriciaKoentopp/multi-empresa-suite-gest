@@ -29,7 +29,7 @@ import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ContasAReceberTable, ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
-import BaixarContaReceberModal from "@/components/contas-a-receber/BaixarContaReceberModal";
+import { BaixarContaReceberModal } from "@/components/contas-a-receber/BaixarContaReceberModal";
 
 // Função para formatar datas (DD/MM/YYYY)
 function formatDateBR(dateStr: string) {

@@ -34,7 +34,7 @@ export interface MovimentacaoParcela {
   multa?: number;
   juros?: number;
   desconto?: number;
-  forma_pagamento?: string; 
+  forma_pagamento?: string;
 }
 
 // Extensão para compatibilidade com ContaPagar
