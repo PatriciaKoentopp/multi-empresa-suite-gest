@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ interface BaixarContaPagarModalProps {
     multa: number;
     juros: number;
     desconto: number;
-    formaPagamento: string; // Adicionando forma de pagamento aos dados de baixa
+    formaPagamento: string;
   }) => void;
 }
 
@@ -129,7 +130,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
         .insert({
           empresa_id: currentCompany?.id,
           data_movimentacao: dataPagamento.toISOString().split('T')[0],
-          valor: -(conta?.valor || 0) - (multa || 0) - (juros || 0) + (desconto || 0), // Valor negativo pois é uma saída
+          valor: -(conta?.valor || 0) - (multa || 0) - (juros || 0) + (desconto || 0),
           origem: 'contas_pagar',
           tipo_operacao: 'pagar',
           movimentacao_id: conta?.movimentacao_id,
@@ -151,7 +152,6 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
         return;
       }
 
-      // Passamos a forma de pagamento para a função onBaixar
       onBaixar({ dataPagamento, contaCorrenteId, multa, juros, desconto, formaPagamento });
       onClose();
     };

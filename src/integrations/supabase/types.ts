@@ -244,6 +244,7 @@ export type Database = {
           data_movimentacao: string
           descricao: string | null
           empresa_id: string
+          forma_pagamento: string | null
           id: string
           movimentacao_id: string | null
           movimentacao_parcela_id: string | null
@@ -260,6 +261,7 @@ export type Database = {
           data_movimentacao: string
           descricao?: string | null
           empresa_id: string
+          forma_pagamento?: string | null
           id?: string
           movimentacao_id?: string | null
           movimentacao_parcela_id?: string | null
@@ -276,6 +278,7 @@ export type Database = {
           data_movimentacao?: string
           descricao?: string | null
           empresa_id?: string
+          forma_pagamento?: string | null
           id?: string
           movimentacao_id?: string | null
           movimentacao_parcela_id?: string | null
