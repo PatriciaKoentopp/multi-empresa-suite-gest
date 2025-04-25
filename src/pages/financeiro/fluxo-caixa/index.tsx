@@ -99,6 +99,7 @@ export default function FluxoCaixaPage() {
   const navigate = useNavigate();
   const { currentCompany } = useCompany();
   const queryClient = useQueryClient();
+  const [favorecidosCache, setFavorecidosCache] = useState<Record<string, any>>({});
 
   // Buscar contas correntes
   const { data: contasCorrentes = [] } = useQuery({
@@ -129,12 +130,9 @@ export default function FluxoCaixaPage() {
         .from("fluxo_caixa")
         .select(`
           *,
-          favorecidos (
-            id, 
-            nome
-          ),
           movimentacoes (
-            descricao
+            descricao,
+            favorecido_id
           ),
           movimentacoes_parcelas (
             numero
@@ -160,6 +158,28 @@ export default function FluxoCaixaPage() {
         toast.error("Erro ao carregar movimentações");
         console.error(error);
         return [];
+      }
+
+      // Coletar todos os IDs de favorecidos relacionados às movimentações
+      const favorecidosIds = data
+        .filter(item => item.movimentacoes?.favorecido_id)
+        .map(item => item.movimentacoes.favorecido_id);
+
+      // Buscar os dados dos favorecidos se existirem IDs
+      if (favorecidosIds.length > 0) {
+        const uniqueIds = [...new Set(favorecidosIds)];
+        const { data: favorecidosData, error: favError } = await supabase
+          .from("favorecidos")
+          .select("id, nome")
+          .in("id", uniqueIds);
+
+        if (!favError && favorecidosData) {
+          const favMap: Record<string, any> = {};
+          favorecidosData.forEach(fav => {
+            favMap[fav.id] = fav;
+          });
+          setFavorecidosCache(favMap);
+        }
       }
 
       return data;
@@ -226,18 +246,24 @@ export default function FluxoCaixaPage() {
   const filteredMovimentacoes = useMemo(() => {
     return movimentacoes.filter((linha) => {
       const descricao = linha.descricao || linha.movimentacoes?.descricao || "";
-      const favorecido = linha.favorecidos?.nome || "";
+      
+      // Buscar o favorecido a partir do cache
+      let favorecidoNome = "";
+      if (linha.movimentacoes?.favorecido_id) {
+        const favorecido = favorecidosCache[linha.movimentacoes.favorecido_id];
+        favorecidoNome = favorecido?.nome || "";
+      }
       
       const buscaOk =
         !searchTerm ||
         descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        favorecido.toLowerCase().includes(searchTerm.toLowerCase());
+        favorecidoNome.toLowerCase().includes(searchTerm.toLowerCase());
       
       const sitOk = situacao === "todos" || linha.situacao === situacao;
       
       return buscaOk && sitOk;
     });
-  }, [movimentacoes, searchTerm, situacao]);
+  }, [movimentacoes, searchTerm, situacao, favorecidosCache]);
 
   // Função para conciliar movimento
   async function handleConciliar(id: string) {
@@ -280,10 +306,10 @@ export default function FluxoCaixaPage() {
 
   // Função para obter o nome do favorecido
   function getFavorecidoNome(linha: any) {
-    if (linha.favorecidos?.nome) {
-      return linha.favorecidos.nome;
+    if (linha.movimentacoes?.favorecido_id) {
+      const favorecido = favorecidosCache[linha.movimentacoes.favorecido_id];
+      return favorecido?.nome || "-";
     }
-    // Tentar obter de outras formas se disponível
     return "-";
   }
 
