@@ -21,7 +21,9 @@ const formasPagamento = [
 ];
 
 function gerarCodigoVenda(): string {
-  return `${Date.now().toString().slice(-7)}`;
+  const baseNumber = 200;
+  const uniqueSuffix = Date.now().toString().slice(-4);
+  return `${baseNumber}${uniqueSuffix}`;
 }
 
 export default function OrcamentoPage() {
