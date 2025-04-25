@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { SalesCard } from "@/components/vendas/SalesCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -33,9 +34,12 @@ const PainelVendasPage = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
+        console.log("Iniciando busca de dados");
         
         // Buscar total de vendas do ano
         const currentYear = new Date().getFullYear();
+        console.log("Ano atual:", currentYear);
+
         const { data: yearData, error: yearError } = await supabase
           .from('orcamentos')
           .select(`
@@ -47,21 +51,27 @@ const PainelVendasPage = () => {
           .lte('data', `${currentYear}-12-31`);
 
         if (yearError) throw yearError;
+        console.log("Dados do ano:", yearData);
 
         // Calcular total de vendas do ano
         const totalVendas = yearData?.reduce((acc, orcamento) => {
-          const orcamentoTotal = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + item.valor, 0);
+          const orcamentoTotal = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
           return acc + orcamentoTotal;
         }, 0) || 0;
+        
+        console.log("Total de vendas do ano:", totalVendas);
 
         // Buscar vendas do mês atual
         const startCurrentMonth = startOfMonth(new Date());
         const endCurrentMonth = endOfMonth(new Date());
         
+        console.log("Período mês atual:", startCurrentMonth.toISOString(), "até", endCurrentMonth.toISOString());
+        
         const { data: currentMonthData, error: currentMonthError } = await supabase
           .from('orcamentos')
           .select(`
             id,
+            data,
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
@@ -69,15 +79,20 @@ const PainelVendasPage = () => {
           .lte('data', endCurrentMonth.toISOString());
 
         if (currentMonthError) throw currentMonthError;
+        console.log("Dados do mês atual:", currentMonthData);
 
         const vendasMesAtual = currentMonthData?.reduce((acc, orcamento) => {
-          const orcamentoTotal = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + item.valor, 0);
+          const orcamentoTotal = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
           return acc + orcamentoTotal;
         }, 0) || 0;
+        
+        console.log("Vendas mês atual:", vendasMesAtual);
 
         // Buscar vendas do mês anterior
         const startLastMonth = startOfMonth(subMonths(new Date(), 1));
         const endLastMonth = endOfMonth(subMonths(new Date(), 1));
+        
+        console.log("Período mês anterior:", startLastMonth.toISOString(), "até", endLastMonth.toISOString());
         
         const { data: lastMonthData, error: lastMonthError } = await supabase
           .from('orcamentos')
@@ -90,11 +105,14 @@ const PainelVendasPage = () => {
           .lte('data', endLastMonth.toISOString());
 
         if (lastMonthError) throw lastMonthError;
+        console.log("Dados do mês anterior:", lastMonthData);
 
         const vendasMesAnterior = lastMonthData?.reduce((acc, orcamento) => {
-          const orcamentoTotal = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + item.valor, 0);
+          const orcamentoTotal = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
           return acc + orcamentoTotal;
         }, 0) || 0;
+        
+        console.log("Vendas mês anterior:", vendasMesAnterior);
 
         // Calcular variação percentual
         const variacaoPercentual = vendasMesAnterior === 0 ? 100 : ((vendasMesAtual - vendasMesAnterior) / vendasMesAnterior) * 100;
@@ -110,13 +128,16 @@ const PainelVendasPage = () => {
           .gte('data', subDays(new Date(), 90).toISOString());
 
         if (ticketError) throw ticketError;
+        console.log("Dados para cálculo de ticket médio:", ticketData);
 
         const totalVendasPeriodo = ticketData?.reduce((acc, orcamento) => {
-          const orcamentoTotal = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + item.valor, 0);
+          const orcamentoTotal = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
           return acc + orcamentoTotal;
         }, 0) || 0;
 
         const mediaTicket = ticketData?.length ? totalVendasPeriodo / ticketData.length : 0;
+        
+        console.log("Média de ticket:", mediaTicket, "com", ticketData?.length || 0, "vendas");
 
         // Buscar clientes ativos (com vendas nos últimos 90 dias)
         const { data: clientesData, error: clientesError } = await supabase
@@ -127,6 +148,7 @@ const PainelVendasPage = () => {
           .distinct();
 
         if (clientesError) throw clientesError;
+        console.log("Clientes ativos:", clientesData);
 
         const clientesAtivos = clientesData?.length || 0;
 
@@ -151,6 +173,7 @@ const PainelVendasPage = () => {
           .order('data');
 
         if (monthlyError) throw monthlyError;
+        console.log("Dados mensais para gráfico:", monthlyData);
 
         const monthlyChartData = Array.from({ length: 12 }, (_, i) => {
           const month = i + 1;
@@ -159,7 +182,7 @@ const PainelVendasPage = () => {
           );
           
           const faturado = monthData?.reduce((acc, orcamento) => {
-            return acc + orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + item.valor, 0);
+            return acc + orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
           }, 0) || 0;
 
           return {
@@ -170,6 +193,7 @@ const PainelVendasPage = () => {
         });
 
         setBarChartData(monthlyChartData);
+        console.log("Dados do gráfico de barras processados:", monthlyChartData);
 
         // Buscar dados para o gráfico de pizza (vendas por categoria/serviço)
         const { data: categoryData, error: categoryError } = await supabase
@@ -184,17 +208,18 @@ const PainelVendasPage = () => {
           .inner('orcamentos');
 
         if (categoryError) throw categoryError;
+        console.log("Dados por categoria:", categoryData);
 
         const pieData = categoryData?.reduce((acc: any[], item) => {
           const servicoNome = item.servico?.nome || 'Outros';
           const existingService = acc.find(s => s.name === servicoNome);
           
           if (existingService) {
-            existingService.value += item.valor;
+            existingService.value += Number(item.valor) || 0;
           } else {
             acc.push({
               name: servicoNome,
-              value: item.valor,
+              value: Number(item.valor) || 0,
               color: `hsl(${Math.random() * 360}, 70%, 50%)`
             });
           }
@@ -203,6 +228,7 @@ const PainelVendasPage = () => {
         }, []) || [];
 
         setPieChartData(pieData);
+        console.log("Dados do gráfico de pizza processados:", pieData);
 
         // Buscar dados para o gráfico de linha (vendas diárias do mês atual)
         const { data: dailyData, error: dailyError } = await supabase
@@ -217,10 +243,11 @@ const PainelVendasPage = () => {
           .order('data');
 
         if (dailyError) throw dailyError;
+        console.log("Dados diários para gráfico de linha:", dailyData);
 
         const dailyChartData = dailyData?.reduce((acc: any[], orcamento) => {
           const date = format(new Date(orcamento.data), 'dd/MM');
-          const value = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + item.valor, 0);
+          const value = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
           
           const existingDay = acc.find(d => d.name === date);
           if (existingDay) {
@@ -233,9 +260,11 @@ const PainelVendasPage = () => {
         }, []) || [];
 
         setLineChartData(dailyChartData);
+        console.log("Dados do gráfico de linha processados:", dailyChartData);
 
         setIsLoading(false);
       } catch (error: any) {
+        console.error("Erro ao carregar dados:", error);
         toast({
           variant: "destructive",
           title: "Erro ao carregar dados",
