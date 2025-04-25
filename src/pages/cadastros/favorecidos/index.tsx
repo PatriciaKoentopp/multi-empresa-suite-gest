@@ -216,7 +216,7 @@ export default function FavorecidosPage() {
       const favorecidoData = {
         empresa_id: currentCompany.id,
         tipo: data.tipo,
-        tipo_documento: data.tipoDocumento,
+        tipo_documento: data.tipoDocumento, // Garantir que este valor não seja nulo
         documento: data.documento,
         grupo_id: data.grupoId,
         profissao_id: data.profissaoId,
@@ -235,6 +235,8 @@ export default function FavorecidosPage() {
         data_aniversario: dataAniversarioFormatada,
         status: data.status,
       };
+
+      console.log('Dados enviados para o Supabase:', favorecidoData);
 
       if (editingFavorecido) {
         // Atualizar favorecido existente

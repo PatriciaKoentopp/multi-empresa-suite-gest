@@ -91,28 +91,30 @@ export function FavorecidosForm({
 
   const handleSubmit = (data: FormValues) => {
     const formattedData: Partial<Favorecido> = {
-      ...data,
       tipo: data.tipo,
-      tipo_documento: data.tipo_documento,
+      tipoDocumento: data.tipo_documento, // Garantir que o tipoDocumento seja passado corretamente
       documento: data.documento,
-      grupo_id: data.grupo_id,
-      profissao_id: data.profissao_id,
+      grupoId: data.grupo_id,
+      profissaoId: data.profissao_id,
       nome: data.nome,
-      nome_fantasia: data.nome_fantasia,
+      nomeFantasia: data.nome_fantasia,
       email: data.email,
       telefone: data.telefone,
-      cep: data.cep,
-      logradouro: data.logradouro,
-      numero: data.numero,
-      complemento: data.complemento,
-      bairro: data.bairro,
-      cidade: data.cidade,
-      estado: data.estado,
-      pais: data.pais,
-      data_aniversario: data.data_aniversario,
+      endereco: {
+        cep: data.cep,
+        logradouro: data.logradouro,
+        numero: data.numero,
+        complemento: data.complemento,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        estado: data.estado,
+        pais: data.pais,
+      },
+      dataAniversario: data.data_aniversario,
       status: data.status,
     };
     
+    console.log('Dados formatados para envio:', formattedData);
     onSubmit(formattedData);
   };
 
