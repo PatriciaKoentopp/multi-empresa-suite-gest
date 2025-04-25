@@ -7,12 +7,10 @@ import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { ContaReceber } from "./contas-a-receber-table";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-
-// Mock contas correntes
-const mockContasCorrentes = [
-  { id: "1", nome: "Banco do Brasil - 1234-5" },
-  { id: "2", nome: "Caixa - 4432-1" },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 
 interface BaixarContaReceberModalProps {
   conta?: ContaReceber | null;
@@ -37,11 +35,32 @@ function formatCurrencyBR(valor?: number) {
 }
 
 export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: BaixarContaReceberModalProps) {
+  const { currentCompany } = useCompany();
   const [dataRecebimento, setDataRecebimento] = useState<Date | undefined>(conta?.dataVencimento);
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("");
   const [multa, setMulta] = useState<number>(0);
   const [juros, setJuros] = useState<number>(0);
   const [desconto, setDesconto] = useState<number>(0);
+
+  // Buscar contas correntes
+  const { data: contasCorrentes = [] } = useQuery({
+    queryKey: ["contas-correntes", currentCompany?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contas_correntes")
+        .select("*")
+        .eq("empresa_id", currentCompany?.id)
+        .eq("status", "ativo");
+
+      if (error) {
+        console.error("Erro ao buscar contas correntes:", error);
+        return [];
+      }
+
+      return data;
+    },
+    enabled: !!currentCompany?.id,
+  });
 
   useEffect(() => {
     setDataRecebimento(conta?.dataVencimento);
@@ -51,10 +70,70 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     setDesconto(0);
   }, [conta, open]);
 
-  function handleConfirmar() {
+  async function handleConfirmar() {
     if (!dataRecebimento || !contaCorrenteId) return;
-    onBaixar({ dataRecebimento, contaCorrenteId, multa, juros, desconto });
-    onClose();
+
+    try {
+      // 1. Atualiza a parcela com os dados do recebimento
+      if (conta?.origem === 'movimentacao') {
+        const { error: updateError } = await supabase
+          .from("movimentacoes_parcelas")
+          .update({
+            data_pagamento: format(dataRecebimento, "yyyy-MM-dd"),
+            conta_corrente_id: contaCorrenteId,
+            multa,
+            juros,
+            desconto
+          })
+          .eq("id", conta.id);
+
+        if (updateError) throw updateError;
+      }
+
+      // 2. Insere o registro no fluxo de caixa
+      const { data: contaCorrenteData, error: contaCorrenteError } = await supabase
+        .from("contas_correntes")
+        .select("saldo")
+        .eq("id", contaCorrenteId)
+        .single();
+
+      if (contaCorrenteError) throw contaCorrenteError;
+
+      const valorTotal = (conta?.valor || 0) + multa + juros - desconto;
+      const novoSaldo = (contaCorrenteData?.saldo || 0) + valorTotal;
+
+      const { error: fluxoError } = await supabase
+        .from("fluxo_caixa")
+        .insert({
+          empresa_id: currentCompany?.id,
+          conta_corrente_id: contaCorrenteId,
+          data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
+          valor: valorTotal,
+          saldo: novoSaldo,
+          tipo_operacao: "receber",
+          origem: conta?.origem || "movimentacao",
+          movimentacao_parcela_id: conta?.id,
+          situacao: "nao_conciliado"
+        });
+
+      if (fluxoError) throw fluxoError;
+
+      // 3. Atualiza o saldo da conta corrente
+      const { error: saldoError } = await supabase
+        .from("contas_correntes")
+        .update({ saldo: novoSaldo })
+        .eq("id", contaCorrenteId);
+
+      if (saldoError) throw saldoError;
+
+      onBaixar({ dataRecebimento, contaCorrenteId, multa, juros, desconto });
+      onClose();
+      toast.success("Recebimento registrado com sucesso!");
+
+    } catch (error) {
+      console.error("Erro ao registrar recebimento:", error);
+      toast.error("Erro ao registrar recebimento");
+    }
   }
 
   const valorTotal = useMemo(() => {
@@ -89,7 +168,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
                 <SelectValue placeholder="Selecione a conta" />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                {mockContasCorrentes.map((opt) => (
+                {contasCorrentes.map((opt) => (
                   <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
                 ))}
               </SelectContent>
