@@ -254,7 +254,25 @@ export default function ContasAReceberPage() {
         return;
       }
 
-      // 1. Limpar os dados de baixa na movimentacao_parcela
+      // 1. Verificar se o registro está conciliado no fluxo de caixa
+      const { data: fluxoCaixa, error: fluxoError } = await supabase
+        .from('fluxo_caixa')
+        .select('situacao')
+        .eq('movimentacao_parcela_id', conta.id)
+        .single();
+
+      if (fluxoError) {
+        console.error('Erro ao verificar situação:', fluxoError);
+        toast.error("Erro ao verificar situação do título");
+        return;
+      }
+
+      if (fluxoCaixa?.situacao === 'conciliado') {
+        toast.error("Não é possível desfazer a baixa de um título conciliado");
+        return;
+      }
+
+      // 2. Se não estiver conciliado, prosseguir com a operação de desfazer baixa
       const { error: updateError } = await supabase
         .from('movimentacoes_parcelas')
         .update({
@@ -269,7 +287,7 @@ export default function ContasAReceberPage() {
 
       if (updateError) throw updateError;
 
-      // 2. Excluir o registro do fluxo de caixa
+      // 3. Excluir o registro do fluxo de caixa
       const { error: deleteError } = await supabase
         .from('fluxo_caixa')
         .delete()
@@ -277,7 +295,7 @@ export default function ContasAReceberPage() {
 
       if (deleteError) throw deleteError;
 
-      // 3. Atualizar a lista local
+      // 4. Atualizar a lista local
       setContas(prev => prev.map(c => 
         c.id === conta.id
           ? { ...c, dataRecebimento: undefined, status: "em_aberto" as const }
