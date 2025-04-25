@@ -1,7 +1,7 @@
+
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
 import { MoreHorizontal, Eye, Edit, Download, Trash2 } from "lucide-react";
 import {
@@ -65,7 +65,14 @@ export function ContasAReceberTable({
 }: ContasAReceberTableProps) {
   function formatData(data?: Date) {
     if (!data) return "-";
-    return format(data, "dd/MM/yyyy");
+    
+    // Obter o dia, mês e ano diretamente da data sem conversão de timezone
+    const dia = String(data.getDate()).padStart(2, '0');
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const ano = data.getFullYear();
+    
+    // Formatar como DD/MM/YYYY
+    return `${dia}/${mes}/${ano}`;
   }
 
   const totalValor = contas.reduce((soma, conta) => soma + (conta.valor || 0), 0);

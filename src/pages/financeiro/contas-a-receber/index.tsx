@@ -3,9 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, Search, Filter } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
 import { ContasAReceberTable, ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
 import {
   Select,
@@ -78,17 +77,23 @@ export default function ContasAReceberPage() {
       // Converter movimentações parcelas para ContaReceber
       const contasReceber: ContaReceber[] = (movimentacoesParcelas || [])
         .filter(parcela => parcela.movimentacao)
-        .map(parcela => ({
-          id: parcela.id,
-          cliente: parcela.movimentacao.favorecido?.nome || 'Cliente não identificado',
-          descricao: parcela.movimentacao.descricao || '',
-          dataVencimento: new Date(parcela.data_vencimento),
-          dataRecebimento: parcela.data_pagamento ? new Date(parcela.data_pagamento) : undefined,
-          status: determinarStatus(parcela.data_vencimento, parcela.data_pagamento),
-          valor: Number(parcela.valor),
-          numeroParcela: `${parcela.movimentacao.numero_documento || '-'}/${parcela.numero}`,
-          origem: 'movimentacao'
-        }));
+        .map(parcela => {
+          // Criar data sem ajuste de timezone
+          const dataVencimento = new Date(parcela.data_vencimento + 'T12:00:00Z');
+          const dataRecebimento = parcela.data_pagamento ? new Date(parcela.data_pagamento + 'T12:00:00Z') : undefined;
+          
+          return {
+            id: parcela.id,
+            cliente: parcela.movimentacao.favorecido?.nome || 'Cliente não identificado',
+            descricao: parcela.movimentacao.descricao || '',
+            dataVencimento,
+            dataRecebimento,
+            status: determinarStatus(parcela.data_vencimento, parcela.data_pagamento),
+            valor: Number(parcela.valor),
+            numeroParcela: `${parcela.movimentacao.numero_documento || '-'}/${parcela.numero}`,
+            origem: 'movimentacao'
+          };
+        });
 
       setContas(contasReceber);
     } catch (error) {
@@ -102,8 +107,9 @@ export default function ContasAReceberPage() {
   function determinarStatus(dataVencimento: string, dataPagamento?: string): ContaReceber['status'] {
     if (!dataPagamento) return "em_aberto";
     
-    const vencimento = new Date(dataVencimento);
-    const pagamento = new Date(dataPagamento);
+    // Parse sem ajuste de timezone (usando 12:00Z para evitar problemas)
+    const vencimento = new Date(dataVencimento + 'T12:00:00Z');
+    const pagamento = new Date(dataPagamento + 'T12:00:00Z');
     
     return pagamento > vencimento ? "recebido_em_atraso" : "recebido";
   }
@@ -147,11 +153,14 @@ export default function ContasAReceberPage() {
   }) {
     if (!contaParaBaixar) return;
 
+    // Formatar data para YYYY-MM-DD sem timezone
+    const dataFormated = `${dataRecebimento.getFullYear()}-${String(dataRecebimento.getMonth() + 1).padStart(2, '0')}-${String(dataRecebimento.getDate()).padStart(2, '0')}`;
+
     // Atualiza no banco
     supabase
       .from('movimentacoes_parcelas')
       .update({
-        data_pagamento: format(dataRecebimento, 'yyyy-MM-dd'),
+        data_pagamento: dataFormated,
         multa,
         juros,
         desconto,
@@ -173,8 +182,8 @@ export default function ContasAReceberPage() {
                   ...conta,
                   dataRecebimento,
                   status: determinarStatus(
-                    conta.dataVencimento.toISOString(),
-                    dataRecebimento.toISOString()
+                    `${conta.dataVencimento.getFullYear()}-${String(conta.dataVencimento.getMonth() + 1).padStart(2, '0')}-${String(conta.dataVencimento.getDate()).padStart(2, '0')}`,
+                    dataFormated
                   ),
                 }
               : conta
@@ -193,12 +202,35 @@ export default function ContasAReceberPage() {
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const statusOk = statusFilter === "todas" || conta.status === statusFilter;
-      const vencimentoDentroRange =
-        (!dataVencInicio || conta.dataVencimento >= new Date(dataVencInicio)) &&
-        (!dataVencFim || conta.dataVencimento <= new Date(dataVencFim));
-      const recebimentoDentroRange =
-        (!dataRecInicio || (conta.dataRecebimento && conta.dataRecebimento >= new Date(dataRecInicio))) &&
-        (!dataRecFim || (conta.dataRecebimento && conta.dataRecebimento <= new Date(dataRecFim)));
+      
+      // Aplicar filtros de data sem problemas de timezone
+      let vencimentoDentroRange = true;
+      if (dataVencInicio) {
+        const dataInicio = new Date(dataVencInicio + 'T12:00:00Z');
+        vencimentoDentroRange = vencimentoDentroRange && conta.dataVencimento >= dataInicio;
+      }
+      
+      if (dataVencFim) {
+        const dataFim = new Date(dataVencFim + 'T12:00:00Z');
+        vencimentoDentroRange = vencimentoDentroRange && conta.dataVencimento <= dataFim;
+      }
+      
+      let recebimentoDentroRange = true;
+      if (dataRecInicio && conta.dataRecebimento) {
+        const dataInicio = new Date(dataRecInicio + 'T12:00:00Z');
+        recebimentoDentroRange = recebimentoDentroRange && conta.dataRecebimento >= dataInicio;
+      }
+      
+      if (dataRecFim && conta.dataRecebimento) {
+        const dataFim = new Date(dataRecFim + 'T12:00:00Z');
+        recebimentoDentroRange = recebimentoDentroRange && conta.dataRecebimento <= dataFim;
+      }
+      
+      // Se não há data de recebimento e temos filtros de recebimento, 
+      // este item não deve aparecer nos resultados
+      if ((dataRecInicio || dataRecFim) && !conta.dataRecebimento) {
+        recebimentoDentroRange = false;
+      }
 
       return textoBusca && statusOk && vencimentoDentroRange && recebimentoDentroRange;
     });
