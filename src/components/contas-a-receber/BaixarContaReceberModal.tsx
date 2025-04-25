@@ -154,7 +154,6 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
                 className="w-full"
                 value={dataRecebimento ? format(dataRecebimento, "yyyy-MM-dd") : ""}
                 onChange={e => setDataRecebimento(new Date(e.target.value + "T00:00:00"))}
-                min={conta?.dataVencimento ? format(conta.dataVencimento, "yyyy-MM-dd") : undefined}
               />
               <Calendar className="text-blue-500" />
             </div>
@@ -250,3 +249,4 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     </Dialog>
   );
 }
+
