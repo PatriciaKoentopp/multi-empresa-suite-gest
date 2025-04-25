@@ -1,3 +1,4 @@
+
 import { ModuleNavItem } from "@/types";
 import React from "react";
 
@@ -118,6 +119,10 @@ export const navigationConfig: ModuleNavItem[] = [
     name: "Vendas",
     icon: stringToIcon("ShoppingBag"),
     subItems: [
+      {
+        name: "Painel de Vendas",
+        href: "/vendas/painel-vendas",
+      },
       {
         name: "Serviços",
         href: "/vendas/servicos",

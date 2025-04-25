@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -32,8 +33,9 @@ import LeadsPage from "./pages/crm/leads";
 import LancamentosPage from "./pages/contabil/lancamentos";
 import DrePage from "./pages/contabil/dre";
 import BalancoPage from "./pages/contabil/balanco";
-import TiposTitulosPage from "./pages/cadastros/tipos-titulos"; // Importando a página de Tipos de Títulos
+import TiposTitulosPage from "./pages/cadastros/tipos-titulos";
 import MovimentacaoPage from "./pages/financeiro/movimentacao";
+import PainelVendasPage from "./pages/vendas/painel-vendas"; // Importando a nova página
 
 const queryClient = new QueryClient();
 
@@ -69,7 +71,7 @@ const App = () => (
                 <Route path="/cadastros/origens" element={<OrigensPage />} />
                 <Route path="/cadastros/motivos-perda" element={<MotivosPerdaPage />} />
                 <Route path="/cadastros/conta-corrente" element={<ContaCorrentePage />} />
-                <Route path="/cadastros/tipos-titulos" element={<TiposTitulosPage />} /> {/* Nova rota para Tipos de Títulos */}
+                <Route path="/cadastros/tipos-titulos" element={<TiposTitulosPage />} /> 
                 
                 {/* Contábil routes */}
                 <Route path="/contabil/plano-contas" element={<PlanoContasPage />} />
@@ -80,34 +82,31 @@ const App = () => (
                 {/* Style Guide */}
                 <Route path="/style-guide" element={<StyleGuidePage />} />
                 
-                {/* Other module placeholders */}
-                <Route path="/vendas/*" element={<p className="p-4">Módulo de Vendas</p>} />
-                <Route path="/financeiro/*" element={<p className="p-4">Módulo Financeiro</p>} />
-                <Route path="/crm/*" element={<p className="p-4">Módulo CRM</p>} />
-                <Route path="/relatorios/*" element={<p className="p-4">Relatórios e BI</p>} />
+                {/* Vendas routes */}
+                <Route path="/vendas/painel-vendas" element={<PainelVendasPage />} /> {/* Nova rota para o painel de vendas */}
+                <Route path="/vendas/servicos" element={<ServicosPage />} />
+                <Route path="/vendas/orcamento" element={<OrcamentoPage />} />
+                <Route path="/vendas/faturamento" element={<FaturamentoPage />} />
+                <Route path="/vendas/tabela-precos" element={<TabelaPrecosPage />} />
                 
-                {/* User routes */}
-                <Route path="/perfil" element={<p className="p-4">Perfil do Usuário</p>} />
-                <Route path="/configuracoes" element={<p className="p-4">Configurações</p>} />
-                <Route path="/ajuda" element={<p className="p-4">Ajuda</p>} />
-                 {/* Financeiro routes */}
+                {/* Financeiro routes */}
                 <Route path="/financeiro/incluir-movimentacao" element={<IncluirMovimentacaoModal />} />
                 <Route path="/financeiro/contas-a-pagar" element={<ContasAPagarPage />} />
                 <Route path="/financeiro/movimentacao" element={<MovimentacaoPage />} />
                 <Route path="/financeiro/contas-receber" element={<ContasAReceberPage />} />
                 <Route path="/financeiro/fluxo-caixa" element={<FluxoCaixaPage />} />
                 
-                {/* Vendas routes */}
-                <Route path="/vendas/servicos" element={<ServicosPage />} />
-                <Route path="/vendas/orcamento" element={<OrcamentoPage />} />
-                {/* Nova página faturamento */}
-                <Route path="/vendas/faturamento" element={<FaturamentoPage />} />
-                <Route path="/vendas/tabela-precos" element={<TabelaPrecosPage />} />
                 {/* CRM routes */}
                 <Route path="/crm/funil-configuracao" element={<FunilConfiguracaoPage />} />
                 <Route path="/crm/leads" element={<LeadsPage />} />
                 <Route path="/crm/marketing" element={<p className="p-4">Campanhas e automações</p>} />
+                
+                {/* User routes */}
+                <Route path="/perfil" element={<p className="p-4">Perfil do Usuário</p>} />
+                <Route path="/configuracoes" element={<p className="p-4">Configurações</p>} />
+                <Route path="/ajuda" element={<p className="p-4">Ajuda</p>} />
               </Route>
+              
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>

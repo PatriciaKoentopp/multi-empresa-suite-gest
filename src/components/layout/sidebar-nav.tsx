@@ -9,8 +9,21 @@ import {
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ModuleNavItem, SubNavItem } from "@/types";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { 
+  ChevronDown, 
+  ChevronRight,
+  BarChart,
+  Calculator, 
+  Circle, 
+  DollarSign, 
+  Grid, 
+  HelpCircle, 
+  List, 
+  Settings,
+  ShoppingBag, 
+  User, 
+  Users 
+} from "lucide-react";
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {
   items: ModuleNavItem[];
@@ -23,9 +36,19 @@ const renderIcon = (icon?: React.ReactNode | string) => {
   if (!icon) return null;
   
   if (typeof icon === 'string') {
-    // @ts-ignore - Ignoramos este erro porque sabemos que estamos lidando com ícones dinâmicos
-    const Icon = LucideIcons[icon] || LucideIcons.Circle;
-    return <Icon className="h-4 w-4" />;
+    switch (icon) {
+      case "Grid": return <Grid className="h-4 w-4" />;
+      case "Settings": return <Settings className="h-4 w-4" />;
+      case "List": return <List className="h-4 w-4" />;
+      case "DollarSign": return <DollarSign className="h-4 w-4" />;
+      case "Calculator": return <Calculator className="h-4 w-4" />;
+      case "ShoppingBag": return <ShoppingBag className="h-4 w-4" />;
+      case "Users": return <Users className="h-4 w-4" />;
+      case "BarChart": return <BarChart className="h-4 w-4" />;
+      case "User": return <User className="h-4 w-4" />;
+      case "HelpCircle": return <HelpCircle className="h-4 w-4" />;
+      default: return <Circle className="h-4 w-4" />;
+    }
   }
   
   return icon;
