@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -33,6 +32,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
   const [desconto, setDesconto] = useState<number>(0);
   const [contasCorrentes, setContasCorrentes] = useState<ContaCorrente[]>([]);
   const [saldoConta, setSaldoConta] = useState<number>(0);
+  const [formaPagamento, setFormaPagamento] = useState<string>("");
 
   const { currentCompany } = useCompany();
 
@@ -83,6 +83,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
     setMulta(0);
     setJuros(0);
     setDesconto(0);
+    setFormaPagamento("");
   }, [conta, open]);
 
   // Efeito para buscar o último saldo do fluxo de caixa quando a conta corrente for selecionada
@@ -116,7 +117,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
   }, [contaCorrenteId, contasCorrentes]);
 
   function handleConfirmar() {
-    if (!dataPagamento || !contaCorrenteId) return;
+    if (!dataPagamento || !contaCorrenteId || !formaPagamento) return;
     
     const valorTotal = (conta?.valor || 0) + (multa || 0) + (juros || 0) - (desconto || 0);
     const novoSaldo = saldoConta - valorTotal;
@@ -135,7 +136,8 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
           conta_corrente_id: contaCorrenteId,
           situacao: 'nao_conciliado',
           descricao: conta?.descricao || '',
-          saldo: novoSaldo // Adicionando o campo saldo que era obrigatório
+          saldo: novoSaldo,
+          forma_pagamento: formaPagamento
         });
 
       if (errorFluxo) {
@@ -190,6 +192,25 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
               <Calendar className="text-blue-500" />
             </div>
           </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Forma de Pagamento *</label>
+            <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+              <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder="Selecione a forma de pagamento" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                <SelectItem value="pix">PIX</SelectItem>
+                <SelectItem value="boleto">Boleto</SelectItem>
+                <SelectItem value="transferencia">Transferência</SelectItem>
+                <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                <SelectItem value="cheque">Cheque</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div>
             <label className="block text-sm font-medium mb-1">Conta Corrente *</label>
             <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
@@ -261,7 +282,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
             type="button"
             variant="blue"
             onClick={handleConfirmar}
-            disabled={!dataPagamento || !contaCorrenteId}
+            disabled={!dataPagamento || !contaCorrenteId || !formaPagamento}
           >
             Baixar
           </Button>
