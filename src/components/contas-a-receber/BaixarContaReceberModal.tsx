@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
+import { formatCurrency } from "@/lib/utils";
 
 interface BaixarContaReceberModalProps {
   conta?: ContaReceber | null;
@@ -23,15 +24,6 @@ interface BaixarContaReceberModalProps {
     juros: number;
     desconto: number;
   }) => void;
-}
-
-function formatCurrencyBR(valor?: number) {
-  if (valor === undefined) return "-";
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  });
 }
 
 export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: BaixarContaReceberModalProps) {
@@ -98,7 +90,6 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
           conta_corrente_id: contaCorrenteId,
           data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
           valor: valorTotal,
-          saldo: valorTotal, // Usa o valorTotal como saldo do fluxo
           tipo_operacao: "receber",
           origem: "movimentacao",
           movimentacao_parcela_id: conta?.id,
@@ -194,7 +185,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
             <label className="block text-sm font-medium mb-1">Valor Total</label>
             <Input
               type="text"
-              value={formatCurrencyBR(valorTotal)}
+              value={formatCurrency(valorTotal)}
               readOnly
               className="bg-gray-100 font-semibold"
               tabIndex={-1}

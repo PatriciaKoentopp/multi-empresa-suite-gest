@@ -66,3 +66,13 @@ export function dateToISOString(date: Date | undefined): string | null {
   
   return `${year}-${month}-${day}`;
 }
+
+// Função para formatação de valores monetários
+export function formatCurrency(valor?: number): string {
+  if (valor === undefined || valor === null) return "-";
+  return valor.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+  });
+}

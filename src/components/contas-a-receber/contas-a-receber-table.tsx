@@ -3,7 +3,7 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { formatCurrency } from "@/utils";
+import { formatCurrency } from "@/lib/utils";
 
 export interface ContaReceber {
   id: string;
