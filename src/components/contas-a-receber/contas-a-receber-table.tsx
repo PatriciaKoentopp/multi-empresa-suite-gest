@@ -31,6 +31,31 @@ interface ContasAReceberTableProps {
   onVisualizar: (conta: ContaReceber) => void;
 }
 
+function getStatusBadge(status: ContaReceber["status"]) {
+  switch (status) {
+    case "recebido":
+      return (
+        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
+          Recebido
+        </span>
+      );
+    case "recebido_em_atraso":
+      return (
+        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
+          Recebido em Atraso
+        </span>
+      );
+    case "em_aberto":
+      return (
+        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+          Em Aberto
+        </span>
+      );
+    default:
+      return status;
+  }
+}
+
 export function ContasAReceberTable({ 
   contas, 
   onEdit, 
@@ -43,27 +68,7 @@ export function ContasAReceberTable({
     return format(data, "dd/MM/yyyy");
   }
 
-  function getStatusColor(status: ContaReceber["status"]) {
-    switch (status) {
-      case "recebido":
-        return "text-green-600";
-      case "recebido_em_atraso":
-        return "text-red-600";
-      case "em_aberto":
-        return "text-blue-600";
-    }
-  }
-
-  function getStatusText(status: ContaReceber["status"]) {
-    switch (status) {
-      case "recebido":
-        return "Recebido";
-      case "recebido_em_atraso":
-        return "Recebido em Atraso";
-      case "em_aberto":
-        return "Em Aberto";
-    }
-  }
+  const totalValor = contas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
 
   return (
     <div className="border rounded-md">
@@ -96,9 +101,7 @@ export function ContasAReceberTable({
                 <TableCell>{conta.descricao}</TableCell>
                 <TableCell className="text-right">{formatCurrency(conta.valor)}</TableCell>
                 <TableCell>
-                  <span className={getStatusColor(conta.status)}>
-                    {getStatusText(conta.status)}
-                  </span>
+                  {getStatusBadge(conta.status)}
                 </TableCell>
                 <TableCell className="text-center">{conta.numeroParcela}</TableCell>
                 <TableCell className="text-center">
