@@ -153,21 +153,34 @@ export function ContasAPagarTable({
                         <Eye className="h-4 w-4" />
                         Visualizar
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onEdit(conta)}
-                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
-                      >
-                        <Edit className="h-4 w-4" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onBaixar(conta)}
-                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
-                      >
-                        <Download className="h-4 w-4" />
-                        Baixar
-                      </DropdownMenuItem>
-                      {conta.dataPagamento && (
+                      
+                      {conta.status === 'em_aberto' && (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => onEdit(conta)}
+                            className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                          >
+                            <Edit className="h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onBaixar(conta)}
+                            className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                          >
+                            <Download className="h-4 w-4" />
+                            Baixar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onDelete(conta.movimentacao_id)}
+                            className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </>
+                      )}
+
+                      {(conta.status === 'pago' || conta.status === 'pago_em_atraso') && conta.dataPagamento && (
                         <DropdownMenuItem
                           onClick={() => onDesfazerBaixa(conta)}
                           className="flex items-center gap-2 text-orange-500 focus:bg-orange-100 focus:text-orange-700"
@@ -176,13 +189,6 @@ export function ContasAPagarTable({
                           Desfazer Baixa
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem
-                        onClick={() => onDelete(conta.movimentacao_id)}
-                        className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Excluir
-                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
