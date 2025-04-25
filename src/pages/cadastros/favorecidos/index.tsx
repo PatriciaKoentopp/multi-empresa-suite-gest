@@ -189,7 +189,26 @@ export default function FavorecidosPage() {
 
   const handleOpenDialog = (favorecido?: Favorecido, isViewing = false) => {
     if (isViewing) {
-      setViewingFavorecido(favorecido);
+      // Ao visualizar, precisamos formatar o endereço corretamente
+      const favorecidoFormatado: Favorecido = {
+        ...favorecido,
+        tipo_documento: favorecido?.tipoDocumento as "cpf" | "cnpj",
+        grupo_id: favorecido?.grupoId,
+        profissao_id: favorecido?.profissaoId,
+        nome_fantasia: favorecido?.nomeFantasia || "",
+        data_aniversario: favorecido?.dataAniversario ? new Date(favorecido.dataAniversario) : null,
+        endereco: {
+          cep: favorecido?.cep || "",
+          logradouro: favorecido?.logradouro || "",
+          numero: favorecido?.numero || "",
+          complemento: favorecido?.complemento || "",
+          bairro: favorecido?.bairro || "",
+          cidade: favorecido?.cidade || "",
+          estado: favorecido?.estado || "",
+          pais: favorecido?.pais || "Brasil",
+        },
+      };
+      setViewingFavorecido(favorecidoFormatado);
     } else {
       setEditingFavorecido(favorecido);
     }
