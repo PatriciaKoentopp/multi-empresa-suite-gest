@@ -50,8 +50,6 @@ export default function OrcamentoPage() {
   const [notaFiscalPdfUrl, setNotaFiscalPdfUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [parcelasCarregadas, setParcelasCarregadas] = useState(false);
-  const [forcarRecalculo, setForcarRecalculo] = useState(false);
 
   // Estados para dados do banco
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
@@ -92,6 +90,7 @@ export default function OrcamentoPage() {
   
   // Inicializar parcelas
   const [parcelas, setParcelas] = useState(() => getParcelas(0, numeroParcelas, codigoVenda));
+  const [parcelasCarregadas, setParcelasCarregadas] = useState(false);
 
   // Buscar dados iniciais
   useEffect(() => {
@@ -170,6 +169,7 @@ export default function OrcamentoPage() {
           numeroParcela: p.numero_parcela
         }));
         setParcelas(novasParcelas);
+        setParcelasCarregadas(true);
       }
       
     } catch (error) {
@@ -254,25 +254,12 @@ export default function OrcamentoPage() {
     }
   }
 
-  // Efeito para detectar mudanças no valor total ou número de parcelas
+  // Efeito para atualizar as parcelas quando o valor total ou número de parcelas mudar
   useEffect(() => {
-    if (parcelasCarregadas) {
-      setForcarRecalculo(true);
-    }
-  }, [total, numeroParcelas]);
-
-  // Atualiza parcelas quando muda número ou valor total
-  useEffect(() => {
-    if (forcarRecalculo || !orcamentoId) {
-      const dataPrimeiroParcela = parcelas.length > 0 ? parcelas[0].dataVencimento : "";
-      const novas = getParcelas(total, numeroParcelas, codigoVenda, dataPrimeiroParcela);
-      setParcelas(novas);
-      
-      if (forcarRecalculo) {
-        setForcarRecalculo(false);
-      }
-    }
-  }, [numeroParcelas, total, forcarRecalculo, orcamentoId, codigoVenda, parcelas]);
+    const dataPrimeiroParcela = parcelas.length > 0 ? parcelas[0].dataVencimento : "";
+    const novasParcelas = getParcelas(total, numeroParcelas, codigoVenda, dataPrimeiroParcela);
+    setParcelas(novasParcelas);
+  }, [total, numeroParcelas, codigoVenda]);
 
   // Atualiza parcela específica
   const handleParcelaDataChange = (idx: number, data: string) => {

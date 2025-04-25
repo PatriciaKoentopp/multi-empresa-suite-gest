@@ -22,25 +22,23 @@ export function useParcelasCalculation(
       return;
     }
 
-    // Se não devemos recalcular (ex: quando estamos carregando parcelas existentes), apenas retornamos
-    if (!shouldRecalculate && parcelas.length > 0) {
-      return;
-    }
+    // Sempre recalcular quando valorTotal ou numParcelas mudar
+    if (valorTotal > 0 && numParcelas > 0) {
+      const valorParcela = Number((valorTotal / numParcelas).toFixed(2));
+      const ajusteCentavos = Number((valorTotal - (valorParcela * numParcelas)).toFixed(2));
+      
+      const novasParcelas: Parcela[] = [];
+      
+      for (let i = 0; i < numParcelas; i++) {
+        novasParcelas.push({
+          numero: i + 1,
+          valor: i === 0 ? valorParcela + ajusteCentavos : valorParcela,
+          dataVencimento: addMonths(primeiroVencimento, i)
+        });
+      }
 
-    const valorParcela = Number((valorTotal / numParcelas).toFixed(2));
-    const ajusteCentavos = Number((valorTotal - (valorParcela * numParcelas)).toFixed(2));
-    
-    const novasParcelas: Parcela[] = [];
-    
-    for (let i = 0; i < numParcelas; i++) {
-      novasParcelas.push({
-        numero: i + 1,
-        valor: i === 0 ? valorParcela + ajusteCentavos : valorParcela,
-        dataVencimento: addMonths(primeiroVencimento, i)
-      });
+      setParcelas(novasParcelas);
     }
-
-    setParcelas(novasParcelas);
   }, [valorTotal, numParcelas, primeiroVencimento, shouldRecalculate]);
 
   return parcelas;
