@@ -60,6 +60,7 @@ export default function ContasAReceberPage() {
           multa,
           juros,
           desconto,
+          movimentacao_id,
           movimentacao:movimentacoes (
             id,
             descricao,
@@ -93,7 +94,8 @@ export default function ContasAReceberPage() {
             status: determinarStatus(parcela.data_vencimento, parcela.data_pagamento),
             valor: Number(parcela.valor),
             numeroParcela: `${parcela.movimentacao.numero_documento || '-'}/${parcela.numero}`,
-            origem: 'movimentacao'
+            origem: 'movimentacao',
+            movimentacao_id: parcela.movimentacao_id
           };
         });
 
@@ -117,10 +119,30 @@ export default function ContasAReceberPage() {
   }
 
   // Ações
-  const handleEdit = (conta: ContaReceber) => {
-    navigate("/financeiro/incluir-movimentacao", {
-      state: { contaReceber: conta }
-    });
+  const handleEdit = async (conta: ContaReceber) => {
+    try {
+      // Buscar a movimentação completa no banco, similar à página de contas a pagar
+      const { data: movimentacao, error } = await supabase
+        .from('movimentacoes')
+        .select(`
+          *,
+          favorecido:favorecidos(id, nome)
+        `)
+        .eq('id', conta.movimentacao_id)
+        .single();
+        
+      if (error) throw error;
+      
+      if (movimentacao) {
+        // Navegar para a página de edição com os dados da movimentação
+        navigate("/financeiro/incluir-movimentacao", {
+          state: { movimentacao }
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao buscar movimentação:", error);
+      toast.error("Erro ao buscar dados da movimentação");
+    }
   };
 
   const handleBaixar = (conta: ContaReceber) => {
@@ -143,6 +165,35 @@ export default function ContasAReceberPage() {
     } catch (error) {
       console.error('Erro ao excluir conta:', error);
       toast.error("Erro ao excluir conta");
+    }
+  };
+
+  const handleVisualizar = async (conta: ContaReceber) => {
+    try {
+      // Buscar a movimentação completa no banco, similar ao handleEdit
+      const { data: movimentacao, error } = await supabase
+        .from('movimentacoes')
+        .select(`
+          *,
+          favorecido:favorecidos(id, nome)
+        `)
+        .eq('id', conta.movimentacao_id)
+        .single();
+        
+      if (error) throw error;
+      
+      if (movimentacao) {
+        // Navegar para a página de inclusão com os dados da movimentação e o modo visualização
+        navigate("/financeiro/incluir-movimentacao", {
+          state: { 
+            movimentacao,
+            modoVisualizacao: true
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao buscar movimentação:", error);
+      toast.error("Erro ao buscar dados da movimentação para visualização");
     }
   };
 
@@ -241,15 +292,6 @@ export default function ContasAReceberPage() {
   function handleLupaClick() {
     inputBuscaRef.current?.focus();
   }
-
-  const handleVisualizar = (conta: ContaReceber) => {
-    navigate("/financeiro/incluir-movimentacao", {
-      state: { 
-        contaReceber: conta,
-        modoVisualizacao: true
-      }
-    });
-  };
 
   if (isLoading) {
     return (

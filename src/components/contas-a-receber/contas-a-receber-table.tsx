@@ -21,6 +21,7 @@ export interface ContaReceber {
   status: "recebido" | "recebido_em_atraso" | "em_aberto";
   numeroParcela: string;
   origem?: string;
+  movimentacao_id?: string;
 }
 
 interface ContasAReceberTableProps {
