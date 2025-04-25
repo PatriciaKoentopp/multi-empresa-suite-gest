@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,14 @@ interface BaixarContaReceberModalProps {
   }) => void;
 }
 
+// Formas de pagamento fixas
+const formasPagamento = [
+  { id: "1", nome: "Dinheiro" },
+  { id: "2", nome: "Cartão" },
+  { id: "3", nome: "Boleto" },
+  { id: "4", nome: "Transferência" }
+];
+
 export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: BaixarContaReceberModalProps) {
   const { currentCompany } = useCompany();
   const [dataRecebimento, setDataRecebimento] = useState<Date | undefined>(conta?.dataVencimento);
@@ -37,7 +44,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
   const [desconto, setDesconto] = useState<number>(0);
 
   // Buscar contas correntes
-  const { data: contasCorrentes = [] } = useQuery({
+  const { data: contasCorrente = [] } = useQuery({
     queryKey: ["contas-correntes", currentCompany?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -48,26 +55,6 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
 
       if (error) {
         console.error("Erro ao buscar contas correntes:", error);
-        return [];
-      }
-
-      return data;
-    },
-    enabled: !!currentCompany?.id,
-  });
-
-  // Buscar formas de pagamento
-  const { data: formasPagamento = [] } = useQuery({
-    queryKey: ["formas-pagamento", currentCompany?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tipos_titulos")
-        .select("id, nome")
-        .eq("empresa_id", currentCompany?.id)
-        .eq("status", "ativo");
-
-      if (error) {
-        console.error("Erro ao buscar formas de pagamento:", error);
         return [];
       }
 
@@ -178,7 +165,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
                 <SelectValue placeholder="Selecione a conta" />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                {contasCorrentes.map((opt) => (
+                {contasCorrente.map((opt) => (
                   <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
                 ))}
               </SelectContent>
@@ -262,4 +249,3 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     </Dialog>
   );
 }
-
