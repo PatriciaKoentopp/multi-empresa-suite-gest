@@ -300,9 +300,7 @@ export default function FluxoCaixaPage() {
     }
   }
 
-  function handleEdit(id: string) {
-    navigate("/financeiro/incluir-movimentacao", { state: { id } });
-  }
+  
 
   // Função para obter o nome do favorecido
   function getFavorecidoNome(linha: any) {
@@ -511,13 +509,6 @@ export default function FluxoCaixaPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="bg-white z-50 min-w-[160px]">
-                              <DropdownMenuItem
-                                onClick={() => handleEdit(linha.id)}
-                                className="cursor-pointer"
-                              >
-                                <span className="text-blue-500 mr-2"><svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M16.862 4.487a2.5 2.5 0 1 1 3.535 3.536L7.5 20.918l-4.242.707.707-4.243L16.862 4.487z" /></svg></span>
-                                Editar
-                              </DropdownMenuItem>
                               {linha.situacao === "nao_conciliado" ? (
                                 <DropdownMenuItem
                                   onClick={() => handleConciliar(linha.id)}
