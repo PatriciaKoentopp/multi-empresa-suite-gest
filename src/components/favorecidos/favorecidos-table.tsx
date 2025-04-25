@@ -117,7 +117,7 @@ export function FavorecidosTable({
                   </div>
                 </TableCell>
                 <TableCell>{favorecido.documento}</TableCell>
-                <TableCell>{getGrupoNome(favorecido.grupo_id)}</TableCell>
+                <TableCell>{getGrupoNome(favorecido.grupo_id || favorecido.grupoId)}</TableCell>
                 <TableCell>
                   <div className="text-sm">
                     {favorecido.email && (
