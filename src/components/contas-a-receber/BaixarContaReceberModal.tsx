@@ -20,6 +20,7 @@ interface BaixarContaReceberModalProps {
   onBaixar: (dados: {
     dataRecebimento: Date;
     contaCorrenteId: string;
+    formaPagamento: string;
     multa: number;
     juros: number;
     desconto: number;
@@ -30,6 +31,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
   const { currentCompany } = useCompany();
   const [dataRecebimento, setDataRecebimento] = useState<Date | undefined>(conta?.dataVencimento);
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("");
+  const [formaPagamento, setFormaPagamento] = useState<string>("");
   const [multa, setMulta] = useState<number>(0);
   const [juros, setJuros] = useState<number>(0);
   const [desconto, setDesconto] = useState<number>(0);
@@ -54,18 +56,46 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     enabled: !!currentCompany?.id,
   });
 
+  // Buscar formas de pagamento
+  const { data: formasPagamento = [] } = useQuery({
+    queryKey: ["formas-pagamento", currentCompany?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tipos_titulos")
+        .select("id, nome")
+        .eq("empresa_id", currentCompany?.id)
+        .eq("status", "ativo");
+
+      if (error) {
+        console.error("Erro ao buscar formas de pagamento:", error);
+        return [];
+      }
+
+      return data;
+    },
+    enabled: !!currentCompany?.id,
+  });
+
   useEffect(() => {
-    setDataRecebimento(conta?.dataVencimento);
-    setContaCorrenteId("");
-    setMulta(0);
-    setJuros(0);
-    setDesconto(0);
+    if (open) {
+      setDataRecebimento(conta?.dataVencimento);
+      setContaCorrenteId("");
+      setFormaPagamento("");
+      setMulta(0);
+      setJuros(0);
+      setDesconto(0);
+    }
   }, [conta, open]);
 
   async function handleConfirmar() {
-    if (!dataRecebimento || !contaCorrenteId) return;
+    if (!dataRecebimento || !contaCorrenteId || !formaPagamento) {
+      toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
 
     try {
+      const valorTotal = (conta?.valor || 0) + multa + juros - desconto;
+
       // 1. Atualiza a parcela com os dados do recebimento
       const { error: updateError } = await supabase
         .from("movimentacoes_parcelas")
@@ -74,15 +104,14 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
           conta_corrente_id: contaCorrenteId,
           multa,
           juros,
-          desconto
+          desconto,
+          forma_pagamento: formaPagamento
         })
         .eq("id", conta?.id);
 
       if (updateError) throw updateError;
 
       // 2. Insere o registro no fluxo de caixa
-      const valorTotal = (conta?.valor || 0) + multa + juros - desconto;
-
       const { error: fluxoError } = await supabase
         .from("fluxo_caixa")
         .insert({
@@ -90,16 +119,24 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
           conta_corrente_id: contaCorrenteId,
           data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
           valor: valorTotal,
-          saldo: valorTotal, // Adicionando o campo saldo que é obrigatório
+          saldo: valorTotal,
           tipo_operacao: "receber",
           origem: "movimentacao",
           movimentacao_parcela_id: conta?.id,
-          situacao: "nao_conciliado"
+          situacao: "nao_conciliado",
+          forma_pagamento: formaPagamento
         });
 
       if (fluxoError) throw fluxoError;
 
-      onBaixar({ dataRecebimento, contaCorrenteId, multa, juros, desconto });
+      onBaixar({ 
+        dataRecebimento, 
+        contaCorrenteId, 
+        formaPagamento, 
+        multa, 
+        juros, 
+        desconto 
+      });
       onClose();
       toast.success("Recebimento registrado com sucesso!");
 
@@ -142,6 +179,19 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
               </SelectTrigger>
               <SelectContent className="bg-white">
                 {contasCorrentes.map((opt) => (
+                  <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Forma de Pagamento *</label>
+            <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+              <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder="Selecione a forma de pagamento" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                {formasPagamento.map((opt) => (
                   <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
                 ))}
               </SelectContent>
@@ -203,7 +253,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
             type="button"
             variant="blue"
             onClick={handleConfirmar}
-            disabled={!dataRecebimento || !contaCorrenteId}
+            disabled={!dataRecebimento || !contaCorrenteId || !formaPagamento}
           >
             Baixar
           </Button>
@@ -212,3 +262,4 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     </Dialog>
   );
 }
+
