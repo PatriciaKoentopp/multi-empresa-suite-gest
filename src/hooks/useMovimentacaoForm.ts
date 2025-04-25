@@ -47,6 +47,8 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
   const [considerarDRE, setConsiderarDRE] = useState(true);
   const [contaOrigem, setContaOrigem] = useState("");
   const [contaDestino, setContaDestino] = useState("");
+  const [parcelasCarregadas, setParcelasCarregadas] = useState(false);
+  const [forcarRecalculo, setForcarRecalculo] = useState(false);
 
   // Define a função parseValor antes de usá-la
   const parseValor = (valorStr: string): number => {
@@ -55,7 +57,14 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
 
   // Calcular parcelas com base no valor total, número de parcelas e data do primeiro vencimento
   const valorNumerico = parseValor(valor);
-  const parcelas = useParcelasCalculation(valorNumerico, numParcelas, dataPrimeiroVenc);
+  
+  // Usar shouldRecalculate para controlar quando recalcular as parcelas
+  const parcelas = useParcelasCalculation(
+    valorNumerico, 
+    numParcelas, 
+    dataPrimeiroVenc, 
+    !parcelasCarregadas || forcarRecalculo
+  );
 
   useEffect(() => {
     if (movimentacaoParaEditar) {
@@ -72,6 +81,7 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
       setNumParcelas(movimentacaoParaEditar.numero_parcelas || 1);
       setDataPrimeiroVenc(movimentacaoParaEditar.primeiro_vencimento ? new Date(movimentacaoParaEditar.primeiro_vencimento) : undefined);
       setConsiderarDRE(movimentacaoParaEditar.considerar_dre);
+      setParcelasCarregadas(true);
       
       if (movimentacaoParaEditar.tipo_operacao === "transferencia") {
         setContaOrigem(movimentacaoParaEditar.conta_origem_id || "");
@@ -79,6 +89,21 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
       }
     }
   }, [movimentacaoParaEditar]);
+
+  // Efeito para forçar recálculo quando o valor ou número de parcelas mudar
+  useEffect(() => {
+    if (parcelasCarregadas) {
+      setForcarRecalculo(true);
+    }
+  }, [valorNumerico, numParcelas]);
+
+  // Resetar forcarRecalculo depois que o efeito de recálculo for aplicado
+  useEffect(() => {
+    if (forcarRecalculo) {
+      setForcarRecalculo(false);
+      setParcelasCarregadas(false);
+    }
+  }, [forcarRecalculo]);
 
   const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/[^0-9,]/g, "");

@@ -11,13 +11,19 @@ interface Parcela {
 export function useParcelasCalculation(
   valorTotal: number,
   numParcelas: number,
-  primeiroVencimento?: Date
+  primeiroVencimento?: Date,
+  shouldRecalculate: boolean = true
 ) {
   const [parcelas, setParcelas] = useState<Parcela[]>([]);
 
   useEffect(() => {
     if (!valorTotal || !numParcelas || !primeiroVencimento) {
       setParcelas([]);
+      return;
+    }
+
+    // Se não devemos recalcular (ex: quando estamos carregando parcelas existentes), apenas retornamos
+    if (!shouldRecalculate && parcelas.length > 0) {
       return;
     }
 
@@ -35,7 +41,7 @@ export function useParcelasCalculation(
     }
 
     setParcelas(novasParcelas);
-  }, [valorTotal, numParcelas, primeiroVencimento]);
+  }, [valorTotal, numParcelas, primeiroVencimento, shouldRecalculate]);
 
   return parcelas;
 }
