@@ -84,19 +84,17 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     try {
       const valorTotal = (conta?.valor || 0) + multa + juros - desconto;
 
-      // Buscar dados completos da movimentação para obter favorecido e descrição
-      let favorecidoId: string | null = null;
+      // Buscar dados completos da movimentação para obter descrição
       let descricao: string | null = null;
       
       if (conta?.movimentacao_id) {
         const { data: movimentacao, error: movError } = await supabase
           .from("movimentacoes")
-          .select("favorecido_id, descricao")
+          .select("descricao")
           .eq("id", conta.movimentacao_id)
           .single();
           
         if (!movError && movimentacao) {
-          favorecidoId = movimentacao.favorecido_id;
           descricao = movimentacao.descricao;
         }
       }
@@ -116,7 +114,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
 
       if (updateError) throw updateError;
 
-      // 2. Insere o registro no fluxo de caixa com favorecido_id e descrição
+      // 2. Insere o registro no fluxo de caixa sem o campo favorecido_id que não existe
       const { error: fluxoError } = await supabase
         .from("fluxo_caixa")
         .insert({
@@ -130,7 +128,6 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
           movimentacao_parcela_id: conta?.id,
           movimentacao_id: conta?.movimentacao_id,
           situacao: "nao_conciliado",
-          favorecido_id: favorecidoId,
           descricao: descricao || conta?.descricao || `Recebimento ${conta?.cliente}`,
           forma_pagamento: formaPagamento
         });
