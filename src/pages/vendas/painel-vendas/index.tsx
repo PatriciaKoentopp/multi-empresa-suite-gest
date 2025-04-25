@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SalesCard } from "@/components/vendas/SalesCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -9,10 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import { format, subDays, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatCurrency } from "@/lib/utils";
 
-// Interfaces para os dados
 interface SalesData {
   total_vendas: number;
   vendas_mes_atual: number;
@@ -26,31 +25,216 @@ const PainelVendasPage = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [salesData, setSalesData] = useState<SalesData | null>(null);
+  const [barChartData, setBarChartData] = useState<any[]>([]);
+  const [pieChartData, setPieChartData] = useState<any[]>([]);
+  const [lineChartData, setLineChartData] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
         
-        // Em um cenário real, usaríamos dados do Supabase
-        // Para esse exemplo, usaremos dados simulados
+        // Buscar total de vendas do ano
+        const currentYear = new Date().getFullYear();
+        const { data: yearData, error: yearError } = await supabase
+          .from('orcamentos')
+          .select(`
+            id,
+            orcamentos_itens (valor)
+          `)
+          .eq('tipo', 'venda')
+          .gte('data', `${currentYear}-01-01`)
+          .lte('data', `${currentYear}-12-31`);
+
+        if (yearError) throw yearError;
+
+        // Calcular total de vendas do ano
+        const totalVendas = yearData?.reduce((acc, orcamento) => {
+          const orcamentoTotal = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + item.valor, 0);
+          return acc + orcamentoTotal;
+        }, 0) || 0;
+
+        // Buscar vendas do mês atual
+        const startCurrentMonth = startOfMonth(new Date());
+        const endCurrentMonth = endOfMonth(new Date());
         
-        // Simulação de dados de vendas
-        const dadosSimulados: SalesData = {
-          total_vendas: 1258760.45,
-          vendas_mes_atual: 124580.75,
-          vendas_mes_anterior: 118340.20,
-          variacao_percentual: 5.3,
-          media_ticket: 3450.80,
-          clientes_ativos: 45
-        };
+        const { data: currentMonthData, error: currentMonthError } = await supabase
+          .from('orcamentos')
+          .select(`
+            id,
+            orcamentos_itens (valor)
+          `)
+          .eq('tipo', 'venda')
+          .gte('data', startCurrentMonth.toISOString())
+          .lte('data', endCurrentMonth.toISOString());
+
+        if (currentMonthError) throw currentMonthError;
+
+        const vendasMesAtual = currentMonthData?.reduce((acc, orcamento) => {
+          const orcamentoTotal = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + item.valor, 0);
+          return acc + orcamentoTotal;
+        }, 0) || 0;
+
+        // Buscar vendas do mês anterior
+        const startLastMonth = startOfMonth(subMonths(new Date(), 1));
+        const endLastMonth = endOfMonth(subMonths(new Date(), 1));
         
-        // Simular tempo de carregamento para uma experiência mais realista
-        setTimeout(() => {
-          setSalesData(dadosSimulados);
-          setIsLoading(false);
-        }, 800);
-        
+        const { data: lastMonthData, error: lastMonthError } = await supabase
+          .from('orcamentos')
+          .select(`
+            id,
+            orcamentos_itens (valor)
+          `)
+          .eq('tipo', 'venda')
+          .gte('data', startLastMonth.toISOString())
+          .lte('data', endLastMonth.toISOString());
+
+        if (lastMonthError) throw lastMonthError;
+
+        const vendasMesAnterior = lastMonthData?.reduce((acc, orcamento) => {
+          const orcamentoTotal = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + item.valor, 0);
+          return acc + orcamentoTotal;
+        }, 0) || 0;
+
+        // Calcular variação percentual
+        const variacaoPercentual = vendasMesAnterior === 0 ? 100 : ((vendasMesAtual - vendasMesAnterior) / vendasMesAnterior) * 100;
+
+        // Buscar média de ticket
+        const { data: ticketData, error: ticketError } = await supabase
+          .from('orcamentos')
+          .select(`
+            id,
+            orcamentos_itens (valor)
+          `)
+          .eq('tipo', 'venda')
+          .gte('data', subDays(new Date(), 90).toISOString());
+
+        if (ticketError) throw ticketError;
+
+        const totalVendasPeriodo = ticketData?.reduce((acc, orcamento) => {
+          const orcamentoTotal = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + item.valor, 0);
+          return acc + orcamentoTotal;
+        }, 0) || 0;
+
+        const mediaTicket = ticketData?.length ? totalVendasPeriodo / ticketData.length : 0;
+
+        // Buscar clientes ativos (com vendas nos últimos 90 dias)
+        const { data: clientesData, error: clientesError } = await supabase
+          .from('orcamentos')
+          .select('favorecido_id')
+          .eq('tipo', 'venda')
+          .gte('data', subDays(new Date(), 90).toISOString())
+          .distinct();
+
+        if (clientesError) throw clientesError;
+
+        const clientesAtivos = clientesData?.length || 0;
+
+        setSalesData({
+          total_vendas: totalVendas,
+          vendas_mes_atual: vendasMesAtual,
+          vendas_mes_anterior: vendasMesAnterior,
+          variacao_percentual: variacaoPercentual,
+          media_ticket: mediaTicket,
+          clientes_ativos: clientesAtivos
+        });
+
+        // Buscar dados para o gráfico de barras (vendas mensais)
+        const { data: monthlyData, error: monthlyError } = await supabase
+          .from('orcamentos')
+          .select(`
+            data,
+            orcamentos_itens (valor)
+          `)
+          .eq('tipo', 'venda')
+          .gte('data', `${currentYear}-01-01`)
+          .order('data');
+
+        if (monthlyError) throw monthlyError;
+
+        const monthlyChartData = Array.from({ length: 12 }, (_, i) => {
+          const month = i + 1;
+          const monthData = monthlyData?.filter(
+            (item) => new Date(item.data).getMonth() === i
+          );
+          
+          const faturado = monthData?.reduce((acc, orcamento) => {
+            return acc + orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + item.valor, 0);
+          }, 0) || 0;
+
+          return {
+            name: format(new Date(currentYear, i), 'MMM', { locale: ptBR }),
+            faturado,
+            projetado: faturado * 1.1 // Projeção simples de 10% de crescimento
+          };
+        });
+
+        setBarChartData(monthlyChartData);
+
+        // Buscar dados para o gráfico de pizza (vendas por categoria/serviço)
+        const { data: categoryData, error: categoryError } = await supabase
+          .from('orcamentos_itens')
+          .select(`
+            valor,
+            servico:servicos(nome)
+          `)
+          .gte('orcamentos.data', startCurrentMonth.toISOString())
+          .lte('orcamentos.data', endCurrentMonth.toISOString())
+          .eq('orcamentos.tipo', 'venda')
+          .inner('orcamentos');
+
+        if (categoryError) throw categoryError;
+
+        const pieData = categoryData?.reduce((acc: any[], item) => {
+          const servicoNome = item.servico?.nome || 'Outros';
+          const existingService = acc.find(s => s.name === servicoNome);
+          
+          if (existingService) {
+            existingService.value += item.valor;
+          } else {
+            acc.push({
+              name: servicoNome,
+              value: item.valor,
+              color: `hsl(${Math.random() * 360}, 70%, 50%)`
+            });
+          }
+          
+          return acc;
+        }, []) || [];
+
+        setPieChartData(pieData);
+
+        // Buscar dados para o gráfico de linha (vendas diárias do mês atual)
+        const { data: dailyData, error: dailyError } = await supabase
+          .from('orcamentos')
+          .select(`
+            data,
+            orcamentos_itens (valor)
+          `)
+          .eq('tipo', 'venda')
+          .gte('data', startCurrentMonth.toISOString())
+          .lte('data', endCurrentMonth.toISOString())
+          .order('data');
+
+        if (dailyError) throw dailyError;
+
+        const dailyChartData = dailyData?.reduce((acc: any[], orcamento) => {
+          const date = format(new Date(orcamento.data), 'dd/MM');
+          const value = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + item.valor, 0);
+          
+          const existingDay = acc.find(d => d.name === date);
+          if (existingDay) {
+            existingDay.value += value;
+          } else {
+            acc.push({ name: date, value });
+          }
+          
+          return acc;
+        }, []) || [];
+
+        setLineChartData(dailyChartData);
+
+        setIsLoading(false);
       } catch (error: any) {
         toast({
           variant: "destructive",
@@ -63,58 +247,6 @@ const PainelVendasPage = () => {
 
     fetchData();
   }, [toast]);
-
-  // Dados simulados para os gráficos
-  const barChartData = [
-    { name: "Jan", faturado: 45000, projetado: 50000 },
-    { name: "Fev", faturado: 52000, projetado: 51000 },
-    { name: "Mar", faturado: 48500, projetado: 52000 },
-    { name: "Abr", faturado: 47800, projetado: 53000 },
-    { name: "Mai", faturado: 54200, projetado: 54000 },
-    { name: "Jun", faturado: 59700, projetado: 55000 },
-    { name: "Jul", faturado: 56300, projetado: 56000 },
-    { name: "Ago", faturado: 62500, projetado: 57000 },
-    { name: "Set", faturado: 60200, projetado: 58000 },
-    { name: "Out", faturado: 67800, projetado: 59000 },
-    { name: "Nov", faturado: 71500, projetado: 60000 },
-    { name: "Dez", faturado: 85000, projetado: 61000 },
-  ];
-
-  const pieChartData = [
-    { name: "Consultoria", value: 420500, color: "#1E88E5" },
-    { name: "Desenvolvimento", value: 350200, color: "#43A047" },
-    { name: "Suporte", value: 215800, color: "#FB8C00" },
-    { name: "Treinamento", value: 178250, color: "#8E24AA" },
-    { name: "Outros", value: 94010, color: "#5E35B1" },
-  ];
-
-  const lineChartData = [
-    { name: "01/11", value: 2400 },
-    { name: "02/11", value: 1398 },
-    { name: "03/11", value: 9800 },
-    { name: "04/11", value: 3908 },
-    { name: "05/11", value: 4800 },
-    { name: "06/11", value: 3800 },
-    { name: "07/11", value: 4300 },
-    { name: "08/11", value: 5300 },
-    { name: "09/11", value: 4890 },
-    { name: "10/11", value: 8200 },
-    { name: "11/11", value: 6100 },
-    { name: "12/11", value: 5700 },
-    { name: "13/11", value: 7500 },
-    { name: "14/11", value: 6890 },
-    { name: "15/11", value: 8900 },
-    { name: "16/11", value: 7200 },
-    { name: "17/11", value: 9100 },
-    { name: "18/11", value: 10200 },
-    { name: "19/11", value: 8300 },
-    { name: "20/11", value: 9580 },
-    { name: "21/11", value: 11200 },
-    { name: "22/11", value: 10500 },
-    { name: "23/11", value: 12800 },
-    { name: "24/11", value: 14100 },
-    { name: "25/11", value: 16500 },
-  ];
 
   // Formatação de valores para exibição
   const formatCurrency = (value: number) => {
