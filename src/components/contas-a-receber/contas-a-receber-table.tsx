@@ -1,9 +1,15 @@
-
 import React from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
+import { MoreHorizontal, Eye, Edit, Download, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 export interface ContaReceber {
   id: string;
@@ -25,12 +31,12 @@ interface ContasAReceberTableProps {
   onVisualizar: (conta: ContaReceber) => void;
 }
 
-export function ContasAReceberTable({
-  contas,
-  onEdit,
-  onBaixar,
+export function ContasAReceberTable({ 
+  contas, 
+  onEdit, 
+  onBaixar, 
   onDelete,
-  onVisualizar,
+  onVisualizar 
 }: ContasAReceberTableProps) {
   function formatData(data?: Date) {
     if (!data) return "-";
@@ -96,109 +102,63 @@ export function ContasAReceberTable({
                 </TableCell>
                 <TableCell className="text-center">{conta.numeroParcela}</TableCell>
                 <TableCell className="text-center">
-                  <div className="flex items-center gap-2 justify-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-blue-500 hover:bg-blue-100"
-                      onClick={() => onVisualizar(conta)}
-                      title="Visualizar"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-neutral-500 hover:bg-gray-100"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-green-500 hover:bg-green-100"
-                      onClick={() => onBaixar(conta)}
-                      title="Receber"
-                      disabled={conta.status === "recebido" || conta.status === "recebido_em_atraso"}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Abrir menu de ações</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
+                      <DropdownMenuItem
+                        onClick={() => onVisualizar(conta)}
+                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                        />
-                      </svg>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-yellow-500 hover:bg-yellow-100"
-                      onClick={() => onEdit(conta)}
-                      title="Editar"
-                      disabled={conta.status === "recebido" || conta.status === "recebido_em_atraso"}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
+                        <Eye className="h-4 w-4" />
+                        Visualizar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onEdit(conta)}
+                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        disabled={conta.status === "recebido" || conta.status === "recebido_em_atraso"}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500 hover:bg-red-100"
-                      onClick={() => onDelete(conta.id)}
-                      title="Excluir"
-                      disabled={conta.status === "recebido" || conta.status === "recebido_em_atraso"}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
+                        <Edit className="h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onBaixar(conta)}
+                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        disabled={conta.status === "recebido" || conta.status === "recebido_em_atraso"}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </Button>
-                  </div>
+                        <Download className="h-4 w-4" />
+                        Baixar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onDelete(conta.id)}
+                        className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                        disabled={conta.status === "recebido" || conta.status === "recebido_em_atraso"}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))
           )}
         </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={7} className="font-bold text-right">Total</TableCell>
+            <TableCell className="font-bold">{formatCurrency(contas.reduce((soma, conta) => soma + (conta.valor || 0), 0))}</TableCell>
+            <TableCell />
+          </TableRow>
+        </TableFooter>
       </Table>
     </div>
   );
