@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,7 +25,8 @@ export default function ContasAReceberPage() {
 
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"todas" | "recebido" | "recebido_em_atraso" | "em_aberto">("todas");
+  // Alteração: Valor padrão agora é "em_aberto"
+  const [statusFilter, setStatusFilter] = useState<"todas" | "recebido" | "recebido_em_atraso" | "em_aberto">("em_aberto");
   const [dataVencInicio, setDataVencInicio] = useState<string>("");
   const [dataVencFim, setDataVencFim] = useState<string>("");
   const [dataRecInicio, setDataRecInicio] = useState<string>("");
