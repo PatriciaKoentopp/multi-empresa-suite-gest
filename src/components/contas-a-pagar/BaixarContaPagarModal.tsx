@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
   const [juros, setJuros] = useState<number>(0);
   const [desconto, setDesconto] = useState<number>(0);
   const [contasCorrentes, setContasCorrentes] = useState<ContaCorrente[]>([]);
+  const [saldoConta, setSaldoConta] = useState<number>(0);
 
   const { currentCompany } = useCompany();
 
@@ -83,8 +85,41 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
     setDesconto(0);
   }, [conta, open]);
 
+  // Efeito para buscar o último saldo do fluxo de caixa quando a conta corrente for selecionada
+  useEffect(() => {
+    if (contaCorrenteId) {
+      const buscarUltimoSaldo = async () => {
+        const { data, error } = await supabase
+          .from('fluxo_caixa')
+          .select('saldo')
+          .eq('conta_corrente_id', contaCorrenteId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (error) {
+          console.error('Erro ao buscar saldo:', error);
+          return;
+        }
+
+        // Se encontrou registro, usa o saldo dele, senão busca o saldo inicial da conta
+        if (data && data.length > 0) {
+          setSaldoConta(Number(data[0].saldo));
+        } else {
+          // Busca o saldo inicial da conta corrente
+          const contaSelecionada = contasCorrentes.find(c => c.id === contaCorrenteId);
+          setSaldoConta(Number(contaSelecionada?.saldoInicial || 0));
+        }
+      };
+
+      buscarUltimoSaldo();
+    }
+  }, [contaCorrenteId, contasCorrentes]);
+
   function handleConfirmar() {
     if (!dataPagamento || !contaCorrenteId) return;
+    
+    const valorTotal = (conta?.valor || 0) + (multa || 0) + (juros || 0) - (desconto || 0);
+    const novoSaldo = saldoConta - valorTotal;
 
     const inserirFluxoCaixa = async () => {
       const { error: errorFluxo } = await supabase
@@ -99,7 +134,8 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
           movimentacao_parcela_id: conta?.id,
           conta_corrente_id: contaCorrenteId,
           situacao: 'nao_conciliado',
-          descricao: conta?.descricao || ''
+          descricao: conta?.descricao || '',
+          saldo: novoSaldo // Adicionando o campo saldo que era obrigatório
         });
 
       if (errorFluxo) {
