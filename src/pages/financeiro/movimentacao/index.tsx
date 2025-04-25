@@ -192,7 +192,29 @@ export default function MovimentacaoPage() {
     try {
       setIsLoading(true);
       
-      // Primeiro, excluir as parcelas associadas à movimentação
+      // Verificar se a movimentação já foi baixada antes de tentar excluir
+      const { data: movimentacaoParcelas, error: parcelasError } = await supabase
+        .from("movimentacoes_parcelas")
+        .select("id, data_pagamento")
+        .eq("movimentacao_id", movimentacaoParaExcluir);
+      
+      if (parcelasError) {
+        throw parcelasError;
+      }
+
+      // Verificar se alguma parcela já foi paga
+      const parcelasBaixadas = movimentacaoParcelas.some(parcela => parcela.data_pagamento !== null);
+      
+      if (parcelasBaixadas) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Esta movimentação não pode ser excluída pois já foi baixada."
+        });
+        return;
+      }
+      
+      // Excluir as parcelas associadas à movimentação
       const { error: errorParcelas } = await supabase
         .from("movimentacoes_parcelas")
         .delete()
