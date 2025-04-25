@@ -44,6 +44,7 @@ export default function MovimentacaoPage() {
   // Estado para o modal de confirmação de exclusão
   const [movimentacaoParaExcluir, setMovimentacaoParaExcluir] = useState<string | null>(null);
   const [confirmarExclusaoAberto, setConfirmarExclusaoAberto] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const inputBuscaRef = useRef<HTMLInputElement>(null);
 
@@ -189,13 +190,26 @@ export default function MovimentacaoPage() {
     if (!movimentacaoParaExcluir) return;
     
     try {
+      setIsLoading(true);
+      
       // Primeiro, excluir as parcelas associadas à movimentação
       const { error: errorParcelas } = await supabase
         .from("movimentacoes_parcelas")
         .delete()
         .eq("movimentacao_id", movimentacaoParaExcluir);
 
-      if (errorParcelas) throw errorParcelas;
+      if (errorParcelas) {
+        // Verifica se o erro é devido à movimentação já estar baixada
+        if (errorParcelas.code === "23503" && errorParcelas.message.includes("fluxo_caixa")) {
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Esta movimentação não pode ser excluída pois já foi baixada."
+          });
+          return;
+        }
+        throw errorParcelas;
+      }
       
       // Depois de excluir as parcelas, excluir a movimentação principal
       const { error } = await supabase
@@ -212,17 +226,27 @@ export default function MovimentacaoPage() {
         title: "Sucesso",
         description: "Movimentação excluída com sucesso!"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao excluir movimentação:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao excluir a movimentação"
-      });
+      // Verifica se o erro é devido à movimentação já estar baixada
+      if (error.code === "23503" && error.message.includes("fluxo_caixa")) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Esta movimentação não pode ser excluída pois já foi baixada."
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Erro ao excluir a movimentação"
+        });
+      }
     } finally {
       // Fechar o modal e limpar o estado
       setConfirmarExclusaoAberto(false);
       setMovimentacaoParaExcluir(null);
+      setIsLoading(false);
     }
   };
 
