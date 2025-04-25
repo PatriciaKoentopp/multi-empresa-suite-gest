@@ -506,6 +506,7 @@ export type Database = {
           data_pagamento: string | null
           data_vencimento: string
           desconto: number | null
+          forma_pagamento: string | null
           id: string
           juros: number | null
           movimentacao_id: string
@@ -520,6 +521,7 @@ export type Database = {
           data_pagamento?: string | null
           data_vencimento: string
           desconto?: number | null
+          forma_pagamento?: string | null
           id?: string
           juros?: number | null
           movimentacao_id: string
@@ -534,6 +536,7 @@ export type Database = {
           data_pagamento?: string | null
           data_vencimento?: string
           desconto?: number | null
+          forma_pagamento?: string | null
           id?: string
           juros?: number | null
           movimentacao_id?: string
