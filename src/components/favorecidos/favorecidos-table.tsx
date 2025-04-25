@@ -1,3 +1,4 @@
+
 import { Favorecido, GrupoFavorecido } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,16 +65,16 @@ export function FavorecidosTable({
 
   // Função para confirmar e executar a exclusão
   const handleDelete = (id: string, nome: string) => {
-    toast.error(`Confirmar exclusão`, {
+    toast.error("Confirmar exclusão", {
       description: `Tem certeza que deseja excluir este favorecido? Esta ação não pode ser desfeita.`,
-      action: {
-        label: "Excluir",
-        onClick: () => onDelete(id),
-      },
       cancel: {
         label: "Cancelar",
-        onClick: () => console.log("Cancelado"),
+        onClick: () => {}
       },
+      action: {
+        label: "Excluir",
+        onClick: () => onDelete(id)
+      }
     });
   };
 
