@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -128,8 +129,11 @@ export default function FluxoCaixaPage() {
         .from("fluxo_caixa")
         .select(`
           *,
+          favorecidos (
+            id, 
+            nome
+          ),
           movimentacoes (
-            favorecido_id,
             descricao
           ),
           movimentacoes_parcelas (
@@ -221,9 +225,13 @@ export default function FluxoCaixaPage() {
   // Filtro das movimentações
   const filteredMovimentacoes = useMemo(() => {
     return movimentacoes.filter((linha) => {
+      const descricao = linha.descricao || linha.movimentacoes?.descricao || "";
+      const favorecido = linha.favorecidos?.nome || "";
+      
       const buscaOk =
         !searchTerm ||
-        linha.movimentacoes?.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
+        descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        favorecido.toLowerCase().includes(searchTerm.toLowerCase());
       
       const sitOk = situacao === "todos" || linha.situacao === situacao;
       
@@ -268,6 +276,26 @@ export default function FluxoCaixaPage() {
       console.error("Erro ao excluir:", error);
       toast.error("Erro ao excluir movimento");
     }
+  }
+
+  // Função para obter o nome do favorecido
+  function getFavorecidoNome(linha: any) {
+    if (linha.favorecidos?.nome) {
+      return linha.favorecidos.nome;
+    }
+    // Tentar obter de outras formas se disponível
+    return "-";
+  }
+
+  // Função para obter a descrição
+  function getDescricao(linha: any) {
+    if (linha.descricao) {
+      return linha.descricao;
+    }
+    if (linha.movimentacoes?.descricao) {
+      return linha.movimentacoes.descricao;
+    }
+    return "-";
   }
 
   return (
@@ -416,8 +444,8 @@ export default function FluxoCaixaPage() {
                     <TableHead>Descrição</TableHead>
                     <TableHead>Forma de Pagamento</TableHead>
                     <TableHead>Situação</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Saldo</TableHead>
+                    <TableHead className="text-right w-[120px]">Valor</TableHead>
+                    <TableHead className="text-right w-[120px]">Saldo</TableHead>
                     <TableHead className="text-center w-[60px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -432,8 +460,8 @@ export default function FluxoCaixaPage() {
                     filteredMovimentacoes.map((linha) => (
                       <TableRow key={linha.id}>
                         <TableCell>{formatDateBR(linha.data_movimentacao)}</TableCell>
-                        <TableCell>{linha.movimentacoes?.descricao}</TableCell>
-                        <TableCell>{linha.movimentacoes?.descricao}</TableCell>
+                        <TableCell>{getFavorecidoNome(linha)}</TableCell>
+                        <TableCell>{getDescricao(linha)}</TableCell>
                         <TableCell>{linha.forma_pagamento}</TableCell>
                         <TableCell>
                           {getStatusBadge(
@@ -442,8 +470,8 @@ export default function FluxoCaixaPage() {
                               : "nao_conciliado"
                           )}
                         </TableCell>
-                        <TableCell>{formatCurrency(linha.valor)}</TableCell>
-                        <TableCell>{formatCurrency(linha.saldo)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(linha.valor)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(linha.saldo)}</TableCell>
                         <TableCell className="text-center">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -456,7 +484,7 @@ export default function FluxoCaixaPage() {
                                 <MoreVertical size={20} />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="bg-white z-50 min-w-[160px]">
+                            <DropdownMenuContent align="end" className="bg-white z-50 min-w-[160px]">
                               <DropdownMenuItem
                                 onClick={() => handleEdit(linha.id)}
                                 className="cursor-pointer"

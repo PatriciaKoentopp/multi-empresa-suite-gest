@@ -84,6 +84,23 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     try {
       const valorTotal = (conta?.valor || 0) + multa + juros - desconto;
 
+      // Buscar dados completos da movimentação para obter favorecido e descrição
+      let favorecidoId: string | null = null;
+      let descricao: string | null = null;
+      
+      if (conta?.movimentacao_id) {
+        const { data: movimentacao, error: movError } = await supabase
+          .from("movimentacoes")
+          .select("favorecido_id, descricao")
+          .eq("id", conta.movimentacao_id)
+          .single();
+          
+        if (!movError && movimentacao) {
+          favorecidoId = movimentacao.favorecido_id;
+          descricao = movimentacao.descricao;
+        }
+      }
+
       // 1. Atualiza a parcela com os dados do recebimento
       const { error: updateError } = await supabase
         .from("movimentacoes_parcelas")
@@ -99,7 +116,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
 
       if (updateError) throw updateError;
 
-      // 2. Insere o registro no fluxo de caixa
+      // 2. Insere o registro no fluxo de caixa com favorecido_id e descrição
       const { error: fluxoError } = await supabase
         .from("fluxo_caixa")
         .insert({
@@ -111,7 +128,10 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
           tipo_operacao: "receber",
           origem: "movimentacao",
           movimentacao_parcela_id: conta?.id,
+          movimentacao_id: conta?.movimentacao_id,
           situacao: "nao_conciliado",
+          favorecido_id: favorecidoId,
+          descricao: descricao || conta?.descricao || `Recebimento ${conta?.cliente}`,
           forma_pagamento: formaPagamento
         });
 
@@ -249,4 +269,3 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     </Dialog>
   );
 }
-
