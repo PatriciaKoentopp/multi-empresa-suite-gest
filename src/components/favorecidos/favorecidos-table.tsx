@@ -1,4 +1,3 @@
-
 import { Favorecido, GrupoFavorecido } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Eye, Pencil, Trash2, User, Building2, Landmark, UserCog, MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 
 interface FavorecidosTableProps {
@@ -60,6 +60,21 @@ export function FavorecidosTable({
       publico: "Órgão Público"
     };
     return tipos[tipo as keyof typeof tipos] || tipo;
+  };
+
+  // Função para confirmar e executar a exclusão
+  const handleDelete = (id: string, nome: string) => {
+    toast.error(`Confirmar exclusão`, {
+      description: `Tem certeza que deseja excluir este favorecido? Esta ação não pode ser desfeita.`,
+      action: {
+        label: "Excluir",
+        onClick: () => onDelete(id),
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => console.log("Cancelado"),
+      },
+    });
   };
 
   return (
@@ -147,7 +162,7 @@ export function FavorecidosTable({
                         Editar
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => onDelete(favorecido.id)}
+                        onClick={() => handleDelete(favorecido.id, favorecido.nome)}
                         className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
