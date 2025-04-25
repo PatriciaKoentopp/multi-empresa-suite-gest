@@ -1,9 +1,8 @@
-
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import { MoreHorizontal, Eye, Edit, Download, Trash2 } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Download, Trash2, RotateCcw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -32,38 +31,16 @@ interface ContasAReceberTableProps {
   onVisualizar: (conta: ContaReceber) => void;
 }
 
-function getStatusBadge(status: ContaReceber["status"]) {
-  switch (status) {
-    case "recebido":
-      return (
-        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
-          Recebido
-        </span>
-      );
-    case "recebido_em_atraso":
-      return (
-        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
-          Recebido em Atraso
-        </span>
-      );
-    case "em_aberto":
-      return (
-        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
-          Em Aberto
-        </span>
-      );
-    default:
-      return status;
-  }
-}
-
 export function ContasAReceberTable({ 
   contas, 
   onEdit, 
   onBaixar, 
   onDelete,
-  onVisualizar 
-}: ContasAReceberTableProps) {
+  onVisualizar,
+  onDesfazerBaixa 
+}: ContasAReceberTableProps & {
+  onDesfazerBaixa: (conta: ContaReceber) => void;
+}) {
   function formatData(data?: Date) {
     if (!data) return "-";
     
@@ -77,6 +54,31 @@ export function ContasAReceberTable({
   }
 
   const totalValor = contas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
+
+  function getStatusBadge(status: ContaReceber["status"]) {
+    switch (status) {
+      case "recebido":
+        return (
+          <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
+            Recebido
+          </span>
+        );
+      case "recebido_em_atraso":
+        return (
+          <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
+            Recebido em Atraso
+          </span>
+        );
+      case "em_aberto":
+        return (
+          <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+            Em Aberto
+          </span>
+        );
+      default:
+        return status;
+    }
+  }
 
   return (
     <div className="border rounded-md">
@@ -147,6 +149,14 @@ export function ContasAReceberTable({
                       >
                         <Download className="h-4 w-4" />
                         Baixar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onDesfazerBaixa(conta)}
+                        className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                        disabled={conta.status === "em_aberto"}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        Desfazer Baixa
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onDelete(conta.id)}

@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -248,6 +247,51 @@ export default function ContasAReceberPage() {
       });
   }
 
+  const handleDesfazerBaixa = async (conta: ContaReceber) => {
+    try {
+      if (!conta.movimentacao_id) {
+        toast.error("Não foi possível identificar a movimentação");
+        return;
+      }
+
+      // 1. Limpar os dados de baixa na movimentacao_parcela
+      const { error: updateError } = await supabase
+        .from('movimentacoes_parcelas')
+        .update({
+          data_pagamento: null,
+          forma_pagamento: null,
+          multa: null,
+          juros: null,
+          desconto: null,
+          conta_corrente_id: null
+        })
+        .eq('id', conta.id);
+
+      if (updateError) throw updateError;
+
+      // 2. Excluir o registro do fluxo de caixa
+      const { error: deleteError } = await supabase
+        .from('fluxo_caixa')
+        .delete()
+        .eq('movimentacao_parcela_id', conta.id);
+
+      if (deleteError) throw deleteError;
+
+      // 3. Atualizar a lista local
+      setContas(prev => prev.map(c => 
+        c.id === conta.id
+          ? { ...c, dataRecebimento: undefined, status: "em_aberto" as const }
+          : c
+      ));
+
+      toast.success("Baixa desfeita com sucesso!");
+
+    } catch (error) {
+      console.error('Erro ao desfazer baixa:', error);
+      toast.error("Erro ao desfazer baixa");
+    }
+  };
+
   // Filtro
   const filteredContas = useMemo(() => {
     return contas.filter((conta) => {
@@ -415,6 +459,7 @@ export default function ContasAReceberPage() {
               onBaixar={handleBaixar}
               onDelete={handleDelete}
               onVisualizar={handleVisualizar}
+              onDesfazerBaixa={handleDesfazerBaixa}
             />
           </div>
         </CardContent>
