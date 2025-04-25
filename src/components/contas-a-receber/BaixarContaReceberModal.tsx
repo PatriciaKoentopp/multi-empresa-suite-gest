@@ -90,6 +90,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
           conta_corrente_id: contaCorrenteId,
           data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
           valor: valorTotal,
+          saldo: valorTotal, // Adicionando o campo saldo que é obrigatório
           tipo_operacao: "receber",
           origem: "movimentacao",
           movimentacao_parcela_id: conta?.id,
