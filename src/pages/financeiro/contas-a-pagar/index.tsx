@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar, Search, Filter, Undo } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ContasAPagarTable, ContaPagar } from "@/components/contas-a-pagar/contas-a-pagar-table";
 import {
@@ -32,6 +32,7 @@ import { useCompany } from "@/contexts/company-context";
 export default function ContasAPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>([]);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Filtros com valor padrão definido para "em_aberto"
   const [searchTerm, setSearchTerm] = useState("");
