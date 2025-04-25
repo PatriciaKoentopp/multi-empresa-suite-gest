@@ -33,7 +33,6 @@ export default function OrcamentoPage() {
   const orcamentoId = searchParams.get('id');
   const isVisualizacao = searchParams.get('visualizar') === '1';
   
-  const [tipoVenda, setTipoVenda] = useState<"orcamento" | "venda">("orcamento");
   const [data, setData] = useState(formatDate(new Date()));
   const [codigoVenda, setCodigoVenda] = useState(gerarCodigoVenda());
   const [favorecidoId, setFavorecidoId] = useState<string>("");
@@ -137,7 +136,6 @@ export default function OrcamentoPage() {
       if (parcelasError) throw parcelasError;
       
       // Preencher o formulário com os dados
-      setTipoVenda(orcamento.tipo as "orcamento" | "venda");
       setData(formatDate(new Date(orcamento.data)));
       setCodigoVenda(orcamento.codigo);
       setFavorecidoId(orcamento.favorecido_id);
@@ -426,7 +424,6 @@ export default function OrcamentoPage() {
           .from('orcamentos')
           .update({
             favorecido_id: favorecidoId,
-            tipo: tipoVenda,
             codigo_projeto: codigoProjeto || null,
             observacoes: observacoes || null,
             forma_pagamento: formaPagamento,
@@ -482,14 +479,14 @@ export default function OrcamentoPage() {
 
         if (parcelasError) throw parcelasError;
       } else {
-        // Inserir novo orçamento
+        // Inserir novo orçamento (sempre como tipo "orcamento")
         const { data: orcamento, error: orcamentoError } = await supabase
           .from('orcamentos')
           .insert({
             empresa_id: currentCompany?.id,
             favorecido_id: favorecidoId,
             codigo: codigoVenda,
-            tipo: tipoVenda,
+            tipo: 'orcamento', // Tipo fixo como "orcamento"
             data: new Date().toISOString(),
             codigo_projeto: codigoProjeto || null,
             observacoes: observacoes || null,
@@ -568,25 +565,7 @@ export default function OrcamentoPage() {
           <CardContent>
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <div className="flex flex-col md:flex-row gap-4">
-                {/* Tipo de Venda */}
-                <div className="w-full md:w-1/2">
-                  <label className="block text-sm mb-1">Tipo de Venda</label>
-                  <Select 
-                    value={tipoVenda} 
-                    onValueChange={v => setTipoVenda(v as any)}
-                    disabled={isVisualizacao}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="orcamento">Orçamento</SelectItem>
-                      <SelectItem value="venda">Venda</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {/* Data */}
-                <div className="w-full md:w-1/2">
+                <div className="w-full">
                   <label className="block text-sm mb-1">Data</label>
                   <Input
                     type="text"
