@@ -569,6 +569,7 @@ export type Database = {
           created_at: string
           data: string
           data_nota_fiscal: string | null
+          data_venda: string | null
           empresa_id: string
           favorecido_id: string
           forma_pagamento: string
@@ -587,6 +588,7 @@ export type Database = {
           created_at?: string
           data?: string
           data_nota_fiscal?: string | null
+          data_venda?: string | null
           empresa_id: string
           favorecido_id: string
           forma_pagamento: string
@@ -605,6 +607,7 @@ export type Database = {
           created_at?: string
           data?: string
           data_nota_fiscal?: string | null
+          data_venda?: string | null
           empresa_id?: string
           favorecido_id?: string
           forma_pagamento?: string

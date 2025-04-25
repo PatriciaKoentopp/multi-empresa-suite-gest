@@ -39,6 +39,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "@/hooks/use-toast";
 import { Orcamento, Favorecido } from "@/types";
+import { EfetivarVendaModal } from "@/components/vendas/EfetivarVendaModal";
 
 // Opções de tipo
 const tipos = ["Todos", "Orçamento", "Venda"];
@@ -65,6 +66,7 @@ export default function FaturamentoPage() {
   const [showToastConfirm, setShowToastConfirm] = useState(false);
   const [excluirItem, setExcluirItem] = useState<Orcamento | null>(null);
   const [statusFilter, setStatusFilter] = useState<"ativo" | "inativo" | "todos">("ativo");
+  const [efetivarVendaItem, setEfetivarVendaItem] = useState<Orcamento | null>(null);
 
   const navigate = useNavigate();
 
@@ -407,6 +409,15 @@ export default function FaturamentoPage() {
                           <Edit className="w-4 h-4" />
                           Editar
                         </DropdownMenuItem>
+                        {item.tipo === "orcamento" && (
+                          <DropdownMenuItem
+                            onClick={() => setEfetivarVendaItem(item)}
+                            className="flex items-center gap-2 text-green-500 focus:bg-green-100 focus:text-green-700"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            Efetivar Venda
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           onClick={() => handleConfirmarExclusao(item)}
                           className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
@@ -482,6 +493,17 @@ export default function FaturamentoPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Adicionar o modal de Efetivar Venda */}
+      <EfetivarVendaModal
+        open={!!efetivarVendaItem}
+        onClose={() => setEfetivarVendaItem(null)}
+        orcamento={efetivarVendaItem}
+        onSuccess={() => {
+          setEfetivarVendaItem(null);
+          carregarFaturamentos();
+        }}
+      />
     </div>
   );
 }
