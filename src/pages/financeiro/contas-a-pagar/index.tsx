@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, Search, Filter } from "lucide-react";
+import { Calendar, Search, Filter, Undo } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { ContasAPagarTable, ContaPagar } from "@/components/contas-a-pagar/contas-a-pagar-table";
@@ -273,6 +273,88 @@ export default function ContasAPagarPage() {
     }
   };
 
+  const handleDesfazerBaixa = async (conta: ContaPagar) => {
+    try {
+      if (!conta.movimentacao_id) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível identificar a movimentação"
+        });
+        return;
+      }
+
+      // 1. Verificar se o registro está conciliado no fluxo de caixa
+      const { data: fluxoCaixa, error: fluxoError } = await supabase
+        .from('fluxo_caixa')
+        .select('situacao')
+        .eq('movimentacao_parcela_id', conta.id)
+        .single();
+
+      if (fluxoError) {
+        console.error('Erro ao verificar situação:', fluxoError);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Erro ao verificar situação do título"
+        });
+        return;
+      }
+
+      if (fluxoCaixa?.situacao === 'conciliado') {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não é possível desfazer a baixa de um título conciliado"
+        });
+        return;
+      }
+
+      // 2. Se não estiver conciliado, prosseguir com a operação de desfazer baixa
+      const { error: updateError } = await supabase
+        .from('movimentacoes_parcelas')
+        .update({
+          data_pagamento: null,
+          forma_pagamento: null,
+          multa: null,
+          juros: null,
+          desconto: null,
+          conta_corrente_id: null
+        })
+        .eq('id', conta.id);
+
+      if (updateError) throw updateError;
+
+      // 3. Excluir o registro do fluxo de caixa
+      const { error: deleteError } = await supabase
+        .from('fluxo_caixa')
+        .delete()
+        .eq('movimentacao_parcela_id', conta.id);
+
+      if (deleteError) throw deleteError;
+
+      // 4. Atualizar a lista local
+      setContas(prev => prev.map(c => 
+        c.id === conta.id
+          ? { ...c, dataPagamento: undefined, status: "em_aberto" as const }
+          : c
+      ));
+
+      toast({
+        title: "Sucesso",
+        description: "Baixa desfeita com sucesso!"
+      });
+
+    } catch (error) {
+      console.error('Erro ao desfazer baixa:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao desfazer baixa"
+      });
+    }
+  };
+
   // Carregar dados quando o componente montar ou a empresa mudar
   useEffect(() => {
     if (currentCompany) {
@@ -425,6 +507,7 @@ export default function ContasAPagarPage() {
               onBaixar={handleBaixar}
               onDelete={prepararExclusao}
               onVisualizar={handleVisualizar}
+              onDesfazerBaixa={handleDesfazerBaixa}
             />
           </div>
         </CardContent>

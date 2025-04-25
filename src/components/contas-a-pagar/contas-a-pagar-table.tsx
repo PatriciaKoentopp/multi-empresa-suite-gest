@@ -8,7 +8,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { Edit, Download, Trash2, MoreHorizontal, Eye } from "lucide-react";
+import { Edit, Download, Trash2, MoreHorizontal, Eye, Undo } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -35,6 +35,7 @@ interface ContasAPagarTableProps {
   onBaixar: (conta: ContaPagar) => void;
   onDelete: (id: string) => void;
   onVisualizar: (conta: ContaPagar) => void;
+  onDesfazerBaixa: (conta: ContaPagar) => void;
 }
 
 function formatDateBR(date?: Date) {
@@ -81,7 +82,8 @@ export function ContasAPagarTable({
   onEdit, 
   onBaixar, 
   onDelete,
-  onVisualizar 
+  onVisualizar,
+  onDesfazerBaixa 
 }: ContasAPagarTableProps) {
   const totalValor = contas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
 
@@ -165,6 +167,15 @@ export function ContasAPagarTable({
                         <Download className="h-4 w-4" />
                         Baixar
                       </DropdownMenuItem>
+                      {conta.dataPagamento && (
+                        <DropdownMenuItem
+                          onClick={() => onDesfazerBaixa(conta)}
+                          className="flex items-center gap-2 text-orange-500 focus:bg-orange-100 focus:text-orange-700"
+                        >
+                          <Undo className="h-4 w-4" />
+                          Desfazer Baixa
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         onClick={() => onDelete(conta.movimentacao_id)}
                         className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
