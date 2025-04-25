@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -283,6 +282,24 @@ export default function FluxoCaixaPage() {
     }
   }
 
+  // Nova função para desfazer conciliação
+  async function handleDesfazerConciliacao(id: string) {
+    try {
+      const { error } = await supabase
+        .from("fluxo_caixa")
+        .update({ situacao: "nao_conciliado" })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast.success("Conciliação desfeita com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["fluxo-caixa"] });
+    } catch (error) {
+      console.error("Erro ao desfazer conciliação:", error);
+      toast.error("Erro ao desfazer conciliação");
+    }
+  }
+
   function handleEdit(id: string) {
     navigate("/financeiro/incluir-movimentacao", { state: { id } });
   }
@@ -525,7 +542,7 @@ export default function FluxoCaixaPage() {
                                 <span className="text-red-500 mr-2"><svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></span>
                                 Excluir
                               </DropdownMenuItem>
-                              {linha.situacao !== "conciliado" && (
+                              {linha.situacao === "nao_conciliado" ? (
                                 <DropdownMenuItem
                                   onClick={() => handleConciliar(linha.id)}
                                   className="cursor-pointer"
@@ -533,6 +550,18 @@ export default function FluxoCaixaPage() {
                                   <span className="text-green-600 mr-2"><Check className="inline" size={16} /></span>
                                   Conciliar movimento
                                 </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() => handleDesfazerConciliacao(linha.id)}
+                                  className="cursor-pointer"
+                                >
+                                  <span className="text-blue-500 mr-2">
+                                    <svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                    </svg>
+                                  </span>
+                                  Desfazer conciliação
+                              </DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
