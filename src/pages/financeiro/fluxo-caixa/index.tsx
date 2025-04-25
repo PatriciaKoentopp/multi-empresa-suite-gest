@@ -304,23 +304,6 @@ export default function FluxoCaixaPage() {
     navigate("/financeiro/incluir-movimentacao", { state: { id } });
   }
 
-  async function handleDelete(id: string) {
-    try {
-      const { error } = await supabase
-        .from("fluxo_caixa")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast.success("Movimento excluído com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["fluxo-caixa"] });
-    } catch (error) {
-      console.error("Erro ao excluir:", error);
-      toast.error("Erro ao excluir movimento");
-    }
-  }
-
   // Função para obter o nome do favorecido
   function getFavorecidoNome(linha: any) {
     if (linha.movimentacoes?.favorecido_id) {
@@ -534,13 +517,6 @@ export default function FluxoCaixaPage() {
                               >
                                 <span className="text-blue-500 mr-2"><svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M16.862 4.487a2.5 2.5 0 1 1 3.535 3.536L7.5 20.918l-4.242.707.707-4.243L16.862 4.487z" /></svg></span>
                                 Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDelete(linha.id)}
-                                className="cursor-pointer"
-                              >
-                                <span className="text-red-500 mr-2"><svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></span>
-                                Excluir
                               </DropdownMenuItem>
                               {linha.situacao === "nao_conciliado" ? (
                                 <DropdownMenuItem
