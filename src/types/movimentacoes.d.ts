@@ -29,6 +29,12 @@ export interface MovimentacaoParcela {
   data_vencimento: string;
   created_at: string;
   updated_at: string;
+  data_pagamento?: string;
+  conta_corrente_id?: string;
+  multa?: number;
+  juros?: number;
+  desconto?: number;
+  forma_pagamento?: string; // Adicionando o campo forma_pagamento
 }
 
 // Extensão para compatibilidade com ContaPagar
@@ -36,5 +42,6 @@ declare module "@/components/contas-a-pagar/contas-a-pagar-table" {
   interface ContaPagar {
     tipo_operacao?: 'pagar' | 'receber' | 'transferencia';
     tipo_titulo_id?: string;
+    forma_pagamento?: string; // Adicionando o campo forma_pagamento
   }
 }

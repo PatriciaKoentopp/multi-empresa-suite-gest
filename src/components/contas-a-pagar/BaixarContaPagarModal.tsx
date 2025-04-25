@@ -21,6 +21,7 @@ interface BaixarContaPagarModalProps {
     multa: number;
     juros: number;
     desconto: number;
+    formaPagamento: string; // Adicionando forma de pagamento aos dados de baixa
   }) => void;
 }
 
@@ -150,7 +151,8 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
         return;
       }
 
-      onBaixar({ dataPagamento, contaCorrenteId, multa, juros, desconto });
+      // Passamos a forma de pagamento para a função onBaixar
+      onBaixar({ dataPagamento, contaCorrenteId, multa, juros, desconto, formaPagamento });
       onClose();
     };
 
