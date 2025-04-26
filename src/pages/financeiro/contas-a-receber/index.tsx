@@ -16,6 +16,16 @@ import {
 import { BaixarContaReceberModal } from "@/components/contas-a-receber/BaixarContaReceberModal";
 import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ContasAReceberPage() {
   const { currentCompany } = useCompany();
@@ -36,6 +46,9 @@ export default function ContasAReceberPage() {
   // Modal Baixar
   const [contaParaBaixar, setContaParaBaixar] = useState<ContaReceber | null>(null);
   const [modalBaixarAberto, setModalBaixarAberto] = useState(false);
+
+  // Novo estado para controlar o dialog de confirmação
+  const [contaParaExcluir, setContaParaExcluir] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentCompany?.id) {
@@ -150,20 +163,28 @@ export default function ContasAReceberPage() {
   };
 
   const handleDelete = async (id: string) => {
+    setContaParaExcluir(id);
+  };
+
+  const confirmarExclusao = async () => {
+    if (!contaParaExcluir) return;
+
     try {
       const { error } = await supabase
         .from('movimentacoes_parcelas')
         .delete()
-        .eq('id', id);
+        .eq('id', contaParaExcluir);
       
       if (error) throw error;
 
-      setContas(prev => prev.filter(c => c.id !== id));
+      setContas(prev => prev.filter(c => c.id !== contaParaExcluir));
       toast.success("Conta excluída com sucesso");
+      setContaParaExcluir(null);
       
     } catch (error) {
       console.error('Erro ao excluir conta:', error);
       toast.error("Erro ao excluir conta");
+      setContaParaExcluir(null);
     }
   };
 
@@ -365,6 +386,23 @@ export default function ContasAReceberPage() {
 
   return (
     <div className="space-y-4">
+      <AlertDialog open={!!contaParaExcluir} onOpenChange={() => setContaParaExcluir(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este título? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setContaParaExcluir(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarExclusao} className="bg-red-500 hover:bg-red-600">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Contas a Receber</h1>
         <Button
