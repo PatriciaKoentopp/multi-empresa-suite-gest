@@ -17,27 +17,13 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { ContaPagar } from "../contas-a-pagar/contas-a-pagar-table";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatCurrency } from "@/lib/utils";
 
 interface MovimentacaoTableProps {
   movimentacoes: ContaPagar[];
   onEdit: (movimentacao: ContaPagar) => void;
   onDelete: (id: string) => void;
   onVisualizar: (movimentacao: ContaPagar) => void;
-}
-
-function formatDateBR(date?: Date) {
-  if (!date) return "-";
-  return formatDate(date);
-}
-
-function formatCurrency(valor?: number) {
-  if (valor === undefined) return "-";
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  });
 }
 
 function getTipoOperacao(tipo?: string) {
@@ -97,7 +83,7 @@ export function MovimentacaoTable({
           ) : (
             movimentacoes.map((movimentacao) => (
               <TableRow key={movimentacao.id}>
-                <TableCell>{formatDateBR(movimentacao.dataVencimento)}</TableCell>
+                <TableCell>{formatDate(movimentacao.dataVencimento)}</TableCell>
                 <TableCell>
                   {movimentacao.numeroParcela ? (
                     <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">

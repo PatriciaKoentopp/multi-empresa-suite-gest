@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -15,6 +16,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { formatDate, formatCurrency } from "@/lib/utils";
 
 export interface ContaPagar {
   id: string;
@@ -36,20 +38,6 @@ interface ContasAPagarTableProps {
   onDelete: (id: string) => void;
   onVisualizar: (conta: ContaPagar) => void;
   onDesfazerBaixa: (conta: ContaPagar) => void;
-}
-
-function formatDateBR(date?: Date) {
-  if (!date) return "-";
-  return date.toLocaleDateString("pt-BR");
-}
-
-function formatCurrency(valor?: number) {
-  if (valor === undefined) return "-";
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  });
 }
 
 function getStatusBadge(status: ContaPagar["status"]) {
@@ -113,8 +101,8 @@ export function ContasAPagarTable({
           ) : (
             contas.map((conta) => (
               <TableRow key={conta.id}>
-                <TableCell>{formatDateBR(conta.dataVencimento)}</TableCell>
-                <TableCell>{formatDateBR(conta.dataPagamento)}</TableCell>
+                <TableCell>{formatDate(conta.dataVencimento)}</TableCell>
+                <TableCell>{formatDate(conta.dataPagamento)}</TableCell>
                 <TableCell>
                   {conta.numeroTitulo ? (
                     <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">

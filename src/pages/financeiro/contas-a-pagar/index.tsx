@@ -28,6 +28,7 @@ import { BaixarContaPagarModal } from "@/components/contas-a-pagar/BaixarContaPa
 import { supabase } from "@/integrations/supabase/client";
 import { Movimentacao, MovimentacaoParcela } from "@/types/movimentacoes";
 import { useCompany } from "@/contexts/company-context";
+import { formatDate } from "@/lib/utils";
 
 export default function ContasAPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>([]);
@@ -216,64 +217,6 @@ export default function ContasAPagarPage() {
     }
   };
 
-  // Carregar dados do Supabase
-  const carregarContasAPagar = async () => {
-    try {
-      const { data: movimentacoes, error } = await supabase
-        .from('movimentacoes')
-        .select(`
-          *,
-          favorecido:favorecidos(nome),
-          movimentacoes_parcelas(
-            id,
-            numero,
-            valor,
-            data_vencimento,
-            data_pagamento,
-            multa,
-            juros,
-            desconto,
-            conta_corrente_id
-          )
-        `)
-        .eq('tipo_operacao', 'pagar')
-        .eq('empresa_id', currentCompany?.id);
-
-      if (error) throw error;
-
-      if (movimentacoes) {
-        const contasFormatadas: ContaPagar[] = movimentacoes.flatMap((mov: any) => {
-          return mov.movimentacoes_parcelas.map((parcela: any) => ({
-            id: parcela.id,
-            movimentacao_id: mov.id,
-            favorecido: mov.favorecido?.nome || 'Não informado',
-            descricao: mov.descricao || '',
-            dataVencimento: new Date(parcela.data_vencimento),
-            dataPagamento: parcela.data_pagamento ? new Date(parcela.data_pagamento) : undefined,
-            status: parcela.data_pagamento 
-              ? (new Date(parcela.data_vencimento) < new Date(parcela.data_pagamento) ? 'pago_em_atraso' : 'pago') 
-              : 'em_aberto',
-            valor: Number(parcela.valor),
-            multa: Number(parcela.multa || 0),
-            juros: Number(parcela.juros || 0),
-            desconto: Number(parcela.desconto || 0),
-            numeroParcela: parcela.numero,
-            numeroTitulo: mov.numero_documento
-          }));
-        });
-
-        setContas(contasFormatadas);
-      }
-    } catch (error: any) {
-      console.error('Erro ao carregar contas:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: 'Erro ao carregar as contas a pagar'
-      });
-    }
-  };
-
   const handleDesfazerBaixa = async (conta: ContaPagar) => {
     try {
       if (!conta.movimentacao_id) {
@@ -356,6 +299,65 @@ export default function ContasAPagarPage() {
     }
   };
 
+  // Carregar dados do Supabase
+  const carregarContasAPagar = async () => {
+    try {
+      const { data: movimentacoes, error } = await supabase
+        .from('movimentacoes')
+        .select(`
+          *,
+          favorecido:favorecidos(nome),
+          movimentacoes_parcelas(
+            id,
+            numero,
+            valor,
+            data_vencimento,
+            data_pagamento,
+            multa,
+            juros,
+            desconto,
+            conta_corrente_id
+          )
+        `)
+        .eq('tipo_operacao', 'pagar')
+        .eq('empresa_id', currentCompany?.id);
+
+      if (error) throw error;
+
+      if (movimentacoes) {
+        const contasFormatadas: ContaPagar[] = movimentacoes.flatMap((mov: any) => {
+          return mov.movimentacoes_parcelas.map((parcela: any) => ({
+            id: parcela.id,
+            movimentacao_id: mov.id,
+            favorecido: mov.favorecido?.nome || 'Não informado',
+            descricao: mov.descricao || '',
+            // Criar datas sem ajuste de timezone
+            dataVencimento: parcela.data_vencimento ? new Date(parcela.data_vencimento + "T12:00:00Z") : new Date(),
+            dataPagamento: parcela.data_pagamento ? new Date(parcela.data_pagamento + "T12:00:00Z") : undefined,
+            status: parcela.data_pagamento 
+              ? (new Date(parcela.data_vencimento + "T12:00:00Z") < new Date(parcela.data_pagamento + "T12:00:00Z") ? 'pago_em_atraso' : 'pago') 
+              : 'em_aberto',
+            valor: Number(parcela.valor),
+            multa: Number(parcela.multa || 0),
+            juros: Number(parcela.juros || 0),
+            desconto: Number(parcela.desconto || 0),
+            numeroParcela: parcela.numero,
+            numeroTitulo: mov.numero_documento
+          }));
+        });
+
+        setContas(contasFormatadas);
+      }
+    } catch (error: any) {
+      console.error('Erro ao carregar contas:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: 'Erro ao carregar as contas a pagar'
+      });
+    }
+  };
+
   // Carregar dados quando o componente montar ou a empresa mudar
   useEffect(() => {
     if (currentCompany) {
@@ -371,11 +373,11 @@ export default function ContasAPagarPage() {
         .includes(searchTerm.toLowerCase());
       const statusOk = statusFilter === "todas" || conta.status === statusFilter;
       const vencimentoDentroRange =
-        (!dataVencInicio || conta.dataVencimento >= new Date(dataVencInicio)) &&
-        (!dataVencFim || conta.dataVencimento <= new Date(dataVencFim));
+        (!dataVencInicio || conta.dataVencimento >= new Date(dataVencInicio + "T12:00:00Z")) &&
+        (!dataVencFim || conta.dataVencimento <= new Date(dataVencFim + "T23:59:59Z"));
       const pagamentoDentroRange =
-        (!dataPagInicio || (conta.dataPagamento && conta.dataPagamento >= new Date(dataPagInicio))) &&
-        (!dataPagFim || (conta.dataPagamento && conta.dataPagamento <= new Date(dataPagFim)));
+        (!dataPagInicio || (conta.dataPagamento && conta.dataPagamento >= new Date(dataPagInicio + "T12:00:00Z"))) &&
+        (!dataPagFim || (conta.dataPagamento && conta.dataPagamento <= new Date(dataPagFim + "T23:59:59Z")));
 
       return textoBusca && statusOk && vencimentoDentroRange && pagamentoDentroRange;
     });
