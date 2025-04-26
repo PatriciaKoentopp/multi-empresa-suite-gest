@@ -68,6 +68,7 @@ export default function FaturamentoPage() {
   const [excluirItem, setExcluirItem] = useState<Orcamento | null>(null);
   const [statusFilter, setStatusFilter] = useState<"ativo" | "inativo" | "todos">("ativo");
   const [efetivarVendaItem, setEfetivarVendaItem] = useState<Orcamento | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -135,10 +136,95 @@ export default function FaturamentoPage() {
   }
 
   // Função para abrir diálogo de confirmação
-  function handleConfirmarExclusao(item: Orcamento) {
+  const prepararExclusao = (item: Orcamento) => {
     setExcluirItem(item);
-    setShowToastConfirm(true);
-  }
+    setConfirmarExclusaoAberto(true);
+  };
+
+  // Função para excluir uma venda/orçamento após confirmação
+  const confirmarExclusao = async () => {
+    if (!excluirItem) return;
+    
+    try {
+      setIsLoading(true);
+
+      // Se for uma venda, precisamos verificar se há parcelas recebidas e excluir as movimentações
+      if (excluirItem.tipo === 'venda') {
+        // 1. Buscar a movimentação relacionada à venda
+        const { data: movimentacao, error: movError } = await supabase
+          .from('movimentacoes')
+          .select('id')
+          .eq('numero_documento', excluirItem.codigo)
+          .single();
+
+        if (movError) throw movError;
+
+        if (movimentacao) {
+          // 2. Verificar se alguma parcela foi recebida
+          const { data: parcelas, error: parcelasError } = await supabase
+            .from('movimentacoes_parcelas')
+            .select('data_pagamento')
+            .eq('movimentacao_id', movimentacao.id);
+
+          if (parcelasError) throw parcelasError;
+
+          const temParcelasRecebidas = parcelas.some(parcela => parcela.data_pagamento !== null);
+          
+          if (temParcelasRecebidas) {
+            toast({
+              title: "Não é possível excluir",
+              description: "Esta venda já possui parcelas recebidas.",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          // 3. Excluir parcelas da movimentação
+          const { error: deleteParcelasError } = await supabase
+            .from('movimentacoes_parcelas')
+            .delete()
+            .eq('movimentacao_id', movimentacao.id);
+
+          if (deleteParcelasError) throw deleteParcelasError;
+
+          // 4. Excluir movimentação
+          const { error: deleteMovError } = await supabase
+            .from('movimentacoes')
+            .delete()
+            .eq('id', movimentacao.id);
+
+          if (deleteMovError) throw deleteMovError;
+        }
+      }
+
+      // 5. Atualizar status do orçamento/venda para inativo
+      const { error } = await supabase
+        .from('orcamentos')
+        .update({ status: 'inativo' })
+        .eq('id', excluirItem.id);
+
+      if (error) throw error;
+
+      toast({ 
+        title: "Sucesso", 
+        description: `${excluirItem.tipo === 'venda' ? 'Venda' : 'Orçamento'} excluído com sucesso!` 
+      });
+      
+      carregarFaturamentos(); // Recarrega a lista
+      setExcluirItem(null);
+      setConfirmarExclusaoAberto(false);
+
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+      toast({
+        title: "Erro ao excluir registro",
+        description: "Ocorreu um erro ao tentar excluir o registro.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Função para cancelar exclusão
   function handleCancelarExclusao() {
@@ -490,7 +576,7 @@ export default function FaturamentoPage() {
             </Button>
             <Button
               variant="destructive"
-              onClick={handleConfirmarEExcluir}
+              onClick={confirmarExclusao}
               className="flex-1 sm:flex-none"
             >
               Excluir
