@@ -47,7 +47,8 @@ export function useMovimentacaoDados() {
         .from("plano_contas")
         .select("id, descricao")
         .eq("empresa_id", currentCompany.id)
-        .eq("status", "ativo");
+        .eq("status", "ativo")
+        .eq("categoria", "movimentação"); // Adicionado filtro por categoria
         
       if (errorCategorias) throw errorCategorias;
       
@@ -75,7 +76,7 @@ export function useMovimentacaoDados() {
       if (tiposTitulosData) {
         const tiposTitulosFormatados: TipoTitulo[] = tiposTitulosData.map(tipo => ({
           ...tipo,
-          tipo: tipo.tipo === "pagar" ? "pagar" : "receber" // Assegurando que tipo seja 'pagar' ou 'receber'
+          tipo: tipo.tipo === "pagar" ? "pagar" : "receber"
         }));
         setTiposTitulos(tiposTitulosFormatados);
       } else {
