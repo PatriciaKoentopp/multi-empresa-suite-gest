@@ -164,7 +164,7 @@ export default function ContasAReceberPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      // Primeiro, buscar a parcela que está sendo excluída para obter o movimentacao_id
+      // 1. Primeiro, buscar a parcela que está sendo excluída para obter o movimentacao_id
       const { data: parcela, error: parcelaError } = await supabase
         .from('movimentacoes_parcelas')
         .select('movimentacao_id')
@@ -173,7 +173,7 @@ export default function ContasAReceberPage() {
 
       if (parcelaError) throw parcelaError;
       
-      // Verificar se existe alguma parcela recebida para esta movimentação
+      // 2. Verificar se existe alguma parcela recebida para esta movimentação
       const { data: parcelasRecebidas, error: parcelasError } = await supabase
         .from('movimentacoes_parcelas')
         .select('data_pagamento')
@@ -183,12 +183,12 @@ export default function ContasAReceberPage() {
       if (parcelasError) throw parcelasError;
 
       if (parcelasRecebidas && parcelasRecebidas.length > 0) {
-        toast.error("Não é possível excluir parcelas de uma movimentação que já possui recebimentos.");
+        toast.error("Não é possível excluir título que já possui parcelas recebidas.");
         return;
       }
 
-      // Se não houver parcelas recebidas, permite a exclusão
-      setContaParaExcluir(id);
+      // Se não houver parcelas recebidas, permite a exclusão de todas as parcelas
+      setContaParaExcluir(parcela.movimentacao_id);
 
     } catch (error) {
       console.error('Erro ao verificar parcelas:', error);
@@ -200,20 +200,29 @@ export default function ContasAReceberPage() {
     if (!contaParaExcluir) return;
 
     try {
-      const { error } = await supabase
+      // Excluir todas as parcelas da movimentação
+      const { error: errorParcelas } = await supabase
         .from('movimentacoes_parcelas')
         .delete()
-        .eq('id', contaParaExcluir);
+        .eq('movimentacao_id', contaParaExcluir);
       
-      if (error) throw error;
+      if (errorParcelas) throw errorParcelas;
 
-      setContas(prev => prev.filter(c => c.id !== contaParaExcluir));
-      toast.success("Conta excluída com sucesso");
+      // Excluir a movimentação
+      const { error: errorMovimentacao } = await supabase
+        .from('movimentacoes')
+        .delete()
+        .eq('id', contaParaExcluir);
+
+      if (errorMovimentacao) throw errorMovimentacao;
+
+      setContas(prev => prev.filter(c => c.movimentacao_id !== contaParaExcluir));
+      toast.success("Título excluído com sucesso");
       setContaParaExcluir(null);
       
     } catch (error) {
-      console.error('Erro ao excluir conta:', error);
-      toast.error("Erro ao excluir conta");
+      console.error('Erro ao excluir título:', error);
+      toast.error("Erro ao excluir título");
       setContaParaExcluir(null);
     }
   };
