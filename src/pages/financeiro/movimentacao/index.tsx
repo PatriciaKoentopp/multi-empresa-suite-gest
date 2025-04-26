@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -138,7 +139,8 @@ export default function MovimentacaoPage() {
             id: mov.id,
             favorecido: mov.favorecido?.nome || 'Não informado',
             descricao: mov.descricao || '',
-            dataVencimento: mov.primeiro_vencimento ? new Date(mov.primeiro_vencimento) : undefined,
+            // Usar a função auxiliar para criar o objeto Date com a data correta - sem ajuste de timezone
+            dataVencimento: mov.primeiro_vencimento ? new Date(mov.primeiro_vencimento + "T12:00:00Z") : undefined,
             dataPagamento: undefined,
             status: 'em_aberto',
             valor: Number(mov.valor),
