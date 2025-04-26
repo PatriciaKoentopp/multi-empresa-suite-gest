@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -17,6 +16,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { ContaPagar } from "../contas-a-pagar/contas-a-pagar-table";
+import { formatDate } from "@/lib/utils";
 
 interface MovimentacaoTableProps {
   movimentacoes: ContaPagar[];
@@ -27,7 +27,7 @@ interface MovimentacaoTableProps {
 
 function formatDateBR(date?: Date) {
   if (!date) return "-";
-  return date.toLocaleDateString("pt-BR");
+  return formatDate(date);
 }
 
 function formatCurrency(valor?: number) {

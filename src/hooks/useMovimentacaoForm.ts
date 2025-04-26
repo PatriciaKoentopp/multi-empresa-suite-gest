@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +5,7 @@ import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useParcelasCalculation } from "./useParcelasCalculation";
+import { formatDate } from "@/lib/utils";
 
 export type Operacao = "pagar" | "receber" | "transferencia";
 
@@ -69,8 +69,11 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
   useEffect(() => {
     if (movimentacaoParaEditar) {
       setOperacao(movimentacaoParaEditar.tipo_operacao);
-      setDataEmissao(movimentacaoParaEditar.data_emissao ? new Date(movimentacaoParaEditar.data_emissao) : undefined);
-      setDataLancamento(movimentacaoParaEditar.data_lancamento ? new Date(movimentacaoParaEditar.data_lancamento) : undefined);
+      
+      // Usar as datas diretamente do banco, sem ajustes de timezone
+      setDataEmissao(movimentacaoParaEditar.data_emissao ? new Date(movimentacaoParaEditar.data_emissao + "T12:00:00Z") : undefined);
+      setDataLancamento(movimentacaoParaEditar.data_lancamento ? new Date(movimentacaoParaEditar.data_lancamento + "T12:00:00Z") : undefined);
+      
       setNumDoc(movimentacaoParaEditar.numero_documento || "");
       setFavorecido(movimentacaoParaEditar.favorecido_id || "");
       setCategoria(movimentacaoParaEditar.categoria_id || "");
@@ -79,7 +82,10 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
       setValor(movimentacaoParaEditar.valor?.toString().replace(".", ",") || "");
       setFormaPagamento(movimentacaoParaEditar.forma_pagamento || "");
       setNumParcelas(movimentacaoParaEditar.numero_parcelas || 1);
-      setDataPrimeiroVenc(movimentacaoParaEditar.primeiro_vencimento ? new Date(movimentacaoParaEditar.primeiro_vencimento) : undefined);
+      
+      // Usar a data do primeiro vencimento diretamente do banco, sem ajustes de timezone
+      setDataPrimeiroVenc(movimentacaoParaEditar.primeiro_vencimento ? new Date(movimentacaoParaEditar.primeiro_vencimento + "T12:00:00Z") : undefined);
+      
       setConsiderarDRE(movimentacaoParaEditar.considerar_dre);
       setParcelasCarregadas(true);
       

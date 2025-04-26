@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useMovimentacaoDados } from "@/hooks/useMovimentacaoDados";
+import { formatDate } from "@/lib/utils";
 
 export default function MovimentacaoPage() {
   const [movimentacoes, setMovimentacoes] = useState<ContaPagar[]>([]);
@@ -69,7 +70,7 @@ export default function MovimentacaoPage() {
       if (error) throw error;
       
       if (movimentacaoCompleta) {
-        // Navega para a página de edição com os dados da movimentação
+        // Importante: Não precisamos ajustar as datas aqui, pois vamos usar formatDate no componente
         navigate("/financeiro/incluir-movimentacao", {
           state: { movimentacao: movimentacaoCompleta }
         });
@@ -100,7 +101,7 @@ export default function MovimentacaoPage() {
       if (error) throw error;
       
       if (movimentacaoCompleta) {
-        // Navegar para a página de inclusão com os dados da movimentação e o modo visualização
+        // Importante: Não precisamos ajustar as datas aqui, pois vamos usar formatDate no componente
         navigate("/financeiro/incluir-movimentacao", {
           state: { 
             movimentacao: movimentacaoCompleta,
