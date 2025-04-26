@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -64,6 +63,13 @@ export default function IncluirMovimentacaoPage() {
   } = useMovimentacaoForm(movimentacaoParaEditar);
 
   const { favorecidos, categorias, contasCorrente, tiposTitulos } = useMovimentacaoDados();
+  
+  // Novo: Filtrar tipos de títulos baseado na operação
+  const tiposTitulosFiltrados = tiposTitulos.filter(tipo => {
+    if (operacao === "pagar") return tipo.tipo === "pagar";
+    if (operacao === "receber") return tipo.tipo === "receber";
+    return false;
+  });
 
   const [isModalNovoFavorecido, setIsModalNovoFavorecido] = useState(false);
   const [isModalNovaCategoria, setIsModalNovaCategoria] = useState(false);
@@ -170,7 +176,7 @@ export default function IncluirMovimentacaoPage() {
               onDataPrimeiroVencChange={setDataPrimeiroVenc}
               considerarDRE={considerarDRE}
               onConsiderarDREChange={setConsiderarDRE}
-              tiposTitulos={tiposTitulos.filter(t => t.tipo === "pagar")}
+              tiposTitulos={tiposTitulosFiltrados}
               favorecidos={favorecidos}
               categorias={categorias}
               formasPagamento={formasPagamento}
@@ -201,7 +207,7 @@ export default function IncluirMovimentacaoPage() {
               onDataPrimeiroVencChange={setDataPrimeiroVenc}
               considerarDRE={considerarDRE}
               onConsiderarDREChange={setConsiderarDRE}
-              tiposTitulos={tiposTitulos}
+              tiposTitulos={tiposTitulosFiltrados}
               favorecidos={favorecidos}
               categorias={categorias}
               formasPagamento={formasPagamento}
