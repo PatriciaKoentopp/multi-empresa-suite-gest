@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -577,30 +576,23 @@ export default function FluxoCaixaPage() {
           {/* Informações da Conta Corrente */}
           {contaCorrenteSelecionada && (
             <div className="mt-4 mb-4">
-              <div className="bg-blue-50 p-3 rounded-md border border-blue-100 flex flex-wrap">
-                <div className="mr-6 mb-2">
-                  <span className="text-xs text-gray-600 block">Conta:</span>
-                  <span className="font-medium">{contaCorrenteSelecionada.nome}</span>
-                </div>
-                <div className="mr-6 mb-2">
-                  <span className="text-xs text-gray-600 block">Banco:</span>
-                  <span className="font-medium">{contaCorrenteSelecionada.banco}</span>
-                </div>
-                <div className="mr-6 mb-2">
-                  <span className="text-xs text-gray-600 block">Agência/Conta:</span>
-                  <span className="font-medium">{contaCorrenteSelecionada.agencia}/{contaCorrenteSelecionada.numero}</span>
-                </div>
-                <div className="mb-2">
-                  <span className="text-xs text-gray-600 block">Saldo Inicial Cadastrado:</span>
-                  <span className="font-medium">{formatCurrency(Number(contaCorrenteSelecionada.saldo_inicial || 0))}</span>
-                </div>
-                {dataInicial && (
-                  <div className="w-full mt-2 pt-2 border-t border-blue-200">
-                    <span className="text-xs text-gray-600 block">Saldo até {dateToBR(dataInicial)}:</span>
-                    <span className="font-medium text-blue-700">{formatCurrency(saldoInicial)}</span>
-                    <span className="text-xs ml-2 text-gray-500">(Saldo inicial + movimentações anteriores ao período)</span>
+              <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                <div className="flex flex-wrap gap-6">
+                  <div>
+                    <span className="text-xs text-gray-600 block">Banco:</span>
+                    <span className="font-medium">{contaCorrenteSelecionada.banco} - {contaCorrenteSelecionada.nome}</span>
                   </div>
-                )}
+                  <div>
+                    <span className="text-xs text-gray-600 block">Agência/Conta:</span>
+                    <span className="font-medium">{contaCorrenteSelecionada.agencia}/{contaCorrenteSelecionada.numero}</span>
+                  </div>
+                  {dataInicial && (
+                    <div>
+                      <span className="text-xs text-gray-600 block">Saldo inicial do período:</span>
+                      <span className="font-medium text-blue-700">{formatCurrency(saldoInicial)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
