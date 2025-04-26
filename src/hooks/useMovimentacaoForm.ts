@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +50,7 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
   const [contaDestino, setContaDestino] = useState("");
   const [parcelasCarregadas, setParcelasCarregadas] = useState(false);
   const [forcarRecalculo, setForcarRecalculo] = useState(false);
+  const [movimentacaoId, setMovimentacaoId] = useState<string | undefined>(undefined);
 
   // Define a função parseValor antes de usá-la
   const parseValor = (valorStr: string): number => {
@@ -66,21 +68,23 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
     !parcelasCarregadas || forcarRecalculo
   );
 
-  // Função para buscar os dados atualizados da movimentação
+  // Função para buscar os dados atualizados da movimentação diretamente do banco
   const recarregarDadosMovimentacao = async (id: string) => {
     if (!currentCompany?.id) return;
 
     try {
+      // Buscar os dados atualizados da movimentação
       const { data: movimentacao, error } = await supabase
         .from('movimentacoes')
-        .select('*, movimentacoes_parcelas(*)')
+        .select('*')
         .eq('id', id)
         .single();
 
       if (error) throw error;
 
       if (movimentacao) {
-        setOperacao(movimentacao.tipo_operacao);
+        // Atualizar o estado com os dados do banco
+        setOperacao(movimentacao.tipo_operacao as Operacao);
         setDataEmissao(movimentacao.data_emissao ? new Date(movimentacao.data_emissao + "T12:00:00Z") : undefined);
         setDataLancamento(movimentacao.data_lancamento ? new Date(movimentacao.data_lancamento + "T12:00:00Z") : undefined);
         setNumDoc(movimentacao.numero_documento || "");
@@ -93,16 +97,30 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
         setNumParcelas(movimentacao.numero_parcelas || 1);
         setDataPrimeiroVenc(movimentacao.primeiro_vencimento ? new Date(movimentacao.primeiro_vencimento + "T12:00:00Z") : undefined);
         setConsiderarDRE(movimentacao.considerar_dre);
-        setParcelasCarregadas(true);
-        setForcarRecalculo(false);
+        setMovimentacaoId(movimentacao.id);
 
+        // Se for transferência, atualizar os campos específicos
         if (movimentacao.tipo_operacao === "transferencia") {
           setContaOrigem(movimentacao.conta_origem_id || "");
           setContaDestino(movimentacao.conta_destino_id || "");
         }
+
+        // Buscar as parcelas dessa movimentação
+        const { data: parcelasData, error: parcelasError } = await supabase
+          .from('movimentacoes_parcelas')
+          .select('*')
+          .eq('movimentacao_id', id)
+          .order('numero', { ascending: true });
+
+        if (!parcelasError && parcelasData) {
+          // Definir como parcelas carregadas e não forçar recálculo
+          setParcelasCarregadas(true);
+          setForcarRecalculo(false);
+        }
       }
     } catch (error) {
       console.error("Erro ao recarregar dados da movimentação:", error);
+      toast.error("Erro ao carregar dados da movimentação");
     }
   };
 
@@ -122,6 +140,7 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
       setValor(movimentacaoParaEditar.valor?.toString().replace(".", ",") || "");
       setFormaPagamento(movimentacaoParaEditar.forma_pagamento || "");
       setNumParcelas(movimentacaoParaEditar.numero_parcelas || 1);
+      setMovimentacaoId(movimentacaoParaEditar.id);
       
       // Usar a data do primeiro vencimento diretamente do banco, sem ajustes de timezone
       setDataPrimeiroVenc(movimentacaoParaEditar.primeiro_vencimento ? new Date(movimentacaoParaEditar.primeiro_vencimento + "T12:00:00Z") : undefined);
@@ -211,31 +230,56 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
       }
 
       let response;
-      let movimentacaoId;
+      let novaMovimentacaoId;
       
-      if (movimentacaoParaEditar) {
+      if (movimentacaoId) {
         // Atualizar movimentação existente
         response = await supabase
           .from("movimentacoes")
           .update(movimentacaoData)
-          .eq('id', movimentacaoParaEditar.id)
+          .eq('id', movimentacaoId)
           .select()
           .single();
 
         if (response.error) throw response.error;
-        movimentacaoId = movimentacaoParaEditar.id;
+        
+        try {
+          // Excluir parcelas anteriores antes de inserir as novas
+          const { error: deleteError } = await supabase
+            .from("movimentacoes_parcelas")
+            .delete()
+            .eq('movimentacao_id', movimentacaoId);
+            
+          if (deleteError) {
+            // Se houver erro ao deletar as parcelas (devido a referências em fluxo_caixa)
+            // recarregamos os dados originais do banco e mostramos o erro
+            await recarregarDadosMovimentacao(movimentacaoId);
+            throw deleteError;
+          }
 
-        // Excluir parcelas anteriores antes de inserir as novas
-        const { error: deleteError } = await supabase
-          .from("movimentacoes_parcelas")
-          .delete()
-          .eq('movimentacao_id', movimentacaoId);
-          
-        if (deleteError) {
-          // Se houver erro ao deletar as parcelas (por exemplo, devido a referências)
-          // recarregamos os dados originais e mostramos o erro
-          await recarregarDadosMovimentacao(movimentacaoId);
-          throw deleteError;
+          // Inserir novas parcelas
+          if (operacao !== "transferencia" && parcelas.length > 0) {
+            const parcelasData = parcelas.map(parcela => ({
+              movimentacao_id: movimentacaoId,
+              numero: parcela.numero,
+              valor: parcela.valor,
+              data_vencimento: format(parcela.dataVencimento, "yyyy-MM-dd")
+            }));
+
+            const { error: parcelasError } = await supabase
+              .from("movimentacoes_parcelas")
+              .insert(parcelasData);
+
+            if (parcelasError) {
+              // Caso de erro ao inserir novas parcelas, recarregar dados do banco
+              await recarregarDadosMovimentacao(movimentacaoId);
+              throw parcelasError;
+            }
+          }
+        } catch (error) {
+          // Garantir que os dados são recarregados do banco após qualquer erro
+          console.error("Erro ao processar parcelas:", error);
+          throw error;
         }
       } else {
         // Inserir nova movimentação
@@ -246,34 +290,41 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
           .single();
 
         if (response.error) throw response.error;
-        movimentacaoId = response.data.id;
-      }
+        novaMovimentacaoId = response.data.id;
 
-      // Inserir parcelas se não for transferência
-      if (operacao !== "transferencia" && parcelas.length > 0) {
-        const parcelasData = parcelas.map(parcela => ({
-          movimentacao_id: movimentacaoId,
-          numero: parcela.numero,
-          valor: parcela.valor,
-          data_vencimento: format(parcela.dataVencimento, "yyyy-MM-dd")
-        }));
+        // Inserir parcelas para nova movimentação
+        if (operacao !== "transferencia" && parcelas.length > 0) {
+          const parcelasData = parcelas.map(parcela => ({
+            movimentacao_id: novaMovimentacaoId,
+            numero: parcela.numero,
+            valor: parcela.valor,
+            data_vencimento: format(parcela.dataVencimento, "yyyy-MM-dd")
+          }));
 
-        const { error: parcelasError } = await supabase
-          .from("movimentacoes_parcelas")
-          .insert(parcelasData);
+          const { error: parcelasError } = await supabase
+            .from("movimentacoes_parcelas")
+            .insert(parcelasData);
 
-        if (parcelasError) {
-          // Se houver erro ao inserir as novas parcelas, recarregamos os dados originais
-          await recarregarDadosMovimentacao(movimentacaoId);
-          throw parcelasError;
+          if (parcelasError) throw parcelasError;
         }
       }
 
-      toast.success(movimentacaoParaEditar ? "Movimentação atualizada com sucesso!" : "Movimentação salva com sucesso!");
+      toast.success(movimentacaoId ? "Movimentação atualizada com sucesso!" : "Movimentação salva com sucesso!");
       navigate(-1);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar movimentação:", error);
-      toast.error("Erro ao salvar movimentação");
+      
+      // Se a mensagem de erro indicar violação de chave estrangeira
+      if (error.code === '23503' && error.message?.includes('fluxo_caixa')) {
+        toast.error("Não é possível alterar uma movimentação que já possui parcelas pagas");
+      } else {
+        toast.error("Erro ao salvar movimentação");
+      }
+      
+      // Recarregar dados originais se for uma edição
+      if (movimentacaoId) {
+        await recarregarDadosMovimentacao(movimentacaoId);
+      }
     }
   };
 
