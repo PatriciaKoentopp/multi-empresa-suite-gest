@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -138,7 +139,7 @@ export default function FaturamentoPage() {
   // Função para abrir diálogo de confirmação
   const prepararExclusao = (item: Orcamento) => {
     setExcluirItem(item);
-    setConfirmarExclusaoAberto(true);
+    setShowToastConfirm(true);
   };
 
   // Função para excluir uma venda/orçamento após confirmação
@@ -157,7 +158,7 @@ export default function FaturamentoPage() {
           .eq('numero_documento', excluirItem.codigo)
           .single();
 
-        if (movError) throw movError;
+        if (movError && movError.code !== 'PGRST116') throw movError;
 
         if (movimentacao) {
           // 2. Verificar se alguma parcela foi recebida
@@ -176,6 +177,7 @@ export default function FaturamentoPage() {
               description: "Esta venda já possui parcelas recebidas.",
               variant: "destructive"
             });
+            setIsLoading(false);
             return;
           }
 
@@ -212,7 +214,7 @@ export default function FaturamentoPage() {
       
       carregarFaturamentos(); // Recarrega a lista
       setExcluirItem(null);
-      setConfirmarExclusaoAberto(false);
+      setShowToastConfirm(false);
 
     } catch (error) {
       console.error('Erro ao excluir:', error);
@@ -230,31 +232,6 @@ export default function FaturamentoPage() {
   function handleCancelarExclusao() {
     setExcluirItem(null);
     setShowToastConfirm(false);
-  }
-
-  // Função para confirmar e excluir
-  async function handleConfirmarEExcluir() {
-    if (!excluirItem) return;
-
-    try {
-      const { error } = await supabase
-        .from('orcamentos')
-        .update({ status: 'inativo' })
-        .eq('id', excluirItem.id);
-
-      if (error) throw error;
-
-      toast({ title: "Registro excluído com sucesso!" });
-      carregarFaturamentos(); // Recarrega a lista
-      setExcluirItem(null);
-      setShowToastConfirm(false);
-    } catch (error) {
-      console.error('Erro ao excluir:', error);
-      toast({
-        title: "Erro ao excluir registro",
-        variant: "destructive",
-      });
-    }
   }
 
   // Filtros aplicados
@@ -510,7 +487,7 @@ export default function FaturamentoPage() {
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
-                          onClick={() => handleConfirmarExclusao(item)}
+                          onClick={() => prepararExclusao(item)}
                           className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -577,9 +554,10 @@ export default function FaturamentoPage() {
             <Button
               variant="destructive"
               onClick={confirmarExclusao}
+              disabled={isLoading}
               className="flex-1 sm:flex-none"
             >
-              Excluir
+              {isLoading ? "Excluindo..." : "Excluir"}
             </Button>
           </DialogFooter>
         </DialogContent>
