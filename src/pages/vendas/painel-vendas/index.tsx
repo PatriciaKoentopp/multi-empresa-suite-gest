@@ -52,6 +52,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
+          .eq('status', 'ativo') // Adicionado filtro por status ativo
           .gte('data', startYearDate)
           .lte('data', endYearDate);
 
@@ -84,6 +85,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
+          .eq('status', 'ativo') // Adicionado filtro por status ativo
           .gte('data', startCurrentMonthFormatted)
           .lte('data', endCurrentMonthFormatted);
 
@@ -114,6 +116,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
+          .eq('status', 'ativo') // Adicionado filtro por status ativo
           .gte('data', startLastMonthFormatted)
           .lte('data', endLastMonthFormatted);
 
@@ -142,6 +145,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
+          .eq('status', 'ativo') // Adicionado filtro por status ativo
           .gte('data', ninetyDaysAgoFormatted);
 
         if (ticketError) throw ticketError;
@@ -161,6 +165,7 @@ const PainelVendasPage = () => {
           .from('orcamentos')
           .select('favorecido_id')
           .eq('tipo', 'venda')
+          .eq('status', 'ativo') // Adicionado filtro por status ativo
           .gte('data', ninetyDaysAgoFormatted);
 
         if (clientesError) throw clientesError;
@@ -194,6 +199,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
+          .eq('status', 'ativo') // Adicionado filtro por status ativo
           .gte('data', startYearDate)
           .order('data');
 
@@ -235,6 +241,7 @@ const PainelVendasPage = () => {
           .gte('orcamentos.data', startCurrentMonthFormatted)
           .lte('orcamentos.data', endCurrentMonthFormatted)
           .eq('orcamentos.tipo', 'venda')
+          .eq('orcamentos.status', 'ativo') // Adicionado filtro por status ativo
           .inner('orcamentos');
 
         if (categoryError) throw categoryError;
@@ -268,6 +275,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
+          .eq('status', 'ativo') // Adicionado filtro por status ativo
           .gte('data', startCurrentMonthFormatted)
           .lte('data', endCurrentMonthFormatted)
           .order('data');
