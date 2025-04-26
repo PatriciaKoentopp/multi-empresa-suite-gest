@@ -299,7 +299,7 @@ export default function FluxoCaixaPage() {
         ...movimentacao,
         saldo_calculado: saldoAcumulado
       };
-    }).reverse();
+    }); // Removemos o .reverse() para manter a ordem crescente de datas
   }, [movimentacoesPeriodo, saldoInicial, contaCorrenteId]);
 
   // Função para atualizar datas automáticas ao mudar período
