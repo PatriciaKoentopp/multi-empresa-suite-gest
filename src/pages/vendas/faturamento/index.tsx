@@ -40,6 +40,7 @@ import { useCompany } from "@/contexts/company-context";
 import { toast } from "@/hooks/use-toast";
 import { Orcamento, Favorecido } from "@/types";
 import { EfetivarVendaModal } from "@/components/vendas/EfetivarVendaModal";
+import { formatDate } from "@/lib/utils";
 
 // Opções de tipo
 const tipos = ["Todos", "Orçamento", "Venda"];
@@ -363,7 +364,11 @@ export default function FaturamentoPage() {
                     {item.tipo === "orcamento" ? "Orçamento" : "Venda"}
                   </TableCell>
                   <TableCell>{item.codigo}</TableCell>
-                  <TableCell>{formatDateBR(item.data)}</TableCell>
+                  <TableCell>
+                    {item.tipo === "orcamento" 
+                      ? formatDate(item.data)
+                      : formatDate(item.data_venda)}
+                  </TableCell>
                   <TableCell>{item.favorecido?.nome}</TableCell>
                   <TableCell>{item.codigo_projeto}</TableCell>
                   <TableCell className="text-right">
