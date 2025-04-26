@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Favorecido, Servico, TabelaPreco, TabelaPrecoItem, Orcamento as OrcamentoType, OrcamentoItem, OrcamentoParcela } from "@/types";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { format, addMonths } from 'date-fns';
 
 // Formas de Pagamento
 const formasPagamento = [
@@ -37,7 +37,8 @@ export default function OrcamentoPage() {
   const isVisualizacao = searchParams.get('visualizar') === '1';
   
   const [data, setData] = useState(formatDate(new Date()));
-  const [codigoVenda, setCodigoVenda] = useState(gerarCodigoVenda());
+  // Removendo a geração automática do código de venda
+  const [codigoVenda, setCodigoVenda] = useState("");
   const [favorecidoId, setFavorecidoId] = useState<string>("");
   const [showFavorecidoModal, setShowFavorecidoModal] = useState(false);
   const [codigoProjeto, setCodigoProjeto] = useState("");
@@ -49,7 +50,7 @@ export default function OrcamentoPage() {
   ]);
   const [dataNotaFiscal, setDataNotaFiscal] = useState("");
   const [numeroNotaFiscal, setNumeroNotaFiscal] = useState("");
-  const [notaFiscalPdf, setNotaFiscalPdf] = useState<File | null>(null);
+  const [notaFiscalPdf, setNotaFiscalPdf = useState<File | null>(null);
   const [notaFiscalPdfUrl, setNotaFiscalPdfUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -63,18 +64,20 @@ export default function OrcamentoPage() {
   // Cálculo do total do orçamento
   const total = servicos.reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
   
-  // Função para calcular as parcelas
+  // Modificando a função que gera as parcelas para incluir datas padrão
   function getParcelas(valorTotal: number, numParcelas: number, codigo: string, datasPrimeiroVencimento?: string) {
     if (numParcelas <= 1) {
       return [{
         valor: valorTotal,
-        dataVencimento: datasPrimeiroVencimento || "",
+        dataVencimento: datasPrimeiroVencimento || format(new Date(), 'yyyy-MM-dd'),
         numeroParcela: `${codigo}/1`
       }];
     }
+    
     const valorParcela = Math.floor((valorTotal / numParcelas) * 100) / 100;
     const parcelas = [];
     let soma = 0;
+    
     for (let i = 0; i < numParcelas; i++) {
       let valor = valorParcela;
       if (i === numParcelas - 1) {
@@ -82,15 +85,22 @@ export default function OrcamentoPage() {
       } else {
         soma += valor;
       }
+      
+      // Calcula a data de vencimento: primeira parcela hoje, demais a cada 30 dias
+      const dataVencimento = format(
+        addMonths(new Date(), i),
+        'yyyy-MM-dd'
+      );
+      
       parcelas.push({
         valor,
-        dataVencimento: datasPrimeiroVencimento || "",
+        dataVencimento: dataVencimento,
         numeroParcela: `${codigo}/${i + 1}`,
       });
     }
     return parcelas;
   }
-  
+
   // Inicializar parcelas
   const [parcelas, setParcelas] = useState(() => getParcelas(0, numeroParcelas, codigoVenda));
   const [parcelasCarregadas, setParcelasCarregadas] = useState(false);
@@ -585,10 +595,17 @@ export default function OrcamentoPage() {
               
               
               <div className="flex flex-col md:flex-row gap-4">
-                {/* Código da Venda */}
+                {/* Código da Venda - agora editável */}
                 <div className="w-full md:w-1/2">
-                  <label className="block text-sm mb-1">Código da Venda</label>
-                  <Input type="text" value={codigoVenda} readOnly />
+                  <label className="block text-sm mb-1">Código da Venda *</label>
+                  <Input 
+                    type="text" 
+                    value={codigoVenda} 
+                    onChange={(e) => setCodigoVenda(e.target.value)}
+                    placeholder="Digite o código da venda"
+                    required
+                    disabled={isVisualizacao}
+                  />
                 </div>
                 {/* Favorecido */}
                 <div className="w-full md:w-1/2">
