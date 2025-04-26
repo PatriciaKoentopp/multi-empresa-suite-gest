@@ -50,7 +50,7 @@ export default function OrcamentoPage() {
   ]);
   const [dataNotaFiscal, setDataNotaFiscal] = useState("");
   const [numeroNotaFiscal, setNumeroNotaFiscal] = useState("");
-  const [notaFiscalPdf, setNotaFiscalPdf = useState<File | null>(null);
+  const [notaFiscalPdf, setNotaFiscalPdf] = useState<File | null>(null);
   const [notaFiscalPdfUrl, setNotaFiscalPdfUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
