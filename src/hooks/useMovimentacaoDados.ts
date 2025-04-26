@@ -48,7 +48,8 @@ export function useMovimentacaoDados() {
         .select("id, descricao")
         .eq("empresa_id", currentCompany.id)
         .eq("status", "ativo")
-        .eq("categoria", "movimentação"); // Adicionado filtro por categoria
+        .eq("categoria", "movimentação")
+        .in("tipo", ["receita", "despesa"]); // Adicionado filtro por tipo receita e despesa
         
       if (errorCategorias) throw errorCategorias;
       
