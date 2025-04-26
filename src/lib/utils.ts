@@ -13,30 +13,51 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDate(date: Date | undefined | string, formatString = "dd/MM/yyyy"): string {
   if (!date) return "";
   
-  // Se for uma string no formato ISO ou YYYY-MM-DD, convertemos para Date
+  // Para garantir que trabalhamos com a data exata, sem ajustes de timezone
   let dateObj: Date;
+  
+  // Se for string, precisamos converter para Date
   if (typeof date === "string") {
-    // Trata datas no formato YYYY-MM-DD diretamente
+    // Se a data estiver no formato ISO ou YYYY-MM-DD
     if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
       const [year, month, day] = date.split('-').map(Number);
-      // Usando UTC para preservar o dia exato
-      dateObj = new Date(Date.UTC(year, month - 1, day));
-    } else {
-      // Qualquer outro formato de string de data
-      dateObj = new Date(date);
+      dateObj = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+    } 
+    // Se for uma string ISO com data e hora
+    else if (date.includes('T')) {
+      const datePart = date.split('T')[0];
+      const [year, month, day] = datePart.split('-').map(Number);
+      dateObj = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+    } 
+    // Qualquer outro formato de data
+    else {
+      const parts = date.split('/');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const year = parseInt(parts[2], 10);
+        dateObj = new Date(Date.UTC(year, month, day, 12, 0, 0));
+      } else {
+        // Fallback para qualquer outro formato
+        dateObj = new Date(date);
+      }
     }
-  } else {
-    dateObj = date;
+  } 
+  // Se já for um objeto Date
+  else {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    dateObj = new Date(Date.UTC(year, month, day, 12, 0, 0));
   }
   
-  // Extrair componentes de data sem considerar timezone
-  const year = dateObj.getFullYear();
-  const month = dateObj.getMonth();
-  const day = dateObj.getDate();
-  
-  // Criar uma nova data com UTC para evitar ajustes de timezone
-  const utcDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
-  return format(utcDate, formatString, { locale: ptBR });
+  // Formatar a data usando date-fns
+  try {
+    return format(dateObj, formatString, { locale: ptBR });
+  } catch (error) {
+    console.error("Erro ao formatar data:", error);
+    return "";
+  }
 }
 
 // Função para converter string DD/MM/YYYY para Date sem ajuste de timezone

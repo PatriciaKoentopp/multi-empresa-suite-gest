@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { formatDate } from "@/lib/utils";
+import { formatDate, parseDateString, dateToISOString } from "@/lib/utils";
 import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Favorecido, Servico, TabelaPreco, TabelaPrecoItem, Orcamento as OrcamentoType, OrcamentoItem, OrcamentoParcela } from "@/types";
@@ -139,8 +140,8 @@ export default function OrcamentoPage() {
       if (parcelasError) throw parcelasError;
       
       // Preencher o formulário com os dados
-      // Usando formatDate para evitar ajuste de timezone
-      setData(formatDate(orcamento.data));
+      // Exibir data exatamente como está no banco
+      setData(orcamento.data ? formatDate(orcamento.data) : formatDate(new Date()));
       setCodigoVenda(orcamento.codigo);
       setFavorecidoId(orcamento.favorecido_id);
       setCodigoProjeto(orcamento.codigo_projeto || "");
@@ -148,7 +149,7 @@ export default function OrcamentoPage() {
       setFormaPagamento(orcamento.forma_pagamento);
       setNumeroParcelas(orcamento.numero_parcelas);
       
-      // Usando formatDate para evitar ajuste de timezone
+      // Exibir data da nota fiscal exatamente como está no banco
       if (orcamento.data_nota_fiscal) {
         setDataNotaFiscal(formatDate(orcamento.data_nota_fiscal, "yyyy-MM-dd"));
       }
@@ -169,7 +170,7 @@ export default function OrcamentoPage() {
       if (parcelas && parcelas.length > 0) {
         const novasParcelas = parcelas.map(p => ({
           valor: p.valor,
-          dataVencimento: formatDate(p.data_vencimento, "yyyy-MM-dd"), // Usando formatDate para evitar ajuste de timezone
+          dataVencimento: formatDate(p.data_vencimento, "yyyy-MM-dd"),
           numeroParcela: p.numero_parcela
         }));
         setParcelas(novasParcelas);
