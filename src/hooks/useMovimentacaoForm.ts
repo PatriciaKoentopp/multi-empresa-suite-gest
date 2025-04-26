@@ -66,6 +66,46 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
     !parcelasCarregadas || forcarRecalculo
   );
 
+  // Função para buscar os dados atualizados da movimentação
+  const recarregarDadosMovimentacao = async (id: string) => {
+    if (!currentCompany?.id) return;
+
+    try {
+      const { data: movimentacao, error } = await supabase
+        .from('movimentacoes')
+        .select('*, movimentacoes_parcelas(*)')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      if (movimentacao) {
+        setOperacao(movimentacao.tipo_operacao);
+        setDataEmissao(movimentacao.data_emissao ? new Date(movimentacao.data_emissao + "T12:00:00Z") : undefined);
+        setDataLancamento(movimentacao.data_lancamento ? new Date(movimentacao.data_lancamento + "T12:00:00Z") : undefined);
+        setNumDoc(movimentacao.numero_documento || "");
+        setFavorecido(movimentacao.favorecido_id || "");
+        setCategoria(movimentacao.categoria_id || "");
+        setTipoTitulo(movimentacao.tipo_titulo_id || "");
+        setDescricao(movimentacao.descricao || "");
+        setValor(movimentacao.valor?.toString().replace(".", ",") || "");
+        setFormaPagamento(movimentacao.forma_pagamento || "");
+        setNumParcelas(movimentacao.numero_parcelas || 1);
+        setDataPrimeiroVenc(movimentacao.primeiro_vencimento ? new Date(movimentacao.primeiro_vencimento + "T12:00:00Z") : undefined);
+        setConsiderarDRE(movimentacao.considerar_dre);
+        setParcelasCarregadas(true);
+        setForcarRecalculo(false);
+
+        if (movimentacao.tipo_operacao === "transferencia") {
+          setContaOrigem(movimentacao.conta_origem_id || "");
+          setContaDestino(movimentacao.conta_destino_id || "");
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao recarregar dados da movimentação:", error);
+    }
+  };
+
   useEffect(() => {
     if (movimentacaoParaEditar) {
       setOperacao(movimentacaoParaEditar.tipo_operacao);
@@ -191,7 +231,12 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
           .delete()
           .eq('movimentacao_id', movimentacaoId);
           
-        if (deleteError) throw deleteError;
+        if (deleteError) {
+          // Se houver erro ao deletar as parcelas (por exemplo, devido a referências)
+          // recarregamos os dados originais e mostramos o erro
+          await recarregarDadosMovimentacao(movimentacaoId);
+          throw deleteError;
+        }
       } else {
         // Inserir nova movimentação
         response = await supabase
@@ -217,7 +262,11 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
           .from("movimentacoes_parcelas")
           .insert(parcelasData);
 
-        if (parcelasError) throw parcelasError;
+        if (parcelasError) {
+          // Se houver erro ao inserir as novas parcelas, recarregamos os dados originais
+          await recarregarDadosMovimentacao(movimentacaoId);
+          throw parcelasError;
+        }
       }
 
       toast.success(movimentacaoParaEditar ? "Movimentação atualizada com sucesso!" : "Movimentação salva com sucesso!");
