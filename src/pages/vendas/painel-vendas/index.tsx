@@ -40,6 +40,11 @@ const PainelVendasPage = () => {
         const currentYear = new Date().getFullYear();
         console.log("Ano atual:", currentYear);
 
+        // Formato de data correto para o Supabase: YYYY-MM-DD
+        const startYearDate = `${currentYear}-01-01`;
+        const endYearDate = `${currentYear}-12-31`;
+        console.log("Período do ano:", startYearDate, "até", endYearDate);
+
         const { data: yearData, error: yearError } = await supabase
           .from('orcamentos')
           .select(`
@@ -47,8 +52,8 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .gte('data', `${currentYear}-01-01`)
-          .lte('data', `${currentYear}-12-31`);
+          .gte('data', startYearDate)
+          .lte('data', endYearDate);
 
         if (yearError) throw yearError;
         console.log("Dados do ano:", yearData);
@@ -61,11 +66,15 @@ const PainelVendasPage = () => {
         
         console.log("Total de vendas do ano:", totalVendas);
 
-        // Buscar vendas do mês atual
+        // Buscar vendas do mês atual - usando formato de data correto
         const startCurrentMonth = startOfMonth(new Date());
         const endCurrentMonth = endOfMonth(new Date());
         
-        console.log("Período mês atual:", startCurrentMonth.toISOString(), "até", endCurrentMonth.toISOString());
+        // Formatar para YYYY-MM-DD
+        const startCurrentMonthFormatted = format(startCurrentMonth, 'yyyy-MM-dd');
+        const endCurrentMonthFormatted = format(endCurrentMonth, 'yyyy-MM-dd');
+        
+        console.log("Período mês atual:", startCurrentMonthFormatted, "até", endCurrentMonthFormatted);
         
         const { data: currentMonthData, error: currentMonthError } = await supabase
           .from('orcamentos')
@@ -75,8 +84,8 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .gte('data', startCurrentMonth.toISOString())
-          .lte('data', endCurrentMonth.toISOString());
+          .gte('data', startCurrentMonthFormatted)
+          .lte('data', endCurrentMonthFormatted);
 
         if (currentMonthError) throw currentMonthError;
         console.log("Dados do mês atual:", currentMonthData);
@@ -88,11 +97,15 @@ const PainelVendasPage = () => {
         
         console.log("Vendas mês atual:", vendasMesAtual);
 
-        // Buscar vendas do mês anterior
+        // Buscar vendas do mês anterior - usando formato de data correto
         const startLastMonth = startOfMonth(subMonths(new Date(), 1));
         const endLastMonth = endOfMonth(subMonths(new Date(), 1));
         
-        console.log("Período mês anterior:", startLastMonth.toISOString(), "até", endLastMonth.toISOString());
+        // Formatar para YYYY-MM-DD
+        const startLastMonthFormatted = format(startLastMonth, 'yyyy-MM-dd');
+        const endLastMonthFormatted = format(endLastMonth, 'yyyy-MM-dd');
+        
+        console.log("Período mês anterior:", startLastMonthFormatted, "até", endLastMonthFormatted);
         
         const { data: lastMonthData, error: lastMonthError } = await supabase
           .from('orcamentos')
@@ -101,8 +114,8 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .gte('data', startLastMonth.toISOString())
-          .lte('data', endLastMonth.toISOString());
+          .gte('data', startLastMonthFormatted)
+          .lte('data', endLastMonthFormatted);
 
         if (lastMonthError) throw lastMonthError;
         console.log("Dados do mês anterior:", lastMonthData);
@@ -117,7 +130,11 @@ const PainelVendasPage = () => {
         // Calcular variação percentual
         const variacaoPercentual = vendasMesAnterior === 0 ? 100 : ((vendasMesAtual - vendasMesAnterior) / vendasMesAnterior) * 100;
 
-        // Buscar média de ticket
+        // Buscar média de ticket - usando formato de data correto para os últimos 90 dias
+        const ninetyDaysAgo = subDays(new Date(), 90);
+        const ninetyDaysAgoFormatted = format(ninetyDaysAgo, 'yyyy-MM-dd');
+        console.log("90 dias atrás:", ninetyDaysAgoFormatted);
+
         const { data: ticketData, error: ticketError } = await supabase
           .from('orcamentos')
           .select(`
@@ -125,7 +142,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .gte('data', subDays(new Date(), 90).toISOString());
+          .gte('data', ninetyDaysAgoFormatted);
 
         if (ticketError) throw ticketError;
         console.log("Dados para cálculo de ticket médio:", ticketData);
@@ -144,13 +161,20 @@ const PainelVendasPage = () => {
           .from('orcamentos')
           .select('favorecido_id')
           .eq('tipo', 'venda')
-          .gte('data', subDays(new Date(), 90).toISOString())
-          .distinct();
+          .gte('data', ninetyDaysAgoFormatted);
 
         if (clientesError) throw clientesError;
-        console.log("Clientes ativos:", clientesData);
-
-        const clientesAtivos = clientesData?.length || 0;
+        
+        // Contar clientes únicos
+        const clientesUnicos = new Set();
+        clientesData?.forEach(orcamento => {
+          if (orcamento.favorecido_id) {
+            clientesUnicos.add(orcamento.favorecido_id);
+          }
+        });
+        
+        const clientesAtivos = clientesUnicos.size;
+        console.log("Clientes ativos:", clientesAtivos);
 
         setSalesData({
           total_vendas: totalVendas,
@@ -162,6 +186,7 @@ const PainelVendasPage = () => {
         });
 
         // Buscar dados para o gráfico de barras (vendas mensais)
+        // Formatando corretamente as datas no formato YYYY-MM-DD
         const { data: monthlyData, error: monthlyError } = await supabase
           .from('orcamentos')
           .select(`
@@ -169,7 +194,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .gte('data', `${currentYear}-01-01`)
+          .gte('data', startYearDate)
           .order('data');
 
         if (monthlyError) throw monthlyError;
@@ -177,8 +202,13 @@ const PainelVendasPage = () => {
 
         const monthlyChartData = Array.from({ length: 12 }, (_, i) => {
           const month = i + 1;
+          // Filtra orçamentos cujo mês corresponde ao índice do loop
           const monthData = monthlyData?.filter(
-            (item) => new Date(item.data).getMonth() === i
+            (item) => {
+              if (!item.data) return false;
+              const date = new Date(item.data);
+              return date.getMonth() === i;
+            }
           );
           
           const faturado = monthData?.reduce((acc, orcamento) => {
@@ -202,8 +232,8 @@ const PainelVendasPage = () => {
             valor,
             servico:servicos(nome)
           `)
-          .gte('orcamentos.data', startCurrentMonth.toISOString())
-          .lte('orcamentos.data', endCurrentMonth.toISOString())
+          .gte('orcamentos.data', startCurrentMonthFormatted)
+          .lte('orcamentos.data', endCurrentMonthFormatted)
           .eq('orcamentos.tipo', 'venda')
           .inner('orcamentos');
 
@@ -238,14 +268,17 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .gte('data', startCurrentMonth.toISOString())
-          .lte('data', endCurrentMonth.toISOString())
+          .gte('data', startCurrentMonthFormatted)
+          .lte('data', endCurrentMonthFormatted)
           .order('data');
 
         if (dailyError) throw dailyError;
         console.log("Dados diários para gráfico de linha:", dailyData);
 
         const dailyChartData = dailyData?.reduce((acc: any[], orcamento) => {
+          if (!orcamento.data) return acc;
+          
+          // Formatando para DD/MM como esperado pelo componente
           const date = format(new Date(orcamento.data), 'dd/MM');
           const value = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
           
@@ -276,14 +309,6 @@ const PainelVendasPage = () => {
 
     fetchData();
   }, [toast]);
-
-  // Formatação de valores para exibição
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
 
   if (isLoading) {
     return (
@@ -406,7 +431,7 @@ const PainelVendasPage = () => {
         
         <Card className="md:col-span-1">
           <CardHeader>
-            <CardTitle>Tendência Vendas Diárias (Novembro)</CardTitle>
+            <CardTitle>Tendência Vendas Diárias ({format(new Date(), 'MMMM', { locale: ptBR })})</CardTitle>
           </CardHeader>
           <CardContent>
             <SalesLineChart data={lineChartData} />
