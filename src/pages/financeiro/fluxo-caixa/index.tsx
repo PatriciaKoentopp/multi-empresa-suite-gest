@@ -1,9 +1,11 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Search, Filter } from "lucide-react";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -231,13 +233,13 @@ export default function FluxoCaixaPage() {
     enabled: !!currentCompany?.id && !!contaCorrenteId,
   });
 
-  // Calcular saldo inicial dinâmico até a data inicial da consulta
+  // Calcular saldo acumulado até a data inicial da consulta
   const saldoInicial = useMemo(() => {
     // Se não temos conta selecionada ou dados, não calcular
     if (!contaCorrenteSelecionada || !todasMovimentacoes.length || !dataInicial) return 0;
 
-    // Obtemos o saldo inicial como 0, calcularemos considerando todas as movimentações anteriores
-    let saldo = 0;
+    // Obtemos o saldo inicial cadastrado na conta corrente
+    let saldo = contaCorrenteSelecionada.saldo_inicial ? Number(contaCorrenteSelecionada.saldo_inicial) : 0;
     
     // Data inicial em formato ISO para comparação
     const dataInicialISO = dataInicial.toISOString().split('T')[0];
@@ -588,10 +590,15 @@ export default function FluxoCaixaPage() {
                   <span className="text-xs text-gray-600 block">Agência/Conta:</span>
                   <span className="font-medium">{contaCorrenteSelecionada.agencia}/{contaCorrenteSelecionada.numero}</span>
                 </div>
+                <div className="mb-2">
+                  <span className="text-xs text-gray-600 block">Saldo Inicial Cadastrado:</span>
+                  <span className="font-medium">{formatCurrency(Number(contaCorrenteSelecionada.saldo_inicial || 0))}</span>
+                </div>
                 {dataInicial && (
                   <div className="w-full mt-2 pt-2 border-t border-blue-200">
                     <span className="text-xs text-gray-600 block">Saldo até {dateToBR(dataInicial)}:</span>
                     <span className="font-medium text-blue-700">{formatCurrency(saldoInicial)}</span>
+                    <span className="text-xs ml-2 text-gray-500">(Saldo inicial + movimentações anteriores ao período)</span>
                   </div>
                 )}
               </div>
