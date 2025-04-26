@@ -163,7 +163,37 @@ export default function ContasAReceberPage() {
   };
 
   const handleDelete = async (id: string) => {
-    setContaParaExcluir(id);
+    try {
+      // Primeiro, buscar a parcela que está sendo excluída para obter o movimentacao_id
+      const { data: parcela, error: parcelaError } = await supabase
+        .from('movimentacoes_parcelas')
+        .select('movimentacao_id')
+        .eq('id', id)
+        .single();
+
+      if (parcelaError) throw parcelaError;
+      
+      // Verificar se existe alguma parcela recebida para esta movimentação
+      const { data: parcelasRecebidas, error: parcelasError } = await supabase
+        .from('movimentacoes_parcelas')
+        .select('data_pagamento')
+        .eq('movimentacao_id', parcela.movimentacao_id)
+        .not('data_pagamento', 'is', null);
+
+      if (parcelasError) throw parcelasError;
+
+      if (parcelasRecebidas && parcelasRecebidas.length > 0) {
+        toast.error("Não é possível excluir parcelas de uma movimentação que já possui recebimentos.");
+        return;
+      }
+
+      // Se não houver parcelas recebidas, permite a exclusão
+      setContaParaExcluir(id);
+
+    } catch (error) {
+      console.error('Erro ao verificar parcelas:', error);
+      toast.error("Erro ao verificar parcelas para exclusão");
+    }
   };
 
   const confirmarExclusao = async () => {
