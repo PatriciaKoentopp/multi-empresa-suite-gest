@@ -133,10 +133,13 @@ export default function FluxoCaixaPage() {
     }
   }, [contaCorrenteId, contasCorrentes]);
 
-  // Buscar movimentações do fluxo de caixa
-  const { data: movimentacoes = [], isLoading } = useQuery({
-    queryKey: ["fluxo-caixa", currentCompany?.id, contaCorrenteId, dataInicial, dataFinal],
+  // Buscar TODAS as movimentações do fluxo de caixa para a conta selecionada
+  // Isso permite calcular o saldo correto considerando movimentações fora do período
+  const { data: todasMovimentacoes = [], isLoading: isLoadingTodasMovimentacoes } = useQuery({
+    queryKey: ["fluxo-caixa-todas", currentCompany?.id, contaCorrenteId],
     queryFn: async () => {
+      if (!contaCorrenteId) return [];
+
       let query = supabase
         .from("fluxo_caixa")
         .select(`
@@ -149,11 +152,43 @@ export default function FluxoCaixaPage() {
             numero
           )
         `)
-        .eq("empresa_id", currentCompany?.id);
+        .eq("empresa_id", currentCompany?.id)
+        .eq("conta_corrente_id", contaCorrenteId)
+        .order("data_movimentacao", { ascending: true });
 
-      if (contaCorrenteId) {
-        query = query.eq("conta_corrente_id", contaCorrenteId);
+      const { data, error } = await query;
+
+      if (error) {
+        toast.error("Erro ao carregar todas as movimentações");
+        console.error(error);
+        return [];
       }
+
+      return data || [];
+    },
+    enabled: !!currentCompany?.id && !!contaCorrenteId,
+  });
+
+  // Buscar movimentações do fluxo de caixa para o período selecionado
+  const { data: movimentacoesPeriodo = [], isLoading } = useQuery({
+    queryKey: ["fluxo-caixa-periodo", currentCompany?.id, contaCorrenteId, dataInicial, dataFinal],
+    queryFn: async () => {
+      if (!contaCorrenteId) return [];
+
+      let query = supabase
+        .from("fluxo_caixa")
+        .select(`
+          *,
+          movimentacoes (
+            descricao,
+            favorecido_id
+          ),
+          movimentacoes_parcelas (
+            numero
+          )
+        `)
+        .eq("empresa_id", currentCompany?.id)
+        .eq("conta_corrente_id", contaCorrenteId);
 
       if (dataInicial) {
         query = query.gte("data_movimentacao", dataInicial.toISOString().split("T")[0]);
@@ -166,7 +201,7 @@ export default function FluxoCaixaPage() {
       const { data, error } = await query.order("data_movimentacao", { ascending: false });
 
       if (error) {
-        toast.error("Erro ao carregar movimentações");
+        toast.error("Erro ao carregar movimentações do período");
         console.error(error);
         return [];
       }
@@ -193,31 +228,59 @@ export default function FluxoCaixaPage() {
         }
       }
 
-      return data;
+      return data || [];
     },
-    enabled: !!currentCompany?.id,
+    enabled: !!currentCompany?.id && !!contaCorrenteId,
   });
 
-  // Calcular saldo acumulado para cada movimentação
+  // Calcular saldo acumulado até a data inicial da consulta
+  const saldoInicial = useMemo(() => {
+    // Se não temos conta selecionada ou dados, não calcular
+    if (!contaCorrenteSelecionada || !todasMovimentacoes.length || !dataInicial) return 0;
+
+    // Obtemos o saldo inicial cadastrado na conta corrente
+    let saldo = contaCorrenteSelecionada.saldo_inicial ? Number(contaCorrenteSelecionada.saldo_inicial) : 0;
+    
+    // Data inicial em formato ISO para comparação
+    const dataInicialISO = dataInicial.toISOString().split('T')[0];
+    
+    // Calcular saldo considerando todas as movimentações ANTERIORES à data inicial
+    for (const mov of todasMovimentacoes) {
+      // Só consideramos movimentações anteriores à data inicial
+      if (mov.data_movimentacao >= dataInicialISO) continue;
+      
+      if (mov.tipo_operacao === 'receber') {
+        saldo += Number(mov.valor);
+      } else if (mov.tipo_operacao === 'pagar') {
+        saldo -= Number(mov.valor);
+      } else if (mov.tipo_operacao === 'transferencia') {
+        // Para transferências, verificar se é entrada ou saída
+        if (mov.conta_destino_id === contaCorrenteId) {
+          saldo += Number(mov.valor);
+        } else if (mov.conta_corrente_id === contaCorrenteId) {
+          saldo -= Number(mov.valor);
+        }
+      }
+    }
+    
+    return saldo;
+  }, [contaCorrenteSelecionada, todasMovimentacoes, dataInicial, contaCorrenteId]);
+
+  // Calcular saldo acumulado para cada movimentação do período
   const movimentacoesComSaldo = useMemo(() => {
     // Verificar se temos uma conta corrente selecionada
-    if (!movimentacoes || movimentacoes.length === 0) return [];
-
-    // Obter o saldo inicial da conta corrente selecionada
-    let saldoInicial = 0;
-    if (contaCorrenteSelecionada && typeof contaCorrenteSelecionada.saldo_inicial === 'number') {
-      saldoInicial = contaCorrenteSelecionada.saldo_inicial;
-    }
+    if (!movimentacoesPeriodo || movimentacoesPeriodo.length === 0) return [];
 
     // Ordenar movimentações por data, do mais antigo para o mais recente
-    const movimentacoesOrdenadas = [...movimentacoes].sort((a, b) => {
+    const movimentacoesOrdenadas = [...movimentacoesPeriodo].sort((a, b) => {
       const dataA = new Date(a.data_movimentacao).getTime();
       const dataB = new Date(b.data_movimentacao).getTime();
       return dataA - dataB;
     });
 
-    // Calcular saldo acumulado
+    // Calcular saldo acumulado, partindo do saldo inicial calculado anteriormente
     let saldoAcumulado = saldoInicial;
+    
     return movimentacoesOrdenadas.map(movimentacao => {
       // Atualizar saldo com base no tipo de operação
       if (movimentacao.tipo_operacao === 'receber') {
@@ -238,7 +301,7 @@ export default function FluxoCaixaPage() {
         saldo_calculado: saldoAcumulado
       };
     }).reverse(); // Revertemos para manter a ordem mais recente primeiro na exibição
-  }, [movimentacoes, contaCorrenteSelecionada, contaCorrenteId]);
+  }, [movimentacoesPeriodo, saldoInicial, contaCorrenteId]);
 
   // Função para atualizar datas automáticas ao mudar período
   useEffect(() => {
@@ -329,7 +392,8 @@ export default function FluxoCaixaPage() {
       if (error) throw error;
 
       toast.success("Movimento conciliado com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["fluxo-caixa"] });
+      queryClient.invalidateQueries({ queryKey: ["fluxo-caixa-periodo"] });
+      queryClient.invalidateQueries({ queryKey: ["fluxo-caixa-todas"] });
     } catch (error) {
       console.error("Erro ao conciliar:", error);
       toast.error("Erro ao conciliar movimento");
@@ -347,7 +411,8 @@ export default function FluxoCaixaPage() {
       if (error) throw error;
 
       toast.success("Conciliação desfeita com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["fluxo-caixa"] });
+      queryClient.invalidateQueries({ queryKey: ["fluxo-caixa-periodo"] });
+      queryClient.invalidateQueries({ queryKey: ["fluxo-caixa-todas"] });
     } catch (error) {
       console.error("Erro ao desfazer conciliação:", error);
       toast.error("Erro ao desfazer conciliação");
@@ -512,24 +577,38 @@ export default function FluxoCaixaPage() {
           {/* Informações da Conta Corrente */}
           {contaCorrenteSelecionada && (
             <div className="mt-4 mb-4">
-              <div className="bg-blue-50 p-3 rounded-md border border-blue-100 flex">
-                <div className="mr-6">
+              <div className="bg-blue-50 p-3 rounded-md border border-blue-100 flex flex-wrap">
+                <div className="mr-6 mb-2">
                   <span className="text-xs text-gray-600 block">Conta:</span>
                   <span className="font-medium">{contaCorrenteSelecionada.nome}</span>
                 </div>
-                <div className="mr-6">
+                <div className="mr-6 mb-2">
                   <span className="text-xs text-gray-600 block">Banco:</span>
                   <span className="font-medium">{contaCorrenteSelecionada.banco}</span>
                 </div>
-                <div className="mr-6">
+                <div className="mr-6 mb-2">
                   <span className="text-xs text-gray-600 block">Agência/Conta:</span>
                   <span className="font-medium">{contaCorrenteSelecionada.agencia}/{contaCorrenteSelecionada.numero}</span>
                 </div>
-                <div>
-                  <span className="text-xs text-gray-600 block">Saldo Inicial:</span>
+                <div className="mb-2">
+                  <span className="text-xs text-gray-600 block">Saldo Inicial Cadastrado:</span>
                   <span className="font-medium">{formatCurrency(Number(contaCorrenteSelecionada.saldo_inicial || 0))}</span>
                 </div>
+                {dataInicial && (
+                  <div className="w-full mt-2 pt-2 border-t border-blue-200">
+                    <span className="text-xs text-gray-600 block">Saldo até {dateToBR(dataInicial)}:</span>
+                    <span className="font-medium text-blue-700">{formatCurrency(saldoInicial)}</span>
+                    <span className="text-xs ml-2 text-gray-500">(Saldo inicial + movimentações anteriores ao período)</span>
+                  </div>
+                )}
               </div>
+            </div>
+          )}
+
+          {/* Estado de carregamento */}
+          {isLoadingTodasMovimentacoes && (
+            <div className="text-center py-4">
+              <div className="animate-pulse">Calculando saldos...</div>
             </div>
           )}
 
