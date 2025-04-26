@@ -60,6 +60,7 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
   // Determinar o estado das parcelas
   const [parcelasCarregadasDoBanco, setParcelasCarregadasDoBanco] = useState(false);
   const [forcarRecalculo, setForcarRecalculo] = useState(false);
+  const [parcelasOriginais, setParcelasOriginais] = useState<any[]>([]);
 
   // Calcular parcelas com base no valor total, número de parcelas e data do primeiro vencimento
   const valorNumerico = parseValor(valor);
@@ -131,6 +132,8 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
 
         if (!parcelasError && parcelasData) {
           console.log("Parcelas carregadas do banco:", parcelasData.length);
+          // Salvar as parcelas originais
+          setParcelasOriginais(parcelasData);
           // Definir como parcelas carregadas do banco, desativando recálculo automático
           setParcelasCarregadasDoBanco(true);
           setForcarRecalculo(false);
@@ -204,6 +207,24 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
     setValor(val);
   };
 
+  // Verificar se as parcelas têm pagamentos registrados no fluxo_caixa
+  const verificarParcelasPagas = async (movimentacaoId: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('fluxo_caixa')
+        .select('id')
+        .eq('movimentacao_id', movimentacaoId)
+        .limit(1);
+      
+      if (error) throw error;
+      
+      return data && data.length > 0;
+    } catch (error) {
+      console.error("Erro ao verificar parcelas pagas:", error);
+      return true; // Em caso de erro, considerar como tendo parcelas pagas por segurança
+    }
+  };
+
   const handleSalvar = async () => {
     if (!currentCompany?.id) {
       toast.error("Nenhuma empresa selecionada");
@@ -255,51 +276,84 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
         };
       }
 
-      let novaMovimentacaoId;
-      
+      // Caso seja uma atualização, verificar primeiro se há parcelas pagas
       if (movimentacaoId) {
-        // Atualizar movimentação existente
-        console.log("Atualizando movimentação:", movimentacaoData);
-        const { data, error } = await supabase
-          .from("movimentacoes")
-          .update(movimentacaoData)
-          .eq('id', movimentacaoId)
-          .eq('empresa_id', currentCompany.id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error("Erro ao atualizar movimentação:", error);
-          throw error;
-        }
+        const temParcelasPagas = await verificarParcelasPagas(movimentacaoId);
         
-        try {
-          // Excluir parcelas anteriores antes de inserir as novas
-          console.log("Excluindo parcelas anteriores...");
-          const { error: deleteError } = await supabase
-            .from("movimentacoes_parcelas")
-            .delete()
-            .eq('movimentacao_id', movimentacaoId);
+        // Se houver parcelas pagas e o número de parcelas mudou, não permitir a alteração
+        if (temParcelasPagas) {
+          const { data: movAtual } = await supabase
+            .from("movimentacoes")
+            .select("numero_parcelas")
+            .eq('id', movimentacaoId)
+            .single();
             
-          if (deleteError) {
-            console.error("Erro ao excluir parcelas:", deleteError);
-            // Se houver erro ao deletar as parcelas (devido a referências em fluxo_caixa)
+          if (movAtual && movAtual.numero_parcelas !== movimentacaoData.numero_parcelas) {
+            toast.error("Não é possível alterar o número de parcelas de uma movimentação que já possui lançamentos no fluxo de caixa");
             await recarregarDadosMovimentacao(movimentacaoId);
-            
-            if (deleteError.code === '23503' && deleteError.message?.includes('fluxo_caixa')) {
-              toast.error("Não é possível alterar uma movimentação que já possui parcelas pagas");
-            } else {
-              toast.error("Erro ao atualizar parcelas");
-            }
-            
-            return; // Interrompe o fluxo aqui, não tentamos inserir novas parcelas
+            return;
+          }
+        }
+      }
+
+      // Iniciar transação para garantir atomicidade
+      const { data: client } = await supabase.rpc('get_pg_client');
+      
+      const processar = async () => {
+        let novaMovimentacaoId: string | undefined = movimentacaoId;
+        
+        if (!novaMovimentacaoId) {
+          // Inserir nova movimentação
+          console.log("Criando nova movimentação:", movimentacaoData);
+          const { data, error } = await supabase
+            .from("movimentacoes")
+            .insert([movimentacaoData])
+            .select()
+            .single();
+
+          if (error) {
+            console.error("Erro ao criar movimentação:", error);
+            throw error;
           }
 
-          // Inserir novas parcelas apenas se não houve erro na exclusão
-          if (operacao !== "transferencia" && parcelas.length > 0) {
-            console.log("Inserindo novas parcelas:", parcelas.length);
+          novaMovimentacaoId = data.id;
+        } else {
+          // Atualizar movimentação existente
+          console.log("Atualizando movimentação:", movimentacaoData);
+          const { data, error } = await supabase
+            .from("movimentacoes")
+            .update(movimentacaoData)
+            .eq('id', movimentacaoId)
+            .eq('empresa_id', currentCompany.id)
+            .select()
+            .single();
+
+          if (error) {
+            console.error("Erro ao atualizar movimentação:", error);
+            throw error;
+          }
+        }
+
+        // Só prosseguir para gerenciar parcelas se não for transferência
+        if (operacao !== "transferencia") {
+          // No caso de uma atualização, remover as parcelas antigas
+          if (movimentacaoId) {
+            const { error: deleteError } = await supabase
+              .from("movimentacoes_parcelas")
+              .delete()
+              .eq('movimentacao_id', movimentacaoId);
+              
+            if (deleteError) {
+              console.error("Erro ao excluir parcelas:", deleteError);
+              throw deleteError;
+            }
+          }
+          
+          // Inserir novas parcelas
+          if (parcelas.length > 0) {
+            console.log(`Inserindo ${parcelas.length} parcelas para movimentação:`, novaMovimentacaoId);
             const parcelasData = parcelas.map(parcela => ({
-              movimentacao_id: movimentacaoId,
+              movimentacao_id: novaMovimentacaoId,
               numero: parcela.numero,
               valor: parcela.valor,
               data_vencimento: format(parcela.dataVencimento, "yyyy-MM-dd")
@@ -310,71 +364,46 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
               .insert(parcelasData);
 
             if (parcelasError) {
-              console.error("Erro ao inserir novas parcelas:", parcelasError);
-              // Caso de erro ao inserir novas parcelas, recarregar dados do banco
-              await recarregarDadosMovimentacao(movimentacaoId);
-              toast.error("Erro ao atualizar parcelas");
-              return;
+              console.error("Erro ao inserir parcelas:", parcelasError);
+              throw parcelasError;
             }
-          }
-          
-          toast.success("Movimentação atualizada com sucesso!");
-          navigate(-1);
-          
-        } catch (error) {
-          // Garantir que os dados são recarregados do banco após qualquer erro
-          console.error("Erro ao processar parcelas:", error);
-          await recarregarDadosMovimentacao(movimentacaoId);
-          throw error;
-        }
-      } else {
-        // Inserir nova movimentação
-        console.log("Criando nova movimentação:", movimentacaoData);
-        const { data, error } = await supabase
-          .from("movimentacoes")
-          .insert([movimentacaoData])
-          .select()
-          .single();
-
-        if (error) {
-          console.error("Erro ao criar movimentação:", error);
-          throw error;
-        }
-
-        novaMovimentacaoId = data.id;
-
-        // Inserir parcelas para nova movimentação
-        if (operacao !== "transferencia" && parcelas.length > 0) {
-          console.log("Inserindo parcelas para nova movimentação:", parcelas.length);
-          const parcelasData = parcelas.map(parcela => ({
-            movimentacao_id: novaMovimentacaoId,
-            numero: parcela.numero,
-            valor: parcela.valor,
-            data_vencimento: format(parcela.dataVencimento, "yyyy-MM-dd")
-          }));
-
-          const { error: parcelasError } = await supabase
-            .from("movimentacoes_parcelas")
-            .insert(parcelasData);
-
-          if (parcelasError) {
-            console.error("Erro ao inserir parcelas:", parcelasError);
-            throw parcelasError;
+          } else {
+            throw new Error("Não foi possível calcular as parcelas corretamente");
           }
         }
+
+        return novaMovimentacaoId;
+      };
+
+      try {
+        // Tentar processar com proteção de erros
+        const resultado = await processar();
         
         toast.success("Movimentação salva com sucesso!");
         navigate(-1);
+      } catch (error: any) {
+        console.error("Erro na transação:", error);
+        
+        // Se for uma atualização, restaurar os dados ao estado original
+        if (movimentacaoId) {
+          console.log("Recarregando dados originais após erro");
+          await recarregarDadosMovimentacao(movimentacaoId);
+        }
+        
+        // Mensagens de erro específicas
+        if (error.code === '23503') {
+          if (error.message?.includes('fluxo_caixa')) {
+            toast.error("Não é possível alterar uma movimentação que já possui parcelas pagas");
+          } else {
+            toast.error("Erro de referência no banco de dados");
+          }
+        } else {
+          toast.error("Erro ao salvar movimentação: " + error.message);
+        }
       }
     } catch (error: any) {
-      console.error("Erro ao salvar movimentação:", error);
-      
-      // Mensagens específicas para violações de restrições
-      if (error.code === '23503' && error.message?.includes('fluxo_caixa')) {
-        toast.error("Não é possível alterar uma movimentação que já possui parcelas pagas");
-      } else {
-        toast.error("Erro ao salvar movimentação");
-      }
+      console.error("Erro ao processar movimentação:", error);
+      toast.error("Erro ao processar movimentação");
       
       // Recarregar dados originais se for uma edição
       if (movimentacaoId) {

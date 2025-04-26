@@ -7,9 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Orcamento, TipoTitulo } from "@/types";
+import { Orcamento } from "@/types";
 import { useCompany } from "@/contexts/company-context";
 import { Label } from "@/components/ui/label";
+
+interface TipoTitulo {
+  id: string;
+  nome: string;
+  tipo: string;
+  status: string;
+}
 
 interface EfetivarVendaModalProps {
   open: boolean;
@@ -77,52 +84,60 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
       // 2. Criar movimentação com as novas informações
       const valorTotal = itens.reduce((sum, item) => sum + Number(item.valor), 0);
       
-      const { data: movimentacao, error: movError } = await supabase
-        .from('movimentacoes')
-        .insert({
-          empresa_id: currentCompany.id,
-          tipo_operacao: 'receber',
-          data_lancamento: dataVenda,
-          data_emissao: dataVenda,
-          favorecido_id: orcamento.favorecido_id,
-          forma_pagamento: orcamento.forma_pagamento,
-          valor: valorTotal,
-          numero_parcelas: parcelas.length,
-          primeiro_vencimento: parcelas[0]?.data_vencimento,
-          descricao: `Venda ${orcamento.codigo}`,
-          considerar_dre: true,
-          numero_documento: orcamento.codigo,
-          tipo_titulo_id: tipoTituloId
-        })
-        .select()
-        .single();
-
-      if (movError) throw movError;
-
-      // 3. Criar parcelas da movimentação
-      const parcelasMovimentacao = parcelas.map(parcela => ({
-        movimentacao_id: movimentacao.id,
-        numero: parseInt(parcela.numero_parcela.split('/')[1]),
-        valor: parcela.valor,
-        data_vencimento: parcela.data_vencimento
-      }));
-
-      const { error: parcelasMovError } = await supabase
-        .from('movimentacoes_parcelas')
-        .insert(parcelasMovimentacao);
-
-      if (parcelasMovError) throw parcelasMovError;
-
-      // 4. Atualizar o orçamento para tipo "venda" e incluir data_venda
-      const { error: orcamentoError } = await supabase
-        .from('orcamentos')
-        .update({ 
-          tipo: 'venda',
-          data_venda: dataVenda
-        })
-        .eq('id', orcamento.id);
-
-      if (orcamentoError) throw orcamentoError;
+      // Começar uma transação em JavaScript
+      try {
+        // Criar a movimentação
+        const { data: movimentacao, error: movError } = await supabase
+          .from('movimentacoes')
+          .insert({
+            empresa_id: currentCompany.id,
+            tipo_operacao: 'receber',
+            data_lancamento: dataVenda,
+            data_emissao: dataVenda,
+            favorecido_id: orcamento.favorecido_id,
+            forma_pagamento: orcamento.forma_pagamento,
+            valor: valorTotal,
+            numero_parcelas: parcelas.length,
+            primeiro_vencimento: parcelas[0]?.data_vencimento,
+            descricao: `Venda ${orcamento.codigo}`,
+            considerar_dre: true,
+            numero_documento: orcamento.codigo,
+            tipo_titulo_id: tipoTituloId
+          })
+          .select()
+          .single();
+  
+        if (movError) throw movError;
+  
+        // 3. Criar parcelas da movimentação
+        const parcelasMovimentacao = parcelas.map(parcela => ({
+          movimentacao_id: movimentacao.id,
+          numero: parseInt(parcela.numero_parcela.split('/')[1]),
+          valor: parcela.valor,
+          data_vencimento: parcela.data_vencimento
+        }));
+  
+        const { error: parcelasMovError } = await supabase
+          .from('movimentacoes_parcelas')
+          .insert(parcelasMovimentacao);
+  
+        if (parcelasMovError) throw parcelasMovError;
+  
+        // 4. Atualizar o orçamento para tipo "venda" e incluir data_venda
+        const { error: orcamentoError } = await supabase
+          .from('orcamentos')
+          .update({ 
+            tipo: 'venda',
+            data_venda: dataVenda
+          })
+          .eq('id', orcamento.id);
+  
+        if (orcamentoError) throw orcamentoError;
+      } catch (error) {
+        // Se algo falhar, rolamos de volta
+        console.error("Erro na transação:", error);
+        throw error;
+      }
 
       toast.success("Venda efetivada com sucesso!");
       onSuccess();
