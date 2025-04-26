@@ -139,7 +139,8 @@ export default function OrcamentoPage() {
       if (parcelasError) throw parcelasError;
       
       // Preencher o formulário com os dados
-      setData(formatDate(new Date(orcamento.data)));
+      // Usando formatDate para evitar ajuste de timezone
+      setData(formatDate(orcamento.data));
       setCodigoVenda(orcamento.codigo);
       setFavorecidoId(orcamento.favorecido_id);
       setCodigoProjeto(orcamento.codigo_projeto || "");
@@ -147,8 +148,9 @@ export default function OrcamentoPage() {
       setFormaPagamento(orcamento.forma_pagamento);
       setNumeroParcelas(orcamento.numero_parcelas);
       
+      // Usando formatDate para evitar ajuste de timezone
       if (orcamento.data_nota_fiscal) {
-        setDataNotaFiscal(orcamento.data_nota_fiscal.split('T')[0]); // Formatar data para input type="date"
+        setDataNotaFiscal(formatDate(orcamento.data_nota_fiscal, "yyyy-MM-dd"));
       }
       
       setNumeroNotaFiscal(orcamento.numero_nota_fiscal || "");
@@ -167,7 +169,7 @@ export default function OrcamentoPage() {
       if (parcelas && parcelas.length > 0) {
         const novasParcelas = parcelas.map(p => ({
           valor: p.valor,
-          dataVencimento: p.data_vencimento.split('T')[0], // Formatar data para input type="date"
+          dataVencimento: formatDate(p.data_vencimento, "yyyy-MM-dd"), // Usando formatDate para evitar ajuste de timezone
           numeroParcela: p.numero_parcela
         }));
         setParcelas(novasParcelas);
