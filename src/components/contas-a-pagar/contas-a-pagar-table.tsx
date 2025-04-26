@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -82,8 +81,7 @@ export function ContasAPagarTable({
           <TableRow>
             <TableHead>Data de Vencimento</TableHead>
             <TableHead>Data de Pagamento</TableHead>
-            <TableHead>Título</TableHead>
-            <TableHead>Nº Parcela</TableHead>
+            <TableHead>Parcela</TableHead>
             <TableHead>Favorecido</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead>Status</TableHead>
@@ -94,7 +92,7 @@ export function ContasAPagarTable({
         <TableBody>
           {contas.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                 Nenhum resultado encontrado
               </TableCell>
             </TableRow>
@@ -104,17 +102,8 @@ export function ContasAPagarTable({
                 <TableCell>{formatDate(conta.dataVencimento)}</TableCell>
                 <TableCell>{formatDate(conta.dataPagamento)}</TableCell>
                 <TableCell>
-                  {conta.numeroTitulo ? (
-                    <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
-                      {conta.numeroTitulo}
-                    </span>
-                  ) : (
-                    "-"
-                  )}
-                </TableCell>
-                <TableCell>
                   <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
-                    {conta.numeroParcela}
+                    {`${conta.numeroTitulo || '-'}/${conta.numeroParcela}`}
                   </span>
                 </TableCell>
                 <TableCell>{conta.favorecido}</TableCell>
@@ -186,7 +175,7 @@ export function ContasAPagarTable({
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={7} className="font-bold text-right">Total</TableCell>
+            <TableCell colSpan={6} className="font-bold text-right">Total</TableCell>
             <TableCell className="font-bold">{formatCurrency(totalValor)}</TableCell>
             <TableCell />
           </TableRow>
