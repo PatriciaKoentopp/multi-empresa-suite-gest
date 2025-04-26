@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -99,6 +100,7 @@ export default function FluxoCaixaPage() {
   const { currentCompany } = useCompany();
   const queryClient = useQueryClient();
   const [favorecidosCache, setFavorecidosCache] = useState<Record<string, any>>({});
+  const [contaCorrenteSelecionada, setContaCorrenteSelecionada] = useState<any>(null);
 
   // Buscar contas correntes
   const { data: contasCorrentes = [] } = useQuery({
@@ -120,6 +122,16 @@ export default function FluxoCaixaPage() {
     },
     enabled: !!currentCompany?.id,
   });
+
+  // Atualizar conta corrente selecionada quando o ID mudar
+  useEffect(() => {
+    if (contaCorrenteId && contasCorrentes.length > 0) {
+      const conta = contasCorrentes.find(c => c.id === contaCorrenteId);
+      setContaCorrenteSelecionada(conta || null);
+    } else {
+      setContaCorrenteSelecionada(null);
+    }
+  }, [contaCorrenteId, contasCorrentes]);
 
   // Buscar movimentações do fluxo de caixa
   const { data: movimentacoes = [], isLoading } = useQuery({
@@ -186,6 +198,48 @@ export default function FluxoCaixaPage() {
     enabled: !!currentCompany?.id,
   });
 
+  // Calcular saldo acumulado para cada movimentação
+  const movimentacoesComSaldo = useMemo(() => {
+    // Verificar se temos uma conta corrente selecionada
+    if (!movimentacoes || movimentacoes.length === 0) return [];
+
+    // Obter o saldo inicial da conta corrente selecionada
+    let saldoInicial = 0;
+    if (contaCorrenteSelecionada && typeof contaCorrenteSelecionada.saldo_inicial === 'number') {
+      saldoInicial = contaCorrenteSelecionada.saldo_inicial;
+    }
+
+    // Ordenar movimentações por data, do mais antigo para o mais recente
+    const movimentacoesOrdenadas = [...movimentacoes].sort((a, b) => {
+      const dataA = new Date(a.data_movimentacao).getTime();
+      const dataB = new Date(b.data_movimentacao).getTime();
+      return dataA - dataB;
+    });
+
+    // Calcular saldo acumulado
+    let saldoAcumulado = saldoInicial;
+    return movimentacoesOrdenadas.map(movimentacao => {
+      // Atualizar saldo com base no tipo de operação
+      if (movimentacao.tipo_operacao === 'receber') {
+        saldoAcumulado += Number(movimentacao.valor);
+      } else if (movimentacao.tipo_operacao === 'pagar') {
+        saldoAcumulado -= Number(movimentacao.valor);
+      } else if (movimentacao.tipo_operacao === 'transferencia') {
+        // Para transferências, verificar se é entrada ou saída para esta conta
+        if (movimentacao.conta_destino_id === contaCorrenteId) {
+          saldoAcumulado += Number(movimentacao.valor);
+        } else if (movimentacao.conta_corrente_id === contaCorrenteId) {
+          saldoAcumulado -= Number(movimentacao.valor);
+        }
+      }
+
+      return {
+        ...movimentacao,
+        saldo_calculado: saldoAcumulado
+      };
+    }).reverse(); // Revertemos para manter a ordem mais recente primeiro na exibição
+  }, [movimentacoes, contaCorrenteSelecionada, contaCorrenteId]);
+
   // Função para atualizar datas automáticas ao mudar período
   useEffect(() => {
     const hoje = new Date();
@@ -243,7 +297,7 @@ export default function FluxoCaixaPage() {
 
   // Filtro das movimentações
   const filteredMovimentacoes = useMemo(() => {
-    return movimentacoes.filter((linha) => {
+    return movimentacoesComSaldo.filter((linha) => {
       const descricao = linha.descricao || linha.movimentacoes?.descricao || "";
       
       // Buscar o favorecido a partir do cache
@@ -262,7 +316,7 @@ export default function FluxoCaixaPage() {
       
       return buscaOk && sitOk;
     });
-  }, [movimentacoes, searchTerm, situacao, favorecidosCache]);
+  }, [movimentacoesComSaldo, searchTerm, situacao, favorecidosCache]);
 
   // Função para conciliar movimento
   async function handleConciliar(id: string) {
@@ -299,8 +353,6 @@ export default function FluxoCaixaPage() {
       toast.error("Erro ao desfazer conciliação");
     }
   }
-
-  
 
   // Função para obter o nome do favorecido
   function getFavorecidoNome(linha: any) {
@@ -457,6 +509,30 @@ export default function FluxoCaixaPage() {
           {/* Separador */}
           <div className="mb-4" />
 
+          {/* Informações da Conta Corrente */}
+          {contaCorrenteSelecionada && (
+            <div className="mt-4 mb-4">
+              <div className="bg-blue-50 p-3 rounded-md border border-blue-100 flex">
+                <div className="mr-6">
+                  <span className="text-xs text-gray-600 block">Conta:</span>
+                  <span className="font-medium">{contaCorrenteSelecionada.nome}</span>
+                </div>
+                <div className="mr-6">
+                  <span className="text-xs text-gray-600 block">Banco:</span>
+                  <span className="font-medium">{contaCorrenteSelecionada.banco}</span>
+                </div>
+                <div className="mr-6">
+                  <span className="text-xs text-gray-600 block">Agência/Conta:</span>
+                  <span className="font-medium">{contaCorrenteSelecionada.agencia}/{contaCorrenteSelecionada.numero}</span>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-600 block">Saldo Inicial:</span>
+                  <span className="font-medium">{formatCurrency(Number(contaCorrenteSelecionada.saldo_inicial || 0))}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Tabela */}
           <div className="mt-6">
             <div className="border rounded-md">
@@ -495,7 +571,7 @@ export default function FluxoCaixaPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">{formatCurrency(linha.valor)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(linha.saldo)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(linha.saldo_calculado)}</TableCell>
                         <TableCell className="text-center">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
