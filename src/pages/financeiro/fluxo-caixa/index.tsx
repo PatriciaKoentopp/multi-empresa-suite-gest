@@ -595,7 +595,6 @@ export default function FluxoCaixaPage() {
                     <TableHead>Data</TableHead>
                     <TableHead>Favorecido</TableHead>
                     <TableHead>Descrição</TableHead>
-                    <TableHead>Forma de Pagamento</TableHead>
                     <TableHead>Situação</TableHead>
                     <TableHead className="text-right w-[120px]">Valor</TableHead>
                     <TableHead className="text-right w-[120px]">Saldo</TableHead>
@@ -605,7 +604,7 @@ export default function FluxoCaixaPage() {
                 <TableBody>
                   {filteredMovimentacoes.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                         Nenhum resultado encontrado
                       </TableCell>
                     </TableRow>
@@ -615,7 +614,6 @@ export default function FluxoCaixaPage() {
                         <TableCell>{formatDateBR(linha.data_movimentacao)}</TableCell>
                         <TableCell>{getFavorecidoNome(linha)}</TableCell>
                         <TableCell>{getDescricao(linha)}</TableCell>
-                        <TableCell>{linha.forma_pagamento}</TableCell>
                         <TableCell>
                           {getStatusBadge(
                             linha.situacao === "conciliado"
