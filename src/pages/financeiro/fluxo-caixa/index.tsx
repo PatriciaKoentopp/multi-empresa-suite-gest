@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -249,19 +248,11 @@ export default function FluxoCaixaPage() {
       // Só consideramos movimentações anteriores à data inicial
       if (mov.data_movimentacao >= dataInicialISO) continue;
       
-      // Corrigir o cálculo com base no tipo de operação
-      if (mov.tipo_operacao === 'receber') {
-        saldo += Number(mov.valor);
-      } else if (mov.tipo_operacao === 'pagar') {
-        saldo -= Number(mov.valor); // Pagamentos DIMINUEM o saldo
-      } else if (mov.tipo_operacao === 'transferencia') {
-        // Para transferências, verificar se é entrada ou saída
-        if (mov.conta_destino_id === contaCorrenteId) {
-          saldo += Number(mov.valor);
-        } else if (mov.conta_corrente_id === contaCorrenteId) {
-          saldo -= Number(mov.valor);
-        }
-      }
+      // O valor já vem com o sinal correto, então basta somar ao saldo
+      saldo += Number(mov.valor);
+      
+      // Caso precise depurar valores individuais
+      // console.log(`Movimentação anterior: ${mov.data_movimentacao}, tipo: ${mov.tipo_operacao}, valor: ${mov.valor}, saldo atual: ${saldo}`);
     }
     
     return saldo;
@@ -283,26 +274,15 @@ export default function FluxoCaixaPage() {
     let saldoAcumulado = saldoInicial;
     
     return movimentacoesOrdenadas.map(movimentacao => {
-      // Corrigir a atualização do saldo com base no tipo de operação
-      if (movimentacao.tipo_operacao === 'receber') {
-        saldoAcumulado += Number(movimentacao.valor);
-      } else if (movimentacao.tipo_operacao === 'pagar') {
-        saldoAcumulado -= Number(movimentacao.valor); // Pagamentos DIMINUEM o saldo
-      } else if (movimentacao.tipo_operacao === 'transferencia') {
-        // Para transferências, verificar se é entrada ou saída para esta conta
-        if (movimentacao.conta_destino_id === contaCorrenteId) {
-          saldoAcumulado += Number(movimentacao.valor);
-        } else if (movimentacao.conta_corrente_id === contaCorrenteId) {
-          saldoAcumulado -= Number(movimentacao.valor);
-        }
-      }
-
+      // O valor já vem com o sinal correto do banco, apenas somar ao saldo
+      saldoAcumulado += Number(movimentacao.valor);
+      
       return {
         ...movimentacao,
         saldo_calculado: saldoAcumulado
       };
     });
-  }, [movimentacoesPeriodo, saldoInicial, contaCorrenteId]);
+  }, [movimentacoesPeriodo, saldoInicial]);
 
   // Função para atualizar datas automáticas ao mudar período
   useEffect(() => {
