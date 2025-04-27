@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -188,8 +187,10 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
                 type="date"
                 className="w-full"
                 value={dataPagamento ? format(dataPagamento, "yyyy-MM-dd") : ""}
-                onChange={e => setDataPagamento(new Date(e.target.value + "T00:00:00"))}
-                min={conta?.dataVencimento ? format(conta.dataVencimento, "yyyy-MM-dd") : undefined}
+                onChange={e => {
+                  const selectedDate = new Date(e.target.value + "T00:00:00");
+                  setDataPagamento(selectedDate);
+                }}
               />
               <Calendar className="text-blue-500" />
             </div>
