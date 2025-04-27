@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SalesCard } from "@/components/vendas/SalesCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -52,9 +51,9 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo') // Adicionado filtro por status ativo
-          .gte('data', startYearDate)
-          .lte('data', endYearDate);
+          .eq('status', 'ativo')
+          .gte('data_venda', startYearDate)
+          .lte('data_venda', endYearDate);
 
         if (yearError) throw yearError;
         console.log("Dados do ano:", yearData);
@@ -71,7 +70,6 @@ const PainelVendasPage = () => {
         const startCurrentMonth = startOfMonth(new Date());
         const endCurrentMonth = endOfMonth(new Date());
         
-        // Formatar para YYYY-MM-DD
         const startCurrentMonthFormatted = format(startCurrentMonth, 'yyyy-MM-dd');
         const endCurrentMonthFormatted = format(endCurrentMonth, 'yyyy-MM-dd');
         
@@ -81,13 +79,13 @@ const PainelVendasPage = () => {
           .from('orcamentos')
           .select(`
             id,
-            data,
+            data_venda,
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo') // Adicionado filtro por status ativo
-          .gte('data', startCurrentMonthFormatted)
-          .lte('data', endCurrentMonthFormatted);
+          .eq('status', 'ativo')
+          .gte('data_venda', startCurrentMonthFormatted)
+          .lte('data_venda', endCurrentMonthFormatted);
 
         if (currentMonthError) throw currentMonthError;
         console.log("Dados do mês atual:", currentMonthData);
@@ -103,7 +101,6 @@ const PainelVendasPage = () => {
         const startLastMonth = startOfMonth(subMonths(new Date(), 1));
         const endLastMonth = endOfMonth(subMonths(new Date(), 1));
         
-        // Formatar para YYYY-MM-DD
         const startLastMonthFormatted = format(startLastMonth, 'yyyy-MM-dd');
         const endLastMonthFormatted = format(endLastMonth, 'yyyy-MM-dd');
         
@@ -116,9 +113,9 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo') // Adicionado filtro por status ativo
-          .gte('data', startLastMonthFormatted)
-          .lte('data', endLastMonthFormatted);
+          .eq('status', 'ativo')
+          .gte('data_venda', startLastMonthFormatted)
+          .lte('data_venda', endLastMonthFormatted);
 
         if (lastMonthError) throw lastMonthError;
         console.log("Dados do mês anterior:", lastMonthData);
@@ -145,8 +142,8 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo') // Adicionado filtro por status ativo
-          .gte('data', ninetyDaysAgoFormatted);
+          .eq('status', 'ativo')
+          .gte('data_venda', ninetyDaysAgoFormatted);
 
         if (ticketError) throw ticketError;
         console.log("Dados para cálculo de ticket médio:", ticketData);
@@ -165,8 +162,8 @@ const PainelVendasPage = () => {
           .from('orcamentos')
           .select('favorecido_id')
           .eq('tipo', 'venda')
-          .eq('status', 'ativo') // Adicionado filtro por status ativo
-          .gte('data', ninetyDaysAgoFormatted);
+          .eq('status', 'ativo')
+          .gte('data_venda', ninetyDaysAgoFormatted);
 
         if (clientesError) throw clientesError;
         
@@ -191,28 +188,26 @@ const PainelVendasPage = () => {
         });
 
         // Buscar dados para o gráfico de barras (vendas mensais)
-        // Formatando corretamente as datas no formato YYYY-MM-DD
         const { data: monthlyData, error: monthlyError } = await supabase
           .from('orcamentos')
           .select(`
-            data,
+            data_venda,
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo') // Adicionado filtro por status ativo
-          .gte('data', startYearDate)
-          .order('data');
+          .eq('status', 'ativo')
+          .gte('data_venda', startYearDate)
+          .order('data_venda');
 
         if (monthlyError) throw monthlyError;
         console.log("Dados mensais para gráfico:", monthlyData);
 
         const monthlyChartData = Array.from({ length: 12 }, (_, i) => {
           const month = i + 1;
-          // Filtra orçamentos cujo mês corresponde ao índice do loop
           const monthData = monthlyData?.filter(
             (item) => {
-              if (!item.data) return false;
-              const date = new Date(item.data);
+              if (!item.data_venda) return false;
+              const date = new Date(item.data_venda);
               return date.getMonth() === i;
             }
           );
@@ -224,7 +219,7 @@ const PainelVendasPage = () => {
           return {
             name: format(new Date(currentYear, i), 'MMM', { locale: ptBR }),
             faturado,
-            projetado: faturado * 1.1 // Projeção simples de 10% de crescimento
+            projetado: faturado * 1.1
           };
         });
 
@@ -238,10 +233,10 @@ const PainelVendasPage = () => {
             valor,
             servico:servicos(nome)
           `)
-          .gte('orcamentos.data', startCurrentMonthFormatted)
-          .lte('orcamentos.data', endCurrentMonthFormatted)
+          .gte('orcamentos.data_venda', startCurrentMonthFormatted)
+          .lte('orcamentos.data_venda', endCurrentMonthFormatted)
           .eq('orcamentos.tipo', 'venda')
-          .eq('orcamentos.status', 'ativo') // Adicionado filtro por status ativo
+          .eq('orcamentos.status', 'ativo')
           .inner('orcamentos');
 
         if (categoryError) throw categoryError;
@@ -271,23 +266,22 @@ const PainelVendasPage = () => {
         const { data: dailyData, error: dailyError } = await supabase
           .from('orcamentos')
           .select(`
-            data,
+            data_venda,
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo') // Adicionado filtro por status ativo
-          .gte('data', startCurrentMonthFormatted)
-          .lte('data', endCurrentMonthFormatted)
-          .order('data');
+          .eq('status', 'ativo')
+          .gte('data_venda', startCurrentMonthFormatted)
+          .lte('data_venda', endCurrentMonthFormatted)
+          .order('data_venda');
 
         if (dailyError) throw dailyError;
         console.log("Dados diários para gráfico de linha:", dailyData);
 
         const dailyChartData = dailyData?.reduce((acc: any[], orcamento) => {
-          if (!orcamento.data) return acc;
+          if (!orcamento.data_venda) return acc;
           
-          // Formatando para DD/MM como esperado pelo componente
-          const date = format(new Date(orcamento.data), 'dd/MM');
+          const date = format(new Date(orcamento.data_venda), 'dd/MM');
           const value = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
           
           const existingDay = acc.find(d => d.name === date);
