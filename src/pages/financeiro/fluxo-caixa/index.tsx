@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -248,10 +249,11 @@ export default function FluxoCaixaPage() {
       // Só consideramos movimentações anteriores à data inicial
       if (mov.data_movimentacao >= dataInicialISO) continue;
       
+      // Corrigindo o cálculo com base no tipo de operação
       if (mov.tipo_operacao === 'receber') {
         saldo += Number(mov.valor);
       } else if (mov.tipo_operacao === 'pagar') {
-        saldo -= Number(mov.valor);
+        saldo -= Number(mov.valor); // Pagamentos diminuem o saldo
       } else if (mov.tipo_operacao === 'transferencia') {
         // Para transferências, verificar se é entrada ou saída
         if (mov.conta_destino_id === contaCorrenteId) {
@@ -281,11 +283,11 @@ export default function FluxoCaixaPage() {
     let saldoAcumulado = saldoInicial;
     
     return movimentacoesOrdenadas.map(movimentacao => {
-      // Atualizar saldo com base no tipo de operação
+      // Corrigindo a atualização do saldo com base no tipo de operação
       if (movimentacao.tipo_operacao === 'receber') {
         saldoAcumulado += Number(movimentacao.valor);
       } else if (movimentacao.tipo_operacao === 'pagar') {
-        saldoAcumulado -= Number(movimentacao.valor);
+        saldoAcumulado -= Number(movimentacao.valor); // Pagamentos diminuem o saldo
       } else if (movimentacao.tipo_operacao === 'transferencia') {
         // Para transferências, verificar se é entrada ou saída para esta conta
         if (movimentacao.conta_destino_id === contaCorrenteId) {
@@ -299,7 +301,7 @@ export default function FluxoCaixaPage() {
         ...movimentacao,
         saldo_calculado: saldoAcumulado
       };
-    }); // Removemos o .reverse() para manter a ordem crescente de datas
+    });
   }, [movimentacoesPeriodo, saldoInicial, contaCorrenteId]);
 
   // Função para atualizar datas automáticas ao mudar período
