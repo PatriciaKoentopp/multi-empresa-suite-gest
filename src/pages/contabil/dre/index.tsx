@@ -3,6 +3,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useCompany } from "@/contexts/company-context";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 
 // Arrays de meses e anos
 const meses = [
@@ -113,14 +118,115 @@ const mockDREMensal: { mes: string, dados: { tipo: string, valor: number }[] }[]
   return { mes: mesVal, dados: contasDRE.map(c => ({ tipo: c, valor: 0 })) };
 });
 
+function formatCurrency(value: number) {
+  return value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+  });
+}
+
 export default function DrePage() {
   // NOVO: incluir modo comparar_anos
   const [visualizacao, setVisualizacao] = useState<"acumulado" | "comparar_anos" | "mensal">("acumulado");
   const [ano, setAno] = useState(anoAtual.toString());
   const [anosComparar, setAnosComparar] = useState<string[]>([anoAtual.toString(), (anoAtual-1).toString()]);
   const [mes, setMes] = useState("01");
-  // NOVO ESTADO: ano para visualização mensal
   const [anoMensal, setAnoMensal] = useState(anoAtual.toString());
+  const { currentCompany } = useCompany();
+
+  // Função para buscar dados do fluxo de caixa
+  const { data: dadosDRE = [], isLoading } = useQuery({
+    queryKey: ["dre-data", currentCompany?.id, ano, mes, visualizacao],
+    queryFn: async () => {
+      if (!currentCompany?.id) return [];
+
+      let startDate, endDate;
+
+      if (visualizacao === "mensal" && mes !== "todos") {
+        startDate = format(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1), 'yyyy-MM-dd');
+        endDate = format(endOfMonth(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1)), 'yyyy-MM-dd');
+      } else {
+        startDate = format(new Date(parseInt(ano), 0, 1), 'yyyy-MM-dd');
+        endDate = format(new Date(parseInt(ano), 11, 31), 'yyyy-MM-dd');
+      }
+
+      const { data: movimentacoes, error } = await supabase
+        .from('fluxo_caixa')
+        .select(`
+          *,
+          movimentacoes (
+            tipo_operacao,
+            categoria_id
+          ),
+          plano_contas:movimentacoes (
+            plano_contas (
+              tipo,
+              descricao
+            )
+          )
+        `)
+        .eq('empresa_id', currentCompany.id)
+        .gte('data_movimentacao', startDate)
+        .lte('data_movimentacao', endDate);
+
+      if (error) {
+        console.error('Erro ao buscar dados:', error);
+        toast.error('Erro ao carregar dados do DRE');
+        return [];
+      }
+
+      // Agrupar movimentações por tipo de conta
+      const agrupado = movimentacoes.reduce((acc: any, mov) => {
+        const planoContas = mov.plano_contas?.plano_contas;
+        if (!planoContas) return acc;
+
+        const tipo = planoContas.tipo;
+        const descricao = planoContas.descricao;
+        const valor = Number(mov.valor);
+
+        if (!acc[tipo]) {
+          acc[tipo] = {};
+        }
+        if (!acc[tipo][descricao]) {
+          acc[tipo][descricao] = 0;
+        }
+        acc[tipo][descricao] += valor;
+
+        return acc;
+      }, {});
+
+      // Calcular totais
+      const receitaBruta = Object.values(agrupado.receita || {}).reduce((sum: number, val: any) => sum + val, 0);
+      const deducoes = Object.values(agrupado.deducao || {}).reduce((sum: number, val: any) => sum + val, 0);
+      const custos = Object.values(agrupado.custo || {}).reduce((sum: number, val: any) => sum + val, 0);
+      const despesasOperacionais = Object.values(agrupado.despesa || {}).reduce((sum: number, val: any) => sum + val, 0);
+      const despesasFinanceiras = Object.values(agrupado.despesa_financeira || {}).reduce((sum: number, val: any) => sum + val, 0);
+      const impostos = Object.values(agrupado.imposto || {}).reduce((sum: number, val: any) => sum + val, 0);
+
+      // Cálculos DRE
+      const receitaLiquida = receitaBruta - Math.abs(deducoes);
+      const lucroBruto = receitaLiquida - Math.abs(custos);
+      const resultadoOperacional = lucroBruto - Math.abs(despesasOperacionais);
+      const resultadoAntesIR = resultadoOperacional - Math.abs(despesasFinanceiras);
+      const lucroLiquido = resultadoAntesIR - Math.abs(impostos);
+
+      return [
+        { tipo: "Receita Bruta", valor: receitaBruta },
+        { tipo: "(-) Deduções", valor: -Math.abs(deducoes) },
+        { tipo: "Receita Líquida", valor: receitaLiquida },
+        { tipo: "(-) Custos", valor: -Math.abs(custos) },
+        { tipo: "Lucro Bruto", valor: lucroBruto },
+        { tipo: "(-) Despesas Operacionais", valor: -Math.abs(despesasOperacionais) },
+        { tipo: "Resultado Operacional", valor: resultadoOperacional },
+        { tipo: "(-) Despesas financeiras", valor: -Math.abs(despesasFinanceiras) },
+        { tipo: "Resultado Antes IR", valor: resultadoAntesIR },
+        { tipo: "(-) IRPJ/CSLL", valor: -Math.abs(impostos) },
+        { tipo: "Lucro Líquido do Exercício", valor: lucroLiquido }
+      ];
+    },
+    enabled: !!currentCompany?.id
+  });
 
   function handleAnoCompararChange(anoAlterado: string) {
     let result: string[] = [];
@@ -246,141 +352,145 @@ export default function DrePage() {
             )}
           </form>
 
-          {/* Exibição do DRE */}
-          <div>
-            {/* Acumulado padrão */}
-            {visualizacao === "acumulado" && (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Conta</TableHead>
-                    <TableHead className="text-right">Valor (R$)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(mockDREPorAno[ano] || mockDRE).map(item => (
-                    <TableRow key={item.tipo}>
-                      <TableCell>{item.tipo}</TableCell>
-                      <TableCell className="text-right">
-                        {item.valor.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL"
-                        })}
-                      </TableCell>
+          {/* Estado de carregamento */}
+          {isLoading ? (
+            <div className="text-center py-4">
+              <div className="animate-pulse">Carregando dados do DRE...</div>
+            </div>
+          ) : (
+            /* Exibição do DRE */
+            <div>
+              {/* Acumulado padrão */}
+              {visualizacao === "acumulado" && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Conta</TableHead>
+                      <TableHead className="text-right">Valor (R$)</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-            {/* Comparação de anos */}
-            {visualizacao === "comparar_anos" && (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Conta</TableHead>
-                    {anosComparar.map(a => (
-                      <TableHead key={a} className="text-center">{a}</TableHead>
+                  </TableHeader>
+                  <TableBody>
+                    {dadosDRE.map(item => (
+                      <TableRow key={item.tipo}>
+                        <TableCell>{item.tipo}</TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.valor)}
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {contasDRE.map(conta => (
-                    <TableRow key={conta}>
-                      <TableCell>{conta}</TableCell>
-                      {anosComparar.map(a => {
-                        const dadosAno = mockDREPorAno[a] || [];
-                        const linha = dadosAno.find(i => i.tipo === conta);
-                        return (
-                          <TableCell key={a} className="text-right">
-                            {linha
-                              ? linha.valor.toLocaleString("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL"
-                                })
-                              : "R$ 0,00"}
-                          </TableCell>
-                        );
-                      })}
+                  </TableBody>
+                </Table>
+              )}
+              {/* Comparação de anos */}
+              {visualizacao === "comparar_anos" && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Conta</TableHead>
+                      {anosComparar.map(a => (
+                        <TableHead key={a} className="text-center">{a}</TableHead>
+                      ))}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-            {/* Mensal por mês único */}
-            {visualizacao === "mensal" && mes !== "todos" && (
-              (() => {
-                const dadosMensalAno = getMockDREMensalAnoSelecionado(anoMensal);
-                const dadosMes = dadosMensalAno.find(mObj => mObj.mes === mes);
-                if (!dadosMes) {
+                  </TableHeader>
+                  <TableBody>
+                    {contasDRE.map(conta => (
+                      <TableRow key={conta}>
+                        <TableCell>{conta}</TableCell>
+                        {anosComparar.map(a => {
+                          const dadosAno = mockDREPorAno[a] || [];
+                          const linha = dadosAno.find(i => i.tipo === conta);
+                          return (
+                            <TableCell key={a} className="text-right">
+                              {linha
+                                ? linha.valor.toLocaleString("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL"
+                                  })
+                                : "R$ 0,00"}
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+              {/* Mensal por mês único */}
+              {visualizacao === "mensal" && mes !== "todos" && (
+                (() => {
+                  const dadosMensalAno = getMockDREMensalAnoSelecionado(anoMensal);
+                  const dadosMes = dadosMensalAno.find(mObj => mObj.mes === mes);
+                  if (!dadosMes) {
+                    return (
+                      <div className="text-muted-foreground py-4">Sem dados para este mês.</div>
+                    );
+                  }
                   return (
-                    <div className="text-muted-foreground py-4">Sem dados para este mês.</div>
-                  );
-                }
-                return (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Conta</TableHead>
-                        <TableHead className="text-right">Valor (R$)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {dadosMes.dados.map(item => (
-                        <TableRow key={item.tipo}>
-                          <TableCell>{item.tipo}</TableCell>
-                          <TableCell className="text-right">
-                            {item.valor.toLocaleString("pt-BR", {
-                              style: "currency",
-                              currency: "BRL"
-                            })}
-                          </TableCell>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Conta</TableHead>
+                          <TableHead className="text-right">Valor (R$)</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                );
-              })()
-            )}
-            {/* Mensal todos os meses em colunas */}
-            {visualizacao === "mensal" && mes === "todos" && (
-              (() => {
-                const dadosMensalAno = getMockDREMensalAnoSelecionado(anoMensal);
-                return (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Conta</TableHead>
-                        {meses.map(m => (
-                          <TableHead key={m.value} className="text-center">{m.label}</TableHead>
+                      </TableHeader>
+                      <TableBody>
+                        {dadosMes.dados.map(item => (
+                          <TableRow key={item.tipo}>
+                            <TableCell>{item.tipo}</TableCell>
+                            <TableCell className="text-right">
+                              {item.valor.toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL"
+                              })}
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {contasDRE.map(conta => (
-                        <TableRow key={conta}>
-                          <TableCell>{conta}</TableCell>
-                          {meses.map(m => {
-                            const dadoMes = dadosMensalAno.find(x => x.mes === m.value);
-                            const linha = dadoMes?.dados.find(i => i.tipo === conta);
-                            return (
-                              <TableCell key={m.value} className="text-right">
-                                {linha
-                                  ? linha.valor.toLocaleString("pt-BR", {
-                                      style: "currency",
-                                      currency: "BRL"
-                                    })
-                                  : "R$ 0,00"}
-                              </TableCell>
-                            );
-                          })}
+                      </TableBody>
+                    </Table>
+                  );
+                })()
+              )}
+              {/* Mensal todos os meses em colunas */}
+              {visualizacao === "mensal" && mes === "todos" && (
+                (() => {
+                  const dadosMensalAno = getMockDREMensalAnoSelecionado(anoMensal);
+                  return (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Conta</TableHead>
+                          {meses.map(m => (
+                            <TableHead key={m.value} className="text-center">{m.label}</TableHead>
+                          ))}
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                );
-              })()
-            )}
-          </div>
+                      </TableHeader>
+                      <TableBody>
+                        {contasDRE.map(conta => (
+                          <TableRow key={conta}>
+                            <TableCell>{conta}</TableCell>
+                            {meses.map(m => {
+                              const dadoMes = dadosMensalAno.find(x => x.mes === m.value);
+                              const linha = dadoMes?.dados.find(i => i.tipo === conta);
+                              return (
+                                <TableCell key={m.value} className="text-right">
+                                  {linha
+                                    ? linha.valor.toLocaleString("pt-BR", {
+                                        style: "currency",
+                                        currency: "BRL"
+                                      })
+                                    : "R$ 0,00"}
+                                </TableCell>
+                              );
+                            })}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  );
+                })()
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
