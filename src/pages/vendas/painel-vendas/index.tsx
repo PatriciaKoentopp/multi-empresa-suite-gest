@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { SalesCard } from "@/components/vendas/SalesCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -68,7 +69,7 @@ const PainelVendasPage = () => {
         
         console.log("Total de vendas do ano:", totalVendas);
 
-        // Buscar vendas do mês atual - usando formato de data correto
+        // Definir datas para mês atual e anterior
         const startCurrentMonth = startOfMonth(new Date());
         const endCurrentMonth = endOfMonth(new Date());
         
@@ -310,56 +311,56 @@ const PainelVendasPage = () => {
         setYearlyChartData(yearlyData);
         console.log("Dados do gráfico anual processados:", yearlyData);
 
-        // Buscar vendas por serviço para o gráfico de pizza - corrigindo a consulta
-        const startCurrentMonth = startOfMonth(new Date());
-        const endCurrentMonth = endOfMonth(new Date());
-        
-        const startCurrentMonthFormatted = format(startCurrentMonth, 'yyyy-MM-dd');
-        const endCurrentMonthFormatted = format(endCurrentMonth, 'yyyy-MM-dd');
+        // Buscar vendas por serviço para o gráfico de pizza
+        try {
+          const { data: serviceData, error: serviceError } = await supabase
+            .from('orcamentos_itens')
+            .select(`
+              valor,
+              servico:servicos(id, nome),
+              orcamento:orcamentos!inner(data_venda, tipo, status)
+            `)
+            .eq('orcamento.tipo', 'venda')
+            .eq('orcamento.status', 'ativo')
+            .gte('orcamento.data_venda', startCurrentMonthFormatted)
+            .lte('orcamento.data_venda', endCurrentMonthFormatted);
 
-        // Corrigindo a consulta para buscar dados de vendas por serviço
-        // Usando join adequado em vez de inner()
-        const { data: serviceData, error: serviceError } = await supabase
-          .from('orcamentos_itens')
-          .select(`
-            valor,
-            servico:servicos(id, nome),
-            orcamentos!inner(data_venda, tipo, status)
-          `)
-          .eq('orcamentos.tipo', 'venda')
-          .eq('orcamentos.status', 'ativo')
-          .gte('orcamentos.data_venda', startCurrentMonthFormatted)
-          .lte('orcamentos.data_venda', endCurrentMonthFormatted);
+          if (serviceError) throw serviceError;
+          console.log("Dados por serviço:", serviceData);
 
-        if (serviceError) throw serviceError;
-        console.log("Dados por serviço:", serviceData);
+          // Filtrar registros válidos
+          const filteredServiceData = serviceData?.filter(item => 
+            item.orcamento && 
+            item.orcamento.data_venda && 
+            item.servico && 
+            item.servico.nome
+          );
 
-        // Filtramos apenas os registros que possuem data_venda dentro do período
-        const filteredServiceData = serviceData?.filter(item => {
-          if (!item.orcamentos || !item.orcamentos.data_venda) return false;
-          const dataVenda = new Date(item.orcamentos.data_venda);
-          return dataVenda >= startCurrentMonth && dataVenda <= endCurrentMonth;
-        });
+          // Processar dados do gráfico de pizza
+          const pieData = filteredServiceData?.reduce((acc: any[], item) => {
+            const servicoNome = item.servico?.nome || 'Outros';
+            const existingService = acc.find(s => s.name === servicoNome);
+            
+            if (existingService) {
+              existingService.value += Number(item.valor) || 0;
+            } else {
+              acc.push({
+                name: servicoNome,
+                value: Number(item.valor) || 0,
+                color: `hsl(${Math.random() * 360}, 70%, 50%)`
+              });
+            }
+            
+            return acc;
+          }, []) || [];
 
-        const pieData = filteredServiceData?.reduce((acc: any[], item) => {
-          const servicoNome = item.servico?.nome || 'Outros';
-          const existingService = acc.find(s => s.name === servicoNome);
-          
-          if (existingService) {
-            existingService.value += Number(item.valor) || 0;
-          } else {
-            acc.push({
-              name: servicoNome,
-              value: Number(item.valor) || 0,
-              color: `hsl(${Math.random() * 360}, 70%, 50%)`
-            });
-          }
-          
-          return acc;
-        }, []) || [];
-
-        setPieChartData(pieData);
-        console.log("Dados do gráfico de pizza processados:", pieData);
+          setPieChartData(pieData);
+          console.log("Dados do gráfico de pizza processados:", pieData);
+        } catch (serviceError) {
+          console.error("Erro ao buscar dados por serviço:", serviceError);
+          // Definir um gráfico vazio em caso de erro
+          setPieChartData([]);
+        }
 
         // Buscar dados para o gráfico de linha (vendas diárias do mês atual)
         const { data: dailyData, error: dailyError } = await supabase
