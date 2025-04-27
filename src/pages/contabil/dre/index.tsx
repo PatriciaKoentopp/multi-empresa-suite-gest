@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useCompany } from "@/contexts/company-context";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,6 +127,21 @@ function formatCurrency(value: number) {
   });
 }
 
+// Interface para detalhes de movimentação
+interface MovimentacaoDetalhe {
+  data_movimentacao: string;
+  descricao: string;
+  valor: number;
+  categoria?: string;
+}
+
+// Interface para grupo de movimentações
+interface GrupoMovimentacao {
+  tipo: string;
+  valor: number;
+  detalhes: MovimentacaoDetalhe[];
+}
+
 export default function DrePage() {
   // NOVO: incluir modo comparar_anos
   const [visualizacao, setVisualizacao] = useState<"acumulado" | "comparar_anos" | "mensal">("acumulado");
@@ -135,7 +151,7 @@ export default function DrePage() {
   const [anoMensal, setAnoMensal] = useState(anoAtual.toString());
   const { currentCompany } = useCompany();
 
-  // Função para buscar dados do fluxo de caixa
+  // Query para buscar dados do DRE
   const { data: dadosDRE = [], isLoading } = useQuery({
     queryKey: ["dre-data", currentCompany?.id, ano, mes, visualizacao],
     queryFn: async () => {
@@ -145,7 +161,7 @@ export default function DrePage() {
 
       if (visualizacao === "mensal" && mes !== "todos") {
         startDate = format(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1), 'yyyy-MM-dd');
-        endDate = format(endOfMonth(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1)), 'yyyy-MM-dd');
+        endDate = format(new Date(parseInt(anoMensal), parseInt(mes), 0), 'yyyy-MM-dd');
       } else {
         startDate = format(new Date(parseInt(ano), 0, 1), 'yyyy-MM-dd');
         endDate = format(new Date(parseInt(ano), 11, 31), 'yyyy-MM-dd');
@@ -155,7 +171,10 @@ export default function DrePage() {
         .from('fluxo_caixa')
         .select(`
           *,
-          movimentacoes (tipo_operacao, categoria_id),
+          movimentacoes (
+            categoria_id,
+            tipo_operacao
+          ),
           plano_contas:movimentacoes(plano_contas(tipo, descricao))
         `)
         .eq('empresa_id', currentCompany.id)
@@ -168,72 +187,97 @@ export default function DrePage() {
         return [];
       }
 
-      // Cálculos do DRE
-      const calculos = movimentacoes.reduce((acc: any, mov) => {
-        const valor = Number(mov.valor);
-        const planoContas = mov.plano_contas?.plano_contas;
-        const tipoOperacao = mov.movimentacoes?.tipo_operacao;
-        const categoriaId = mov.movimentacoes?.categoria_id;
+      // Agrupar movimentações
+      const grupos: { [key: string]: MovimentacaoDetalhe[] } = {
+        "Receita Bruta": [],
+        "Deduções": [],
+        "Custos": [],
+        "Despesas Operacionais": [],
+        "Despesas Financeiras": [],
+        "IRPJ/CSLL": []
+      };
 
-        // Receita Bruta (todas as movimentações de recebimento sem categoria)
+      let receitaBruta = 0;
+      let deducoes = 0;
+      let custos = 0;
+      let despesasOperacionais = 0;
+      let despesasFinanceiras = 0;
+      let impostos = 0;
+
+      movimentacoes?.forEach(mov => {
+        const valor = Number(mov.valor);
+        const tipoOperacao = mov.movimentacoes?.tipo_operacao;
+        const planoContas = mov.plano_contas?.plano_contas;
+        const categoriaId = mov.movimentacoes?.categoria_id;
+        const descricaoCategoria = planoContas?.descricao || 'Sem categoria';
+
+        const detalhe: MovimentacaoDetalhe = {
+          data_movimentacao: format(new Date(mov.data_movimentacao), 'dd/MM/yyyy'),
+          descricao: mov.descricao || descricaoCategoria,
+          valor: valor,
+          categoria: descricaoCategoria
+        };
+
+        // Se for receita e não tiver categoria, considera como receita bruta
         if (tipoOperacao === 'receber' && !categoriaId) {
-          acc.receitaBruta += valor;
+          receitaBruta += valor;
+          grupos["Receita Bruta"].push(detalhe);
         } 
-        // Demais contas (baseadas no plano de contas)
+        // Para as demais, usa o plano de contas
         else if (planoContas) {
           const { tipo, descricao } = planoContas;
           if (tipo === 'despesa') {
             switch (descricao) {
               case 'DAS - Simples Nacional':
-                acc.deducoes += Math.abs(valor);
+                deducoes += Math.abs(valor);
+                grupos["Deduções"].push(detalhe);
                 break;
               case 'Pró-Labore':
               case 'INSS':
               case 'Honorários Contábeis':
-                acc.despesasOperacionais += Math.abs(valor);
+                despesasOperacionais += Math.abs(valor);
+                grupos["Despesas Operacionais"].push(detalhe);
                 break;
               case 'Distribuição de Lucros':
-                acc.despesasFinanceiras += Math.abs(valor);
+                despesasFinanceiras += Math.abs(valor);
+                grupos["Despesas Financeiras"].push(detalhe);
                 break;
               default:
-                acc.custos += Math.abs(valor);
+                custos += Math.abs(valor);
+                grupos["Custos"].push(detalhe);
             }
           }
         }
-
-        return acc;
-      }, {
-        receitaBruta: 0,
-        deducoes: 0,
-        custos: 0,
-        despesasOperacionais: 0,
-        despesasFinanceiras: 0,
-        impostos: 0
       });
 
-      // Cálculos finais do DRE
-      const receitaLiquida = calculos.receitaBruta - calculos.deducoes;
-      const lucroBruto = receitaLiquida - calculos.custos;
-      const resultadoOperacional = lucroBruto - calculos.despesasOperacionais;
-      const resultadoAntesIR = resultadoOperacional - calculos.despesasFinanceiras;
-      const lucroLiquido = resultadoAntesIR - calculos.impostos;
+      const receitaLiquida = receitaBruta - deducoes;
+      const lucroBruto = receitaLiquida - custos;
+      const resultadoOperacional = lucroBruto - despesasOperacionais;
+      const resultadoAntesIR = resultadoOperacional - despesasFinanceiras;
+      const lucroLiquido = resultadoAntesIR - impostos;
 
-      return [
-        { tipo: "Receita Bruta", valor: calculos.receitaBruta },
-        { tipo: "(-) Deduções", valor: -calculos.deducoes },
-        { tipo: "Receita Líquida", valor: receitaLiquida },
-        { tipo: "(-) Custos", valor: -calculos.custos },
-        { tipo: "Lucro Bruto", valor: lucroBruto },
-        { tipo: "(-) Despesas Operacionais", valor: -calculos.despesasOperacionais },
-        { tipo: "Resultado Operacional", valor: resultadoOperacional },
-        { tipo: "(-) Despesas financeiras", valor: -calculos.despesasFinanceiras },
-        { tipo: "Resultado Antes IR", valor: resultadoAntesIR },
-        { tipo: "(-) IRPJ/CSLL", valor: -calculos.impostos },
-        { tipo: "Lucro Líquido do Exercício", valor: lucroLiquido }
+      // Converter grupos em array para o DRE
+      const gruposDRE: GrupoMovimentacao[] = [
+        { tipo: "Receita Bruta", valor: receitaBruta, detalhes: grupos["Receita Bruta"] },
+        { tipo: "(-) Deduções", valor: -deducoes, detalhes: grupos["Deduções"] },
+        { tipo: "Receita Líquida", valor: receitaLiquida, detalhes: [] },
+        { tipo: "(-) Custos", valor: -custos, detalhes: grupos["Custos"] },
+        { tipo: "Lucro Bruto", valor: lucroBruto, detalhes: [] },
+        { tipo: "(-) Despesas Operacionais", valor: -despesasOperacionais, detalhes: grupos["Despesas Operacionais"] },
+        { tipo: "Resultado Operacional", valor: resultadoOperacional, detalhes: [] },
+        { tipo: "(-) Despesas financeiras", valor: -despesasFinanceiras, detalhes: grupos["Despesas Financeiras"] },
+        { tipo: "Resultado Antes IR", valor: resultadoAntesIR, detalhes: [] },
+        { tipo: "(-) IRPJ/CSLL", valor: -impostos, detalhes: grupos["IRPJ/CSLL"] },
+        { tipo: "Lucro Líquido do Exercício", valor: lucroLiquido, detalhes: [] }
       ];
+
+      return gruposDRE;
     },
     enabled: !!currentCompany?.id
   });
+
+  // Função para verificar se o grupo tem detalhes
+  const temDetalhes = (grupo: GrupoMovimentacao) => grupo.detalhes.length > 0;
 
   function handleAnoCompararChange(anoAlterado: string) {
     let result: string[] = [];
@@ -369,25 +413,42 @@ export default function DrePage() {
             <div>
               {/* Acumulado padrão */}
               {visualizacao === "acumulado" && (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Conta</TableHead>
-                      <TableHead className="text-right">Valor (R$)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dadosDRE.map(item => (
-                      <TableRow key={item.tipo}>
-                        <TableCell>{item.tipo}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(item.valor)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <Accordion type="single" collapsible className="w-full">
+                  {dadosDRE.map((grupo, index) => (
+                    <AccordionItem value={`item-${index}`} key={index}>
+                      <AccordionTrigger className={`${!temDetalhes(grupo) ? 'cursor-default hover:no-underline' : ''}`} disabled={!temDetalhes(grupo)}>
+                        <div className="flex justify-between w-full pr-4">
+                          <span>{grupo.tipo}</span>
+                          <span>{formatCurrency(grupo.valor)}</span>
+                        </div>
+                      </AccordionTrigger>
+                      {temDetalhes(grupo) && (
+                        <AccordionContent>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Data</TableHead>
+                                <TableHead>Descrição</TableHead>
+                                <TableHead className="text-right">Valor</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {grupo.detalhes.map((detalhe, idx) => (
+                                <TableRow key={idx}>
+                                  <TableCell>{detalhe.data_movimentacao}</TableCell>
+                                  <TableCell>{detalhe.descricao}</TableCell>
+                                  <TableCell className="text-right">{formatCurrency(detalhe.valor)}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </AccordionContent>
+                      )}
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               )}
+
               {/* Comparação de anos */}
               {visualizacao === "comparar_anos" && (
                 <Table>
@@ -503,5 +564,3 @@ export default function DrePage() {
     </div>
   );
 }
-
-// O arquivo ficou longo; recomendo considerar refatoração em componentes menores após esta alteração.
