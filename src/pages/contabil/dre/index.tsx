@@ -155,16 +155,8 @@ export default function DrePage() {
         .from('fluxo_caixa')
         .select(`
           *,
-          movimentacoes (
-            tipo_operacao,
-            categoria_id
-          ),
-          plano_contas:movimentacoes (
-            plano_contas (
-              tipo,
-              descricao
-            )
-          )
+          movimentacoes (tipo_operacao, categoria_id),
+          plano_contas:movimentacoes(plano_contas(tipo, descricao))
         `)
         .eq('empresa_id', currentCompany.id)
         .gte('data_movimentacao', startDate)
@@ -176,52 +168,67 @@ export default function DrePage() {
         return [];
       }
 
-      // Agrupar movimentações por tipo de conta
-      const agrupado = movimentacoes.reduce((acc: any, mov) => {
-        const planoContas = mov.plano_contas?.plano_contas;
-        if (!planoContas) return acc;
-
-        const tipo = planoContas.tipo;
-        const descricao = planoContas.descricao;
+      // Cálculos do DRE
+      const calculos = movimentacoes.reduce((acc: any, mov) => {
         const valor = Number(mov.valor);
+        const planoContas = mov.plano_contas?.plano_contas;
+        const tipoOperacao = mov.movimentacoes?.tipo_operacao;
+        const categoriaId = mov.movimentacoes?.categoria_id;
 
-        if (!acc[tipo]) {
-          acc[tipo] = {};
+        // Receita Bruta (todas as movimentações de recebimento sem categoria)
+        if (tipoOperacao === 'receber' && !categoriaId) {
+          acc.receitaBruta += valor;
+        } 
+        // Demais contas (baseadas no plano de contas)
+        else if (planoContas) {
+          const { tipo, descricao } = planoContas;
+          if (tipo === 'despesa') {
+            switch (descricao) {
+              case 'DAS - Simples Nacional':
+                acc.deducoes += Math.abs(valor);
+                break;
+              case 'Pró-Labore':
+              case 'INSS':
+              case 'Honorários Contábeis':
+                acc.despesasOperacionais += Math.abs(valor);
+                break;
+              case 'Distribuição de Lucros':
+                acc.despesasFinanceiras += Math.abs(valor);
+                break;
+              default:
+                acc.custos += Math.abs(valor);
+            }
+          }
         }
-        if (!acc[tipo][descricao]) {
-          acc[tipo][descricao] = 0;
-        }
-        acc[tipo][descricao] += valor;
 
         return acc;
-      }, {});
+      }, {
+        receitaBruta: 0,
+        deducoes: 0,
+        custos: 0,
+        despesasOperacionais: 0,
+        despesasFinanceiras: 0,
+        impostos: 0
+      });
 
-      // Calcular totais
-      const receitaBruta = Object.values(agrupado.receita || {}).reduce((sum: number, val: any) => sum + val, 0);
-      const deducoes = Object.values(agrupado.deducao || {}).reduce((sum: number, val: any) => sum + val, 0);
-      const custos = Object.values(agrupado.custo || {}).reduce((sum: number, val: any) => sum + val, 0);
-      const despesasOperacionais = Object.values(agrupado.despesa || {}).reduce((sum: number, val: any) => sum + val, 0);
-      const despesasFinanceiras = Object.values(agrupado.despesa_financeira || {}).reduce((sum: number, val: any) => sum + val, 0);
-      const impostos = Object.values(agrupado.imposto || {}).reduce((sum: number, val: any) => sum + val, 0);
-
-      // Cálculos DRE
-      const receitaLiquida = receitaBruta - Math.abs(deducoes);
-      const lucroBruto = receitaLiquida - Math.abs(custos);
-      const resultadoOperacional = lucroBruto - Math.abs(despesasOperacionais);
-      const resultadoAntesIR = resultadoOperacional - Math.abs(despesasFinanceiras);
-      const lucroLiquido = resultadoAntesIR - Math.abs(impostos);
+      // Cálculos finais do DRE
+      const receitaLiquida = calculos.receitaBruta - calculos.deducoes;
+      const lucroBruto = receitaLiquida - calculos.custos;
+      const resultadoOperacional = lucroBruto - calculos.despesasOperacionais;
+      const resultadoAntesIR = resultadoOperacional - calculos.despesasFinanceiras;
+      const lucroLiquido = resultadoAntesIR - calculos.impostos;
 
       return [
-        { tipo: "Receita Bruta", valor: receitaBruta },
-        { tipo: "(-) Deduções", valor: -Math.abs(deducoes) },
+        { tipo: "Receita Bruta", valor: calculos.receitaBruta },
+        { tipo: "(-) Deduções", valor: -calculos.deducoes },
         { tipo: "Receita Líquida", valor: receitaLiquida },
-        { tipo: "(-) Custos", valor: -Math.abs(custos) },
+        { tipo: "(-) Custos", valor: -calculos.custos },
         { tipo: "Lucro Bruto", valor: lucroBruto },
-        { tipo: "(-) Despesas Operacionais", valor: -Math.abs(despesasOperacionais) },
+        { tipo: "(-) Despesas Operacionais", valor: -calculos.despesasOperacionais },
         { tipo: "Resultado Operacional", valor: resultadoOperacional },
-        { tipo: "(-) Despesas financeiras", valor: -Math.abs(despesasFinanceiras) },
+        { tipo: "(-) Despesas financeiras", valor: -calculos.despesasFinanceiras },
         { tipo: "Resultado Antes IR", valor: resultadoAntesIR },
-        { tipo: "(-) IRPJ/CSLL", valor: -Math.abs(impostos) },
+        { tipo: "(-) IRPJ/CSLL", valor: -calculos.impostos },
         { tipo: "Lucro Líquido do Exercício", valor: lucroLiquido }
       ];
     },
