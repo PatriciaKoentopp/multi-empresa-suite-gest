@@ -36,97 +36,6 @@ const anos: string[] = [];
 const anoAtual = new Date().getFullYear();
 for (let a = anoAtual; a >= 2021; a--) anos.push(a.toString());
 
-// Mock dados contábeis padrão
-const mockDRE = [
-  { tipo: "Receita Bruta", valor: 100000 },
-  { tipo: "(-) Deduções", valor: -2000 },
-  { tipo: "Receita Líquida", valor: 98000 },
-  { tipo: "(-) Custos", valor: -30000 },
-  { tipo: "Lucro Bruto", valor: 68000 },
-  { tipo: "(-) Despesas Operacionais", valor: -35000 },
-  { tipo: "Resultado Operacional", valor: 33000 },
-  { tipo: "(-) Despesas financeiras", valor: -8000 },
-  { tipo: "Resultado Antes IR", valor: 25000 },
-  { tipo: "(-) IRPJ/CSLL", valor: -3000 },
-  { tipo: "Lucro Líquido do Exercício", valor: 22000 }
-];
-const contasDRE = mockDRE.map(c => c.tipo);
-
-const mesesNumericos = meses.map(m => m.value);
-
-// Mock DRE Mensal
-const mockDREMensalBase = [
-  {
-    mes: "01",
-    dados: [
-      { tipo: "Receita Bruta", valor: 8000 },
-      { tipo: "(-) Deduções", valor: -150 },
-      { tipo: "Receita Líquida", valor: 7850 },
-      { tipo: "(-) Custos", valor: -2500 },
-      { tipo: "Lucro Bruto", valor: 5350 },
-      { tipo: "(-) Despesas Operacionais", valor: -2900 },
-      { tipo: "Resultado Operacional", valor: 2450 },
-      { tipo: "(-) Despesas financeiras", valor: -600 },
-      { tipo: "Resultado Antes IR", valor: 1850 },
-      { tipo: "(-) IRPJ/CSLL", valor: -220 },
-      { tipo: "Lucro Líquido do Exercício", valor: 1630 }
-    ]
-  },
-  {
-    mes: "02",
-    dados: [
-      { tipo: "Receita Bruta", valor: 9000 },
-      { tipo: "(-) Deduções", valor: -180 },
-      { tipo: "Receita Líquida", valor: 8820 },
-      { tipo: "(-) Custos", valor: -2650 },
-      { tipo: "Lucro Bruto", valor: 6170 },
-      { tipo: "(-) Despesas Operacionais", valor: -3050 },
-      { tipo: "Resultado Operacional", valor: 3120 },
-      { tipo: "(-) Despesas financeiras", valor: -500 },
-      { tipo: "Resultado Antes IR", valor: 2620 },
-      { tipo: "(-) IRPJ/CSLL", valor: -360 },
-      { tipo: "Lucro Líquido do Exercício", valor: 2260 }
-    ]
-  }
-  // ... adicionar demais meses ao mock se necessário ...
-];
-
-// Mock multi anos acumulado - simular diferenças para comparar
-const mockDREPorAno: { [ano: string]: typeof mockDRE } = {
-  [anoAtual]: mockDRE,
-  [anoAtual - 1]: mockDRE.map((l, i) => ({
-    ...l,
-    valor: Math.round(l.valor * 0.93 + (i%2 === 0 ? 3500 : -1200))
-  })),
-  [anoAtual - 2]: mockDRE.map((l, i) => ({
-    ...l,
-    valor: Math.round(l.valor * 0.81 + (i%2 === 0 ? 2000 : -2200))
-  })),
-  [anoAtual - 3]: mockDRE.map((l, i) => ({
-    ...l,
-    valor: Math.round(l.valor * 1.11 + (i%2 === 0 ? 700 : +800))
-  })),
-  [anoAtual - 4]: mockDRE.map((l, i) => ({
-    ...l,
-    valor: Math.round(l.valor * 1.19 + (i%2 === 0 ? 320 : -900))
-  })),
-};
-
-// Monta todos os meses do ano para exibição horizontal
-const mockDREMensal: { mes: string, dados: { tipo: string, valor: number }[] }[] = mesesNumericos.map(mesVal => {
-  const encontrado = mockDREMensalBase.find(mx => mx.mes === mesVal);
-  if (encontrado) return encontrado;
-  return { mes: mesVal, dados: contasDRE.map(c => ({ tipo: c, valor: 0 })) };
-});
-
-function formatCurrency(value: number) {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  });
-}
-
 // Interface para detalhes de movimentação
 interface MovimentacaoDetalhe {
   data_movimentacao: string;
@@ -143,138 +52,228 @@ interface GrupoMovimentacao {
 }
 
 export default function DrePage() {
-  // NOVO: incluir modo comparar_anos
   const [visualizacao, setVisualizacao] = useState<"acumulado" | "comparar_anos" | "mensal">("acumulado");
-  const [ano, setAno] = useState(anoAtual.toString());
-  const [anosComparar, setAnosComparar] = useState<string[]>([anoAtual.toString(), (anoAtual-1).toString()]);
+  const [ano, setAno] = useState(new Date().getFullYear().toString());
+  const [anosComparar, setAnosComparar] = useState<string[]>([new Date().getFullYear().toString(), (new Date().getFullYear()-1).toString()]);
   const [mes, setMes] = useState("01");
-  const [anoMensal, setAnoMensal] = useState(anoAtual.toString());
+  const [anoMensal, setAnoMensal] = useState(new Date().getFullYear().toString());
   const { currentCompany } = useCompany();
 
   // Query para buscar dados do DRE
   const { data: dadosDRE = [], isLoading } = useQuery({
-    queryKey: ["dre-data", currentCompany?.id, ano, mes, visualizacao],
+    queryKey: ["dre-data", currentCompany?.id, ano, mes, visualizacao, anoMensal, anosComparar],
     queryFn: async () => {
       if (!currentCompany?.id) return [];
 
-      let startDate, endDate;
+      let dadosAgrupados: GrupoMovimentacao[] = [];
 
-      if (visualizacao === "mensal" && mes !== "todos") {
-        startDate = format(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1), 'yyyy-MM-dd');
-        endDate = format(new Date(parseInt(anoMensal), parseInt(mes), 0), 'yyyy-MM-dd');
-      } else {
-        startDate = format(new Date(parseInt(ano), 0, 1), 'yyyy-MM-dd');
-        endDate = format(new Date(parseInt(ano), 11, 31), 'yyyy-MM-dd');
-      }
+      try {
+        if (visualizacao === "mensal" && mes !== "todos") {
+          // Busca dados para um mês específico
+          const startDate = format(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1), 'yyyy-MM-dd');
+          const endDate = format(endOfMonth(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1)), 'yyyy-MM-dd');
 
-      const { data: movimentacoes, error } = await supabase
-        .from('fluxo_caixa')
-        .select(`
-          *,
-          movimentacoes (
-            categoria_id,
-            tipo_operacao
-          ),
-          plano_contas:movimentacoes(plano_contas(tipo, descricao))
-        `)
-        .eq('empresa_id', currentCompany.id)
-        .gte('data_movimentacao', startDate)
-        .lte('data_movimentacao', endDate);
+          const { data: movimentacoes, error } = await supabase
+            .from('fluxo_caixa')
+            .select(`
+              *,
+              movimentacoes (
+                categoria_id,
+                tipo_operacao
+              ),
+              plano_contas:movimentacoes(plano_contas(tipo, descricao))
+            `)
+            .eq('empresa_id', currentCompany.id)
+            .gte('data_movimentacao', startDate)
+            .lte('data_movimentacao', endDate);
 
-      if (error) {
+          if (error) throw error;
+
+          dadosAgrupados = processarMovimentacoes(movimentacoes || []);
+
+        } else if (visualizacao === "mensal" && mes === "todos") {
+          // Busca dados para todos os meses do ano
+          const startDate = format(new Date(parseInt(anoMensal), 0, 1), 'yyyy-MM-dd');
+          const endDate = format(new Date(parseInt(anoMensal), 11, 31), 'yyyy-MM-dd');
+
+          const { data: movimentacoes, error } = await supabase
+            .from('fluxo_caixa')
+            .select(`
+              *,
+              movimentacoes (
+                categoria_id,
+                tipo_operacao
+              ),
+              plano_contas:movimentacoes(plano_contas(tipo, descricao))
+            `)
+            .eq('empresa_id', currentCompany.id)
+            .gte('data_movimentacao', startDate)
+            .lte('data_movimentacao', endDate);
+
+          if (error) throw error;
+
+          // Agrupa movimentações por mês
+          const movimentacoesPorMes = (movimentacoes || []).reduce((acc: any, mov) => {
+            const mesMovimentacao = format(new Date(mov.data_movimentacao), 'MM');
+            if (!acc[mesMovimentacao]) {
+              acc[mesMovimentacao] = [];
+            }
+            acc[mesMovimentacao].push(mov);
+            return acc;
+          }, {});
+
+          // Processa movimentações para cada mês
+          dadosAgrupados = Object.entries(movimentacoesPorMes).map(([mes, movs]) => ({
+            mes,
+            dados: processarMovimentacoes(movs as any[])
+          }));
+
+        } else if (visualizacao === "comparar_anos") {
+          // Busca dados para cada ano selecionado
+          const dadosPorAno: { [ano: string]: GrupoMovimentacao[] } = {};
+
+          for (const anoSelecionado of anosComparar) {
+            const startDate = format(new Date(parseInt(anoSelecionado), 0, 1), 'yyyy-MM-dd');
+            const endDate = format(new Date(parseInt(anoSelecionado), 11, 31), 'yyyy-MM-dd');
+
+            const { data: movimentacoes, error } = await supabase
+              .from('fluxo_caixa')
+              .select(`
+                *,
+                movimentacoes (
+                  categoria_id,
+                  tipo_operacao
+                ),
+                plano_contas:movimentacoes(plano_contas(tipo, descricao))
+              `)
+              .eq('empresa_id', currentCompany.id)
+              .gte('data_movimentacao', startDate)
+              .lte('data_movimentacao', endDate);
+
+            if (error) throw error;
+
+            dadosPorAno[anoSelecionado] = processarMovimentacoes(movimentacoes || []);
+          }
+
+          dadosAgrupados = dadosPorAno;
+        } else {
+          // Acumulado - mantém o código existente
+          const startDate = format(new Date(parseInt(ano), 0, 1), 'yyyy-MM-dd');
+          const endDate = format(new Date(parseInt(ano), 11, 31), 'yyyy-MM-dd');
+
+          const { data: movimentacoes, error } = await supabase
+            .from('fluxo_caixa')
+            .select(`
+              *,
+              movimentacoes (
+                categoria_id,
+                tipo_operacao
+              ),
+              plano_contas:movimentacoes(plano_contas(tipo, descricao))
+            `)
+            .eq('empresa_id', currentCompany.id)
+            .gte('data_movimentacao', startDate)
+            .lte('data_movimentacao', endDate);
+
+          if (error) throw error;
+
+          dadosAgrupados = processarMovimentacoes(movimentacoes || []);
+        }
+
+        return dadosAgrupados;
+
+      } catch (error) {
         console.error('Erro ao buscar dados:', error);
         toast.error('Erro ao carregar dados do DRE');
         return [];
       }
+    }
+  });
 
-      // Agrupar movimentações
-      const grupos: { [key: string]: MovimentacaoDetalhe[] } = {
-        "Receita Bruta": [],
-        "Deduções": [],
-        "Custos": [],
-        "Despesas Operacionais": [],
-        "Despesas Financeiras": [],
-        "IRPJ/CSLL": []
+  // Função para processar movimentações e calcular totais
+  function processarMovimentacoes(movimentacoes: any[]) {
+    const grupos: { [key: string]: MovimentacaoDetalhe[] } = {
+      "Receita Bruta": [],
+      "Deduções": [],
+      "Custos": [],
+      "Despesas Operacionais": [],
+      "Despesas Financeiras": [],
+      "IRPJ/CSLL": []
+    };
+
+    let receitaBruta = 0;
+    let deducoes = 0;
+    let custos = 0;
+    let despesasOperacionais = 0;
+    let despesasFinanceiras = 0;
+    let impostos = 0;
+
+    movimentacoes.forEach(mov => {
+      const valor = Number(mov.valor);
+      const tipoOperacao = mov.movimentacoes?.tipo_operacao;
+      const planoContas = mov.plano_contas?.plano_contas;
+      const categoriaId = mov.movimentacoes?.categoria_id;
+      const descricaoCategoria = planoContas?.descricao || 'Sem categoria';
+
+      const detalhe: MovimentacaoDetalhe = {
+        data_movimentacao: format(new Date(mov.data_movimentacao), 'dd/MM/yyyy'),
+        descricao: mov.descricao || descricaoCategoria,
+        valor: valor,
+        categoria: descricaoCategoria
       };
 
-      let receitaBruta = 0;
-      let deducoes = 0;
-      let custos = 0;
-      let despesasOperacionais = 0;
-      let despesasFinanceiras = 0;
-      let impostos = 0;
-
-      movimentacoes?.forEach(mov => {
-        const valor = Number(mov.valor);
-        const tipoOperacao = mov.movimentacoes?.tipo_operacao;
-        const planoContas = mov.plano_contas?.plano_contas;
-        const categoriaId = mov.movimentacoes?.categoria_id;
-        const descricaoCategoria = planoContas?.descricao || 'Sem categoria';
-
-        const detalhe: MovimentacaoDetalhe = {
-          data_movimentacao: format(new Date(mov.data_movimentacao), 'dd/MM/yyyy'),
-          descricao: mov.descricao || descricaoCategoria,
-          valor: valor,
-          categoria: descricaoCategoria
-        };
-
-        // Se for receita e não tiver categoria, considera como receita bruta
-        if (tipoOperacao === 'receber' && !categoriaId) {
-          receitaBruta += valor;
-          grupos["Receita Bruta"].push(detalhe);
-        } 
-        // Para as demais, usa o plano de contas
-        else if (planoContas) {
-          const { tipo, descricao } = planoContas;
-          if (tipo === 'despesa') {
-            switch (descricao) {
-              case 'DAS - Simples Nacional':
-                deducoes += Math.abs(valor);
-                grupos["Deduções"].push(detalhe);
-                break;
-              case 'Pró-Labore':
-              case 'INSS':
-              case 'Honorários Contábeis':
-                despesasOperacionais += Math.abs(valor);
-                grupos["Despesas Operacionais"].push(detalhe);
-                break;
-              case 'Distribuição de Lucros':
-                despesasFinanceiras += Math.abs(valor);
-                grupos["Despesas Financeiras"].push(detalhe);
-                break;
-              default:
-                custos += Math.abs(valor);
-                grupos["Custos"].push(detalhe);
-            }
+      // Se for recebimento e não tiver categoria, considera como receita bruta
+      if (tipoOperacao === 'receber' && !categoriaId) {
+        receitaBruta += valor;
+        grupos["Receita Bruta"].push(detalhe);
+      } 
+      // Para as demais, usa o plano de contas
+      else if (planoContas) {
+        const { tipo, descricao } = planoContas;
+        if (tipo === 'despesa') {
+          switch (descricao) {
+            case 'DAS - Simples Nacional':
+              deducoes += Math.abs(valor);
+              grupos["Deduções"].push(detalhe);
+              break;
+            case 'Pró-Labore':
+            case 'INSS':
+            case 'Honorários Contábeis':
+              despesasOperacionais += Math.abs(valor);
+              grupos["Despesas Operacionais"].push(detalhe);
+              break;
+            case 'Distribuição de Lucros':
+              despesasFinanceiras += Math.abs(valor);
+              grupos["Despesas Financeiras"].push(detalhe);
+              break;
+            default:
+              custos += Math.abs(valor);
+              grupos["Custos"].push(detalhe);
           }
         }
-      });
+      }
+    });
 
-      const receitaLiquida = receitaBruta - deducoes;
-      const lucroBruto = receitaLiquida - custos;
-      const resultadoOperacional = lucroBruto - despesasOperacionais;
-      const resultadoAntesIR = resultadoOperacional - despesasFinanceiras;
-      const lucroLiquido = resultadoAntesIR - impostos;
+    const receitaLiquida = receitaBruta - deducoes;
+    const lucroBruto = receitaLiquida - custos;
+    const resultadoOperacional = lucroBruto - despesasOperacionais;
+    const resultadoAntesIR = resultadoOperacional - despesasFinanceiras;
+    const lucroLiquido = resultadoAntesIR - impostos;
 
-      // Converter grupos em array para o DRE
-      const gruposDRE: GrupoMovimentacao[] = [
-        { tipo: "Receita Bruta", valor: receitaBruta, detalhes: grupos["Receita Bruta"] },
-        { tipo: "(-) Deduções", valor: -deducoes, detalhes: grupos["Deduções"] },
-        { tipo: "Receita Líquida", valor: receitaLiquida, detalhes: [] },
-        { tipo: "(-) Custos", valor: -custos, detalhes: grupos["Custos"] },
-        { tipo: "Lucro Bruto", valor: lucroBruto, detalhes: [] },
-        { tipo: "(-) Despesas Operacionais", valor: -despesasOperacionais, detalhes: grupos["Despesas Operacionais"] },
-        { tipo: "Resultado Operacional", valor: resultadoOperacional, detalhes: [] },
-        { tipo: "(-) Despesas financeiras", valor: -despesasFinanceiras, detalhes: grupos["Despesas Financeiras"] },
-        { tipo: "Resultado Antes IR", valor: resultadoAntesIR, detalhes: [] },
-        { tipo: "(-) IRPJ/CSLL", valor: -impostos, detalhes: grupos["IRPJ/CSLL"] },
-        { tipo: "Lucro Líquido do Exercício", valor: lucroLiquido, detalhes: [] }
-      ];
-
-      return gruposDRE;
-    },
-    enabled: !!currentCompany?.id
-  });
+    return [
+      { tipo: "Receita Bruta", valor: receitaBruta, detalhes: grupos["Receita Bruta"] },
+      { tipo: "(-) Deduções", valor: -deducoes, detalhes: grupos["Deduções"] },
+      { tipo: "Receita Líquida", valor: receitaLiquida, detalhes: [] },
+      { tipo: "(-) Custos", valor: -custos, detalhes: grupos["Custos"] },
+      { tipo: "Lucro Bruto", valor: lucroBruto, detalhes: [] },
+      { tipo: "(-) Despesas Operacionais", valor: -despesasOperacionais, detalhes: grupos["Despesas Operacionais"] },
+      { tipo: "Resultado Operacional", valor: resultadoOperacional, detalhes: [] },
+      { tipo: "(-) Despesas financeiras", valor: -despesasFinanceiras, detalhes: grupos["Despesas Financeiras"] },
+      { tipo: "Resultado Antes IR", valor: resultadoAntesIR, detalhes: [] },
+      { tipo: "(-) IRPJ/CSLL", valor: -impostos, detalhes: grupos["IRPJ/CSLL"] },
+      { tipo: "Lucro Líquido do Exercício", valor: lucroLiquido, detalhes: [] }
+    ];
+  }
 
   // Função para verificar se o grupo tem detalhes
   const temDetalhes = (grupo: GrupoMovimentacao) => grupo.detalhes.length > 0;
@@ -282,27 +281,21 @@ export default function DrePage() {
   function handleAnoCompararChange(anoAlterado: string) {
     let result: string[] = [];
     if (anosComparar.includes(anoAlterado)) {
-      // desmarca
       result = anosComparar.filter(a => a !== anoAlterado);
     } else {
-      // marca (até 5)
       if (anosComparar.length < 5) result = [...anosComparar, anoAlterado];
       else result = anosComparar;
     }
-    // Garante pelo menos 1 ano selecionado
     if (result.length === 0) result = [anoAlterado];
     setAnosComparar(result);
   }
 
-  // Ajuste para buscar dados mensais do mock base para o ano selecionado (apenas para demonstrar seleção, simula dados zerados caso não exista p/ ano)
-  function getMockDREMensalAnoSelecionado(anoSelecionado: string) {
-    // Simples: só retorna o mock fixo pois mocks não tem dados de outros anos para visualização, simula zerados nos outros anos
-    if (anoSelecionado === anoAtual.toString()) return mockDREMensal;
-    // Se quiser simular outros anos diferentes, basta criar outros arrays semelhantes.
-    return mesesNumericos.map(mesVal => ({
-      mes: mesVal,
-      dados: contasDRE.map(c => ({ tipo: c, valor: 0 })),
-    }));
+  function formatCurrency(value: number) {
+    return value.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 2,
+    });
   }
 
   return (
@@ -409,12 +402,11 @@ export default function DrePage() {
               <div className="animate-pulse">Carregando dados do DRE...</div>
             </div>
           ) : (
-            /* Exibição do DRE */
             <div>
               {/* Acumulado padrão */}
               {visualizacao === "acumulado" && (
                 <Accordion type="single" collapsible className="w-full">
-                  {dadosDRE.map((grupo, index) => (
+                  {dadosDRE.map((grupo: GrupoMovimentacao, index: number) => (
                     <AccordionItem value={`item-${index}`} key={index}>
                       <AccordionTrigger className={`${!temDetalhes(grupo) ? 'cursor-default hover:no-underline' : ''}`} disabled={!temDetalhes(grupo)}>
                         <div className="flex justify-between w-full pr-4">
@@ -461,20 +453,79 @@ export default function DrePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
+                    {Object.keys(dadosDRE[0] || {}).map(conta => (
+                      <TableRow key={conta}>
+                        <TableCell>{conta}</TableCell>
+                        {anosComparar.map(ano => (
+                          <TableCell key={ano} className="text-right">
+                            {formatCurrency((dadosDRE as any)[ano]?.find((i: GrupoMovimentacao) => i.tipo === conta)?.valor || 0)}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+
+              {/* Mensal por mês único */}
+              {visualizacao === "mensal" && mes !== "todos" && (
+                <Accordion type="single" collapsible className="w-full">
+                  {dadosDRE.map((grupo: GrupoMovimentacao, index: number) => (
+                    <AccordionItem value={`item-${index}`} key={index}>
+                      <AccordionTrigger className={`${!temDetalhes(grupo) ? 'cursor-default hover:no-underline' : ''}`} disabled={!temDetalhes(grupo)}>
+                        <div className="flex justify-between w-full pr-4">
+                          <span>{grupo.tipo}</span>
+                          <span>{formatCurrency(grupo.valor)}</span>
+                        </div>
+                      </AccordionTrigger>
+                      {temDetalhes(grupo) && (
+                        <AccordionContent>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Data</TableHead>
+                                <TableHead>Descrição</TableHead>
+                                <TableHead className="text-right">Valor</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {grupo.detalhes.map((detalhe, idx) => (
+                                <TableRow key={idx}>
+                                  <TableCell>{detalhe.data_movimentacao}</TableCell>
+                                  <TableCell>{detalhe.descricao}</TableCell>
+                                  <TableCell className="text-right">{formatCurrency(detalhe.valor)}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </AccordionContent>
+                      )}
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
+
+              {/* Mensal todos os meses em colunas */}
+              {visualizacao === "mensal" && mes === "todos" && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Conta</TableHead>
+                      {meses.map(m => (
+                        <TableHead key={m.value} className="text-center">{m.label}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {contasDRE.map(conta => (
                       <TableRow key={conta}>
                         <TableCell>{conta}</TableCell>
-                        {anosComparar.map(a => {
-                          const dadosAno = mockDREPorAno[a] || [];
-                          const linha = dadosAno.find(i => i.tipo === conta);
+                        {meses.map(m => {
+                          const dadosMes = (dadosDRE as any[]).find(x => x.mes === m.value);
+                          const linhaMes = dadosMes?.dados?.find((i: GrupoMovimentacao) => i.tipo === conta);
                           return (
-                            <TableCell key={a} className="text-right">
-                              {linha
-                                ? linha.valor.toLocaleString("pt-BR", {
-                                    style: "currency",
-                                    currency: "BRL"
-                                  })
-                                : "R$ 0,00"}
+                            <TableCell key={m.value} className="text-right">
+                              {formatCurrency(linhaMes?.valor || 0)}
                             </TableCell>
                           );
                         })}
@@ -482,80 +533,6 @@ export default function DrePage() {
                     ))}
                   </TableBody>
                 </Table>
-              )}
-              {/* Mensal por mês único */}
-              {visualizacao === "mensal" && mes !== "todos" && (
-                (() => {
-                  const dadosMensalAno = getMockDREMensalAnoSelecionado(anoMensal);
-                  const dadosMes = dadosMensalAno.find(mObj => mObj.mes === mes);
-                  if (!dadosMes) {
-                    return (
-                      <div className="text-muted-foreground py-4">Sem dados para este mês.</div>
-                    );
-                  }
-                  return (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Conta</TableHead>
-                          <TableHead className="text-right">Valor (R$)</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {dadosMes.dados.map(item => (
-                          <TableRow key={item.tipo}>
-                            <TableCell>{item.tipo}</TableCell>
-                            <TableCell className="text-right">
-                              {item.valor.toLocaleString("pt-BR", {
-                                style: "currency",
-                                currency: "BRL"
-                              })}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  );
-                })()
-              )}
-              {/* Mensal todos os meses em colunas */}
-              {visualizacao === "mensal" && mes === "todos" && (
-                (() => {
-                  const dadosMensalAno = getMockDREMensalAnoSelecionado(anoMensal);
-                  return (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Conta</TableHead>
-                          {meses.map(m => (
-                            <TableHead key={m.value} className="text-center">{m.label}</TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {contasDRE.map(conta => (
-                          <TableRow key={conta}>
-                            <TableCell>{conta}</TableCell>
-                            {meses.map(m => {
-                              const dadoMes = dadosMensalAno.find(x => x.mes === m.value);
-                              const linha = dadoMes?.dados.find(i => i.tipo === conta);
-                              return (
-                                <TableCell key={m.value} className="text-right">
-                                  {linha
-                                    ? linha.valor.toLocaleString("pt-BR", {
-                                        style: "currency",
-                                        currency: "BRL"
-                                      })
-                                    : "R$ 0,00"}
-                                </TableCell>
-                              );
-                            })}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  );
-                })()
               )}
             </div>
           )}
