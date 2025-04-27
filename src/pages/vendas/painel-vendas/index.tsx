@@ -310,23 +310,38 @@ const PainelVendasPage = () => {
         setYearlyChartData(yearlyData);
         console.log("Dados do gráfico anual processados:", yearlyData);
 
-        // Buscar dados para o gráfico de pizza (vendas por serviço)
+        // Buscar vendas por serviço para o gráfico de pizza - corrigindo a consulta
+        const startCurrentMonth = startOfMonth(new Date());
+        const endCurrentMonth = endOfMonth(new Date());
+        
+        const startCurrentMonthFormatted = format(startCurrentMonth, 'yyyy-MM-dd');
+        const endCurrentMonthFormatted = format(endCurrentMonth, 'yyyy-MM-dd');
+
+        // Corrigindo a consulta para buscar dados de vendas por serviço
+        // Usando join adequado em vez de inner()
         const { data: serviceData, error: serviceError } = await supabase
           .from('orcamentos_itens')
           .select(`
             valor,
-            servico:servicos(id, nome)
+            servico:servicos(id, nome),
+            orcamentos!inner(data_venda, tipo, status)
           `)
           .eq('orcamentos.tipo', 'venda')
           .eq('orcamentos.status', 'ativo')
           .gte('orcamentos.data_venda', startCurrentMonthFormatted)
-          .lte('orcamentos.data_venda', endCurrentMonthFormatted)
-          .inner('orcamentos');
+          .lte('orcamentos.data_venda', endCurrentMonthFormatted);
 
         if (serviceError) throw serviceError;
         console.log("Dados por serviço:", serviceData);
 
-        const pieData = serviceData?.reduce((acc: any[], item) => {
+        // Filtramos apenas os registros que possuem data_venda dentro do período
+        const filteredServiceData = serviceData?.filter(item => {
+          if (!item.orcamentos || !item.orcamentos.data_venda) return false;
+          const dataVenda = new Date(item.orcamentos.data_venda);
+          return dataVenda >= startCurrentMonth && dataVenda <= endCurrentMonth;
+        });
+
+        const pieData = filteredServiceData?.reduce((acc: any[], item) => {
           const servicoNome = item.servico?.nome || 'Outros';
           const existingService = acc.find(s => s.name === servicoNome);
           
