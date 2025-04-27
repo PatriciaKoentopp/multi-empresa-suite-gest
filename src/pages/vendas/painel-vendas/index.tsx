@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { SalesCard } from "@/components/vendas/SalesCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -8,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
-import { format, subDays, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format, subDays, startOfMonth, endOfMonth, subMonths, subYears, getYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
 
@@ -26,6 +27,8 @@ const PainelVendasPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [salesData, setSalesData] = useState<SalesData | null>(null);
   const [barChartData, setBarChartData] = useState<any[]>([]);
+  const [quarterlyChartData, setQuarterlyChartData] = useState<any[]>([]);
+  const [yearlyChartData, setYearlyChartData] = useState<any[]>([]);
   const [pieChartData, setPieChartData] = useState<any[]>([]);
   const [lineChartData, setLineChartData] = useState<any[]>([]);
 
@@ -226,6 +229,88 @@ const PainelVendasPage = () => {
         setBarChartData(monthlyChartData);
         console.log("Dados do gráfico de barras processados:", monthlyChartData);
 
+        // Buscar dados para gráficos trimestrais
+        // Define os intervalos para cada trimestre do ano atual
+        const quarters = [
+          { start: `${currentYear}-01-01`, end: `${currentYear}-03-31`, name: 'T1' },
+          { start: `${currentYear}-04-01`, end: `${currentYear}-06-30`, name: 'T2' },
+          { start: `${currentYear}-07-01`, end: `${currentYear}-09-30`, name: 'T3' },
+          { start: `${currentYear}-10-01`, end: `${currentYear}-12-31`, name: 'T4' }
+        ];
+
+        const quarterlyData = [];
+
+        for (const quarter of quarters) {
+          const { data: qData, error: qError } = await supabase
+            .from('orcamentos')
+            .select(`
+              data_venda,
+              orcamentos_itens (valor)
+            `)
+            .eq('tipo', 'venda')
+            .eq('status', 'ativo')
+            .gte('data_venda', quarter.start)
+            .lte('data_venda', quarter.end);
+
+          if (qError) throw qError;
+
+          const faturado = qData?.reduce((acc, orcamento) => {
+            return acc + orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
+          }, 0) || 0;
+
+          quarterlyData.push({
+            name: quarter.name,
+            faturado,
+            projetado: faturado * 1.1
+          });
+        }
+
+        setQuarterlyChartData(quarterlyData);
+        console.log("Dados do gráfico trimestral processados:", quarterlyData);
+
+        // Buscar dados para gráficos anuais (últimos 4 anos)
+        const yearlyData = [];
+        const currentYearNum = currentYear;
+        
+        for (let i = 3; i >= 0; i--) {
+          const year = currentYearNum - i;
+          const yearStart = `${year}-01-01`;
+          const yearEnd = `${year}-12-31`;
+
+          const { data: yData, error: yError } = await supabase
+            .from('orcamentos')
+            .select(`
+              data_venda,
+              orcamentos_itens (valor)
+            `)
+            .eq('tipo', 'venda')
+            .eq('status', 'ativo')
+            .gte('data_venda', yearStart)
+            .lte('data_venda', yearEnd);
+
+          if (yError) throw yError;
+
+          const faturado = yData?.reduce((acc, orcamento) => {
+            return acc + orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
+          }, 0) || 0;
+
+          // Cálculo da projeção: para anos passados, é igual ao faturado
+          // Para o ano atual, é o valor atual extrapolado para o ano inteiro
+          const projetado = year < currentYearNum ? 
+            faturado : 
+            // Extrapola o valor atual com base no mês corrente
+            Math.round((faturado / (new Date().getMonth() + 1)) * 12);
+
+          yearlyData.push({
+            name: year.toString(),
+            faturado,
+            projetado
+          });
+        }
+
+        setYearlyChartData(yearlyData);
+        console.log("Dados do gráfico anual processados:", yearlyData);
+
         // Buscar dados para o gráfico de pizza (vendas por categoria/serviço)
         const { data: categoryData, error: categoryError } = await supabase
           .from('orcamentos_itens')
@@ -389,14 +474,7 @@ const PainelVendasPage = () => {
                 <CardTitle>Vendas por Trimestre</CardTitle>
               </CardHeader>
               <CardContent>
-                <SalesBarChart 
-                  data={[
-                    { name: "T1", faturado: 145500, projetado: 153000 },
-                    { name: "T2", faturado: 161700, projetado: 162000 },
-                    { name: "T3", faturado: 179000, projetado: 171000 },
-                    { name: "T4", faturado: 224300, projetado: 180000 }
-                  ]}
-                />
+                <SalesBarChart data={quarterlyChartData} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -406,14 +484,7 @@ const PainelVendasPage = () => {
                 <CardTitle>Comparativo Anual</CardTitle>
               </CardHeader>
               <CardContent>
-                <SalesBarChart 
-                  data={[
-                    { name: "2022", faturado: 850000, projetado: 820000 },
-                    { name: "2023", faturado: 980000, projetado: 950000 },
-                    { name: "2024", faturado: 710500, projetado: 1100000 },
-                    { name: "2025", faturado: 0, projetado: 1250000 }
-                  ]}
-                />
+                <SalesBarChart data={yearlyChartData} />
               </CardContent>
             </Card>
           </TabsContent>
