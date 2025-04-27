@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SalesCard } from "@/components/vendas/SalesCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -311,23 +310,23 @@ const PainelVendasPage = () => {
         setYearlyChartData(yearlyData);
         console.log("Dados do gráfico anual processados:", yearlyData);
 
-        // Buscar dados para o gráfico de pizza (vendas por categoria/serviço)
-        const { data: categoryData, error: categoryError } = await supabase
+        // Buscar dados para o gráfico de pizza (vendas por serviço)
+        const { data: serviceData, error: serviceError } = await supabase
           .from('orcamentos_itens')
           .select(`
             valor,
-            servico:servicos(nome)
+            servico:servicos(id, nome)
           `)
-          .gte('orcamentos.data_venda', startCurrentMonthFormatted)
-          .lte('orcamentos.data_venda', endCurrentMonthFormatted)
           .eq('orcamentos.tipo', 'venda')
           .eq('orcamentos.status', 'ativo')
+          .gte('orcamentos.data_venda', startCurrentMonthFormatted)
+          .lte('orcamentos.data_venda', endCurrentMonthFormatted)
           .inner('orcamentos');
 
-        if (categoryError) throw categoryError;
-        console.log("Dados por categoria:", categoryData);
+        if (serviceError) throw serviceError;
+        console.log("Dados por serviço:", serviceData);
 
-        const pieData = categoryData?.reduce((acc: any[], item) => {
+        const pieData = serviceData?.reduce((acc: any[], item) => {
           const servicoNome = item.servico?.nome || 'Outros';
           const existingService = acc.find(s => s.name === servicoNome);
           
@@ -495,7 +494,7 @@ const PainelVendasPage = () => {
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="md:col-span-1">
           <CardHeader>
-            <CardTitle>Vendas por Categoria</CardTitle>
+            <CardTitle>Vendas por Serviço</CardTitle>
           </CardHeader>
           <CardContent>
             <SalesPieChart data={pieChartData} />
