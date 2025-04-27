@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,21 @@ interface GrupoMovimentacao {
   detalhes: MovimentacaoDetalhe[];
 }
 
+// Lista de contas padrão do DRE para garantir consistência nas visualizações
+const contasDRE = [
+  "Receita Bruta",
+  "(-) Deduções",
+  "Receita Líquida",
+  "(-) Custos",
+  "Lucro Bruto",
+  "(-) Despesas Operacionais",
+  "Resultado Operacional",
+  "(-) Despesas financeiras",
+  "Resultado Antes IR",
+  "(-) IRPJ/CSLL",
+  "Lucro Líquido do Exercício"
+];
+
 export default function DrePage() {
   const [visualizacao, setVisualizacao] = useState<"acumulado" | "comparar_anos" | "mensal">("acumulado");
   const [ano, setAno] = useState(new Date().getFullYear().toString());
@@ -65,7 +81,7 @@ export default function DrePage() {
     queryFn: async () => {
       if (!currentCompany?.id) return [];
 
-      let dadosAgrupados: GrupoMovimentacao[] = [];
+      let dadosAgrupados: any = [];
 
       try {
         if (visualizacao === "mensal" && mes !== "todos") {
@@ -123,14 +139,14 @@ export default function DrePage() {
           }, {});
 
           // Processa movimentações para cada mês
-          dadosAgrupados = Object.entries(movimentacoesPorMes).map(([mes, movs]) => ({
-            mes,
+          dadosAgrupados = Object.entries(movimentacoesPorMes).map(([mesDado, movs]) => ({
+            mes: mesDado,
             dados: processarMovimentacoes(movs as any[])
           }));
 
         } else if (visualizacao === "comparar_anos") {
           // Busca dados para cada ano selecionado
-          const dadosPorAno: { [ano: string]: GrupoMovimentacao[] } = {};
+          const dadosPorAno: Record<string, GrupoMovimentacao[]> = {};
 
           for (const anoSelecionado of anosComparar) {
             const startDate = format(new Date(parseInt(anoSelecionado), 0, 1), 'yyyy-MM-dd');
@@ -155,7 +171,7 @@ export default function DrePage() {
             dadosPorAno[anoSelecionado] = processarMovimentacoes(movimentacoes || []);
           }
 
-          dadosAgrupados = dadosPorAno;
+          return dadosPorAno;
         } else {
           // Acumulado - mantém o código existente
           const startDate = format(new Date(parseInt(ano), 0, 1), 'yyyy-MM-dd');
@@ -442,25 +458,31 @@ export default function DrePage() {
               )}
 
               {/* Comparação de anos */}
-              {visualizacao === "comparar_anos" && (
+              {visualizacao === "comparar_anos" && dadosDRE && (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Conta</TableHead>
                       {anosComparar.map(a => (
-                        <TableHead key={a} className="text-center">{a}</TableHead>
+                        <TableHead key={a} className="text-right">{a}</TableHead>
                       ))}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {Object.keys(dadosDRE[0] || {}).map(conta => (
+                    {contasDRE.map(conta => (
                       <TableRow key={conta}>
                         <TableCell>{conta}</TableCell>
-                        {anosComparar.map(ano => (
-                          <TableCell key={ano} className="text-right">
-                            {formatCurrency((dadosDRE as any)[ano]?.find((i: GrupoMovimentacao) => i.tipo === conta)?.valor || 0)}
-                          </TableCell>
-                        ))}
+                        {anosComparar.map(anoComp => {
+                          // Dados do DRE são um objeto com anos como chaves
+                          const dadosAno = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoComp] || [];
+                          // Procurar a conta específica nos dados do ano
+                          const contaData = dadosAno.find(item => item.tipo === conta);
+                          return (
+                            <TableCell key={anoComp} className="text-right">
+                              {formatCurrency(contaData?.valor || 0)}
+                            </TableCell>
+                          );
+                        })}
                       </TableRow>
                     ))}
                   </TableBody>
