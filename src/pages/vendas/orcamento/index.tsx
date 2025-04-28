@@ -621,8 +621,6 @@ export default function OrcamentoPage() {
                 </div>
               </div>
               
-              
-              
               <div className="flex flex-col md:flex-row gap-4">
                 {/* Código da Venda - agora editável */}
                 <div className="w-full md:w-1/2">
@@ -884,4 +882,4 @@ export default function OrcamentoPage() {
                   </Button>
                 )}
                 <Button type="button" variant="outline" onClick={handleCancel}>
-                  {
+                  {isVisualizacao
