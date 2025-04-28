@@ -3,6 +3,11 @@ import { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { format, isValid, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type DateInputProps = {
   label?: string;
@@ -51,15 +56,41 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
   return (
     <div className="flex flex-col gap-1">
       {label && <label className="text-sm font-medium">{label}</label>}
-      <Input
-        type="text"
-        value={inputValue}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        placeholder="DD/MM/AAAA"
-        className="bg-white"
-        disabled={disabled}
-      />
+      <div className="relative flex">
+        <Input
+          type="text"
+          value={inputValue}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder="DD/MM/AAAA"
+          className="bg-white"
+          disabled={disabled}
+        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "absolute right-0 h-full px-2 hover:bg-gray-100",
+                disabled && "opacity-50 cursor-not-allowed"
+              )}
+              disabled={disabled}
+            >
+              <CalendarIcon className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="single"
+              selected={value}
+              onSelect={onChange}
+              initialFocus
+              disabled={disabled}
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }
