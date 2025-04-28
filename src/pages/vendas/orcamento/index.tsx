@@ -448,7 +448,10 @@ export default function OrcamentoPage() {
       return;
     }
     
-    // Verificação da soma dos valores das parcelas
+    // Verificação da soma dos valores das parcelas APENAS no momento do salvamento
+    const somaParcelas = parcelas.reduce((acc, parcela) => acc + parcela.valor, 0);
+    const valoresTotaisCorretos = Math.abs(total - somaParcelas) < 0.02;
+    
     if (!valoresTotaisCorretos) {
       toast({ 
         title: "A soma dos valores das parcelas não corresponde ao valor total", 
@@ -881,13 +884,4 @@ export default function OrcamentoPage() {
                   </Button>
                 )}
                 <Button type="button" variant="outline" onClick={handleCancel}>
-                  {isVisualizacao ? "Voltar" : "Cancelar"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
+                  {

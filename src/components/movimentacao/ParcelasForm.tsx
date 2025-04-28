@@ -23,7 +23,14 @@ export function ParcelasForm({ parcelas, onValorChange, onDataChange, readOnly =
 
   const handleValorChange = (index: number, valorString: string) => {
     if (!onValorChange) return;
-    const valor = parseFloat(valorString.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+    
+    // Remover símbolos de moeda e pontos, mantendo apenas números e vírgula
+    const valorLimpo = valorString.replace(/[^\d,]/g, '').replace(',', '.');
+    
+    // Converter para número, utilizando parseFloat
+    const valor = parseFloat(valorLimpo) || 0;
+    
+    // Chamar a função de atualização com o novo valor
     onValorChange(index, valor);
   };
 
