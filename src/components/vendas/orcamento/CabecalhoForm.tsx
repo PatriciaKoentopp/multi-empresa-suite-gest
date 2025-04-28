@@ -3,21 +3,7 @@ import React, { useState } from 'react';
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { Input } from "@/components/ui/input";
 import { Favorecido } from '@/types';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Button } from "@/components/ui/button";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CabecalhoFormProps {
   data?: Date;
@@ -40,9 +26,6 @@ export function CabecalhoForm({
   favorecidos,
   disabled = false
 }: CabecalhoFormProps) {
-  const [open, setOpen] = useState(false);
-  const selectedFavorecido = favorecidos.find(f => f.id === favorecidoId);
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row gap-4">
@@ -71,46 +54,20 @@ export function CabecalhoForm({
         
         <div className="w-full md:w-1/2">
           <label className="block text-sm mb-1">Favorecido *</label>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className="w-full justify-between"
-                disabled={disabled}
-              >
-                {selectedFavorecido ? selectedFavorecido.nome : "Selecione o Favorecido"}
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-              <Command>
-                <CommandInput placeholder="Buscar favorecido..." />
-                <CommandEmpty>Nenhum favorecido encontrado.</CommandEmpty>
-                <CommandGroup>
-                  {favorecidos.map((favorecido) => (
-                    <CommandItem
-                      key={favorecido.id}
-                      value={favorecido.nome}
-                      onSelect={() => {
-                        onFavorecidoChange(favorecido.id);
-                        setOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          favorecidoId === favorecido.id ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {favorecido.nome}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          <Select 
+            value={favorecidoId} 
+            onValueChange={onFavorecidoChange}
+            disabled={disabled}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o Favorecido" />
+            </SelectTrigger>
+            <SelectContent>
+              {favorecidos.map(f => (
+                <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </div>
