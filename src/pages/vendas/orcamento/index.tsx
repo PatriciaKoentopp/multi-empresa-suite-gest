@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -884,4 +885,13 @@ export default function OrcamentoPage() {
                   </Button>
                 )}
                 <Button type="button" variant="outline" onClick={handleCancel}>
-                  {
+                  Voltar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
