@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -881,3 +882,22 @@ export default function OrcamentoPage() {
                     {isLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 mr-2 border-t-2 border-white"></div>
+                        Salvando...
+                      </>
+                    ) : (
+                      orcamentoId ? "Atualizar Orçamento" : "Salvar Orçamento"
+                    )}
+                  </Button>
+                )}
+                <Button type="button" variant="outline" onClick={handleCancel}>
+                  Voltar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
