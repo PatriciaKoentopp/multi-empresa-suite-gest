@@ -13,6 +13,7 @@ import { Favorecido, Servico, TabelaPreco, TabelaPrecoItem, Orcamento as Orcamen
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format, addMonths } from 'date-fns';
 import { DateInput } from "@/components/movimentacao/DateInput";
+import { ParcelasForm } from "@/components/movimentacao/ParcelasForm";
 
 // Formas de Pagamento
 const formasPagamento = [
@@ -414,6 +415,13 @@ export default function OrcamentoPage() {
     navigate("/vendas/faturamento");
   };
 
+  // Adicionar função para atualizar valor da parcela
+  const handleParcelaValorChange = (idx: number, valor: number) => {
+    setParcelas(prev => prev.map((parcela, i) =>
+      i === idx ? { ...parcela, valor } : parcela
+    ));
+  };
+
   // Enviar formulário
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -761,27 +769,15 @@ export default function OrcamentoPage() {
                   Parcelas e Datas de Vencimento
                 </label>
                 <div className="flex flex-col gap-2">
-                  {parcelas.map((parcela, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Input
-                        type="text"
-                        readOnly
-                        value={`Parcela ${parcela.numeroParcela} - ${parcela.valor.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL"
-                        })}`}
-                        className="w-72"
-                      />
-                      <Input
-                        type="date"
-                        value={parcela.dataVencimento}
-                        onChange={e => handleParcelaDataChange(idx, e.target.value)}
-                        required
-                        className="w-52"
-                        disabled={isVisualizacao}
-                      />
-                    </div>
-                  ))}
+                  <ParcelasForm 
+                    parcelas={parcelas.map(p => ({
+                      numero: parseInt(p.numeroParcela.split('/')[1]),
+                      valor: p.valor,
+                      dataVencimento: new Date(p.dataVencimento)
+                    }))}
+                    onValorChange={handleParcelaValorChange}
+                    readOnly={isVisualizacao}
+                  />
                 </div>
               </div>
 

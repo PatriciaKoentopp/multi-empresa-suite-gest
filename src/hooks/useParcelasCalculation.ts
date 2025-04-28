@@ -12,13 +12,20 @@ export function useParcelasCalculation(
   valorTotal: number,
   numParcelas: number,
   primeiroVencimento?: Date,
-  shouldRecalculate: boolean = true
+  shouldRecalculate: boolean = true,
+  parcelasExistentes?: Parcela[]
 ) {
   const [parcelas, setParcelas] = useState<Parcela[]>([]);
 
   useEffect(() => {
     if (!valorTotal || !numParcelas || !primeiroVencimento) {
       setParcelas([]);
+      return;
+    }
+
+    // Se existem parcelas e não devemos recalcular, manter as parcelas existentes
+    if (parcelasExistentes && !shouldRecalculate) {
+      setParcelas(parcelasExistentes);
       return;
     }
 
@@ -39,7 +46,18 @@ export function useParcelasCalculation(
 
       setParcelas(novasParcelas);
     }
-  }, [valorTotal, numParcelas, primeiroVencimento, shouldRecalculate]);
+  }, [valorTotal, numParcelas, primeiroVencimento, shouldRecalculate, parcelasExistentes]);
 
-  return parcelas;
+  const atualizarValorParcela = (index: number, novoValor: number) => {
+    setParcelas(parcelasAntigas => {
+      const novasParcelas = [...parcelasAntigas];
+      novasParcelas[index] = {
+        ...novasParcelas[index],
+        valor: novoValor
+      };
+      return novasParcelas;
+    });
+  };
+
+  return { parcelas, atualizarValorParcela };
 }
