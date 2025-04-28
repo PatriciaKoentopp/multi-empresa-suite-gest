@@ -1,23 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { Input } from "@/components/ui/input";
 import { Favorecido } from '@/types';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Check, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from "@/components/ui/select";
+import { Search } from "lucide-react";
 
 interface CabecalhoFormProps {
   data?: Date;
@@ -40,8 +33,17 @@ export function CabecalhoForm({
   favorecidos,
   disabled = false
 }: CabecalhoFormProps) {
-  const [open, setOpen] = useState(false);
-  const selectedFavorecido = favorecidos.find(f => f.id === favorecidoId);
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Filtra os favorecidos com base no termo de busca
+  const filteredFavorecidos = useMemo(() => {
+    if (!searchTerm.trim()) return favorecidos;
+    
+    const termLower = searchTerm.toLowerCase();
+    return favorecidos.filter(f => 
+      f.nome.toLowerCase().includes(termLower)
+    );
+  }, [favorecidos, searchTerm]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -71,46 +73,40 @@ export function CabecalhoForm({
         
         <div className="w-full md:w-1/2">
           <label className="block text-sm mb-1">Favorecido *</label>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className="w-full justify-between"
+          <div className="relative">
+            <div className="relative mb-2">
+              <Input
+                type="text"
+                placeholder="Buscar favorecido..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9"
                 disabled={disabled}
-              >
-                {selectedFavorecido ? selectedFavorecido.nome : "Selecione o Favorecido"}
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-              <Command>
-                <CommandInput placeholder="Buscar favorecido..." />
-                <CommandEmpty>Nenhum favorecido encontrado.</CommandEmpty>
-                <CommandGroup className="max-h-[300px] overflow-y-auto">
-                  {favorecidos.map((favorecido) => (
-                    <CommandItem
-                      key={favorecido.id}
-                      value={favorecido.nome}
-                      onSelect={() => {
-                        onFavorecidoChange(favorecido.id);
-                        setOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          favorecidoId === favorecido.id ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {favorecido.nome}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </Command>
-            </PopoverContent>
-          </Popover>
+              />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            </div>
+            
+            <Select 
+              value={favorecidoId} 
+              onValueChange={onFavorecidoChange}
+              disabled={disabled}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o Favorecido" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {filteredFavorecidos.length > 0 ? (
+                  filteredFavorecidos.map(f => (
+                    <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
+                  ))
+                ) : (
+                  <div className="text-center py-2 text-sm text-gray-500">
+                    Nenhum favorecido encontrado
+                  </div>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </div>
