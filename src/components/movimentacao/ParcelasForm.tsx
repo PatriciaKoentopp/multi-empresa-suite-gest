@@ -54,6 +54,22 @@ export function ParcelasForm({
     }
   };
 
+  // Esta função é chamada quando a data é alterada pelo componente DateInput
+  const handleDataChange = (index: number, data: Date) => {
+    if (onDataChange && data) {
+      // Garantir que a data seja preservada sem ajustes de timezone
+      // Criando uma nova instância com o horário definido para meio-dia
+      const dataSemTimezone = new Date(
+        data.getFullYear(),
+        data.getMonth(),
+        data.getDate(),
+        12, 0, 0
+      );
+      
+      onDataChange(index, dataSemTimezone);
+    }
+  };
+
   const formatarValor = (valor: number): string => {
     return valor.toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
@@ -80,7 +96,7 @@ export function ParcelasForm({
                 <TableCell>
                   <DateInput
                     value={parcela.dataVencimento}
-                    onChange={(date) => onDataChange && date && onDataChange(index, date)}
+                    onChange={(date) => date && handleDataChange(index, date)}
                     disabled={readOnly}
                   />
                 </TableCell>

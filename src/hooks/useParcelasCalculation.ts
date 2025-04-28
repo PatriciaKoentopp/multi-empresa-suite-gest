@@ -36,14 +36,13 @@ export function useParcelasCalculation(
       const novasParcelas: Parcela[] = [];
       
       for (let i = 0; i < numParcelas; i++) {
-        // Criar uma nova data para cada parcela com base na data do primeiro vencimento
-        // Importante: mantermos sempre o dia, mês e ano sem problemas de timezone
-        const novaData = new Date(
-          primeiroVencimento.getFullYear(),
-          primeiroVencimento.getMonth() + i,
-          primeiroVencimento.getDate(),
-          12, 0, 0
-        );
+        // Garantir que estamos usando o dia exato sem timezone issues
+        const diaVenc = primeiroVencimento.getDate();
+        const mesVenc = primeiroVencimento.getMonth() + i;
+        const anoVenc = primeiroVencimento.getFullYear();
+        
+        // Criar data sempre com horário meio-dia para evitar problemas de timezone
+        const novaData = new Date(anoVenc, mesVenc, diaVenc, 12, 0, 0);
         
         novasParcelas.push({
           numero: i + 1,
@@ -70,9 +69,18 @@ export function useParcelasCalculation(
   const atualizarDataVencimento = (index: number, novaData: Date) => {
     setParcelas(parcelasAntigas => {
       const novasParcelas = [...parcelasAntigas];
+      
+      // Garantir que usamos a data exata sem problemas de timezone
+      const dataAjustada = new Date(
+        novaData.getFullYear(),
+        novaData.getMonth(),
+        novaData.getDate(),
+        12, 0, 0
+      );
+      
       novasParcelas[index] = {
         ...novasParcelas[index],
-        dataVencimento: novaData
+        dataVencimento: dataAjustada
       };
       return novasParcelas;
     });

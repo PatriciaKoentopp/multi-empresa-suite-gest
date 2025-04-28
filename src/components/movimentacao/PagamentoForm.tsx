@@ -34,6 +34,8 @@ interface PagamentoFormProps {
   onNovoFavorecido: () => void;
   onNovaCategoria: () => void;
   parcelas: any[];
+  onParcelaValorChange?: (index: number, valor: number) => void;
+  onParcelaDataChange?: (index: number, data: Date) => void;
   readOnly?: boolean;
 }
 
@@ -65,6 +67,8 @@ export function PagamentoForm({
   onNovoFavorecido,
   onNovaCategoria,
   parcelas,
+  onParcelaValorChange,
+  onParcelaDataChange,
   readOnly = false
 }: PagamentoFormProps) {
   return (
@@ -240,7 +244,12 @@ export function PagamentoForm({
       {parcelas.length > 0 && (
         <div className="mt-6">
           <h3 className="text-lg font-medium mb-2">Parcelas</h3>
-          <ParcelasForm parcelas={parcelas} />
+          <ParcelasForm 
+            parcelas={parcelas}
+            onValorChange={onParcelaValorChange}
+            onDataChange={onParcelaDataChange}
+            readOnly={readOnly}
+          />
         </div>
       )}
     </div>
