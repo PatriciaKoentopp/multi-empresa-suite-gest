@@ -86,20 +86,6 @@ export default function OrcamentoPage() {
     );
   }
 
-  // Função para manipular mudanças de data nas parcelas com tratamento específico para timezone
-  const handleParcelasDataChange = (index: number, data: Date) => {
-    // Garantir que estamos criando uma nova data com horário fixo às 12:00 
-    // para evitar problemas de timezone
-    const dataSemTimezone = new Date(
-      data.getFullYear(), 
-      data.getMonth(), 
-      data.getDate(), 
-      12, 0, 0
-    );
-    
-    handleParcelaDataChange(index, dataSemTimezone);
-  };
-
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-6">
       <div className="flex justify-between items-center">
@@ -171,7 +157,7 @@ export default function OrcamentoPage() {
                     dataVencimento: new Date(p.dataVencimento)
                   }))}
                   onValorChange={handleParcelaValorChange}
-                  onDataChange={handleParcelasDataChange}
+                  onDataChange={handleParcelaDataChange}
                   readOnly={isVisualizacao}
                   mostrarAlertaDiferenca={false} // Nunca mostrar alerta na tabela de parcelas
                   valorTotal={total}

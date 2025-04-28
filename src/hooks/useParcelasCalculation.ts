@@ -37,12 +37,28 @@ export function useParcelasCalculation(
       
       for (let i = 0; i < numParcelas; i++) {
         // Garantir que estamos usando o dia exato sem timezone issues
-        const diaVenc = primeiroVencimento.getDate();
-        const mesVenc = primeiroVencimento.getMonth() + i;
-        const anoVenc = primeiroVencimento.getFullYear();
+        const dataBase = new Date(primeiroVencimento);
         
-        // Criar data sempre com horário meio-dia para evitar problemas de timezone
-        const novaData = new Date(anoVenc, mesVenc, diaVenc, 12, 0, 0);
+        // Criar nova data para cada mês
+        let novaData: Date;
+        
+        if (i === 0) {
+          // Para a primeira parcela, usamos a data exata informada
+          novaData = new Date(
+            dataBase.getFullYear(),
+            dataBase.getMonth(),
+            dataBase.getDate(),
+            12, 0, 0
+          );
+        } else {
+          // Para as demais parcelas, adicionamos meses
+          novaData = new Date(
+            dataBase.getFullYear(),
+            dataBase.getMonth() + i,
+            dataBase.getDate(),
+            12, 0, 0
+          );
+        }
         
         novasParcelas.push({
           numero: i + 1,
@@ -70,17 +86,10 @@ export function useParcelasCalculation(
     setParcelas(parcelasAntigas => {
       const novasParcelas = [...parcelasAntigas];
       
-      // Garantir que usamos a data exata sem problemas de timezone
-      const dataAjustada = new Date(
-        novaData.getFullYear(),
-        novaData.getMonth(),
-        novaData.getDate(),
-        12, 0, 0
-      );
-      
+      // Manter a data exatamente como foi recebida - já garantimos que está com horário 12:00
       novasParcelas[index] = {
         ...novasParcelas[index],
-        dataVencimento: dataAjustada
+        dataVencimento: novaData
       };
       return novasParcelas;
     });

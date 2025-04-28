@@ -1,13 +1,14 @@
 
 import { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
-import { format, isValid, parse } from 'date-fns';
+import { isValid, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDate } from '@/lib/utils';
 
 type DateInputProps = {
   label?: string;
@@ -22,7 +23,7 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
   // Atualiza o valor do input quando o value de fora muda
   useEffect(() => {
     if (value && isValid(value)) {
-      setInputValue(format(value, 'dd/MM/yyyy', { locale: ptBR }));
+      setInputValue(formatDate(value));
     } else {
       setInputValue('');
     }

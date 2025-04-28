@@ -57,16 +57,8 @@ export function ParcelasForm({
   // Esta função é chamada quando a data é alterada pelo componente DateInput
   const handleDataChange = (index: number, data: Date) => {
     if (onDataChange && data) {
-      // Garantir que a data seja preservada sem ajustes de timezone
-      // Criando uma nova instância com o horário definido para meio-dia
-      const dataSemTimezone = new Date(
-        data.getFullYear(),
-        data.getMonth(),
-        data.getDate(),
-        12, 0, 0
-      );
-      
-      onDataChange(index, dataSemTimezone);
+      // Não fazer nenhum ajuste adicional, apenas passar a data como está
+      onDataChange(index, data);
     }
   };
 
