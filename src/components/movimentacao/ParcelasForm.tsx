@@ -35,16 +35,19 @@ export function ParcelasForm({
   const handleValorChange = (index: number, valorString: string) => {
     if (!onValorChange) return;
     
-    // Permitir a edição do campo mesmo com valor inválido temporariamente
-    // Remover símbolos de moeda e pontos, mantendo apenas números e vírgula
-    const valorLimpo = valorString.replace(/[^\d,]/g, '').replace(',', '.');
+    // Permitir a entrada livre durante a digitação
+    const valorLimpo = valorString.replace(/[^\d,]/g, '');
     
-    // Converter para número, utilizando parseFloat
-    // Se o valor não for um número válido, usamos 0 como fallback
-    const valor = parseFloat(valorLimpo) || 0;
+    // Se estiver vazio ou for apenas uma vírgula, não converter ainda
+    if (!valorLimpo || valorLimpo === ',') {
+      return;
+    }
+    
+    // Converter para número apenas após formatação completa
+    const valorNumerico = parseFloat(valorLimpo.replace(',', '.')) || 0;
     
     // Chamar a função de atualização com o novo valor
-    onValorChange(index, valor);
+    onValorChange(index, valorNumerico);
   };
 
   const formatarValor = (valor: number): string => {
