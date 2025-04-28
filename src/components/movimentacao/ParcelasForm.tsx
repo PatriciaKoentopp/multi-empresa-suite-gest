@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/movimentacao/DateInput";
 
 interface Parcela {
   numero: number;
@@ -14,10 +15,11 @@ interface Parcela {
 interface ParcelasFormProps {
   parcelas: Parcela[];
   onValorChange?: (index: number, valor: number) => void;
+  onDataChange?: (index: number, data: Date) => void;
   readOnly?: boolean;
 }
 
-export function ParcelasForm({ parcelas, onValorChange, readOnly = false }: ParcelasFormProps) {
+export function ParcelasForm({ parcelas, onValorChange, onDataChange, readOnly = false }: ParcelasFormProps) {
   if (parcelas.length === 0) return null;
 
   const handleValorChange = (index: number, valorString: string) => {
@@ -49,7 +51,17 @@ export function ParcelasForm({ parcelas, onValorChange, readOnly = false }: Parc
             {parcelas.map((parcela, index) => (
               <TableRow key={parcela.numero}>
                 <TableCell>{parcela.numero}</TableCell>
-                <TableCell>{format(parcela.dataVencimento, "dd/MM/yyyy")}</TableCell>
+                <TableCell>
+                  {readOnly ? (
+                    format(parcela.dataVencimento, "dd/MM/yyyy")
+                  ) : (
+                    <DateInput
+                      value={parcela.dataVencimento}
+                      onChange={(date) => onDataChange && date && onDataChange(index, date)}
+                      disabled={readOnly}
+                    />
+                  )}
+                </TableCell>
                 <TableCell className="text-right">
                   {readOnly ? (
                     formatarValor(parcela.valor)

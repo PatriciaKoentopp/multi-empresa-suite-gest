@@ -279,9 +279,12 @@ export default function OrcamentoPage() {
   }, [total, numeroParcelas, codigoVenda]);
 
   // Atualiza parcela específica
-  const handleParcelaDataChange = (idx: number, data: string) => {
+  const handleParcelaDataChange = (idx: number, data: Date) => {
     setParcelas(prev => prev.map((parcela, i) =>
-      i === idx ? { ...parcela, dataVencimento: data } : parcela
+      i === idx ? { 
+        ...parcela, 
+        dataVencimento: format(data, 'yyyy-MM-dd') 
+      } : parcela
     ));
   };
 
@@ -422,6 +425,12 @@ export default function OrcamentoPage() {
     ));
   };
 
+  // Calcular a soma dos valores das parcelas
+  const somaParcelas = parcelas.reduce((acc, parcela) => acc + parcela.valor, 0);
+  
+  // Verificar se os valores estão corretos (com tolerância de centavos para arredondamento)
+  const valoresTotaisCorretos = Math.abs(total - somaParcelas) < 0.02;
+
   // Enviar formulário
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -436,6 +445,16 @@ export default function OrcamentoPage() {
     }
     if (parcelas.some(p => !p.dataVencimento)) {
       toast({ title: "Preencha todas as datas de vencimento das parcelas." });
+      return;
+    }
+    
+    // Verificação da soma dos valores das parcelas
+    if (!valoresTotaisCorretos) {
+      toast({ 
+        title: "A soma dos valores das parcelas não corresponde ao valor total", 
+        description: `Total: ${total.toFixed(2)}, Soma das parcelas: ${somaParcelas.toFixed(2)}`,
+        variant: "destructive"
+      });
       return;
     }
 
@@ -776,9 +795,18 @@ export default function OrcamentoPage() {
                       dataVencimento: new Date(p.dataVencimento)
                     }))}
                     onValorChange={handleParcelaValorChange}
+                    onDataChange={handleParcelaDataChange}
                     readOnly={isVisualizacao}
                   />
                 </div>
+                
+                {/* Verificação de valores */}
+                {!valoresTotaisCorretos && (
+                  <div className="mt-2 text-red-600 text-sm">
+                    A soma dos valores das parcelas ({somaParcelas.toFixed(2)}) 
+                    não corresponde ao valor total ({total.toFixed(2)})
+                  </div>
+                )}
               </div>
 
               {/* CAMPOS NOTA FISCAL */}

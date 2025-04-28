@@ -59,5 +59,19 @@ export function useParcelasCalculation(
     });
   };
 
-  return { parcelas, atualizarValorParcela };
+  const atualizarDataVencimento = (index: number, novaData: Date) => {
+    setParcelas(parcelasAntigas => {
+      const novasParcelas = [...parcelasAntigas];
+      novasParcelas[index] = {
+        ...novasParcelas[index],
+        dataVencimento: novaData
+      };
+      return novasParcelas;
+    });
+  };
+
+  // Calcula a soma total dos valores das parcelas
+  const somaParcelas = parcelas.reduce((acc, parcela) => acc + parcela.valor, 0);
+  
+  return { parcelas, atualizarValorParcela, atualizarDataVencimento, somaParcelas };
 }

@@ -66,11 +66,12 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
   const valorNumerico = parseValor(valor);
   
   // Usar shouldRecalculate para controlar quando recalcular as parcelas
-  const parcelas = useParcelasCalculation(
+  const { parcelas, atualizarValorParcela, atualizarDataVencimento, somaParcelas } = useParcelasCalculation(
     valorNumerico, 
     numParcelas, 
     dataPrimeiroVenc, 
-    !parcelasCarregadasDoBanco || forcarRecalculo
+    !parcelasCarregadasDoBanco || forcarRecalculo,
+    parcelasOriginais
   );
 
   // Função para buscar os dados atualizados da movimentação diretamente do banco
@@ -445,6 +446,8 @@ export function useMovimentacaoForm(movimentacaoParaEditar?: any) {
     setContaDestino,
     handleSalvar,
     parcelas,
+    atualizarValorParcela,
+    atualizarDataVencimento,
     carregandoDados
   };
 }

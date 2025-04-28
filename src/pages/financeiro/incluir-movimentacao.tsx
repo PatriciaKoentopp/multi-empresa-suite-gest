@@ -59,7 +59,9 @@ export default function IncluirMovimentacaoPage() {
     contaDestino,
     setContaDestino,
     handleSalvar,
-    parcelas
+    parcelas,
+    atualizarValorParcela,
+    atualizarDataVencimento
   } = useMovimentacaoForm(movimentacaoParaEditar);
 
   const { favorecidos, categorias, contasCorrente, tiposTitulos } = useMovimentacaoDados();
@@ -183,6 +185,8 @@ export default function IncluirMovimentacaoPage() {
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
               parcelas={parcelas}
+              onParcelaValorChange={atualizarValorParcela}
+              onParcelaDataChange={atualizarDataVencimento}
               readOnly={modoVisualizacao}
             />
           ) : operacao === "receber" ? (
@@ -214,6 +218,8 @@ export default function IncluirMovimentacaoPage() {
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
               parcelas={parcelas}
+              onParcelaValorChange={atualizarValorParcela}
+              onParcelaDataChange={atualizarDataVencimento}
               readOnly={modoVisualizacao}
             />
           ) : null}
