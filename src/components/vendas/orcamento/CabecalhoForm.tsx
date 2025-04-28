@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { Input } from "@/components/ui/input";
 import { Favorecido } from '@/types';
@@ -10,7 +10,15 @@ import {
   SelectTrigger,
   SelectValue 
 } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Check, Search } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CabecalhoFormProps {
   data?: Date;
@@ -34,16 +42,16 @@ export function CabecalhoForm({
   disabled = false
 }: CabecalhoFormProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [open, setOpen] = useState(false);
   
-  // Filtra os favorecidos com base no termo de busca
-  const filteredFavorecidos = useMemo(() => {
-    if (!searchTerm.trim()) return favorecidos;
-    
-    const termLower = searchTerm.toLowerCase();
-    return favorecidos.filter(f => 
-      f.nome.toLowerCase().includes(termLower)
-    );
-  }, [favorecidos, searchTerm]);
+  // Função para filtrar os favorecidos com base no termo de busca
+  const filteredFavorecidos = favorecidos.filter(favorecido => {
+    if (!searchTerm) return true;
+    return favorecido.nome.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+  
+  // Encontra o favorecido selecionado
+  const selectedFavorecido = favorecidos.find(f => f.id === favorecidoId);
 
   return (
     <div className="flex flex-col gap-4">
@@ -73,40 +81,63 @@ export function CabecalhoForm({
         
         <div className="w-full md:w-1/2">
           <label className="block text-sm mb-1">Favorecido *</label>
-          <div className="relative">
-            <div className="relative mb-2">
-              <Input
-                type="text"
-                placeholder="Buscar favorecido..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9"
+          
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full justify-between"
                 disabled={disabled}
-              />
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-            </div>
-            
-            <Select 
-              value={favorecidoId} 
-              onValueChange={onFavorecidoChange}
-              disabled={disabled}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o Favorecido" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
-                {filteredFavorecidos.length > 0 ? (
-                  filteredFavorecidos.map(f => (
-                    <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
-                  ))
-                ) : (
-                  <div className="text-center py-2 text-sm text-gray-500">
-                    Nenhum favorecido encontrado
-                  </div>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
+              >
+                {selectedFavorecido ? selectedFavorecido.nome : "Selecione o Favorecido"}
+                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-white">
+              <div className="px-3 py-2">
+                <Input
+                  placeholder="Buscar favorecido..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-9 w-full"
+                />
+              </div>
+              <ScrollArea className="h-72">
+                <div className="p-1">
+                  {filteredFavorecidos.length > 0 ? (
+                    filteredFavorecidos.map((favorecido) => (
+                      <div
+                        key={favorecido.id}
+                        className={cn(
+                          "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
+                          favorecidoId === favorecido.id ? "bg-accent text-accent-foreground" : "hover:bg-accent hover:text-accent-foreground"
+                        )}
+                        onClick={() => {
+                          onFavorecidoChange(favorecido.id);
+                          setOpen(false);
+                          setSearchTerm("");
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            favorecidoId === favorecido.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {favorecido.nome}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      Nenhum favorecido encontrado
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </div>
