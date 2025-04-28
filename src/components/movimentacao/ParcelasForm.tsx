@@ -16,9 +16,20 @@ interface ParcelasFormProps {
   onValorChange?: (index: number, valor: number) => void;
   onDataChange?: (index: number, data: Date) => void;
   readOnly?: boolean;
+  mostrarAlertaDiferenca?: boolean;
+  valorTotal?: number;
+  somaParcelas?: number;
 }
 
-export function ParcelasForm({ parcelas, onValorChange, onDataChange, readOnly = false }: ParcelasFormProps) {
+export function ParcelasForm({ 
+  parcelas, 
+  onValorChange, 
+  onDataChange, 
+  readOnly = false,
+  mostrarAlertaDiferenca = false,
+  valorTotal = 0,
+  somaParcelas = 0
+}: ParcelasFormProps) {
   if (parcelas.length === 0) return null;
 
   const handleValorChange = (index: number, valorString: string) => {
@@ -42,6 +53,10 @@ export function ParcelasForm({ parcelas, onValorChange, onDataChange, readOnly =
       maximumFractionDigits: 2
     });
   };
+
+  // Verificar se há diferença entre o valor total e a soma das parcelas (com tolerância de centavos)
+  const valoresTotaisCorretos = Math.abs(valorTotal - somaParcelas) < 0.02;
+  const exibirAlerta = mostrarAlertaDiferenca && !valoresTotaisCorretos;
 
   return (
     <div className="space-y-2">
@@ -80,6 +95,12 @@ export function ParcelasForm({ parcelas, onValorChange, onDataChange, readOnly =
           </TableBody>
         </Table>
       </div>
+      {exibirAlerta && (
+        <div className="mt-2 text-red-600 text-sm">
+          A soma dos valores das parcelas ({somaParcelas.toFixed(2)}) 
+          não corresponde ao valor total ({valorTotal.toFixed(2)})
+        </div>
+      )}
     </div>
   );
 }

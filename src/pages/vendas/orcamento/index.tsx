@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -300,12 +299,8 @@ export default function OrcamentoPage() {
     ));
   };
 
-  // Calcular a soma dos valores das parcelas
+  // Calcular a soma dos valores das parcelas - mantemos essa lógica para ser usada na validação final
   const somaParcelas = parcelas.reduce((acc, parcela) => acc + parcela.valor, 0);
-  
-  // Verificar se os valores estão corretos (com tolerância de centavos para arredondamento)
-  // Esta verificação não deve bloquear a digitação, apenas mostrar mensagem visual
-  const valoresTotaisCorretos = Math.abs(total - somaParcelas) < 0.02;
 
   // Atualiza valor do serviço selecionado
   const handleServicoChange = (idx: number, field: "servicoId" | "valor", value: string | number) => {
@@ -806,16 +801,11 @@ export default function OrcamentoPage() {
                     onValorChange={handleParcelaValorChange}
                     onDataChange={handleParcelaDataChange}
                     readOnly={isVisualizacao}
+                    mostrarAlertaDiferenca={true}
+                    valorTotal={total}
+                    somaParcelas={somaParcelas}
                   />
                 </div>
-                
-                {/* Verificação de valores */}
-                {!valoresTotaisCorretos && (
-                  <div className="mt-2 text-red-600 text-sm">
-                    A soma dos valores das parcelas ({somaParcelas.toFixed(2)}) 
-                    não corresponde ao valor total ({total.toFixed(2)})
-                  </div>
-                )}
               </div>
 
               {/* CAMPOS NOTA FISCAL */}
@@ -900,4 +890,4 @@ export default function OrcamentoPage() {
     </div>
   );
 }
-
+</lov-code
