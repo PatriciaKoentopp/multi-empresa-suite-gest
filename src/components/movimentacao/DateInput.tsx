@@ -22,7 +22,7 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
   // Atualiza o valor do input quando o value de fora muda
   useEffect(() => {
     if (value && isValid(value)) {
-      setInputValue(format(value, 'dd/MM/yyyy'));
+      setInputValue(format(value, 'dd/MM/yyyy', { locale: ptBR }));
     } else {
       setInputValue('');
     }
@@ -86,6 +86,7 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
               onSelect={onChange}
               initialFocus
               disabled={disabled}
+              locale={ptBR}
               className={cn("p-3 pointer-events-auto")}
             />
           </PopoverContent>

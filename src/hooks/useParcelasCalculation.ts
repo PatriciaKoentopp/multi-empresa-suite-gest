@@ -37,10 +37,14 @@ export function useParcelasCalculation(
       const novasParcelas: Parcela[] = [];
       
       for (let i = 0; i < numParcelas; i++) {
+        // Usar o objeto Date diretamente sem UTC
+        const novaData = new Date(primeiroVencimento);
+        novaData.setMonth(novaData.getMonth() + i);
+        
         novasParcelas.push({
           numero: i + 1,
           valor: i === 0 ? valorParcela + ajusteCentavos : valorParcela,
-          dataVencimento: addMonths(primeiroVencimento, i)
+          dataVencimento: novaData
         });
       }
 
