@@ -1,7 +1,7 @@
 
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { format, parse } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 // Função para mesclar classes CSS, mantendo a original
@@ -13,7 +13,6 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDate(date: Date | undefined | string, formatString = "dd/MM/yyyy"): string {
   if (!date) return "";
   
-  // Para garantir que trabalhamos com a data exata, sem ajustes de timezone
   let dateObj: Date;
   
   // Se for string, precisamos converter para Date
@@ -39,22 +38,13 @@ export function formatDate(date: Date | undefined | string, formatString = "dd/M
         dateObj = new Date(year, month, day, 12, 0, 0);
       } else {
         // Fallback para qualquer outro formato
-        const tempDate = new Date(date);
-        dateObj = new Date(
-          tempDate.getFullYear(),
-          tempDate.getMonth(),
-          tempDate.getDate(),
-          12, 0, 0
-        );
+        dateObj = new Date(date);
       }
     }
   } 
   // Se já for um objeto Date
   else {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const day = date.getDate();
-    dateObj = new Date(year, month, day, 12, 0, 0);
+    dateObj = date;
   }
   
   // Formatar a data usando date-fns
@@ -79,8 +69,10 @@ export function parseDateString(dateString: string): Date | undefined {
   
   if (isNaN(day) || isNaN(month) || isNaN(year)) return undefined;
   
-  // Criar data com horário meio-dia (12:00) para evitar problemas com ajustes de timezone
-  return new Date(year, month, day, 12, 0, 0);
+  // Criar data em UTC e depois ajustar o offset para garantir o dia correto
+  const dateInUTC = new Date(Date.UTC(year, month, day, 12, 0, 0));
+  const offset = dateInUTC.getTimezoneOffset() * 60000;
+  return new Date(dateInUTC.getTime() + offset);
 }
 
 // Função para converter Date para formato YYYY-MM-DD para banco de dados

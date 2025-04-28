@@ -36,28 +36,24 @@ export function useParcelasCalculation(
       const novasParcelas: Parcela[] = [];
       
       for (let i = 0; i < numParcelas; i++) {
-        // Garantir que estamos usando o dia exato sem timezone issues
-        const dataBase = new Date(primeiroVencimento);
-        
-        // Criar nova data para cada mês
+        // Para garantir que a data seja exatamente a selecionada, usamos UTC e depois ajustamos o offset
         let novaData: Date;
         
         if (i === 0) {
-          // Para a primeira parcela, usamos a data exata informada
-          novaData = new Date(
-            dataBase.getFullYear(),
-            dataBase.getMonth(),
-            dataBase.getDate(),
-            12, 0, 0
-          );
+          // Para a primeira parcela, usamos a data exata informada sem alterações
+          novaData = new Date(primeiroVencimento);
         } else {
-          // Para as demais parcelas, adicionamos meses
-          novaData = new Date(
-            dataBase.getFullYear(),
-            dataBase.getMonth() + i,
-            dataBase.getDate(),
-            12, 0, 0
-          );
+          // Para as demais parcelas, criamos uma nova data mantendo o mesmo dia
+          const diaVenc = primeiroVencimento.getDate();
+          const mesVenc = primeiroVencimento.getMonth() + i;
+          const anoVenc = primeiroVencimento.getFullYear();
+          
+          // Criar data em UTC para evitar ajustes automáticos de timezone
+          novaData = new Date(Date.UTC(anoVenc, mesVenc, diaVenc, 12, 0, 0));
+          
+          // Ajustar o offset do timezone local
+          const offset = novaData.getTimezoneOffset() * 60000;
+          novaData = new Date(novaData.getTime() + offset);
         }
         
         novasParcelas.push({
@@ -86,7 +82,7 @@ export function useParcelasCalculation(
     setParcelas(parcelasAntigas => {
       const novasParcelas = [...parcelasAntigas];
       
-      // Manter a data exatamente como foi recebida - já garantimos que está com horário 12:00
+      // A novaData já deve vir corretamente tratada do componente DateInput
       novasParcelas[index] = {
         ...novasParcelas[index],
         dataVencimento: novaData

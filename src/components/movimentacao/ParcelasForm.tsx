@@ -57,7 +57,7 @@ export function ParcelasForm({
   // Esta função é chamada quando a data é alterada pelo componente DateInput
   const handleDataChange = (index: number, data: Date) => {
     if (onDataChange && data) {
-      // Não fazer nenhum ajuste adicional, apenas passar a data como está
+      // A data já vem corretamente tratada do componente DateInput
       onDataChange(index, data);
     }
   };

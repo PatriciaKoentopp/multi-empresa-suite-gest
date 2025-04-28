@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
-import { isValid, parse } from 'date-fns';
+import { isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -70,15 +70,19 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
       return;
     }
     
-    // Criar nova data com horário meio-dia para evitar problemas de timezone
-    const dataSemTimezone = new Date(
+    // Criar nova data fixando UTC para preservar o dia exato selecionado
+    const dataSemTimezone = new Date(Date.UTC(
       date.getFullYear(),
       date.getMonth(),
       date.getDate(),
       12, 0, 0
-    );
+    ));
     
-    onChange(dataSemTimezone);
+    // Ajustar o offset do timezone local para garantir que a data seja a mesma
+    const offset = dataSemTimezone.getTimezoneOffset() * 60000;
+    const adjustedDate = new Date(dataSemTimezone.getTime() + offset);
+    
+    onChange(adjustedDate);
   };
 
   return (
