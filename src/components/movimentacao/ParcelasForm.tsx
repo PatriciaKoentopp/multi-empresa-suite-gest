@@ -2,7 +2,6 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { DateInput } from "@/components/movimentacao/DateInput";
 
@@ -52,27 +51,20 @@ export function ParcelasForm({ parcelas, onValorChange, onDataChange, readOnly =
               <TableRow key={parcela.numero}>
                 <TableCell>{parcela.numero}</TableCell>
                 <TableCell>
-                  {readOnly ? (
-                    format(parcela.dataVencimento, "dd/MM/yyyy")
-                  ) : (
-                    <DateInput
-                      value={parcela.dataVencimento}
-                      onChange={(date) => onDataChange && date && onDataChange(index, date)}
-                      disabled={readOnly}
-                    />
-                  )}
+                  <DateInput
+                    value={parcela.dataVencimento}
+                    onChange={(date) => onDataChange && date && onDataChange(index, date)}
+                    disabled={readOnly}
+                  />
                 </TableCell>
                 <TableCell className="text-right">
-                  {readOnly ? (
-                    formatarValor(parcela.valor)
-                  ) : (
-                    <Input
-                      type="text"
-                      value={formatarValor(parcela.valor)}
-                      onChange={(e) => handleValorChange(index, e.target.value)}
-                      className="text-right w-32 ml-auto"
-                    />
-                  )}
+                  <Input
+                    type="text"
+                    value={formatarValor(parcela.valor)}
+                    onChange={(e) => handleValorChange(index, e.target.value)}
+                    className="text-right w-32 ml-auto"
+                    disabled={readOnly}
+                  />
                 </TableCell>
               </TableRow>
             ))}

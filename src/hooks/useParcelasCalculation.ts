@@ -29,8 +29,8 @@ export function useParcelasCalculation(
       return;
     }
 
-    // Sempre recalcular quando valorTotal ou numParcelas mudar
-    if (valorTotal > 0 && numParcelas > 0) {
+    // Recalcular quando os valores mudarem e shouldRecalculate for true
+    if (shouldRecalculate && valorTotal > 0 && numParcelas > 0) {
       const valorParcela = Number((valorTotal / numParcelas).toFixed(2));
       const ajusteCentavos = Number((valorTotal - (valorParcela * numParcelas)).toFixed(2));
       
