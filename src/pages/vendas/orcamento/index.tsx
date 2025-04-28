@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "react-router-dom";
@@ -18,6 +18,9 @@ export default function OrcamentoPage() {
   // Obter parâmetros da URL
   const orcamentoId = searchParams.get('id');
   const isVisualizacao = searchParams.get('visualizar') === '1';
+  
+  // Estado para controlar a validação de parcelas apenas durante o submit
+  const [validandoParcelas, setValidandoParcelas] = useState(false);
   
   // Usar o hook personalizado para gerenciar o formulário
   const {
@@ -68,6 +71,13 @@ export default function OrcamentoPage() {
     isVisualizacao: isVizualizacaoProp
   } = useOrcamentoForm(orcamentoId, isVisualizacao);
 
+  // Função personalizada para lidar com o envio do formulário
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setValidandoParcelas(true); // Ativar validação apenas ao tentar salvar
+    handleSubmit(e);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center p-8">
@@ -91,7 +101,7 @@ export default function OrcamentoPage() {
       
       <Card>
         <CardContent>
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          <form className="flex flex-col gap-4" onSubmit={handleFormSubmit}>
             <CabecalhoForm
               data={data}
               onDataChange={setData}
@@ -120,7 +130,11 @@ export default function OrcamentoPage() {
               disabled={isVisualizacao}
             />
             
-            <TotalVendaDisplay total={total} />
+            <TotalVendaDisplay 
+              total={total} 
+              somaParcelas={somaParcelas}
+              mostrarAlerta={validandoParcelas} 
+            />
 
             <PagamentoForm
               formaPagamento={formaPagamento}
@@ -145,7 +159,7 @@ export default function OrcamentoPage() {
                   onValorChange={handleParcelaValorChange}
                   onDataChange={handleParcelaDataChange}
                   readOnly={isVisualizacao}
-                  mostrarAlertaDiferenca={true}
+                  mostrarAlertaDiferenca={false} // Nunca mostrar alerta na tabela de parcelas
                   valorTotal={total}
                   somaParcelas={somaParcelas}
                 />

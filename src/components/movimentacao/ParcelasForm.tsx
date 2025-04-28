@@ -54,10 +54,6 @@ export function ParcelasForm({
     });
   };
 
-  // Verificar se há diferença entre o valor total e a soma das parcelas (com tolerância de centavos)
-  const valoresTotaisCorretos = Math.abs(valorTotal - somaParcelas) < 0.02;
-  const exibirAlerta = mostrarAlertaDiferenca && !valoresTotaisCorretos;
-
   return (
     <div className="space-y-2">
       <Label>Parcelas</Label>
@@ -95,12 +91,6 @@ export function ParcelasForm({
           </TableBody>
         </Table>
       </div>
-      {exibirAlerta && (
-        <div className="mt-2 text-red-600 text-sm">
-          A soma dos valores das parcelas ({somaParcelas.toFixed(2)}) 
-          não corresponde ao valor total ({valorTotal.toFixed(2)})
-        </div>
-      )}
     </div>
   );
 }
