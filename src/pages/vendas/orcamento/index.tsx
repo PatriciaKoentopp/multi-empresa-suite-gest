@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Favorecido, Servico, TabelaPreco, TabelaPrecoItem, Orcamento as OrcamentoType, OrcamentoItem, OrcamentoParcela } from "@/types";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format, addMonths } from 'date-fns';
+import { DateInput } from "@/components/movimentacao/DateInput";
 
 // Formas de Pagamento
 const formasPagamento = [
@@ -36,7 +37,7 @@ export default function OrcamentoPage() {
   const orcamentoId = searchParams.get('id');
   const isVisualizacao = searchParams.get('visualizar') === '1';
   
-  const [data, setData] = useState(formatDate(new Date()));
+  const [data, setData] = useState<Date | undefined>(new Date());
   // Removendo a geração automática do código de venda
   const [codigoVenda, setCodigoVenda] = useState("");
   const [favorecidoId, setFavorecidoId] = useState<string>("");
@@ -151,7 +152,7 @@ export default function OrcamentoPage() {
       
       // Preencher o formulário com os dados
       // Exibir data exatamente como está no banco
-      setData(orcamento.data ? formatDate(orcamento.data) : formatDate(new Date()));
+      setData(orcamento.data ? new Date(orcamento.data) : new Date());
       setCodigoVenda(orcamento.codigo);
       setFavorecidoId(orcamento.favorecido_id);
       setCodigoProjeto(orcamento.codigo_projeto || "");
@@ -502,7 +503,7 @@ export default function OrcamentoPage() {
             favorecido_id: favorecidoId,
             codigo: codigoVenda,
             tipo: 'orcamento', // Tipo fixo como "orcamento"
-            data: new Date().toISOString(),
+            data: data ? new Date(data).toISOString() : new Date().toISOString(),
             codigo_projeto: codigoProjeto || null,
             observacoes: observacoes || null,
             forma_pagamento: formaPagamento,
@@ -582,11 +583,9 @@ export default function OrcamentoPage() {
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="w-full">
                   <label className="block text-sm mb-1">Data</label>
-                  <Input
-                    type="text"
-                    value={data}
-                    onChange={e => setData(e.target.value)}
-                    placeholder="DD/MM/AAAA"
+                  <DateInput 
+                    value={data} 
+                    onChange={(date) => setData(date)}
                     disabled={isVisualizacao}
                   />
                 </div>
