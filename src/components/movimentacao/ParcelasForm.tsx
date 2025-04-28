@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -31,23 +31,27 @@ export function ParcelasForm({
   somaParcelas = 0
 }: ParcelasFormProps) {
   if (parcelas.length === 0) return null;
+  
+  // Estado local para rastrear os valores em edição
+  const [valoresEmEdicao, setValoresEmEdicao] = useState<Record<number, string>>({});
 
   const handleValorChange = (index: number, valorString: string) => {
     if (!onValorChange) return;
     
-    // Permitir a entrada livre durante a digitação
+    // Atualizar o estado local com o valor que está sendo digitado
+    setValoresEmEdicao(prev => ({
+      ...prev,
+      [index]: valorString
+    }));
+    
+    // Limpar o valor para processamento (remover símbolos de moeda, pontos, etc)
     const valorLimpo = valorString.replace(/[^\d,]/g, '');
     
-    // Se estiver vazio ou for apenas uma vírgula, não converter ainda
-    if (!valorLimpo || valorLimpo === ',') {
-      return;
+    // Se o valor for válido para conversão, atualizar o valor real
+    if (valorLimpo && valorLimpo !== ',') {
+      const valorNumerico = parseFloat(valorLimpo.replace(',', '.')) || 0;
+      onValorChange(index, valorNumerico);
     }
-    
-    // Converter para número apenas após formatação completa
-    const valorNumerico = parseFloat(valorLimpo.replace(',', '.')) || 0;
-    
-    // Chamar a função de atualização com o novo valor
-    onValorChange(index, valorNumerico);
   };
 
   const formatarValor = (valor: number): string => {
@@ -83,8 +87,22 @@ export function ParcelasForm({
                 <TableCell className="text-right">
                   <Input
                     type="text"
-                    value={formatarValor(parcela.valor)}
+                    value={
+                      // Se o campo estiver em edição ativa, mostrar o valor sendo digitado
+                      // Caso contrário, mostrar o valor formatado
+                      valoresEmEdicao[index] !== undefined ? 
+                        valoresEmEdicao[index] : 
+                        formatarValor(parcela.valor)
+                    }
                     onChange={(e) => handleValorChange(index, e.target.value)}
+                    // Quando o campo perde o foco, resetar o estado de edição
+                    onBlur={() => {
+                      setValoresEmEdicao(prev => {
+                        const newState = {...prev};
+                        delete newState[index];
+                        return newState;
+                      });
+                    }}
                     className="text-right w-32 ml-auto"
                     disabled={readOnly}
                   />
