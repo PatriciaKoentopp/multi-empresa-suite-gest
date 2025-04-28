@@ -64,7 +64,9 @@ const contasDRE = [
   "(-) Despesas financeiras",
   "Resultado Antes IR",
   "(-) IRPJ/CSLL",
-  "Lucro Líquido do Exercício"
+  "Lucro Líquido do Exercício",
+  "(-) Distribuição de Lucros",
+  "Resultado do Exercício"
 ];
 
 export default function DrePage() {
@@ -214,6 +216,7 @@ export default function DrePage() {
       "Custos": [],
       "Despesas Operacionais": [],
       "Despesas Financeiras": [],
+      "Distribuição de Lucros": [], // Adicionado grupo separado para Distribuição de Lucros
       "IRPJ/CSLL": []
     };
 
@@ -222,6 +225,7 @@ export default function DrePage() {
     let custos = 0;
     let despesasOperacionais = 0;
     let despesasFinanceiras = 0;
+    let distribuicaoLucros = 0; // Novo valor para rastrear Distribuição de Lucros
     let impostos = 0;
 
     movimentacoes.forEach(mov => {
@@ -259,8 +263,9 @@ export default function DrePage() {
               grupos["Despesas Operacionais"].push(detalhe);
               break;
             case 'Distribuição de Lucros':
-              despesasFinanceiras += Math.abs(valor);
-              grupos["Despesas Financeiras"].push(detalhe);
+              // Movido da categoria de despesas financeiras para sua própria categoria
+              distribuicaoLucros += Math.abs(valor);
+              grupos["Distribuição de Lucros"].push(detalhe);
               break;
             default:
               custos += Math.abs(valor);
@@ -275,6 +280,7 @@ export default function DrePage() {
     const resultadoOperacional = lucroBruto - despesasOperacionais;
     const resultadoAntesIR = resultadoOperacional - despesasFinanceiras;
     const lucroLiquido = resultadoAntesIR - impostos;
+    const resultadoExercicio = lucroLiquido - distribuicaoLucros; // Novo cálculo para Resultado do Exercício
 
     return [
       { tipo: "Receita Bruta", valor: receitaBruta, detalhes: grupos["Receita Bruta"] },
@@ -287,7 +293,9 @@ export default function DrePage() {
       { tipo: "(-) Despesas financeiras", valor: -despesasFinanceiras, detalhes: grupos["Despesas Financeiras"] },
       { tipo: "Resultado Antes IR", valor: resultadoAntesIR, detalhes: [] },
       { tipo: "(-) IRPJ/CSLL", valor: -impostos, detalhes: grupos["IRPJ/CSLL"] },
-      { tipo: "Lucro Líquido do Exercício", valor: lucroLiquido, detalhes: [] }
+      { tipo: "Lucro Líquido do Exercício", valor: lucroLiquido, detalhes: [] },
+      { tipo: "(-) Distribuição de Lucros", valor: -distribuicaoLucros, detalhes: grupos["Distribuição de Lucros"] },
+      { tipo: "Resultado do Exercício", valor: resultadoExercicio, detalhes: [] }
     ];
   }
 
