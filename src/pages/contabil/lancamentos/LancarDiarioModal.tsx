@@ -186,7 +186,7 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
           </div>
           <div>
             <label className="text-sm font-medium mb-1 block">Valor</label>
-            <Input type="number" min={0} step="0.01" autoComplete="off" required value={valor} onChange={e => setValor(e.target.value.replace(",", "."))} />
+            <Input type="number" step="0.01" autoComplete="off" required value={valor} onChange={e => setValor(e.target.value.replace(",", "."))} />
           </div>
           <div>
             <label className="text-sm font-medium mb-1 block">Histórico</label>

@@ -36,7 +36,7 @@ const formSchema = z.object({
   contaContabilId: z.string().min(1, "Conta Contábil é obrigatória"),
   status: z.enum(["ativo", "inativo"]),
   data: z.date({ required_error: "Data é obrigatória" }),
-  saldoInicial: z.coerce.number().min(0, "Saldo inicial deve ser maior ou igual a zero"),
+  saldoInicial: z.coerce.number(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -206,7 +206,6 @@ export function ContaCorrenteForm({
                 <Input
                   type="number"
                   step="0.01"
-                  min={0}
                   {...field}
                   onChange={e => field.onChange(Number(e.target.value))}
                 />
