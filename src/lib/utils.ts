@@ -39,7 +39,13 @@ export function formatDate(date: Date | undefined | string, formatString = "dd/M
         dateObj = new Date(year, month, day, 12, 0, 0);
       } else {
         // Fallback para qualquer outro formato
-        dateObj = new Date(date);
+        const tempDate = new Date(date);
+        dateObj = new Date(
+          tempDate.getFullYear(),
+          tempDate.getMonth(),
+          tempDate.getDate(),
+          12, 0, 0
+        );
       }
     }
   } 
@@ -73,8 +79,7 @@ export function parseDateString(dateString: string): Date | undefined {
   
   if (isNaN(day) || isNaN(month) || isNaN(year)) return undefined;
   
-  // Criar data sem UTC para preservar o dia exato, define horário para 12:00
-  // para evitar problemas com ajustes de timezone
+  // Criar data com horário meio-dia (12:00) para evitar problemas com ajustes de timezone
   return new Date(year, month, day, 12, 0, 0);
 }
 

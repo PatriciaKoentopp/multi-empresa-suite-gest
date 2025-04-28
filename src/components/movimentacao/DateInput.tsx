@@ -34,10 +34,19 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
 
     // Apenas tenta converter para data se tiver o formato completo DD/MM/YYYY
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(inputText)) {
-      const parsedDate = parse(inputText, 'dd/MM/yyyy', new Date(), { locale: ptBR });
-      if (isValid(parsedDate)) {
-        onChange(parsedDate);
-      } else {
+      try {
+        // Extrair dia, mês e ano da string
+        const [dia, mes, ano] = inputText.split('/').map(Number);
+        
+        // Criar uma nova data com horário ao meio-dia para evitar problemas de timezone
+        const dataSemTimezone = new Date(ano, mes - 1, dia, 12, 0, 0);
+        
+        if (isValid(dataSemTimezone)) {
+          onChange(dataSemTimezone);
+        } else {
+          onChange(undefined);
+        }
+      } catch (error) {
         onChange(undefined);
       }
     } else if (!inputText) {
@@ -60,16 +69,15 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
       return;
     }
     
-    // Criamos uma nova data preservando o dia, mês e ano selecionados
-    // definindo a hora para 12:00 (meio-dia) para evitar problemas com timezone
-    const adjustedDate = new Date(
+    // Criar nova data com horário meio-dia para evitar problemas de timezone
+    const dataSemTimezone = new Date(
       date.getFullYear(),
       date.getMonth(),
       date.getDate(),
       12, 0, 0
     );
     
-    onChange(adjustedDate);
+    onChange(dataSemTimezone);
   };
 
   return (
