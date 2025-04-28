@@ -28,7 +28,7 @@ import { useCompany } from "@/contexts/company-context";
 import { dateToISOString, parseDateString } from "@/lib/utils";
 
 export default function FavorecidosPage() {
-  const [favorecidos, setFavorecidos = useState<Favorecido[]>([]);
+  const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
   const [grupos, setGrupos] = useState<GrupoFavorecido[]>([]);
   const [profissoes, setProfissoes] = useState<Profissao[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -549,8 +549,8 @@ export default function FavorecidosPage() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[95vw] h-[95vh] p-0 overflow-y-auto">
-          <DialogHeader className="border-b px-6 py-4 sticky top-0 bg-white z-10">
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
             <DialogTitle>
               {viewingFavorecido
                 ? "Visualizar Favorecido"
@@ -559,16 +559,14 @@ export default function FavorecidosPage() {
                 : "Novo Favorecido"}
             </DialogTitle>
           </DialogHeader>
-          <div className="px-6 py-4">
-            <FavorecidosForm
-              favorecido={viewingFavorecido || editingFavorecido}
-              grupos={grupos}
-              profissoes={profissoes}
-              onSubmit={handleSubmit}
-              onCancel={handleCloseDialog}
-              readOnly={!!viewingFavorecido}
-            />
-          </div>
+          <FavorecidosForm
+            favorecido={viewingFavorecido || editingFavorecido}
+            grupos={grupos}
+            profissoes={profissoes}
+            onSubmit={handleSubmit}
+            onCancel={handleCloseDialog}
+            readOnly={!!viewingFavorecido}
+          />
         </DialogContent>
       </Dialog>
     </div>
