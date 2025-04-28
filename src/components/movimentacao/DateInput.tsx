@@ -53,6 +53,25 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
     }
   };
 
+  // Função para garantir que a data do calendário seja preservada sem timezone
+  const handleCalendarSelect = (date?: Date) => {
+    if (!date) {
+      onChange(undefined);
+      return;
+    }
+    
+    // Criamos uma nova data preservando o dia, mês e ano selecionados
+    // definindo a hora para 12:00 (meio-dia) para evitar problemas com timezone
+    const adjustedDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      12, 0, 0
+    );
+    
+    onChange(adjustedDate);
+  };
+
   return (
     <div className="flex flex-col gap-1">
       {label && <label className="text-sm font-medium">{label}</label>}
@@ -83,7 +102,7 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
             <Calendar
               mode="single"
               selected={value}
-              onSelect={onChange}
+              onSelect={handleCalendarSelect}
               initialFocus
               disabled={disabled}
               locale={ptBR}

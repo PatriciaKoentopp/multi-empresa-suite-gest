@@ -73,7 +73,8 @@ export function parseDateString(dateString: string): Date | undefined {
   
   if (isNaN(day) || isNaN(month) || isNaN(year)) return undefined;
   
-  // Criar data sem UTC para preservar o dia exato
+  // Criar data sem UTC para preservar o dia exato, define horário para 12:00
+  // para evitar problemas com ajustes de timezone
   return new Date(year, month, day, 12, 0, 0);
 }
 

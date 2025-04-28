@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { addMonths } from "date-fns";
 
 interface Parcela {
   numero: number;
@@ -37,9 +36,14 @@ export function useParcelasCalculation(
       const novasParcelas: Parcela[] = [];
       
       for (let i = 0; i < numParcelas; i++) {
-        // Usar o objeto Date diretamente sem UTC
-        const novaData = new Date(primeiroVencimento);
-        novaData.setMonth(novaData.getMonth() + i);
+        // Criar uma nova data para cada parcela com base na data do primeiro vencimento
+        // Importante: mantermos sempre o dia, mês e ano sem problemas de timezone
+        const novaData = new Date(
+          primeiroVencimento.getFullYear(),
+          primeiroVencimento.getMonth() + i,
+          primeiroVencimento.getDate(),
+          12, 0, 0
+        );
         
         novasParcelas.push({
           numero: i + 1,
