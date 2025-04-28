@@ -252,6 +252,16 @@ export default function FaturamentoPage() {
     return buscaMatch && tipoMatch && favMatch && dataI_Match && dataF_Match;
   });
 
+  // Ordenação da tabela: primeiro por tipo, depois por código
+  const itemsOrdenados = [...itemsFiltrados].sort((a, b) => {
+    // Primeiro critério: ordenar por tipo (orcamento vem antes de venda)
+    if (a.tipo !== b.tipo) {
+      return a.tipo === "orcamento" ? -1 : 1;
+    }
+    // Segundo critério: ordenar por código
+    return a.codigo.localeCompare(b.codigo);
+  });
+
   // Função Visualizar: abre orçamento em modo visualização
   function handleVisualizar(item: Orcamento) {
     const url = `/vendas/orcamento?id=${item.id}&visualizar=1`;
@@ -414,14 +424,14 @@ export default function FaturamentoPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {itemsFiltrados.length === 0 ? (
+            {itemsOrdenados.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center text-muted-foreground">
                   Nenhum faturamento encontrado.
                 </TableCell>
               </TableRow>
             ) : (
-              itemsFiltrados.map((item) => (
+              itemsOrdenados.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
                     {item.tipo === "orcamento" ? "Orçamento" : "Venda"}
