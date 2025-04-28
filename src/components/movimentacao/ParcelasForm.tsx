@@ -24,10 +24,12 @@ export function ParcelasForm({ parcelas, onValorChange, onDataChange, readOnly =
   const handleValorChange = (index: number, valorString: string) => {
     if (!onValorChange) return;
     
+    // Permitir a edição do campo mesmo com valor inválido temporariamente
     // Remover símbolos de moeda e pontos, mantendo apenas números e vírgula
     const valorLimpo = valorString.replace(/[^\d,]/g, '').replace(',', '.');
     
     // Converter para número, utilizando parseFloat
+    // Se o valor não for um número válido, usamos 0 como fallback
     const valor = parseFloat(valorLimpo) || 0;
     
     // Chamar a função de atualização com o novo valor

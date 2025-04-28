@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -274,10 +273,14 @@ export default function OrcamentoPage() {
 
   // Efeito para atualizar as parcelas quando o valor total ou número de parcelas mudar
   useEffect(() => {
-    const dataPrimeiroParcela = parcelas.length > 0 ? parcelas[0].dataVencimento : "";
-    const novasParcelas = getParcelas(total, numeroParcelas, codigoVenda, dataPrimeiroParcela);
-    setParcelas(novasParcelas);
-  }, [total, numeroParcelas, codigoVenda]);
+    // Só deve recalcular automaticamente as parcelas quando o número de parcelas mudar
+    // ou quando for uma nova inicialização, não a cada edição de valor
+    if (!parcelasCarregadas) {
+      const dataPrimeiroParcela = parcelas.length > 0 ? parcelas[0].dataVencimento : "";
+      const novasParcelas = getParcelas(total, numeroParcelas, codigoVenda, dataPrimeiroParcela);
+      setParcelas(novasParcelas);
+    }
+  }, [numeroParcelas, codigoVenda]);
 
   // Atualiza parcela específica
   const handleParcelaDataChange = (idx: number, data: Date) => {
@@ -288,6 +291,20 @@ export default function OrcamentoPage() {
       } : parcela
     ));
   };
+
+  // Adicionar função para atualizar valor da parcela
+  const handleParcelaValorChange = (idx: number, valor: number) => {
+    setParcelas(prev => prev.map((parcela, i) =>
+      i === idx ? { ...parcela, valor } : parcela
+    ));
+  };
+
+  // Calcular a soma dos valores das parcelas
+  const somaParcelas = parcelas.reduce((acc, parcela) => acc + parcela.valor, 0);
+  
+  // Verificar se os valores estão corretos (com tolerância de centavos para arredondamento)
+  // Esta verificação não deve bloquear a digitação, apenas mostrar mensagem visual
+  const valoresTotaisCorretos = Math.abs(total - somaParcelas) < 0.02;
 
   // Atualiza valor do serviço selecionado
   const handleServicoChange = (idx: number, field: "servicoId" | "valor", value: string | number) => {
@@ -418,19 +435,6 @@ export default function OrcamentoPage() {
   const handleCancel = () => {
     navigate("/vendas/faturamento");
   };
-
-  // Adicionar função para atualizar valor da parcela
-  const handleParcelaValorChange = (idx: number, valor: number) => {
-    setParcelas(prev => prev.map((parcela, i) =>
-      i === idx ? { ...parcela, valor } : parcela
-    ));
-  };
-
-  // Calcular a soma dos valores das parcelas
-  const somaParcelas = parcelas.reduce((acc, parcela) => acc + parcela.valor, 0);
-  
-  // Verificar se os valores estão corretos (com tolerância de centavos para arredondamento)
-  const valoresTotaisCorretos = Math.abs(total - somaParcelas) < 0.02;
 
   // Enviar formulário
   const handleSubmit = async (e: React.FormEvent) => {
@@ -877,21 +881,3 @@ export default function OrcamentoPage() {
                     {isLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 mr-2 border-t-2 border-white"></div>
-                        Salvando...
-                      </>
-                    ) : (
-                      orcamentoId ? "Atualizar Orçamento" : "Salvar Orçamento"
-                    )}
-                  </Button>
-                )}
-                <Button type="button" variant="outline" onClick={handleCancel}>
-                  Voltar
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
