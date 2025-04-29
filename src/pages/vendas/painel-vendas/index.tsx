@@ -1,8 +1,7 @@
+
 import { useEffect, useState } from "react";
 import { SalesCard } from "@/components/vendas/SalesCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
-import { SalesPieChart } from "@/components/vendas/SalesPieChart";
-import { SalesLineChart } from "@/components/vendas/SalesLineChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,8 +27,6 @@ const PainelVendasPage = () => {
   const [barChartData, setBarChartData] = useState<any[]>([]);
   const [quarterlyChartData, setQuarterlyChartData] = useState<any[]>([]);
   const [yearlyChartData, setYearlyChartData] = useState<any[]>([]);
-  const [pieChartData, setPieChartData] = useState<any[]>([]);
-  const [lineChartData, setLineChartData] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -189,7 +186,7 @@ const PainelVendasPage = () => {
           clientes_ativos: clientesAtivos
         });
 
-        // Buscar dados para o gráfico de barras (vendas mensais) - REMOVIDO CAMPO PROJETADO
+        // Buscar dados para o gráfico de barras (vendas mensais)
         const { data: monthlyData, error: monthlyError } = await supabase
           .from('orcamentos')
           .select(`
@@ -227,7 +224,7 @@ const PainelVendasPage = () => {
         setBarChartData(monthlyChartData);
         console.log("Dados do gráfico de barras processados:", monthlyChartData);
 
-        // Buscar dados para gráficos trimestrais - REMOVIDO CAMPO PROJETADO
+        // Buscar dados para gráficos trimestrais
         // Define os intervalos para cada trimestre do ano atual
         const quarters = [
           { start: `${currentYear}-01-01`, end: `${currentYear}-03-31`, name: 'T1' },
@@ -265,7 +262,7 @@ const PainelVendasPage = () => {
         setQuarterlyChartData(quarterlyData);
         console.log("Dados do gráfico trimestral processados:", quarterlyData);
 
-        // Buscar dados para gráficos anuais - REMOVIDO CAMPO PROJETADO
+        // Buscar dados para gráficos anuais
         const yearlyData = [];
         const currentYearNum = currentYear;
         
@@ -299,92 +296,6 @@ const PainelVendasPage = () => {
 
         setYearlyChartData(yearlyData);
         console.log("Dados do gráfico anual processados:", yearlyData);
-
-        // Buscar vendas por serviço para o gráfico de pizza
-        try {
-          const { data: serviceData, error: serviceError } = await supabase
-            .from('orcamentos_itens')
-            .select(`
-              valor,
-              servico:servicos(id, nome),
-              orcamento:orcamentos!inner(data_venda, tipo, status)
-            `)
-            .eq('orcamento.tipo', 'venda')
-            .eq('orcamento.status', 'ativo')
-            .gte('orcamento.data_venda', startCurrentMonthFormatted)
-            .lte('orcamento.data_venda', endCurrentMonthFormatted);
-
-          if (serviceError) throw serviceError;
-          console.log("Dados por serviço:", serviceData);
-
-          // Filtrar registros válidos
-          const filteredServiceData = serviceData?.filter(item => 
-            item.orcamento && 
-            item.orcamento.data_venda && 
-            item.servico && 
-            item.servico.nome
-          );
-
-          // Processar dados do gráfico de pizza
-          const pieData = filteredServiceData?.reduce((acc: any[], item) => {
-            const servicoNome = item.servico?.nome || 'Outros';
-            const existingService = acc.find(s => s.name === servicoNome);
-            
-            if (existingService) {
-              existingService.value += Number(item.valor) || 0;
-            } else {
-              acc.push({
-                name: servicoNome,
-                value: Number(item.valor) || 0,
-                color: `hsl(${Math.random() * 360}, 70%, 50%)`
-              });
-            }
-            
-            return acc;
-          }, []) || [];
-
-          setPieChartData(pieData);
-          console.log("Dados do gráfico de pizza processados:", pieData);
-        } catch (serviceError) {
-          console.error("Erro ao buscar dados por serviço:", serviceError);
-          // Definir um gráfico vazio em caso de erro
-          setPieChartData([]);
-        }
-
-        // Buscar dados para o gráfico de linha (vendas diárias do mês atual)
-        const { data: dailyData, error: dailyError } = await supabase
-          .from('orcamentos')
-          .select(`
-            data_venda,
-            orcamentos_itens (valor)
-          `)
-          .eq('tipo', 'venda')
-          .eq('status', 'ativo')
-          .gte('data_venda', startCurrentMonthFormatted)
-          .lte('data_venda', endCurrentMonthFormatted)
-          .order('data_venda');
-
-        if (dailyError) throw dailyError;
-        console.log("Dados diários para gráfico de linha:", dailyData);
-
-        const dailyChartData = dailyData?.reduce((acc: any[], orcamento) => {
-          if (!orcamento.data_venda) return acc;
-          
-          const date = format(new Date(orcamento.data_venda), 'dd/MM');
-          const value = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
-          
-          const existingDay = acc.find(d => d.name === date);
-          if (existingDay) {
-            existingDay.value += value;
-          } else {
-            acc.push({ name: date, value });
-          }
-          
-          return acc;
-        }, []) || [];
-
-        setLineChartData(dailyChartData);
-        console.log("Dados do gráfico de linha processados:", dailyChartData);
 
         setIsLoading(false);
       } catch (error: any) {
@@ -451,7 +362,7 @@ const PainelVendasPage = () => {
         />
       </div>
 
-      {/* Gráficos */}
+      {/* Gráficos de desempenho de vendas com abas */}
       <div className="space-y-4">
         <Tabs defaultValue="monthly">
           <div className="flex justify-between items-center">
@@ -493,27 +404,6 @@ const PainelVendasPage = () => {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
-
-      {/* Layout de 2 colunas com diferentes tipos de gráficos */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Vendas por Serviço</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SalesPieChart data={pieChartData} />
-          </CardContent>
-        </Card>
-        
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Tendência Vendas Diárias ({format(new Date(), 'MMMM', { locale: ptBR })})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SalesLineChart data={lineChartData} />
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
