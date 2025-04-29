@@ -69,8 +69,8 @@ export default function FaturamentoPage() {
   const [tipo, setTipo] = useState("");
   const [favorecido, setFavorecido] = useState("");
   // Inicializa com o primeiro dia do mês atual
-  const [dataInicial, setDataInicial] = useState<Date>(getPrimeiroDiaMes());
-  const [dataFinal, setDataFinal] = useState<Date>();
+  const [dataInicial, setDataInicial] = useState<Date | undefined>(getPrimeiroDiaMes());
+  const [dataFinal, setDataFinal] = useState<Date | undefined>();
   const [faturamentos, setFaturamentos] = useState<Orcamento[]>([]);
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
   const [showToastConfirm, setShowToastConfirm] = useState(false);
@@ -247,7 +247,7 @@ export default function FaturamentoPage() {
     setBusca("");
     setTipo("");
     setFavorecido("");
-    setDataInicial(getPrimeiroDiaMes()); // Reseta para o primeiro dia do mês atual
+    setDataInicial(undefined); // Modificado: agora limpa a data inicial
     setDataFinal(undefined);
     setStatusFilter("ativo");
   }
