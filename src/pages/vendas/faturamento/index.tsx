@@ -41,6 +41,7 @@ import { toast } from "@/hooks/use-toast";
 import { Orcamento, Favorecido } from "@/types";
 import { EfetivarVendaModal } from "@/components/vendas/EfetivarVendaModal";
 import { formatDate } from "@/lib/utils";
+import { SalesCard } from "@/components/vendas/SalesCard";
 
 // Opções de tipo
 const tipos = ["Todos", "Orçamento", "Venda"];
@@ -271,6 +272,13 @@ export default function FaturamentoPage() {
     return a.codigo.localeCompare(b.codigo);
   });
 
+  // Calcular totais para os cards
+  const orcamentos = itemsFiltrados.filter(item => item.tipo === 'orcamento');
+  const vendas = itemsFiltrados.filter(item => item.tipo === 'venda');
+  
+  const totalOrcamentos = orcamentos.reduce((acc, item) => acc + Number(item.valor || 0), 0);
+  const totalVendas = vendas.reduce((acc, item) => acc + Number(item.valor || 0), 0);
+
   // Função Visualizar: abre orçamento em modo visualização
   function handleVisualizar(item: Orcamento) {
     const url = `/vendas/orcamento?id=${item.id}&visualizar=1`;
@@ -416,7 +424,7 @@ export default function FaturamentoPage() {
           <Filter className="w-4 h-4" />
         </Button>
 
-        {/* Botão Limpar Filtros - NOVO */}
+        {/* Botão Limpar Filtros */}
         <Button 
           variant="outline"
           onClick={limparFiltros}
@@ -426,6 +434,24 @@ export default function FaturamentoPage() {
           <X className="w-4 h-4" />
           <span className="hidden sm:inline">Limpar Filtros</span>
         </Button>
+      </div>
+
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <SalesCard
+          title="Orçamentos"
+          value={totalOrcamentos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          description={`${orcamentos.length} orçamento${orcamentos.length !== 1 ? 's' : ''}`}
+          icon="sales"
+          className="bg-white"
+        />
+        <SalesCard
+          title="Vendas"
+          value={totalVendas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          description={`${vendas.length} venda${vendas.length !== 1 ? 's' : ''}`}
+          icon="money"
+          className="bg-white"
+        />
       </div>
 
       {/* Tabela */}
