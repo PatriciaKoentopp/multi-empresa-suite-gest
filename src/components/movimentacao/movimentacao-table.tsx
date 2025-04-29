@@ -57,6 +57,13 @@ export function MovimentacaoTable({
   onDelete,
   onVisualizar 
 }: MovimentacaoTableProps) {
+  // Ordenar movimentações por data de lançamento (mais recente primeiro)
+  const sortedMovimentacoes = [...movimentacoes].sort((a, b) => {
+    const dateA = a.dataLancamento ? new Date(a.dataLancamento).getTime() : 0;
+    const dateB = b.dataLancamento ? new Date(b.dataLancamento).getTime() : 0;
+    return dateB - dateA; // Ordem decrescente (mais recente primeiro)
+  });
+
   const totalValor = movimentacoes.reduce((soma, movimentacao) => soma + (movimentacao.valor || 0), 0);
 
   return (
@@ -74,16 +81,16 @@ export function MovimentacaoTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {movimentacoes.length === 0 ? (
+          {sortedMovimentacoes.length === 0 ? (
             <TableRow>
               <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                 Nenhum resultado encontrado
               </TableCell>
             </TableRow>
           ) : (
-            movimentacoes.map((movimentacao) => (
+            sortedMovimentacoes.map((movimentacao) => (
               <TableRow key={movimentacao.id}>
-                <TableCell>{formatDate(movimentacao.dataPagamento || movimentacao.dataVencimento)}</TableCell>
+                <TableCell>{formatDate(movimentacao.dataLancamento)}</TableCell>
                 <TableCell>
                   {movimentacao.numeroParcela ? (
                     <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
