@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Search, Filter } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -339,6 +339,15 @@ export default function FluxoCaixaPage() {
     }
   }
 
+  // Função para limpar todos os filtros
+  const limparFiltros = () => {
+    setSearchTerm("");
+    setSituacao("todos");
+    setContaCorrenteId("");
+    setPeriodo("mes_atual");
+    // A alteração de período vai acionar o useEffect e limpar/atualizar as datas
+  };
+
   // Filtro das movimentações
   const filteredMovimentacoes = useMemo(() => {
     return movimentacoesComSaldo.filter((linha) => {
@@ -551,6 +560,17 @@ export default function FluxoCaixaPage() {
                 autoComplete="off"
               />
             </div>
+            
+            {/* Botão para limpar filtros */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={limparFiltros}
+              className="text-gray-500 hover:text-gray-700 h-[52px] w-10"
+              title="Limpar filtros"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
           {/* Separador */}
           <div className="mb-4" />
