@@ -24,44 +24,41 @@ export const SalesCard = ({
 }: SalesCardProps) => {
   return (
     <Card className={cn("overflow-hidden", className)}>
-      <CardContent className="p-5 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-950">
-            {icon === "money" && (
-              <DollarSign className="h-5 w-5 text-blue-500 dark:text-blue-400" />
-            )}
-            {icon === "sales" && (
-              <ShoppingBag className="h-5 w-5 text-blue-500 dark:text-blue-400" />
-            )}
-          </div>
-          
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-            <p className="text-xl font-bold">{value}</p>
-          </div>
+      <CardContent className="p-4 flex items-center h-14">
+        <div className="p-1.5 mr-3 rounded-md bg-blue-50 dark:bg-blue-950">
+          {icon === "money" && (
+            <DollarSign className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+          )}
+          {icon === "sales" && (
+            <ShoppingBag className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+          )}
         </div>
         
-        <div className="flex items-center gap-3">
-          {description && (
-            <p className="text-xs text-muted-foreground">{description}</p>
-          )}
-          
-          {trend !== "neutral" && trendValue && (
-            <div className={cn(
-              "flex items-center text-xs font-medium px-2 py-1 rounded-full",
-              trend === "up" 
-                ? "text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400" 
-                : "text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400"
-            )}>
-              {trend === "up" ? (
-                <ArrowUpRight className="h-3 w-3 mr-1" />
-              ) : (
-                <ArrowDownRight className="h-3 w-3 mr-1" />
-              )}
-              {trendValue}
-            </div>
-          )}
+        <div className="flex-1">
+          <div className="flex items-center">
+            <span className="text-lg font-semibold">{value}</span>
+            {description && (
+              <span className="ml-2 text-xs text-muted-foreground">{description}</span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground -mt-0.5">{title}</p>
         </div>
+        
+        {trend !== "neutral" && trendValue && (
+          <div className={cn(
+            "flex items-center text-xs font-medium px-2 py-1 rounded-full ml-auto",
+            trend === "up" 
+              ? "text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400" 
+              : "text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400"
+          )}>
+            {trend === "up" ? (
+              <ArrowUpRight className="h-3 w-3 mr-1" />
+            ) : (
+              <ArrowDownRight className="h-3 w-3 mr-1" />
+            )}
+            {trendValue}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
