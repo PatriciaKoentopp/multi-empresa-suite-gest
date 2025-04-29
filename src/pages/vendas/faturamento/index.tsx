@@ -254,7 +254,11 @@ export default function FaturamentoPage() {
         )
       : true;
     
-    const tipoMatch = tipo && tipo !== "Todos" ? item.tipo === tipo.toLowerCase() : true;
+    // Corrige o filtro de tipo, convertendo para minúsculo e comparando corretamente
+    const tipoMatch = tipo && tipo !== "Todos" 
+      ? item.tipo === tipo.toLowerCase() 
+      : true;
+    
     const favMatch = favorecido ? item.favorecido_id === favorecido : true;
     const dataI_Match = dataInicial ? new Date(item.data) >= dataInicial : true;
     const dataF_Match = dataFinal ? new Date(item.data) <= dataFinal : true;
