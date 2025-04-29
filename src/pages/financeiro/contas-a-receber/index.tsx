@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -529,79 +530,79 @@ export default function ContasAReceberPage() {
                       )}
                     </Button>
                   </CollapsibleTrigger>
-                </Collapsible>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={limparFiltros}
+                    className="text-gray-500 hover:text-gray-700 h-10 w-10"
+                    title="Limpar filtros"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={limparFiltros}
-                  className="text-gray-500 hover:text-gray-700 h-10 w-10"
-                  title="Limpar filtros"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                  <CollapsibleContent className="absolute top-full left-0 right-0 z-10 mt-2 bg-white border rounded-lg shadow-lg p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                      {/* Data de Vencimento */}
+                      <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                        <div className="text-sm font-medium mb-2 text-gray-700">Data de Vencimento</div>
+                        <div className="flex flex-row gap-2">
+                          <div className="flex flex-col flex-1">
+                            <label className="text-xs font-medium text-gray-500">De</label>
+                            <Input
+                              type="date"
+                              className="bg-white"
+                              value={dataVencInicio}
+                              max={dataVencFim || undefined}
+                              onChange={e => setDataVencInicio(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex flex-col flex-1">
+                            <label className="text-xs font-medium text-gray-500">Até</label>
+                            <Input
+                              type="date"
+                              className="bg-white"
+                              value={dataVencFim}
+                              min={dataVencInicio || undefined}
+                              onChange={e => setDataVencFim(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Data de Recebimento */}
+                      <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                        <div className="text-sm font-medium mb-2 text-gray-700">Data de Recebimento</div>
+                        <div className="flex flex-row gap-2">
+                          <div className="flex flex-col flex-1">
+                            <label className="text-xs font-medium text-gray-500">De</label>
+                            <Input
+                              type="date"
+                              className="bg-white"
+                              value={dataRecInicio}
+                              max={dataRecFim || undefined}
+                              onChange={e => setDataRecInicio(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex flex-col flex-1">
+                            <label className="text-xs font-medium text-gray-500">Até</label>
+                            <Input
+                              type="date"
+                              className="bg-white"
+                              value={dataRecFim}
+                              min={dataRecInicio || undefined}
+                              onChange={e => setDataRecFim(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
               
               <div />
             </div>
-            
-            <CollapsibleContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                {/* Data de Vencimento */}
-                <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
-                  <div className="text-sm font-medium mb-2 text-gray-700">Data de Vencimento</div>
-                  <div className="flex flex-row gap-2">
-                    <div className="flex flex-col flex-1">
-                      <label className="text-xs font-medium text-gray-500">De</label>
-                      <Input
-                        type="date"
-                        className="bg-white"
-                        value={dataVencInicio}
-                        max={dataVencFim || undefined}
-                        onChange={e => setDataVencInicio(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex flex-col flex-1">
-                      <label className="text-xs font-medium text-gray-500">Até</label>
-                      <Input
-                        type="date"
-                        className="bg-white"
-                        value={dataVencFim}
-                        min={dataVencInicio || undefined}
-                        onChange={e => setDataVencFim(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Data de Recebimento */}
-                <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
-                  <div className="text-sm font-medium mb-2 text-gray-700">Data de Recebimento</div>
-                  <div className="flex flex-row gap-2">
-                    <div className="flex flex-col flex-1">
-                      <label className="text-xs font-medium text-gray-500">De</label>
-                      <Input
-                        type="date"
-                        className="bg-white"
-                        value={dataRecInicio}
-                        max={dataRecFim || undefined}
-                        onChange={e => setDataRecInicio(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex flex-col flex-1">
-                      <label className="text-xs font-medium text-gray-500">Até</label>
-                      <Input
-                        type="date"
-                        className="bg-white"
-                        value={dataRecFim}
-                        min={dataRecInicio || undefined}
-                        onChange={e => setDataRecFim(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CollapsibleContent>
           </div>
           
           <div className="mt-6">
