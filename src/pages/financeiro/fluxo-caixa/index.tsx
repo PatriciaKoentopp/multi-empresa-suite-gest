@@ -86,6 +86,24 @@ function getStatusBadge(status: "conciliado" | "nao_conciliado") {
   );
 }
 
+// Função para formatar valores monetários com cor
+function formatCurrencyWithColor(value: number, addColor: boolean = false) {
+  const formattedValue = value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+  });
+  
+  if (!addColor) {
+    return formattedValue;
+  }
+  
+  // Define cores com base no valor
+  const color = value < 0 ? "text-red-600" : "text-blue-600";
+  
+  return <span className={color}>{formattedValue}</span>;
+}
+
 export default function FluxoCaixaPage() {
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("");
   const [periodo, setPeriodo] = useState<"mes_atual" | "mes_anterior" | "personalizado">("mes_atual");
@@ -641,7 +659,7 @@ export default function FluxoCaixaPage() {
                               : "nao_conciliado"
                           )}
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrency(linha.valor)}</TableCell>
+                        <TableCell className="text-right">{formatCurrencyWithColor(linha.valor, true)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(linha.saldo_calculado)}</TableCell>
                         <TableCell className="text-center">
                           <DropdownMenu>
