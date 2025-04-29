@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 import { ContasAReceberTable, ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
 import {
@@ -370,6 +370,16 @@ export default function ContasAReceberPage() {
     }
   };
 
+  // Novo: função para limpar todos os filtros
+  const limparFiltros = () => {
+    setSearchTerm("");
+    setStatusFilter("em_aberto");
+    setDataVencInicio("");
+    setDataVencFim("");
+    setDataRecInicio("");
+    setDataRecFim("");
+  };
+
   // Filtro
   const filteredContas = useMemo(() => {
     return contas.filter((conta) => {
@@ -453,100 +463,125 @@ export default function ContasAReceberPage() {
       </div>
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative col-span-1 min-w-[240px]">
-              <button
-                type="button"
-                className="absolute left-3 top-3 z-10 p-0 m-0 bg-transparent border-none cursor-pointer text-muted-foreground hover:text-blue-500"
-                style={{ lineHeight: 0 }}
-                onClick={handleLupaClick}
-                tabIndex={-1}
-                aria-label="Buscar"
+          {/* Melhorei a UI do cabeçalho dos filtros */}
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 border-b pb-4">
+              <h3 className="text-lg font-medium">Filtros</h3>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={limparFiltros}
+                className="flex items-center gap-1 text-gray-500 hover:text-gray-700"
               >
-                <Search className="h-5 w-5" />
-              </button>
-              <Input
-                ref={inputBuscaRef}
-                placeholder="Buscar cliente ou descrição"
-                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    inputBuscaRef.current?.blur();
-                  }
-                }}
-                autoComplete="off"
-              />
+                <X className="h-4 w-4" />
+                Limpar filtros
+              </Button>
             </div>
-            <div className="col-span-1 min-w-[180px]">
-              <Select
-                value={statusFilter}
-                onValueChange={(v) => setStatusFilter(v as any)}
-              >
-                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200">
-                  <SelectItem value="todas">Todos Status</SelectItem>
-                  <SelectItem value="em_aberto" className="text-blue-600">Em Aberto</SelectItem>
-                  <SelectItem value="recebido" className="text-green-600">Recebido</SelectItem>
-                  <SelectItem value="recebido_em_atraso" className="text-red-600">Recebido em Atraso</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="relative col-span-1 min-w-[240px]">
+                <button
+                  type="button"
+                  className="absolute left-3 top-3 z-10 p-0 m-0 bg-transparent border-none cursor-pointer text-muted-foreground hover:text-blue-500"
+                  style={{ lineHeight: 0 }}
+                  onClick={handleLupaClick}
+                  tabIndex={-1}
+                  aria-label="Buscar"
+                >
+                  <Search className="h-5 w-5" />
+                </button>
+                <Input
+                  ref={inputBuscaRef}
+                  placeholder="Buscar cliente ou descrição"
+                  className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      inputBuscaRef.current?.blur();
+                    }
+                  }}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="col-span-1 min-w-[180px]">
+                <Select
+                  value={statusFilter}
+                  onValueChange={(v) => setStatusFilter(v as any)}
+                >
+                  <SelectTrigger className="w-full bg-white dark:bg-gray-900">
+                    <Filter className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-200">
+                    <SelectItem value="todas">Todos Status</SelectItem>
+                    <SelectItem value="em_aberto" className="text-blue-600">Em Aberto</SelectItem>
+                    <SelectItem value="recebido" className="text-green-600">Recebido</SelectItem>
+                    <SelectItem value="recebido_em_atraso" className="text-red-600">Recebido em Atraso</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div />
             </div>
-            <div />
+            
+            {/* Redesenhado o layout dos campos de data */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Data de Vencimento */}
+              <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                <div className="text-sm font-medium mb-2 text-gray-700">Data de Vencimento</div>
+                <div className="flex flex-row gap-2">
+                  <div className="flex flex-col flex-1">
+                    <label className="text-xs font-medium text-gray-500">De</label>
+                    <Input
+                      type="date"
+                      className="bg-white"
+                      value={dataVencInicio}
+                      max={dataVencFim || undefined}
+                      onChange={e => setDataVencInicio(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-col flex-1">
+                    <label className="text-xs font-medium text-gray-500">Até</label>
+                    <Input
+                      type="date"
+                      className="bg-white"
+                      value={dataVencFim}
+                      min={dataVencInicio || undefined}
+                      onChange={e => setDataVencFim(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Data de Recebimento */}
+              <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                <div className="text-sm font-medium mb-2 text-gray-700">Data de Recebimento</div>
+                <div className="flex flex-row gap-2">
+                  <div className="flex flex-col flex-1">
+                    <label className="text-xs font-medium text-gray-500">De</label>
+                    <Input
+                      type="date"
+                      className="bg-white"
+                      value={dataRecInicio}
+                      max={dataRecFim || undefined}
+                      onChange={e => setDataRecInicio(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-col flex-1">
+                    <label className="text-xs font-medium text-gray-500">Até</label>
+                    <Input
+                      type="date"
+                      className="bg-white"
+                      value={dataRecFim}
+                      min={dataRecInicio || undefined}
+                      onChange={e => setDataRecFim(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="mt-2 flex flex-col md:flex-row gap-2">
-            {/* Vencimento: de - até */}
-            <div className="flex flex-row gap-2 flex-1 min-w-[240px]">
-              <div className="flex flex-col flex-1">
-                <label className="text-xs font-medium">Venc. de</label>
-                <Input
-                  type="date"
-                  className="min-w-[120px] max-w-[140px]"
-                  value={dataVencInicio}
-                  max={dataVencFim || undefined}
-                  onChange={e => setDataVencInicio(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col flex-1">
-                <label className="text-xs font-medium">até</label>
-                <Input
-                  type="date"
-                  className="min-w-[120px] max-w-[140px]"
-                  value={dataVencFim}
-                  min={dataVencInicio || undefined}
-                  onChange={e => setDataVencFim(e.target.value)}
-                />
-              </div>
-            </div>
-            {/* Recebimento: de - até */}
-            <div className="flex flex-row gap-2 flex-1 min-w-[240px]">
-              <div className="flex flex-col flex-1">
-                <label className="text-xs font-medium">Rec. de</label>
-                <Input
-                  type="date"
-                  className="min-w-[120px] max-w-[140px]"
-                  value={dataRecInicio}
-                  max={dataRecFim || undefined}
-                  onChange={e => setDataRecInicio(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col flex-1">
-                <label className="text-xs font-medium">até</label>
-                <Input
-                  type="date"
-                  className="min-w-[120px] max-w-[140px]"
-                  value={dataRecFim}
-                  min={dataRecInicio || undefined}
-                  onChange={e => setDataRecFim(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="mb-4" />
+          
           <div className="mt-6">
             <ContasAReceberTable
               contas={filteredContas}
