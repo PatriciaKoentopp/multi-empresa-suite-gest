@@ -1,9 +1,10 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, Search, Filter, Undo } from "lucide-react";
+import { Search, Filter, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ContasAPagarTable, ContaPagar } from "@/components/contas-a-pagar/contas-a-pagar-table";
@@ -29,6 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Movimentacao, MovimentacaoParcela } from "@/types/movimentacoes";
 import { useCompany } from "@/contexts/company-context";
 import { formatDate } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function ContasAPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>([]);
@@ -42,6 +44,7 @@ export default function ContasAPagarPage() {
   const [dataVencFim, setDataVencFim] = useState<string>("");
   const [dataPagInicio, setDataPagInicio] = useState<string>("");
   const [dataPagFim, setDataPagFim] = useState<string>("");
+  const [isFiltroAvancadoOpen, setIsFiltroAvancadoOpen] = useState(false);
 
   const [contaParaExcluir, setContaParaExcluir] = useState<string | null>(null);
   const [confirmarExclusaoAberto, setConfirmarExclusaoAberto] = useState(false);
@@ -365,6 +368,17 @@ export default function ContasAPagarPage() {
     }
   }, [currentCompany]);
 
+  // Limpar todos os filtros
+  const limparFiltros = () => {
+    setSearchTerm("");
+    setStatusFilter("em_aberto");
+    setDataVencInicio("");
+    setDataVencFim("");
+    setDataPagInicio("");
+    setDataPagFim("");
+    setIsFiltroAvancadoOpen(false);
+  };
+
   // Filtro de contas
   const filteredContas = useMemo(() => {
     return contas.filter((conta) => {
@@ -372,21 +386,39 @@ export default function ContasAPagarPage() {
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const statusOk = statusFilter === "todas" || conta.status === statusFilter;
-      const vencimentoDentroRange =
-        (!dataVencInicio || conta.dataVencimento >= new Date(dataVencInicio + "T12:00:00Z")) &&
-        (!dataVencFim || conta.dataVencimento <= new Date(dataVencFim + "T23:59:59Z"));
-      const pagamentoDentroRange =
-        (!dataPagInicio || (conta.dataPagamento && conta.dataPagamento >= new Date(dataPagInicio + "T12:00:00Z"))) &&
-        (!dataPagFim || (conta.dataPagamento && conta.dataPagamento <= new Date(dataPagFim + "T23:59:59Z")));
+      
+      // Aplicar filtros de data sem problemas de timezone
+      let vencimentoDentroRange = true;
+      if (dataVencInicio) {
+        const dataInicio = new Date(dataVencInicio + 'T12:00:00Z');
+        vencimentoDentroRange = vencimentoDentroRange && conta.dataVencimento >= dataInicio;
+      }
+      
+      if (dataVencFim) {
+        const dataFim = new Date(dataVencFim + 'T12:00:00Z');
+        vencimentoDentroRange = vencimentoDentroRange && conta.dataVencimento <= dataFim;
+      }
+      
+      let pagamentoDentroRange = true;
+      if (dataPagInicio && conta.dataPagamento) {
+        const dataInicio = new Date(dataPagInicio + 'T12:00:00Z');
+        pagamentoDentroRange = pagamentoDentroRange && conta.dataPagamento >= dataInicio;
+      }
+      
+      if (dataPagFim && conta.dataPagamento) {
+        const dataFim = new Date(dataPagFim + 'T12:00:00Z');
+        pagamentoDentroRange = pagamentoDentroRange && conta.dataPagamento <= dataFim;
+      }
+      
+      // Se não há data de pagamento e temos filtros de pagamento, 
+      // este item não deve aparecer nos resultados
+      if ((dataPagInicio || dataPagFim) && !conta.dataPagamento) {
+        pagamentoDentroRange = false;
+      }
 
       return textoBusca && statusOk && vencimentoDentroRange && pagamentoDentroRange;
     });
   }, [contas, searchTerm, statusFilter, dataVencInicio, dataVencFim, dataPagInicio, dataPagFim]);
-
-  function formatInputDate(date: Date | undefined) {
-    if (!date) return "";
-    return format(date, "yyyy-MM-dd");
-  }
 
   function handleLupaClick() {
     inputBuscaRef.current?.focus();
@@ -405,113 +437,144 @@ export default function ContasAPagarPage() {
       </div>
       <Card>
         <CardContent className="pt-6">
-          {/* Primeira linha: Busca + Status */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative col-span-1 min-w-[240px]">
-              <button
-                type="button"
-                className="absolute left-3 top-3 z-10 p-0 m-0 bg-transparent border-none cursor-pointer text-muted-foreground hover:text-blue-500"
-                style={{ lineHeight: 0 }}
-                onClick={handleLupaClick}
-                tabIndex={-1}
-                aria-label="Buscar"
-              >
-                <Search className="h-5 w-5" />
-              </button>
-              <Input
-                ref={inputBuscaRef}
-                placeholder="Buscar favorecido ou descrição"
-                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    inputBuscaRef.current?.blur();
-                  }
-                }}
-                autoComplete="off"
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="relative col-span-1 min-w-[240px]">
+                <button
+                  type="button"
+                  className="absolute left-3 top-3 z-10 p-0 m-0 bg-transparent border-none cursor-pointer text-muted-foreground hover:text-blue-500"
+                  style={{ lineHeight: 0 }}
+                  onClick={handleLupaClick}
+                  tabIndex={-1}
+                  aria-label="Buscar"
+                >
+                  <Search className="h-5 w-5" />
+                </button>
+                <Input
+                  ref={inputBuscaRef}
+                  placeholder="Buscar favorecido ou descrição"
+                  className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      inputBuscaRef.current?.blur();
+                    }
+                  }}
+                  autoComplete="off"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <div className="min-w-[180px]">
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v) => setStatusFilter(v as any)}
+                  >
+                    <SelectTrigger className="w-full bg-white dark:bg-gray-900">
+                      <Filter className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border border-gray-200">
+                      <SelectItem value="todas">Todos Status</SelectItem>
+                      <SelectItem value="em_aberto" className="text-blue-600">Em Aberto</SelectItem>
+                      <SelectItem value="pago" className="text-green-600">Pago</SelectItem>
+                      <SelectItem value="pago_em_atraso" className="text-red-600">Pago em Atraso</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="h-10"
+                  onClick={() => setIsFiltroAvancadoOpen(!isFiltroAvancadoOpen)}
+                >
+                  {isFiltroAvancadoOpen ? (
+                    <>Ocultar filtros <ChevronUp className="h-4 w-4 ml-1" /></>
+                  ) : (
+                    <>Busca avançada <ChevronDown className="h-4 w-4 ml-1" /></>
+                  )}
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={limparFiltros}
+                  className="text-gray-500 hover:text-gray-700 h-10 w-10"
+                  title="Limpar filtros"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            {isFiltroAvancadoOpen && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                  <div className="text-sm font-medium mb-2 text-gray-700">Data de Vencimento</div>
+                  <div className="flex flex-row gap-2">
+                    <div className="flex flex-col flex-1">
+                      <label className="text-xs font-medium text-gray-500">De</label>
+                      <Input
+                        type="date"
+                        className="bg-white"
+                        value={dataVencInicio}
+                        max={dataVencFim || undefined}
+                        onChange={e => setDataVencInicio(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-col flex-1">
+                      <label className="text-xs font-medium text-gray-500">Até</label>
+                      <Input
+                        type="date"
+                        className="bg-white"
+                        value={dataVencFim}
+                        min={dataVencInicio || undefined}
+                        onChange={e => setDataVencFim(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                  <div className="text-sm font-medium mb-2 text-gray-700">Data de Pagamento</div>
+                  <div className="flex flex-row gap-2">
+                    <div className="flex flex-col flex-1">
+                      <label className="text-xs font-medium text-gray-500">De</label>
+                      <Input
+                        type="date"
+                        className="bg-white"
+                        value={dataPagInicio}
+                        max={dataPagFim || undefined}
+                        onChange={e => setDataPagInicio(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-col flex-1">
+                      <label className="text-xs font-medium text-gray-500">Até</label>
+                      <Input
+                        type="date"
+                        className="bg-white"
+                        value={dataPagFim}
+                        min={dataPagInicio || undefined}
+                        onChange={e => setDataPagFim(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          
+            <div className="mt-6">
+              <ContasAPagarTable
+                contas={filteredContas}
+                onEdit={handleEdit}
+                onBaixar={handleBaixar}
+                onDelete={prepararExclusao}
+                onVisualizar={handleVisualizar}
+                onDesfazerBaixa={handleDesfazerBaixa}
               />
             </div>
-            <div className="col-span-1 min-w-[180px]">
-              <Select
-                value={statusFilter}
-                onValueChange={(v) => setStatusFilter(v as any)}
-              >
-                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200">
-                  <SelectItem value="todas">Todos Status</SelectItem>
-                  <SelectItem value="em_aberto" className="text-blue-600">Em Aberto</SelectItem>
-                  <SelectItem value="pago" className="text-green-600">Pago</SelectItem>
-                  <SelectItem value="pago_em_atraso" className="text-red-600">Pago em Atraso</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div /> {/* Espaço só para organizar em tela grande */}
-          </div>
-          {/* Linha única de filtros de datas, sempre abaixo da busca */}
-          <div className="mt-2 flex flex-col md:flex-row gap-2">
-            {/* Vencimento: de - até */}
-            <div className="flex flex-row gap-2 flex-1 min-w-[240px]">
-              <div className="flex flex-col flex-1">
-                <label className="text-xs font-medium">Venc. de</label>
-                <Input
-                  type="date"
-                  className="min-w-[120px] max-w-[140px]"
-                  value={dataVencInicio}
-                  max={dataVencFim || undefined}
-                  onChange={e => setDataVencInicio(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col flex-1">
-                <label className="text-xs font-medium">até</label>
-                <Input
-                  type="date"
-                  className="min-w-[120px] max-w-[140px]"
-                  value={dataVencFim}
-                  min={dataVencInicio || undefined}
-                  onChange={e => setDataVencFim(e.target.value)}
-                />
-              </div>
-            </div>
-            {/* Pagamento: de - até */}
-            <div className="flex flex-row gap-2 flex-1 min-w-[240px]">
-              <div className="flex flex-col flex-1">
-                <label className="text-xs font-medium">Pagto. de</label>
-                <Input
-                  type="date"
-                  className="min-w-[120px] max-w-[140px]"
-                  value={dataPagInicio}
-                  max={dataPagFim || undefined}
-                  onChange={e => setDataPagInicio(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col flex-1">
-                <label className="text-xs font-medium">até</label>
-                <Input
-                  type="date"
-                  className="min-w-[120px] max-w-[140px]"
-                  value={dataPagFim}
-                  min={dataPagInicio || undefined}
-                  onChange={e => setDataPagFim(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-          
-          {/* Separador para dar respiro visual */}
-          <div className="mb-4" />
-          <div className="mt-6">
-            <ContasAPagarTable
-              contas={filteredContas}
-              onEdit={handleEdit}
-              onBaixar={handleBaixar}
-              onDelete={prepararExclusao}
-              onVisualizar={handleVisualizar}
-              onDesfazerBaixa={handleDesfazerBaixa}
-            />
           </div>
         </CardContent>
       </Card>
