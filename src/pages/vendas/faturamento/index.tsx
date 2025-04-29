@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -56,12 +57,19 @@ function formatDateBR(date: Date | string | undefined) {
   return `${day}/${month}/${year}`;
 }
 
+// Função para obter o primeiro dia do mês atual
+function getPrimeiroDiaMes(): Date {
+  const hoje = new Date();
+  return new Date(hoje.getFullYear(), hoje.getMonth(), 1, 12, 0, 0);
+}
+
 export default function FaturamentoPage() {
   const { currentCompany } = useCompany();
   const [busca, setBusca] = useState("");
   const [tipo, setTipo] = useState("");
   const [favorecido, setFavorecido] = useState("");
-  const [dataInicial, setDataInicial] = useState<Date>();
+  // Inicializa com o primeiro dia do mês atual
+  const [dataInicial, setDataInicial] = useState<Date>(getPrimeiroDiaMes());
   const [dataFinal, setDataFinal] = useState<Date>();
   const [faturamentos, setFaturamentos] = useState<Orcamento[]>([]);
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
@@ -239,7 +247,7 @@ export default function FaturamentoPage() {
     setBusca("");
     setTipo("");
     setFavorecido("");
-    setDataInicial(undefined);
+    setDataInicial(getPrimeiroDiaMes()); // Reseta para o primeiro dia do mês atual
     setDataFinal(undefined);
     setStatusFilter("ativo");
   }
@@ -260,8 +268,13 @@ export default function FaturamentoPage() {
       : true;
     
     const favMatch = favorecido ? item.favorecido_id === favorecido : true;
-    const dataI_Match = dataInicial ? new Date(item.data) >= dataInicial : true;
-    const dataF_Match = dataFinal ? new Date(item.data) <= dataFinal : true;
+    
+    // Verifica a data baseada no tipo do item
+    const dataParaComparacao = item.tipo === 'venda' ? new Date(item.data_venda || '') : new Date(item.data);
+    
+    // Filtragem por datas
+    const dataI_Match = dataInicial ? dataParaComparacao >= dataInicial : true;
+    const dataF_Match = dataFinal ? dataParaComparacao <= dataFinal : true;
 
     return buscaMatch && tipoMatch && favMatch && dataI_Match && dataF_Match;
   });
