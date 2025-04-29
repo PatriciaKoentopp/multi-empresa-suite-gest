@@ -11,14 +11,11 @@ import {
 } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "../ui/chart";
 
-interface SalesData {
-  name: string;
-  faturado: number;
-  projetado: number;
-}
-
 interface SalesBarChartProps {
-  data: SalesData[];
+  data: {
+    name: string;
+    faturado: number;
+  }[];
   className?: string;
 }
 
@@ -30,11 +27,7 @@ export const SalesBarChart = ({ data, className }: SalesBarChartProps) => {
         config={{
           faturado: {
             label: "Faturado",
-            color: "#1E88E5",
-          },
-          projetado: {
-            label: "Projetado",
-            color: "#90CAF9",
+            color: "#4CAF50",
           },
         }}
       >
@@ -42,10 +35,10 @@ export const SalesBarChart = ({ data, className }: SalesBarChartProps) => {
           <BarChart
             data={data}
             margin={{
-              top: 20,
+              top: 10,
               right: 30,
-              left: 20,
-              bottom: 30,
+              left: 0,
+              bottom: 40,
             }}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -54,6 +47,7 @@ export const SalesBarChart = ({ data, className }: SalesBarChartProps) => {
               tickLine={false}
               axisLine={true}
               tick={{ fontSize: 12 }}
+              height={40}
             />
             <YAxis
               tickLine={false}
@@ -62,9 +56,11 @@ export const SalesBarChart = ({ data, className }: SalesBarChartProps) => {
               tickFormatter={(value) => `R$ ${value.toLocaleString()}`}
             />
             <Tooltip content={<ChartTooltipContent labelKey="name" />} />
-            <Legend verticalAlign="top" height={36} />
-            <Bar dataKey="faturado" name="Faturado" fill="var(--color-faturado)" barSize={20} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="projetado" name="Projetado" fill="var(--color-projetado)" barSize={20} radius={[4, 4, 0, 0]} />
+            <Bar
+              dataKey="faturado"
+              fill="var(--color-faturado)"
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </ChartContainer>
