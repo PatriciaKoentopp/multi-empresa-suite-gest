@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -449,17 +448,17 @@ export default function FaturamentoPage() {
         </Button>
       </div>
 
-      {/* Cards de resumo - agora em uma única linha */}
+      {/* Cards de resumo - agora sem títulos e com números alinhados à direita */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SalesCard
-          title="Orçamentos"
+          title=""
           value={totalOrcamentos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
           description={`${orcamentos.length} orçamento${orcamentos.length !== 1 ? 's' : ''}`}
           icon="sales"
           className="bg-white"
         />
         <SalesCard
-          title="Vendas"
+          title=""
           value={totalVendas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
           description={`${vendas.length} venda${vendas.length !== 1 ? 's' : ''}`}
           icon="money"
