@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, X } from "lucide-react";
+import { Search, X, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -34,7 +34,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
-import { Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "@/hooks/use-toast";
@@ -420,19 +420,15 @@ export default function FaturamentoPage() {
           </PopoverContent>
         </Popover>
 
-        <Button variant="outline" size="icon" className="ml-2" title="Filtrar">
-          <Filter className="w-4 h-4" />
-        </Button>
-
-        {/* Botão Limpar Filtros */}
+        {/* Botão Limpar Filtros - agora apenas com ícone */}
         <Button 
           variant="outline"
           onClick={limparFiltros}
-          className="ml-2 flex items-center gap-2"
+          size="icon"
+          className="ml-2"
           title="Limpar filtros"
         >
           <X className="w-4 h-4" />
-          <span className="hidden sm:inline">Limpar Filtros</span>
         </Button>
       </div>
 
