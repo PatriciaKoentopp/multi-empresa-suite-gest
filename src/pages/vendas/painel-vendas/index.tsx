@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SalesCard } from "@/components/vendas/SalesCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -190,7 +189,7 @@ const PainelVendasPage = () => {
           clientes_ativos: clientesAtivos
         });
 
-        // Buscar dados para o gráfico de barras (vendas mensais)
+        // Buscar dados para o gráfico de barras (vendas mensais) - REMOVIDO CAMPO PROJETADO
         const { data: monthlyData, error: monthlyError } = await supabase
           .from('orcamentos')
           .select(`
@@ -221,15 +220,14 @@ const PainelVendasPage = () => {
 
           return {
             name: format(new Date(currentYear, i), 'MMM', { locale: ptBR }),
-            faturado,
-            projetado: faturado * 1.1
+            faturado
           };
         });
 
         setBarChartData(monthlyChartData);
         console.log("Dados do gráfico de barras processados:", monthlyChartData);
 
-        // Buscar dados para gráficos trimestrais
+        // Buscar dados para gráficos trimestrais - REMOVIDO CAMPO PROJETADO
         // Define os intervalos para cada trimestre do ano atual
         const quarters = [
           { start: `${currentYear}-01-01`, end: `${currentYear}-03-31`, name: 'T1' },
@@ -260,15 +258,14 @@ const PainelVendasPage = () => {
 
           quarterlyData.push({
             name: quarter.name,
-            faturado,
-            projetado: faturado * 1.1
+            faturado
           });
         }
 
         setQuarterlyChartData(quarterlyData);
         console.log("Dados do gráfico trimestral processados:", quarterlyData);
 
-        // Buscar dados para gráficos anuais (últimos 4 anos)
+        // Buscar dados para gráficos anuais - REMOVIDO CAMPO PROJETADO
         const yearlyData = [];
         const currentYearNum = currentYear;
         
@@ -294,17 +291,9 @@ const PainelVendasPage = () => {
             return acc + orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
           }, 0) || 0;
 
-          // Cálculo da projeção: para anos passados, é igual ao faturado
-          // Para o ano atual, é o valor atual extrapolado para o ano inteiro
-          const projetado = year < currentYearNum ? 
-            faturado : 
-            // Extrapola o valor atual com base no mês corrente
-            Math.round((faturado / (new Date().getMonth() + 1)) * 12);
-
           yearlyData.push({
             name: year.toString(),
-            faturado,
-            projetado
+            faturado
           });
         }
 
