@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -234,6 +233,16 @@ export default function FaturamentoPage() {
     setShowToastConfirm(false);
   }
 
+  // Função para limpar todos os filtros
+  function limparFiltros() {
+    setBusca("");
+    setTipo("");
+    setFavorecido("");
+    setDataInicial(undefined);
+    setDataFinal(undefined);
+    setStatusFilter("ativo");
+  }
+
   // Filtros aplicados
   const itemsFiltrados = faturamentos.filter(item => {
     const buscaMatch = busca
@@ -405,6 +414,17 @@ export default function FaturamentoPage() {
 
         <Button variant="outline" size="icon" className="ml-2" title="Filtrar">
           <Filter className="w-4 h-4" />
+        </Button>
+
+        {/* Botão Limpar Filtros - NOVO */}
+        <Button 
+          variant="outline"
+          onClick={limparFiltros}
+          className="ml-2 flex items-center gap-2"
+          title="Limpar filtros"
+        >
+          <X className="w-4 h-4" />
+          <span className="hidden sm:inline">Limpar Filtros</span>
         </Button>
       </div>
 
