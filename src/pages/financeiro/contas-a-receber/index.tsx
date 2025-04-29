@@ -1,10 +1,9 @@
-
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, X } from "lucide-react";
+import { Search, Filter, X, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { ContasAReceberTable, ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
 import {
@@ -27,6 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function ContasAReceberPage() {
   const { currentCompany } = useCompany();
@@ -35,12 +35,12 @@ export default function ContasAReceberPage() {
 
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  // Alteração: Valor padrão agora é "em_aberto"
   const [statusFilter, setStatusFilter] = useState<"todas" | "recebido" | "recebido_em_atraso" | "em_aberto">("em_aberto");
   const [dataVencInicio, setDataVencInicio] = useState<string>("");
   const [dataVencFim, setDataVencFim] = useState<string>("");
   const [dataRecInicio, setDataRecInicio] = useState<string>("");
   const [dataRecFim, setDataRecFim] = useState<string>("");
+  const [isFiltroAvancadoOpen, setIsFiltroAvancadoOpen] = useState(false);
 
   const inputBuscaRef = useRef<HTMLInputElement>(null);
 
@@ -48,7 +48,7 @@ export default function ContasAReceberPage() {
   const [contaParaBaixar, setContaParaBaixar] = useState<ContaReceber | null>(null);
   const [modalBaixarAberto, setModalBaixarAberto] = useState(false);
 
-  // Novo estado para controlar o dialog de confirmação
+  // Estado para controlar o dialog de confirmação
   const [contaParaExcluir, setContaParaExcluir] = useState<string | null>(null);
 
   useEffect(() => {
@@ -371,7 +371,7 @@ export default function ContasAReceberPage() {
     }
   };
 
-  // Novo: função para limpar todos os filtros
+  // Função para limpar todos os filtros
   const limparFiltros = () => {
     setSearchTerm("");
     setStatusFilter("em_aberto");
@@ -464,7 +464,6 @@ export default function ContasAReceberPage() {
       </div>
       <Card>
         <CardContent className="pt-6">
-          {/* Layout modificado - removido o título Filtros e realinhado os componentes */}
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative col-span-1 min-w-[240px]">
@@ -512,76 +511,97 @@ export default function ContasAReceberPage() {
                   </Select>
                 </div>
                 
+                <Collapsible 
+                  open={isFiltroAvancadoOpen} 
+                  onOpenChange={setIsFiltroAvancadoOpen}
+                  className="flex"
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="h-10"
+                    >
+                      {isFiltroAvancadoOpen ? (
+                        <>Ocultar filtros <ChevronUp className="h-4 w-4 ml-1" /></>
+                      ) : (
+                        <>Busca avançada <ChevronDown className="h-4 w-4 ml-1" /></>
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                </Collapsible>
+                
                 <Button 
                   variant="ghost" 
-                  size="sm" 
+                  size="icon"
                   onClick={limparFiltros}
-                  className="flex items-center gap-1 text-gray-500 hover:text-gray-700 h-10"
+                  className="text-gray-500 hover:text-gray-700 h-10 w-10"
+                  title="Limpar filtros"
                 >
                   <X className="h-4 w-4" />
-                  Limpar filtros
                 </Button>
               </div>
               
               <div />
             </div>
             
-            {/* Redesenhado o layout dos campos de data */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Data de Vencimento */}
-              <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
-                <div className="text-sm font-medium mb-2 text-gray-700">Data de Vencimento</div>
-                <div className="flex flex-row gap-2">
-                  <div className="flex flex-col flex-1">
-                    <label className="text-xs font-medium text-gray-500">De</label>
-                    <Input
-                      type="date"
-                      className="bg-white"
-                      value={dataVencInicio}
-                      max={dataVencFim || undefined}
-                      onChange={e => setDataVencInicio(e.target.value)}
-                    />
+            <CollapsibleContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                {/* Data de Vencimento */}
+                <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                  <div className="text-sm font-medium mb-2 text-gray-700">Data de Vencimento</div>
+                  <div className="flex flex-row gap-2">
+                    <div className="flex flex-col flex-1">
+                      <label className="text-xs font-medium text-gray-500">De</label>
+                      <Input
+                        type="date"
+                        className="bg-white"
+                        value={dataVencInicio}
+                        max={dataVencFim || undefined}
+                        onChange={e => setDataVencInicio(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-col flex-1">
+                      <label className="text-xs font-medium text-gray-500">Até</label>
+                      <Input
+                        type="date"
+                        className="bg-white"
+                        value={dataVencFim}
+                        min={dataVencInicio || undefined}
+                        onChange={e => setDataVencFim(e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <div className="flex flex-col flex-1">
-                    <label className="text-xs font-medium text-gray-500">Até</label>
-                    <Input
-                      type="date"
-                      className="bg-white"
-                      value={dataVencFim}
-                      min={dataVencInicio || undefined}
-                      onChange={e => setDataVencFim(e.target.value)}
-                    />
+                </div>
+                
+                {/* Data de Recebimento */}
+                <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                  <div className="text-sm font-medium mb-2 text-gray-700">Data de Recebimento</div>
+                  <div className="flex flex-row gap-2">
+                    <div className="flex flex-col flex-1">
+                      <label className="text-xs font-medium text-gray-500">De</label>
+                      <Input
+                        type="date"
+                        className="bg-white"
+                        value={dataRecInicio}
+                        max={dataRecFim || undefined}
+                        onChange={e => setDataRecInicio(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-col flex-1">
+                      <label className="text-xs font-medium text-gray-500">Até</label>
+                      <Input
+                        type="date"
+                        className="bg-white"
+                        value={dataRecFim}
+                        min={dataRecInicio || undefined}
+                        onChange={e => setDataRecFim(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-              
-              {/* Data de Recebimento */}
-              <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
-                <div className="text-sm font-medium mb-2 text-gray-700">Data de Recebimento</div>
-                <div className="flex flex-row gap-2">
-                  <div className="flex flex-col flex-1">
-                    <label className="text-xs font-medium text-gray-500">De</label>
-                    <Input
-                      type="date"
-                      className="bg-white"
-                      value={dataRecInicio}
-                      max={dataRecFim || undefined}
-                      onChange={e => setDataRecInicio(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-col flex-1">
-                    <label className="text-xs font-medium text-gray-500">Até</label>
-                    <Input
-                      type="date"
-                      className="bg-white"
-                      value={dataRecFim}
-                      min={dataRecInicio || undefined}
-                      onChange={e => setDataRecFim(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            </CollapsibleContent>
           </div>
           
           <div className="mt-6">
