@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, Search, Filter, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Calendar, Search, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ContaPagar } from "@/components/contas-a-pagar/contas-a-pagar-table";
@@ -29,7 +29,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useMovimentacaoDados } from "@/hooks/useMovimentacaoDados";
 import { formatDate } from "@/lib/utils";
-import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
+import { DateInput } from "@/components/movimentacao/DateInput";
 
 export default function MovimentacaoPage() {
   const [movimentacoes, setMovimentacoes] = useState<ContaPagar[]>([]);
@@ -39,12 +39,10 @@ export default function MovimentacaoPage() {
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [tipoTituloId, setTipoTituloId] = useState<string>("todos");
-  const [dataVencInicio, setDataVencInicio] = useState<string>("");
-  const [dataVencFim, setDataVencFim] = useState<string>("");
-  const [dataPagInicio, setDataPagInicio] = useState<string>("");
-  const [dataPagFim, setDataPagFim] = useState<string>("");
-  const [isFiltroAvancadoOpen, setIsFiltroAvancadoOpen] = useState(false);
-
+  const [periodo, setPeriodo] = useState<"mes_atual" | "mes_anterior" | "personalizado">("mes_atual");
+  const [dataInicial, setDataInicial] = useState<Date | undefined>();
+  const [dataFinal, setDataFinal] = useState<Date | undefined>();
+  
   // Estado para o modal de confirmação de exclusão
   const [movimentacaoParaExcluir, setMovimentacaoParaExcluir] = useState<string | null>(null);
   const [confirmarExclusaoAberto, setConfirmarExclusaoAberto] = useState(false);
@@ -52,10 +50,23 @@ export default function MovimentacaoPage() {
 
   const inputBuscaRef = useRef<HTMLInputElement>(null);
 
-  function formatInputDate(date: Date | undefined) {
-    if (!date) return "";
-    return format(date, "yyyy-MM-dd");
-  }
+  // Definir datas iniciais conforme o período selecionado
+  useEffect(() => {
+    const hoje = new Date();
+    if (periodo === "mes_atual") {
+      const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+      setDataInicial(inicio);
+      setDataFinal(fim);
+    } else if (periodo === "mes_anterior") {
+      const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+      const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+      setDataInicial(inicio);
+      setDataFinal(fim);
+    } else if (periodo === "personalizado") {
+      // Mantém as datas atuais quando for personalizado
+    }
+  }, [periodo]);
 
   // Adapta a função handleEdit para passar a movimentação completa
   const handleEdit = async (movimentacao: ContaPagar) => {
@@ -73,7 +84,6 @@ export default function MovimentacaoPage() {
       if (error) throw error;
       
       if (movimentacaoCompleta) {
-        // Importante: Não precisamos ajustar as datas aqui, pois vamos usar formatDate no componente
         navigate("/financeiro/incluir-movimentacao", {
           state: { movimentacao: movimentacaoCompleta }
         });
@@ -100,7 +110,6 @@ export default function MovimentacaoPage() {
       if (error) throw error;
       
       if (movimentacaoCompleta) {
-        // Importante: Não precisamos ajustar as datas aqui, pois vamos usar formatDate no componente
         navigate("/financeiro/incluir-movimentacao", {
           state: { 
             movimentacao: movimentacaoCompleta,
@@ -140,7 +149,8 @@ export default function MovimentacaoPage() {
             valor: Number(mov.valor),
             numeroParcela: mov.numero_documento,
             tipo_operacao: mov.tipo_operacao,
-            tipo_titulo_id: mov.tipo_titulo_id
+            tipo_titulo_id: mov.tipo_titulo_id,
+            dataLancamento: mov.data_lancamento ? new Date(mov.data_lancamento + "T12:00:00Z") : undefined,
           }));
 
           setMovimentacoes(movimentacoesFormatadas);
@@ -158,53 +168,47 @@ export default function MovimentacaoPage() {
   const limparFiltros = () => {
     setSearchTerm("");
     setTipoTituloId("todos");
-    setDataVencInicio("");
-    setDataVencFim("");
-    setDataPagInicio("");
-    setDataPagFim("");
-    setIsFiltroAvancadoOpen(false);
+    setPeriodo("mes_atual");
+    
+    // Resetar para o mês atual
+    const hoje = new Date();
+    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    setDataInicial(inicio);
+    setDataFinal(fim);
   };
 
-  // Filtro com o novo campo de tipo de título
+  // Filtro com o novo campo de tipo de título e filtro de datas
   const filteredMovimentacoes = useMemo(() => {
     return movimentacoes.filter((movimentacao) => {
-      const textoBusca = (movimentacao.favorecido + movimentacao.descricao)
+      const textoBusca = (movimentacao.favorecido + " " + (movimentacao.descricao || ""))
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const tipoTituloOk = tipoTituloId === "todos" || movimentacao.tipo_titulo_id === tipoTituloId;
       
-      // Aplicar filtros de data sem problemas de timezone
-      let vencimentoDentroRange = true;
-      if (dataVencInicio && movimentacao.dataVencimento) {
-        const dataInicio = new Date(dataVencInicio + 'T12:00:00Z');
-        vencimentoDentroRange = vencimentoDentroRange && movimentacao.dataVencimento >= dataInicio;
+      // Aplicar filtro de data de lançamento
+      let dataLancamentoOk = true;
+      if (dataInicial && movimentacao.dataLancamento) {
+        // Comparar apenas as datas, ignorando as horas
+        const dataInicioComparacao = new Date(dataInicial);
+        dataInicioComparacao.setHours(0, 0, 0, 0);
+        const dataMovComparacao = new Date(movimentacao.dataLancamento);
+        dataMovComparacao.setHours(0, 0, 0, 0);
+        dataLancamentoOk = dataLancamentoOk && dataMovComparacao >= dataInicioComparacao;
       }
       
-      if (dataVencFim && movimentacao.dataVencimento) {
-        const dataFim = new Date(dataVencFim + 'T12:00:00Z');
-        vencimentoDentroRange = vencimentoDentroRange && movimentacao.dataVencimento <= dataFim;
-      }
-      
-      let pagamentoDentroRange = true;
-      if (dataPagInicio && movimentacao.dataPagamento) {
-        const dataInicio = new Date(dataPagInicio + 'T12:00:00Z');
-        pagamentoDentroRange = pagamentoDentroRange && movimentacao.dataPagamento >= dataInicio;
-      }
-      
-      if (dataPagFim && movimentacao.dataPagamento) {
-        const dataFim = new Date(dataPagFim + 'T12:00:00Z');
-        pagamentoDentroRange = pagamentoDentroRange && movimentacao.dataPagamento <= dataFim;
-      }
-      
-      // Se não há data de pagamento e temos filtros de pagamento, 
-      // este item não deve aparecer nos resultados
-      if ((dataPagInicio || dataPagFim) && !movimentacao.dataPagamento) {
-        pagamentoDentroRange = false;
+      if (dataFinal && movimentacao.dataLancamento) {
+        // Comparar apenas as datas, ignorando as horas
+        const dataFimComparacao = new Date(dataFinal);
+        dataFimComparacao.setHours(23, 59, 59, 999); // Fim do dia
+        const dataMovComparacao = new Date(movimentacao.dataLancamento);
+        dataMovComparacao.setHours(0, 0, 0, 0);
+        dataLancamentoOk = dataLancamentoOk && dataMovComparacao <= dataFimComparacao;
       }
 
-      return textoBusca && tipoTituloOk && vencimentoDentroRange && pagamentoDentroRange;
+      return textoBusca && tipoTituloOk && dataLancamentoOk;
     });
-  }, [movimentacoes, searchTerm, tipoTituloId, dataVencInicio, dataVencFim, dataPagInicio, dataPagFim]);
+  }, [movimentacoes, searchTerm, tipoTituloId, dataInicial, dataFinal]);
 
   // Prepara a exclusão abrindo o modal de confirmação
   const prepararExclusao = (id: string) => {
@@ -299,8 +303,10 @@ export default function MovimentacaoPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="relative col-span-1 min-w-[240px]">
+            {/* Primeira linha de filtros */}
+            <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-end">
+              {/* Busca por texto */}
+              <div className="md:col-span-3 relative">
                 <button
                   type="button"
                   className="absolute left-3 top-3 z-10 p-0 m-0 bg-transparent border-none cursor-pointer text-muted-foreground hover:text-blue-500"
@@ -326,107 +332,81 @@ export default function MovimentacaoPage() {
                 />
               </div>
               
-              <div className="flex items-center gap-2">
-                <div className="min-w-[180px]">
-                  <Select
-                    value={tipoTituloId}
-                    onValueChange={setTipoTituloId}
-                  >
-                    <SelectTrigger className="w-full bg-white dark:bg-gray-900">
-                      <Filter className="mr-2 h-4 w-4" />
-                      <SelectValue placeholder="Tipo de Título" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border border-gray-200">
-                      <SelectItem value="todos">Todos os Tipos</SelectItem>
-                      {tiposTitulos.map((tipo) => (
-                        <SelectItem key={tipo.id} value={tipo.id}>
-                          {tipo.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="h-10"
-                  onClick={() => setIsFiltroAvancadoOpen(!isFiltroAvancadoOpen)}
+              {/* Filtro por tipo de título */}
+              <div className="md:col-span-2">
+                <Select
+                  value={tipoTituloId}
+                  onValueChange={setTipoTituloId}
                 >
-                  {isFiltroAvancadoOpen ? (
-                    <>Ocultar filtros <ChevronUp className="h-4 w-4 ml-1" /></>
-                  ) : (
-                    <>Busca avançada <ChevronDown className="h-4 w-4 ml-1" /></>
-                  )}
-                </Button>
-                
+                  <SelectTrigger className="w-full bg-white dark:bg-gray-900">
+                    <Filter className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Tipo de Título" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-200">
+                    <SelectItem value="todos">Todos os Tipos</SelectItem>
+                    {tiposTitulos.map((tipo) => (
+                      <SelectItem key={tipo.id} value={tipo.id}>
+                        {tipo.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Seletor de período */}
+              <div className="md:col-span-2">
+                <Select 
+                  value={periodo} 
+                  onValueChange={(value) => setPeriodo(value as "mes_atual" | "mes_anterior" | "personalizado")}
+                >
+                  <SelectTrigger className="w-full bg-white">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Selecionar Período" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border">
+                    <SelectItem value="mes_atual">Mês Atual</SelectItem>
+                    <SelectItem value="mes_anterior">Mês Anterior</SelectItem>
+                    <SelectItem value="personalizado">Selecionar Período</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Botão para limpar filtros */}
+              <div className="md:col-span-1 flex justify-center">
                 <Button 
                   variant="ghost" 
                   size="icon"
                   onClick={limparFiltros}
-                  className="text-gray-500 hover:text-gray-700 h-10 w-10"
+                  className="text-gray-500 hover:text-gray-700"
                   title="Limpar filtros"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>
-            
-            {isFiltroAvancadoOpen && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
-                  <div className="text-sm font-medium mb-2 text-gray-700">Data de Vencimento</div>
-                  <div className="flex flex-row gap-2">
-                    <div className="flex flex-col flex-1">
-                      <label className="text-xs font-medium text-gray-500">De</label>
-                      <Input
-                        type="date"
-                        className="bg-white"
-                        value={dataVencInicio}
-                        max={dataVencFim || undefined}
-                        onChange={e => setDataVencInicio(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex flex-col flex-1">
-                      <label className="text-xs font-medium text-gray-500">Até</label>
-                      <Input
-                        type="date"
-                        className="bg-white"
-                        value={dataVencFim}
-                        min={dataVencInicio || undefined}
-                        onChange={e => setDataVencFim(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
-                  <div className="text-sm font-medium mb-2 text-gray-700">Data de Pagamento</div>
-                  <div className="flex flex-row gap-2">
-                    <div className="flex flex-col flex-1">
-                      <label className="text-xs font-medium text-gray-500">De</label>
-                      <Input
-                        type="date"
-                        className="bg-white"
-                        value={dataPagInicio}
-                        max={dataPagFim || undefined}
-                        onChange={e => setDataPagInicio(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex flex-col flex-1">
-                      <label className="text-xs font-medium text-gray-500">Até</label>
-                      <Input
-                        type="date"
-                        className="bg-white"
-                        value={dataPagFim}
-                        min={dataPagInicio || undefined}
-                        onChange={e => setDataPagFim(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
+
+            {/* Segunda linha com filtros de data */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Data Inicial */}
+              <div>
+                <DateInput 
+                  label="Data Inicial"
+                  value={dataInicial}
+                  onChange={setDataInicial}
+                  disabled={periodo !== "personalizado"}
+                />
               </div>
-            )}
+              
+              {/* Data Final */}
+              <div>
+                <DateInput 
+                  label="Data Final"
+                  value={dataFinal}
+                  onChange={setDataFinal}
+                  disabled={periodo !== "personalizado"}
+                />
+              </div>
+            </div>
             
             <div className="mt-6">
               <MovimentacaoTable

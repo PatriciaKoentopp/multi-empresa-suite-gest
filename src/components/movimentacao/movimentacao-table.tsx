@@ -83,7 +83,7 @@ export function MovimentacaoTable({
           ) : (
             movimentacoes.map((movimentacao) => (
               <TableRow key={movimentacao.id}>
-                <TableCell>{formatDate(movimentacao.dataVencimento)}</TableCell>
+                <TableCell>{formatDate(movimentacao.dataLancamento || movimentacao.dataVencimento)}</TableCell>
                 <TableCell>
                   {movimentacao.numeroParcela ? (
                     <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
