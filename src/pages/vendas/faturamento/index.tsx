@@ -254,9 +254,9 @@ export default function FaturamentoPage() {
         )
       : true;
     
-    // Corrige o filtro de tipo, convertendo para minúsculo e comparando corretamente
+    // Corrige o filtro de tipo, mapeando "Orçamento" para "orcamento" e "Venda" para "venda"
     const tipoMatch = tipo && tipo !== "Todos" 
-      ? item.tipo === tipo.toLowerCase() 
+      ? (tipo === "Orçamento" && item.tipo === "orcamento") || (tipo === "Venda" && item.tipo === "venda")
       : true;
     
     const favMatch = favorecido ? item.favorecido_id === favorecido : true;
