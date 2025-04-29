@@ -436,7 +436,7 @@ export default function FaturamentoPage() {
         </Button>
       </div>
 
-      {/* Cards de resumo */}
+      {/* Cards de resumo - agora em uma única linha */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SalesCard
           title="Orçamentos"
