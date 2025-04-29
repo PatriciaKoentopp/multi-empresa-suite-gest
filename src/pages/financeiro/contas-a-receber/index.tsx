@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -463,21 +464,8 @@ export default function ContasAReceberPage() {
       </div>
       <Card>
         <CardContent className="pt-6">
-          {/* Melhorei a UI do cabeçalho dos filtros */}
+          {/* Layout modificado - removido o título Filtros e realinhado os componentes */}
           <div className="space-y-4">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 border-b pb-4">
-              <h3 className="text-lg font-medium">Filtros</h3>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={limparFiltros}
-                className="flex items-center gap-1 text-gray-500 hover:text-gray-700"
-              >
-                <X className="h-4 w-4" />
-                Limpar filtros
-              </Button>
-            </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative col-span-1 min-w-[240px]">
                 <button
@@ -504,23 +492,37 @@ export default function ContasAReceberPage() {
                   autoComplete="off"
                 />
               </div>
-              <div className="col-span-1 min-w-[180px]">
-                <Select
-                  value={statusFilter}
-                  onValueChange={(v) => setStatusFilter(v as any)}
+              
+              <div className="flex items-center gap-2">
+                <div className="min-w-[180px]">
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v) => setStatusFilter(v as any)}
+                  >
+                    <SelectTrigger className="w-full bg-white dark:bg-gray-900">
+                      <Filter className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border border-gray-200">
+                      <SelectItem value="todas">Todos Status</SelectItem>
+                      <SelectItem value="em_aberto" className="text-blue-600">Em Aberto</SelectItem>
+                      <SelectItem value="recebido" className="text-green-600">Recebido</SelectItem>
+                      <SelectItem value="recebido_em_atraso" className="text-red-600">Recebido em Atraso</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={limparFiltros}
+                  className="flex items-center gap-1 text-gray-500 hover:text-gray-700 h-10"
                 >
-                  <SelectTrigger className="w-full bg-white dark:bg-gray-900">
-                    <Filter className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-200">
-                    <SelectItem value="todas">Todos Status</SelectItem>
-                    <SelectItem value="em_aberto" className="text-blue-600">Em Aberto</SelectItem>
-                    <SelectItem value="recebido" className="text-green-600">Recebido</SelectItem>
-                    <SelectItem value="recebido_em_atraso" className="text-red-600">Recebido em Atraso</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <X className="h-4 w-4" />
+                  Limpar filtros
+                </Button>
               </div>
+              
               <div />
             </div>
             
