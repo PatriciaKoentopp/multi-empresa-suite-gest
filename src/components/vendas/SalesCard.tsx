@@ -23,9 +23,9 @@ export const SalesCard = ({
   className,
 }: SalesCardProps) => {
   return (
-    <Card className={cn("overflow-hidden", className)}>
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-2">
+    <Card className={cn("overflow-hidden h-24", className)}>
+      <CardContent className="p-5 h-full flex flex-col justify-between">
+        <div className="flex items-center justify-between">
           <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-950">
             {icon === "money" && (
               <DollarSign className="h-5 w-5 text-blue-500 dark:text-blue-400" />
@@ -51,9 +51,11 @@ export const SalesCard = ({
           )}
         </div>
         
-        <div className="space-y-1.5">
-          <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-          <p className="text-2xl font-bold">{value}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+            <p className="text-xl font-bold">{value}</p>
+          </div>
           {description && (
             <p className="text-xs text-muted-foreground">{description}</p>
           )}
