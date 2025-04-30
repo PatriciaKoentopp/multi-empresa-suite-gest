@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { PlusCircle, Search, Filter } from "lucide-react";
 import { FavorecidosForm } from "@/components/favorecidos/favorecidos-form";
 import { FavorecidosTable } from "@/components/favorecidos/favorecidos-table";
+import { FavorecidosCountCard } from "@/components/favorecidos/favorecidos-count-card";
 import {
   Card,
   CardContent,
@@ -139,7 +140,16 @@ export default function FavorecidosPage() {
         }
   
         if (data) {
-          setFavorecidos(data);
+          const favorecidosFormatados: Favorecido[] = data.map(favorecido => ({
+            ...favorecido,
+            created_at: new Date(favorecido.created_at),
+            updated_at: new Date(favorecido.updated_at),
+            data_aniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
+            tipo: favorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor",
+            tipo_documento: favorecido.tipo_documento as "cpf" | "cnpj",
+            status: favorecido.status as "ativo" | "inativo"
+          }));
+          setFavorecidos(favorecidosFormatados);
         }
         setIsLoading(false);
       } catch (error) {
@@ -228,7 +238,18 @@ export default function FavorecidosPage() {
 
         // Atualizar o estado local
         setFavorecidos(prev => 
-          prev.map(f => f.id === editingFavorecido.id ? {...f, ...favorecidoData} : f)
+          prev.map(f => {
+            if (f.id === editingFavorecido.id) {
+              return {
+                ...f,
+                ...favorecidoData,
+                data_aniversario: data.data_aniversario,
+                created_at: f.created_at,
+                updated_at: new Date()
+              };
+            }
+            return f;
+          })
         );
         toast.success("Favorecido atualizado com sucesso!");
       } else {
@@ -246,7 +267,16 @@ export default function FavorecidosPage() {
         }
 
         if (novoFavorecido) {
-          setFavorecidos(prev => [...prev, novoFavorecido]);
+          const novoFavorecidoFormatado = {
+            ...novoFavorecido,
+            created_at: new Date(novoFavorecido.created_at),
+            updated_at: new Date(novoFavorecido.updated_at),
+            data_aniversario: novoFavorecido.data_aniversario ? new Date(novoFavorecido.data_aniversario) : undefined,
+            tipo: novoFavorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor",
+            tipo_documento: novoFavorecido.tipo_documento as "cpf" | "cnpj",
+            status: novoFavorecido.status as "ativo" | "inativo"
+          };
+          setFavorecidos(prev => [...prev, novoFavorecidoFormatado]);
           toast.success("Favorecido criado com sucesso!");
         }
       }
@@ -309,8 +339,13 @@ export default function FavorecidosPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-2xl font-bold">Favorecidos</h1>
+        
+        <div className="md:flex-1 max-w-xs">
+          <FavorecidosCountCard count={filteredFavorecidos.length} total={favorecidos.length} />
+        </div>
+        
         <Button 
           onClick={() => handleOpenDialog()}
           variant="blue"
