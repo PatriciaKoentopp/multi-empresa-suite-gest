@@ -275,9 +275,7 @@ export function Dashboard() {
               <CalendarX className="h-5 w-5 text-red-500" /> 
               Parcelas em Atraso
             </CardTitle>
-            <CardDescription>
-              Títulos com vencimento passado
-            </CardDescription>
+            
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
