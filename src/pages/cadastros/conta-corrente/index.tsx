@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { ContaCorrente } from "@/types/conta-corrente";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
+import { PlanoConta } from "@/types/plano-contas";
 
 export default function ContaCorrentePage() {
   const [contas, setContas] = useState<ContaCorrente[]>([]);
@@ -42,6 +44,7 @@ export default function ContaCorrentePage() {
   const [editingConta, setEditingConta] = useState<ContaCorrente | undefined>(undefined);
   const [viewingConta, setViewingConta] = useState<ContaCorrente | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  const [contasContabeis, setContasContabeis] = useState<PlanoConta[]>([]);
 
   // Usar o contexto da empresa
   const { currentCompany } = useCompany();
@@ -50,34 +53,6 @@ export default function ContaCorrentePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
   const [bancoFilter, setBancoFilter] = useState<string>("todos");
-
-  // Mock data para contas contábeis
-  const mockContasContabeis = [
-    {
-      id: "1",
-      codigo: "1.1.01",
-      descricao: "Banco do Brasil - Conta Corrente",
-      tipo: "ativo",
-      considerarDRE: false,
-      status: "ativo"
-    },
-    {
-      id: "2",
-      codigo: "1.1.02",
-      descricao: "Caixa Econômica - Conta Corrente",
-      tipo: "ativo",
-      considerarDRE: false,
-      status: "ativo"
-    },
-    {
-      id: "3",
-      codigo: "1.1.03",
-      descricao: "Bradesco - Conta Corrente",
-      tipo: "ativo",
-      considerarDRE: false,
-      status: "ativo"
-    }
-  ];
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingContaId, setDeletingContaId] = useState<string | null>(null);
@@ -124,8 +99,32 @@ export default function ContaCorrentePage() {
     }
   };
 
+  // Buscar contas contábeis
+  const fetchContasContabeis = async () => {
+    try {
+      if (!currentCompany?.id) return;
+      
+      const { data, error } = await supabase
+        .from('plano_contas')
+        .select('*')
+        .eq('empresa_id', currentCompany.id)
+        .eq('status', 'ativo')
+        .eq('tipo', 'ativo');
+        
+      if (error) {
+        throw error;
+      }
+      
+      setContasContabeis(data as PlanoConta[]);
+    } catch (error) {
+      console.error('Erro ao buscar contas contábeis:', error);
+      toast.error('Erro ao carregar contas contábeis');
+    }
+  };
+
   useEffect(() => {
     fetchContasCorrentes();
+    fetchContasContabeis();
   }, [currentCompany?.id]);
 
   const bancos = useMemo(() => {
@@ -331,7 +330,7 @@ export default function ContaCorrentePage() {
           <div className="mt-6">
             <ContaCorrenteTable
               contas={filteredContas}
-              contasContabeis={mockContasContabeis}
+              contasContabeis={contasContabeis}
               onView={(conta) => handleOpenDialog(conta, true)}
               onEdit={handleOpenDialog}
               onDelete={handleDelete}
@@ -354,7 +353,7 @@ export default function ContaCorrentePage() {
           <ContaCorrenteForm
             onSubmit={handleSubmit}
             onCancel={handleCloseDialog}
-            contasContabeis={mockContasContabeis}
+            contasContabeis={contasContabeis}
             initialData={viewingConta || editingConta}
           />
         </DialogContent>
