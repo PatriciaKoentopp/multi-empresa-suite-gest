@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,12 @@ export function ContasAReceberTable({
 
   const totalValor = contas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
 
-  function getStatusBadge(status: ContaReceber["status"]) {
+  function getStatusBadge(status: ContaReceber["status"], dataVencimento: Date) {
+    // Verificar se está vencido (data de vencimento menor que a data atual)
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0); // Resetar horas para comparação apenas de data
+    const estaVencido = dataVencimento < hoje;
+
     switch (status) {
       case "recebido":
         return (
@@ -70,11 +76,19 @@ export function ContasAReceberTable({
           </span>
         );
       case "em_aberto":
-        return (
-          <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
-            Em Aberto
-          </span>
-        );
+        if (estaVencido) {
+          return (
+            <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
+              Em Aberto
+            </span>
+          );
+        } else {
+          return (
+            <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+              Em Aberto
+            </span>
+          );
+        }
       default:
         return status;
     }
@@ -111,7 +125,7 @@ export function ContasAReceberTable({
                 <TableCell>{conta.descricao}</TableCell>
                 <TableCell className="text-right">{formatCurrency(conta.valor)}</TableCell>
                 <TableCell>
-                  {getStatusBadge(conta.status)}
+                  {getStatusBadge(conta.status, conta.dataVencimento)}
                 </TableCell>
                 <TableCell className="text-center">{conta.numeroParcela}</TableCell>
                 <TableCell className="text-center">
