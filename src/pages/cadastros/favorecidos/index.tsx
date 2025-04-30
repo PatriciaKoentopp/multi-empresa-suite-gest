@@ -188,30 +188,42 @@ export default function FavorecidosPage() {
   }, [currentCompany]);
 
   const handleOpenDialog = (favorecido?: Favorecido, isViewing = false) => {
-    if (isViewing) {
-      // Ao visualizar, precisamos formatar o endereço corretamente
-      const favorecidoFormatado: Favorecido = {
-        ...favorecido,
-        tipo_documento: favorecido?.tipoDocumento as "cpf" | "cnpj",
-        grupo_id: favorecido?.grupoId,
-        profissao_id: favorecido?.profissaoId,
-        nome_fantasia: favorecido?.nomeFantasia || "",
-        data_aniversario: favorecido?.dataAniversario ? new Date(favorecido.dataAniversario) : null,
-        endereco: {
-          cep: favorecido?.cep || "",
-          logradouro: favorecido?.logradouro || "",
-          numero: favorecido?.numero || "",
-          complemento: favorecido?.complemento || "",
-          bairro: favorecido?.bairro || "",
-          cidade: favorecido?.cidade || "",
-          estado: favorecido?.estado || "",
-          pais: favorecido?.pais || "Brasil",
-        },
-      };
-      setViewingFavorecido(favorecidoFormatado);
-    } else {
-      setEditingFavorecido(favorecido);
+    if (!favorecido) {
+      setEditingFavorecido(undefined);
+      setViewingFavorecido(undefined);
+      setIsDialogOpen(true);
+      return;
     }
+
+    // Formatar o favorecido antes de passá-lo para o formulário
+    const favorecidoFormatado: Favorecido = {
+      ...favorecido,
+      tipoDocumento: favorecido.tipoDocumento || favorecido.tipo_documento as "cpf" | "cnpj",
+      grupoId: favorecido.grupoId || favorecido.grupo_id,
+      profissaoId: favorecido.profissaoId || favorecido.profissao_id,
+      nomeFantasia: favorecido.nomeFantasia || favorecido.nome_fantasia || "",
+      dataAniversario: favorecido.dataAniversario || (favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined),
+      // Garantir que o objeto endereco está corretamente formatado
+      endereco: {
+        cep: favorecido.endereco?.cep || favorecido.cep || "",
+        logradouro: favorecido.endereco?.logradouro || favorecido.logradouro || "",
+        numero: favorecido.endereco?.numero || favorecido.numero || "",
+        complemento: favorecido.endereco?.complemento || favorecido.complemento || "",
+        bairro: favorecido.endereco?.bairro || favorecido.bairro || "",
+        cidade: favorecido.endereco?.cidade || favorecido.cidade || "",
+        estado: favorecido.endereco?.estado || favorecido.estado || "",
+        pais: favorecido.endereco?.pais || favorecido.pais || "Brasil",
+      }
+    };
+
+    if (isViewing) {
+      setViewingFavorecido(favorecidoFormatado);
+      setEditingFavorecido(undefined);
+    } else {
+      setEditingFavorecido(favorecidoFormatado);
+      setViewingFavorecido(undefined);
+    }
+    
     setIsDialogOpen(true);
   };
 
