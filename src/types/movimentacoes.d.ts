@@ -43,5 +43,6 @@ declare module "@/components/contas-a-pagar/contas-a-pagar-table" {
     tipo_operacao?: 'pagar' | 'receber' | 'transferencia';
     tipo_titulo_id?: string;
     forma_pagamento?: string;
+    numeroTitulo?: string;
   }
 }

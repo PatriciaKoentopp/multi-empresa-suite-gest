@@ -74,7 +74,7 @@ export function MovimentacaoTable({
         <TableHeader>
           <TableRow>
             <TableHead>Data de Lançamento</TableHead>
-            <TableHead>Título</TableHead>
+            <TableHead>Título/Parcela</TableHead>
             <TableHead>Favorecido</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead>Tipo</TableHead>
@@ -94,9 +94,9 @@ export function MovimentacaoTable({
               <TableRow key={movimentacao.id}>
                 <TableCell>{formatDate(movimentacao.dataPagamento || movimentacao.dataVencimento)}</TableCell>
                 <TableCell>
-                  {movimentacao.numeroParcela ? (
+                  {(movimentacao.numeroTitulo || movimentacao.numeroParcela) ? (
                     <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
-                      {movimentacao.numeroParcela}
+                      {`${movimentacao.numeroTitulo || '-'}/${movimentacao.numeroParcela}`}
                     </span>
                   ) : (
                     "-"

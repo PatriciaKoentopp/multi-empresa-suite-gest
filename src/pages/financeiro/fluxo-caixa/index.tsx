@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -118,6 +119,7 @@ export default function FluxoCaixaPage() {
   const queryClient = useQueryClient();
   const [favorecidosCache, setFavorecidosCache] = useState<Record<string, any>>({});
   const [contaCorrenteSelecionada, setContaCorrenteSelecionada] = useState<any>(null);
+  const [documentosCache, setDocumentosCache] = useState<Record<string, any>>({});
 
   // Buscar contas correntes
   const { data: contasCorrentes = [] } = useQuery({
@@ -163,7 +165,9 @@ export default function FluxoCaixaPage() {
           *,
           movimentacoes (
             descricao,
-            favorecido_id
+            favorecido_id,
+            numero_documento,
+            numero_parcelas
           ),
           movimentacoes_parcelas (
             numero
@@ -198,7 +202,9 @@ export default function FluxoCaixaPage() {
           *,
           movimentacoes (
             descricao,
-            favorecido_id
+            favorecido_id,
+            numero_documento,
+            numero_parcelas
           ),
           movimentacoes_parcelas (
             numero
@@ -244,6 +250,57 @@ export default function FluxoCaixaPage() {
           setFavorecidosCache(favMap);
         }
       }
+      
+      // Coletar todos os IDs de movimentações para buscar informações sobre documentos/títulos
+      const movimentacoesIds = data
+        .filter(item => item.movimentacao_id)
+        .map(item => item.movimentacao_id);
+        
+      const movimentacoesParcelasIds = data
+        .filter(item => item.movimentacao_parcela_id)
+        .map(item => item.movimentacao_parcela_id);
+        
+      if (movimentacoesIds.length > 0 || movimentacoesParcelasIds.length > 0) {
+        // Buscar informações das parcelas 
+        if (movimentacoesParcelasIds.length > 0) {
+          const { data: parcelasData } = await supabase
+            .from("movimentacoes_parcelas")
+            .select("id, movimentacao_id, numero")
+            .in("id", movimentacoesParcelasIds);
+            
+          if (parcelasData) {
+            // Adiciona os IDs de movimentação relacionados às parcelas
+            parcelasData.forEach(parcela => {
+              if (!movimentacoesIds.includes(parcela.movimentacao_id)) {
+                movimentacoesIds.push(parcela.movimentacao_id);
+              }
+            });
+            
+            // Armazena as informações das parcelas
+            const docsMap: Record<string, any> = {...documentosCache};
+            parcelasData.forEach(parcela => {
+              docsMap[parcela.id] = parcela;
+            });
+            setDocumentosCache(docsMap);
+          }
+        }
+        
+        // Buscar informações das movimentações para obter número de documento
+        if (movimentacoesIds.length > 0) {
+          const { data: movsData } = await supabase
+            .from("movimentacoes")
+            .select("id, numero_documento")
+            .in("id", movimentacoesIds);
+            
+          if (movsData) {
+            const docsMap: Record<string, any> = {...documentosCache};
+            movsData.forEach(mov => {
+              docsMap[mov.id] = mov;
+            });
+            setDocumentosCache(docsMap);
+          }
+        }
+      }
 
       return data || [];
     },
@@ -268,9 +325,6 @@ export default function FluxoCaixaPage() {
       
       // O valor já vem com o sinal correto, então basta somar ao saldo
       saldo += Number(mov.valor);
-      
-      // Caso precise depurar valores individuais
-      // console.log(`Movimentação anterior: ${mov.data_movimentacao}, tipo: ${mov.tipo_operacao}, valor: ${mov.valor}, saldo atual: ${saldo}`);
     }
     
     return saldo;
@@ -444,6 +498,38 @@ export default function FluxoCaixaPage() {
     if (linha.movimentacoes?.descricao) {
       return linha.movimentacoes.descricao;
     }
+    return "-";
+  }
+  
+  // Função para obter número de documento/parcela formatado
+  function getTituloParcela(linha: any) {
+    // Caso 1: Temos uma movimentação de parcela direta
+    if (linha.movimentacao_parcela_id) {
+      const parcela = documentosCache[linha.movimentacao_parcela_id];
+      if (parcela) {
+        // Buscar o número do documento da movimentação pai
+        const movPai = documentosCache[parcela.movimentacao_id];
+        const numeroDoc = movPai?.numero_documento || '-';
+        return `${numeroDoc}/${parcela.numero}`;
+      }
+    }
+    
+    // Caso 2: Temos uma movimentação principal
+    if (linha.movimentacao_id) {
+      const movimento = documentosCache[linha.movimentacao_id];
+      if (movimento) {
+        return `${movimento.numero_documento || '-'}/1`;
+      }
+      
+      // Tenta buscar das informações aninhadas
+      if (linha.movimentacoes) {
+        const numDoc = linha.movimentacoes.numero_documento || '-';
+        const parcela = linha.movimentacoes_parcelas?.[0]?.numero || '1';
+        return `${numDoc}/${parcela}`;
+      }
+    }
+    
+    // Caso padrão
     return "-";
   }
 
@@ -631,6 +717,7 @@ export default function FluxoCaixaPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data</TableHead>
+                    <TableHead>Título/Parcela</TableHead>
                     <TableHead>Favorecido</TableHead>
                     <TableHead>Descrição</TableHead>
                     <TableHead>Situação</TableHead>
@@ -642,7 +729,7 @@ export default function FluxoCaixaPage() {
                 <TableBody>
                   {filteredMovimentacoes.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                         Nenhum resultado encontrado
                       </TableCell>
                     </TableRow>
@@ -650,6 +737,11 @@ export default function FluxoCaixaPage() {
                     filteredMovimentacoes.map((linha) => (
                       <TableRow key={linha.id}>
                         <TableCell>{formatDateBR(linha.data_movimentacao)}</TableCell>
+                        <TableCell>
+                          <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
+                            {getTituloParcela(linha)}
+                          </span>
+                        </TableCell>
                         <TableCell>{getFavorecidoNome(linha)}</TableCell>
                         <TableCell>{getDescricao(linha)}</TableCell>
                         <TableCell>
