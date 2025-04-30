@@ -39,14 +39,19 @@ export function FavorecidosTable({
   // Função para renderizar o ícone baseado no tipo do favorecido
   const renderTipoIcon = (tipo: string) => {
     switch (tipo) {
-      case "cliente":
+      case "fisica":
         return <User className="h-4 w-4 text-blue-500" />;
-      case "fornecedor":
+      case "juridica":
         return <Building2 className="h-4 w-4 text-green-500" />;
       case "funcionario":
         return <UserCog className="h-4 w-4 text-amber-500" />;
       case "publico":
         return <Landmark className="h-4 w-4 text-purple-500" />;
+      // Manter compatibilidade com dados antigos
+      case "cliente":
+        return <User className="h-4 w-4 text-blue-500" />;
+      case "fornecedor":
+        return <Building2 className="h-4 w-4 text-green-500" />;
       default:
         return <User className="h-4 w-4" />;
     }
@@ -55,10 +60,13 @@ export function FavorecidosTable({
   // Função para formatar o tipo para exibição
   const formatTipo = (tipo: string) => {
     const tipos = {
-      cliente: "Física",
-      fornecedor: "Jurídica",
+      fisica: "Física",
+      juridica: "Jurídica",
       funcionario: "Funcionário",
-      publico: "Órgão Público"
+      publico: "Órgão Público",
+      // Manter compatibilidade com dados antigos
+      cliente: "Física",
+      fornecedor: "Jurídica"
     };
     return tipos[tipo as keyof typeof tipos] || tipo;
   };
@@ -112,8 +120,8 @@ export function FavorecidosTable({
                     <div className="font-medium">{favorecido.nome}</div>
                   </div>
                 </TableCell>
-                <TableCell>{favorecido.nomeFantasia || "-"}</TableCell>
-                <TableCell>{getGrupoNome(favorecido.grupo_id || favorecido.grupoId)}</TableCell>
+                <TableCell>{favorecido.nome_fantasia || "-"}</TableCell>
+                <TableCell>{getGrupoNome(favorecido.grupo_id)}</TableCell>
                 <TableCell>
                   <span
                     className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${

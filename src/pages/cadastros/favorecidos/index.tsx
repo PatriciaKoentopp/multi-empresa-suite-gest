@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -66,8 +67,9 @@ export default function FavorecidosPage() {
             id: grupo.id,
             nome: grupo.nome,
             status: grupo.status as "ativo" | "inativo",
-            createdAt: new Date(grupo.created_at),
-            updatedAt: new Date(grupo.updated_at)
+            empresa_id: grupo.empresa_id,
+            created_at: new Date(grupo.created_at),
+            updated_at: new Date(grupo.updated_at)
           }));
           setGrupos(gruposFormatados);
         }
@@ -103,8 +105,9 @@ export default function FavorecidosPage() {
             id: profissao.id,
             nome: profissao.nome,
             status: profissao.status as "ativo" | "inativo",
-            createdAt: new Date(profissao.created_at),
-            updatedAt: new Date(profissao.updated_at)
+            empresa_id: profissao.empresa_id,
+            created_at: new Date(profissao.created_at),
+            updated_at: new Date(profissao.updated_at)
           }));
           setProfissoes(profissoesFormatadas);
         }
@@ -136,58 +139,7 @@ export default function FavorecidosPage() {
         }
   
         if (data) {
-          const favorecidosFormatados: Favorecido[] = data.map(favorecido => {
-            // Criar data de aniversário sem timezone para manter o dia exato
-            let dataAniversario: Date | undefined = undefined;
-            if (favorecido.data_aniversario) {
-              // Usar UTC para preservar o dia exato
-              const [ano, mes, dia] = favorecido.data_aniversario.split('-').map(Number);
-              if (!isNaN(ano) && !isNaN(mes) && !isNaN(dia)) {
-                dataAniversario = new Date(Date.UTC(ano, mes - 1, dia, 12, 0, 0));
-              }
-            }
-            
-            // Converter os tipos do banco para a interface (cliente -> fisica, fornecedor -> juridica)
-            let tipoInterface;
-            switch (favorecido.tipo) {
-              case "cliente":
-                tipoInterface = "fisica";
-                break;
-              case "fornecedor":
-                tipoInterface = "juridica";
-                break;
-              default:
-                tipoInterface = favorecido.tipo;
-            }
-            
-            return {
-              id: favorecido.id,
-              tipo: tipoInterface as "fisica" | "juridica" | "publico" | "funcionario",
-              tipoDocumento: favorecido.tipo_documento as "cpf" | "cnpj",
-              documento: favorecido.documento,
-              grupoId: favorecido.grupo_id,
-              profissaoId: favorecido.profissao_id,
-              nome: favorecido.nome,
-              nomeFantasia: favorecido.nome_fantasia,
-              email: favorecido.email,
-              telefone: favorecido.telefone,
-              endereco: {
-                cep: favorecido.cep || "",
-                logradouro: favorecido.logradouro || "",
-                numero: favorecido.numero || "",
-                complemento: favorecido.complemento || "",
-                bairro: favorecido.bairro || "",
-                cidade: favorecido.cidade || "",
-                estado: favorecido.estado || "",
-                pais: favorecido.pais || "Brasil",
-              },
-              dataAniversario,
-              status: favorecido.status as "ativo" | "inativo",
-              createdAt: new Date(favorecido.created_at),
-              updatedAt: new Date(favorecido.updated_at),
-            };
-          });
-          setFavorecidos(favorecidosFormatados);
+          setFavorecidos(data);
         }
         setIsLoading(false);
       } catch (error) {
@@ -208,32 +160,11 @@ export default function FavorecidosPage() {
       return;
     }
 
-    // Formatar o favorecido antes de passá-lo para o formulário
-    const favorecidoFormatado: Favorecido = {
-      ...favorecido,
-      tipoDocumento: favorecido.tipoDocumento || favorecido.tipo_documento as "cpf" | "cnpj",
-      grupoId: favorecido.grupoId || favorecido.grupo_id,
-      profissaoId: favorecido.profissaoId || favorecido.profissao_id,
-      nomeFantasia: favorecido.nomeFantasia || favorecido.nome_fantasia || "",
-      dataAniversario: favorecido.dataAniversario || (favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined),
-      // Garantir que o objeto endereco está corretamente formatado
-      endereco: {
-        cep: favorecido.endereco?.cep || favorecido.cep || "",
-        logradouro: favorecido.endereco?.logradouro || favorecido.logradouro || "",
-        numero: favorecido.endereco?.numero || favorecido.numero || "",
-        complemento: favorecido.endereco?.complemento || favorecido.complemento || "",
-        bairro: favorecido.endereco?.bairro || favorecido.bairro || "",
-        cidade: favorecido.endereco?.cidade || favorecido.cidade || "",
-        estado: favorecido.endereco?.estado || favorecido.estado || "",
-        pais: favorecido.endereco?.pais || favorecido.pais || "Brasil",
-      }
-    };
-
     if (isViewing) {
-      setViewingFavorecido(favorecidoFormatado);
+      setViewingFavorecido(favorecido);
       setEditingFavorecido(undefined);
     } else {
-      setEditingFavorecido(favorecidoFormatado);
+      setEditingFavorecido(favorecido);
       setViewingFavorecido(undefined);
     }
     
@@ -254,28 +185,28 @@ export default function FavorecidosPage() {
 
     try {
       // Converter a data de aniversário para o formato YYYY-MM-DD para o Supabase
-      const dataAniversarioFormatada = dateToISOString(data.dataAniversario);
+      const dataAniversarioFormatada = data.data_aniversario ? dateToISOString(data.data_aniversario) : null;
 
       // Preparar os dados para inserção/atualização no Supabase
       const favorecidoData = {
         empresa_id: currentCompany.id,
-        tipo: data.tipo, // Agora gravamos diretamente o valor como fisica, juridica, etc.
-        tipo_documento: data.tipoDocumento,
+        tipo: data.tipo,
+        tipo_documento: data.tipo_documento,
         documento: data.documento,
-        grupo_id: data.grupoId,
-        profissao_id: data.profissaoId,
+        grupo_id: data.grupo_id,
+        profissao_id: data.profissao_id,
         nome: data.nome,
-        nome_fantasia: data.nomeFantasia,
+        nome_fantasia: data.nome_fantasia,
         email: data.email,
         telefone: data.telefone,
-        cep: data.endereco?.cep,
-        logradouro: data.endereco?.logradouro,
-        numero: data.endereco?.numero,
-        complemento: data.endereco?.complemento,
-        bairro: data.endereco?.bairro,
-        cidade: data.endereco?.cidade,
-        estado: data.endereco?.estado,
-        pais: data.endereco?.pais,
+        cep: data.cep,
+        logradouro: data.logradouro,
+        numero: data.numero,
+        complemento: data.complemento,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        estado: data.estado,
+        pais: data.pais,
         data_aniversario: dataAniversarioFormatada,
         status: data.status,
       };
@@ -295,36 +226,9 @@ export default function FavorecidosPage() {
           return;
         }
 
-        setFavorecidos(prev =>
-          prev.map(f =>
-            f.id === editingFavorecido.id
-              ? {
-                  ...f,
-                  tipo: data.tipo as "fisica" | "juridica" | "publico" | "funcionario",
-                  tipoDocumento: favorecidoData.tipo_documento,
-                  documento: favorecidoData.documento,
-                  grupoId: favorecidoData.grupo_id,
-                  profissaoId: favorecidoData.profissao_id,
-                  nome: favorecidoData.nome,
-                  nomeFantasia: favorecidoData.nome_fantasia,
-                  email: favorecidoData.email,
-                  telefone: favorecidoData.telefone,
-                  endereco: {
-                    cep: favorecidoData.cep || "",
-                    logradouro: favorecidoData.logradouro || "",
-                    numero: favorecidoData.numero || "",
-                    complemento: favorecidoData.complemento || "",
-                    bairro: favorecidoData.bairro || "",
-                    cidade: favorecidoData.cidade || "",
-                    estado: favorecidoData.estado || "",
-                    pais: favorecidoData.pais || "Brasil",
-                  },
-                  dataAniversario: dataAniversarioFormatada ? new Date(dataAniversarioFormatada) : undefined,
-                  status: favorecidoData.status as "ativo" | "inativo",
-                  updatedAt: new Date(),
-                }
-              : f
-          )
+        // Atualizar o estado local
+        setFavorecidos(prev => 
+          prev.map(f => f.id === editingFavorecido.id ? {...f, ...favorecidoData} : f)
         );
         toast.success("Favorecido atualizado com sucesso!");
       } else {
@@ -342,33 +246,7 @@ export default function FavorecidosPage() {
         }
 
         if (novoFavorecido) {
-          const favorecidoFormatado: Favorecido = {
-            id: novoFavorecido.id,
-            tipo: novoFavorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario",
-            tipoDocumento: novoFavorecido.tipo_documento as "cpf" | "cnpj",
-            documento: novoFavorecido.documento,
-            grupoId: novoFavorecido.grupo_id,
-            profissaoId: novoFavorecido.profissao_id,
-            nome: novoFavorecido.nome,
-            nomeFantasia: novoFavorecido.nome_fantasia,
-            email: novoFavorecido.email,
-            telefone: novoFavorecido.telefone,
-            endereco: {
-              cep: novoFavorecido.cep || "",
-              logradouro: novoFavorecido.logradouro || "",
-              numero: novoFavorecido.numero || "",
-              complemento: novoFavorecido.complemento || "",
-              bairro: novoFavorecido.bairro || "",
-              cidade: novoFavorecido.cidade || "",
-              estado: novoFavorecido.estado || "",
-              pais: novoFavorecido.pais || "Brasil",
-            },
-            dataAniversario: novoFavorecido.data_aniversario ? new Date(novoFavorecido.data_aniversario) : undefined,
-            status: novoFavorecido.status as "ativo" | "inativo",
-            createdAt: new Date(novoFavorecido.created_at),
-            updatedAt: new Date(novoFavorecido.updated_at),
-          };
-          setFavorecidos(prev => [...prev, favorecidoFormatado]);
+          setFavorecidos(prev => [...prev, novoFavorecido]);
           toast.success("Favorecido criado com sucesso!");
         }
       }
@@ -405,97 +283,25 @@ export default function FavorecidosPage() {
     }
   };
 
-  useEffect(() => {
-    const fetchFavorecidos = async () => {
-      if (!currentCompany) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from("favorecidos")
-          .select("*")
-          .eq("empresa_id", currentCompany.id)
-          .order("nome");
-  
-        if (error) {
-          console.error("Erro ao carregar favorecidos:", error);
-          toast.error("Erro ao carregar favorecidos");
-          return;
-        }
-  
-        if (data) {
-          const favorecidosFormatados: Favorecido[] = data.map(favorecido => {
-            // Converter os tipos do banco para a interface (cliente -> fisica, fornecedor -> juridica)
-            let tipoInterface;
-            switch (favorecido.tipo) {
-              case "cliente":
-                tipoInterface = "fisica";
-                break;
-              case "fornecedor":
-                tipoInterface = "juridica";
-                break;
-              default:
-                tipoInterface = favorecido.tipo;
-            }
-            
-            return {
-              id: favorecido.id,
-              tipo: tipoInterface as "fisica" | "juridica" | "publico" | "funcionario",
-              tipoDocumento: favorecido.tipo_documento as "cpf" | "cnpj",
-              documento: favorecido.documento,
-              grupoId: favorecido.grupo_id,
-              profissaoId: favorecido.profissao_id,
-              nome: favorecido.nome,
-              nomeFantasia: favorecido.nome_fantasia,
-              email: favorecido.email,
-              telefone: favorecido.telefone,
-              endereco: {
-                cep: favorecido.cep || "",
-                logradouro: favorecido.logradouro || "",
-                numero: favorecido.numero || "",
-                complemento: favorecido.complemento || "",
-                bairro: favorecido.bairro || "",
-                cidade: favorecido.cidade || "",
-                estado: favorecido.estado || "",
-                pais: favorecido.pais || "Brasil",
-              },
-              dataAniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
-              status: favorecido.status as "ativo" | "inativo",
-              createdAt: new Date(favorecido.created_at),
-              updatedAt: new Date(favorecido.updated_at),
-            };
-          });
-          setFavorecidos(favorecidosFormatados);
-        }
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Erro ao carregar favorecidos:", error);
-        toast.error("Erro ao carregar favorecidos");
-        setIsLoading(false);
-      }
-    };
-
-    fetchFavorecidos();
-  }, [currentCompany]);
-
   const filteredFavorecidos = useMemo(() => {
     return favorecidos.filter((favorecido) => {
       // Filtro por nome ou documento
       const matchesSearch = 
         favorecido.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         favorecido.documento.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (favorecido.nomeFantasia?.toLowerCase() || "").includes(searchTerm.toLowerCase());
+        (favorecido.nome_fantasia?.toLowerCase() || "").includes(searchTerm.toLowerCase());
       
       // Filtro por tipo
       const matchesTipo = tipoFilter === "todos" || 
-        (tipoFilter === "cliente" && favorecido.tipo === "fisica") ||
-        (tipoFilter === "fornecedor" && favorecido.tipo === "juridica") ||
+        (tipoFilter === "fisica" && (favorecido.tipo === "fisica" || favorecido.tipo === "cliente")) ||
+        (tipoFilter === "juridica" && (favorecido.tipo === "juridica" || favorecido.tipo === "fornecedor")) ||
         favorecido.tipo === tipoFilter;
       
       // Filtro por status
       const matchesStatus = statusFilter === "todos" || favorecido.status === statusFilter;
       
       // Filtro por grupo
-      const matchesGrupo = grupoFilter === "todos" || favorecido.grupoId === grupoFilter;
+      const matchesGrupo = grupoFilter === "todos" || favorecido.grupo_id === grupoFilter;
       
       return matchesSearch && matchesTipo && matchesStatus && matchesGrupo;
     });
@@ -538,8 +344,8 @@ export default function FavorecidosPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                   <SelectItem value="todos">Todos os tipos</SelectItem>
-                  <SelectItem value="cliente">Física</SelectItem>
-                  <SelectItem value="fornecedor">Jurídica</SelectItem>
+                  <SelectItem value="fisica">Física</SelectItem>
+                  <SelectItem value="juridica">Jurídica</SelectItem>
                   <SelectItem value="funcionario">Funcionário</SelectItem>
                   <SelectItem value="publico">Órgão Público</SelectItem>
                 </SelectContent>

@@ -1,3 +1,4 @@
+
 export interface Empresa {
   id: string;
   nome: string;
@@ -31,8 +32,8 @@ export interface GrupoFavorecido {
   nome: string;
   status: "ativo" | "inativo";
   empresa_id: string;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface Profissao {
@@ -40,32 +41,30 @@ export interface Profissao {
   nome: string;
   status: "ativo" | "inativo";
   empresa_id: string;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface Favorecido {
   id: string;
-  tipo: "fisica" | "juridica" | "publico" | "funcionario";
-  tipoDocumento: "cpf" | "cnpj";
+  tipo: "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor";
+  tipo_documento: "cpf" | "cnpj";
   documento: string;
-  grupoId: string;
-  profissaoId: string;
+  grupo_id: string;
+  profissao_id: string;
   nome: string;
-  nomeFantasia?: string;
+  nome_fantasia?: string;
   email?: string;
   telefone?: string;
-  endereco?: {
-    cep: string;
-    logradouro: string;
-    numero: string;
-    complemento: string;
-    bairro: string;
-    cidade: string;
-    estado: string;
-    pais: string;
-  };
-  dataAniversario?: Date;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
+  data_aniversario?: Date;
   status: "ativo" | "inativo";
   empresa_id: string;
   created_at: Date;
