@@ -58,11 +58,13 @@ export const SalesDashboardCard = ({
     <Card className={cn("overflow-hidden shadow-md hover:shadow-lg transition-shadow", className)}>
       <CardContent className="p-0">
         <div className="flex flex-col h-full">
-          {/* Cabeçalho com título e ícone na mesma linha */}
+          {/* Cabeçalho com título e ícone na mesma linha - agora alinhados */}
           <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-            <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-            <div className={cn("p-2 rounded-lg", getIconColor())}>
-              {getIcon()}
+            <div className="flex items-center gap-3">
+              <div className={cn("p-2 rounded-lg", getIconColor())}>
+                {getIcon()}
+              </div>
+              <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
             </div>
           </div>
           
