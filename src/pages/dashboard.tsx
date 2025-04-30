@@ -2,13 +2,15 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
-import { BanknoteIcon, CalendarX, CreditCard, TrendingUp } from "lucide-react";
+import { BanknoteIcon, CalendarX, CreditCard, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
+import { ContaCorrente } from "@/types/conta-corrente";
+
 interface DashboardData {
   totalVendas: number;
   contasReceber: number;
@@ -21,7 +23,14 @@ interface DashboardData {
     data: string;
   }[];
   parcelasEmAtraso: ContaReceber[];
+  saldoContas: {
+    nome: string;
+    saldo: number;
+    id: string;
+  }[];
+  totalSaldo: number;
 }
+
 export function Dashboard() {
   const {
     currentCompany
@@ -36,8 +45,11 @@ export function Dashboard() {
     contasPagar: 0,
     novosClientes: 0,
     ultimasVendas: [],
-    parcelasEmAtraso: []
+    parcelasEmAtraso: [],
+    saldoContas: [],
+    totalSaldo: 0
   });
+
   useEffect(() => {
     const fetchDados = async () => {
       try {
@@ -54,6 +66,46 @@ export function Dashboard() {
         const inicioMesFormatado = format(inicioMes, 'yyyy-MM-dd');
         const inicioMesAnteriorFormatado = format(inicioMesAnterior, 'yyyy-MM-dd');
 
+        // 1. Buscar contas correntes e seus saldos
+        const { data: contasCorrentes, error: erroContasCorrentes } = await supabase
+          .from('contas_correntes')
+          .select('*')
+          .eq('empresa_id', currentCompany.id)
+          .eq('status', 'ativo');
+
+        if (erroContasCorrentes) throw erroContasCorrentes;
+
+        // Contas com saldos iniciais
+        const saldoContas = [];
+        let totalSaldo = 0;
+
+        if (contasCorrentes && contasCorrentes.length > 0) {
+          // Para cada conta, buscar o último registro do fluxo de caixa para obter o saldo atual
+          for (const conta of contasCorrentes) {
+            const { data: ultimoFluxo, error: erroFluxo } = await supabase
+              .from('fluxo_caixa')
+              .select('saldo')
+              .eq('conta_corrente_id', conta.id)
+              .eq('empresa_id', currentCompany.id)
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            let saldoAtual = Number(conta.saldo_inicial || 0);
+
+            if (!erroFluxo && ultimoFluxo && ultimoFluxo.length > 0) {
+              saldoAtual = Number(ultimoFluxo[0].saldo);
+            }
+
+            saldoContas.push({
+              id: conta.id,
+              nome: conta.nome,
+              saldo: saldoAtual
+            });
+
+            totalSaldo += saldoAtual;
+          }
+        }
+        
         // 1. Buscar total de vendas do mês atual
         const {
           data: vendas,
@@ -213,7 +265,9 @@ export function Dashboard() {
           contasPagar: totalContasPagar,
           novosClientes: quantidadeNovosClientes,
           ultimasVendas: vendasFormatadas,
-          parcelasEmAtraso
+          parcelasEmAtraso,
+          saldoContas,
+          totalSaldo
         });
         setIsLoading(false);
       } catch (error: any) {
@@ -228,6 +282,7 @@ export function Dashboard() {
     };
     fetchDados();
   }, [currentCompany?.id, toast]);
+
   return <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -242,6 +297,52 @@ export function Dashboard() {
         <SalesDashboardCard title="Contas a Pagar" value={formatCurrency(dashboardData.contasPagar)} description="Pagamentos pendentes" icon="sales" />
         <SalesDashboardCard title="Novos Clientes" value={`+${dashboardData.novosClientes}`} description="Novos cadastros no mês" icon="users" />
       </div>
+
+      {/* Card para Saldo das Contas */}
+      <Card className="bg-white">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-blue-500" /> 
+            Saldo das Contas
+          </CardTitle>
+          <CardDescription>
+            Saldo atual em todas as contas correntes
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            </div>
+          ) : dashboardData.saldoContas.length > 0 ? (
+            <div className="space-y-4">
+              {/* Total geral */}
+              <div className="flex items-center justify-between border-b pb-2">
+                <p className="font-semibold text-lg">Saldo Total</p>
+                <p className={`font-bold text-lg ${dashboardData.totalSaldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(dashboardData.totalSaldo)}
+                </p>
+              </div>
+              
+              {/* Lista de contas */}
+              <div className="space-y-2">
+                {dashboardData.saldoContas.map(conta => (
+                  <div key={conta.id} className="flex items-center justify-between">
+                    <p className="text-gray-800">{conta.nome}</p>
+                    <p className={conta.saldo >= 0 ? 'text-green-600' : 'text-red-600'}>
+                      {formatCurrency(conta.saldo)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-4">
+              Nenhuma conta corrente encontrada
+            </p>
+          )}
+        </CardContent>
+      </Card>
       
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="col-span-1">
