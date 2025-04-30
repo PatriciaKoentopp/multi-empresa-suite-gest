@@ -53,7 +53,11 @@ import Relatorios from "./pages/relatorios";
 import RelatorioFavorecido from "./pages/relatorios/favorecido";
 
 // Authentication wrapper
-const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface PrivateRouteProps {
+  children: React.ReactNode;
+}
+
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
