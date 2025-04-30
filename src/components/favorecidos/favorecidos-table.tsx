@@ -85,7 +85,7 @@ export function FavorecidosTable({
           <TableRow>
             <TableHead>Tipo</TableHead>
             <TableHead>Nome</TableHead>
-            <TableHead>Documento</TableHead>
+            <TableHead>Nome Fantasia</TableHead>
             <TableHead>Grupo</TableHead>
             <TableHead>Contato</TableHead>
             <TableHead>Status</TableHead>
@@ -111,12 +111,9 @@ export function FavorecidosTable({
                 <TableCell>
                   <div>
                     <div className="font-medium">{favorecido.nome}</div>
-                    {favorecido.nome_fantasia && (
-                      <div className="text-xs text-muted-foreground">{favorecido.nome_fantasia}</div>
-                    )}
                   </div>
                 </TableCell>
-                <TableCell>{favorecido.documento}</TableCell>
+                <TableCell>{favorecido.nome_fantasia || "-"}</TableCell>
                 <TableCell>{getGrupoNome(favorecido.grupo_id || favorecido.grupoId)}</TableCell>
                 <TableCell>
                   <div className="text-sm">
