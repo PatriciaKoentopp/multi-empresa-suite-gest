@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
@@ -31,7 +32,10 @@ export function FavorecidosForm({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: favorecido ? {
-      tipo: favorecido.tipo as "cliente" | "fornecedor" | "publico" | "funcionario",
+      // Convertemos os valores antigos para os novos tipos
+      tipo: (favorecido.tipo === "cliente" ? "fisica" : 
+             favorecido.tipo === "fornecedor" ? "juridica" : 
+             favorecido.tipo) as "fisica" | "juridica" | "publico" | "funcionario",
       tipo_documento: favorecido.tipoDocumento as "cpf" | "cnpj",
       documento: favorecido.documento,
       grupo_id: favorecido.grupoId,
@@ -51,7 +55,7 @@ export function FavorecidosForm({
       data_aniversario: favorecido.dataAniversario ? new Date(favorecido.dataAniversario) : undefined,
       status: favorecido.status as "ativo" | "inativo",
     } : {
-      tipo: "cliente",
+      tipo: "fisica", // Alterado de "cliente" para "fisica"
       tipo_documento: "cpf",
       documento: "",
       nome: "",
@@ -104,11 +108,11 @@ export function FavorecidosForm({
     const tipoFavorecido = form.watch("tipo");
     const tipoDocumentoAtual = form.watch("tipo_documento");
     
-    if (tipoFavorecido === "cliente" && tipoDocumentoAtual !== "cpf") {
+    if (tipoFavorecido === "fisica" && tipoDocumentoAtual !== "cpf") {
       form.setValue("tipo_documento", "cpf");
     }
     else if (
-      (tipoFavorecido === "fornecedor" || 
+      (tipoFavorecido === "juridica" || 
        tipoFavorecido === "publico" || 
        tipoFavorecido === "funcionario") && 
       tipoDocumentoAtual !== "cnpj"

@@ -26,15 +26,15 @@ export function FavorecidoTipoRadio({ form, readOnly }: FavorecidoTipoRadioProps
               disabled={readOnly}
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="cliente" id="cliente" />
-                <FormLabel htmlFor="cliente" className="flex items-center cursor-pointer">
+                <RadioGroupItem value="fisica" id="fisica" />
+                <FormLabel htmlFor="fisica" className="flex items-center cursor-pointer">
                   <User className="mr-1 h-4 w-4" />
                   Física
                 </FormLabel>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="fornecedor" id="fornecedor" />
-                <FormLabel htmlFor="fornecedor" className="flex items-center cursor-pointer">
+                <RadioGroupItem value="juridica" id="juridica" />
+                <FormLabel htmlFor="juridica" className="flex items-center cursor-pointer">
                   <Building2 className="mr-1 h-4 w-4" />
                   Jurídica
                 </FormLabel>

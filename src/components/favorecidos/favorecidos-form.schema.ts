@@ -2,7 +2,7 @@
 import * as z from "zod";
 
 export const formSchema = z.object({
-  tipo: z.enum(["cliente", "fornecedor", "publico", "funcionario"], {
+  tipo: z.enum(["fisica", "juridica", "publico", "funcionario"], {
     required_error: "Tipo de favorecido é obrigatório",
   }),
   tipo_documento: z.enum(["cpf", "cnpj"], {
