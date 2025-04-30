@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Usuario } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,8 @@ export default function UsuariosPage() {
     undefined
   );
   const [isLoading, setIsLoading] = useState(true);
+  // Adicionamos uma flag para forçar o recarregamento
+  const [refreshFlag, setRefreshFlag] = useState(0);
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,8 +46,8 @@ export default function UsuariosPage() {
 
   const { currentCompany } = useCompany();
 
-  // Função para buscar os usuários
-  const fetchUsuarios = async () => {
+  // Modificamos a função para usar o useCallback para poder referenciá-la no useEffect
+  const fetchUsuarios = useCallback(async () => {
     if (!currentCompany) return;
 
     setIsLoading(true);
@@ -72,8 +74,9 @@ export default function UsuariosPage() {
           tipo: usuario.tipo as "Administrador" | "Usuário",
           status: usuario.status as "ativo" | "inativo",
           vendedor: usuario.vendedor as "sim" | "nao",
-          createdAt: new Date(usuario.created_at),
-          updatedAt: new Date(usuario.updated_at),
+          created_at: new Date(usuario.created_at),
+          updated_at: new Date(usuario.updated_at),
+          empresa_id: usuario.empresa_id
         }));
         setUsuarios(usuariosFormatados);
       }
@@ -83,12 +86,12 @@ export default function UsuariosPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentCompany]);
   
-  // Efeito para carregar os dados quando a página é carregada
+  // Efeito para carregar os dados quando a página é carregada ou quando refreshFlag muda
   useEffect(() => {
     fetchUsuarios();
-  }, [currentCompany]);
+  }, [fetchUsuarios, currentCompany, refreshFlag]);
 
   const handleOpenDialog = (usuario?: Usuario) => {
     setEditingUsuario(usuario);
@@ -162,8 +165,8 @@ export default function UsuariosPage() {
       // Fecha o modal
       handleCloseDialog();
       
-      // Atualiza os dados
-      fetchUsuarios();
+      // Incrementa o refreshFlag para forçar o recarregamento dos dados
+      setRefreshFlag(prev => prev + 1);
       
     } catch (err) {
       console.error("Exceção durante operação de usuário:", err);
@@ -195,8 +198,8 @@ export default function UsuariosPage() {
       console.log("Usuário excluído com sucesso!");
       toast.success("Usuário excluído com sucesso!");
       
-      // Atualiza os dados
-      fetchUsuarios();
+      // Incrementa o refreshFlag para forçar o recarregamento dos dados
+      setRefreshFlag(prev => prev + 1);
       
     } catch (err) {
       console.error("Exceção ao excluir usuário:", err);
