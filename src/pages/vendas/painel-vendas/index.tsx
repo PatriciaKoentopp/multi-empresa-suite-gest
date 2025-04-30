@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { SalesCard } from "@/components/vendas/SalesCard";
+import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -334,31 +334,31 @@ const PainelVendasPage = () => {
 
       {/* Cards com estatísticas principais */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <SalesCard
-          title="Total de Vendas (Ano)"
+        <SalesDashboardCard
+          title="Total de Vendas no Ano"
           value={formatCurrency(salesData?.total_vendas || 0)}
           description="Total acumulado no ano"
           icon="money"
         />
-        <SalesCard
+        <SalesDashboardCard
           title={`Vendas (${format(new Date(), 'MMMM', { locale: ptBR })})`}
           value={formatCurrency(salesData?.vendas_mes_atual || 0)}
           description={`vs. ${formatCurrency(salesData?.vendas_mes_anterior || 0)} mês anterior`}
           trend={salesData?.variacao_percentual && salesData.variacao_percentual > 0 ? "up" : "down"}
           trendValue={`${Math.abs(salesData?.variacao_percentual || 0).toFixed(1)}%`}
-          icon="money"
+          icon="chart"
         />
-        <SalesCard
+        <SalesDashboardCard
           title="Ticket Médio"
           value={formatCurrency(salesData?.media_ticket || 0)}
           description="Por venda realizada"
           icon="sales"
         />
-        <SalesCard
+        <SalesDashboardCard
           title="Clientes Ativos"
           value={String(salesData?.clientes_ativos || 0)}
           description="Com vendas nos últimos 90 dias"
-          icon="sales"
+          icon="users"
         />
       </div>
 
