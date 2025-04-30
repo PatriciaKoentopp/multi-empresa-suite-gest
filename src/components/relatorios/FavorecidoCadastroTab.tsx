@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { GrupoFavorecido, Profissao, Favorecido } from "@/types";
-import { formatDate } from "@/lib/utils";
 
 interface FavorecidoCadastroTabProps {
   favorecido: Favorecido;
@@ -77,15 +76,23 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
     }
   };
 
-  const getTipoDocumentoLabel = (tipo: string) => {
-    switch (tipo) {
-      case "cpf":
-        return "CPF";
-      case "cnpj":
-        return "CNPJ";
-      default:
-        return tipo;
+  const formatarDocumento = (documento: string, tipo: string) => {
+    if (!documento) return "Não informado";
+    
+    // Remove caracteres não numéricos
+    const numeros = documento.replace(/\D/g, '');
+    
+    if (tipo === "cpf") {
+      // Formatação para CPF: 000.000.000-00
+      if (numeros.length !== 11) return documento;
+      return numeros.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    } else if (tipo === "cnpj") {
+      // Formatação para CNPJ: 00.000.000/0000-00
+      if (numeros.length !== 14) return documento;
+      return numeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
     }
+    
+    return documento;
   };
 
   return (
@@ -118,7 +125,7 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Documento:</span>
                 <span className="font-medium">
-                  {getTipoDocumentoLabel(favorecido.tipo_documento)}: {favorecido.documento}
+                  {favorecido.tipo_documento === 'cpf' ? 'CPF' : 'CNPJ'}: {formatarDocumento(favorecido.documento, favorecido.tipo_documento)}
                 </span>
               </div>
               <div className="flex justify-between">
