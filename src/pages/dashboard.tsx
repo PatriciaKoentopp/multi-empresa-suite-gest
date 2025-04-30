@@ -163,7 +163,7 @@ export function Dashboard() {
           }
         }
         
-        // 3. Buscar contas a pagar em aberto - CORREÇÃO AQUI
+        // 3. Buscar contas a pagar em aberto
         const { data: contasPagar, error: erroContasPagar } = await supabase
           .from('movimentacoes_parcelas')
           .select(`
@@ -175,7 +175,7 @@ export function Dashboard() {
             )
           `)
           .is('data_pagamento', null)
-          .eq('movimentacao.tipo_operacao', 'pagar')  // Garantindo que é tipo pagar
+          .eq('movimentacao.tipo_operacao', 'pagar')
           .eq('movimentacao.empresa_id', currentCompany.id);
         
         if (erroContasPagar) throw erroContasPagar;
@@ -190,16 +190,37 @@ export function Dashboard() {
         }, 0) || 0;
         
         // 4. Buscar novos clientes (cadastrados no mês atual)
-        const { data: novosClientes, error: erroNovosClientes } = await supabase
-          .from('favorecidos')
+        // ALTERAÇÃO: Buscar primeiro o ID do grupo "Clientes"
+        const { data: grupoClientes, error: erroGrupoClientes } = await supabase
+          .from('grupo_favorecidos')
           .select('id')
           .eq('empresa_id', currentCompany.id)
-          .eq('tipo', 'cliente')
-          .gte('created_at', inicioMesFormatado);
+          .eq('nome', 'Clientes')
+          .eq('status', 'ativo')
+          .limit(1);
         
-        if (erroNovosClientes) throw erroNovosClientes;
+        if (erroGrupoClientes) throw erroGrupoClientes;
         
-        const quantidadeNovosClientes = novosClientes?.length || 0;
+        let quantidadeNovosClientes = 0;
+        
+        if (grupoClientes && grupoClientes.length > 0) {
+          const grupoClienteId = grupoClientes[0].id;
+          
+          // Agora buscamos os favorecidos filtrados pelo grupo_id
+          const { data: novosClientes, error: erroNovosClientes } = await supabase
+            .from('favorecidos')
+            .select('id')
+            .eq('empresa_id', currentCompany.id)
+            .eq('grupo_id', grupoClienteId)
+            .gte('created_at', inicioMesFormatado);
+            
+          if (erroNovosClientes) throw erroNovosClientes;
+          
+          quantidadeNovosClientes = novosClientes?.length || 0;
+        } else {
+          // Caso não encontre o grupo "Clientes", vamos fazer um log e mostrar 0
+          console.warn("Grupo 'Clientes' não encontrado na tabela grupo_favorecidos");
+        }
         
         // 5. Buscar últimas vendas
         const { data: ultimasVendas, error: erroUltimasVendas } = await supabase
