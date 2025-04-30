@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { useToast } from "sonner";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { FavorecidoCadastroTab } from "@/components/relatorios/FavorecidoCadastroTab";
@@ -23,7 +23,6 @@ export default function RelatorioFavorecido() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { currentCompany } = useCompany();
-  const toast = useToast();
 
   // Carregar favorecidos do Supabase
   useEffect(() => {
@@ -80,7 +79,7 @@ export default function RelatorioFavorecido() {
     };
 
     fetchFavorecidos();
-  }, [currentCompany, toast, searchParams]);
+  }, [currentCompany, searchParams]);
 
   const handleSearch = () => {
     const filteredFavorecidos = favorecidos.filter(favorecido =>

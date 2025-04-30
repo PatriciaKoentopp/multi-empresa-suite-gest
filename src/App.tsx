@@ -1,14 +1,14 @@
 
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { Index } from "./pages/Index";
+import Index from "./pages/Index";
 import { Login } from "./pages/login";
 import { Dashboard } from "./pages/dashboard";
 import { MainLayout } from "./components/layout/main-layout";
 import { CompanyProvider } from "./contexts/company-context";
 import { AuthProvider, useAuth } from "./contexts/auth-context";
-import { NotFound } from "./pages/NotFound";
-import { Toaster } from "./components/ui/sonner";
+import NotFound from "./pages/NotFound";
+import { Toaster } from "sonner";
 import StyleGuide from "./pages/style-guide";
 import Empresas from "./pages/empresas";
 

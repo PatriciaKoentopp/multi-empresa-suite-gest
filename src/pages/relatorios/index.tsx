@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FileText, Users, Calculator, BarChart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-export default function RelatoriosPage() {
+export default function Relatorios() {
   const navigate = useNavigate();
 
   const relatorios = [
@@ -20,21 +20,21 @@ export default function RelatoriosPage() {
       title: "Relatório de Vendas",
       description: "Análise detalhada das vendas por período",
       icon: <BarChart className="h-8 w-8 text-green-500" />,
-      route: "/relatorios"
+      route: "/relatorios/vendas"
     },
     {
       id: "financeiro",
       title: "Relatório Financeiro",
       description: "Fluxo de caixa e análise de receitas e despesas",
       icon: <Calculator className="h-8 w-8 text-purple-500" />,
-      route: "/relatorios"
+      route: "/relatorios/financeiro"
     },
     {
       id: "geral",
       title: "Relatório Geral",
       description: "Visão geral de todas as operações da empresa",
       icon: <FileText className="h-8 w-8 text-amber-500" />,
-      route: "/relatorios"
+      route: "/relatorios/geral"
     },
   ];
 
