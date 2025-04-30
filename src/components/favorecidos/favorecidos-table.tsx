@@ -87,7 +87,6 @@ export function FavorecidosTable({
             <TableHead>Nome</TableHead>
             <TableHead>Nome Fantasia</TableHead>
             <TableHead>Grupo</TableHead>
-            <TableHead>Contato</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="w-[120px]">Ações</TableHead>
           </TableRow>
@@ -95,7 +94,7 @@ export function FavorecidosTable({
         <TableBody>
           {favorecidos.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                 Nenhum resultado encontrado
               </TableCell>
             </TableRow>
@@ -115,16 +114,6 @@ export function FavorecidosTable({
                 </TableCell>
                 <TableCell>{favorecido.nomeFantasia || "-"}</TableCell>
                 <TableCell>{getGrupoNome(favorecido.grupo_id || favorecido.grupoId)}</TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    {favorecido.email && (
-                      <div className="text-xs">{favorecido.email}</div>
-                    )}
-                    {favorecido.telefone && (
-                      <div className="text-xs">{favorecido.telefone}</div>
-                    )}
-                  </div>
-                </TableCell>
                 <TableCell>
                   <span
                     className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
