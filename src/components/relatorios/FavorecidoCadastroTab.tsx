@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { GrupoFavorecido, Profissao, Favorecido } from "@/types";
+import { formatDate } from "@/lib/utils";
 
 interface FavorecidoCadastroTabProps {
   favorecido: Favorecido;
@@ -76,17 +77,18 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
     }
   };
 
-  const formatarDocumento = (documento: string, tipo: string) => {
+  // Função revisada para formatar corretamente CPF e CNPJ
+  const formatarDocumento = (documento: string, tipoDocumento: string): string => {
     if (!documento) return "Não informado";
     
     // Remove caracteres não numéricos
     const numeros = documento.replace(/\D/g, '');
     
-    if (tipo === "cpf") {
+    if (tipoDocumento === "cpf") {
       // Formatação para CPF: 000.000.000-00
       if (numeros.length !== 11) return documento;
       return numeros.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-    } else if (tipo === "cnpj") {
+    } else if (tipoDocumento === "cnpj") {
       // Formatação para CNPJ: 00.000.000/0000-00
       if (numeros.length !== 14) return documento;
       return numeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
@@ -141,7 +143,7 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
                 <span className="text-muted-foreground">Aniversário:</span>
                 <span className="font-medium">
                   {favorecido.data_aniversario 
-                    ? favorecido.data_aniversario.toString().substring(0, 10).split('-').reverse().join('/')
+                    ? formatDate(favorecido.data_aniversario)
                     : "Não informado"}
                 </span>
               </div>

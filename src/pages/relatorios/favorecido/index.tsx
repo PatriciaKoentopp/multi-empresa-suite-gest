@@ -44,7 +44,7 @@ export default function RelatorioFavorecido() {
         }
   
         if (data) {
-          // Preservamos os tipos originais dos dados sem conversão adicional
+          // Garantindo que os tipos estão corretos sem conversões desnecessárias
           setFavorecidos(data);
 
           // Verificar se há um favorecido na URL
@@ -171,3 +171,4 @@ export default function RelatorioFavorecido() {
     </div>
   );
 }
+
