@@ -125,7 +125,8 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Documento:</span>
                 <span className="font-medium">
-                  {favorecido.tipo_documento === 'cpf' ? 'CPF' : 'CNPJ'}: {formatarDocumento(favorecido.documento, favorecido.tipo_documento)}
+                  {favorecido.tipo_documento === 'cpf' ? 'CPF: ' : 'CNPJ: '}
+                  {formatarDocumento(favorecido.documento, favorecido.tipo_documento)}
                 </span>
               </div>
               <div className="flex justify-between">

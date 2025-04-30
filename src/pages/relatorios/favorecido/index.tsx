@@ -45,11 +45,7 @@ export default function RelatorioFavorecido() {
   
         if (data) {
           // Preservamos os tipos originais dos dados sem conversão adicional
-          setFavorecidos(data.map(favorecido => ({
-            ...favorecido,
-            created_at: new Date(favorecido.created_at),
-            updated_at: new Date(favorecido.updated_at)
-          })));
+          setFavorecidos(data);
 
           // Verificar se há um favorecido na URL
           const favorecidoId = searchParams.get('id');
