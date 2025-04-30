@@ -7,6 +7,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
+import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
+import { DollarSign, TrendingUp, ShoppingBag, Users } from "lucide-react";
 
 export function Dashboard() {
   const { currentCompany } = useCompany();
@@ -21,50 +23,30 @@ export function Dashboard() {
       </div>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Vendas Totais</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ 45.231,89</div>
-            <p className="text-xs text-muted-foreground">
-              +20.1% em relação ao mês passado
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Contas a Receber</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ 12.450,00</div>
-            <p className="text-xs text-muted-foreground">
-              5 títulos pendentes
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Contas a Pagar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ 8.230,50</div>
-            <p className="text-xs text-muted-foreground">
-              3 títulos pendentes
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Novos Clientes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+12</div>
-            <p className="text-xs text-muted-foreground">
-              +30% em relação ao mês passado
-            </p>
-          </CardContent>
-        </Card>
+        <SalesDashboardCard
+          title="Vendas Totais"
+          value="R$ 45.231,89"
+          description="+20.1% em relação ao mês passado"
+          icon="money"
+        />
+        <SalesDashboardCard
+          title="Contas a Receber"
+          value="R$ 12.450,00"
+          description="5 títulos pendentes"
+          icon="chart"
+        />
+        <SalesDashboardCard
+          title="Contas a Pagar"
+          value="R$ 8.230,50"
+          description="3 títulos pendentes"
+          icon="sales"
+        />
+        <SalesDashboardCard
+          title="Novos Clientes"
+          value="+12"
+          description="+30% em relação ao mês passado"
+          icon="users"
+        />
       </div>
       
       <div className="grid gap-6 md:grid-cols-2">

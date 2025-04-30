@@ -17,12 +17,12 @@ import { EllipsisVertical, Phone, Mail, Building, Calendar, User, Tag, MoveRight
 import { Origem, Usuario } from "@/types";
 
 interface Lead {
-  id: number;
+  id: string; // Alterado de number para string para compatibilidade com tipos
   nome: string;
   empresa: string;
   email: string;
   telefone: string;
-  etapaId: number;
+  etapaId: string; // Alterado de number para string
   valor: number;
   origemId: string;
   dataCriacao: string;
@@ -31,7 +31,7 @@ interface Lead {
 }
 
 interface EtapaFunil {
-  id: number;
+  id: string; // Alterado de number para string para compatibilidade com tipos
   nome: string;
   cor: string;
   ordem: number;
@@ -44,7 +44,7 @@ interface LeadCardProps {
   usuarios: Usuario[];
   onEdit: () => void;
   onDelete: () => void;
-  onMove: (leadId: number, etapaId: number) => void;
+  onMove: (leadId: string, etapaId: string) => void; // Alterado os tipos para string
 }
 
 export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, onMove }: LeadCardProps) {

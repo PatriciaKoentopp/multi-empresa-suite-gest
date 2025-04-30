@@ -58,35 +58,32 @@ export const SalesDashboardCard = ({
     <Card className={cn("overflow-hidden shadow-md hover:shadow-lg transition-shadow", className)}>
       <CardContent className="p-0">
         <div className="flex flex-col h-full">
-          {/* Cabeçalho com título */}
-          <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800">
+          {/* Cabeçalho com título e ícone na mesma linha */}
+          <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
             <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+            <div className={cn("p-2 rounded-lg", getIconColor())}>
+              {getIcon()}
+            </div>
           </div>
           
           {/* Conteúdo principal */}
-          <div className="p-5 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className={cn("p-2 rounded-lg", getIconColor())}>
-                {getIcon()}
+          <div className="p-5">
+            <div>
+              <div className="text-2xl font-bold">
+                {value}
               </div>
               
-              <div>
-                <div className="text-2xl font-bold">
-                  {value}
+              {description && (
+                <div className="text-sm text-muted-foreground mt-1">
+                  {description}
                 </div>
-                
-                {description && (
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {description}
-                  </div>
-                )}
-              </div>
+              )}
             </div>
             
             {/* Indicador de tendência */}
             {trend !== "neutral" && trendValue && (
               <div className={cn(
-                "flex items-center text-sm font-medium px-2.5 py-1.5 rounded-full",
+                "flex items-center text-sm font-medium px-2.5 py-1.5 rounded-full mt-2 w-fit",
                 trend === "up" 
                   ? "text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400" 
                   : "text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400"
