@@ -57,10 +57,12 @@ export function MovimentacaoTable({
   onDelete,
   onVisualizar 
 }: MovimentacaoTableProps) {
-  // Ordenar movimentações por data de lançamento (mais recente primeiro)
+  // Ordenar movimentações por data de vencimento ou pagamento (mais recente primeiro)
   const sortedMovimentacoes = [...movimentacoes].sort((a, b) => {
-    const dateA = a.dataLancamento ? new Date(a.dataLancamento).getTime() : 0;
-    const dateB = b.dataLancamento ? new Date(b.dataLancamento).getTime() : 0;
+    const dateA = a.dataPagamento ? new Date(a.dataPagamento).getTime() : 
+                 a.dataVencimento ? new Date(a.dataVencimento).getTime() : 0;
+    const dateB = b.dataPagamento ? new Date(b.dataPagamento).getTime() : 
+                 b.dataVencimento ? new Date(b.dataVencimento).getTime() : 0;
     return dateB - dateA; // Ordem decrescente (mais recente primeiro)
   });
 
@@ -90,7 +92,7 @@ export function MovimentacaoTable({
           ) : (
             sortedMovimentacoes.map((movimentacao) => (
               <TableRow key={movimentacao.id}>
-                <TableCell>{formatDate(movimentacao.dataLancamento)}</TableCell>
+                <TableCell>{formatDate(movimentacao.dataPagamento || movimentacao.dataVencimento)}</TableCell>
                 <TableCell>
                   {movimentacao.numeroParcela ? (
                     <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
