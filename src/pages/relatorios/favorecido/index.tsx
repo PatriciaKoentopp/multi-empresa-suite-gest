@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,9 +44,9 @@ export default function RelatorioFavorecido() {
         }
   
         if (data) {
+          // Preservamos os tipos originais dos dados sem conversão adicional
           setFavorecidos(data.map(favorecido => ({
             ...favorecido,
-            // Não convertemos para Date os campos de data para preservar o formato original
             created_at: new Date(favorecido.created_at),
             updated_at: new Date(favorecido.updated_at)
           })));
