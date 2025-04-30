@@ -96,6 +96,38 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
     
     return documento;
   };
+  
+  // Nova função para formatar o telefone no padrão (00) 00000-0000
+  const formatarTelefone = (telefone: string): string => {
+    if (!telefone) return "Não informado";
+    
+    // Remove caracteres não numéricos
+    const numeros = telefone.replace(/\D/g, '');
+    
+    if (numeros.length === 11) {
+      // Celular: (00) 00000-0000
+      return numeros.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+    } else if (numeros.length === 10) {
+      // Telefone fixo: (00) 0000-0000
+      return numeros.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
+    }
+    
+    return telefone;
+  };
+  
+  // Nova função para formatar o CEP no padrão 00.000-000
+  const formatarCep = (cep: string): string => {
+    if (!cep) return "Não informado";
+    
+    // Remove caracteres não numéricos
+    const numeros = cep.replace(/\D/g, '');
+    
+    if (numeros.length === 8) {
+      return numeros.replace(/(\d{2})(\d{3})(\d{3})/, "$1.$2-$3");
+    }
+    
+    return cep;
+  };
 
   return (
     <div className="space-y-6">
@@ -161,13 +193,13 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Telefone:</span>
-                <span className="font-medium">{favorecido.telefone || "Não informado"}</span>
+                <span className="font-medium">{formatarTelefone(favorecido.telefone || "")}</span>
               </div>
               
               <h3 className="text-lg font-semibold mt-4 mb-2">Endereço</h3>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">CEP:</span>
-                <span className="font-medium">{favorecido.cep || "Não informado"}</span>
+                <span className="font-medium">{formatarCep(favorecido.cep || "")}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Logradouro:</span>
