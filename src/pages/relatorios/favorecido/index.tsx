@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,22 +45,7 @@ export default function RelatorioFavorecido() {
         if (data) {
           setFavorecidos(data.map(favorecido => ({
             ...favorecido,
-            tipo: favorecido.tipo,
-            tipoDocumento: favorecido.tipo_documento,
-            grupoId: favorecido.grupo_id,
-            profissaoId: favorecido.profissao_id,
-            nomeFantasia: favorecido.nome_fantasia,
-            dataAniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
-            endereco: {
-              cep: favorecido.cep || "",
-              logradouro: favorecido.logradouro || "",
-              numero: favorecido.numero || "",
-              complemento: favorecido.complemento || "",
-              bairro: favorecido.bairro || "",
-              cidade: favorecido.cidade || "",
-              estado: favorecido.estado || "",
-              pais: favorecido.pais || "Brasil",
-            },
+            // Não convertemos para Date os campos de data para preservar o formato original
             created_at: new Date(favorecido.created_at),
             updated_at: new Date(favorecido.updated_at)
           })));

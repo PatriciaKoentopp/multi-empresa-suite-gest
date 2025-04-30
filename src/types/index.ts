@@ -1,5 +1,3 @@
-
-
 export interface Empresa {
   id: string;
   nome: string;
@@ -65,7 +63,7 @@ export interface Favorecido {
   cidade?: string;
   estado?: string;
   pais?: string;
-  data_aniversario?: Date;
+  data_aniversario?: string | Date; // Permitimos string ou Date para maior flexibilidade
   status: "ativo" | "inativo";
   empresa_id: string;
   created_at: Date;
@@ -181,4 +179,3 @@ export interface Orcamento {
   created_at: Date;
   updated_at: Date;
 }
-

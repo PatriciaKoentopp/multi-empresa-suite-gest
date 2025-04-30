@@ -16,11 +16,11 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
   
   useEffect(() => {
     const fetchRelacionamentos = async () => {
-      if (favorecido.grupoId) {
+      if (favorecido.grupo_id) {
         const { data: grupoData } = await supabase
           .from('grupo_favorecidos')
           .select('*')
-          .eq('id', favorecido.grupoId)
+          .eq('id', favorecido.grupo_id)
           .single();
           
         if (grupoData) {
@@ -35,11 +35,11 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
         }
       }
       
-      if (favorecido.profissaoId) {
+      if (favorecido.profissao_id) {
         const { data: profissaoData } = await supabase
           .from('profissoes')
           .select('*')
-          .eq('id', favorecido.profissaoId)
+          .eq('id', favorecido.profissao_id)
           .single();
           
         if (profissaoData) {
@@ -56,10 +56,14 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
     };
     
     fetchRelacionamentos();
-  }, [favorecido.grupoId, favorecido.profissaoId]);
+  }, [favorecido.grupo_id, favorecido.profissao_id]);
 
   const getTipoFavorecidoLabel = (tipo: string) => {
     switch (tipo) {
+      case "fisica":
+        return "Pessoa Física";
+      case "juridica":
+        return "Pessoa Jurídica";
       case "cliente":
         return "Cliente";
       case "fornecedor":
@@ -95,10 +99,10 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
                 <span className="text-muted-foreground">Nome:</span>
                 <span className="font-medium">{favorecido.nome}</span>
               </div>
-              {favorecido.nomeFantasia && (
+              {favorecido.nome_fantasia && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Nome Fantasia:</span>
-                  <span className="font-medium">{favorecido.nomeFantasia}</span>
+                  <span className="font-medium">{favorecido.nome_fantasia}</span>
                 </div>
               )}
               <div className="flex justify-between">
@@ -114,7 +118,7 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Documento:</span>
                 <span className="font-medium">
-                  {getTipoDocumentoLabel(favorecido.tipoDocumento)}: {favorecido.documento}
+                  {getTipoDocumentoLabel(favorecido.tipo_documento)}: {favorecido.documento}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -128,8 +132,8 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Aniversário:</span>
                 <span className="font-medium">
-                  {favorecido.dataAniversario 
-                    ? formatDate(favorecido.dataAniversario)
+                  {favorecido.data_aniversario 
+                    ? favorecido.data_aniversario.toString().substring(0, 10).split('-').reverse().join('/')
                     : "Não informado"}
                 </span>
               </div>
@@ -153,35 +157,35 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
               <h3 className="text-lg font-semibold mt-4 mb-2">Endereço</h3>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">CEP:</span>
-                <span className="font-medium">{favorecido.endereco?.cep || "Não informado"}</span>
+                <span className="font-medium">{favorecido.cep || "Não informado"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Logradouro:</span>
-                <span className="font-medium">{favorecido.endereco?.logradouro || "Não informado"}</span>
+                <span className="font-medium">{favorecido.logradouro || "Não informado"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Número:</span>
-                <span className="font-medium">{favorecido.endereco?.numero || "Não informado"}</span>
+                <span className="font-medium">{favorecido.numero || "Não informado"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Complemento:</span>
-                <span className="font-medium">{favorecido.endereco?.complemento || "Não informado"}</span>
+                <span className="font-medium">{favorecido.complemento || "Não informado"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Bairro:</span>
-                <span className="font-medium">{favorecido.endereco?.bairro || "Não informado"}</span>
+                <span className="font-medium">{favorecido.bairro || "Não informado"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Cidade:</span>
-                <span className="font-medium">{favorecido.endereco?.cidade || "Não informado"}</span>
+                <span className="font-medium">{favorecido.cidade || "Não informado"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Estado:</span>
-                <span className="font-medium">{favorecido.endereco?.estado || "Não informado"}</span>
+                <span className="font-medium">{favorecido.estado || "Não informado"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">País:</span>
-                <span className="font-medium">{favorecido.endereco?.pais || "Brasil"}</span>
+                <span className="font-medium">{favorecido.pais || "Brasil"}</span>
               </div>
             </div>
           </CardContent>
