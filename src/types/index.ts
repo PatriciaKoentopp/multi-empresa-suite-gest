@@ -1,322 +1,73 @@
-export interface TabelaPreco {
+export interface Empresa {
   id: string;
-  empresa_id: string;
   nome: string;
-  vigencia_inicial: Date | null;
-  vigencia_final: Date | null;
+  cnpj: string;
+  endereco: string;
+  cidade: string;
+  estado: string;
+  telefone: string;
+  email: string;
+  logoUrl?: string;
   status: "ativo" | "inativo";
   created_at: Date;
   updated_at: Date;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface TabelaPrecoItem {
-  id: string;
-  tabela_id: string;
-  servico_id: string;
-  preco: number;
-  created_at: Date;
-  updated_at: Date;
-  nome?: string; // Adicionado para compatibilidade com o serviço
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface Servico {
-  id: string;
-  empresa_id: string;
-  nome: string;
-  descricao: string | null;
-  status: "ativo" | "inativo";
-  created_at: Date;
-  updated_at: Date;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-// Outros tipos necessários para resolver erros
-export interface GrupoFavorecido {
-  id: string;
-  empresa_id: string;
-  nome: string;
-  status: "ativo" | "inativo";
-  created_at: Date;
-  updated_at: Date;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface Profissao {
-  id: string;
-  empresa_id: string;
-  nome: string;
-  status: "ativo" | "inativo";
-  created_at: Date;
-  updated_at: Date;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface Favorecido {
-  id: string;
-  empresa_id: string;
-  nome: string;
-  tipo: string;
-  tipo_documento: string;
-  documento: string;
-  email: string | null;
-  telefone: string | null;
-  status: string;
-  grupo_id: string | null;
-  profissao_id: string | null;
-  data_aniversario: Date | null;
-  logradouro: string | null;
-  numero: string | null;
-  complemento: string | null;
-  bairro: string | null;
-  cidade: string | null;
-  estado: string | null;
-  cep: string | null;
-  pais: string | null;
-  nome_fantasia: string | null;
-  created_at: Date;
-  updated_at: Date;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
-  tipoDocumento?: string;
-  grupoId?: string | null;
-  profissaoId?: string | null;
-  dataAniversario?: Date | null;
-  nomeFantasia?: string | null;
-  
-  // Para compatibilidade com componentes que esperam object.endereco
-  endereco?: {
-    cep: string | null;
-    logradouro: string | null;
-    numero: string | null;
-    complemento: string | null;
-    bairro: string | null;
-    cidade: string | null;
-    estado: string | null;
-    pais: string | null;
-  };
-}
-
-export interface MotivoPerda {
-  id: string;
-  empresa_id: string;
-  nome: string;
-  status: "ativo" | "inativo";
-  created_at: Date;
-  updated_at: Date;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface Origem {
-  id: string;
-  empresa_id: string;
-  nome: string;
-  status: "ativo" | "inativo";
-  created_at: Date;
-  updated_at: Date;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface PlanoConta {
-  id: string;
-  empresa_id: string;
-  codigo: string;
-  descricao: string;
-  tipo: string;
-  status: "ativo" | "inativo";
-  created_at: Date;
-  updated_at: Date;
-  considerarDRE: boolean;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
 }
 
 export interface Usuario {
   id: string;
   nome: string;
   email: string;
-  empresa_id: string | null;
-  status: "ativo" | "inativo";
+  senha?: string;
   tipo: "Administrador" | "Usuário";
+  status: "ativo" | "inativo";
   vendedor: "sim" | "nao";
   created_at: Date;
   updated_at: Date;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
+  empresa_id: string;
 }
 
-export interface Company {
+export interface GrupoFavorecido {
   id: string;
-  razao_social: string;
-  nome_fantasia: string;
-  cnpj: string;
-  inscricao_estadual: string | null;
-  inscricao_municipal: string | null;
-  email: string | null;
-  site: string | null;
-  telefone: string | null;
-  cnae: string | null;
-  regime_tributacao: string | null;
-  logo: string | null;
-  created_at: Date | null;
-  updated_at: Date | null;
-  cep: string;
-  logradouro: string;
-  numero: string;
-  complemento: string | null;
-  bairro: string;
-  cidade: string;
-  estado: string;
-  pais: string;
-  
-  // Aliases em camelCase para compatibilidade
-  name?: string;
-  razaoSocial?: string;
+  nome: string;
+  status: "ativo" | "inativo";
+  empresa_id: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Profissao {
+  id: string;
+  nome: string;
+  status: "ativo" | "inativo";
+  empresa_id: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Favorecido {
+  id: string;
+  tipo: "fisica" | "juridica" | "publico" | "funcionario";
+  tipoDocumento: "cpf" | "cnpj";
+  documento: string;
+  grupoId: string;
+  profissaoId: string;
+  nome: string;
   nomeFantasia?: string;
-  inscricaoEstadual?: string | null;
-  inscricaoMunicipal?: string | null;
-  regimeTributacao?: string | null;
-  createdAt?: Date | null;
-  updatedAt?: Date | null;
-  
-  // Para compatibilidade com componentes que esperam object.endereco
+  email?: string;
+  telefone?: string;
   endereco?: {
     cep: string;
     logradouro: string;
     numero: string;
-    complemento: string | null;
+    complemento: string;
     bairro: string;
     cidade: string;
     estado: string;
     pais: string;
   };
-}
-
-export interface Funil {
-  id: string;
-  nome: string;
-  etapas: EtapaFunil[];
-  created_at: Date;
-  updated_at: Date;
+  dataAniversario?: Date;
+  status: "ativo" | "inativo";
   empresa_id: string;
-  status: string;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface EtapaFunil {
-  id: string;
-  funil_id: string;
-  nome: string;
-  ordem: number;
-  cor: string;
   created_at: Date;
   updated_at: Date;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface ModuleNavItem {
-  name: string;
-  href?: string;
-  icon?: React.ReactNode | string;
-  disabled?: boolean;
-  external?: boolean;
-  description?: string;
-  subItems?: SubNavItem[];
-}
-
-export interface SubNavItem {
-  name: string;
-  href: string;
-  disabled?: boolean;
-  external?: boolean;
-  description?: string;
-}
-
-export interface Orcamento {
-  id: string;
-  empresa_id: string;
-  favorecido_id: string;
-  codigo: string;
-  tipo: string;
-  data: Date;
-  codigo_projeto?: string | null;
-  observacoes?: string | null;
-  forma_pagamento: string;
-  numero_parcelas: number;
-  data_nota_fiscal?: Date | null;
-  numero_nota_fiscal?: string | null;
-  nota_fiscal_pdf?: string | null;
-  status: string;
-  created_at: Date;
-  updated_at: Date;
-  favorecido?: {
-    nome: string;
-  };
-  valor?: number;
-  itens?: Array<{valor: number}>;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface OrcamentoItem {
-  id: string;
-  orcamento_id: string;
-  servico_id: string;
-  valor: number;
-  created_at: Date;
-  updated_at: Date;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface OrcamentoParcela {
-  id: string;
-  orcamento_id: string;
-  numero_parcela: string;
-  valor: number;
-  data_vencimento: Date;
-  created_at: Date;
-  updated_at: Date;
-  
-  // Aliases em camelCase para compatibilidade
-  createdAt?: Date;
-  updatedAt?: Date;
 }
