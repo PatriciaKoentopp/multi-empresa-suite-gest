@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -201,13 +200,16 @@ export default function FluxoCaixaPage() {
         .select(`
           *,
           movimentacoes (
+            id,
             descricao,
             favorecido_id,
             numero_documento,
             numero_parcelas
           ),
           movimentacoes_parcelas (
-            numero
+            id,
+            numero,
+            movimentacao_id
           )
         `)
         .eq("empresa_id", currentCompany?.id)
@@ -251,54 +253,51 @@ export default function FluxoCaixaPage() {
         }
       }
       
-      // Coletar todos os IDs de movimentações para buscar informações sobre documentos/títulos
-      const movimentacoesIds = data
-        .filter(item => item.movimentacao_id)
-        .map(item => item.movimentacao_id);
-        
-      const movimentacoesParcelasIds = data
+      // Buscar informações sobre movimentações e parcelas
+      const movimentacoesIds = new Set<string>();
+      
+      // Adicionar IDs de movimentações relacionadas diretamente
+      data.filter(item => item.movimentacao_id).forEach(item => {
+        movimentacoesIds.add(item.movimentacao_id);
+      });
+      
+      // Adicionar IDs de movimentações relacionadas às parcelas
+      const parcelasIds = data
         .filter(item => item.movimentacao_parcela_id)
         .map(item => item.movimentacao_parcela_id);
-        
-      if (movimentacoesIds.length > 0 || movimentacoesParcelasIds.length > 0) {
-        // Buscar informações das parcelas 
-        if (movimentacoesParcelasIds.length > 0) {
-          const { data: parcelasData } = await supabase
-            .from("movimentacoes_parcelas")
-            .select("id, movimentacao_id, numero")
-            .in("id", movimentacoesParcelasIds);
-            
-          if (parcelasData) {
-            // Adiciona os IDs de movimentação relacionados às parcelas
-            parcelasData.forEach(parcela => {
-              if (!movimentacoesIds.includes(parcela.movimentacao_id)) {
-                movimentacoesIds.push(parcela.movimentacao_id);
-              }
-            });
-            
-            // Armazena as informações das parcelas
-            const docsMap: Record<string, any> = {...documentosCache};
-            parcelasData.forEach(parcela => {
-              docsMap[parcela.id] = parcela;
-            });
-            setDocumentosCache(docsMap);
-          }
+      
+      if (parcelasIds.length > 0) {
+        const { data: parcelasData } = await supabase
+          .from("movimentacoes_parcelas")
+          .select("id, movimentacao_id, numero")
+          .in("id", parcelasIds);
+          
+        if (parcelasData) {
+          // Armazena as informações das parcelas e adiciona movimentacoes_id ao conjunto
+          const docsMap: Record<string, any> = {...documentosCache};
+          parcelasData.forEach(parcela => {
+            docsMap[parcela.id] = parcela;
+            if (parcela.movimentacao_id) {
+              movimentacoesIds.add(parcela.movimentacao_id);
+            }
+          });
+          setDocumentosCache(docsMap);
         }
-        
-        // Buscar informações das movimentações para obter número de documento
-        if (movimentacoesIds.length > 0) {
-          const { data: movsData } = await supabase
-            .from("movimentacoes")
-            .select("id, numero_documento")
-            .in("id", movimentacoesIds);
-            
-          if (movsData) {
-            const docsMap: Record<string, any> = {...documentosCache};
-            movsData.forEach(mov => {
-              docsMap[mov.id] = mov;
-            });
-            setDocumentosCache(docsMap);
-          }
+      }
+      
+      // Buscar informações das movimentações para obter número de documento
+      if (movimentacoesIds.size > 0) {
+        const { data: movsData } = await supabase
+          .from("movimentacoes")
+          .select("id, numero_documento")
+          .in("id", Array.from(movimentacoesIds));
+          
+        if (movsData) {
+          const docsMap: Record<string, any> = {...documentosCache};
+          movsData.forEach(mov => {
+            docsMap[mov.id] = mov;
+          });
+          setDocumentosCache(docsMap);
         }
       }
 
@@ -503,14 +502,13 @@ export default function FluxoCaixaPage() {
   
   // Função para obter número de documento/parcela formatado
   function getTituloParcela(linha: any) {
-    // Caso 1: Temos uma movimentação de parcela direta
+    // Caso 1: Temos uma movimentação de parcela
     if (linha.movimentacao_parcela_id) {
       const parcela = documentosCache[linha.movimentacao_parcela_id];
-      if (parcela) {
-        // Buscar o número do documento da movimentação pai
+      if (parcela && parcela.movimentacao_id) {
         const movPai = documentosCache[parcela.movimentacao_id];
         const numeroDoc = movPai?.numero_documento || '-';
-        return `${numeroDoc}/${parcela.numero}`;
+        return `${numeroDoc}/${parcela.numero || '1'}`;
       }
     }
     
@@ -520,16 +518,8 @@ export default function FluxoCaixaPage() {
       if (movimento) {
         return `${movimento.numero_documento || '-'}/1`;
       }
-      
-      // Tenta buscar das informações aninhadas
-      if (linha.movimentacoes) {
-        const numDoc = linha.movimentacoes.numero_documento || '-';
-        const parcela = linha.movimentacoes_parcelas?.[0]?.numero || '1';
-        return `${numDoc}/${parcela}`;
-      }
     }
     
-    // Caso padrão
     return "-";
   }
 
@@ -791,14 +781,3 @@ export default function FluxoCaixaPage() {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
