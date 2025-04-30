@@ -80,20 +80,25 @@ export function Dashboard() {
         let totalSaldo = 0;
 
         if (contasCorrentes && contasCorrentes.length > 0) {
-          // Para cada conta, buscar o último registro do fluxo de caixa para obter o saldo atual
+          // Para cada conta, buscar TODAS as movimentações ordenadas por data
           for (const conta of contasCorrentes) {
-            const { data: ultimoFluxo, error: erroFluxo } = await supabase
+            const { data: movimentacoes, error: erroMovimentacoes } = await supabase
               .from('fluxo_caixa')
-              .select('saldo')
+              .select('*')
               .eq('conta_corrente_id', conta.id)
               .eq('empresa_id', currentCompany.id)
-              .order('created_at', { ascending: false })
-              .limit(1);
+              .order('data_movimentacao', { ascending: true });
 
+            if (erroMovimentacoes) throw erroMovimentacoes;
+
+            // Calcular o saldo como na página de fluxo de caixa
             let saldoAtual = Number(conta.saldo_inicial || 0);
 
-            if (!erroFluxo && ultimoFluxo && ultimoFluxo.length > 0) {
-              saldoAtual = Number(ultimoFluxo[0].saldo);
+            if (movimentacoes && movimentacoes.length > 0) {
+              // Somar todas as movimentações ordenadas cronologicamente
+              for (const mov of movimentacoes) {
+                saldoAtual += Number(mov.valor);
+              }
             }
 
             saldoContas.push({
@@ -140,7 +145,6 @@ export function Dashboard() {
         // Filtrar parcelas em atraso
         const parcelasEmAtraso: ContaReceber[] = [];
 
-        // Se temos dados de contas a receber, vamos buscar informações dos favorecidos para as parcelas em atraso
         if (contasReceber && contasReceber.length > 0) {
           const parcelasAtrasadas = contasReceber.filter(parcela => new Date(parcela.data_vencimento) < hoje && parcela.movimentacao?.tipo_operacao === 'receber');
           if (parcelasAtrasadas.length > 0) {
@@ -213,7 +217,6 @@ export function Dashboard() {
         }, 0) || 0;
 
         // 4. Buscar novos clientes (cadastrados no mês atual)
-        // ALTERAÇÃO: Buscar primeiro o ID do grupo "Clientes"
         const {
           data: grupoClientes,
           error: erroGrupoClientes
