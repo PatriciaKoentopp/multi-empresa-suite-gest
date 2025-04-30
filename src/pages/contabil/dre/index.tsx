@@ -323,8 +323,8 @@ export default function DrePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <Card>
+    <div className="w-full">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>DRE - Demonstração do Resultado do Exercício</CardTitle>
         </CardHeader>
@@ -426,7 +426,7 @@ export default function DrePage() {
               <div className="animate-pulse">Carregando dados do DRE...</div>
             </div>
           ) : (
-            <div>
+            <div className="overflow-x-auto">
               {/* Acumulado padrão */}
               {visualizacao === "acumulado" && (
                 <Accordion type="single" collapsible className="w-full">
@@ -440,24 +440,26 @@ export default function DrePage() {
                       </AccordionTrigger>
                       {temDetalhes(grupo) && (
                         <AccordionContent>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Data</TableHead>
-                                <TableHead>Descrição</TableHead>
-                                <TableHead className="text-right">Valor</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {grupo.detalhes.map((detalhe, idx) => (
-                                <TableRow key={idx}>
-                                  <TableCell>{detalhe.data_movimentacao}</TableCell>
-                                  <TableCell>{detalhe.descricao}</TableCell>
-                                  <TableCell className="text-right">{formatCurrency(detalhe.valor)}</TableCell>
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Data</TableHead>
+                                  <TableHead>Descrição</TableHead>
+                                  <TableHead className="text-right">Valor</TableHead>
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                              </TableHeader>
+                              <TableBody>
+                                {grupo.detalhes.map((detalhe, idx) => (
+                                  <TableRow key={idx}>
+                                    <TableCell>{detalhe.data_movimentacao}</TableCell>
+                                    <TableCell>{detalhe.descricao}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(detalhe.valor)}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
                         </AccordionContent>
                       )}
                     </AccordionItem>
@@ -467,34 +469,36 @@ export default function DrePage() {
 
               {/* Comparação de anos */}
               {visualizacao === "comparar_anos" && dadosDRE && (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Conta</TableHead>
-                      {anosComparar.map(a => (
-                        <TableHead key={a} className="text-right">{a}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contasDRE.map(conta => (
-                      <TableRow key={conta}>
-                        <TableCell>{conta}</TableCell>
-                        {anosComparar.map(anoComp => {
-                          // Dados do DRE são um objeto com anos como chaves
-                          const dadosAno = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoComp] || [];
-                          // Procurar a conta específica nos dados do ano
-                          const contaData = dadosAno.find(item => item.tipo === conta);
-                          return (
-                            <TableCell key={anoComp} className="text-right">
-                              {formatCurrency(contaData?.valor || 0)}
-                            </TableCell>
-                          );
-                        })}
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Conta</TableHead>
+                        {anosComparar.map(a => (
+                          <TableHead key={a} className="text-right">{a}</TableHead>
+                        ))}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {contasDRE.map(conta => (
+                        <TableRow key={conta}>
+                          <TableCell>{conta}</TableCell>
+                          {anosComparar.map(anoComp => {
+                            // Dados do DRE são um objeto com anos como chaves
+                            const dadosAno = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoComp] || [];
+                            // Procurar a conta específica nos dados do ano
+                            const contaData = dadosAno.find(item => item.tipo === conta);
+                            return (
+                              <TableCell key={anoComp} className="text-right">
+                                {formatCurrency(contaData?.valor || 0)}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
 
               {/* Mensal por mês único */}
@@ -510,24 +514,26 @@ export default function DrePage() {
                       </AccordionTrigger>
                       {temDetalhes(grupo) && (
                         <AccordionContent>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Data</TableHead>
-                                <TableHead>Descrição</TableHead>
-                                <TableHead className="text-right">Valor</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {grupo.detalhes.map((detalhe, idx) => (
-                                <TableRow key={idx}>
-                                  <TableCell>{detalhe.data_movimentacao}</TableCell>
-                                  <TableCell>{detalhe.descricao}</TableCell>
-                                  <TableCell className="text-right">{formatCurrency(detalhe.valor)}</TableCell>
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Data</TableHead>
+                                  <TableHead>Descrição</TableHead>
+                                  <TableHead className="text-right">Valor</TableHead>
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                              </TableHeader>
+                              <TableBody>
+                                {grupo.detalhes.map((detalhe, idx) => (
+                                  <TableRow key={idx}>
+                                    <TableCell>{detalhe.data_movimentacao}</TableCell>
+                                    <TableCell>{detalhe.descricao}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(detalhe.valor)}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
                         </AccordionContent>
                       )}
                     </AccordionItem>
@@ -537,32 +543,34 @@ export default function DrePage() {
 
               {/* Mensal todos os meses em colunas */}
               {visualizacao === "mensal" && mes === "todos" && (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Conta</TableHead>
-                      {meses.map(m => (
-                        <TableHead key={m.value} className="text-center">{m.label}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contasDRE.map(conta => (
-                      <TableRow key={conta}>
-                        <TableCell>{conta}</TableCell>
-                        {meses.map(m => {
-                          const dadosMes = (dadosDRE as any[]).find(x => x.mes === m.value);
-                          const linhaMes = dadosMes?.dados?.find((i: GrupoMovimentacao) => i.tipo === conta);
-                          return (
-                            <TableCell key={m.value} className="text-right">
-                              {formatCurrency(linhaMes?.valor || 0)}
-                            </TableCell>
-                          );
-                        })}
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Conta</TableHead>
+                        {meses.map(m => (
+                          <TableHead key={m.value} className="text-center">{m.label}</TableHead>
+                        ))}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {contasDRE.map(conta => (
+                        <TableRow key={conta}>
+                          <TableCell>{conta}</TableCell>
+                          {meses.map(m => {
+                            const dadosMes = (dadosDRE as any[]).find(x => x.mes === m.value);
+                            const linhaMes = dadosMes?.dados?.find((i: GrupoMovimentacao) => i.tipo === conta);
+                            return (
+                              <TableCell key={m.value} className="text-right">
+                                {formatCurrency(linhaMes?.valor || 0)}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </div>
           )}
@@ -571,3 +579,4 @@ export default function DrePage() {
     </div>
   );
 }
+
