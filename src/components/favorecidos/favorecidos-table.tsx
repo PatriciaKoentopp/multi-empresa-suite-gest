@@ -113,7 +113,7 @@ export function FavorecidosTable({
                     <div className="font-medium">{favorecido.nome}</div>
                   </div>
                 </TableCell>
-                <TableCell>{favorecido.nome_fantasia || "-"}</TableCell>
+                <TableCell>{favorecido.nomeFantasia || "-"}</TableCell>
                 <TableCell>{getGrupoNome(favorecido.grupo_id || favorecido.grupoId)}</TableCell>
                 <TableCell>
                   <div className="text-sm">
