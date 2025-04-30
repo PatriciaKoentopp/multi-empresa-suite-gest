@@ -243,10 +243,27 @@ export default function FavorecidosPage() {
       // Converter a data de aniversário para o formato YYYY-MM-DD para o Supabase
       const dataAniversarioFormatada = dateToISOString(data.dataAniversario);
 
+      // Mapear os novos tipos para os valores aceitos no banco de dados
+      let tipoParaBanco;
+      switch (data.tipo) {
+        case "fisica":
+          tipoParaBanco = "cliente";
+          break;
+        case "juridica":
+          tipoParaBanco = "fornecedor";
+          break;
+        case "publico":
+        case "funcionario":
+          tipoParaBanco = data.tipo;
+          break;
+        default:
+          tipoParaBanco = "cliente"; // valor padrão
+      }
+
       // Preparar os dados para inserção/atualização no Supabase
       const favorecidoData = {
         empresa_id: currentCompany.id,
-        tipo: data.tipo,
+        tipo: tipoParaBanco, // Usar o valor mapeado para o banco
         tipo_documento: data.tipoDocumento,
         documento: data.documento,
         grupo_id: data.grupoId,
@@ -282,12 +299,13 @@ export default function FavorecidosPage() {
           return;
         }
 
+        // Ao atualizar na lista local, converter de volta para o formato da interface
         setFavorecidos(prev =>
           prev.map(f =>
             f.id === editingFavorecido.id
               ? {
                   ...f,
-                  tipo: favorecidoData.tipo,
+                  tipo: data.tipo,
                   tipoDocumento: favorecidoData.tipo_documento,
                   documento: favorecidoData.documento,
                   grupoId: favorecidoData.grupo_id,
@@ -329,9 +347,26 @@ export default function FavorecidosPage() {
         }
 
         if (novoFavorecido) {
+          // Ao adicionar à lista local, converter para o formato da interface
+          let tipoParaInterface;
+          switch (novoFavorecido.tipo) {
+            case "cliente":
+              tipoParaInterface = "fisica";
+              break;
+            case "fornecedor":
+              tipoParaInterface = "juridica";
+              break;
+            case "publico":
+            case "funcionario":
+              tipoParaInterface = novoFavorecido.tipo;
+              break;
+            default:
+              tipoParaInterface = "fisica"; // valor padrão
+          }
+          
           const favorecidoFormatado: Favorecido = {
             id: novoFavorecido.id,
-            tipo: novoFavorecido.tipo as "cliente" | "fornecedor" | "publico" | "funcionario",
+            tipo: tipoParaInterface as "fisica" | "juridica" | "publico" | "funcionario",
             tipoDocumento: novoFavorecido.tipo_documento as "cpf" | "cnpj",
             documento: novoFavorecido.documento,
             grupoId: novoFavorecido.grupo_id,
@@ -459,7 +494,10 @@ export default function FavorecidosPage() {
         (favorecido.nomeFantasia?.toLowerCase() || "").includes(searchTerm.toLowerCase());
       
       // Filtro por tipo
-      const matchesTipo = tipoFilter === "todos" || favorecido.tipo === tipoFilter;
+      const matchesTipo = tipoFilter === "todos" || 
+        (tipoFilter === "cliente" && favorecido.tipo === "fisica") ||
+        (tipoFilter === "fornecedor" && favorecido.tipo === "juridica") ||
+        favorecido.tipo === tipoFilter;
       
       // Filtro por status
       const matchesStatus = statusFilter === "todos" || favorecido.status === statusFilter;

@@ -55,7 +55,7 @@ export function FavorecidosForm({
       data_aniversario: favorecido.dataAniversario ? new Date(favorecido.dataAniversario) : undefined,
       status: favorecido.status as "ativo" | "inativo",
     } : {
-      tipo: "fisica", // Alterado de "cliente" para "fisica"
+      tipo: "fisica",
       tipo_documento: "cpf",
       documento: "",
       nome: "",
