@@ -2,9 +2,13 @@
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { useAuth } from "@/contexts/auth-context";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
-export function MainLayout() {
+interface MainLayoutProps {
+  children: React.ReactNode;
+}
+
+export function MainLayout({ children }: MainLayoutProps) {
   const { isAuthenticated, isLoading } = useAuth();
   
   // If loading, show loading state
@@ -30,7 +34,7 @@ export function MainLayout() {
       <div className="flex flex-1 flex-col">
         <Header />
         <main className="flex-1 p-4 lg:p-6">
-          <Outlet />
+          {children}
         </main>
         <footer className="border-t p-4 text-center text-sm text-muted-foreground">
           <p>ERP Multi-empresa © {new Date().getFullYear()}</p>

@@ -27,7 +27,7 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
           setGrupo({
             id: grupoData.id,
             nome: grupoData.nome,
-            status: grupoData.status,
+            status: grupoData.status as "ativo" | "inativo",
             empresa_id: grupoData.empresa_id,
             created_at: new Date(grupoData.created_at),
             updated_at: new Date(grupoData.updated_at)
@@ -46,7 +46,7 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
           setProfissao({
             id: profissaoData.id,
             nome: profissaoData.nome,
-            status: profissaoData.status,
+            status: profissaoData.status as "ativo" | "inativo",
             empresa_id: profissaoData.empresa_id,
             created_at: new Date(profissaoData.created_at),
             updated_at: new Date(profissaoData.updated_at)

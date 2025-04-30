@@ -61,7 +61,9 @@ export default function RelatorioFavorecido() {
               cidade: favorecido.cidade || "",
               estado: favorecido.estado || "",
               pais: favorecido.pais || "Brasil",
-            }
+            },
+            created_at: new Date(favorecido.created_at),
+            updated_at: new Date(favorecido.updated_at)
           })));
 
           // Verificar se há um favorecido na URL

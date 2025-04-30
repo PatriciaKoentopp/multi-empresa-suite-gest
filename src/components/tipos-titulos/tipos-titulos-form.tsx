@@ -59,7 +59,7 @@ export function TiposTitulosForm({
       nome: tipoTitulo?.nome || "",
       tipo: tipoTitulo?.tipo || "receber",
       conta_contabil_id: tipoTitulo?.conta_contabil_id || "",
-      status: tipoTitulo?.status || "ativo",
+      status: (tipoTitulo?.status as "ativo" | "inativo") || "ativo",
     },
   });
 
