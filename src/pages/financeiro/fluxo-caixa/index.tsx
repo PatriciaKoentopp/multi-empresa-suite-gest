@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,6 +119,7 @@ export default function FluxoCaixaPage() {
   const [favorecidosCache, setFavorecidosCache] = useState<Record<string, any>>({});
   const [contaCorrenteSelecionada, setContaCorrenteSelecionada] = useState<any>(null);
   const [documentosCache, setDocumentosCache] = useState<Record<string, any>>({});
+  const [parcelasCache, setParcelasCache] = useState<Record<string, any>>({});
 
   // Buscar contas correntes
   const { data: contasCorrentes = [] } = useQuery({
@@ -270,19 +270,19 @@ export default function FluxoCaixaPage() {
       if (parcelasIds.length > 0) {
         const { data: parcelasData } = await supabase
           .from("movimentacoes_parcelas")
-          .select("id, movimentacao_id, numero")
+          .select("id, movimentacao_id, numero, data_pagamento")
           .in("id", parcelasIds);
           
         if (parcelasData) {
           // Armazena as informações das parcelas e adiciona movimentacoes_id ao conjunto
-          const docsMap: Record<string, any> = {...documentosCache};
+          const parcelasMap: Record<string, any> = {...parcelasCache};
           parcelasData.forEach(parcela => {
-            docsMap[parcela.id] = parcela;
+            parcelasMap[parcela.id] = parcela;
             if (parcela.movimentacao_id) {
               movimentacoesIds.add(parcela.movimentacao_id);
             }
           });
-          setDocumentosCache(docsMap);
+          setParcelasCache(parcelasMap);
         }
       }
       
@@ -505,11 +505,13 @@ export default function FluxoCaixaPage() {
   function getTituloParcela(linha: any) {
     // Caso 1: Temos uma movimentação de parcela
     if (linha.movimentacao_parcela_id) {
-      const parcela = documentosCache[linha.movimentacao_parcela_id];
+      const parcela = parcelasCache[linha.movimentacao_parcela_id];
       if (parcela && parcela.movimentacao_id) {
-        const movPai = documentosCache[parcela.movimentacao_id];
+        const movimentacaoId = parcela.movimentacao_id;
+        const movPai = documentosCache[movimentacaoId];
         const numeroDoc = movPai?.numero_documento || '-';
-        return `${numeroDoc}/${parcela.numero || '1'}`;
+        const numeroParcela = parcela.numero || '1';
+        return `${numeroDoc}/${numeroParcela}`;
       }
     }
     
@@ -773,23 +775,3 @@ export default function FluxoCaixaPage() {
                                   <span className="text-blue-500 mr-2">
                                     <svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                                    </svg>
-                                  </span>
-                                  Desfazer conciliação
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
