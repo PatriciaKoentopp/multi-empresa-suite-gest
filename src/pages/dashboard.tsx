@@ -163,10 +163,11 @@ export function Dashboard() {
           }
         }
         
-        // 3. Buscar contas a pagar em aberto
+        // 3. Buscar contas a pagar em aberto - CORREÇÃO AQUI
         const { data: contasPagar, error: erroContasPagar } = await supabase
           .from('movimentacoes_parcelas')
           .select(`
+            id,
             valor,
             movimentacao:movimentacao_id(
               tipo_operacao,
@@ -174,12 +175,19 @@ export function Dashboard() {
             )
           `)
           .is('data_pagamento', null)
-          .eq('movimentacao.tipo_operacao', 'pagar')
+          .eq('movimentacao.tipo_operacao', 'pagar')  // Garantindo que é tipo pagar
           .eq('movimentacao.empresa_id', currentCompany.id);
         
         if (erroContasPagar) throw erroContasPagar;
         
-        const totalContasPagar = contasPagar?.reduce((acc, conta) => acc + (Number(conta.valor) || 0), 0) || 0;
+        // Calculando corretamente o total das contas a pagar
+        const totalContasPagar = contasPagar?.reduce((acc, conta) => {
+          // Verificando se é realmente uma conta a pagar
+          if (conta.movimentacao?.tipo_operacao === 'pagar') {
+            return acc + (Number(conta.valor) || 0);
+          }
+          return acc;
+        }, 0) || 0;
         
         // 4. Buscar novos clientes (cadastrados no mês atual)
         const { data: novosClientes, error: erroNovosClientes } = await supabase
