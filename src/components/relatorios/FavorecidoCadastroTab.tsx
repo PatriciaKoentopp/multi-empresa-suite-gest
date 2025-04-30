@@ -77,7 +77,7 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
     }
   };
 
-  // Função revisada para formatar corretamente CPF e CNPJ
+  // Função atualizada para formatar corretamente CPF e CNPJ independente do tipo de favorecido
   const formatarDocumento = (documento: string, tipoDocumento: string): string => {
     if (!documento) return "Não informado";
     

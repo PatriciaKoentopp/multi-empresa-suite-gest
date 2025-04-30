@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,7 +43,6 @@ export default function RelatorioFavorecido() {
         }
   
         if (data) {
-          // Garantindo que os tipos estão corretos sem conversões desnecessárias
           setFavorecidos(data);
 
           // Verificar se há um favorecido na URL
@@ -171,4 +169,3 @@ export default function RelatorioFavorecido() {
     </div>
   );
 }
-
