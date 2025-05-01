@@ -17,9 +17,25 @@ interface SalesBarChartProps {
     faturado: number;
   }[];
   className?: string;
+  multiColor?: boolean;
 }
 
-export const SalesBarChart = ({ data, className }: SalesBarChartProps) => {
+const CHART_COLORS = [
+  "#4CAF50", // Verde
+  "#2196F3", // Azul
+  "#FFC107", // Amarelo
+  "#9C27B0", // Roxo
+  "#FF5722", // Laranja
+  "#795548", // Marrom
+  "#607D8B", // Azul Acinzentado
+  "#E91E63", // Rosa
+  "#3F51B5", // Índigo
+  "#CDDC39", // Lima
+  "#009688", // Verde-azulado
+  "#FF9800"  // Âmbar
+];
+
+export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarChartProps) => {
   return (
     <div className={className}>
       <ChartContainer
@@ -56,11 +72,23 @@ export const SalesBarChart = ({ data, className }: SalesBarChartProps) => {
               tickFormatter={(value) => `R$ ${value.toLocaleString()}`}
             />
             <Tooltip content={<ChartTooltipContent labelKey="name" />} />
-            <Bar
-              dataKey="faturado"
-              fill="var(--color-faturado)"
-              radius={[4, 4, 0, 0]}
-            />
+            {multiColor ? (
+              data.map((entry, index) => (
+                <Bar 
+                  key={`bar-${entry.name}`}
+                  dataKey="faturado" 
+                  name={entry.name}
+                  fill={CHART_COLORS[index % CHART_COLORS.length]}
+                  radius={[4, 4, 0, 0]}
+                />
+              ))
+            ) : (
+              <Bar
+                dataKey="faturado"
+                fill="var(--color-faturado)"
+                radius={[4, 4, 0, 0]}
+              />
+            )}
           </BarChart>
         </ResponsiveContainer>
       </ChartContainer>

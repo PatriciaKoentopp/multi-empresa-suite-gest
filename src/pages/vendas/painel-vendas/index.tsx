@@ -104,14 +104,14 @@ const PainelVendasPage = () => {
         console.log("Dados dos últimos 12 meses:", lastTwelveMonthsData);
 
         // Processar dados para comparativo mensal
-        const monthlyData: { [key: string]: { total: number, date: Date } } = {};
+        const monthlyComparisonMap: { [key: string]: { total: number, date: Date } } = {};
         const currentDate = new Date();
         
         // Inicializar os últimos 12 meses com valores zero
         for (let i = 0; i < 12; i++) {
           const date = subMonths(currentDate, i);
           const monthKey = format(date, 'yyyy-MM');
-          monthlyData[monthKey] = { total: 0, date: new Date(date) };
+          monthlyComparisonMap[monthKey] = { total: 0, date: new Date(date) };
         }
         
         // Preencher com dados reais
@@ -120,17 +120,17 @@ const PainelVendasPage = () => {
             const date = new Date(orcamento.data_venda);
             const monthKey = format(date, 'yyyy-MM');
             
-            if (monthlyData[monthKey]) {
+            if (monthlyComparisonMap[monthKey]) {
               const total = orcamento.orcamentos_itens.reduce(
                 (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
               );
-              monthlyData[monthKey].total += total;
+              monthlyComparisonMap[monthKey].total += total;
             }
           }
         });
         
         // Calcular variações e formatar dados para a tabela
-        const sortedMonths = Object.entries(monthlyData)
+        const sortedMonths = Object.entries(monthlyComparisonMap)
           .sort(([keyA], [keyB]) => keyB.localeCompare(keyA))
           .map(([key, data], index, array) => {
             // Extrair ano e mês do key (yyyy-MM)
@@ -302,7 +302,7 @@ const PainelVendasPage = () => {
         });
 
         // Buscar dados para o gráfico de barras (vendas mensais)
-        const { data: monthlyData, error: monthlyError } = await supabase
+        const { data: chartMonthlyData, error: chartMonthlyError } = await supabase
           .from('orcamentos')
           .select(`
             data_venda,
@@ -313,12 +313,12 @@ const PainelVendasPage = () => {
           .gte('data_venda', startYearDate)
           .order('data_venda');
 
-        if (monthlyError) throw monthlyError;
-        console.log("Dados mensais para gráfico:", monthlyData);
+        if (chartMonthlyError) throw chartMonthlyError;
+        console.log("Dados mensais para gráfico:", chartMonthlyData);
 
         const monthlyChartData = Array.from({ length: 12 }, (_, i) => {
           const month = i + 1;
-          const monthData = monthlyData?.filter(
+          const monthData = chartMonthlyData?.filter(
             (item) => {
               if (!item.data_venda) return false;
               const date = new Date(item.data_venda);
