@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, ArrowUp, ArrowDown } from "lucide-react";
+import { Loader2, ArrowUp, ArrowDown, ChevronDown } from "lucide-react";
 import { format, subDays, startOfMonth, endOfMonth, subMonths, subYears, getYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
@@ -18,6 +17,12 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from "@/components/ui/accordion";
 
 interface SalesData {
   total_vendas: number;
@@ -37,6 +42,13 @@ interface MonthlyComparison {
   sortDate: Date; // Data para ordenação
 }
 
+interface YearlyComparison {
+  year: number;
+  total: number;
+  yearlyVariation: number | null;
+  months: MonthlyComparison[];
+}
+
 const PainelVendasPage = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -45,6 +57,7 @@ const PainelVendasPage = () => {
   const [quarterlyChartData, setQuarterlyChartData] = useState<any[]>([]);
   const [yearlyChartData, setYearlyChartData] = useState<any[]>([]);
   const [monthlyComparisonData, setMonthlyComparisonData] = useState<MonthlyComparison[]>([]);
+  const [yearlyComparisonData, setYearlyComparisonData] = useState<YearlyComparison[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -220,6 +233,47 @@ const PainelVendasPage = () => {
           });
           
         setMonthlyComparisonData(sortedMonths);
+        
+        // Agrupar dados mensais por ano para a nova visualização
+        const yearlyData: Record<number, YearlyComparison> = {};
+        
+        sortedMonths.forEach(monthData => {
+          if (!yearlyData[monthData.year]) {
+            yearlyData[monthData.year] = {
+              year: monthData.year,
+              total: 0,
+              yearlyVariation: null,
+              months: []
+            };
+          }
+          
+          yearlyData[monthData.year].total += monthData.total;
+          yearlyData[monthData.year].months.push(monthData);
+        });
+        
+        // Calcular variação entre anos
+        const yearsSorted = Object.values(yearlyData).sort((a, b) => b.year - a.year);
+        
+        yearsSorted.forEach((yearData, index) => {
+          if (index < yearsSorted.length - 1) {
+            const prevYearTotal = yearsSorted[index + 1].total;
+            if (prevYearTotal > 0 && yearData.total > 0) {
+              yearData.yearlyVariation = ((yearData.total - prevYearTotal) / prevYearTotal) * 100;
+            }
+          }
+          
+          // Ordenar os meses dentro de cada ano do mais recente para o mais antigo
+          yearData.months.sort((a, b) => {
+            // Extrair mês numérico do nome do mês
+            const monthsOrder = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 
+                                'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+            const monthA = monthsOrder.findIndex(m => m.startsWith(a.month.toLowerCase()));
+            const monthB = monthsOrder.findIndex(m => m.startsWith(b.month.toLowerCase()));
+            return monthB - monthA; // Ordem decrescente
+          });
+        });
+        
+        setYearlyComparisonData(yearsSorted);
 
         // Definir datas para mês atual e anterior
         const startCurrentMonth = startOfMonth(new Date());
@@ -564,7 +618,7 @@ const PainelVendasPage = () => {
         </Tabs>
       </div>
 
-      {/* Tabela de Comparativo de Vendas (movida para baixo do gráfico) */}
+      {/* Tabela de Comparativo de Vendas com Accordion */}
       <Card>
         <CardHeader>
           <CardTitle>Comparativo de Vendas</CardTitle>
@@ -573,54 +627,79 @@ const PainelVendasPage = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Mês/Ano</TableHead>
+                <TableHead className="w-[180px]">Período</TableHead>
                 <TableHead className="text-right">Total de Vendas</TableHead>
-                <TableHead className="text-right">Variação Mensal</TableHead>
-                <TableHead className="text-right">Variação Anual</TableHead>
+                <TableHead className="text-right">Variação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {monthlyComparisonData.map((item, index) => (
-                <TableRow key={`${item.month}-${item.year}`}>
-                  <TableCell className="font-medium">
-                    {item.month.charAt(0).toUpperCase() + item.month.slice(1)} {item.year}
-                  </TableCell>
-                  <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
-                  <TableCell className="text-right">
-                    {item.monthlyVariation !== null ? (
-                      <div className="flex items-center justify-end gap-1">
-                        {item.monthlyVariation > 0 ? (
-                          <ArrowUp className="text-green-600 h-4 w-4" />
-                        ) : item.monthlyVariation < 0 ? (
-                          <ArrowDown className="text-red-600 h-4 w-4" />
-                        ) : null}
-                        <span className={
-                          item.monthlyVariation > 0 ? 'text-green-600' : 
-                          item.monthlyVariation < 0 ? 'text-red-600' : ''
-                        }>
-                          {Math.abs(item.monthlyVariation).toFixed(1)}%
-                        </span>
+              {yearlyComparisonData.map((yearData) => (
+                <Accordion type="single" collapsible key={yearData.year}>
+                  <AccordionItem value={`year-${yearData.year}`} className="border-0">
+                    <TableRow>
+                      <TableCell className="py-0">
+                        <AccordionTrigger className="py-3 hover:no-underline">
+                          <span className="font-medium">{yearData.year}</span>
+                        </AccordionTrigger>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(yearData.total)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {yearData.yearlyVariation !== null ? (
+                          <div className="flex items-center justify-end gap-1">
+                            {yearData.yearlyVariation > 0 ? (
+                              <ArrowUp className="text-green-600 h-4 w-4" />
+                            ) : yearData.yearlyVariation < 0 ? (
+                              <ArrowDown className="text-red-600 h-4 w-4" />
+                            ) : null}
+                            <span className={
+                              yearData.yearlyVariation > 0 ? 'text-green-600' : 
+                              yearData.yearlyVariation < 0 ? 'text-red-600' : ''
+                            }>
+                              {Math.abs(yearData.yearlyVariation).toFixed(1)}%
+                            </span>
+                          </div>
+                        ) : "-"}
+                      </TableCell>
+                    </TableRow>
+                    <AccordionContent>
+                      <div className="pl-6 pb-2">
+                        <Table>
+                          <TableBody>
+                            {yearData.months.map((monthData) => (
+                              <TableRow key={`${yearData.year}-${monthData.month}`} className="border-0">
+                                <TableCell className="py-2">
+                                  <span className="font-normal">{monthData.month}</span>
+                                </TableCell>
+                                <TableCell className="text-right py-2">
+                                  {formatCurrency(monthData.total)}
+                                </TableCell>
+                                <TableCell className="text-right py-2">
+                                  {monthData.monthlyVariation !== null ? (
+                                    <div className="flex items-center justify-end gap-1">
+                                      {monthData.monthlyVariation > 0 ? (
+                                        <ArrowUp className="text-green-600 h-4 w-4" />
+                                      ) : monthData.monthlyVariation < 0 ? (
+                                        <ArrowDown className="text-red-600 h-4 w-4" />
+                                      ) : null}
+                                      <span className={
+                                        monthData.monthlyVariation > 0 ? 'text-green-600' : 
+                                        monthData.monthlyVariation < 0 ? 'text-red-600' : ''
+                                      }>
+                                        {Math.abs(monthData.monthlyVariation).toFixed(1)}%
+                                      </span>
+                                    </div>
+                                  ) : "-"}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </div>
-                    ) : "-"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {item.yearlyVariation !== null ? (
-                      <div className="flex items-center justify-end gap-1">
-                        {item.yearlyVariation > 0 ? (
-                          <ArrowUp className="text-green-600 h-4 w-4" />
-                        ) : item.yearlyVariation < 0 ? (
-                          <ArrowDown className="text-red-600 h-4 w-4" />
-                        ) : null}
-                        <span className={
-                          item.yearlyVariation > 0 ? 'text-green-600' : 
-                          item.yearlyVariation < 0 ? 'text-red-600' : ''
-                        }>
-                          {Math.abs(item.yearlyVariation).toFixed(1)}%
-                        </span>
-                      </div>
-                    ) : "-"}
-                  </TableCell>
-                </TableRow>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               ))}
             </TableBody>
           </Table>
