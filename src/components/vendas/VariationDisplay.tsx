@@ -17,7 +17,8 @@ export const VariationDisplay = ({ value }: VariationDisplayProps) => {
   const Icon = isPositive ? ArrowUp : ArrowDown;
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
-  const formattedValue = Math.abs(value).toFixed(1).replace('.', ',');
+  // Garante que temos sempre uma casa decimal, para valores como -6,75% ou 8,01%
+  const formattedValue = Math.abs(value).toFixed(2).replace('.', ',');
   
   return (
     <div className={`flex items-center justify-end gap-1 ${color} font-medium`}>
