@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,6 +66,7 @@ export const useVendasDashboard = () => {
       const startCurrentMonthFormatted = format(startCurrentMonth, 'yyyy-MM-dd');
       const endCurrentMonthFormatted = format(endCurrentMonth, 'yyyy-MM-dd');
       
+      // Buscar vendas do mês atual - usando formato de data e operadores corretos
       const { data: currentMonthData, error: currentMonthError } = await supabase
         .from('orcamentos')
         .select(`
@@ -84,7 +86,7 @@ export const useVendasDashboard = () => {
         return acc + orcamentoTotal;
       }, 0) || 0;
       
-      // Buscar vendas do mês anterior - usando formato de data correto
+      // Buscar vendas do mês anterior - usando formato de data e operadores corretos
       const startLastMonth = startOfMonth(subMonths(new Date(), 1));
       const endLastMonth = endOfMonth(subMonths(new Date(), 1));
       
@@ -112,7 +114,10 @@ export const useVendasDashboard = () => {
       // Calcular variação percentual
       const variacaoPercentual = vendasMesAnterior === 0 ? 100 : ((vendasMesAtual - vendasMesAnterior) / vendasMesAnterior) * 100;
 
-      // Buscar total anual de vendas do ano atual
+      // Buscar total anual de vendas do ano atual - usando formato de data correto com datas específicas
+      const startOfYear = format(new Date(currentYear, 0, 1), 'yyyy-MM-dd');
+      const endOfYear = format(new Date(currentYear, 11, 31), 'yyyy-MM-dd');
+      
       const { data: totalAnualData, error: totalAnualError } = await supabase
         .from('orcamentos')
         .select(`
@@ -122,7 +127,8 @@ export const useVendasDashboard = () => {
         `)
         .eq('tipo', 'venda')
         .eq('status', 'ativo')
-        .like('data_venda', `${currentYear}-%`);
+        .gte('data_venda', startOfYear)
+        .lte('data_venda', endOfYear);
 
       if (totalAnualError) throw totalAnualError;
 
