@@ -38,8 +38,8 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
         // Extrair dia, mês e ano da string
         const [dia, mes, ano] = inputText.split('/').map(Number);
         
-        // Criar uma nova data
-        const novaData = new Date(ano, mes - 1, dia);
+        // Criar uma nova data no meio-dia para evitar problemas com timezone
+        const novaData = new Date(ano, mes - 1, dia, 12, 0, 0);
         
         if (isNaN(novaData.getTime())) {
           onChange(undefined);
@@ -69,7 +69,10 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
       return;
     }
     
-    onChange(date);
+    // Cria uma nova data com horário meio-dia para evitar problemas de timezone
+    const newDate = new Date(date);
+    newDate.setHours(12, 0, 0, 0);
+    onChange(newDate);
   };
 
   return (
