@@ -20,13 +20,13 @@ export function formatDate(date: Date | undefined | string, formatString = "dd/M
     // Se a data estiver no formato ISO ou YYYY-MM-DD
     if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
       const [year, month, day] = date.split('-').map(Number);
-      dateObj = new Date(year, month - 1, day, 12, 0, 0);
+      dateObj = new Date(year, month - 1, day);
     } 
     // Se for uma string ISO com data e hora
     else if (date.includes('T')) {
       const datePart = date.split('T')[0];
       const [year, month, day] = datePart.split('-').map(Number);
-      dateObj = new Date(year, month - 1, day, 12, 0, 0);
+      dateObj = new Date(year, month - 1, day);
     } 
     // Qualquer outro formato de data
     else {
@@ -35,7 +35,7 @@ export function formatDate(date: Date | undefined | string, formatString = "dd/M
         const day = parseInt(parts[0], 10);
         const month = parseInt(parts[1], 10) - 1;
         const year = parseInt(parts[2], 10);
-        dateObj = new Date(year, month, day, 12, 0, 0);
+        dateObj = new Date(year, month, day);
       } else {
         // Fallback para qualquer outro formato
         dateObj = new Date(date);
@@ -69,8 +69,8 @@ export function parseDateString(dateString: string): Date | undefined {
   
   if (isNaN(day) || isNaN(month) || isNaN(year)) return undefined;
   
-  // Criar uma nova data ao meio-dia para evitar problemas de timezone
-  return new Date(year, month, day, 12, 0, 0);
+  // Criar uma nova data
+  return new Date(year, month, day);
 }
 
 // Função para converter Date para formato YYYY-MM-DD para banco de dados

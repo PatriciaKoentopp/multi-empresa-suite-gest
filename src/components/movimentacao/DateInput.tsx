@@ -1,14 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
-import { isValid } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate } from '@/lib/utils';
+import { ptBR } from 'date-fns/locale';
 
 type DateInputProps = {
   label?: string;
@@ -22,7 +21,7 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
   
   // Atualiza o valor do input quando o value de fora muda
   useEffect(() => {
-    if (value && isValid(value)) {
+    if (value) {
       setInputValue(formatDate(value));
     } else {
       setInputValue('');
@@ -39,13 +38,13 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
         // Extrair dia, mês e ano da string
         const [dia, mes, ano] = inputText.split('/').map(Number);
         
-        // Criar uma nova data - usamos meio-dia para evitar problemas com horário de verão
-        const novaData = new Date(ano, mes - 1, dia, 12, 0, 0);
+        // Criar uma nova data
+        const novaData = new Date(ano, mes - 1, dia);
         
-        if (isValid(novaData)) {
-          onChange(novaData);
-        } else {
+        if (isNaN(novaData.getTime())) {
           onChange(undefined);
+        } else {
+          onChange(novaData);
         }
       } catch (error) {
         onChange(undefined);
@@ -70,15 +69,7 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
       return;
     }
     
-    // Criar nova data com horário ao meio-dia para evitar problemas de timezone
-    const novaData = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-      12, 0, 0
-    );
-    
-    onChange(novaData);
+    onChange(date);
   };
 
   return (

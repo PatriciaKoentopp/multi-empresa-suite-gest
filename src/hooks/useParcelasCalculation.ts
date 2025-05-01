@@ -43,12 +43,7 @@ export function useParcelasCalculation(
         
         if (i === 0) {
           // Para a primeira parcela, usamos exatamente a data base
-          dataVencimento = new Date(
-            dataBase.getFullYear(), 
-            dataBase.getMonth(), 
-            dataBase.getDate(), 
-            12, 0, 0
-          );
+          dataVencimento = new Date(dataBase);
         } else {
           // Para as demais parcelas, adicionamos meses
           const diaBase = dataBase.getDate();
@@ -62,12 +57,13 @@ export function useParcelasCalculation(
           }
           
           // Criar nova data
-          dataVencimento = new Date(novoAno, novoMes, 1, 12, 0, 0);
+          dataVencimento = new Date(novoAno, novoMes, diaBase);
           
           // Ajustar para o dia correto ou último dia do mês
           const ultimoDiaMes = new Date(novoAno, novoMes + 1, 0).getDate();
-          const diaDesejado = Math.min(diaBase, ultimoDiaMes);
-          dataVencimento.setDate(diaDesejado);
+          if (diaBase > ultimoDiaMes) {
+            dataVencimento = new Date(novoAno, novoMes, ultimoDiaMes);
+          }
         }
         
         novasParcelas.push({
@@ -95,18 +91,9 @@ export function useParcelasCalculation(
   const atualizarDataVencimento = (index: number, novaData: Date) => {
     setParcelas(parcelasAntigas => {
       const novasParcelas = [...parcelasAntigas];
-      
-      // Garantir que a nova data seja criada corretamente com meio-dia
-      const dataAjustada = new Date(
-        novaData.getFullYear(),
-        novaData.getMonth(),
-        novaData.getDate(),
-        12, 0, 0
-      );
-      
       novasParcelas[index] = {
         ...novasParcelas[index],
-        dataVencimento: dataAjustada
+        dataVencimento: novaData
       };
       return novasParcelas;
     });
