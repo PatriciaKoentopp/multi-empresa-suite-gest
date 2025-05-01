@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -399,7 +398,7 @@ const PainelVendasPage = () => {
                 <CardTitle>Comparativo Anual</CardTitle>
               </CardHeader>
               <CardContent>
-                <SalesBarChart data={yearlyChartData} />
+                <SalesBarChart data={yearlyChartData} multiColor={true} />
               </CardContent>
             </Card>
           </TabsContent>
