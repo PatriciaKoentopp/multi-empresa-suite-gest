@@ -17,7 +17,6 @@ interface SalesBarChartProps {
   }[];
   className?: string;
   multiColor?: boolean;
-  isYearly?: boolean;
 }
 
 const CHART_COLORS = [
@@ -35,7 +34,7 @@ const CHART_COLORS = [
   "#FF9800"  // Âmbar
 ];
 
-export const SalesBarChart = ({ data, className, multiColor = false, isYearly = false }: SalesBarChartProps) => {
+export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarChartProps) => {
   // Verificar se os dados estão presentes e em formato correto
   const chartData = Array.isArray(data) ? data.map(item => ({
     name: (item.name !== undefined && item.name !== null) ? String(item.name) : '',

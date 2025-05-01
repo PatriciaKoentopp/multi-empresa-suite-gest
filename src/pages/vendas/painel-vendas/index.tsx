@@ -36,16 +36,22 @@ const PainelVendasPage = () => {
     return <SalesLoadingState />;
   }
 
+  // Garantir que todos os arrays de dados estão disponíveis
+  const safeBarChartData = Array.isArray(barChartData) ? barChartData : [];
+  const safeQuarterlyChartData = Array.isArray(quarterlyChartData) ? quarterlyChartData : [];
+  const safeYearlyChartData = Array.isArray(yearlyChartData) ? yearlyChartData : [];
+  const safeYearlyComparisonData = Array.isArray(yearlyComparisonData) ? yearlyComparisonData : [];
+
   return (
     <div className="space-y-6">
       <SalesDashboardHeader />
       <SalesDashboardCards salesData={salesData} />
       <SalesPerformanceTabs
-        barChartData={barChartData || []}
-        quarterlyChartData={quarterlyChartData || []}
-        yearlyChartData={yearlyChartData || []}
+        barChartData={safeBarChartData}
+        quarterlyChartData={safeQuarterlyChartData}
+        yearlyChartData={safeYearlyChartData}
       />
-      <SalesComparisonTable yearlyComparisonData={yearlyComparisonData || []} />
+      <SalesComparisonTable yearlyComparisonData={safeYearlyComparisonData} />
     </div>
   );
 };

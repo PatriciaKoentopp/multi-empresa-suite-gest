@@ -14,6 +14,13 @@ export const SalesPerformanceTabs = ({
   quarterlyChartData,
   yearlyChartData
 }: SalesPerformanceTabsProps) => {
+  // Verificar se todos os dados estão presentes
+  console.log("SalesPerformanceTabs - Dados recebidos:", {
+    barChartData,
+    quarterlyChartData,
+    yearlyChartData
+  });
+
   return (
     <div className="space-y-4">
       <Tabs defaultValue="monthly">
@@ -41,7 +48,7 @@ export const SalesPerformanceTabs = ({
               <CardTitle>Vendas por Trimestre</CardTitle>
             </CardHeader>
             <CardContent>
-              <SalesBarChart data={quarterlyChartData} />
+              <SalesBarChart data={quarterlyChartData} multiColor={true} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -51,7 +58,7 @@ export const SalesPerformanceTabs = ({
               <CardTitle>Comparativo Anual</CardTitle>
             </CardHeader>
             <CardContent>
-              <SalesBarChart data={yearlyChartData} />
+              <SalesBarChart data={yearlyChartData} multiColor={true} />
             </CardContent>
           </Card>
         </TabsContent>
