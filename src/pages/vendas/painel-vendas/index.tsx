@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -121,7 +120,6 @@ const PainelVendasPage = () => {
         // Processar dados para comparativo mensal
         const monthlyComparisonMap: Record<string, { total: number, date: Date }> = {};
 
-        // Primeiro, extraímos todos os meses únicos dos dados
         salesHistoryData?.forEach(orcamento => {
           if (orcamento.data_venda) {
             // Verificar se há uma data de venda válida
@@ -256,26 +254,25 @@ const PainelVendasPage = () => {
         // Calcular variação entre anos e média mensal
         const yearsSorted = Object.values(yearlyDataComparison).sort((a, b) => b.year - a.year);
         
-        yearsSorted.forEach((yearData, index) => {
+        yearsSorted.forEach((yearData, index, array) => {
           // Calcular média mensal
           const numMonths = yearData.months.length;
           yearData.mediaMensal = numMonths > 0 ? yearData.total / numMonths : 0;
           
-          if (index < yearsSorted.length - 1) {
-            const prevYearTotal = yearsSorted[index + 1].total;
-            const prevYearMedia = yearsSorted[index + 1].mediaMensal || 0;
+          // Verifica se há um ano anterior para comparar
+          if (index < array.length - 1) {
+            const prevYearData = array[index + 1];
+            const prevYearTotal = prevYearData.total;
+            const prevYearMedia = prevYearData.mediaMensal;
             
-            // Variação do total anual
-            if (prevYearTotal > 0 && yearData.total > 0) {
+            // Cálculo da variação do total anual
+            if (prevYearTotal > 0) {
               yearData.yearlyVariation = ((yearData.total - prevYearTotal) / prevYearTotal) * 100;
             }
             
-            // Correção do cálculo da variação da média mensal
-            // Verificamos se os valores das médias são válidos antes de calcular
-            if (prevYearMedia > 0 && yearData.mediaMensal > 0) {
+            // Cálculo da variação da média mensal
+            if (prevYearMedia > 0) {
               yearData.mediaVariacao = ((yearData.mediaMensal - prevYearMedia) / prevYearMedia) * 100;
-            } else {
-              yearData.mediaVariacao = null; // Se não for possível calcular, usamos null
             }
           }
           
@@ -671,7 +668,7 @@ const PainelVendasPage = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          {formatCurrency(yearData.mediaMensal || 0)}
+                          {formatCurrency(yearData.mediaMensal)}
                         </TableCell>
                         <TableCell className="text-right pr-6">
                           {yearData.mediaVariacao !== null && (
