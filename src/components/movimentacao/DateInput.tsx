@@ -6,7 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDate } from '@/lib/utils';
+import { formatDate, parseDateString } from '@/lib/utils';
 import { ptBR } from 'date-fns/locale';
 
 type DateInputProps = {
@@ -34,19 +34,10 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
 
     // Apenas tenta converter para data se tiver o formato completo DD/MM/YYYY
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(inputText)) {
-      try {
-        // Extrair dia, mês e ano da string
-        const [dia, mes, ano] = inputText.split('/').map(Number);
-        
-        // Criar uma nova data no meio-dia para evitar problemas com timezone
-        const novaData = new Date(ano, mes - 1, dia, 12, 0, 0);
-        
-        if (isNaN(novaData.getTime())) {
-          onChange(undefined);
-        } else {
-          onChange(novaData);
-        }
-      } catch (error) {
+      const parsedDate = parseDateString(inputText);
+      if (parsedDate) {
+        onChange(parsedDate);
+      } else {
         onChange(undefined);
       }
     } else if (!inputText) {
@@ -62,17 +53,21 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
     }
   };
 
-  // Função para garantir que a data do calendário seja consistente
+  // Função para lidar com a seleção do calendário
   const handleCalendarSelect = (date?: Date) => {
     if (!date) {
       onChange(undefined);
       return;
     }
     
-    // Cria uma nova data com horário meio-dia para evitar problemas de timezone
-    const newDate = new Date(date);
-    newDate.setHours(12, 0, 0, 0);
-    onChange(newDate);
+    // Usa apenas a parte da data, ignorando completamente horário
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    
+    // Cria uma nova data com os mesmos valores de ano, mês e dia
+    const cleanDate = new Date(year, month, day);
+    onChange(cleanDate);
   };
 
   return (

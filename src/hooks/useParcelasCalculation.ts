@@ -36,21 +36,23 @@ export function useParcelasCalculation(
       const novasParcelas: Parcela[] = [];
       
       // Definir a data base para cálculo (hoje ou data fornecida)
-      // Importante: sempre usar meio-dia para evitar problemas com timezone
       const dataBase = primeiroVencimento ? new Date(primeiroVencimento) : new Date();
-      dataBase.setHours(12, 0, 0, 0); // Sempre usar meio-dia
       
       for (let i = 0; i < numParcelas; i++) {
         let dataVencimento: Date;
         
         if (i === 0) {
           // Para a primeira parcela, usamos exatamente a data base
-          dataVencimento = new Date(dataBase);
+          // Criamos uma nova instância para evitar referências
+          dataVencimento = new Date(dataBase.getFullYear(), dataBase.getMonth(), dataBase.getDate());
         } else {
           // Para as demais parcelas, adicionamos meses
-          const dataTemp = new Date(dataBase);
-          dataTemp.setMonth(dataTemp.getMonth() + i);
-          dataVencimento = dataTemp;
+          const ano = dataBase.getFullYear();
+          const mes = dataBase.getMonth() + i;
+          const dia = dataBase.getDate();
+          
+          // Cria uma nova data com o mês incrementado
+          dataVencimento = new Date(ano, mes, dia);
         }
         
         novasParcelas.push({
@@ -76,15 +78,19 @@ export function useParcelasCalculation(
   };
 
   const atualizarDataVencimento = (index: number, novaData: Date) => {
-    // Garantir que a nova data tenha horário meio-dia
-    const dataAjustada = new Date(novaData);
-    dataAjustada.setHours(12, 0, 0, 0);
+    // Extrair apenas a data (sem horário)
+    const ano = novaData.getFullYear();
+    const mes = novaData.getMonth();
+    const dia = novaData.getDate();
+    
+    // Criar uma data limpa sem horário
+    const dataLimpa = new Date(ano, mes, dia);
     
     setParcelas(parcelasAntigas => {
       const novasParcelas = [...parcelasAntigas];
       novasParcelas[index] = {
         ...novasParcelas[index],
-        dataVencimento: dataAjustada
+        dataVencimento: dataLimpa
       };
       return novasParcelas;
     });
