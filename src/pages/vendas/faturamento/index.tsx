@@ -60,29 +60,18 @@ function formatDateBR(date: Date | string | undefined) {
 // Função para obter o primeiro dia do mês atual
 function getPrimeiroDiaMes(): Date {
   const hoje = new Date();
-  return new Date(hoje.getFullYear(), hoje.getMonth(), 1, 0, 0, 0);
+  return new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 }
 
-// Função para comparar apenas as datas, ignorando o horário
-function compareDatesOnly(date1: Date, date2: Date): boolean {
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() === date2.getDate()
-  );
-}
-
-// Função para verificar se uma data é maior ou igual a outra, considerando apenas dia/mês/ano
-function isDateGreaterOrEqual(date1: Date, date2: Date): boolean {
-  // Se as datas forem iguais (mesmo dia/mês/ano)
-  if (compareDatesOnly(date1, date2)) {
-    return true;
-  }
+// Função para converter uma data para o formato YYYY-MM-DD (formato do banco)
+function dateToDBFormat(date: Date | undefined): string | null {
+  if (!date) return null;
   
-  // Caso contrário, compara normalmente
-  const d1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate(), 0, 0, 0);
-  const d2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate(), 0, 0, 0);
-  return d1 >= d2;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
 }
 
 export default function FaturamentoPage() {
@@ -291,13 +280,17 @@ export default function FaturamentoPage() {
     
     const favMatch = favorecido ? item.favorecido_id === favorecido : true;
     
-    // Verifica a data baseada no tipo do item
-    const rawDate = item.tipo === 'venda' ? item.data_venda : item.data;
-    const dataParaComparacao = rawDate ? new Date(rawDate) : new Date();
+    // Obter data como string no formato YYYY-MM-DD (formato do banco)
+    const itemDataStr = item.tipo === 'venda' ? item.data_venda : item.data;
     
-    // Filtragem por datas - MODIFICADO para usar a nova função de comparação apenas por data
-    const dataI_Match = dataInicial ? isDateGreaterOrEqual(dataParaComparacao, dataInicial) : true;
-    const dataF_Match = dataFinal ? isDateGreaterOrEqual(dataFinal, dataParaComparacao) : true;
+    // Converter as datas do filtro para string no formato YYYY-MM-DD
+    const dataInicialStr = dateToDBFormat(dataInicial);
+    const dataFinalStr = dateToDBFormat(dataFinal);
+    
+    // Comparar diretamente as strings de data, sem conversão para objeto Date
+    // Isso evita qualquer problema com timezone ou horário
+    const dataI_Match = dataInicialStr ? itemDataStr >= dataInicialStr : true;
+    const dataF_Match = dataFinalStr ? itemDataStr <= dataFinalStr : true;
 
     return buscaMatch && tipoMatch && favMatch && dataI_Match && dataF_Match;
   });
