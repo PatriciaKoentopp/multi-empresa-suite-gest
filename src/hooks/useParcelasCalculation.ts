@@ -17,7 +17,7 @@ export function useParcelasCalculation(
   const [parcelas, setParcelas] = useState<Parcela[]>([]);
 
   useEffect(() => {
-    if (!valorTotal || !numParcelas || !primeiroVencimento) {
+    if (!valorTotal || !numParcelas) {
       setParcelas([]);
       return;
     }
@@ -35,25 +35,41 @@ export function useParcelasCalculation(
       
       const novasParcelas: Parcela[] = [];
       
+      // Se não existe data de primeiro vencimento, usar a data atual
+      const dataBase = primeiroVencimento ? new Date(primeiroVencimento) : new Date();
+      
       for (let i = 0; i < numParcelas; i++) {
-        // Para garantir que a data seja exatamente a selecionada, usamos UTC e depois ajustamos o offset
         let novaData: Date;
         
         if (i === 0) {
-          // Para a primeira parcela, usamos a data exata informada sem alterações
-          novaData = new Date(primeiroVencimento);
+          // Para a primeira parcela, usamos a data exata informada ou a data atual
+          novaData = new Date(dataBase);
         } else {
-          // Para as demais parcelas, criamos uma nova data mantendo o mesmo dia
-          const diaVenc = primeiroVencimento.getDate();
-          const mesVenc = primeiroVencimento.getMonth() + i;
-          const anoVenc = primeiroVencimento.getFullYear();
+          // Para as demais parcelas, criamos uma nova data sem usar UTC para evitar problemas de timezone
+          // Extrair os componentes da data base
+          const diaVenc = dataBase.getDate();
+          const mesBase = dataBase.getMonth();
+          const anoBase = dataBase.getFullYear();
           
-          // Criar data em UTC para evitar ajustes automáticos de timezone
-          novaData = new Date(Date.UTC(anoVenc, mesVenc, diaVenc, 12, 0, 0));
+          // Calcular o novo mês e ano
+          let novoMes = mesBase + i;
+          let novoAno = anoBase;
           
-          // Ajustar o offset do timezone local
-          const offset = novaData.getTimezoneOffset() * 60000;
-          novaData = new Date(novaData.getTime() + offset);
+          // Ajustar ano se o mês for maior que dezembro
+          while (novoMes > 11) {
+            novoMes -= 12;
+            novoAno += 1;
+          }
+          
+          // Criar a nova data sem ajustes de timezone
+          novaData = new Date(novoAno, novoMes, diaVenc, 12, 0, 0);
+          
+          // Ajustar para o último dia do mês se o dia original não existir 
+          // (por exemplo, 31 de janeiro + 1 mês = 28/29 de fevereiro)
+          const ultimoDiaMes = new Date(novoAno, novoMes + 1, 0).getDate();
+          if (diaVenc > ultimoDiaMes) {
+            novaData = new Date(novoAno, novoMes, ultimoDiaMes, 12, 0, 0);
+          }
         }
         
         novasParcelas.push({
