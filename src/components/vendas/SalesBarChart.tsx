@@ -67,17 +67,15 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
                 radius={[4, 4, 0, 0]}
               />
             ) : (
-              <Bar
-                dataKey="faturado"
-                radius={[4, 4, 0, 0]}
-              >
-                {data.map((entry, index) => (
-                  <rect
-                    key={`bar-${index}`}
-                    fill={barColors[index % barColors.length]}
-                  />
-                ))}
-              </Bar>
+              data.map((entry, index) => (
+                <Bar
+                  key={`bar-${index}`}
+                  dataKey="faturado"
+                  fill={barColors[index % barColors.length]}
+                  radius={[4, 4, 0, 0]}
+                  name={entry.name}
+                />
+              ))
             )}
           </BarChart>
         </ResponsiveContainer>
