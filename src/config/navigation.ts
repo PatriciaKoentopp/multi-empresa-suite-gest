@@ -1,23 +1,16 @@
 
 import { ModuleNavItem } from "@/types";
-import React from "react";
 
-// Esta função é usada para converter strings em ícones ao carregar
-const stringToIcon = (iconName: string): React.ReactNode => {
-  // Esta é apenas uma função auxiliar para compatibilidade
-  // Na prática, precisaria mapear strings para componentes reais de ícones
-  return iconName as unknown as React.ReactNode;
-};
-
+// Esta configuração define os itens de navegação do sistema
 export const navigationConfig: ModuleNavItem[] = [
   {
     name: "Dashboard",
     href: "/dashboard",
-    icon: stringToIcon("Grid"),
+    icon: "Grid",
   },
   {
     name: "Administrativo",
-    icon: stringToIcon("Settings"),
+    icon: "Settings",
     subItems: [
       {
         name: "Empresas",
@@ -39,7 +32,7 @@ export const navigationConfig: ModuleNavItem[] = [
   },
   {
     name: "Cadastros",
-    icon: stringToIcon("List"),
+    icon: "List",
     subItems: [
       {
         name: "Grupo de Favorecidos",
@@ -73,7 +66,7 @@ export const navigationConfig: ModuleNavItem[] = [
   },
   {
     name: "Financeiro",
-    icon: stringToIcon("DollarSign"),
+    icon: "DollarSign",
     subItems: [
       {
         name: "Fluxo de Caixa",
@@ -95,7 +88,7 @@ export const navigationConfig: ModuleNavItem[] = [
   },
   {
     name: "Contábil",
-    icon: stringToIcon("Calculator"),
+    icon: "Calculator",
     subItems: [
       {
         name: "Plano de Contas",
@@ -117,7 +110,7 @@ export const navigationConfig: ModuleNavItem[] = [
   },
   {
     name: "Vendas",
-    icon: stringToIcon("ShoppingBag"),
+    icon: "ShoppingBag",
     subItems: [
       {
         name: "Painel de Vendas",
@@ -143,7 +136,7 @@ export const navigationConfig: ModuleNavItem[] = [
   },
   {
     name: "CRM",
-    icon: stringToIcon("Users"),
+    icon: "Users",
     subItems: [
       {
         name: "Leads",
@@ -161,7 +154,7 @@ export const navigationConfig: ModuleNavItem[] = [
   },
   {
     name: "Relatórios",
-    icon: stringToIcon("BarChart"),
+    icon: "BarChart",
     href: "/relatorios",
   },
 ];
@@ -170,19 +163,16 @@ export const userNavigation: ModuleNavItem[] = [
   {
     name: "Perfil",
     href: "/perfil",
-    icon: stringToIcon("User"),
+    icon: "User",
   },
   {
     name: "Configurações",
     href: "/configuracoes",
-    icon: stringToIcon("Settings"),
+    icon: "Settings",
   },
   {
     name: "Ajuda",
     href: "/ajuda",
-    icon: stringToIcon("HelpCircle"),
+    icon: "HelpCircle",
   }
 ];
-
-// Exportar apenas uma vez
-export { stringToIcon };

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -5,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, ArrowUp, ArrowDown, ChevronDown } from "lucide-react";
-import { format, subDays, startOfMonth, endOfMonth, subMonths, subYears, getYear } from "date-fns";
+import { Loader2, ArrowUp, ArrowDown } from "lucide-react";
+import { format, subDays, startOfMonth, endOfMonth, subMonths, subYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -235,11 +236,11 @@ const PainelVendasPage = () => {
         setMonthlyComparisonData(sortedMonths);
         
         // Agrupar dados mensais por ano para a nova visualização
-        const yearlyData: Record<number, YearlyComparison> = {};
+        const yearlyDataComparison: Record<number, YearlyComparison> = {};
         
         sortedMonths.forEach(monthData => {
-          if (!yearlyData[monthData.year]) {
-            yearlyData[monthData.year] = {
+          if (!yearlyDataComparison[monthData.year]) {
+            yearlyDataComparison[monthData.year] = {
               year: monthData.year,
               total: 0,
               yearlyVariation: null,
@@ -247,12 +248,12 @@ const PainelVendasPage = () => {
             };
           }
           
-          yearlyData[monthData.year].total += monthData.total;
-          yearlyData[monthData.year].months.push(monthData);
+          yearlyDataComparison[monthData.year].total += monthData.total;
+          yearlyDataComparison[monthData.year].months.push(monthData);
         });
         
         // Calcular variação entre anos
-        const yearsSorted = Object.values(yearlyData).sort((a, b) => b.year - a.year);
+        const yearsSorted = Object.values(yearlyDataComparison).sort((a, b) => b.year - a.year);
         
         yearsSorted.forEach((yearData, index) => {
           if (index < yearsSorted.length - 1) {
@@ -475,7 +476,7 @@ const PainelVendasPage = () => {
         console.log("Dados do gráfico trimestral processados:", quarterlyData);
 
         // Buscar dados para gráficos anuais
-        const yearlyData = [];
+        const chartYearlyData = [];
         const currentYearNum = currentYear;
         
         for (let i = 3; i >= 0; i--) {
@@ -500,14 +501,14 @@ const PainelVendasPage = () => {
             return acc + orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
           }, 0) || 0;
 
-          yearlyData.push({
+          chartYearlyData.push({
             name: year.toString(),
             faturado
           });
         }
 
-        setYearlyChartData(yearlyData);
-        console.log("Dados do gráfico anual processados:", yearlyData);
+        setYearlyChartData(chartYearlyData);
+        console.log("Dados do gráfico anual processados:", chartYearlyData);
 
         setIsLoading(false);
       } catch (error: any) {
