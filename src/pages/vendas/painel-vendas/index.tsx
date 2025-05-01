@@ -520,7 +520,51 @@ const PainelVendasPage = () => {
         />
       </div>
 
-      {/* Tabela de Comparativo de Vendas */}
+      {/* Gráficos de desempenho de vendas com abas */}
+      <div className="space-y-4">
+        <Tabs defaultValue="monthly">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-semibold">Desempenho de Vendas</h3>
+            <TabsList>
+              <TabsTrigger value="monthly">Mensal</TabsTrigger>
+              <TabsTrigger value="quarterly">Trimestral</TabsTrigger>
+              <TabsTrigger value="yearly">Anual</TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="monthly" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Vendas por Mês</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SalesBarChart data={barChartData} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="quarterly">
+            <Card>
+              <CardHeader>
+                <CardTitle>Vendas por Trimestre</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SalesBarChart data={quarterlyChartData} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="yearly">
+            <Card>
+              <CardHeader>
+                <CardTitle>Comparativo Anual</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SalesBarChart data={yearlyChartData} multiColor={true} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Tabela de Comparativo de Vendas (movida para baixo do gráfico) */}
       <Card>
         <CardHeader>
           <CardTitle>Comparativo de Vendas</CardTitle>
@@ -582,50 +626,6 @@ const PainelVendasPage = () => {
           </Table>
         </CardContent>
       </Card>
-
-      {/* Gráficos de desempenho de vendas com abas */}
-      <div className="space-y-4">
-        <Tabs defaultValue="monthly">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xl font-semibold">Desempenho de Vendas</h3>
-            <TabsList>
-              <TabsTrigger value="monthly">Mensal</TabsTrigger>
-              <TabsTrigger value="quarterly">Trimestral</TabsTrigger>
-              <TabsTrigger value="yearly">Anual</TabsTrigger>
-            </TabsList>
-          </div>
-          <TabsContent value="monthly" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Vendas por Mês</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SalesBarChart data={barChartData} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="quarterly">
-            <Card>
-              <CardHeader>
-                <CardTitle>Vendas por Trimestre</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SalesBarChart data={quarterlyChartData} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="yearly">
-            <Card>
-              <CardHeader>
-                <CardTitle>Comparativo Anual</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SalesBarChart data={yearlyChartData} multiColor={true} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
     </div>
   );
 };
