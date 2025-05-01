@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -238,12 +239,12 @@ export const useVendasDashboard = () => {
             yearData.yearlyVariation = ((yearData.total - prevYearTotal) / prevYearTotal) * 100;
           }
           
-          // Cálculo da variação da média mensal
-          if (prevYearMedia > 0 && yearData.mediaMensal > 0) {
+          // Correção no cálculo da variação da média mensal
+          if (prevYearMedia > 0) {
             yearData.mediaVariacao = ((yearData.mediaMensal - prevYearMedia) / prevYearMedia) * 100;
             console.log(`Média mensal ${yearData.year}: ${yearData.mediaMensal.toFixed(2)}, Média anterior ${prevYearData.year}: ${prevYearMedia.toFixed(2)}, Variação: ${yearData.mediaVariacao.toFixed(2)}%`);
           } else {
-            console.log(`Não foi possível calcular a variação da média mensal para ${yearData.year}. Valores: média atual = ${yearData.mediaMensal}, média anterior = ${prevYearMedia}`);
+            console.log(`Não foi possível calcular a variação da média mensal para ${yearData.year}. Valor da média anterior = ${prevYearMedia}`);
           }
         }
         
