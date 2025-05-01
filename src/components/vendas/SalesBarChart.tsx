@@ -45,11 +45,22 @@ export const SalesBarChart = ({ data, className, multiColor = false, isYearly = 
   console.log("Dados do gráfico processados:", chartData);
 
   // Verificar se temos dados válidos para o gráfico
-  if (!chartData.length || chartData.every(item => item.faturado === 0)) {
+  if (!chartData.length) {
     console.warn("Sem dados válidos para o gráfico");
     return (
       <div className={className || "h-[300px] flex items-center justify-center"}>
         <p className="text-muted-foreground">Sem dados disponíveis para visualização</p>
+      </div>
+    );
+  }
+
+  // Adicionando verificação adicional: se todos os valores são zero
+  const allZeros = chartData.every(item => item.faturado === 0);
+  if (allZeros) {
+    console.warn("Todos os valores do gráfico são zero");
+    return (
+      <div className={className || "h-[300px] flex items-center justify-center"}>
+        <p className="text-muted-foreground">Sem dados de faturamento para o período selecionado</p>
       </div>
     );
   }
@@ -102,14 +113,7 @@ export const SalesBarChart = ({ data, className, multiColor = false, isYearly = 
             <Tooltip 
               content={<ChartTooltipContent labelKey="name" formatter={(value) => formatCurrency(Number(value))} />} 
             />
-            {isYearly ? (
-              // Para o gráfico anual, mostramos apenas uma barra por ano
-              <Bar
-                dataKey="faturado"
-                fill="#4CAF50"
-                radius={[4, 4, 0, 0]}
-              />
-            ) : multiColor ? (
+            {multiColor ? (
               // Para gráficos com múltiplas cores, iteramos sobre os dados
               chartData.map((entry, index) => (
                 <Bar 
@@ -121,7 +125,7 @@ export const SalesBarChart = ({ data, className, multiColor = false, isYearly = 
                 />
               ))
             ) : (
-              // Para gráficos normais de um só tipo
+              // Para gráficos normais de um só tipo ou anuais
               <Bar
                 dataKey="faturado"
                 fill="#4CAF50"

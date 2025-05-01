@@ -51,7 +51,7 @@ export const SalesPerformanceTabs = ({
               <CardTitle>Comparativo Anual</CardTitle>
             </CardHeader>
             <CardContent>
-              <SalesBarChart data={yearlyChartData} isYearly={true} />
+              <SalesBarChart data={yearlyChartData} />
             </CardContent>
           </Card>
         </TabsContent>
