@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { MonthlyComparison, YearlyComparison } from "@/types";
 
 interface SalesData {
@@ -164,7 +165,7 @@ export const useVendasDashboard = () => {
           
           // Formatar nome do mês diretamente do número do mês
           // Usamos new Date(year, month-1) para criar a data correta
-          const monthName = format(new Date(year, month - 1, 1), 'MMMM', { locale: require('date-fns/locale/pt-BR') });
+          const monthName = format(new Date(year, month - 1, 1), 'MMMM', { locale: ptBR });
           
           // Calcular variação mensal (comparado com o mês anterior)
           let monthlyVariation: number | null = null;
@@ -409,7 +410,7 @@ export const useVendasDashboard = () => {
         }, 0) || 0;
 
         return {
-          name: format(new Date(currentYear, i), 'MMM', { locale: require('date-fns/locale/pt-BR') }),
+          name: format(new Date(currentYear, i), 'MMM', { locale: ptBR }),
           faturado
         };
       });
