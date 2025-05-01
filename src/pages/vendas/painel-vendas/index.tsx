@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -110,39 +111,64 @@ const PainelVendasPage = () => {
         // Primeiro, extraímos todos os meses únicos dos dados
         salesHistoryData?.forEach(orcamento => {
           if (orcamento.data_venda) {
-            // Verificar se a data de venda é válida
-            const vendaDate = new Date(orcamento.data_venda);
-            if (isNaN(vendaDate.getTime())) {
-              console.warn("Data de venda inválida:", orcamento.data_venda);
-              return; // Pula este orçamento
+            // Verificar se há uma data de venda válida
+            if (!orcamento.data_venda) {
+              console.warn("Data de venda ausente");
+              return; // Pular este orçamento
             }
             
-            const monthKey = format(vendaDate, 'yyyy-MM');
-            
-            if (!monthlyComparisonMap[monthKey]) {
-              monthlyComparisonMap[monthKey] = { 
-                total: 0, 
-                date: new Date(vendaDate.getFullYear(), vendaDate.getMonth(), 1) 
-              };
+            try {
+              // Extrair o ano e mês diretamente da string de data no formato YYYY-MM-DD
+              // Isso evita problemas de timezone
+              const [year, month] = orcamento.data_venda.split('-').map(Number);
+              
+              if (!year || !month) {
+                console.warn("Formato de data inválido:", orcamento.data_venda);
+                return; // Pular este orçamento
+              }
+              
+              // Criar chave para o mapa no formato YYYY-MM
+              const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+              
+              // Criar data para ordenação (sem converter timezone)
+              const sortDate = new Date(year, month - 1, 1); // Mês em JavaScript é 0-indexed
+              
+              if (!monthlyComparisonMap[monthKey]) {
+                monthlyComparisonMap[monthKey] = { 
+                  total: 0,
+                  date: sortDate
+                };
+              }
+              
+              // Calcular o total dos itens do orçamento
+              const total = orcamento.orcamentos_itens.reduce(
+                (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+              );
+              
+              monthlyComparisonMap[monthKey].total += total;
+              
+            } catch (error) {
+              console.error("Erro ao processar data:", orcamento.data_venda, error);
             }
-            
-            // Calcula o total de items do orçamento
-            const total = orcamento.orcamentos_itens.reduce(
-              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
-            );
-            
-            monthlyComparisonMap[monthKey].total += total;
           }
         });
         
         // Verificar se há alguma anomalia nos dados (meses futuros, etc)
         const currentDate = new Date();
-        const currentMonthKey = format(currentDate, 'yyyy-MM');
+        const currentYear_month = currentDate.getFullYear();
+        const currentMonth_month = currentDate.getMonth() + 1; // getMonth é 0-indexed
+        const currentMonthKey = `${currentYear_month}-${currentMonth_month.toString().padStart(2, '0')}`;
         
         // Filtrar meses futuros (não deveriam ter dados)
         Object.keys(monthlyComparisonMap).forEach(key => {
-          if (key > currentMonthKey) {
+          const [yearStr, monthStr] = key.split('-').map(Number);
+          const year = Number(yearStr);
+          const month = Number(monthStr);
+          
+          // Verificar se é um mês futuro
+          if (year > currentYear_month || (year === currentYear_month && month > currentMonth_month)) {
             console.warn(`Detectado dados para um período futuro: ${key}. Verificando valores.`);
+            
             // Verificar se os dados são reais ou erros
             if (monthlyComparisonMap[key].total > 0) {
               console.warn(`Dados para período futuro ${key} com total ${monthlyComparisonMap[key].total}. Excluindo.`);
@@ -158,7 +184,8 @@ const PainelVendasPage = () => {
             // Extrair ano e mês do key (yyyy-MM)
             const [year, month] = key.split('-').map(Number);
             
-            // Formatar nome do mês
+            // Formatar nome do mês diretamente do número do mês
+            // Usamos new Date(year, month-1) para criar a data correta
             const monthName = format(new Date(year, month - 1, 1), 'MMMM', { locale: ptBR });
             
             // Calcular variação mensal (comparado com o mês anterior)
@@ -172,7 +199,7 @@ const PainelVendasPage = () => {
             
             // Calcular variação anual (mesmo mês do ano anterior)
             let yearlyVariation: number | null = null;
-            const lastYearMonthKey = `${year - 1}-${month < 10 ? '0' : ''}${month}`;
+            const lastYearMonthKey = `${year - 1}-${month.toString().padStart(2, '0')}`;
             
             if (monthlyComparisonMap[lastYearMonthKey]) {
               const lastYearTotal = monthlyComparisonMap[lastYearMonthKey].total;
@@ -335,8 +362,10 @@ const PainelVendasPage = () => {
           const monthData = chartMonthlyData?.filter(
             (item) => {
               if (!item.data_venda) return false;
-              const date = new Date(item.data_venda);
-              return date.getMonth() === i;
+              
+              // Extrair mês diretamente da string de data
+              const monthFromDate = Number(item.data_venda.split('-')[1]);
+              return monthFromDate === month;
             }
           );
           
