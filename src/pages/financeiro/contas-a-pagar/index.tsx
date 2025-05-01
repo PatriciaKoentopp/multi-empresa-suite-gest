@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BaixarContaPagarModal } from "@/components/contas-a-pagar/BaixarContaPagarModal";
+import { RenegociarParcelasModal } from "@/components/contas-a-pagar/RenegociarParcelasModal";
 import { supabase } from "@/integrations/supabase/client";
 import { Movimentacao, MovimentacaoParcela } from "@/types/movimentacoes";
 import { useCompany } from "@/contexts/company-context";
@@ -53,6 +53,9 @@ export default function ContasAPagarPage() {
 
   const [contaParaBaixar, setContaParaBaixar] = useState<ContaPagar | null>(null);
   const [modalBaixarAberto, setModalBaixarAberto] = useState(false);
+  
+  const [contaParaRenegociar, setContaParaRenegociar] = useState<ContaPagar | null>(null);
+  const [modalRenegociarAberto, setModalRenegociarAberto] = useState(false);
 
   const { currentCompany } = useCompany();
 
@@ -110,6 +113,44 @@ export default function ContasAPagarPage() {
 
     atualizarMovimentacao();
   }
+
+  const handleRenegociar = (conta: ContaPagar) => {
+    setContaParaRenegociar(conta);
+    setModalRenegociarAberto(true);
+  };
+
+  const realizarRenegociacao = async (id: string, dataVencimento: string, valor: number) => {
+    if (!currentCompany) return;
+
+    try {
+      // Atualiza a parcela com os novos dados
+      const { error } = await supabase
+        .from('movimentacoes_parcelas')
+        .update({
+          data_vencimento: dataVencimento,
+          valor: valor
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Recarregar as contas após a renegociação
+      await carregarContasAPagar();
+
+      toast({
+        title: "Sucesso",
+        description: "Parcela renegociada com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao renegociar parcela:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao renegociar a parcela"
+      });
+      throw error;
+    }
+  };
 
   const prepararExclusao = (id: string) => {
     setContaParaExcluir(id);
@@ -573,6 +614,7 @@ export default function ContasAPagarPage() {
                 onDelete={prepararExclusao}
                 onVisualizar={handleVisualizar}
                 onDesfazerBaixa={handleDesfazerBaixa}
+                onRenegociar={handleRenegociar}
               />
             </div>
           </div>
@@ -584,6 +626,13 @@ export default function ContasAPagarPage() {
         open={modalBaixarAberto}
         onClose={() => setModalBaixarAberto(false)}
         onBaixar={realizarBaixa}
+      />
+
+      <RenegociarParcelasModal
+        conta={contaParaRenegociar}
+        open={modalRenegociarAberto}
+        onClose={() => setModalRenegociarAberto(false)}
+        onRenegociar={realizarRenegociacao}
       />
 
       {/* Modal de confirmação de exclusão */}

@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -8,7 +9,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { Edit, Download, Trash2, MoreHorizontal, Eye, Undo } from "lucide-react";
+import { Edit, Download, Trash2, MoreHorizontal, Eye, Undo, RefreshCw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -37,6 +38,7 @@ interface ContasAPagarTableProps {
   onDelete: (id: string) => void;
   onVisualizar: (conta: ContaPagar) => void;
   onDesfazerBaixa: (conta: ContaPagar) => void;
+  onRenegociar: (conta: ContaPagar) => void;
 }
 
 function getStatusBadge(status: ContaPagar["status"]) {
@@ -70,7 +72,8 @@ export function ContasAPagarTable({
   onBaixar, 
   onDelete,
   onVisualizar,
-  onDesfazerBaixa 
+  onDesfazerBaixa,
+  onRenegociar 
 }: ContasAPagarTableProps) {
   const totalValor = contas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
 
@@ -139,6 +142,13 @@ export function ContasAPagarTable({
                           >
                             <Edit className="h-4 w-4" />
                             Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onRenegociar(conta)}
+                            className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                            Renegociar
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => onBaixar(conta)}
