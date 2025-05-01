@@ -154,12 +154,12 @@ export default function OrcamentoPage() {
                   parcelas={parcelas.map(p => ({
                     numero: parseInt(p.numeroParcela.split('/')[1]),
                     valor: p.valor,
-                    dataVencimento: new Date(p.dataVencimento)
+                    dataVencimento: parseDateString(p.dataVencimento) // Usamos a função parseDateString ao invés de new Date()
                   }))}
                   onValorChange={handleParcelaValorChange}
                   onDataChange={handleParcelaDataChange}
                   readOnly={isVisualizacao}
-                  mostrarAlertaDiferenca={false} // Nunca mostrar alerta na tabela de parcelas
+                  mostrarAlertaDiferenca={false}
                   valorTotal={total}
                   somaParcelas={somaParcelas}
                 />
@@ -204,3 +204,6 @@ export default function OrcamentoPage() {
     </div>
   );
 }
+
+// Importar a função parseDateString de utils.ts
+import { parseDateString } from '@/lib/utils';

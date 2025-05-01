@@ -1,11 +1,13 @@
+
 import { useState, useEffect } from "react";
-import { format, addMonths } from 'date-fns';
+import { format, addMonths, parse } from 'date-fns';
 import { toast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/company-context";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Favorecido, Servico, TabelaPreco, TabelaPrecoItem } from "@/types";
 import { OrcamentoItem, Parcela } from "@/types/orcamento";
+import { parseDateString } from "@/lib/utils";
 
 export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean = false) {
   const { currentCompany } = useCompany();
@@ -249,7 +251,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }
   }
   
-  // Atualiza parcela específica
+  // Atualiza parcela específica - Modificado para usar Date diretamente
   const handleParcelaDataChange = (idx: number, data: Date) => {
     setParcelas(prev => prev.map((parcela, i) =>
       i === idx ? { 

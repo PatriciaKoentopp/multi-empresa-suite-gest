@@ -57,18 +57,29 @@ export function formatDate(date: Date | undefined | string, formatString = "dd/M
 
 // Função para converter string DD/MM/YYYY para Date
 export function parseDateString(dateString: string): Date | undefined {
-  if (!dateString || dateString.length !== 10) return undefined;
+  if (!dateString || typeof dateString !== 'string') return undefined;
   
-  const parts = dateString.split('/');
-  if (parts.length !== 3) return undefined;
+  // Se já estiver no formato ISO YYYY-MM-DD
+  if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
   
-  const day = parseInt(parts[0], 10);
-  const month = parseInt(parts[1], 10) - 1; // mês em JS é 0-indexed
-  const year = parseInt(parts[2], 10);
+  // Se estiver no formato DD/MM/YYYY
+  if (dateString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+    const parts = dateString.split('/');
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // mês em JS é 0-indexed
+    const year = parseInt(parts[2], 10);
+    
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return undefined;
+    
+    return new Date(year, month, day);
+  }
   
-  if (isNaN(day) || isNaN(month) || isNaN(year)) return undefined;
-  
-  return new Date(year, month, day);
+  // Tentativa genérica de conversão
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? undefined : date;
 }
 
 // Função para converter Date para formato YYYY-MM-DD para banco de dados
