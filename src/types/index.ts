@@ -188,8 +188,8 @@ export interface YearlyComparison {
   total: number;
   yearlyVariation: number | null;
   months: MonthlyComparison[];
-  mediaMensal?: number;
-  mediaVariacao?: number | null;
+  mediaMensal: number;
+  mediaVariacao: number | null;
 }
 
 export interface MonthlyComparison {

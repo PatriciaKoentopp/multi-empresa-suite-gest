@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -110,7 +111,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo') // Garantir que apenas vendas ativas sejam contabilizadas
+          .eq('status', 'ativo')
           .gte('data_venda', start2023)
           .lte('data_venda', today);
 
@@ -118,8 +119,6 @@ const PainelVendasPage = () => {
         console.log("Dados históricos de vendas:", salesHistoryData);
 
         // Processar dados para comparativo mensal
-        // Em vez de inicializar apenas os últimos 12 meses,
-        // vamos criar um mapa com todos os meses que têm dados
         const monthlyComparisonMap: Record<string, { total: number, date: Date }> = {};
 
         // Primeiro, extraímos todos os meses únicos dos dados
@@ -193,7 +192,7 @@ const PainelVendasPage = () => {
         
         // Calcular variações e formatar dados para a tabela
         const sortedMonths = Object.entries(monthlyComparisonMap)
-          .sort(([keyA], [keyB]) => keyB.localeCompare(keyA)) // Ordenar do mais recente para o mais antigo
+          .sort(([keyA], [keyB]) => keyB.localeCompare(keyA))
           .map(([key, data], index, array) => {
             // Extrair ano e mês do key (yyyy-MM)
             const [year, month] = key.split('-').map(Number);
@@ -244,7 +243,9 @@ const PainelVendasPage = () => {
               year: monthData.year,
               total: 0,
               yearlyVariation: null,
-              months: []
+              months: [],
+              mediaMensal: 0,
+              mediaVariacao: null
             };
           }
           
@@ -271,7 +272,7 @@ const PainelVendasPage = () => {
             
             // Correção do cálculo da variação da média mensal
             // Verificamos se os valores das médias são válidos antes de calcular
-            if (prevYearMedia > 0 && yearData.mediaMensal && yearData.mediaMensal > 0) {
+            if (prevYearMedia > 0 && yearData.mediaMensal > 0) {
               yearData.mediaVariacao = ((yearData.mediaMensal - prevYearMedia) / prevYearMedia) * 100;
             } else {
               yearData.mediaVariacao = null; // Se não for possível calcular, usamos null
@@ -645,9 +646,9 @@ const PainelVendasPage = () => {
               <TableHeader className="bg-muted/40">
                 <TableRow>
                   <TableHead className="w-[130px] text-left">Período</TableHead>
-                  <TableHead className="text-right">Total de Vendas</TableHead>
+                  <TableHead className="text-right w-[170px]">Total de Vendas</TableHead>
                   <TableHead className="text-right w-[100px]">Variação</TableHead>
-                  <TableHead className="text-right">Média Mensal</TableHead>
+                  <TableHead className="text-right w-[170px]">Média Mensal</TableHead>
                   <TableHead className="text-right w-[100px]">Variação</TableHead>
                 </TableRow>
               </TableHeader>
@@ -684,9 +685,9 @@ const PainelVendasPage = () => {
                             <TableHeader className="bg-muted/20">
                               <TableRow className="border-0">
                                 <TableHead className="pl-6 py-2 font-medium text-left">Mês</TableHead>
-                                <TableHead className="text-right py-2 font-medium">Total de Vendas</TableHead>
-                                <TableHead className="text-right py-2 font-medium">Var. Mensal</TableHead>
-                                <TableHead className="text-right py-2 font-medium pr-6">Var. Anual</TableHead>
+                                <TableHead className="text-right py-2 font-medium w-[170px]">Total de Vendas</TableHead>
+                                <TableHead className="text-right py-2 font-medium w-[100px]">Var. Mensal</TableHead>
+                                <TableHead className="text-right py-2 font-medium pr-6 w-[100px]">Var. Anual</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
