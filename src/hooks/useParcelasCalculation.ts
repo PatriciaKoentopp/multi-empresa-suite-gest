@@ -46,24 +46,9 @@ export function useParcelasCalculation(
           dataVencimento = new Date(dataBase);
         } else {
           // Para as demais parcelas, adicionamos meses
-          const diaBase = dataBase.getDate();
-          let novoMes = dataBase.getMonth() + i;
-          let novoAno = dataBase.getFullYear();
-          
-          // Ajustar ano se passar de dezembro
-          while (novoMes > 11) {
-            novoMes -= 12;
-            novoAno++;
-          }
-          
-          // Criar nova data
-          dataVencimento = new Date(novoAno, novoMes, diaBase);
-          
-          // Ajustar para o dia correto ou último dia do mês
-          const ultimoDiaMes = new Date(novoAno, novoMes + 1, 0).getDate();
-          if (diaBase > ultimoDiaMes) {
-            dataVencimento = new Date(novoAno, novoMes, ultimoDiaMes);
-          }
+          const dataTemp = new Date(dataBase);
+          dataTemp.setMonth(dataTemp.getMonth() + i);
+          dataVencimento = dataTemp;
         }
         
         novasParcelas.push({
