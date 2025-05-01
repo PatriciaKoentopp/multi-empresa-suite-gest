@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,7 +33,7 @@ export const useVendasDashboard = () => {
       // Formato de data correto para o Supabase: YYYY-MM-DD
       const currentYear = new Date().getFullYear();
       
-      // Buscar dados de comparação anual - Modificada para resolver problema de ambiguidade
+      // Buscar dados de comparação anual - Função corrigida
       console.log("Iniciando busca de dados de comparação anual");
       const { data: yearComparisonData, error: comparisonError } = await supabase
         .rpc('get_yearly_sales_comparison');
