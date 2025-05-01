@@ -667,6 +667,14 @@ const PainelVendasPage = () => {
                     <AccordionContent>
                       <div className="pl-6 pb-2">
                         <Table>
+                          <TableHeader>
+                            <TableRow className="border-0">
+                              <TableHead className="w-[180px] py-2">Mês</TableHead>
+                              <TableHead className="text-right py-2">Total de Vendas</TableHead>
+                              <TableHead className="text-right py-2">Var. Mensal</TableHead>
+                              <TableHead className="text-right py-2">Var. Anual</TableHead>
+                            </TableRow>
+                          </TableHeader>
                           <TableBody>
                             {yearData.months.map((monthData) => (
                               <TableRow key={`${yearData.year}-${monthData.month}`} className="border-0">
@@ -689,6 +697,23 @@ const PainelVendasPage = () => {
                                         monthData.monthlyVariation < 0 ? 'text-red-600' : ''
                                       }>
                                         {Math.abs(monthData.monthlyVariation).toFixed(1)}%
+                                      </span>
+                                    </div>
+                                  ) : "-"}
+                                </TableCell>
+                                <TableCell className="text-right py-2">
+                                  {monthData.yearlyVariation !== null ? (
+                                    <div className="flex items-center justify-end gap-1">
+                                      {monthData.yearlyVariation > 0 ? (
+                                        <ArrowUp className="text-green-600 h-4 w-4" />
+                                      ) : monthData.yearlyVariation < 0 ? (
+                                        <ArrowDown className="text-red-600 h-4 w-4" />
+                                      ) : null}
+                                      <span className={
+                                        monthData.yearlyVariation > 0 ? 'text-green-600' : 
+                                        monthData.yearlyVariation < 0 ? 'text-red-600' : ''
+                                      }>
+                                        {Math.abs(monthData.yearlyVariation).toFixed(1)}%
                                       </span>
                                     </div>
                                   ) : "-"}

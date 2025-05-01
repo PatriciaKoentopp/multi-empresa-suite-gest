@@ -188,7 +188,7 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
             <div className="border rounded-md p-3 bg-gray-50">
               <p className="font-medium">Orçamento: {orcamento.codigo}</p>
               <p className="text-sm text-muted-foreground">
-                {orcamento.favorecido_nome || "Favorecido não identificado"}
+                {orcamento.favorecido?.nome || "Favorecido não identificado"}
               </p>
             </div>
           )}
