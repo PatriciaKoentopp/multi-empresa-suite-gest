@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -59,7 +60,29 @@ function formatDateBR(date: Date | string | undefined) {
 // Função para obter o primeiro dia do mês atual
 function getPrimeiroDiaMes(): Date {
   const hoje = new Date();
-  return new Date(hoje.getFullYear(), hoje.getMonth(), 1, 12, 0, 0);
+  return new Date(hoje.getFullYear(), hoje.getMonth(), 1, 0, 0, 0);
+}
+
+// Função para comparar apenas as datas, ignorando o horário
+function compareDatesOnly(date1: Date, date2: Date): boolean {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+}
+
+// Função para verificar se uma data é maior ou igual a outra, considerando apenas dia/mês/ano
+function isDateGreaterOrEqual(date1: Date, date2: Date): boolean {
+  // Se as datas forem iguais (mesmo dia/mês/ano)
+  if (compareDatesOnly(date1, date2)) {
+    return true;
+  }
+  
+  // Caso contrário, compara normalmente
+  const d1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate(), 0, 0, 0);
+  const d2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate(), 0, 0, 0);
+  return d1 >= d2;
 }
 
 export default function FaturamentoPage() {
@@ -246,7 +269,7 @@ export default function FaturamentoPage() {
     setBusca("");
     setTipo("");
     setFavorecido("");
-    setDataInicial(undefined); // Modificado: agora limpa a data inicial
+    setDataInicial(undefined);
     setDataFinal(undefined);
     setStatusFilter("ativo");
   }
@@ -269,11 +292,12 @@ export default function FaturamentoPage() {
     const favMatch = favorecido ? item.favorecido_id === favorecido : true;
     
     // Verifica a data baseada no tipo do item
-    const dataParaComparacao = item.tipo === 'venda' ? new Date(item.data_venda || '') : new Date(item.data);
+    const rawDate = item.tipo === 'venda' ? item.data_venda : item.data;
+    const dataParaComparacao = rawDate ? new Date(rawDate) : new Date();
     
-    // Filtragem por datas
-    const dataI_Match = dataInicial ? dataParaComparacao >= dataInicial : true;
-    const dataF_Match = dataFinal ? dataParaComparacao <= dataFinal : true;
+    // Filtragem por datas - MODIFICADO para usar a nova função de comparação apenas por data
+    const dataI_Match = dataInicial ? isDateGreaterOrEqual(dataParaComparacao, dataInicial) : true;
+    const dataF_Match = dataFinal ? isDateGreaterOrEqual(dataFinal, dataParaComparacao) : true;
 
     return buscaMatch && tipoMatch && favMatch && dataI_Match && dataF_Match;
   });
