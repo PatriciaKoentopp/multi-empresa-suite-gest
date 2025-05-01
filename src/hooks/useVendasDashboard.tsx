@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -150,7 +149,7 @@ export const useVendasDashboard = () => {
           
           // Verificar se os dados são reais ou erros
           if (monthlyComparisonMap[key].total > 0) {
-            console.warn(`Dados para período futuro ${key} com total ${monthlyComparisonMap[key].total}. Excluindo.`);
+            console.warn(`Dados para período futuro ${key} com total ${monthlyComparisonMap[key].total.toFixed(2)}. Excluindo.`);
             delete monthlyComparisonMap[key];
           }
         }
