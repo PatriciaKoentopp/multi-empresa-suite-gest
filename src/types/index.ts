@@ -10,7 +10,7 @@ export interface MonthlyComparison {
 
 export interface YearlyComparison {
   year: number;
-  total: number;
+  total: numeric;
   variacao_total: number | null;
   media_mensal: number;
   variacao_media: number | null;
@@ -26,6 +26,19 @@ export interface Favorecido {
   telefone?: string;
   tipo: string;
   status: string;
+  tipo_documento?: string;
+  grupo_id?: string;
+  profissao_id?: string;
+  nome_fantasia?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
+  data_aniversario?: Date;
   // Outros campos necessários
 }
 
@@ -33,6 +46,7 @@ export interface GrupoFavorecido {
   id: string;
   nome: string;
   status: string;
+  empresa_id?: string;
   // Outros campos necessários
 }
 
@@ -40,6 +54,7 @@ export interface Profissao {
   id: string;
   nome: string;
   status: string;
+  empresa_id?: string;
   // Outros campos necessários
 }
 
@@ -49,6 +64,9 @@ export interface Usuario {
   email: string;
   tipo: string;
   status: string;
+  vendedor?: string;
+  created_at?: Date;
+  empresa_id?: string;
   // Outros campos necessários
 }
 
@@ -104,11 +122,15 @@ export interface TabelaPrecoItem {
 export interface Orcamento {
   id: string;
   codigo: string;
+  favorecido_id?: string;
+  forma_pagamento?: string;
+  favorecido?: any;
   // Outros campos necessários
 }
 
 export interface ModuleNavItem {
   title: string;
+  name?: string; // Adicionado para compatibilidade
   icon?: string;
   href?: string;
   disabled?: boolean;
@@ -119,6 +141,7 @@ export interface ModuleNavItem {
 
 export interface SubNavItem {
   title: string;
+  name?: string; // Adicionado para compatibilidade
   href?: string;
   disabled?: boolean;
   external?: boolean;

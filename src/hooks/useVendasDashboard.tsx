@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfMonth, endOfMonth, subMonths, subDays } from "date-fns";
+import { YearlyComparison } from "@/types";
 
 interface SalesData {
   total_vendas: number;
@@ -20,7 +21,7 @@ export const useVendasDashboard = () => {
   const [barChartData, setBarChartData] = useState<any[]>([]);
   const [quarterlyChartData, setQuarterlyChartData] = useState<any[]>([]);
   const [yearlyChartData, setYearlyChartData] = useState<any[]>([]);
-  const [yearlyComparisonData, setYearlyComparisonData] = useState<any[]>([]);
+  const [yearlyComparisonData, setYearlyComparisonData] = useState<YearlyComparison[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -39,7 +40,7 @@ export const useVendasDashboard = () => {
 
       if (comparisonError) throw comparisonError;
       console.log("Dados de comparação anual:", yearlyComparisonData);
-      setYearlyComparisonData(yearlyComparisonData);
+      setYearlyComparisonData(yearlyComparisonData || []);
       
       // Definir datas para mês atual e anterior
       const startCurrentMonth = startOfMonth(new Date());
@@ -103,7 +104,6 @@ export const useVendasDashboard = () => {
           data_venda,
           orcamentos_itens (valor)
         `)
-        .eq('empresa_id', null)  // Removido temporariamente para testes
         .eq('tipo', 'venda')
         .eq('status', 'ativo')
         .like('data_venda', `${currentYear}-%`);
@@ -167,27 +167,23 @@ export const useVendasDashboard = () => {
         clientes_ativos: clientesAtivos
       });
 
-      // Buscar dados para o gráfico de barras (vendas mensais) usando a função Supabase
+      // Buscar dados para o gráfico de barras (vendas mensais)
       const { data: monthlyChartData, error: monthlyChartError } = await supabase
-        .rpc('get_monthly_sales_chart_data', {
-          year_param: currentYear
-        });
+        .rpc('get_monthly_sales_chart_data', { year_param: currentYear });
 
       if (monthlyChartError) throw monthlyChartError;
       console.log("Dados mensais:", monthlyChartData);
       setBarChartData(monthlyChartData || []);
 
-      // Buscar dados para gráficos trimestrais usando a função Supabase
+      // Buscar dados para gráficos trimestrais
       const { data: quarterlyData, error: quarterlyError } = await supabase
-        .rpc('get_quarterly_sales_data', {
-          year_param: currentYear
-        });
+        .rpc('get_quarterly_sales_data', { year_param: currentYear });
 
       if (quarterlyError) throw quarterlyError;
       console.log("Dados trimestrais:", quarterlyData);
       setQuarterlyChartData(quarterlyData || []);
 
-      // Buscar dados para gráficos anuais usando a função Supabase
+      // Buscar dados para gráficos anuais
       const { data: yearlyData, error: yearlyError } = await supabase
         .rpc('get_yearly_sales_data');
 

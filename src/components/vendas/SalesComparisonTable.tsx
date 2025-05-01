@@ -56,13 +56,13 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
                 >
                   <TableCell className="font-medium">{yearData.year}</TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(yearData.total)}
+                    {formatCurrency(Number(yearData.total) || 0)}
                   </TableCell>
                   <TableCell className="text-right">
                     <VariationDisplay value={yearData.variacao_total} />
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(yearData.media_mensal)}
+                    {formatCurrency(yearData.media_mensal || 0)}
                   </TableCell>
                   <TableCell className="text-right">
                     <VariationDisplay value={yearData.variacao_media} />

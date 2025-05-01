@@ -36,6 +36,12 @@ const CHART_COLORS = [
 ];
 
 export const SalesBarChart = ({ data, className, multiColor = false, isYearly = false }: SalesBarChartProps) => {
+  // Verificar se os dados estão presentes e formatar se necessário
+  const chartData = Array.isArray(data) ? data.map(item => ({
+    name: item.name || '',
+    faturado: Number(item.faturado) || 0
+  })) : [];
+
   return (
     <div className={className}>
       <ChartContainer
@@ -49,7 +55,7 @@ export const SalesBarChart = ({ data, className, multiColor = false, isYearly = 
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={data}
+            data={chartData}
             margin={{
               top: 10,
               right: 30,
