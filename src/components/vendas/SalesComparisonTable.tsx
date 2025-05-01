@@ -23,6 +23,20 @@ interface SalesComparisonTableProps {
 }
 
 export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTableProps) => {
+  // Verificar e garantir que temos dados para exibir
+  if (!yearlyComparisonData || yearlyComparisonData.length === 0) {
+    return (
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-muted/30">
+          <CardTitle className="text-lg">Comparativo de Vendas</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 text-center text-muted-foreground">
+          Nenhum dado de comparação disponível.
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-muted/30">
