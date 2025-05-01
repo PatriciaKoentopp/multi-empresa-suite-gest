@@ -13,7 +13,7 @@ export const VariationDisplay = ({ value }: VariationDisplayProps) => {
   const Icon = isPositive ? ArrowUp : ArrowDown;
   
   return (
-    <div className={`flex items-center justify-end gap-1 ${color} font-medium`}>
+    <div className={`flex items-center justify-end gap-1 ${color} font-medium w-full`}>
       <Icon className="h-4 w-4" />
       <span>{Math.abs(value).toFixed(1)}%</span>
     </div>

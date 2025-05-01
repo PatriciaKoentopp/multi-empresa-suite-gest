@@ -50,15 +50,15 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
                           <span>{yearData.year}</span>
                         </AccordionTrigger>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right pr-4 font-medium">
                         {formatCurrency(yearData.total)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right px-4">
                         {yearData.yearlyVariation !== null && (
                           <VariationDisplay value={yearData.yearlyVariation} />
                         )}
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right px-4 font-medium">
                         {formatCurrency(yearData.mediaMensal)}
                       </TableCell>
                       <TableCell className="text-right pr-6">
@@ -73,9 +73,9 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
                           <TableHeader className="bg-muted/20">
                             <TableRow className="border-0">
                               <TableHead className="pl-6 py-2 font-medium text-left">Mês</TableHead>
-                              <TableHead className="text-right py-2 font-medium w-[170px]">Total de Vendas</TableHead>
-                              <TableHead className="text-right py-2 font-medium w-[100px]">Var. Mensal</TableHead>
-                              <TableHead className="text-right py-2 font-medium pr-6 w-[100px]">Var. Anual</TableHead>
+                              <TableHead className="text-right py-2 pr-4 font-medium w-[170px]">Total de Vendas</TableHead>
+                              <TableHead className="text-right py-2 px-4 font-medium w-[100px]">Var. Mensal</TableHead>
+                              <TableHead className="text-right py-2 pr-6 font-medium w-[100px]">Var. Anual</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -87,10 +87,10 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
                                 <TableCell className="py-3 pl-6">
                                   <span className="font-medium capitalize">{monthData.month}</span>
                                 </TableCell>
-                                <TableCell className="text-right py-3">
+                                <TableCell className="text-right py-3 pr-4">
                                   {formatCurrency(monthData.total)}
                                 </TableCell>
-                                <TableCell className="text-right py-3">
+                                <TableCell className="text-right py-3 px-4">
                                   <VariationDisplay value={monthData.monthlyVariation} />
                                 </TableCell>
                                 <TableCell className="text-right py-3 pr-6">

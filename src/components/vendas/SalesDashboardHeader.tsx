@@ -7,7 +7,7 @@ export const SalesDashboardHeader = () => {
     <div>
       <h2 className="text-2xl font-bold tracking-tight">Painel de Vendas</h2>
       <p className="text-muted-foreground">
-        Visão geral dos dados de vendas atualizados até {format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}.
+        Visão geral dos dados de vendas atualizados até {format(new Date(), "dd/MM/yyyy", { locale: ptBR })}.
       </p>
     </div>
   );
