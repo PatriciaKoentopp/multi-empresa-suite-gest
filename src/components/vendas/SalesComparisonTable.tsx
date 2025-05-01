@@ -31,12 +31,6 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
     );
   }
 
-  // Verificar os dados recebidos para debug
-  console.log("Dados recebidos na tabela de comparação:", yearlyComparisonData);
-  yearlyComparisonData.forEach(year => {
-    console.log(`Ano: ${year.year}, Variação Total: ${year.yearlyVariation}, Variação Média: ${year.mediaVariacao}`);
-  });
-
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-muted/30">
@@ -65,13 +59,13 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
                     {formatCurrency(yearData.total)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <VariationDisplay value={yearData.yearlyVariation} />
+                    <VariationDisplay value={yearData.variacao_total} />
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(yearData.mediaMensal)}
+                    {formatCurrency(yearData.media_mensal)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <VariationDisplay value={yearData.mediaVariacao} />
+                    <VariationDisplay value={yearData.variacao_media} />
                   </TableCell>
                 </TableRow>
               ))}

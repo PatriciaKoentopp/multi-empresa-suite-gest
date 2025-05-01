@@ -6,12 +6,8 @@ interface VariationDisplayProps {
 }
 
 export const VariationDisplay = ({ value }: VariationDisplayProps) => {
-  // Log do valor recebido para debug
-  console.log("Valor de variação recebido:", value);
-  
   // Se o valor for null ou undefined, mostramos o traço
   if (value === null || value === undefined) {
-    console.log("Valor nulo ou indefinido, exibindo traço");
     return <span className="text-gray-400 block text-right">-</span>;
   }
   
@@ -25,8 +21,6 @@ export const VariationDisplay = ({ value }: VariationDisplayProps) => {
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
   // Garantimos que sempre temos duas casas decimais, para valores como -6,75% ou 8,01%
   const formattedValue = Math.abs(value).toFixed(2).replace('.', ',');
-  
-  console.log("Exibindo valor formatado:", formattedValue, "com cor:", color);
   
   // Garantir que a visualização seja consistente para todos os valores
   return (
