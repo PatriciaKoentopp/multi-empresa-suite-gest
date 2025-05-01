@@ -6,10 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowUp, ArrowDown } from "lucide-react";
 import { format, subDays, startOfMonth, endOfMonth, subMonths, subYears, getYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
 
 interface SalesData {
   total_vendas: number;
@@ -20,6 +28,15 @@ interface SalesData {
   clientes_ativos: number;
 }
 
+interface MonthlyComparison {
+  month: string; // Nome do mês
+  year: number; // Ano
+  total: number; // Total de vendas
+  monthlyVariation: number | null; // Variação percentual mensal
+  yearlyVariation: number | null; // Variação percentual anual
+  sortDate: Date; // Data para ordenação
+}
+
 const PainelVendasPage = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -27,6 +44,7 @@ const PainelVendasPage = () => {
   const [barChartData, setBarChartData] = useState<any[]>([]);
   const [quarterlyChartData, setQuarterlyChartData] = useState<any[]>([]);
   const [yearlyChartData, setYearlyChartData] = useState<any[]>([]);
+  const [monthlyComparisonData, setMonthlyComparisonData] = useState<MonthlyComparison[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,6 +65,7 @@ const PainelVendasPage = () => {
           .from('orcamentos')
           .select(`
             id,
+            data_venda,
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
@@ -64,6 +83,102 @@ const PainelVendasPage = () => {
         }, 0) || 0;
         
         console.log("Total de vendas do ano:", totalVendas);
+
+        // Buscar dados para comparativo mensal dos últimos 12 meses
+        const lastYear = new Date();
+        lastYear.setFullYear(lastYear.getFullYear() - 1);
+        const lastYearFormatted = format(lastYear, 'yyyy-MM-dd');
+
+        const { data: lastTwelveMonthsData, error: lastTwelveMonthsError } = await supabase
+          .from('orcamentos')
+          .select(`
+            id,
+            data_venda,
+            orcamentos_itens (valor)
+          `)
+          .eq('tipo', 'venda')
+          .eq('status', 'ativo')
+          .gte('data_venda', lastYearFormatted);
+
+        if (lastTwelveMonthsError) throw lastTwelveMonthsError;
+        console.log("Dados dos últimos 12 meses:", lastTwelveMonthsData);
+
+        // Processar dados para comparativo mensal
+        const monthlyData: { [key: string]: { total: number, date: Date } } = {};
+        const currentDate = new Date();
+        
+        // Inicializar os últimos 12 meses com valores zero
+        for (let i = 0; i < 12; i++) {
+          const date = subMonths(currentDate, i);
+          const monthKey = format(date, 'yyyy-MM');
+          monthlyData[monthKey] = { total: 0, date: new Date(date) };
+        }
+        
+        // Preencher com dados reais
+        lastTwelveMonthsData?.forEach(orcamento => {
+          if (orcamento.data_venda) {
+            const date = new Date(orcamento.data_venda);
+            const monthKey = format(date, 'yyyy-MM');
+            
+            if (monthlyData[monthKey]) {
+              const total = orcamento.orcamentos_itens.reduce(
+                (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+              );
+              monthlyData[monthKey].total += total;
+            }
+          }
+        });
+        
+        // Calcular variações e formatar dados para a tabela
+        const sortedMonths = Object.entries(monthlyData)
+          .sort(([keyA], [keyB]) => keyB.localeCompare(keyA))
+          .map(([key, data], index, array) => {
+            // Extrair ano e mês do key (yyyy-MM)
+            const [year, month] = key.split('-').map(Number);
+            
+            // Formatar nome do mês
+            const monthName = format(new Date(year, month - 1, 1), 'MMMM', { locale: ptBR });
+            
+            // Calcular variação mensal (comparado com o mês anterior)
+            let monthlyVariation: number | null = null;
+            if (index < array.length - 1) {
+              const prevMonthTotal = array[index + 1][1].total;
+              if (prevMonthTotal > 0 && data.total > 0) {
+                monthlyVariation = ((data.total - prevMonthTotal) / prevMonthTotal) * 100;
+              }
+            }
+            
+            // Calcular variação anual (mesmo mês do ano anterior)
+            let yearlyVariation: number | null = null;
+            const lastYearMonthKey = `${year - 1}-${month < 10 ? '0' : ''}${month}`;
+            const lastYearMonth = lastTwelveMonthsData?.filter(orcamento => {
+              if (!orcamento.data_venda) return false;
+              return format(new Date(orcamento.data_venda), 'yyyy-MM') === lastYearMonthKey;
+            });
+            
+            if (lastYearMonth && lastYearMonth.length > 0) {
+              const lastYearTotal = lastYearMonth.reduce((sum, orcamento) => {
+                return sum + orcamento.orcamentos_itens.reduce(
+                  (itemSum: number, item: any) => itemSum + (Number(item.valor) || 0), 0
+                );
+              }, 0);
+              
+              if (lastYearTotal > 0 && data.total > 0) {
+                yearlyVariation = ((data.total - lastYearTotal) / lastYearTotal) * 100;
+              }
+            }
+            
+            return {
+              month: monthName,
+              year,
+              total: data.total,
+              monthlyVariation,
+              yearlyVariation,
+              sortDate: data.date
+            };
+          });
+          
+        setMonthlyComparisonData(sortedMonths);
 
         // Definir datas para mês atual e anterior
         const startCurrentMonth = startOfMonth(new Date());
@@ -362,6 +477,69 @@ const PainelVendasPage = () => {
         />
       </div>
 
+      {/* Tabela de Comparativo de Vendas */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Comparativo de Vendas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mês/Ano</TableHead>
+                <TableHead className="text-right">Total de Vendas</TableHead>
+                <TableHead className="text-right">Variação Mensal</TableHead>
+                <TableHead className="text-right">Variação Anual</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {monthlyComparisonData.map((item, index) => (
+                <TableRow key={`${item.month}-${item.year}`}>
+                  <TableCell className="font-medium">
+                    {item.month.charAt(0).toUpperCase() + item.month.slice(1)} {item.year}
+                  </TableCell>
+                  <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
+                  <TableCell className="text-right">
+                    {item.monthlyVariation !== null ? (
+                      <div className="flex items-center justify-end gap-1">
+                        {item.monthlyVariation > 0 ? (
+                          <ArrowUp className="text-green-600 h-4 w-4" />
+                        ) : item.monthlyVariation < 0 ? (
+                          <ArrowDown className="text-red-600 h-4 w-4" />
+                        ) : null}
+                        <span className={
+                          item.monthlyVariation > 0 ? 'text-green-600' : 
+                          item.monthlyVariation < 0 ? 'text-red-600' : ''
+                        }>
+                          {Math.abs(item.monthlyVariation).toFixed(1)}%
+                        </span>
+                      </div>
+                    ) : "-"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {item.yearlyVariation !== null ? (
+                      <div className="flex items-center justify-end gap-1">
+                        {item.yearlyVariation > 0 ? (
+                          <ArrowUp className="text-green-600 h-4 w-4" />
+                        ) : item.yearlyVariation < 0 ? (
+                          <ArrowDown className="text-red-600 h-4 w-4" />
+                        ) : null}
+                        <span className={
+                          item.yearlyVariation > 0 ? 'text-green-600' : 
+                          item.yearlyVariation < 0 ? 'text-red-600' : ''
+                        }>
+                          {Math.abs(item.yearlyVariation).toFixed(1)}%
+                        </span>
+                      </div>
+                    ) : "-"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
       {/* Gráficos de desempenho de vendas com abas */}
       <div className="space-y-4">
         <Tabs defaultValue="monthly">
@@ -399,7 +577,7 @@ const PainelVendasPage = () => {
                 <CardTitle>Comparativo Anual</CardTitle>
               </CardHeader>
               <CardContent>
-                <SalesBarChart data={yearlyChartData} />
+                <SalesBarChart data={yearlyChartData} multiColor={true} />
               </CardContent>
             </Card>
           </TabsContent>
