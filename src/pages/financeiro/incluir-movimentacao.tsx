@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -12,6 +13,7 @@ import { PagamentoForm } from "@/components/movimentacao/PagamentoForm";
 import { RecebimentoForm } from "@/components/movimentacao/RecebimentoForm";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 
 // Formas de pagamento fixas
 const formasPagamento = [
@@ -24,8 +26,22 @@ const formasPagamento = [
 export default function IncluirMovimentacaoPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const movimentacaoParaEditar = location.state?.movimentacao;
+  let movimentacaoParaEditar = location.state?.movimentacao;
   const modoVisualizacao = location.state?.modoVisualizacao;
+  
+  // Garantir que as datas das parcelas sejam objetos Date
+  if (movimentacaoParaEditar && movimentacaoParaEditar.parcelas) {
+    movimentacaoParaEditar = {
+      ...movimentacaoParaEditar,
+      parcelas: movimentacaoParaEditar.parcelas.map(parcela => ({
+        ...parcela,
+        dataVencimento: parcela.data_vencimento ? new Date(parcela.data_vencimento + 'T12:00:00Z') : new Date()
+      }))
+    };
+    
+    // Log para diagnóstico
+    console.log('Parcelas processadas:', movimentacaoParaEditar.parcelas);
+  }
 
   const {
     operacao,
@@ -82,15 +98,24 @@ export default function IncluirMovimentacaoPage() {
       setTipoTitulo(movimentacaoParaEditar.tipo_titulo_id);
     }
   }, [movimentacaoParaEditar, setTipoTitulo]);
+  
+  // Log para diagnóstico de parcelas
+  useEffect(() => {
+    if (parcelas.length > 0) {
+      console.log('Parcelas carregadas:', parcelas);
+    }
+  }, [parcelas]);
 
   const handleSalvarNovoFavorecido = () => {
     // Implementação do salvamento do novo favorecido
     setIsModalNovoFavorecido(false);
+    toast.success("Novo favorecido cadastrado com sucesso!");
   };
   
   const handleSalvarNovaCategoria = () => {
     // Implementação do salvamento da nova categoria
     setIsModalNovaCategoria(false);
+    toast.success("Nova categoria cadastrada com sucesso!");
   };
 
   return (

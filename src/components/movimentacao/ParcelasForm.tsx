@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -72,6 +72,15 @@ export function ParcelasForm({
   // Calcular diferença para mostrar alerta
   const diferenca = valorTotal - somaParcelas;
   const temDiferenca = mostrarAlertaDiferenca && Math.abs(diferenca) > 0.01;
+
+  // Efeito para garantir que as datas das parcelas estejam corretas (como objetos Date)
+  useEffect(() => {
+    parcelas.forEach(parcela => {
+      if (!(parcela.dataVencimento instanceof Date)) {
+        console.warn('dataVencimento não é um objeto Date:', parcela.dataVencimento);
+      }
+    });
+  }, [parcelas]);
 
   return (
     <div className="space-y-2">

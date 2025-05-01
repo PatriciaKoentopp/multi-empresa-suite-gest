@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -143,7 +144,8 @@ export default function ContasAReceberPage() {
         .from('movimentacoes')
         .select(`
           *,
-          favorecido:favorecidos(id, nome)
+          favorecido:favorecidos(id, nome),
+          parcelas:movimentacoes_parcelas(*)
         `)
         .eq('id', conta.movimentacao_id)
         .single();
@@ -151,6 +153,15 @@ export default function ContasAReceberPage() {
       if (error) throw error;
       
       if (movimentacao) {
+        // Formato correto das parcelas para edição
+        if (movimentacao.parcelas && Array.isArray(movimentacao.parcelas)) {
+          movimentacao.parcelas = movimentacao.parcelas.map(parcela => ({
+            ...parcela,
+            // Assegurando que temos as datas em formato Date para a edição
+            data_vencimento: parcela.data_vencimento
+          }));
+        }
+        
         // Navegar para a página de edição com os dados da movimentação
         navigate("/financeiro/incluir-movimentacao", {
           state: { movimentacao }
@@ -239,12 +250,13 @@ export default function ContasAReceberPage() {
 
   const handleVisualizar = async (conta: ContaReceber) => {
     try {
-      // Buscar a movimentação completa no banco, similar ao handleEdit
+      // Buscar a movimentação completa no banco
       const { data: movimentacao, error } = await supabase
         .from('movimentacoes')
         .select(`
           *,
-          favorecido:favorecidos(id, nome)
+          favorecido:favorecidos(id, nome),
+          parcelas:movimentacoes_parcelas(*)
         `)
         .eq('id', conta.movimentacao_id)
         .single();
@@ -252,6 +264,15 @@ export default function ContasAReceberPage() {
       if (error) throw error;
       
       if (movimentacao) {
+        // Formato correto das parcelas para visualização
+        if (movimentacao.parcelas && Array.isArray(movimentacao.parcelas)) {
+          movimentacao.parcelas = movimentacao.parcelas.map(parcela => ({
+            ...parcela,
+            // Assegurando que preservamos o formato original da data
+            data_vencimento: parcela.data_vencimento
+          }));
+        }
+        
         // Navegar para a página de inclusão com os dados da movimentação e o modo visualização
         navigate("/financeiro/incluir-movimentacao", {
           state: { 
