@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -68,7 +69,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo')
+          .eq('status', 'ativo') // Garantir que apenas vendas ativas sejam contabilizadas
           .gte('data_venda', startYearDate)
           .lte('data_venda', endYearDate);
 
@@ -95,7 +96,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo')
+          .eq('status', 'ativo') // Garantir que apenas vendas ativas sejam contabilizadas
           .gte('data_venda', start2023)
           .lte('data_venda', today);
 
@@ -188,7 +189,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo')
+          .eq('status', 'ativo') // Garantir que apenas vendas ativas sejam contabilizadas
           .gte('data_venda', startCurrentMonthFormatted)
           .lte('data_venda', endCurrentMonthFormatted);
 
@@ -218,7 +219,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo')
+          .eq('status', 'ativo') // Garantir que apenas vendas ativas sejam contabilizadas
           .gte('data_venda', startLastMonthFormatted)
           .lte('data_venda', endLastMonthFormatted);
 
@@ -247,7 +248,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo')
+          .eq('status', 'ativo') // Garantir que apenas vendas ativas sejam contabilizadas
           .gte('data_venda', ninetyDaysAgoFormatted);
 
         if (ticketError) throw ticketError;
@@ -267,7 +268,7 @@ const PainelVendasPage = () => {
           .from('orcamentos')
           .select('favorecido_id')
           .eq('tipo', 'venda')
-          .eq('status', 'ativo')
+          .eq('status', 'ativo') // Garantir que apenas vendas ativas sejam contabilizadas
           .gte('data_venda', ninetyDaysAgoFormatted);
 
         if (clientesError) throw clientesError;
@@ -300,7 +301,7 @@ const PainelVendasPage = () => {
             orcamentos_itens (valor)
           `)
           .eq('tipo', 'venda')
-          .eq('status', 'ativo')
+          .eq('status', 'ativo') // Garantir que apenas vendas ativas sejam contabilizadas
           .gte('data_venda', startYearDate)
           .order('data_venda');
 
@@ -349,7 +350,7 @@ const PainelVendasPage = () => {
               orcamentos_itens (valor)
             `)
             .eq('tipo', 'venda')
-            .eq('status', 'ativo')
+            .eq('status', 'ativo') // Garantir que apenas vendas ativas sejam contabilizadas
             .gte('data_venda', quarter.start)
             .lte('data_venda', quarter.end);
 
@@ -384,7 +385,7 @@ const PainelVendasPage = () => {
               orcamentos_itens (valor)
             `)
             .eq('tipo', 'venda')
-            .eq('status', 'ativo')
+            .eq('status', 'ativo') // Garantir que apenas vendas ativas sejam contabilizadas
             .gte('data_venda', yearStart)
             .lte('data_venda', yearEnd);
 
