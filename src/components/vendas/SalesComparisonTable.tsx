@@ -31,6 +31,12 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
     );
   }
 
+  // Verificar os dados recebidos para debug
+  console.log("Dados recebidos na tabela de comparação:", yearlyComparisonData);
+  yearlyComparisonData.forEach(year => {
+    console.log(`Ano: ${year.year}, Variação Total: ${year.yearlyVariation}, Variação Média: ${year.mediaVariacao}`);
+  });
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-muted/30">

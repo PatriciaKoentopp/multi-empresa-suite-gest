@@ -238,19 +238,18 @@ export const useVendasDashboard = () => {
             yearData.yearlyVariation = ((yearData.total - prevYearTotal) / prevYearTotal) * 100;
           }
           
-          // Correção no cálculo da variação da média mensal
-          // Garantir que ambos os valores sejam maiores que zero para fazer o cálculo
+          // CORREÇÃO CRÍTICA: Cálculo correto da variação da média mensal
+          // Garantimos que os valores são válidos e não zero
+          console.log(`Calculando variação de média para ${yearData.year}:`);
+          console.log(`Média atual: ${yearData.mediaMensal}, Média anterior: ${prevYearMedia}`);
+          
           if (prevYearMedia > 0 && yearData.mediaMensal > 0) {
-            yearData.mediaVariacao = ((yearData.mediaMensal - prevYearMedia) / prevYearMedia) * 100;
-            console.log(`Cálculo de variação da média mensal para ${yearData.year}:`);
-            console.log(`- Média atual: ${yearData.mediaMensal.toFixed(2)}`);
-            console.log(`- Média anterior (${prevYearData.year}): ${prevYearMedia.toFixed(2)}`);
-            console.log(`- Variação calculada: ${yearData.mediaVariacao.toFixed(2)}%`);
+            const mediaVar = ((yearData.mediaMensal - prevYearMedia) / prevYearMedia) * 100;
+            yearData.mediaVariacao = mediaVar;
+            console.log(`Variação calculada: ${mediaVar.toFixed(2)}%`);
           } else {
+            console.log("Não foi possível calcular a variação: valores inválidos ou zero");
             yearData.mediaVariacao = null;
-            console.log(`Não foi possível calcular a variação da média mensal para ${yearData.year}:`);
-            console.log(`- Média atual: ${yearData.mediaMensal.toFixed(2)}`);
-            console.log(`- Média anterior (${prevYearData.year}): ${prevYearMedia.toFixed(2)}`);
           }
         }
         
@@ -265,11 +264,16 @@ export const useVendasDashboard = () => {
         });
       });
       
-      // Verificar dados da variação média
+      // Debug final dos dados calculados
       yearsSorted.forEach(year => {
-        console.log(`Ano ${year.year}: Total=${year.total.toFixed(2)}, Média=${year.mediaMensal.toFixed(2)}, Var. Média=${year.mediaVariacao?.toFixed(2) || 'null'}`);
+        console.log(`Ano ${year.year}:`);
+        console.log(`- Total: ${year.total.toFixed(2)}`);
+        console.log(`- Média mensal: ${year.mediaMensal.toFixed(2)}`);
+        console.log(`- Variação total: ${year.yearlyVariation?.toFixed(2) || 'null'}`);
+        console.log(`- Variação média: ${year.mediaVariacao?.toFixed(2) || 'null'}`);
       });
       
+      // Garantir que os dados calculados estejam sendo passados corretamente
       setYearlyComparisonData(yearsSorted);
 
       // Definir datas para mês atual e anterior

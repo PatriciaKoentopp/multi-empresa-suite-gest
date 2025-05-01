@@ -20,6 +20,9 @@ const PainelVendasPage = () => {
     return <SalesLoadingState />;
   }
 
+  // Verificar se os dados estão sendo carregados corretamente
+  console.log("Dados de comparação anual:", yearlyComparisonData);
+
   return (
     <div className="space-y-6">
       <SalesDashboardHeader />
