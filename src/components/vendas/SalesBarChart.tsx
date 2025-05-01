@@ -70,7 +70,6 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
               <Bar
                 dataKey="faturado"
                 radius={[4, 4, 0, 0]}
-                fill={barColors[0]}
               >
                 {data.map((entry, index) => (
                   <rect
