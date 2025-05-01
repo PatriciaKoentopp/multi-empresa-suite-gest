@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -49,6 +48,22 @@ interface YearlyComparison {
   yearlyVariation: number | null;
   months: MonthlyComparison[];
 }
+
+// Componente para exibir a variação com seta e cor
+const VariationDisplay = ({ value }: { value: number | null }) => {
+  if (value === null) return <span className="text-gray-400">-</span>;
+  
+  const isPositive = value > 0;
+  const color = isPositive ? "text-green-600" : "text-red-500";
+  const Icon = isPositive ? ArrowUp : ArrowDown;
+  
+  return (
+    <div className={`flex items-center justify-end gap-1 ${color} font-medium`}>
+      <Icon className="h-4 w-4" />
+      <span>{Math.abs(value).toFixed(1)}%</span>
+    </div>
+  );
+};
 
 const PainelVendasPage = () => {
   const { toast } = useToast();
@@ -619,116 +634,81 @@ const PainelVendasPage = () => {
         </Tabs>
       </div>
 
-      {/* Tabela de Comparativo de Vendas com Accordion */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Comparativo de Vendas</CardTitle>
+      {/* Tabela de Comparativo de Vendas com melhor UI/UX */}
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-muted/30">
+          <CardTitle className="text-lg">Comparativo de Vendas</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[180px]">Período</TableHead>
-                <TableHead className="text-right">Total de Vendas</TableHead>
-                <TableHead className="text-right">Variação</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {yearlyComparisonData.map((yearData) => (
-                <Accordion type="single" collapsible key={yearData.year}>
-                  <AccordionItem value={`year-${yearData.year}`} className="border-0">
-                    <TableRow>
-                      <TableCell className="py-0">
-                        <AccordionTrigger className="py-3 hover:no-underline">
-                          <span className="font-medium">{yearData.year}</span>
-                        </AccordionTrigger>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(yearData.total)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {yearData.yearlyVariation !== null ? (
-                          <div className="flex items-center justify-end gap-1">
-                            {yearData.yearlyVariation > 0 ? (
-                              <ArrowUp className="text-green-600 h-4 w-4" />
-                            ) : yearData.yearlyVariation < 0 ? (
-                              <ArrowDown className="text-red-600 h-4 w-4" />
-                            ) : null}
-                            <span className={
-                              yearData.yearlyVariation > 0 ? 'text-green-600' : 
-                              yearData.yearlyVariation < 0 ? 'text-red-600' : ''
-                            }>
-                              {Math.abs(yearData.yearlyVariation).toFixed(1)}%
-                            </span>
-                          </div>
-                        ) : "-"}
-                      </TableCell>
-                    </TableRow>
-                    <AccordionContent>
-                      <div className="pl-6 pb-2">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="border-0">
-                              <TableHead className="w-[180px] py-2">Mês</TableHead>
-                              <TableHead className="text-right py-2">Total de Vendas</TableHead>
-                              <TableHead className="text-right py-2">Var. Mensal</TableHead>
-                              <TableHead className="text-right py-2">Var. Anual</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {yearData.months.map((monthData) => (
-                              <TableRow key={`${yearData.year}-${monthData.month}`} className="border-0">
-                                <TableCell className="py-2">
-                                  <span className="font-normal">{monthData.month}</span>
-                                </TableCell>
-                                <TableCell className="text-right py-2">
-                                  {formatCurrency(monthData.total)}
-                                </TableCell>
-                                <TableCell className="text-right py-2">
-                                  {monthData.monthlyVariation !== null ? (
-                                    <div className="flex items-center justify-end gap-1">
-                                      {monthData.monthlyVariation > 0 ? (
-                                        <ArrowUp className="text-green-600 h-4 w-4" />
-                                      ) : monthData.monthlyVariation < 0 ? (
-                                        <ArrowDown className="text-red-600 h-4 w-4" />
-                                      ) : null}
-                                      <span className={
-                                        monthData.monthlyVariation > 0 ? 'text-green-600' : 
-                                        monthData.monthlyVariation < 0 ? 'text-red-600' : ''
-                                      }>
-                                        {Math.abs(monthData.monthlyVariation).toFixed(1)}%
-                                      </span>
-                                    </div>
-                                  ) : "-"}
-                                </TableCell>
-                                <TableCell className="text-right py-2">
-                                  {monthData.yearlyVariation !== null ? (
-                                    <div className="flex items-center justify-end gap-1">
-                                      {monthData.yearlyVariation > 0 ? (
-                                        <ArrowUp className="text-green-600 h-4 w-4" />
-                                      ) : monthData.yearlyVariation < 0 ? (
-                                        <ArrowDown className="text-red-600 h-4 w-4" />
-                                      ) : null}
-                                      <span className={
-                                        monthData.yearlyVariation > 0 ? 'text-green-600' : 
-                                        monthData.yearlyVariation < 0 ? 'text-red-600' : ''
-                                      }>
-                                        {Math.abs(monthData.yearlyVariation).toFixed(1)}%
-                                      </span>
-                                    </div>
-                                  ) : "-"}
-                                </TableCell>
+        <CardContent className="p-0">
+          <div className="rounded-md">
+            <Table>
+              <TableHeader className="bg-muted/40">
+                <TableRow>
+                  <TableHead className="w-[180px] text-left">Período</TableHead>
+                  <TableHead className="text-right">Total de Vendas</TableHead>
+                  <TableHead className="text-right w-[120px]">Variação</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {yearlyComparisonData.map((yearData) => (
+                  <Accordion type="single" collapsible key={yearData.year}>
+                    <AccordionItem value={`year-${yearData.year}`} className="border-0">
+                      <TableRow className={yearData.year % 2 === 0 ? "bg-white" : "bg-muted/10"}>
+                        <TableCell className="py-0 pl-4">
+                          <AccordionTrigger className="py-4 hover:no-underline font-semibold">
+                            <span>{yearData.year}</span>
+                          </AccordionTrigger>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(yearData.total)}
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          {yearData.yearlyVariation !== null && (
+                            <VariationDisplay value={yearData.yearlyVariation} />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      <AccordionContent>
+                        <div className="pl-4 pr-2 pb-2 bg-muted/5">
+                          <Table>
+                            <TableHeader className="bg-muted/20">
+                              <TableRow className="border-0">
+                                <TableHead className="pl-6 py-2 font-medium text-left">Mês</TableHead>
+                                <TableHead className="text-right py-2 font-medium">Total de Vendas</TableHead>
+                                <TableHead className="text-right py-2 font-medium">Var. Mensal</TableHead>
+                                <TableHead className="text-right py-2 font-medium pr-6">Var. Anual</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              ))}
-            </TableBody>
-          </Table>
+                            </TableHeader>
+                            <TableBody>
+                              {yearData.months.map((monthData, index) => (
+                                <TableRow 
+                                  key={`${yearData.year}-${monthData.month}`} 
+                                  className={`border-0 ${index % 2 === 0 ? "bg-white/40" : "bg-muted/10"} hover:bg-muted/20`}
+                                >
+                                  <TableCell className="py-3 pl-6">
+                                    <span className="font-medium capitalize">{monthData.month}</span>
+                                  </TableCell>
+                                  <TableCell className="text-right py-3">
+                                    {formatCurrency(monthData.total)}
+                                  </TableCell>
+                                  <TableCell className="text-right py-3">
+                                    <VariationDisplay value={monthData.monthlyVariation} />
+                                  </TableCell>
+                                  <TableCell className="text-right py-3 pr-6">
+                                    <VariationDisplay value={monthData.yearlyVariation} />
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

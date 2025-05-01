@@ -20,6 +20,7 @@ export interface Orcamento {
   usuario_criacao: string;
   usuario_atualizacao: string;
   data_atualizacao: string;
+  data_venda: string;
   cliente?: Cliente;
   favorecido?: Favorecido;
 }
@@ -50,6 +51,19 @@ export interface Favorecido {
   cpf_cnpj: string;
   rg_ie: string;
   data_nascimento: string;
+  tipo: string;
+  tipo_documento: string;
+  documento: string;
+  grupo_id: string;
+  profissao_id: string;
+  nome_fantasia: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  pais: string;
+  data_aniversario: string;
+  status: string;
 }
 
 export interface SubNavItem {
