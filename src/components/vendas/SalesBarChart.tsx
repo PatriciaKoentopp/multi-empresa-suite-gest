@@ -36,13 +36,33 @@ const CHART_COLORS = [
 ];
 
 export const SalesBarChart = ({ data, className, multiColor = false, isYearly = false }: SalesBarChartProps) => {
-  // Verificar se os dados estão presentes e formatar se necessário
+  // Verificar se os dados estão presentes e em formato correto
   const chartData = Array.isArray(data) ? data.map(item => ({
-    name: item.name || '',
-    faturado: Number(item.faturado) || 0
+    name: (item.name !== undefined && item.name !== null) ? String(item.name) : '',
+    faturado: (item.faturado !== undefined && item.faturado !== null) ? Number(item.faturado) : 0
   })) : [];
   
-  console.log("Dados do gráfico:", chartData);
+  console.log("Dados do gráfico processados:", chartData);
+
+  // Verificar se temos dados válidos para o gráfico
+  if (!chartData.length || chartData.every(item => item.faturado === 0)) {
+    console.warn("Sem dados válidos para o gráfico");
+    return (
+      <div className={className || "h-[300px] flex items-center justify-center"}>
+        <p className="text-muted-foreground">Sem dados disponíveis para visualização</p>
+      </div>
+    );
+  }
+
+  // Formatador para valores em reais
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+  };
 
   return (
     <div className={className}>
@@ -77,9 +97,11 @@ export const SalesBarChart = ({ data, className, multiColor = false, isYearly = 
               tickLine={false}
               axisLine={false}
               tick={{ fontSize: 12 }}
-              tickFormatter={(value) => `R$ ${value.toLocaleString()}`}
+              tickFormatter={formatCurrency}
             />
-            <Tooltip content={<ChartTooltipContent labelKey="name" />} />
+            <Tooltip 
+              content={<ChartTooltipContent labelKey="name" formatter={(value) => formatCurrency(Number(value))} />} 
+            />
             {isYearly ? (
               // Para o gráfico anual, mostramos apenas uma barra por ano
               <Bar
@@ -91,7 +113,7 @@ export const SalesBarChart = ({ data, className, multiColor = false, isYearly = 
               // Para gráficos com múltiplas cores, iteramos sobre os dados
               chartData.map((entry, index) => (
                 <Bar 
-                  key={`bar-${entry.name}`}
+                  key={`bar-${entry.name}-${index}`}
                   dataKey="faturado" 
                   name={entry.name}
                   fill={CHART_COLORS[index % CHART_COLORS.length]}

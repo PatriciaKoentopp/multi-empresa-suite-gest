@@ -5,6 +5,7 @@ import { SalesDashboardCards } from "@/components/vendas/SalesDashboardCards";
 import { SalesPerformanceTabs } from "@/components/vendas/SalesPerformanceTabs";
 import { SalesComparisonTable } from "@/components/vendas/SalesComparisonTable";
 import { useVendasDashboard } from "@/hooks/useVendasDashboard";
+import { useEffect } from "react";
 
 const PainelVendasPage = () => {
   const {
@@ -16,14 +17,20 @@ const PainelVendasPage = () => {
     yearlyComparisonData
   } = useVendasDashboard();
 
-  console.log("Estado do Painel de Vendas:", {
-    isLoading,
-    salesData,
-    barChartDataLength: barChartData?.length,
-    quarterlyChartDataLength: quarterlyChartData?.length,
-    yearlyChartDataLength: yearlyChartData?.length,
-    yearlyComparisonDataLength: yearlyComparisonData?.length
-  });
+  useEffect(() => {
+    console.log("Estado do Painel de Vendas:", {
+      isLoading,
+      salesData,
+      barChartDataLength: barChartData?.length,
+      barChartData,
+      quarterlyChartDataLength: quarterlyChartData?.length,
+      quarterlyChartData,
+      yearlyChartDataLength: yearlyChartData?.length,
+      yearlyChartData,
+      yearlyComparisonDataLength: yearlyComparisonData?.length,
+      yearlyComparisonData
+    });
+  }, [isLoading, salesData, barChartData, quarterlyChartData, yearlyChartData, yearlyComparisonData]);
 
   if (isLoading) {
     return <SalesLoadingState />;

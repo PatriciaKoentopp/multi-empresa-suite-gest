@@ -17,7 +17,9 @@ interface SalesComparisonTableProps {
 }
 
 export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTableProps) => {
-  // Verificar e garantir que temos dados para exibir
+  // Garantir que temos dados válidos para exibir
+  console.log("Dados recebidos na tabela de comparação:", yearlyComparisonData);
+  
   if (!yearlyComparisonData || yearlyComparisonData.length === 0) {
     return (
       <Card className="overflow-hidden">
@@ -31,7 +33,26 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
     );
   }
 
-  console.log("Dados na tabela:", yearlyComparisonData);
+  // Verificando dados antes de renderizar
+  const hasValidData = yearlyComparisonData.some(item => 
+    typeof item.year === 'number' && 
+    typeof item.total === 'number' && 
+    item.total > 0
+  );
+
+  if (!hasValidData) {
+    console.warn("Dados inválidos na tabela de comparação:", yearlyComparisonData);
+    return (
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-muted/30">
+          <CardTitle className="text-lg">Comparativo de Vendas</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 text-center text-muted-foreground">
+          Dados de comparação inválidos ou incompletos.
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="overflow-hidden">
@@ -51,12 +72,12 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
               </TableRow>
             </TableHeader>
             <TableBody>
-              {yearlyComparisonData.map((yearData) => (
+              {yearlyComparisonData.map((yearData, index) => (
                 <TableRow 
-                  key={yearData.year} 
-                  className={yearData.year % 2 === 0 ? "bg-white" : "bg-muted/10"}
+                  key={`yearly-comparison-${yearData.year || index}`} 
+                  className={(yearData.year || 0) % 2 === 0 ? "bg-white" : "bg-muted/10"}
                 >
-                  <TableCell className="font-medium">{yearData.year}</TableCell>
+                  <TableCell className="font-medium">{yearData.year || "N/A"}</TableCell>
                   <TableCell className="text-right font-medium">
                     {formatCurrency(yearData.total || 0)}
                   </TableCell>
@@ -77,4 +98,4 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
       </CardContent>
     </Card>
   );
-}
+};
