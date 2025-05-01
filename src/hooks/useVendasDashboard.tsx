@@ -14,6 +14,16 @@ interface SalesData {
   clientes_ativos: number;
 }
 
+// Função auxiliar para formatar dados do gráfico
+const formatChartData = (data: any[] | null) => {
+  if (!Array.isArray(data) || data.length === 0) return [];
+  
+  return data.map((item) => ({
+    name: String(item.name || ''),
+    faturado: Number(item.faturado || 0)
+  }));
+};
+
 export const useVendasDashboard = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -190,67 +200,140 @@ export const useVendasDashboard = () => {
       });
 
       // Buscar dados para o gráfico de barras (vendas mensais)
-      console.log("Iniciando busca de dados para gráfico de barras");
-      const { data: monthlyChartData, error: monthlyChartError } = await supabase
-        .rpc('get_monthly_sales_chart_data', { year_param: currentYear });
-
-      if (monthlyChartError) {
-        console.error("Erro ao buscar dados mensais:", monthlyChartError);
-        throw monthlyChartError;
+      // AQUI ESTÁ O PROBLEMA - Vamos usar uma SQL Query direta em vez de RPC
+      try {
+        console.log("Iniciando busca de dados para gráfico de barras mensais");
+        
+        const { data: monthlyData, error: monthlyError } = await supabase
+          .from('orcamentos')
+          .select(`
+            id,
+            data_venda,
+            orcamentos_itens (valor)
+          `)
+          .eq('tipo', 'venda')
+          .eq('status', 'ativo')
+          .gte('data_venda', `${currentYear}-01-01`)
+          .lte('data_venda', `${currentYear}-12-31`);
+  
+        if (monthlyError) {
+          console.error("Erro ao buscar dados mensais:", monthlyError);
+          throw monthlyError;
+        }
+  
+        // Processar dados mensais manualmente
+        const monthlyResults = Array(12).fill(0).map((_, i) => ({
+          name: format(new Date(currentYear, i, 1), 'MMM', { locale: require('date-fns/locale/pt-BR') }),
+          faturado: 0
+        }));
+  
+        monthlyData?.forEach(orcamento => {
+          if (orcamento.data_venda) {
+            const dataVenda = new Date(orcamento.data_venda);
+            const mes = dataVenda.getMonth();
+            
+            const orcamentoTotal = orcamento.orcamentos_itens.reduce(
+              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+            );
+            
+            monthlyResults[mes].faturado += orcamentoTotal;
+          }
+        });
+  
+        console.log("Dados mensais processados:", monthlyResults);
+        setBarChartData(monthlyResults);
+      } catch (monthlyError) {
+        console.error("Erro ao processar dados mensais:", monthlyError);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar dados mensais",
+          description: "Não foi possível processar os dados mensais"
+        });
       }
-      
-      console.log("Dados mensais brutos:", monthlyChartData);
-      
-      // Processamento dos dados mensais - garantir que são strings e números válidos
-      const processedMonthlyData = Array.isArray(monthlyChartData) ? monthlyChartData.map((item: any) => ({
-        name: String(item.name || ''),
-        faturado: Number(item.faturado || 0)
-      })) : [];
-      
-      console.log("Dados mensais processados:", processedMonthlyData);
-      setBarChartData(processedMonthlyData);
 
       // Buscar dados para gráficos trimestrais
-      console.log("Iniciando busca de dados trimestrais");
-      const { data: quarterlyData, error: quarterlyError } = await supabase
-        .rpc('get_quarterly_sales_data', { year_param: currentYear });
-
-      if (quarterlyError) {
-        console.error("Erro ao buscar dados trimestrais:", quarterlyError);
-        throw quarterlyError;
+      try {
+        console.log("Iniciando busca de dados trimestrais");
+        
+        // Processar dados trimestrais manualmente a partir dos dados mensais
+        const quarterlyResults = [
+          { name: '1º Trimestre', faturado: 0 },
+          { name: '2º Trimestre', faturado: 0 },
+          { name: '3º Trimestre', faturado: 0 },
+          { name: '4º Trimestre', faturado: 0 }
+        ];
+        
+        // Usar os dados mensais já calculados para agregar em trimestres
+        if (Array.isArray(monthlyResults)) {
+          for (let i = 0; i < 12; i++) {
+            const trimestre = Math.floor(i / 3);
+            quarterlyResults[trimestre].faturado += monthlyResults[i].faturado;
+          }
+        }
+        
+        console.log("Dados trimestrais processados:", quarterlyResults);
+        setQuarterlyChartData(quarterlyResults);
+      } catch (quarterlyError) {
+        console.error("Erro ao processar dados trimestrais:", quarterlyError);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar dados trimestrais",
+          description: "Não foi possível processar os dados trimestrais"
+        });
       }
-      
-      console.log("Dados trimestrais brutos:", quarterlyData);
-      
-      // Processamento dos dados trimestrais
-      const processedQuarterlyData = Array.isArray(quarterlyData) ? quarterlyData.map((item: any) => ({
-        name: String(item.name || ''),
-        faturado: Number(item.faturado || 0)
-      })) : [];
-      
-      console.log("Dados trimestrais processados:", processedQuarterlyData);
-      setQuarterlyChartData(processedQuarterlyData);
 
       // Buscar dados para gráficos anuais
-      console.log("Iniciando busca de dados anuais");
-      const { data: yearlyData, error: yearlyError } = await supabase
-        .rpc('get_yearly_sales_data');
-
-      if (yearlyError) {
-        console.error("Erro ao buscar dados anuais:", yearlyError);
-        throw yearlyError;
+      try {
+        console.log("Iniciando busca de dados anuais");
+        
+        // Vamos buscar dados dos últimos 3 anos
+        const yearsToShow = 3;
+        const currentYear = new Date().getFullYear();
+        const yearlyResults = [];
+        
+        // Buscar vendas por ano para os últimos 3 anos
+        for (let i = 0; i < yearsToShow; i++) {
+          const year = currentYear - i;
+          const startDate = `${year}-01-01`;
+          const endDate = `${year}-12-31`;
+          
+          const { data: yearData, error: yearError } = await supabase
+            .from('orcamentos')
+            .select(`
+              id,
+              data_venda,
+              orcamentos_itens (valor)
+            `)
+            .eq('tipo', 'venda')
+            .eq('status', 'ativo')
+            .gte('data_venda', startDate)
+            .lte('data_venda', endDate);
+          
+          if (yearError) throw yearError;
+          
+          const totalYearSales = yearData?.reduce((acc, orcamento) => {
+            const orcamentoTotal = orcamento.orcamentos_itens.reduce(
+              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+            );
+            return acc + orcamentoTotal;
+          }, 0) || 0;
+          
+          yearlyResults.push({
+            name: year.toString(),
+            faturado: totalYearSales
+          });
+        }
+        
+        console.log("Dados anuais processados:", yearlyResults);
+        setYearlyChartData(yearlyResults);
+      } catch (yearlyError) {
+        console.error("Erro ao processar dados anuais:", yearlyError);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar dados anuais",
+          description: "Não foi possível processar os dados anuais"
+        });
       }
-      
-      console.log("Dados anuais brutos:", yearlyData);
-      
-      // Processamento dos dados anuais
-      const processedYearlyChartData = Array.isArray(yearlyData) ? yearlyData.map((item: any) => ({
-        name: String(item.name || ''),
-        faturado: Number(item.faturado || 0)
-      })) : [];
-      
-      console.log("Dados anuais processados:", processedYearlyChartData);
-      setYearlyChartData(processedYearlyChartData);
 
       setIsLoading(false);
     } catch (error: any) {
