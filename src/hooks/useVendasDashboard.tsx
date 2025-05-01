@@ -35,12 +35,28 @@ export const useVendasDashboard = () => {
       const currentYear = new Date().getFullYear();
       
       // Buscar dados de comparação anual diretamente do Supabase usando a função criada
-      const { data: yearlyComparisonData, error: comparisonError } = await supabase
+      const { data: yearComparisonData, error: comparisonError } = await supabase
         .rpc('get_yearly_sales_comparison');
 
-      if (comparisonError) throw comparisonError;
-      console.log("Dados de comparação anual:", yearlyComparisonData);
-      setYearlyComparisonData(yearlyComparisonData || []);
+      if (comparisonError) {
+        console.error("Erro ao buscar comparação anual:", comparisonError);
+        throw comparisonError;
+      }
+      
+      console.log("Dados de comparação anual brutos:", yearComparisonData);
+      
+      // Garantir que todos os campos numéricos sejam números
+      const processedYearlyData = yearComparisonData ? yearComparisonData.map((item: any) => ({
+        year: Number(item.year),
+        total: Number(item.total) || 0,
+        variacao_total: item.variacao_total !== null ? Number(item.variacao_total) : null,
+        media_mensal: Number(item.media_mensal) || 0,
+        variacao_media: item.variacao_media !== null ? Number(item.variacao_media) : null,
+        num_meses: Number(item.num_meses) || 0
+      })) : [];
+
+      console.log("Dados de comparação anual processados:", processedYearlyData);
+      setYearlyComparisonData(processedYearlyData);
       
       // Definir datas para mês atual e anterior
       const startCurrentMonth = startOfMonth(new Date());
@@ -172,24 +188,48 @@ export const useVendasDashboard = () => {
         .rpc('get_monthly_sales_chart_data', { year_param: currentYear });
 
       if (monthlyChartError) throw monthlyChartError;
-      console.log("Dados mensais:", monthlyChartData);
-      setBarChartData(monthlyChartData || []);
+      console.log("Dados mensais brutos:", monthlyChartData);
+      
+      // Processamento dos dados mensais
+      const processedMonthlyData = monthlyChartData ? monthlyChartData.map((item: any) => ({
+        name: item.name,
+        faturado: Number(item.faturado) || 0
+      })) : [];
+      
+      console.log("Dados mensais processados:", processedMonthlyData);
+      setBarChartData(processedMonthlyData);
 
       // Buscar dados para gráficos trimestrais
       const { data: quarterlyData, error: quarterlyError } = await supabase
         .rpc('get_quarterly_sales_data', { year_param: currentYear });
 
       if (quarterlyError) throw quarterlyError;
-      console.log("Dados trimestrais:", quarterlyData);
-      setQuarterlyChartData(quarterlyData || []);
+      console.log("Dados trimestrais brutos:", quarterlyData);
+      
+      // Processamento dos dados trimestrais
+      const processedQuarterlyData = quarterlyData ? quarterlyData.map((item: any) => ({
+        name: item.name,
+        faturado: Number(item.faturado) || 0
+      })) : [];
+      
+      console.log("Dados trimestrais processados:", processedQuarterlyData);
+      setQuarterlyChartData(processedQuarterlyData);
 
       // Buscar dados para gráficos anuais
       const { data: yearlyData, error: yearlyError } = await supabase
         .rpc('get_yearly_sales_data');
 
       if (yearlyError) throw yearlyError;
-      console.log("Dados anuais:", yearlyData);
-      setYearlyChartData(yearlyData || []);
+      console.log("Dados anuais brutos:", yearlyData);
+      
+      // Processamento dos dados anuais
+      const processedYearlyChartData = yearlyData ? yearlyData.map((item: any) => ({
+        name: item.name,
+        faturado: Number(item.faturado) || 0
+      })) : [];
+      
+      console.log("Dados anuais processados:", processedYearlyChartData);
+      setYearlyChartData(processedYearlyChartData);
 
       setIsLoading(false);
     } catch (error: any) {

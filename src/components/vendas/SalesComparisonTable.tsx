@@ -31,6 +31,8 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
     );
   }
 
+  console.log("Dados na tabela:", yearlyComparisonData);
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-muted/30">
@@ -56,7 +58,7 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
                 >
                   <TableCell className="font-medium">{yearData.year}</TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(Number(yearData.total) || 0)}
+                    {formatCurrency(yearData.total || 0)}
                   </TableCell>
                   <TableCell className="text-right">
                     <VariationDisplay value={yearData.variacao_total} />

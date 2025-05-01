@@ -16,6 +16,15 @@ const PainelVendasPage = () => {
     yearlyComparisonData
   } = useVendasDashboard();
 
+  console.log("Estado do Painel de Vendas:", {
+    isLoading,
+    salesData,
+    barChartDataLength: barChartData?.length,
+    quarterlyChartDataLength: quarterlyChartData?.length,
+    yearlyChartDataLength: yearlyChartData?.length,
+    yearlyComparisonDataLength: yearlyComparisonData?.length
+  });
+
   if (isLoading) {
     return <SalesLoadingState />;
   }
@@ -25,11 +34,11 @@ const PainelVendasPage = () => {
       <SalesDashboardHeader />
       <SalesDashboardCards salesData={salesData} />
       <SalesPerformanceTabs
-        barChartData={barChartData}
-        quarterlyChartData={quarterlyChartData}
-        yearlyChartData={yearlyChartData}
+        barChartData={barChartData || []}
+        quarterlyChartData={quarterlyChartData || []}
+        yearlyChartData={yearlyChartData || []}
       />
-      <SalesComparisonTable yearlyComparisonData={yearlyComparisonData} />
+      <SalesComparisonTable yearlyComparisonData={yearlyComparisonData || []} />
     </div>
   );
 };

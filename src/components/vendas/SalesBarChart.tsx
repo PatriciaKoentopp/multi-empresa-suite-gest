@@ -41,6 +41,8 @@ export const SalesBarChart = ({ data, className, multiColor = false, isYearly = 
     name: item.name || '',
     faturado: Number(item.faturado) || 0
   })) : [];
+  
+  console.log("Dados do gráfico:", chartData);
 
   return (
     <div className={className}>
@@ -87,7 +89,7 @@ export const SalesBarChart = ({ data, className, multiColor = false, isYearly = 
               />
             ) : multiColor ? (
               // Para gráficos com múltiplas cores, iteramos sobre os dados
-              data.map((entry, index) => (
+              chartData.map((entry, index) => (
                 <Bar 
                   key={`bar-${entry.name}`}
                   dataKey="faturado" 
@@ -100,7 +102,7 @@ export const SalesBarChart = ({ data, className, multiColor = false, isYearly = 
               // Para gráficos normais de um só tipo
               <Bar
                 dataKey="faturado"
-                fill="var(--color-faturado)"
+                fill="#4CAF50"
                 radius={[4, 4, 0, 0]}
               />
             )}
