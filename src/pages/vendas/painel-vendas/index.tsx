@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -84,12 +83,11 @@ const PainelVendasPage = () => {
         
         console.log("Total de vendas do ano:", totalVendas);
 
-        // Buscar dados para comparativo mensal dos últimos 12 meses
-        const lastYear = new Date();
-        lastYear.setFullYear(lastYear.getFullYear() - 1);
-        const lastYearFormatted = format(lastYear, 'yyyy-MM-dd');
+        // Buscar dados para comparativo mensal desde 2023
+        const start2023 = '2023-01-01';
+        const today = format(new Date(), 'yyyy-MM-dd');
 
-        const { data: lastTwelveMonthsData, error: lastTwelveMonthsError } = await supabase
+        const { data: salesHistoryData, error: salesHistoryError } = await supabase
           .from('orcamentos')
           .select(`
             id,
@@ -98,40 +96,41 @@ const PainelVendasPage = () => {
           `)
           .eq('tipo', 'venda')
           .eq('status', 'ativo')
-          .gte('data_venda', lastYearFormatted);
+          .gte('data_venda', start2023)
+          .lte('data_venda', today);
 
-        if (lastTwelveMonthsError) throw lastTwelveMonthsError;
-        console.log("Dados dos últimos 12 meses:", lastTwelveMonthsData);
+        if (salesHistoryError) throw salesHistoryError;
+        console.log("Dados históricos de vendas:", salesHistoryData);
 
         // Processar dados para comparativo mensal
-        const monthlyComparisonMap: { [key: string]: { total: number, date: Date } } = {};
-        const currentDate = new Date();
-        
-        // Inicializar os últimos 12 meses com valores zero
-        for (let i = 0; i < 12; i++) {
-          const date = subMonths(currentDate, i);
-          const monthKey = format(date, 'yyyy-MM');
-          monthlyComparisonMap[monthKey] = { total: 0, date: new Date(date) };
-        }
-        
-        // Preencher com dados reais
-        lastTwelveMonthsData?.forEach(orcamento => {
+        // Em vez de inicializar apenas os últimos 12 meses,
+        // vamos criar um mapa com todos os meses que têm dados
+        const monthlyComparisonMap: Record<string, { total: number, date: Date }> = {};
+
+        // Primeiro, extraímos todos os meses únicos dos dados
+        salesHistoryData?.forEach(orcamento => {
           if (orcamento.data_venda) {
             const date = new Date(orcamento.data_venda);
             const monthKey = format(date, 'yyyy-MM');
             
-            if (monthlyComparisonMap[monthKey]) {
-              const total = orcamento.orcamentos_itens.reduce(
-                (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
-              );
-              monthlyComparisonMap[monthKey].total += total;
+            if (!monthlyComparisonMap[monthKey]) {
+              monthlyComparisonMap[monthKey] = { 
+                total: 0, 
+                date: new Date(date.getFullYear(), date.getMonth(), 1) 
+              };
             }
+            
+            const total = orcamento.orcamentos_itens.reduce(
+              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+            );
+            
+            monthlyComparisonMap[monthKey].total += total;
           }
         });
         
         // Calcular variações e formatar dados para a tabela
         const sortedMonths = Object.entries(monthlyComparisonMap)
-          .sort(([keyA], [keyB]) => keyB.localeCompare(keyA))
+          .sort(([keyA], [keyB]) => keyB.localeCompare(keyA)) // Ordenar do mais recente para o mais antigo
           .map(([key, data], index, array) => {
             // Extrair ano e mês do key (yyyy-MM)
             const [year, month] = key.split('-').map(Number);
@@ -151,17 +150,9 @@ const PainelVendasPage = () => {
             // Calcular variação anual (mesmo mês do ano anterior)
             let yearlyVariation: number | null = null;
             const lastYearMonthKey = `${year - 1}-${month < 10 ? '0' : ''}${month}`;
-            const lastYearMonth = lastTwelveMonthsData?.filter(orcamento => {
-              if (!orcamento.data_venda) return false;
-              return format(new Date(orcamento.data_venda), 'yyyy-MM') === lastYearMonthKey;
-            });
             
-            if (lastYearMonth && lastYearMonth.length > 0) {
-              const lastYearTotal = lastYearMonth.reduce((sum, orcamento) => {
-                return sum + orcamento.orcamentos_itens.reduce(
-                  (itemSum: number, item: any) => itemSum + (Number(item.valor) || 0), 0
-                );
-              }, 0);
+            if (monthlyComparisonMap[lastYearMonthKey]) {
+              const lastYearTotal = monthlyComparisonMap[lastYearMonthKey].total;
               
               if (lastYearTotal > 0 && data.total > 0) {
                 yearlyVariation = ((data.total - lastYearTotal) / lastYearTotal) * 100;
