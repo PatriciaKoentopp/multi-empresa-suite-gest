@@ -17,13 +17,9 @@ interface SalesBarChartProps {
     faturado: number;
   }[];
   className?: string;
-  multiColor?: boolean;
 }
 
-// Array de cores para barras múltiplas
-const barColors = ["#4CAF50", "#8B5CF6", "#F97316", "#0EA5E9"];
-
-export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarChartProps) => {
+export const SalesBarChart = ({ data, className }: SalesBarChartProps) => {
   return (
     <div className={className}>
       <ChartContainer
@@ -60,23 +56,11 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
               tickFormatter={(value) => `R$ ${value.toLocaleString()}`}
             />
             <Tooltip content={<ChartTooltipContent labelKey="name" />} />
-            {!multiColor ? (
-              <Bar
-                dataKey="faturado"
-                fill="var(--color-faturado)"
-                radius={[4, 4, 0, 0]}
-              />
-            ) : (
-              data.map((entry, index) => (
-                <Bar
-                  key={`bar-${index}`}
-                  dataKey="faturado"
-                  fill={barColors[index % barColors.length]}
-                  radius={[4, 4, 0, 0]}
-                  name={entry.name}
-                />
-              ))
-            )}
+            <Bar
+              dataKey="faturado"
+              fill="var(--color-faturado)"
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </ChartContainer>
