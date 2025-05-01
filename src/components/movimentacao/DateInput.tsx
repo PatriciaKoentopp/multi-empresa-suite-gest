@@ -60,14 +60,7 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
       return;
     }
     
-    // Usa apenas a parte da data, ignorando completamente horário
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const day = date.getDate();
-    
-    // Cria uma nova data com os mesmos valores de ano, mês e dia
-    const cleanDate = new Date(year, month, day);
-    onChange(cleanDate);
+    onChange(date);
   };
 
   return (

@@ -43,8 +43,7 @@ export function useParcelasCalculation(
         
         if (i === 0) {
           // Para a primeira parcela, usamos exatamente a data base
-          // Criamos uma nova instância para evitar referências
-          dataVencimento = new Date(dataBase.getFullYear(), dataBase.getMonth(), dataBase.getDate());
+          dataVencimento = new Date(dataBase);
         } else {
           // Para as demais parcelas, adicionamos meses
           const ano = dataBase.getFullYear();
@@ -78,19 +77,11 @@ export function useParcelasCalculation(
   };
 
   const atualizarDataVencimento = (index: number, novaData: Date) => {
-    // Extrair apenas a data (sem horário)
-    const ano = novaData.getFullYear();
-    const mes = novaData.getMonth();
-    const dia = novaData.getDate();
-    
-    // Criar uma data limpa sem horário
-    const dataLimpa = new Date(ano, mes, dia);
-    
     setParcelas(parcelasAntigas => {
       const novasParcelas = [...parcelasAntigas];
       novasParcelas[index] = {
         ...novasParcelas[index],
-        dataVencimento: dataLimpa
+        dataVencimento: novaData
       };
       return novasParcelas;
     });

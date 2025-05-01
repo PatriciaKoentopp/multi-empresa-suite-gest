@@ -37,23 +37,13 @@ export function formatDate(date: Date | undefined | string, formatString = "dd/M
         const year = parseInt(parts[2], 10);
         dateObj = new Date(year, month, day);
       } else {
-        // Fallback para qualquer outro formato - apenas extrair a data
-        const tempDate = new Date(date);
-        dateObj = new Date(
-          tempDate.getFullYear(),
-          tempDate.getMonth(),
-          tempDate.getDate()
-        );
+        dateObj = new Date(date);
       }
     }
   } 
-  // Se já for um objeto Date, extrair apenas ano, mês e dia
+  // Se já for um objeto Date
   else {
-    dateObj = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate()
-    );
+    dateObj = date;
   }
   
   // Formatar a data usando date-fns
@@ -65,7 +55,7 @@ export function formatDate(date: Date | undefined | string, formatString = "dd/M
   }
 }
 
-// Função para converter string DD/MM/YYYY para Date sem ajuste de timezone
+// Função para converter string DD/MM/YYYY para Date
 export function parseDateString(dateString: string): Date | undefined {
   if (!dateString || dateString.length !== 10) return undefined;
   
@@ -78,7 +68,6 @@ export function parseDateString(dateString: string): Date | undefined {
   
   if (isNaN(day) || isNaN(month) || isNaN(year)) return undefined;
   
-  // Criar uma nova data sem definir horário
   return new Date(year, month, day);
 }
 
