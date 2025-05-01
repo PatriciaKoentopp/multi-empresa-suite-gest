@@ -54,16 +54,20 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
                         {formatCurrency(yearData.total)}
                       </TableCell>
                       <TableCell className="text-right pr-4">
-                        {yearData.yearlyVariation !== null && (
+                        {yearData.yearlyVariation !== null ? (
                           <VariationDisplay value={yearData.yearlyVariation} />
+                        ) : (
+                          <span className="text-gray-400 block text-right">-</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right pr-4 font-medium">
                         {formatCurrency(yearData.mediaMensal)}
                       </TableCell>
                       <TableCell className="text-right pr-4">
-                        {yearData.mediaVariacao !== null && (
+                        {yearData.mediaVariacao !== null ? (
                           <VariationDisplay value={yearData.mediaVariacao} />
+                        ) : (
+                          <span className="text-gray-400 block text-right">-</span>
                         )}
                       </TableCell>
                     </TableRow>
@@ -91,10 +95,18 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
                                   {formatCurrency(monthData.total)}
                                 </TableCell>
                                 <TableCell className="text-right py-3 pr-4">
-                                  <VariationDisplay value={monthData.monthlyVariation} />
+                                  {monthData.monthlyVariation !== null ? (
+                                    <VariationDisplay value={monthData.monthlyVariation} />
+                                  ) : (
+                                    <span className="text-gray-400 block text-right">-</span>
+                                  )}
                                 </TableCell>
                                 <TableCell className="text-right py-3 pr-4">
-                                  <VariationDisplay value={monthData.yearlyVariation} />
+                                  {monthData.yearlyVariation !== null ? (
+                                    <VariationDisplay value={monthData.yearlyVariation} />
+                                  ) : (
+                                    <span className="text-gray-400 block text-right">-</span>
+                                  )}
                                 </TableCell>
                               </TableRow>
                             ))}
