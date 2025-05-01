@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -111,21 +110,44 @@ const PainelVendasPage = () => {
         // Primeiro, extraímos todos os meses únicos dos dados
         salesHistoryData?.forEach(orcamento => {
           if (orcamento.data_venda) {
-            const date = new Date(orcamento.data_venda);
-            const monthKey = format(date, 'yyyy-MM');
+            // Verificar se a data de venda é válida
+            const vendaDate = new Date(orcamento.data_venda);
+            if (isNaN(vendaDate.getTime())) {
+              console.warn("Data de venda inválida:", orcamento.data_venda);
+              return; // Pula este orçamento
+            }
+            
+            const monthKey = format(vendaDate, 'yyyy-MM');
             
             if (!monthlyComparisonMap[monthKey]) {
               monthlyComparisonMap[monthKey] = { 
                 total: 0, 
-                date: new Date(date.getFullYear(), date.getMonth(), 1) 
+                date: new Date(vendaDate.getFullYear(), vendaDate.getMonth(), 1) 
               };
             }
             
+            // Calcula o total de items do orçamento
             const total = orcamento.orcamentos_itens.reduce(
               (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
             );
             
             monthlyComparisonMap[monthKey].total += total;
+          }
+        });
+        
+        // Verificar se há alguma anomalia nos dados (meses futuros, etc)
+        const currentDate = new Date();
+        const currentMonthKey = format(currentDate, 'yyyy-MM');
+        
+        // Filtrar meses futuros (não deveriam ter dados)
+        Object.keys(monthlyComparisonMap).forEach(key => {
+          if (key > currentMonthKey) {
+            console.warn(`Detectado dados para um período futuro: ${key}. Verificando valores.`);
+            // Verificar se os dados são reais ou erros
+            if (monthlyComparisonMap[key].total > 0) {
+              console.warn(`Dados para período futuro ${key} com total ${monthlyComparisonMap[key].total}. Excluindo.`);
+              delete monthlyComparisonMap[key];
+            }
           }
         });
         
