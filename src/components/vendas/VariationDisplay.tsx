@@ -6,7 +6,11 @@ interface VariationDisplayProps {
 }
 
 export const VariationDisplay = ({ value }: VariationDisplayProps) => {
-  if (value === null) return <span className="text-gray-400 block text-right">-</span>;
+  // Se o valor for null ou undefined, mostramos o traço
+  if (value === null || value === undefined) return <span className="text-gray-400 block text-right">-</span>;
+  
+  // Se o valor for zero, mostramos zero em cinza
+  if (value === 0) return <span className="text-gray-500 block text-right">0.0%</span>;
   
   const isPositive = value > 0;
   const color = isPositive ? "text-green-600" : "text-red-500";
