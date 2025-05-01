@@ -18,6 +18,7 @@ interface SalesBarChartProps {
   }[];
   className?: string;
   multiColor?: boolean;
+  isYearly?: boolean;
 }
 
 const CHART_COLORS = [
@@ -35,7 +36,7 @@ const CHART_COLORS = [
   "#FF9800"  // Âmbar
 ];
 
-export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarChartProps) => {
+export const SalesBarChart = ({ data, className, multiColor = false, isYearly = false }: SalesBarChartProps) => {
   return (
     <div className={className}>
       <ChartContainer
@@ -72,7 +73,15 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
               tickFormatter={(value) => `R$ ${value.toLocaleString()}`}
             />
             <Tooltip content={<ChartTooltipContent labelKey="name" />} />
-            {multiColor ? (
+            {isYearly ? (
+              // Para o gráfico anual, mostramos apenas uma barra por ano
+              <Bar
+                dataKey="faturado"
+                fill="#4CAF50"
+                radius={[4, 4, 0, 0]}
+              />
+            ) : multiColor ? (
+              // Para gráficos com múltiplas cores, iteramos sobre os dados
               data.map((entry, index) => (
                 <Bar 
                   key={`bar-${entry.name}`}
@@ -83,6 +92,7 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
                 />
               ))
             ) : (
+              // Para gráficos normais de um só tipo
               <Bar
                 dataKey="faturado"
                 fill="var(--color-faturado)"

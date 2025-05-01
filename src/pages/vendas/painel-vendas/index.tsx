@@ -557,7 +557,7 @@ const PainelVendasPage = () => {
                 <CardTitle>Comparativo Anual</CardTitle>
               </CardHeader>
               <CardContent>
-                <SalesBarChart data={yearlyChartData} multiColor={true} />
+                <SalesBarChart data={yearlyChartData} isYearly={true} />
               </CardContent>
             </Card>
           </TabsContent>
