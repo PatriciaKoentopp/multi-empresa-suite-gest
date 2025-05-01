@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { DateInput } from "@/components/movimentacao/DateInput";
+import { formatCurrency } from "@/lib/utils";
 
 interface Parcela {
   numero: number;
@@ -69,6 +70,10 @@ export function ParcelasForm({
     });
   };
 
+  // Calcular diferença para mostrar alerta
+  const diferenca = valorTotal - somaParcelas;
+  const temDiferenca = mostrarAlertaDiferenca && Math.abs(diferenca) > 0.01;
+
   return (
     <div className="space-y-2">
       <Label>Parcelas</Label>
@@ -78,7 +83,7 @@ export function ParcelasForm({
             <TableRow>
               <TableHead>Nº</TableHead>
               <TableHead>Vencimento</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="text-right w-[120px]">Valor</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -120,6 +125,16 @@ export function ParcelasForm({
           </TableBody>
         </Table>
       </div>
+      
+      {temDiferenca && (
+        <div className={`mt-2 p-2 rounded-md text-sm ${diferenca > 0 ? 'bg-red-50 text-red-700' : 'bg-red-50 text-red-700'}`}>
+          <span className="font-medium">
+            {diferenca > 0 
+              ? `Faltam ${formatCurrency(diferenca)} para atingir o valor total`
+              : `O valor total é excedido em ${formatCurrency(Math.abs(diferenca))}`}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

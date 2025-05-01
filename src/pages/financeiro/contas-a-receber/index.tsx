@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BaixarContaReceberModal } from "@/components/contas-a-receber/BaixarContaReceberModal";
+import { RenegociarParcelasModal } from "@/components/contas-a-receber/RenegociarParcelasModal";
 import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -47,6 +48,10 @@ export default function ContasAReceberPage() {
   // Modal Baixar
   const [contaParaBaixar, setContaParaBaixar] = useState<ContaReceber | null>(null);
   const [modalBaixarAberto, setModalBaixarAberto] = useState(false);
+
+  // Modal Renegociar
+  const [contaParaRenegociar, setContaParaRenegociar] = useState<ContaReceber | null>(null);
+  const [modalRenegociarAberto, setModalRenegociarAberto] = useState(false);
 
   // Estado para controlar o dialog de confirmação
   const [contaParaExcluir, setContaParaExcluir] = useState<string | null>(null);
@@ -162,6 +167,11 @@ export default function ContasAReceberPage() {
     setModalBaixarAberto(true);
   };
 
+  const handleRenegociarParcela = (conta: ContaReceber) => {
+    setContaParaRenegociar(conta);
+    setModalRenegociarAberto(true);
+  };
+
   const handleDelete = async (id: string) => {
     try {
       // 1. Primeiro, buscar a parcela que está sendo excluída para obter o movimentacao_id
@@ -256,9 +266,10 @@ export default function ContasAReceberPage() {
     }
   };
 
-  function realizarBaixa({ dataRecebimento, contaCorrenteId, multa, juros, desconto }: {
+  function realizarBaixa({ dataRecebimento, contaCorrenteId, multa, juros, desconto, formaPagamento }: {
     dataRecebimento: Date;
     contaCorrenteId: string;
+    formaPagamento: string;
     multa: number;
     juros: number;
     desconto: number;
@@ -276,7 +287,8 @@ export default function ContasAReceberPage() {
         multa,
         juros,
         desconto,
-        conta_corrente_id: contaCorrenteId
+        conta_corrente_id: contaCorrenteId,
+        forma_pagamento: formaPagamento
       })
       .eq('id', contaParaBaixar.id)
       .then(({ error }) => {
@@ -598,16 +610,25 @@ export default function ContasAReceberPage() {
                 onDelete={handleDelete}
                 onVisualizar={handleVisualizar}
                 onDesfazerBaixa={handleDesfazerBaixa}
+                onRenegociarParcela={handleRenegociarParcela}
               />
             </div>
           </div>
         </CardContent>
       </Card>
+      
       <BaixarContaReceberModal
         conta={contaParaBaixar}
         open={modalBaixarAberto}
         onClose={() => setModalBaixarAberto(false)}
         onBaixar={realizarBaixa}
+      />
+      
+      <RenegociarParcelasModal
+        parcela={contaParaRenegociar}
+        open={modalRenegociarAberto}
+        onClose={() => setModalRenegociarAberto(false)}
+        onConfirmar={carregarContasReceber}
       />
     </div>
   );

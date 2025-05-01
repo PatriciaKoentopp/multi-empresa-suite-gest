@@ -3,7 +3,7 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import { MoreHorizontal, Eye, Edit, Download, Trash2, RotateCcw } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Download, Trash2, RotateCcw, FileEdit } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -30,6 +30,7 @@ interface ContasAReceberTableProps {
   onBaixar: (conta: ContaReceber) => void;
   onDelete: (id: string) => void;
   onVisualizar: (conta: ContaReceber) => void;
+  onRenegociarParcela: (conta: ContaReceber) => void;
 }
 
 export function ContasAReceberTable({ 
@@ -38,7 +39,8 @@ export function ContasAReceberTable({
   onBaixar, 
   onDelete,
   onVisualizar,
-  onDesfazerBaixa 
+  onDesfazerBaixa,
+  onRenegociarParcela
 }: ContasAReceberTableProps & {
   onDesfazerBaixa: (conta: ContaReceber) => void;
 }) {
@@ -155,6 +157,14 @@ export function ContasAReceberTable({
                       >
                         <Edit className="h-4 w-4" />
                         Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onRenegociarParcela(conta)}
+                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        disabled={conta.status === "recebido" || conta.status === "recebido_em_atraso"}
+                      >
+                        <FileEdit className="h-4 w-4" />
+                        Renegociar
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onBaixar(conta)}
