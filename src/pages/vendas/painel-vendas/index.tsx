@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -270,9 +269,12 @@ const PainelVendasPage = () => {
               yearData.yearlyVariation = ((yearData.total - prevYearTotal) / prevYearTotal) * 100;
             }
             
-            // Variação da média mensal
-            if (prevYearMedia > 0 && yearData.mediaMensal > 0) {
+            // Correção do cálculo da variação da média mensal
+            // Verificamos se os valores das médias são válidos antes de calcular
+            if (prevYearMedia > 0 && yearData.mediaMensal && yearData.mediaMensal > 0) {
               yearData.mediaVariacao = ((yearData.mediaMensal - prevYearMedia) / prevYearMedia) * 100;
+            } else {
+              yearData.mediaVariacao = null; // Se não for possível calcular, usamos null
             }
           }
           
