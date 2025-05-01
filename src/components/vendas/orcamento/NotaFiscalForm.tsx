@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatDate } from "@/lib/utils";
 
 interface NotaFiscalFormProps {
   dataNotaFiscal: string;
@@ -34,6 +35,12 @@ export function NotaFiscalForm({
           onChange={onDataNotaFiscalChange}
           disabled={disabled}
         />
+        {/* Mostrar a data formatada quando estiver em modo de visualização */}
+        {disabled && dataNotaFiscal && (
+          <div className="mt-1 text-sm text-gray-500">
+            Data no banco: {dataNotaFiscal} (Formato: {formatDate(dataNotaFiscal)})
+          </div>
+        )}
       </div>
       <div className="w-full md:w-1/3">
         <label className="block text-sm mb-1">Número Nota Fiscal</label>

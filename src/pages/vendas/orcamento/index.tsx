@@ -154,7 +154,7 @@ export default function OrcamentoPage() {
                   parcelas={parcelas.map(p => ({
                     numero: parseInt(p.numeroParcela.split('/')[1]),
                     valor: p.valor,
-                    dataVencimento: parseDateString(p.dataVencimento) // Usamos a função parseDateString ao invés de new Date()
+                    dataVencimento: parseDateString(p.dataVencimento) || new Date()
                   }))}
                   onValorChange={handleParcelaValorChange}
                   onDataChange={handleParcelaDataChange}

@@ -1,13 +1,12 @@
-
 import { useState, useEffect } from "react";
-import { format, addMonths, parse } from 'date-fns';
+import { format, addMonths } from 'date-fns';
 import { toast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/company-context";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Favorecido, Servico, TabelaPreco, TabelaPrecoItem } from "@/types";
 import { OrcamentoItem, Parcela } from "@/types/orcamento";
-import { parseDateString } from "@/lib/utils";
+import { parseDateString, formatDate } from "@/lib/utils";
 
 export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean = false) {
   const { currentCompany } = useCompany();
@@ -64,6 +63,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
         soma += valor;
       }
       
+      // Mantemos o formato yyyy-MM-dd para armazenamento, sem conversão de timezone
       const dataVencimento = format(
         addMonths(new Date(), i),
         'yyyy-MM-dd'
@@ -117,6 +117,8 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
       if (orcamentoError) throw orcamentoError;
       if (!orcamento) throw new Error('Orçamento não encontrado');
       
+      console.log('Dados do orçamento carregados:', orcamento);
+      
       // Buscar itens do orçamento
       const { data: itens, error: itensError } = await supabase
         .from('orcamentos_itens')
@@ -132,9 +134,11 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
         .eq('orcamento_id', id);
         
       if (parcelasError) throw parcelasError;
+      console.log('Parcelas carregadas do banco:', parcelas);
       
       // Preencher o formulário com os dados
-      setData(orcamento.data ? new Date(orcamento.data) : new Date());
+      // Preservamos a data como objeto Date
+      setData(orcamento.data ? parseDateString(orcamento.data) : new Date());
       setCodigoVenda(orcamento.codigo);
       setFavorecidoId(orcamento.favorecido_id);
       setCodigoProjeto(orcamento.codigo_projeto || "");
@@ -142,8 +146,10 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
       setFormaPagamento(orcamento.forma_pagamento);
       setNumeroParcelas(orcamento.numero_parcelas);
       
+      // Para a data da nota fiscal, mantemos o formato ISO sem conversão
       if (orcamento.data_nota_fiscal) {
-        setDataNotaFiscal(format(new Date(orcamento.data_nota_fiscal), "yyyy-MM-dd"));
+        setDataNotaFiscal(orcamento.data_nota_fiscal);
+        console.log('Data nota fiscal do banco:', orcamento.data_nota_fiscal);
       }
       
       setNumeroNotaFiscal(orcamento.numero_nota_fiscal || "");
@@ -158,15 +164,18 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
         setServicos(servicosCarregados);
       }
       
-      // Configurar parcelas
+      // Configurar parcelas - mantemos as datas exatamente como estão no banco
       if (parcelas && parcelas.length > 0) {
         const novasParcelas = parcelas.map(p => ({
           valor: p.valor,
-          dataVencimento: format(new Date(p.data_vencimento), "yyyy-MM-dd"),
+          // Não convertemos para Date aqui, mantemos a string
+          dataVencimento: p.data_vencimento,
           numeroParcela: p.numero_parcela
         }));
         setParcelas(novasParcelas);
         setParcelasCarregadas(true);
+        
+        console.log('Parcelas processadas:', novasParcelas);
       }
       
     } catch (error) {
@@ -251,7 +260,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }
   }
   
-  // Atualiza parcela específica - Modificado para usar Date diretamente
+  // Atualiza parcela específica - Usando parseDateString para garantir consistência
   const handleParcelaDataChange = (idx: number, data: Date) => {
     setParcelas(prev => prev.map((parcela, i) =>
       i === idx ? { 
