@@ -84,6 +84,7 @@ export const useVendasDashboard = () => {
       if (salesHistoryError) throw salesHistoryError;
       console.log("Dados históricos de vendas:", salesHistoryData);
 
+      
       // Processar dados para comparativo mensal
       const monthlyComparisonMap: Record<string, { total: number, date: Date }> = {};
 
@@ -155,7 +156,7 @@ export const useVendasDashboard = () => {
         }
       });
       
-      // Calcular variações e formatar dados para a tabela
+      
       const sortedMonths = Object.entries(monthlyComparisonMap)
         .sort(([keyA], [keyB]) => keyB.localeCompare(keyA))
         .map(([key, data], index, array) => {
@@ -238,8 +239,11 @@ export const useVendasDashboard = () => {
           }
           
           // Cálculo da variação da média mensal
-          if (prevYearMedia > 0) {
+          if (prevYearMedia > 0 && yearData.mediaMensal > 0) {
             yearData.mediaVariacao = ((yearData.mediaMensal - prevYearMedia) / prevYearMedia) * 100;
+            console.log(`Média mensal ${yearData.year}: ${yearData.mediaMensal.toFixed(2)}, Média anterior ${prevYearData.year}: ${prevYearMedia.toFixed(2)}, Variação: ${yearData.mediaVariacao.toFixed(2)}%`);
+          } else {
+            console.log(`Não foi possível calcular a variação da média mensal para ${yearData.year}. Valores: média atual = ${yearData.mediaMensal}, média anterior = ${prevYearMedia}`);
           }
         }
         
@@ -252,6 +256,11 @@ export const useVendasDashboard = () => {
           const monthB = monthsOrder.findIndex(m => m.startsWith(b.month.toLowerCase()));
           return monthB - monthA; // Ordem decrescente
         });
+      });
+      
+      // Verificar dados da variação média
+      yearsSorted.forEach(year => {
+        console.log(`Ano ${year.year}: Total=${year.total.toFixed(2)}, Média=${year.mediaMensal.toFixed(2)}, Var. Média=${year.mediaVariacao?.toFixed(2) || 'null'}`);
       });
       
       setYearlyComparisonData(yearsSorted);
