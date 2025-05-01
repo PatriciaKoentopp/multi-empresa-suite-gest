@@ -35,47 +35,45 @@ export function useParcelasCalculation(
       
       const novasParcelas: Parcela[] = [];
       
-      // Se não existe data de primeiro vencimento, usar a data atual
+      // Definir a data base para cálculo (hoje ou data fornecida)
       const dataBase = primeiroVencimento ? new Date(primeiroVencimento) : new Date();
       
       for (let i = 0; i < numParcelas; i++) {
-        let novaData: Date;
+        let dataVencimento: Date;
         
         if (i === 0) {
-          // Para a primeira parcela, usamos a data exata informada ou a data atual
-          novaData = new Date(dataBase);
+          // Para a primeira parcela, usamos exatamente a data base
+          dataVencimento = new Date(
+            dataBase.getFullYear(), 
+            dataBase.getMonth(), 
+            dataBase.getDate(), 
+            12, 0, 0
+          );
         } else {
-          // Para as demais parcelas, criamos uma nova data sem usar UTC para evitar problemas de timezone
-          // Extrair os componentes da data base
-          const diaVenc = dataBase.getDate();
-          const mesBase = dataBase.getMonth();
-          const anoBase = dataBase.getFullYear();
+          // Para as demais parcelas, adicionamos meses
+          const diaBase = dataBase.getDate();
+          let novoMes = dataBase.getMonth() + i;
+          let novoAno = dataBase.getFullYear();
           
-          // Calcular o novo mês e ano
-          let novoMes = mesBase + i;
-          let novoAno = anoBase;
-          
-          // Ajustar ano se o mês for maior que dezembro
+          // Ajustar ano se passar de dezembro
           while (novoMes > 11) {
             novoMes -= 12;
-            novoAno += 1;
+            novoAno++;
           }
           
-          // Criar a nova data sem ajustes de timezone
-          novaData = new Date(novoAno, novoMes, diaVenc, 12, 0, 0);
+          // Criar nova data
+          dataVencimento = new Date(novoAno, novoMes, 1, 12, 0, 0);
           
-          // Ajustar para o último dia do mês se o dia original não existir 
-          // (por exemplo, 31 de janeiro + 1 mês = 28/29 de fevereiro)
+          // Ajustar para o dia correto ou último dia do mês
           const ultimoDiaMes = new Date(novoAno, novoMes + 1, 0).getDate();
-          if (diaVenc > ultimoDiaMes) {
-            novaData = new Date(novoAno, novoMes, ultimoDiaMes, 12, 0, 0);
-          }
+          const diaDesejado = Math.min(diaBase, ultimoDiaMes);
+          dataVencimento.setDate(diaDesejado);
         }
         
         novasParcelas.push({
           numero: i + 1,
           valor: i === 0 ? valorParcela + ajusteCentavos : valorParcela,
-          dataVencimento: novaData
+          dataVencimento
         });
       }
 
@@ -98,10 +96,17 @@ export function useParcelasCalculation(
     setParcelas(parcelasAntigas => {
       const novasParcelas = [...parcelasAntigas];
       
-      // A novaData já deve vir corretamente tratada do componente DateInput
+      // Garantir que a nova data seja criada corretamente com meio-dia
+      const dataAjustada = new Date(
+        novaData.getFullYear(),
+        novaData.getMonth(),
+        novaData.getDate(),
+        12, 0, 0
+      );
+      
       novasParcelas[index] = {
         ...novasParcelas[index],
-        dataVencimento: novaData
+        dataVencimento: dataAjustada
       };
       return novasParcelas;
     });

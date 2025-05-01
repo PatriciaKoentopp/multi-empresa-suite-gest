@@ -19,7 +19,7 @@ type DateInputProps = {
 
 export function DateInput({ label, value, onChange, disabled = false }: DateInputProps) {
   const [inputValue, setInputValue] = useState('');
-
+  
   // Atualiza o valor do input quando o value de fora muda
   useEffect(() => {
     if (value && isValid(value)) {
@@ -39,11 +39,11 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
         // Extrair dia, mês e ano da string
         const [dia, mes, ano] = inputText.split('/').map(Number);
         
-        // Criar uma nova data com horário ao meio-dia para evitar problemas de timezone
-        const dataSemTimezone = new Date(ano, mes - 1, dia, 12, 0, 0);
+        // Criar uma nova data - usamos meio-dia para evitar problemas com horário de verão
+        const novaData = new Date(ano, mes - 1, dia, 12, 0, 0);
         
-        if (isValid(dataSemTimezone)) {
-          onChange(dataSemTimezone);
+        if (isValid(novaData)) {
+          onChange(novaData);
         } else {
           onChange(undefined);
         }
@@ -63,26 +63,22 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
     }
   };
 
-  // Função para garantir que a data do calendário seja preservada sem timezone
+  // Função para garantir que a data do calendário seja consistente
   const handleCalendarSelect = (date?: Date) => {
     if (!date) {
       onChange(undefined);
       return;
     }
     
-    // Criar nova data fixando UTC para preservar o dia exato selecionado
-    const dataSemTimezone = new Date(Date.UTC(
+    // Criar nova data com horário ao meio-dia para evitar problemas de timezone
+    const novaData = new Date(
       date.getFullYear(),
       date.getMonth(),
       date.getDate(),
       12, 0, 0
-    ));
+    );
     
-    // Ajustar o offset do timezone local para garantir que a data seja a mesma
-    const offset = dataSemTimezone.getTimezoneOffset() * 60000;
-    const adjustedDate = new Date(dataSemTimezone.getTime() + offset);
-    
-    onChange(adjustedDate);
+    onChange(novaData);
   };
 
   return (

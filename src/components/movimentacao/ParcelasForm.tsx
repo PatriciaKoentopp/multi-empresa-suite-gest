@@ -58,7 +58,6 @@ export function ParcelasForm({
   // Esta função é chamada quando a data é alterada pelo componente DateInput
   const handleDataChange = (index: number, data: Date) => {
     if (onDataChange && data) {
-      // Garantir que a data esteja no formato correto sem problemas de timezone
       onDataChange(index, data);
     }
   };
@@ -73,11 +72,6 @@ export function ParcelasForm({
   // Calcular diferença para mostrar alerta
   const diferenca = valorTotal - somaParcelas;
   const temDiferenca = mostrarAlertaDiferenca && Math.abs(diferenca) > 0.01;
-
-  // Função para formatar a data para debug
-  const formatDataForDebug = (date: Date): string => {
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} (${date.toISOString()})`;
-  };
 
   return (
     <div className="space-y-2">

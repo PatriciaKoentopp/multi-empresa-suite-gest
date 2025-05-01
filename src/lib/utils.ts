@@ -69,10 +69,8 @@ export function parseDateString(dateString: string): Date | undefined {
   
   if (isNaN(day) || isNaN(month) || isNaN(year)) return undefined;
   
-  // Criar data em UTC e depois ajustar o offset para garantir o dia correto
-  const dateInUTC = new Date(Date.UTC(year, month, day, 12, 0, 0));
-  const offset = dateInUTC.getTimezoneOffset() * 60000;
-  return new Date(dateInUTC.getTime() + offset);
+  // Criar uma nova data ao meio-dia para evitar problemas de timezone
+  return new Date(year, month, day, 12, 0, 0);
 }
 
 // Função para converter Date para formato YYYY-MM-DD para banco de dados
