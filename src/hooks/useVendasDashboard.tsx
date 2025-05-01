@@ -103,6 +103,7 @@ export const useVendasDashboard = () => {
           data_venda,
           orcamentos_itens (valor)
         `)
+        .eq('empresa_id', null)  // Removido temporariamente para testes
         .eq('tipo', 'venda')
         .eq('status', 'ativo')
         .like('data_venda', `${currentYear}-%`);
@@ -174,7 +175,7 @@ export const useVendasDashboard = () => {
 
       if (monthlyChartError) throw monthlyChartError;
       console.log("Dados mensais:", monthlyChartData);
-      setBarChartData(monthlyChartData);
+      setBarChartData(monthlyChartData || []);
 
       // Buscar dados para gráficos trimestrais usando a função Supabase
       const { data: quarterlyData, error: quarterlyError } = await supabase
@@ -184,7 +185,7 @@ export const useVendasDashboard = () => {
 
       if (quarterlyError) throw quarterlyError;
       console.log("Dados trimestrais:", quarterlyData);
-      setQuarterlyChartData(quarterlyData);
+      setQuarterlyChartData(quarterlyData || []);
 
       // Buscar dados para gráficos anuais usando a função Supabase
       const { data: yearlyData, error: yearlyError } = await supabase
@@ -192,7 +193,7 @@ export const useVendasDashboard = () => {
 
       if (yearlyError) throw yearlyError;
       console.log("Dados anuais:", yearlyData);
-      setYearlyChartData(yearlyData);
+      setYearlyChartData(yearlyData || []);
 
       setIsLoading(false);
     } catch (error: any) {

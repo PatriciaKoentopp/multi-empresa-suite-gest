@@ -16,3 +16,111 @@ export interface YearlyComparison {
   variacao_media: number | null;
   num_meses: number;
 }
+
+// Tipos que estavam faltando (re-declarando para evitar erros com imports)
+export interface Favorecido {
+  id: string;
+  nome: string;
+  documento: string;
+  email?: string;
+  telefone?: string;
+  tipo: string;
+  status: string;
+  // Outros campos necessários
+}
+
+export interface GrupoFavorecido {
+  id: string;
+  nome: string;
+  status: string;
+  // Outros campos necessários
+}
+
+export interface Profissao {
+  id: string;
+  nome: string;
+  status: string;
+  // Outros campos necessários
+}
+
+export interface Usuario {
+  id: string;
+  nome: string;
+  email: string;
+  tipo: string;
+  status: string;
+  // Outros campos necessários
+}
+
+export interface Company {
+  id: string;
+  nome_fantasia: string;
+  razao_social: string;
+  cnpj: string;
+  // Outros campos necessários
+}
+
+export interface MotivoPerda {
+  id: string;
+  nome: string;
+  status: string;
+  // Outros campos necessários
+}
+
+export interface Origem {
+  id: string;
+  nome: string;
+  status: string;
+  // Outros campos necessários
+}
+
+export interface Funil {
+  id: string;
+  nome: string;
+  // Outros campos necessários
+}
+
+export interface Servico {
+  id: string;
+  nome: string;
+  descricao?: string;
+  // Outros campos necessários
+}
+
+export interface TabelaPreco {
+  id: string;
+  nome: string;
+  // Outros campos necessários
+}
+
+export interface TabelaPrecoItem {
+  id: string;
+  tabela_id: string;
+  servico_id: string;
+  preco: number;
+  // Outros campos necessários
+}
+
+export interface Orcamento {
+  id: string;
+  codigo: string;
+  // Outros campos necessários
+}
+
+export interface ModuleNavItem {
+  title: string;
+  icon?: string;
+  href?: string;
+  disabled?: boolean;
+  external?: boolean;
+  label?: string;
+  subItems?: SubNavItem[];
+}
+
+export interface SubNavItem {
+  title: string;
+  href?: string;
+  disabled?: boolean;
+  external?: boolean;
+  label?: string;
+}
