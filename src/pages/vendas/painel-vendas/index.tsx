@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { SalesBarChart } from "@/components/vendas/SalesBarChart";
@@ -23,6 +24,7 @@ import {
   AccordionItem, 
   AccordionTrigger 
 } from "@/components/ui/accordion";
+import { YearlyComparison, MonthlyComparison } from "@/types";
 
 interface SalesData {
   total_vendas: number;
@@ -31,22 +33,6 @@ interface SalesData {
   variacao_percentual: number;
   media_ticket: number;
   clientes_ativos: number;
-}
-
-interface MonthlyComparison {
-  month: string; // Nome do mês
-  year: number; // Ano
-  total: number; // Total de vendas
-  monthlyVariation: number | null; // Variação percentual mensal
-  yearlyVariation: number | null; // Variação percentual anual
-  sortDate: Date; // Data para ordenação
-}
-
-interface YearlyComparison {
-  year: number;
-  total: number;
-  yearlyVariation: number | null;
-  months: MonthlyComparison[];
 }
 
 // Componente para exibir a variação com seta e cor
@@ -267,14 +253,26 @@ const PainelVendasPage = () => {
           yearlyDataComparison[monthData.year].months.push(monthData);
         });
         
-        // Calcular variação entre anos
+        // Calcular variação entre anos e média mensal
         const yearsSorted = Object.values(yearlyDataComparison).sort((a, b) => b.year - a.year);
         
         yearsSorted.forEach((yearData, index) => {
+          // Calcular média mensal
+          const numMonths = yearData.months.length;
+          yearData.mediaMensal = numMonths > 0 ? yearData.total / numMonths : 0;
+          
           if (index < yearsSorted.length - 1) {
             const prevYearTotal = yearsSorted[index + 1].total;
+            const prevYearMedia = yearsSorted[index + 1].mediaMensal || 0;
+            
+            // Variação do total anual
             if (prevYearTotal > 0 && yearData.total > 0) {
               yearData.yearlyVariation = ((yearData.total - prevYearTotal) / prevYearTotal) * 100;
+            }
+            
+            // Variação da média mensal
+            if (prevYearMedia > 0 && yearData.mediaMensal > 0) {
+              yearData.mediaVariacao = ((yearData.mediaMensal - prevYearMedia) / prevYearMedia) * 100;
             }
           }
           
@@ -644,9 +642,11 @@ const PainelVendasPage = () => {
             <Table>
               <TableHeader className="bg-muted/40">
                 <TableRow>
-                  <TableHead className="w-[180px] text-left">Período</TableHead>
+                  <TableHead className="w-[130px] text-left">Período</TableHead>
                   <TableHead className="text-right">Total de Vendas</TableHead>
-                  <TableHead className="text-right w-[120px]">Variação</TableHead>
+                  <TableHead className="text-right w-[100px]">Variação</TableHead>
+                  <TableHead className="text-right">Média Mensal</TableHead>
+                  <TableHead className="text-right w-[100px]">Variação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -662,9 +662,17 @@ const PainelVendasPage = () => {
                         <TableCell className="text-right font-medium">
                           {formatCurrency(yearData.total)}
                         </TableCell>
-                        <TableCell className="text-right pr-6">
+                        <TableCell className="text-right">
                           {yearData.yearlyVariation !== null && (
                             <VariationDisplay value={yearData.yearlyVariation} />
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(yearData.mediaMensal || 0)}
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          {yearData.mediaVariacao !== null && (
+                            <VariationDisplay value={yearData.mediaVariacao} />
                           )}
                         </TableCell>
                       </TableRow>

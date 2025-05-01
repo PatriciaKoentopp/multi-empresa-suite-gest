@@ -182,3 +182,21 @@ export interface Usuario {
   created_at: string;
   updated_at: string;
 }
+
+export interface YearlyComparison {
+  year: number;
+  total: number;
+  yearlyVariation: number | null;
+  months: MonthlyComparison[];
+  mediaMensal?: number;
+  mediaVariacao?: number | null;
+}
+
+export interface MonthlyComparison {
+  month: string; // Nome do mês
+  year: number; // Ano
+  total: number; // Total de vendas
+  monthlyVariation: number | null; // Variação percentual mensal
+  yearlyVariation: number | null; // Variação percentual anual
+  sortDate: Date; // Data para ordenação
+}
