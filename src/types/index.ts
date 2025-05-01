@@ -1,3 +1,4 @@
+
 export interface MonthlyComparison {
   month: string;
   year: number;
@@ -10,8 +11,8 @@ export interface MonthlyComparison {
 export interface YearlyComparison {
   year: number;
   total: number;
-  yearlyVariation: number | null;
-  mediaMensal: number;
-  mediaVariacao: number | null;
-  months: MonthlyComparison[];
+  variacao_total: number | null;
+  media_mensal: number;
+  variacao_media: number | null;
+  num_meses: number;
 }

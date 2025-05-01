@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfMonth, endOfMonth, subMonths, subDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 interface SalesData {
   total_vendas: number;
@@ -33,15 +32,13 @@ export const useVendasDashboard = () => {
       
       // Formato de data correto para o Supabase: YYYY-MM-DD
       const currentYear = new Date().getFullYear();
-      const startYearDate = `${currentYear}-01-01`;
-      const endYearDate = `${currentYear}-12-31`;
       
-      // Buscar dados diretamente com cálculos no Supabase
+      // Buscar dados de comparação anual diretamente do Supabase usando a função criada
       const { data: yearlyComparisonData, error: comparisonError } = await supabase
         .rpc('get_yearly_sales_comparison');
 
       if (comparisonError) throw comparisonError;
-      
+      console.log("Dados de comparação anual:", yearlyComparisonData);
       setYearlyComparisonData(yearlyComparisonData);
       
       // Definir datas para mês atual e anterior
@@ -98,7 +95,7 @@ export const useVendasDashboard = () => {
       // Calcular variação percentual
       const variacaoPercentual = vendasMesAnterior === 0 ? 100 : ((vendasMesAtual - vendasMesAnterior) / vendasMesAnterior) * 100;
 
-      // Buscar total anual
+      // Buscar total anual de vendas do ano atual
       const { data: totalAnualData, error: totalAnualError } = await supabase
         .from('orcamentos')
         .select(`
@@ -108,8 +105,7 @@ export const useVendasDashboard = () => {
         `)
         .eq('tipo', 'venda')
         .eq('status', 'ativo')
-        .gte('data_venda', startYearDate)
-        .lte('data_venda', endYearDate);
+        .like('data_venda', `${currentYear}-%`);
 
       if (totalAnualError) throw totalAnualError;
 
@@ -170,29 +166,32 @@ export const useVendasDashboard = () => {
         clientes_ativos: clientesAtivos
       });
 
-      // Buscar dados para o gráfico de barras (vendas mensais)
+      // Buscar dados para o gráfico de barras (vendas mensais) usando a função Supabase
       const { data: monthlyChartData, error: monthlyChartError } = await supabase
         .rpc('get_monthly_sales_chart_data', {
           year_param: currentYear
         });
 
       if (monthlyChartError) throw monthlyChartError;
+      console.log("Dados mensais:", monthlyChartData);
       setBarChartData(monthlyChartData);
 
-      // Buscar dados para gráficos trimestrais
+      // Buscar dados para gráficos trimestrais usando a função Supabase
       const { data: quarterlyData, error: quarterlyError } = await supabase
         .rpc('get_quarterly_sales_data', {
           year_param: currentYear
         });
 
       if (quarterlyError) throw quarterlyError;
+      console.log("Dados trimestrais:", quarterlyData);
       setQuarterlyChartData(quarterlyData);
 
-      // Buscar dados para gráficos anuais
+      // Buscar dados para gráficos anuais usando a função Supabase
       const { data: yearlyData, error: yearlyError } = await supabase
         .rpc('get_yearly_sales_data');
 
       if (yearlyError) throw yearlyError;
+      console.log("Dados anuais:", yearlyData);
       setYearlyChartData(yearlyData);
 
       setIsLoading(false);

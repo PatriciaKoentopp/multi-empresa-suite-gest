@@ -1062,7 +1062,38 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_monthly_sales_chart_data: {
+        Args: { year_param: number }
+        Returns: {
+          name: string
+          faturado: number
+        }[]
+      }
+      get_quarterly_sales_data: {
+        Args: { year_param: number }
+        Returns: {
+          name: string
+          faturado: number
+        }[]
+      }
+      get_yearly_sales_comparison: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          year: number
+          total: number
+          variacao_total: number
+          media_mensal: number
+          variacao_media: number
+          num_meses: number
+        }[]
+      }
+      get_yearly_sales_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          name: string
+          faturado: number
+        }[]
+      }
     }
     Enums: {
       usuario_status: "ativo" | "inativo"
