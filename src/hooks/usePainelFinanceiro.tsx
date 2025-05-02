@@ -210,11 +210,11 @@ export const usePainelFinanceiro = () => {
         }
       });
       
-      // Converter o Map para um array e ordenar por ano e mês
+      // Converter o Map para um array e ordenar por ano e mês - ordem decrescente (mais recente primeiro)
       const fluxoPorMes = Array.from(mesesMap.values())
         .sort((a, b) => {
-          if (a.ano !== b.ano) return a.ano - b.ano;
-          return a.mes_numero - b.mes_numero;
+          if (a.ano !== b.ano) return b.ano - a.ano; // Ano mais recente primeiro
+          return b.mes_numero - a.mes_numero; // Mês mais recente primeiro
         });
       
       setDadosFinanceiros({
