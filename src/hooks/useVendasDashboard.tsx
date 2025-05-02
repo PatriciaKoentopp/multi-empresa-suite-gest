@@ -324,6 +324,9 @@ export const useVendasDashboard = () => {
           });
         }
         
+        // Invertemos a ordem para o mais antigo aparecer primeiro
+        yearlyResults.reverse();
+        
         console.log("Dados anuais processados:", yearlyResults);
         setYearlyChartData(yearlyResults);
       } catch (yearlyError) {

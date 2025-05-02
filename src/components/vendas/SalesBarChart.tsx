@@ -124,20 +124,23 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
               }} 
             />
             {multiColor ? (
-              // Para cada item, criamos uma barra separada com sua própria cor
-              chartData.map((entry, index) => (
-                <Bar 
-                  key={`bar-${index}`}
-                  dataKey="faturado"
-                  name="Faturado"
-                  fill={CHART_COLORS[index % CHART_COLORS.length]}
-                  radius={[4, 4, 0, 0]}
-                  // Importante: filtrar para mostrar apenas este item
-                  data={[entry]}
-                />
-              ))
+              <Bar
+                dataKey="faturado"
+                name="Faturado"
+                fill="#4CAF50"
+                radius={[4, 4, 0, 0]}
+              >
+                {chartData.map((entry, index) => (
+                  <Bar
+                    key={`bar-${index}`}
+                    dataKey="faturado"
+                    name="Faturado"
+                    fill={CHART_COLORS[index % CHART_COLORS.length]}
+                    radius={[4, 4, 0, 0]}
+                  />
+                ))}
+              </Bar>
             ) : (
-              // Gráfico normal, todas as barras com a mesma cor
               <Bar
                 dataKey="faturado"
                 name="Faturado"
