@@ -56,11 +56,13 @@ export function LeadFechamentoTab({
   // Inicializar estados com base no fechamento recebido
   useEffect(() => {
     if (fechamento) {
+      console.log("Inicializando com fechamento:", fechamento);
       setStatus(fechamento.status);
       setDate(fechamento.data);
       setDescricao(fechamento.descricao);
       setMotivoPerdaId(fechamento.motivoPerdaId);
     } else {
+      console.log("Sem dados de fechamento, resetando estados");
       setStatus(null);
       setDate(undefined);
       setDescricao("");
@@ -95,6 +97,14 @@ export function LeadFechamentoTab({
 
     setIsSaving(true);
     try {
+      console.log("Iniciando salvamento do fechamento:", { 
+        leadId, 
+        status, 
+        motivoPerdaId, 
+        descricao, 
+        data: date || new Date() 
+      });
+      
       // Formatar a data para o formato do banco
       const dataFormatada = format(date || new Date(), 'yyyy-MM-dd');
 
@@ -106,14 +116,17 @@ export function LeadFechamentoTab({
         .maybeSingle();
 
       if (errorCheck) {
+        console.error("Erro ao verificar fechamento existente:", errorCheck);
         throw errorCheck;
       }
 
       console.log('Fechamento existente:', fechamentoExistente);
 
+      let resultado;
+      
       if (fechamentoExistente) {
         // Atualizar fechamento existente
-        const { error } = await supabase
+        resultado = await supabase
           .from('leads_fechamento')
           .update({
             status: status,
@@ -123,14 +136,16 @@ export function LeadFechamentoTab({
           })
           .eq('id', fechamentoExistente.id);
 
-        if (error) {
-          throw error;
+        if (resultado.error) {
+          console.error("Erro ao atualizar fechamento:", resultado.error);
+          throw resultado.error;
         }
-
+        
+        console.log("Fechamento atualizado com sucesso:", resultado.data);
         toast.success("Fechamento atualizado com sucesso!");
       } else {
         // Criar novo fechamento
-        const { error } = await supabase
+        resultado = await supabase
           .from('leads_fechamento')
           .insert([{
             lead_id: leadId,
@@ -140,11 +155,25 @@ export function LeadFechamentoTab({
             data: dataFormatada
           }]);
 
-        if (error) {
-          throw error;
+        if (resultado.error) {
+          console.error("Erro ao inserir fechamento:", resultado.error);
+          throw resultado.error;
         }
-
+        
+        console.log("Fechamento registrado com sucesso:", resultado.data);
         toast.success("Fechamento registrado com sucesso!");
+      }
+      
+      // Atualizar o status do lead
+      const { error: leadUpdateError } = await supabase
+        .from('leads')
+        .update({ status: 'fechado' })
+        .eq('id', leadId);
+      
+      if (leadUpdateError) {
+        console.error("Erro ao atualizar status do lead:", leadUpdateError);
+      } else {
+        console.log("Status do lead atualizado para 'fechado'");
       }
       
     } catch (error) {
