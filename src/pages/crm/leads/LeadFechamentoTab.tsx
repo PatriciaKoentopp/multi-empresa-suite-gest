@@ -48,7 +48,7 @@ export function LeadFechamentoTab({
   leadId
 }: LeadFechamentoTabProps) {
   const [status, setStatus] = useState<"sucesso" | "perda" | null>(null);
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [descricao, setDescricao] = useState("");
   const [motivoPerdaId, setMotivoPerdaId] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
@@ -64,7 +64,7 @@ export function LeadFechamentoTab({
     } else {
       console.log("Sem dados de fechamento, resetando estados");
       setStatus(null);
-      setDate(undefined);
+      setDate(new Date());
       setDescricao("");
       setMotivoPerdaId(undefined);
     }
@@ -84,7 +84,7 @@ export function LeadFechamentoTab({
       console.log("Limpando objeto de fechamento");
       setFechamento(null);
     }
-  }, [status, motivoPerdaId, descricao, date, setFechamento]);
+  }, [status, motivoPerdaId, descricao, date, setFechamento, fechamento]);
 
   // Função para salvar diretamente o fechamento
   const salvarFechamento = async () => {
@@ -275,6 +275,7 @@ export function LeadFechamentoTab({
                   : "Descreva o motivo da perda em detalhes..."
               }
               rows={4}
+              className="resize-none"
             />
           </div>
           

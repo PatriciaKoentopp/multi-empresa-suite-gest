@@ -611,7 +611,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                   </TabsTrigger>
                 </TabsList>
               </div>
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-auto">
                 {/* DADOS */}
                 <TabsContent value="dados" className="p-6 mt-0 h-full overflow-y-auto">
                   <form id="dadosLeadForm" onSubmit={handleSubmit}>
