@@ -102,7 +102,8 @@ export const usePainelFinanceiro = () => {
       // Formatar datas para o formato YYYY-MM-DD
       const dataInicialStr = `${anoInicial}-${mesInicial.toString().padStart(2, '0')}-01`;
       
-      // Buscar dados de movimentações pagas/recebidas agrupadas por mês
+      // Buscar dados de movimentações pagas/recebidas agrupadas por mês de TODAS as contas
+      // Modificado para não filtrar por conta_corrente_id
       const { data: fluxoMensal, error: errorFluxoMensal } = await supabase
         .from('movimentacoes_parcelas')
         .select(`
@@ -159,7 +160,7 @@ export const usePainelFinanceiro = () => {
         .filter(p => p.data_vencimento >= dataAtualStr)
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
       
-      // Processar o fluxo financeiro mensal
+      // Processar o fluxo financeiro mensal - considerando todas as contas
       const mesesMap = new Map<string, FluxoMensal>();
       
       // Inicializar os 12 meses
@@ -187,7 +188,7 @@ export const usePainelFinanceiro = () => {
         });
       }
       
-      // Adicionar os valores de cada movimentação ao mês correspondente
+      // Adicionar os valores de cada movimentação ao mês correspondente independente da conta
       fluxoMensal?.forEach(item => {
         if (item.data_pagamento && item.movimentacoes?.tipo_operacao) {
           const dataPagamento = new Date(item.data_pagamento);
