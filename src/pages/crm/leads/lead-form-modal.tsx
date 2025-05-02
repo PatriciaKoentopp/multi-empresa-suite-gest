@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,6 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Origem, Usuario, MotivoPerda } from "@/types";
-import { format } from "date-fns";
 import { Send, UserRound, Phone, Calendar, Mail, MessageCircle, Eye, Edit, Trash2, MessageSquare } from "lucide-react";
 
 import { LeadDadosTab } from "./LeadDadosTab";
@@ -850,7 +850,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
         </SheetContent>
       </Sheet>
       
-      
+      {/* Dialog para visualização de interação */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -885,3 +885,141 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                   </span>
                 </div>
               </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para edição de interação */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Interação</DialogTitle>
+            <DialogDescription>
+              Modifique os dados da interação
+            </DialogDescription>
+          </DialogHeader>
+          
+          {interacaoEditavel && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="editTipo">Tipo de Interação</Label>
+                <Select
+                  value={interacaoEditavel.tipo}
+                  onValueChange={(value) => handleInteracaoEditavelSelectChange("tipo", value)}
+                >
+                  <SelectTrigger id="editTipo" className="bg-white">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="ligacao">Ligação</SelectItem>
+                    <SelectItem value="reuniao">Reunião</SelectItem>
+                    <SelectItem value="mensagem">Mensagem</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="telegram">Telegram</SelectItem>
+                    <SelectItem value="instagram">Direct do Instagram</SelectItem>
+                    <SelectItem value="facebook">Messenger do Facebook</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="editData">Data</Label>
+                <Input
+                  id="editData"
+                  name="data"
+                  value={interacaoEditavel.data}
+                  onChange={handleInteracaoEditavelChange}
+                  type="text"
+                  placeholder="DD/MM/AAAA"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="editDescricao">Descrição</Label>
+                <Textarea
+                  id="editDescricao"
+                  name="descricao"
+                  value={interacaoEditavel.descricao}
+                  onChange={handleInteracaoEditavelChange}
+                  placeholder="Descreva a interação..."
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="editResponsavel">Responsável</Label>
+                <Select
+                  value={interacaoEditavel.responsavelId}
+                  onValueChange={(value) => handleInteracaoEditavelSelectChange("responsavelId", value)}
+                >
+                  <SelectTrigger id="editResponsavel" className="bg-white">
+                    <SelectValue placeholder="Selecione o responsável" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {vendedoresAtivos.map((vendedor) => (
+                      <SelectItem key={vendedor.id} value={vendedor.id}>
+                        {vendedor.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  variant="blue" 
+                  onClick={confirmarEdicaoInteracao}
+                >
+                  Salvar Alterações
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para confirmação de exclusão */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Esta ação não pode ser desfeita. Deseja realmente excluir esta interação?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {interacaoSelecionada && (
+            <div className="space-y-4 py-2">
+              <div className="flex items-center gap-2 p-3 bg-gray-50 border rounded-md">
+                {getIconForInteraction(interacaoSelecionada.tipo)}
+                <div>
+                  <p className="font-medium capitalize">{interacaoSelecionada.tipo}</p>
+                  <p className="text-sm text-muted-foreground">{interacaoSelecionada.data}</p>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={excluirInteracao}
+                >
+                  Excluir Interação
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
