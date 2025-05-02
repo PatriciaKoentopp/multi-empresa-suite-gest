@@ -117,6 +117,9 @@ export const SalesComparisonTable = ({
           <VariationDisplay value={month.variacao_percentual} />
         </TableCell>
         <TableCell className="text-right text-sm">
+          {formatCurrency(month.faturado / 30 || 0)}
+        </TableCell>
+        <TableCell className="text-right text-sm">
           <VariationDisplay value={month.variacao_ano_anterior} tooltip={`Comparado a ${month.name}/${year-1}`} />
         </TableCell>
       </TableRow>
