@@ -74,6 +74,15 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
     });
   };
 
+  // Transformar os dados para exibição com múltiplas cores
+  // Criar uma cópia dos dados originais e adicionar uma propriedade para cada entrada
+  const enhancedData = multiColor ? chartData.map((item, idx) => {
+    const enhancedItem: any = { name: item.name };
+    // Adiciona uma propriedade única para cada item do array
+    enhancedItem[`faturado_${idx}`] = item.faturado;
+    return enhancedItem;
+  }) : chartData;
+
   return (
     <div className={className}>
       <ChartContainer
@@ -87,7 +96,7 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={chartData}
+            data={enhancedData}
             margin={{
               top: 10,
               right: 30,
@@ -124,15 +133,14 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
               }} 
             />
             {multiColor ? (
-              chartData.map((entry, index) => (
-                <Bar 
+              // Renderizar uma barra para cada item com cor diferente
+              chartData.map((_, index) => (
+                <Bar
                   key={`bar-${index}`}
-                  dataKey="faturado"
+                  dataKey={`faturado_${index}`}
                   name="Faturado"
                   fill={CHART_COLORS[index % CHART_COLORS.length]}
                   radius={[4, 4, 0, 0]}
-                  // Importante: filtrar para mostrar apenas este item
-                  data={[entry]}
                 />
               ))
             ) : (
