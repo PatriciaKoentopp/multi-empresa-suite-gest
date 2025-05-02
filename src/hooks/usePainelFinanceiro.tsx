@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -262,21 +261,7 @@ export const usePainelFinanceiro = () => {
       
       if (errorPagar) throw errorPagar;
       
-      // Busca fluxo financeiro dos últimos 12 meses
-      const dataAtual = new Date();
-      const anoAtual = dataAtual.getFullYear();
-      const mesAtual = dataAtual.getMonth() + 1;
-      
-      // Data de 11 meses atrás (para compor 12 meses com o mês atual)
-      const dataInicial = new Date(dataAtual);
-      dataInicial.setMonth(dataInicial.getMonth() - 11);
-      dataInicial.setDate(1);
-      const anoInicial = dataInicial.getFullYear();
-      const mesInicial = dataInicial.getMonth() + 1;
-      
-      // Formatar datas para o formato YYYY-MM-DD
-      const dataInicialStr = `${anoInicial}-${mesInicial.toString().padStart(2, '0')}-01`;
-      
+      // Busca fluxo financeiro de todos os períodos (sem limitar aos últimos 12 meses)
       // Buscar dados de movimentações pagas/recebidas agrupadas por mês de TODAS as contas
       const { data: fluxoMensal, error: errorFluxoMensal } = await supabase
         .from('movimentacoes_parcelas')
@@ -288,8 +273,7 @@ export const usePainelFinanceiro = () => {
             tipo_operacao
           )
         `)
-        .not('data_pagamento', 'is', null)
-        .gte('data_pagamento', dataInicialStr);
+        .not('data_pagamento', 'is', null);
       
       if (errorFluxoMensal) throw errorFluxoMensal;
 
@@ -348,45 +332,40 @@ export const usePainelFinanceiro = () => {
         })
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
       
-      // Processar o fluxo financeiro mensal - considerando todas as contas e corrigindo o tratamento de datas
+      // Processar o fluxo financeiro mensal - considerando todas as contas
       const mesesMap = new Map<string, FluxoMensal>();
       
-      // Inicializar os 12 meses
-      for (let i = 0; i < 12; i++) {
-        const data = new Date(dataInicial);
-        data.setMonth(data.getMonth() + i);
-        const ano = data.getFullYear();
-        const mesNumero = data.getMonth() + 1;
-        
-        // Nome do mês em português
-        const nomesMeses = [
-          'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-        ];
-        const mes = nomesMeses[data.getMonth()];
-        
-        const chave = `${ano}-${mesNumero}`;
-        mesesMap.set(chave, {
-          mes,
-          mes_numero: mesNumero,
-          ano,
-          total_recebido: 0,
-          total_pago: 0,
-          saldo: 0
-        });
-      }
-      
-      // Adicionar os valores de cada movimentação ao mês correspondente independente da conta
-      // Corrigindo o problema de timezone nas datas
-      fluxoMensal?.forEach(item => {
-        if (item.data_pagamento && item.movimentacoes?.tipo_operacao) {
-          // Extrai a data sem efeitos de timezone
-          const dataPagamento = extrairDataSemTimeZone(item.data_pagamento);
-          const ano = dataPagamento.getFullYear();
-          const mesNumero = dataPagamento.getMonth() + 1;
-          const chave = `${ano}-${mesNumero}`;
-          
-          if (mesesMap.has(chave)) {
+      // Processar todos os dados de movimentações para obter todos os períodos
+      if (fluxoMensal && fluxoMensal.length > 0) {
+        fluxoMensal.forEach(item => {
+          if (item.data_pagamento && item.movimentacoes?.tipo_operacao) {
+            // Extrai a data sem efeitos de timezone
+            const dataPagamento = extrairDataSemTimeZone(item.data_pagamento);
+            const ano = dataPagamento.getFullYear();
+            const mesNumero = dataPagamento.getMonth() + 1;
+            
+            // Nome do mês em português
+            const nomesMeses = [
+              'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            const mes = nomesMeses[dataPagamento.getMonth()];
+            
+            const chave = `${ano}-${mesNumero}`;
+            
+            // Inicializar o mês se ainda não existir no Map
+            if (!mesesMap.has(chave)) {
+              mesesMap.set(chave, {
+                mes,
+                mes_numero: mesNumero,
+                ano,
+                total_recebido: 0,
+                total_pago: 0,
+                saldo: 0
+              });
+            }
+            
+            // Atualizar os valores
             const mesAtual = mesesMap.get(chave)!;
             
             if (item.movimentacoes.tipo_operacao === 'receber') {
@@ -398,8 +377,8 @@ export const usePainelFinanceiro = () => {
             mesAtual.saldo = mesAtual.total_recebido - mesAtual.total_pago;
             mesesMap.set(chave, mesAtual);
           }
-        }
-      });
+        });
+      }
       
       // Converter o Map para um array e ordenar por ano e mês - ordem decrescente (mais recente primeiro)
       const fluxoPorMes = Array.from(mesesMap.values())

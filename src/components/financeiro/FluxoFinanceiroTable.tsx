@@ -89,9 +89,8 @@ export const FluxoFinanceiroTable = ({ fluxoMensal }: FluxoFinanceiroTableProps)
           </TableHeader>
           <TableBody>
             {resumoPorAno.map((ano) => (
-              <>
+              <React.Fragment key={`ano-${ano.ano}`}>
                 <TableRow 
-                  key={`ano-${ano.ano}`}
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => toggleAnoExpansao(ano.ano)}
                 >
@@ -138,7 +137,7 @@ export const FluxoFinanceiroTable = ({ fluxoMensal }: FluxoFinanceiroTableProps)
                     </TableRow>
                   ))
                 }
-              </>
+              </React.Fragment>
             ))}
           </TableBody>
           <TableFooter>
