@@ -119,31 +119,43 @@ export const usePainelFinanceiro = () => {
       if (errorFluxoMensal) throw errorFluxoMensal;
 
       // Processar dados
-      const totalAReceber = parcelasReceber
-        ?.filter(p => p.movimentacoes?.tipo_operacao === 'receber')
-        .reduce((sum, item) => sum + Number(item.valor || 0), 0) || 0;
-      
-      const totalAPagar = parcelasPagar
-        ?.filter(p => p.movimentacoes?.tipo_operacao === 'pagar')
-        .reduce((sum, item) => sum + Number(item.valor || 0), 0) || 0;
-      
       const dataAtualStr = new Date().toISOString().split('T')[0];
       
-      // Calcular contas vencidas separadas por tipo
-      const contasVencidasReceber = (parcelasReceber || [])
+      // Filtrar corretamente as parcelas de contas a receber
+      const parcelasReceberFiltradas = (parcelasReceber || []).filter(p => 
+        p.movimentacoes?.tipo_operacao === 'receber'
+      );
+      
+      // Filtrar corretamente as parcelas de contas a pagar
+      const parcelasPagarFiltradas = (parcelasPagar || []).filter(p => 
+        p.movimentacoes?.tipo_operacao === 'pagar'
+      );
+      
+      // Total a receber
+      const totalAReceber = parcelasReceberFiltradas
+        .reduce((sum, item) => sum + Number(item.valor || 0), 0);
+      
+      // Total a pagar
+      const totalAPagar = parcelasPagarFiltradas
+        .reduce((sum, item) => sum + Number(item.valor || 0), 0);
+      
+      // Calcular contas vencidas a receber
+      const contasVencidasReceber = parcelasReceberFiltradas
         .filter(p => p.data_vencimento < dataAtualStr)
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
       
-      const contasVencidasPagar = (parcelasPagar || [])
+      // Calcular contas vencidas a pagar
+      const contasVencidasPagar = parcelasPagarFiltradas
         .filter(p => p.data_vencimento < dataAtualStr)
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
       
-      // Calcular contas a vencer separadas por tipo
-      const contasAVencerReceber = (parcelasReceber || [])
+      // Calcular contas a vencer a receber
+      const contasAVencerReceber = parcelasReceberFiltradas
         .filter(p => p.data_vencimento >= dataAtualStr)
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
       
-      const contasAVencerPagar = (parcelasPagar || [])
+      // Calcular contas a vencer a pagar
+      const contasAVencerPagar = parcelasPagarFiltradas
         .filter(p => p.data_vencimento >= dataAtualStr)
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
       
