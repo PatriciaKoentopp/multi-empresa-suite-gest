@@ -51,43 +51,42 @@ export const usePainelFinanceiro = () => {
       
       if (errorPagar) throw errorPagar;
 
-      // Busca saldo inicial das contas correntes
+      // Busca contas correntes e seus saldos iniciais
       const { data: contasCorrentes, error: errorContas } = await supabase
         .from('contas_correntes')
-        .select('id, saldo_inicial')
+        .select('*')
         .eq('status', 'ativo');
       
       if (errorContas) throw errorContas;
-      
-      // Busca dados do fluxo de caixa para calcular o saldo atual
-      const { data: fluxoCaixa, error: errorFluxo } = await supabase
-        .from('fluxo_caixa')
-        .select('id, valor, tipo_operacao');
-      
-      if (errorFluxo) throw errorFluxo;
-      
-      // Calcula o saldo das contas considerando o saldo inicial e as movimentações do fluxo de caixa
-      let saldoInicial = contasCorrentes?.reduce((sum, conta) => 
-        sum + Number(conta.saldo_inicial || 0), 0) || 0;
-      
-      let saldoMovimentacoes = 0;
-      if (fluxoCaixa && fluxoCaixa.length > 0) {
-        saldoMovimentacoes = fluxoCaixa.reduce((sum, movimento) => {
-          if (movimento.tipo_operacao === 'receber') {
-            return sum + Number(movimento.valor || 0);
-          } else if (movimento.tipo_operacao === 'pagar') {
-            return sum - Number(movimento.valor || 0);
-          } else if (movimento.tipo_operacao === 'transferencia') {
-            // Transferências não afetam o saldo total
-            return sum;
+
+      // Calcula o saldo total
+      let totalSaldo = 0;
+
+      if (contasCorrentes && contasCorrentes.length > 0) {
+        // Para cada conta, buscar TODAS as movimentações ordenadas por data
+        for (const conta of contasCorrentes) {
+          const { data: movimentacoes, error: erroMovimentacoes } = await supabase
+            .from('fluxo_caixa')
+            .select('*')
+            .eq('conta_corrente_id', conta.id)
+            .order('data_movimentacao', { ascending: true });
+
+          if (erroMovimentacoes) throw erroMovimentacoes;
+
+          // Calcular o saldo como na página de fluxo de caixa
+          let saldoAtual = Number(conta.saldo_inicial || 0);
+
+          if (movimentacoes && movimentacoes.length > 0) {
+            // Somar todas as movimentações ordenadas cronologicamente
+            for (const mov of movimentacoes) {
+              saldoAtual += Number(mov.valor);
+            }
           }
-          return sum;
-        }, 0);
+
+          totalSaldo += saldoAtual;
+        }
       }
       
-      // Saldo final é o saldo inicial mais as movimentações
-      const saldoContas = saldoInicial + saldoMovimentacoes;
-
       // Busca fluxo financeiro dos últimos 12 meses
       const dataAtual = new Date();
       const anoAtual = dataAtual.getFullYear();
@@ -201,8 +200,8 @@ export const usePainelFinanceiro = () => {
       setDadosFinanceiros({
         total_a_receber: totalAReceber,
         total_a_pagar: totalAPagar,
-        saldo_contas: saldoContas,
-        previsao_saldo: saldoContas + totalAReceber - totalAPagar,
+        saldo_contas: totalSaldo,
+        previsao_saldo: totalSaldo + totalAReceber - totalAPagar,
         contas_vencidas: contasVencidas,
         contas_a_vencer: contasAVencer,
         fluxo_por_mes: fluxoPorMes
