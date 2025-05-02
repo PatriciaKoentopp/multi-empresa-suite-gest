@@ -7,18 +7,21 @@ interface SalesPerformanceTabsProps {
   barChartData: any[];
   quarterlyChartData: any[];
   yearlyChartData: any[];
+  monthlyComparisonData: any[]; // Novo tipo de dados para comparação mensal
 }
 
 export const SalesPerformanceTabs = ({
   barChartData,
   quarterlyChartData,
-  yearlyChartData
+  yearlyChartData,
+  monthlyComparisonData
 }: SalesPerformanceTabsProps) => {
   // Verificar se todos os dados estão presentes
   console.log("SalesPerformanceTabs - Dados recebidos:", {
     barChartData,
     quarterlyChartData,
-    yearlyChartData
+    yearlyChartData,
+    monthlyComparisonData
   });
 
   return (
@@ -30,6 +33,7 @@ export const SalesPerformanceTabs = ({
             <TabsTrigger value="monthly">Mensal</TabsTrigger>
             <TabsTrigger value="quarterly">Trimestral</TabsTrigger>
             <TabsTrigger value="yearly">Anual</TabsTrigger>
+            <TabsTrigger value="monthly-comparison">Comparativo Mensal</TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="monthly" className="mt-4">
@@ -59,6 +63,16 @@ export const SalesPerformanceTabs = ({
             </CardHeader>
             <CardContent>
               <SalesBarChart data={yearlyChartData} multiColor={true} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="monthly-comparison">
+          <Card>
+            <CardHeader>
+              <CardTitle>Comparativo Mensal por Ano</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SalesBarChart data={monthlyComparisonData} multiColor={true} />
             </CardContent>
           </Card>
         </TabsContent>

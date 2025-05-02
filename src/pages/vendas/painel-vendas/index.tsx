@@ -15,6 +15,7 @@ const PainelVendasPage = () => {
     quarterlyChartData,
     yearlyChartData,
     yearlyComparisonData,
+    monthlyComparisonData,
     fetchMonthlySalesData
   } = useVendasDashboard();
 
@@ -29,9 +30,10 @@ const PainelVendasPage = () => {
       yearlyChartDataLength: yearlyChartData?.length,
       yearlyChartData,
       yearlyComparisonDataLength: yearlyComparisonData?.length,
-      yearlyComparisonData
+      yearlyComparisonData,
+      monthlyComparisonData
     });
-  }, [isLoading, salesData, barChartData, quarterlyChartData, yearlyChartData, yearlyComparisonData]);
+  }, [isLoading, salesData, barChartData, quarterlyChartData, yearlyChartData, yearlyComparisonData, monthlyComparisonData]);
 
   if (isLoading) {
     return <SalesLoadingState />;
@@ -42,6 +44,7 @@ const PainelVendasPage = () => {
   const safeQuarterlyChartData = Array.isArray(quarterlyChartData) ? quarterlyChartData : [];
   const safeYearlyChartData = Array.isArray(yearlyChartData) ? yearlyChartData : [];
   const safeYearlyComparisonData = Array.isArray(yearlyComparisonData) ? yearlyComparisonData : [];
+  const safeMonthlyComparisonData = Array.isArray(monthlyComparisonData) ? monthlyComparisonData : [];
 
   return (
     <div className="space-y-6">
@@ -51,6 +54,7 @@ const PainelVendasPage = () => {
         barChartData={safeBarChartData}
         quarterlyChartData={safeQuarterlyChartData}
         yearlyChartData={safeYearlyChartData}
+        monthlyComparisonData={safeMonthlyComparisonData}
       />
       <SalesComparisonTable 
         yearlyComparisonData={safeYearlyComparisonData}

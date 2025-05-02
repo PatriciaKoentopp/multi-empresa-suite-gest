@@ -13,7 +13,7 @@ import { ChartContainer, ChartTooltipContent } from "../ui/chart";
 interface SalesBarChartProps {
   data: {
     name: string;
-    faturado: number;
+    [key: string]: any;
   }[];
   className?: string;
   multiColor?: boolean;
@@ -36,10 +36,7 @@ const CHART_COLORS = [
 
 export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarChartProps) => {
   // Verificar se os dados estão presentes e em formato correto
-  const chartData = Array.isArray(data) ? data.map(item => ({
-    name: (item.name !== undefined && item.name !== null) ? String(item.name) : '',
-    faturado: (item.faturado !== undefined && item.faturado !== null) ? Number(item.faturado) : 0
-  })) : [];
+  const chartData = Array.isArray(data) ? data : [];
   
   console.log("Dados do gráfico processados:", chartData);
 
@@ -53,8 +50,14 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
     );
   }
 
-  // Adicionando verificação adicional: se todos os valores são zero
-  const allZeros = chartData.every(item => item.faturado === 0);
+  // Identificar as chaves que representam valores (além de "name")
+  const valueKeys = Object.keys(chartData[0]).filter(key => key !== "name");
+  
+  // Verificar se todos os valores são zero
+  const allZeros = chartData.every(item => 
+    valueKeys.every(key => item[key] === 0)
+  );
+  
   if (allZeros) {
     console.warn("Todos os valores do gráfico são zero");
     return (
@@ -74,15 +77,6 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
     });
   };
 
-  // Transformar os dados para exibição com múltiplas cores
-  // Criar uma cópia dos dados originais e adicionar uma propriedade para cada entrada
-  const enhancedData = multiColor ? chartData.map((item, idx) => {
-    const enhancedItem: any = { name: item.name };
-    // Adiciona uma propriedade única para cada item do array
-    enhancedItem[`faturado_${idx}`] = item.faturado;
-    return enhancedItem;
-  }) : chartData;
-
   return (
     <div className={className}>
       <ChartContainer
@@ -96,7 +90,7 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={enhancedData}
+            data={chartData}
             margin={{
               top: 10,
               right: 30,
@@ -125,20 +119,26 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
                 return (
                   <div className="bg-white p-2 border rounded shadow">
                     <p className="font-medium mb-1">{label}</p>
-                    <p className="text-green-600">
-                      {formatCurrency(Number(payload[0]?.value || 0))}
-                    </p>
+                    {payload.map((entry, index) => (
+                      <p 
+                        key={`tooltip-item-${index}`} 
+                        className="text-sm" 
+                        style={{ color: entry.color }}
+                      >
+                        {entry.name}: {formatCurrency(Number(entry.value || 0))}
+                      </p>
+                    ))}
                   </div>
                 );
               }} 
             />
             {multiColor ? (
-              // Renderizar uma barra para cada item com cor diferente
-              chartData.map((_, index) => (
+              // Se temos múltiplas chaves de valor (anos diferentes ou categorias)
+              valueKeys.map((key, index) => (
                 <Bar
-                  key={`bar-${index}`}
-                  dataKey={`faturado_${index}`}
-                  name="Faturado"
+                  key={`bar-${key}`}
+                  dataKey={key}
+                  name={key}
                   fill={CHART_COLORS[index % CHART_COLORS.length]}
                   radius={[4, 4, 0, 0]}
                 />

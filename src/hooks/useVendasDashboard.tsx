@@ -32,6 +32,7 @@ export const useVendasDashboard = () => {
   const [quarterlyChartData, setQuarterlyChartData] = useState<any[]>([]);
   const [yearlyChartData, setYearlyChartData] = useState<any[]>([]);
   const [yearlyComparisonData, setYearlyComparisonData] = useState<YearlyComparison[]>([]);
+  const [monthlyComparisonData, setMonthlyComparisonData] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -663,6 +664,100 @@ export const useVendasDashboard = () => {
         });
       }
 
+      // NOVO: Buscar dados para comparação mensal (mês a mês ao longo dos anos)
+      try {
+        console.log("Iniciando busca de dados para comparação mensal");
+
+        // Vamos buscar dados dos últimos 3 anos
+        const yearsToShow = 3;
+        const currentYear = new Date().getFullYear();
+        
+        // Estrutura de meses
+        const mesesNomes = [
+          "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+          "Jul", "Ago", "Set", "Out", "Nov", "Dez"
+        ];
+
+        // Dados de vendas por mês para cada ano
+        const dadosMensaisPorAno: { [key: string]: { [key: string]: number } } = {};
+        
+        // Buscar dados para cada ano
+        for (let i = 0; i < yearsToShow; i++) {
+          const year = currentYear - i;
+          const startDate = `${year}-01-01`;
+          const endDate = `${year}-12-31`;
+          
+          dadosMensaisPorAno[year] = {};
+          mesesNomes.forEach(mes => {
+            dadosMensaisPorAno[year][mes] = 0;
+          });
+          
+          const { data: vendaAnual, error: vendaAnualError } = await supabase
+            .from('orcamentos')
+            .select(`
+              id, 
+              data_venda,
+              orcamentos_itens (valor)
+            `)
+            .eq('tipo', 'venda')
+            .eq('status', 'ativo')
+            .gte('data_venda', startDate)
+            .lte('data_venda', endDate);
+          
+          if (vendaAnualError) {
+            console.error(`Erro ao buscar vendas para o ano ${year}:`, vendaAnualError);
+            continue;
+          }
+          
+          console.log(`Vendas do ano ${year} encontradas:`, vendaAnual?.length);
+          
+          // Processar vendas por mês
+          if (vendaAnual) {
+            vendaAnual.forEach(venda => {
+              if (venda.data_venda) {
+                const mesString = venda.data_venda.substring(5, 7);
+                const mes = parseInt(mesString, 10) - 1; // Converter para índice (0-11)
+                
+                const valorTotal = venda.orcamentos_itens.reduce(
+                  (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+                );
+                
+                if (mes >= 0 && mes < 12) {
+                  dadosMensaisPorAno[year][mesesNomes[mes]] += valorTotal;
+                }
+              }
+            });
+          }
+        }
+        
+        console.log("Dados mensais por ano processados:", dadosMensaisPorAno);
+        
+        // Transformar os dados para o formato esperado pelo gráfico
+        const dadosComparativoMensal = [];
+        
+        // Para cada mês, criar um item com dados de todos os anos
+        mesesNomes.forEach(mes => {
+          const dadosMes: any = { name: mes };
+          
+          // Adicionar faturamento de cada ano para este mês
+          Object.keys(dadosMensaisPorAno).forEach(ano => {
+            dadosMes[`${ano}`] = dadosMensaisPorAno[ano][mes];
+          });
+          
+          dadosComparativoMensal.push(dadosMes);
+        });
+        
+        console.log("Dados de comparação mensal formatados:", dadosComparativoMensal);
+        setMonthlyComparisonData(dadosComparativoMensal);
+      } catch (compareError) {
+        console.error("Erro ao processar dados de comparação mensal:", compareError);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar dados de comparação mensal",
+          description: "Não foi possível processar os dados de comparação mensal"
+        });
+      }
+
       setIsLoading(false);
     } catch (error: any) {
       console.error("Erro ao carregar dados:", error);
@@ -682,6 +777,7 @@ export const useVendasDashboard = () => {
     quarterlyChartData,
     yearlyChartData,
     yearlyComparisonData,
+    monthlyComparisonData,
     fetchMonthlySalesData
   };
 };
