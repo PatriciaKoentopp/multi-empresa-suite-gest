@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -470,10 +469,7 @@ export const useVendasDashboard = () => {
         return acc + orcamentoTotal;
       }, 0) || 0;
       
-      // Buscar média de ticket - últimos 90 dias
-      const ninetyDaysAgo = subDays(new Date(), 90);
-      const ninetyDaysAgoFormatted = format(ninetyDaysAgo, 'yyyy-MM-dd');
-
+      // Buscar média de ticket - ANO CORRENTE (alterado de 90 dias para o ano corrente)
       const { data: ticketData, error: ticketError } = await supabase
         .from('orcamentos')
         .select(`
@@ -482,7 +478,8 @@ export const useVendasDashboard = () => {
         `)
         .eq('tipo', 'venda')
         .eq('status', 'ativo')
-        .gte('data_venda', ninetyDaysAgoFormatted);
+        .gte('data_venda', startOfYear)
+        .lte('data_venda', endOfYear);
 
       if (ticketError) throw ticketError;
 
@@ -494,6 +491,9 @@ export const useVendasDashboard = () => {
       const mediaTicket = ticketData?.length ? totalVendasPeriodo / ticketData.length : 0;
       
       // Buscar clientes ativos (com vendas nos últimos 90 dias)
+      const ninetyDaysAgo = subDays(new Date(), 90);
+      const ninetyDaysAgoFormatted = format(ninetyDaysAgo, 'yyyy-MM-dd');
+      
       const { data: clientesData, error: clientesError } = await supabase
         .from('orcamentos')
         .select('favorecido_id')
@@ -776,8 +776,3 @@ export const useVendasDashboard = () => {
     barChartData,
     quarterlyChartData,
     yearlyChartData,
-    yearlyComparisonData,
-    monthlyComparisonData,
-    fetchMonthlySalesData
-  };
-};

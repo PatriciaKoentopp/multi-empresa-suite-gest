@@ -16,6 +16,8 @@ interface SalesDashboardCardsProps {
 }
 
 export const SalesDashboardCards = ({ salesData }: SalesDashboardCardsProps) => {
+  const currentYear = new Date().getFullYear();
+  
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <SalesDashboardCard
@@ -35,7 +37,7 @@ export const SalesDashboardCards = ({ salesData }: SalesDashboardCardsProps) => 
       <SalesDashboardCard
         title="Ticket Médio"
         value={formatCurrency(salesData?.media_ticket || 0)}
-        description="Por venda realizada"
+        description={`Por venda em ${currentYear}`}
         icon="sales"
       />
       <SalesDashboardCard
