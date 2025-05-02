@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -137,8 +138,6 @@ export const usePainelFinanceiro = () => {
         .filter(p => p.data_vencimento < dataAtualStr)
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
       
-      const contasVencidas = contasVencidasReceber + contasVencidasPagar;
-      
       // Calcular contas a vencer separadas por tipo
       const contasAVencerReceber = (parcelasReceber || [])
         .filter(p => p.data_vencimento >= dataAtualStr)
@@ -147,8 +146,6 @@ export const usePainelFinanceiro = () => {
       const contasAVencerPagar = (parcelasPagar || [])
         .filter(p => p.data_vencimento >= dataAtualStr)
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
-      
-      const contasAVencer = contasAVencerReceber + contasAVencerPagar;
       
       // Processar o fluxo financeiro mensal
       const mesesMap = new Map<string, FluxoMensal>();
@@ -213,10 +210,8 @@ export const usePainelFinanceiro = () => {
         total_a_pagar: totalAPagar,
         saldo_contas: totalSaldo,
         previsao_saldo: totalSaldo + totalAReceber - totalAPagar,
-        contas_vencidas: contasVencidas,
         contas_vencidas_receber: contasVencidasReceber,
         contas_vencidas_pagar: contasVencidasPagar,
-        contas_a_vencer: contasAVencer,
         contas_a_vencer_receber: contasAVencerReceber,
         contas_a_vencer_pagar: contasAVencerPagar,
         fluxo_por_mes: fluxoPorMes
