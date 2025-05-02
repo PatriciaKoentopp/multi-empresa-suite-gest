@@ -13,13 +13,7 @@ import { YearlyComparison } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { 
-  Accordion, 
-  AccordionItem, 
-  AccordionTrigger, 
-  AccordionContent 
-} from "@/components/ui/accordion";
+import * as React from "react";
 
 interface SalesComparisonTableProps {
   yearlyComparisonData: YearlyComparison[];
