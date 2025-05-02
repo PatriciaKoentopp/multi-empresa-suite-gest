@@ -1,45 +1,50 @@
 
-import * as React from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarDays } from "lucide-react";
-import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface LeadInteracaoDataFieldProps {
   date: Date;
   onDateChange: (date: Date) => void;
 }
 
-export function LeadInteracaoDataField({ date, onDateChange }: LeadInteracaoDataFieldProps) {
-  const [open, setOpen] = React.useState(false);
-
+export function LeadInteracaoDataField({
+  date,
+  onDateChange,
+}: LeadInteracaoDataFieldProps) {
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
-          className="w-full justify-start text-left font-normal"
+          variant={"outline"}
+          className={cn(
+            "w-full justify-start text-left font-normal",
+            !date && "text-muted-foreground"
+          )}
         >
-          <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
-          {date
-            ? format(date, "dd/MM/yyyy")
-            : <span>Selecione uma data</span>
-          }
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {date ? (
+            format(date, "dd/MM/yyyy", { locale: ptBR })
+          ) : (
+            <span>Selecione uma data</span>
+          )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 bg-white z-50" align="start">
+      <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
           selected={date}
-          onSelect={d => {
-            if (d) {
-              onDateChange(d);
-              setOpen(false);
-            }
-          }}
+          onSelect={(newDate) => newDate && onDateChange(newDate)}
           initialFocus
-          className="p-3 pointer-events-auto"
+          locale={ptBR}
         />
       </PopoverContent>
     </Popover>

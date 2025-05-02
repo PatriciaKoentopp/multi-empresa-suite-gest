@@ -320,6 +320,85 @@ export type Database = {
           },
         ]
       }
+      funil_etapas: {
+        Row: {
+          cor: string
+          created_at: string
+          funil_id: string
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          cor: string
+          created_at?: string
+          funil_id: string
+          id?: string
+          nome: string
+          ordem: number
+          updated_at?: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          funil_id?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funil_etapas_funil_id_fkey"
+            columns: ["funil_id"]
+            isOneToOne: false
+            referencedRelation: "funis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      funis: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          data_criacao: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          data_criacao?: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          data_criacao?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funis_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grupo_favorecidos: {
         Row: {
           created_at: string
@@ -351,6 +430,187 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          created_at: string
+          data_criacao: string
+          email: string | null
+          empresa: string | null
+          empresa_id: string
+          etapa_id: string
+          funil_id: string
+          id: string
+          nome: string
+          observacoes: string | null
+          origem_id: string | null
+          produto: string | null
+          responsavel_id: string | null
+          status: string
+          telefone: string | null
+          ultimo_contato: string | null
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          created_at?: string
+          data_criacao?: string
+          email?: string | null
+          empresa?: string | null
+          empresa_id: string
+          etapa_id: string
+          funil_id: string
+          id?: string
+          nome: string
+          observacoes?: string | null
+          origem_id?: string | null
+          produto?: string | null
+          responsavel_id?: string | null
+          status?: string
+          telefone?: string | null
+          ultimo_contato?: string | null
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          created_at?: string
+          data_criacao?: string
+          email?: string | null
+          empresa?: string | null
+          empresa_id?: string
+          etapa_id?: string
+          funil_id?: string
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          origem_id?: string | null
+          produto?: string | null
+          responsavel_id?: string | null
+          status?: string
+          telefone?: string | null
+          ultimo_contato?: string | null
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "funil_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_funil_id_fkey"
+            columns: ["funil_id"]
+            isOneToOne: false
+            referencedRelation: "funis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_origem_id_fkey"
+            columns: ["origem_id"]
+            isOneToOne: false
+            referencedRelation: "origens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads_fechamento: {
+        Row: {
+          created_at: string
+          data: string
+          descricao: string | null
+          id: string
+          lead_id: string
+          motivo_perda_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          id?: string
+          lead_id: string
+          motivo_perda_id?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          id?: string
+          lead_id?: string
+          motivo_perda_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_fechamento_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: true
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_fechamento_motivo_perda_id_fkey"
+            columns: ["motivo_perda_id"]
+            isOneToOne: false
+            referencedRelation: "motivos_perda"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads_interacoes: {
+        Row: {
+          created_at: string
+          data: string
+          descricao: string
+          id: string
+          lead_id: string
+          responsavel_id: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          descricao: string
+          id?: string
+          lead_id: string
+          responsavel_id?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          descricao?: string
+          id?: string
+          lead_id?: string
+          responsavel_id?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_interacoes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
         ]

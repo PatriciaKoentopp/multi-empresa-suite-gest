@@ -17,21 +17,24 @@ import { EllipsisVertical, Phone, Mail, Building, Calendar, User, Tag, MoveRight
 import { Origem, Usuario } from "@/types";
 
 interface Lead {
-  id: string; // Alterado de number para string para compatibilidade com tipos
+  id: string;
   nome: string;
   empresa: string;
   email: string;
   telefone: string;
-  etapaId: string; // Alterado de number para string
+  etapaId: string;
   valor: number;
   origemId: string;
+  origemNome?: string;
   dataCriacao: string;
   ultimoContato: string;
   responsavelId: string;
+  responsavelNome?: string;
+  produto?: string;
 }
 
 interface EtapaFunil {
-  id: string; // Alterado de number para string para compatibilidade com tipos
+  id: string;
   nome: string;
   cor: string;
   ordem: number;
@@ -44,7 +47,7 @@ interface LeadCardProps {
   usuarios: Usuario[];
   onEdit: () => void;
   onDelete: () => void;
-  onMove: (leadId: string, etapaId: string) => void; // Alterado os tipos para string
+  onMove: (leadId: string, etapaId: string) => void;
 }
 
 export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, onMove }: LeadCardProps) {
@@ -53,16 +56,22 @@ export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, on
     [lead.etapaId, etapas]
   );
 
-  // Buscar a origem pelo ID
+  // Buscar a origem pelo ID ou usar a origem nome se disponível
   const origem = useMemo(
-    () => origens.find((o) => o.id === lead.origemId)?.nome || "Desconhecida",
-    [lead.origemId, origens]
+    () => {
+      if (lead.origemNome) return lead.origemNome;
+      return origens.find((o) => o.id === lead.origemId)?.nome || "Desconhecida";
+    },
+    [lead.origemId, lead.origemNome, origens]
   );
   
-  // Buscar o responsável pelo ID
+  // Buscar o responsável pelo ID ou usar a responsável nome se disponível
   const responsavel = useMemo(
-    () => usuarios.find((u) => u.id === lead.responsavelId)?.nome || "Não atribuído",
-    [lead.responsavelId, usuarios]
+    () => {
+      if (lead.responsavelNome) return lead.responsavelNome;
+      return usuarios.find((u) => u.id === lead.responsavelId)?.nome || "Não atribuído";
+    },
+    [lead.responsavelId, lead.responsavelNome, usuarios]
   );
 
   const valorFormatado = lead.valor.toLocaleString('pt-BR', {
@@ -72,7 +81,7 @@ export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, on
 
   return (
     <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-      <div className="h-1" style={{ backgroundColor: etapa.cor }}></div>
+      <div className="h-1" style={{ backgroundColor: etapa?.cor }}></div>
       <CardContent className="p-3">
         <div className="flex justify-between items-start">
           <div>
@@ -138,6 +147,13 @@ export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, on
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {lead.produto && (
+          <div className="flex justify-between text-xs mt-2">
+            <span className="text-muted-foreground">Produto:</span>
+            <span className="font-medium">{lead.produto}</span>
+          </div>
+        )}
 
         <div className="flex justify-between text-xs mt-2">
           <span className="text-muted-foreground">Valor:</span>
