@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,7 +49,26 @@ export const useVendasDashboard = () => {
           
         if (!error && data) {
           console.log(`Dados mensais recebidos via RPC para ${year}:`, data);
-          return formatChartData(data);
+          const dadosFiltrados = data.filter((item: any) => Number(item.faturado) > 0);
+          // Mapear os nomes dos meses para valores numéricos para ordenação
+          const mesesMap: {[key: string]: number} = {
+            "Janeiro": 1, "Fevereiro": 2, "Março": 3, "Abril": 4,
+            "Maio": 5, "Junho": 6, "Julho": 7, "Agosto": 8,
+            "Setembro": 9, "Outubro": 10, "Novembro": 11, "Dezembro": 12
+          };
+          
+          // Ordenar os meses em ordem decrescente (Dezembro -> Janeiro)
+          return dadosFiltrados
+            .map((item: any) => ({
+              name: String(item.name || ''),
+              faturado: Number(item.faturado || 0),
+              monthNumber: mesesMap[String(item.name)] || 0
+            }))
+            .sort((a, b) => b.monthNumber - a.monthNumber)
+            .map(item => ({
+              name: item.name,
+              faturado: item.faturado
+            }));
         }
       } catch (rpcError) {
         console.warn(`Erro na chamada RPC para dados mensais: ${rpcError}`);
@@ -83,9 +103,16 @@ export const useVendasDashboard = () => {
         "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
       ];
       
+      // Mapeamento reverso de mês para número (para ordenação posterior)
+      const mesesMap: {[key: string]: number} = {};
+      meses.forEach((mes, index) => {
+        mesesMap[mes] = index + 1;
+      });
+      
       const dadosMensais = meses.map((name, index) => ({
         name,
-        faturado: 0
+        faturado: 0,
+        monthNumber: index + 1
       }));
       
       // Preencher os valores de cada mês
@@ -110,8 +137,17 @@ export const useVendasDashboard = () => {
         });
       }
       
-      console.log(`Dados mensais processados para ${year}:`, dadosMensais);
-      return dadosMensais;
+      // Filtrar apenas meses com vendas
+      const mesesComVendas = dadosMensais
+        .filter(mes => mes.faturado > 0)
+        .sort((a, b) => b.monthNumber - a.monthNumber) // Ordenar meses em ordem decrescente (Dez -> Jan)
+        .map(mes => ({
+          name: mes.name,
+          faturado: mes.faturado
+        }));
+      
+      console.log(`Dados mensais processados para ${year}:`, mesesComVendas);
+      return mesesComVendas;
       
     } catch (error: any) {
       console.error(`Erro ao buscar dados mensais para ${year}:`, error);

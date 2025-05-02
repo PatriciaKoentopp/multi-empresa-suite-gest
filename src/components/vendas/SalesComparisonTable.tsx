@@ -1,4 +1,5 @@
 
+import * as React from "react";
 import {
   Table,
   TableBody,
@@ -13,7 +14,6 @@ import { YearlyComparison } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import * as React from "react";
 
 interface SalesComparisonTableProps {
   yearlyComparisonData: YearlyComparison[];
