@@ -14,9 +14,9 @@ import { ContaCorrente } from "@/types/conta-corrente";
 
 interface DashboardData {
   totalVendas: number;
+  totalOrcamentos: number; // Novo campo para o total de orçamentos
   contasReceber: number;
   contasPagar: number;
-  novosClientes: number;
   ultimasVendas: {
     favorecido: string;
     codigo: string;
@@ -42,6 +42,7 @@ export function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     totalVendas: 0,
+    totalOrcamentos: 0, // Inicializado com valor zero
     contasReceber: 0,
     contasPagar: 0,
     novosClientes: 0,
@@ -122,6 +123,20 @@ export function Dashboard() {
           `).eq('empresa_id', currentCompany.id).eq('tipo', 'venda').eq('status', 'ativo').gte('data_venda', inicioMesFormatado);
         if (erroVendas) throw erroVendas;
         const totalVendas = vendas?.reduce((acc, orcamento) => {
+          const valorOrcamento = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
+          return acc + valorOrcamento;
+        }, 0) || 0;
+
+        // Novo: Buscar todos os orçamentos do tipo "orcamento" (sem filtrar por data)
+        const {
+          data: orcamentos,
+          error: erroOrcamentos
+        } = await supabase.from('orcamentos').select(`
+            id,
+            orcamentos_itens (valor)
+          `).eq('empresa_id', currentCompany.id).eq('tipo', 'orcamento').eq('status', 'ativo');
+        if (erroOrcamentos) throw erroOrcamentos;
+        const totalOrcamentos = orcamentos?.reduce((acc, orcamento) => {
           const valorOrcamento = orcamento.orcamentos_itens.reduce((sum: number, item: any) => sum + (Number(item.valor) || 0), 0);
           return acc + valorOrcamento;
         }, 0) || 0;
@@ -216,29 +231,7 @@ export function Dashboard() {
           }
           return acc;
         }, 0) || 0;
-
-        // 4. Buscar novos clientes (cadastrados no mês atual)
-        const {
-          data: grupoClientes,
-          error: erroGrupoClientes
-        } = await supabase.from('grupo_favorecidos').select('id').eq('empresa_id', currentCompany.id).eq('nome', 'Clientes').eq('status', 'ativo').limit(1);
-        if (erroGrupoClientes) throw erroGrupoClientes;
-        let quantidadeNovosClientes = 0;
-        if (grupoClientes && grupoClientes.length > 0) {
-          const grupoClienteId = grupoClientes[0].id;
-
-          // Agora buscamos os favorecidos filtrados pelo grupo_id
-          const {
-            data: novosClientes,
-            error: erroNovosClientes
-          } = await supabase.from('favorecidos').select('id').eq('empresa_id', currentCompany.id).eq('grupo_id', grupoClienteId).gte('created_at', inicioMesFormatado);
-          if (erroNovosClientes) throw erroNovosClientes;
-          quantidadeNovosClientes = novosClientes?.length || 0;
-        } else {
-          // Caso não encontre o grupo "Clientes", vamos fazer um log e mostrar 0
-          console.warn("Grupo 'Clientes' não encontrado na tabela grupo_favorecidos");
-        }
-
+        
         // 5. Buscar últimas vendas
         const {
           data: ultimasVendas,
@@ -265,9 +258,9 @@ export function Dashboard() {
         // Atualizar o estado com todos os dados obtidos
         setDashboardData({
           totalVendas,
+          totalOrcamentos, // Novo valor adicionado
           contasReceber: totalContasReceber,
           contasPagar: totalContasPagar,
-          novosClientes: quantidadeNovosClientes,
           ultimasVendas: vendasFormatadas,
           parcelasEmAtraso,
           saldoContas,
@@ -297,9 +290,9 @@ export function Dashboard() {
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <SalesDashboardCard title="Vendas do Mês" value={formatCurrency(dashboardData.totalVendas)} description="Total do mês atual" icon="money" />
-        <SalesDashboardCard title="Contas a Receber" value={formatCurrency(dashboardData.contasReceber)} description={`${dashboardData.parcelasEmAtraso.length} título(s) em atraso`} icon="chart" />
+        <SalesDashboardCard title="Total de Orçamentos" value={formatCurrency(dashboardData.totalOrcamentos)} description="Soma de todos os orçamentos ativos" icon="chart" />
         <SalesDashboardCard title="Contas a Pagar" value={formatCurrency(dashboardData.contasPagar)} description="Pagamentos pendentes" icon="sales" />
-        <SalesDashboardCard title="Novos Clientes" value={`+${dashboardData.novosClientes}`} description="Novos cadastros no mês" icon="users" />
+        <SalesDashboardCard title="Contas a Receber" value={formatCurrency(dashboardData.contasReceber)} description={`${dashboardData.parcelasEmAtraso.length} título(s) em atraso`} icon="users" />
       </div>
 
       {/* Card para Saldo das Contas */}
