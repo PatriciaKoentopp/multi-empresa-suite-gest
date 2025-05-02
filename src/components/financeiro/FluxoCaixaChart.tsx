@@ -96,6 +96,9 @@ export const FluxoCaixaChart = ({ data, saldoInicialPeriodo = 0 }: FluxoCaixaCha
   // Personalizar tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      const saldoDia = payload[0].value - payload[1].value;
+      const saldoAcumulado = payload[2].value;
+      
       return (
         <div className="bg-white p-4 border rounded-md shadow-md">
           <p className="font-bold">{label}</p>
@@ -105,11 +108,11 @@ export const FluxoCaixaChart = ({ data, saldoInicialPeriodo = 0 }: FluxoCaixaCha
           <p className="text-red-600">
             Saídas: {formatCurrency(payload[1].value)}
           </p>
-          <p className="text-emerald-600 font-semibold">
-            Saldo do dia: {formatCurrency(payload[0].value - payload[1].value)}
+          <p className={`font-semibold ${saldoDia > 0 ? 'text-green-600' : saldoDia < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+            Saldo do dia: {formatCurrency(saldoDia)}
           </p>
-          <p className="text-violet-700 font-semibold">
-            Saldo acumulado: {formatCurrency(payload[2].value)}
+          <p className={`font-semibold ${saldoAcumulado > 0 ? 'text-green-600' : saldoAcumulado < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+            Saldo acumulado: {formatCurrency(saldoAcumulado)}
           </p>
         </div>
       );

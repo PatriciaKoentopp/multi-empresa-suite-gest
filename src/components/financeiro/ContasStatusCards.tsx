@@ -40,7 +40,7 @@ export const ContasStatusCards = ({ dadosFinanceiros }: ContasStatusCardsProps) 
             <CardTitle className="text-red-700 text-xs">Contas a Pagar Vencidas</CardTitle>
           </CardHeader>
           <CardContent className="py-1 px-3">
-            <div className="text-md font-bold text-red-600">
+            <div className={`text-md font-bold ${dadosFinanceiros?.contas_vencidas_pagar === 0 ? 'text-gray-800' : 'text-red-600'}`}>
               {formatCurrency(dadosFinanceiros?.contas_vencidas_pagar || 0)}
             </div>
           </CardContent>
@@ -51,7 +51,7 @@ export const ContasStatusCards = ({ dadosFinanceiros }: ContasStatusCardsProps) 
             <CardTitle className="text-blue-700 text-xs">Contas a Pagar a Vencer</CardTitle>
           </CardHeader>
           <CardContent className="py-1 px-3">
-            <div className="text-md font-bold text-red-600">
+            <div className={`text-md font-bold ${dadosFinanceiros?.contas_a_vencer_pagar === 0 ? 'text-gray-800' : 'text-red-600'}`}>
               {formatCurrency(dadosFinanceiros?.contas_a_vencer_pagar || 0)}
             </div>
           </CardContent>

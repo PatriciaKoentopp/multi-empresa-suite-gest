@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
@@ -322,7 +323,7 @@ export function Dashboard() {
               {/* Total geral */}
               <div className="flex items-center justify-between border-b pb-2">
                 <p className="font-semibold text-lg">Saldo Total</p>
-                <p className={`font-bold text-lg ${dashboardData.totalSaldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`font-bold text-lg ${dashboardData.totalSaldo > 0 ? 'text-green-600' : dashboardData.totalSaldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
                   {formatCurrency(dashboardData.totalSaldo)}
                 </p>
               </div>
@@ -332,7 +333,7 @@ export function Dashboard() {
                 {dashboardData.saldoContas.map(conta => (
                   <div key={conta.id} className="flex items-center justify-between">
                     <p className="text-gray-800">{conta.nome}</p>
-                    <p className={conta.saldo >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    <p className={conta.saldo > 0 ? 'text-green-600' : conta.saldo < 0 ? 'text-red-600' : 'text-gray-800'}>
                       {formatCurrency(conta.saldo)}
                     </p>
                   </div>
