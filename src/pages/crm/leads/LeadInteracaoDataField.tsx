@@ -25,31 +25,17 @@ export function LeadInteracaoDataField({
     if (!dateInput) return new Date();
     
     if (dateInput instanceof Date) {
-      // Para evitar problemas de timezone, normalizar para meio-dia
-      return new Date(
-        dateInput.getFullYear(),
-        dateInput.getMonth(),
-        dateInput.getDate(),
-        12, 0, 0
-      );
+      return dateInput;
     }
     
     try {
       // Se for uma string no formato dd/mm/yyyy
       if (typeof dateInput === 'string' && dateInput.includes('/')) {
         const [day, month, year] = dateInput.split('/').map(Number);
-        // Definir hora como 12:00 para evitar problemas de timezone
-        return new Date(year, month - 1, day, 12, 0, 0);
+        return new Date(year, month - 1, day);
       }
       
-      // Qualquer outro formato, normalizar para meio-dia
-      const tempDate = new Date(dateInput);
-      return new Date(
-        tempDate.getFullYear(),
-        tempDate.getMonth(),
-        tempDate.getDate(),
-        12, 0, 0
-      );
+      return new Date(dateInput);
     } catch (error) {
       console.error('Erro ao converter data:', error);
       return new Date();
@@ -80,18 +66,7 @@ export function LeadInteracaoDataField({
         <Calendar
           mode="single"
           selected={safeDate}
-          onSelect={(newDate) => {
-            if (newDate) {
-              // Normalizar a data para meio-dia para evitar problemas de timezone
-              const normalizedDate = new Date(
-                newDate.getFullYear(),
-                newDate.getMonth(),
-                newDate.getDate(),
-                12, 0, 0
-              );
-              onDateChange(normalizedDate);
-            }
-          }}
+          onSelect={(newDate) => newDate && onDateChange(newDate)}
           initialFocus
           locale={ptBR}
         />
