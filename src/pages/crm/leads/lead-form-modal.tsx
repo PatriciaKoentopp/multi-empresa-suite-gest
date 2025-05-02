@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +44,7 @@ import { LeadFechamentoTab } from "./LeadFechamentoTab";
 import { LeadInteracaoDataField } from "./LeadInteracaoDataField";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface Lead {
   id: string;
@@ -213,6 +213,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
 
   const buscarFechamento = async (leadId: string) => {
     try {
+      console.log("Buscando fechamento para lead ID:", leadId);
       const { data, error } = await supabase
         .from('leads_fechamento')
         .select('*')
@@ -549,7 +550,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
         console.log('Dados de fechamento:', fechamento);
         
         // Formatar a data para o formato do banco
-        const dataFormatada = formatDate(fechamento.data, 'yyyy-MM-dd');
+        const dataFormatada = format(fechamento.data, 'yyyy-MM-dd');
         
         // Verificar se já existe um fechamento para este lead
         const { data: fechamentoExistente, error: errorCheck } = await supabase
@@ -604,8 +605,8 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
           
           console.log('Novo fechamento criado com sucesso');
         }
-      } else {
-        console.log('Nenhum fechamento para processar ou lead novo');
+      } else if (lead?.id) {
+        console.log('Nenhum fechamento para processar');
       }
 
       // Adicionar o ID da empresa aos dados do lead
@@ -617,8 +618,12 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
       // Chamar a função original para salvar os dados do lead
       console.log('Salvando dados do lead:', leadDataWithCompany);
       onConfirm(leadDataWithCompany);
+      
+      // Fechar o modal após salvar
+      onClose();
     } catch (error) {
-      console.error('Erro ao salvar fechamento:', error);
+      console.error('Erro ao salvar lead ou fechamento:', error);
+      alert("Erro ao salvar os dados. Verifique o console para mais detalhes.");
     }
   };
 
@@ -869,6 +874,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                   type="submit" 
                   form="dadosLeadForm" 
                   variant="blue"
+                  onClick={handleSubmit}
                 >
                   {lead ? "Salvar Alterações" : "Criar Lead"}
                 </Button>
@@ -879,166 +885,4 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
       </Sheet>
       
       {/* Diálogo para visualizar uma interação */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Detalhes da Interação</DialogTitle>
-            <DialogDescription>
-              Informações completas sobre a interação
-            </DialogDescription>
-          </DialogHeader>
-          
-          {interacaoSelecionada && (
-            <div className="space-y-4 py-2">
-              <div className="flex items-center gap-2 mb-4">
-                {getIconForInteraction(interacaoSelecionada.tipo)}
-                <span className="font-medium capitalize">
-                  {interacaoSelecionada.tipo} - {interacaoSelecionada.data}
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-sm text-muted-foreground">Descrição</Label>
-                <div className="border rounded-md p-3 bg-gray-50 min-h-[100px]">
-                  {interacaoSelecionada.descricao}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-sm text-muted-foreground">Responsável</Label>
-                <div className="flex items-center gap-2">
-                  <UserRound className="h-4 w-4" />
-                  <span>
-                    {interacaoSelecionada.responsavelNome || getNomeResponsavel(interacaoSelecionada.responsavelId)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Fechar</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Diálogo para editar uma interação */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Interação</DialogTitle>
-            <DialogDescription>
-              Modifique os detalhes da interação
-            </DialogDescription>
-          </DialogHeader>
-          
-          {interacaoEditavel && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="editTipo">Tipo de Interação</Label>
-                <Select
-                  value={interacaoEditavel.tipo}
-                  onValueChange={(value) => handleInteracaoEditavelSelectChange("tipo", value)}
-                >
-                  <SelectTrigger id="editTipo" className="bg-white">
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="ligacao">Ligação</SelectItem>
-                    <SelectItem value="reuniao">Reunião</SelectItem>
-                    <SelectItem value="mensagem">Mensagem</SelectItem>
-                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                    <SelectItem value="telegram">Telegram</SelectItem>
-                    <SelectItem value="instagram">Direct do Instagram</SelectItem>
-                    <SelectItem value="facebook">Messenger do Facebook</SelectItem>
-                    <SelectItem value="outro">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="editData">Data</Label>
-                <Input
-                  id="editData"
-                  name="data"
-                  value={interacaoEditavel.data}
-                  onChange={handleInteracaoEditavelChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="editResponsavel">Responsável</Label>
-                <Select
-                  value={interacaoEditavel.responsavelId}
-                  onValueChange={(value) => handleInteracaoEditavelSelectChange("responsavelId", value)}
-                >
-                  <SelectTrigger id="editResponsavel" className="bg-white">
-                    <SelectValue placeholder="Selecione o responsável" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    {vendedoresAtivos.map((vendedor) => (
-                      <SelectItem key={vendedor.id} value={vendedor.id}>
-                        {vendedor.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="editDescricao">Descrição</Label>
-                <Textarea
-                  id="editDescricao"
-                  name="descricao"
-                  value={interacaoEditavel.descricao}
-                  onChange={handleInteracaoEditavelChange}
-                  rows={4}
-                />
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button onClick={confirmarEdicaoInteracao} variant="blue">
-              Salvar Alterações
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Diálogo para confirmar exclusão */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar Exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir esta interação? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {interacaoSelecionada && (
-            <div className="border-l-4 border-amber-500 pl-4 py-2 bg-amber-50 rounded-r-md mb-4">
-              <p className="font-medium">{interacaoSelecionada.tipo} - {interacaoSelecionada.data}</p>
-              <p className="text-sm text-muted-foreground truncate">{interacaoSelecionada.descricao}</p>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button onClick={excluirInteracao} variant="destructive">
-              Confirmar Exclusão
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
+      <Dialog open={

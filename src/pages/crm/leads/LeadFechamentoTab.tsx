@@ -66,6 +66,7 @@ export function LeadFechamentoTab({
   // Atualizar o objeto de fechamento quando os valores mudarem
   useEffect(() => {
     if (status) {
+      console.log("Atualizando objeto de fechamento:", { status, date, descricao });
       setFechamento({
         status,
         motivoPerdaId: status === "perda" ? motivoPerdaId : undefined,
@@ -73,9 +74,10 @@ export function LeadFechamentoTab({
         data: date || new Date(),
       });
     } else if (fechamento) {
+      console.log("Limpando objeto de fechamento");
       setFechamento(null);
     }
-  }, [status, motivoPerdaId, descricao, date]);
+  }, [status, motivoPerdaId, descricao, date, setFechamento]);
 
   return (
     <div className="space-y-6">
