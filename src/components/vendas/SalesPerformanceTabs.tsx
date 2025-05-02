@@ -71,8 +71,12 @@ export const SalesPerformanceTabs = ({
             <CardHeader>
               <CardTitle>Comparativo Mensal por Ano</CardTitle>
             </CardHeader>
-            <CardContent>
-              <SalesBarChart data={monthlyComparisonData} multiColor={true} />
+            <CardContent className="pb-0">
+              <SalesBarChart 
+                data={monthlyComparisonData} 
+                multiColor={true} 
+                isMonthlyComparison={true} 
+              />
             </CardContent>
           </Card>
         </TabsContent>
