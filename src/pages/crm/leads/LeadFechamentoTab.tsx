@@ -21,6 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LeadFechamentoTabProps {
   fechamento: {
@@ -36,17 +38,20 @@ interface LeadFechamentoTabProps {
     data: Date;
   } | null) => void;
   motivosPerda: any[];
+  leadId?: string;
 }
 
 export function LeadFechamentoTab({
   fechamento,
   setFechamento,
-  motivosPerda
+  motivosPerda,
+  leadId
 }: LeadFechamentoTabProps) {
   const [status, setStatus] = useState<"sucesso" | "perda" | null>(null);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [descricao, setDescricao] = useState("");
   const [motivoPerdaId, setMotivoPerdaId] = useState<string | undefined>(undefined);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Inicializar estados com base no fechamento recebido
   useEffect(() => {
@@ -78,6 +83,79 @@ export function LeadFechamentoTab({
       setFechamento(null);
     }
   }, [status, motivoPerdaId, descricao, date, setFechamento]);
+
+  // Função para salvar diretamente o fechamento
+  const salvarFechamento = async () => {
+    if (!leadId || !status) {
+      toast.error("Não é possível salvar o fechamento", {
+        description: "Lead não identificado ou status não selecionado"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Formatar a data para o formato do banco
+      const dataFormatada = format(date || new Date(), 'yyyy-MM-dd');
+
+      // Verificar se já existe um fechamento para este lead
+      const { data: fechamentoExistente, error: errorCheck } = await supabase
+        .from('leads_fechamento')
+        .select('id')
+        .eq('lead_id', leadId)
+        .maybeSingle();
+
+      if (errorCheck) {
+        throw errorCheck;
+      }
+
+      console.log('Fechamento existente:', fechamentoExistente);
+
+      if (fechamentoExistente) {
+        // Atualizar fechamento existente
+        const { error } = await supabase
+          .from('leads_fechamento')
+          .update({
+            status: status,
+            motivo_perda_id: motivoPerdaId,
+            descricao: descricao,
+            data: dataFormatada
+          })
+          .eq('id', fechamentoExistente.id);
+
+        if (error) {
+          throw error;
+        }
+
+        toast.success("Fechamento atualizado com sucesso!");
+      } else {
+        // Criar novo fechamento
+        const { error } = await supabase
+          .from('leads_fechamento')
+          .insert([{
+            lead_id: leadId,
+            status: status,
+            motivo_perda_id: motivoPerdaId,
+            descricao: descricao,
+            data: dataFormatada
+          }]);
+
+        if (error) {
+          throw error;
+        }
+
+        toast.success("Fechamento registrado com sucesso!");
+      }
+      
+    } catch (error) {
+      console.error('Erro ao salvar fechamento:', error);
+      toast.error("Erro ao salvar fechamento", {
+        description: "Verifique o console para mais detalhes."
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -170,6 +248,20 @@ export function LeadFechamentoTab({
               rows={4}
             />
           </div>
+          
+          {leadId && (
+            <div className="pt-2">
+              <Button 
+                type="button" 
+                variant="blue"
+                className="w-full"
+                disabled={isSaving}
+                onClick={salvarFechamento}
+              >
+                {isSaving ? "Salvando..." : "Salvar Fechamento"}
+              </Button>
+            </div>
+          )}
         </>
       )}
 

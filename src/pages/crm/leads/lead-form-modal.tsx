@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,7 @@ import { LeadInteracaoDataField } from "./LeadInteracaoDataField";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/utils";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface Lead {
   id: string;
@@ -132,6 +134,9 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     data: Date;
   } | null>(null);
 
+  // Estado para controlar a aba ativa
+  const [activeTab, setActiveTab] = useState("dados");
+  
   // Carregar interações quando um lead é editado
   useEffect(() => {
     if (lead?.id) {
@@ -530,85 +535,23 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     }
   };
 
-  // Função para salvar lead e fechamento
+  // Função para salvar lead
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      console.log('Salvando dados do lead e fechamento...');
+      console.log('Salvando dados do lead...');
       // Obter o ID da empresa
       const empresaId = await getEmpresaId();
       
       if (!empresaId) {
         console.error('ID da empresa não encontrado');
+        toast.error("Erro ao salvar", {
+          description: "ID da empresa não encontrado"
+        });
         return;
       }
       
-      // Se estamos editando um lead e temos dados de fechamento
-      if (lead?.id && fechamento) {
-        console.log('Processando fechamento para lead existente:', lead.id);
-        console.log('Dados de fechamento:', fechamento);
-        
-        // Formatar a data para o formato do banco
-        const dataFormatada = format(fechamento.data, 'yyyy-MM-dd');
-        
-        // Verificar se já existe um fechamento para este lead
-        const { data: fechamentoExistente, error: errorCheck } = await supabase
-          .from('leads_fechamento')
-          .select('id')
-          .eq('lead_id', lead.id)
-          .maybeSingle();
-        
-        if (errorCheck) {
-          console.error('Erro ao verificar fechamento existente:', errorCheck);
-          throw errorCheck;
-        }
-        
-        console.log('Fechamento existente:', fechamentoExistente);
-        
-        if (fechamentoExistente) {
-          // Atualizar fechamento existente
-          const { error } = await supabase
-            .from('leads_fechamento')
-            .update({
-              status: fechamento.status,
-              motivo_perda_id: fechamento.motivoPerdaId,
-              descricao: fechamento.descricao,
-              data: dataFormatada
-            })
-            .eq('id', fechamentoExistente.id);
-          
-          if (error) {
-            console.error('Erro ao atualizar fechamento:', error);
-            throw error;
-          }
-          
-          console.log('Fechamento atualizado com sucesso');
-        } else {
-          // Criar novo fechamento
-          const { error } = await supabase
-            .from('leads_fechamento')
-            .insert([
-              {
-                lead_id: lead.id,
-                status: fechamento.status,
-                motivo_perda_id: fechamento.motivoPerdaId,
-                descricao: fechamento.descricao,
-                data: dataFormatada
-              }
-            ]);
-          
-          if (error) {
-            console.error('Erro ao criar novo fechamento:', error);
-            throw error;
-          }
-          
-          console.log('Novo fechamento criado com sucesso');
-        }
-      } else if (lead?.id) {
-        console.log('Nenhum fechamento para processar');
-      }
-
       // Adicionar o ID da empresa aos dados do lead
       const leadDataWithCompany = {
         ...formData,
@@ -622,8 +565,10 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
       // Fechar o modal após salvar
       onClose();
     } catch (error) {
-      console.error('Erro ao salvar lead ou fechamento:', error);
-      alert("Erro ao salvar os dados. Verifique o console para mais detalhes.");
+      console.error('Erro ao salvar lead:', error);
+      toast.error("Erro ao salvar os dados", {
+        description: "Ocorreu um erro ao salvar o lead."
+      });
     }
   };
 
@@ -639,7 +584,11 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
               </SheetDescription>
             </SheetHeader>
 
-            <Tabs defaultValue="dados" className="flex-1 overflow-hidden">
+            <Tabs 
+              value={activeTab} 
+              onValueChange={setActiveTab} 
+              className="flex-1 flex flex-col overflow-hidden"
+            >
               <div className="border-b px-6">
                 <TabsList className="bg-transparent border-b-0 p-0">
                   <TabsTrigger 
@@ -664,7 +613,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
               </div>
               <div className="flex-1 overflow-hidden">
                 {/* DADOS */}
-                <TabsContent value="dados" className="p-6 mt-0">
+                <TabsContent value="dados" className="p-6 mt-0 h-full overflow-y-auto">
                   <form id="dadosLeadForm" onSubmit={handleSubmit}>
                     <LeadDadosTab
                       formData={formData}
@@ -679,7 +628,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                 </TabsContent>
                 {/* INTERAÇÕES */}
                 <TabsContent value="interacoes" className="mt-0 h-full flex flex-col overflow-hidden">
-                  <div className="flex-1 overflow-auto px-6 py-6">
+                  <div className="flex-1 overflow-y-auto px-6 py-6">
                     <div className="space-y-6">
                       {lead ? (
                         <>
@@ -853,11 +802,12 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                   </div>
                 </TabsContent>
                 {/* FECHAMENTO */}
-                <TabsContent value="fechamento" className="p-6 mt-0">
+                <TabsContent value="fechamento" className="p-6 mt-0 h-full overflow-y-auto">
                   <LeadFechamentoTab
                     fechamento={fechamento}
                     setFechamento={setFechamento}
                     motivosPerda={motivosPerda}
+                    leadId={lead?.id}
                   />
                 </TabsContent>
               </div>
@@ -874,7 +824,6 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                   type="submit" 
                   form="dadosLeadForm" 
                   variant="blue"
-                  onClick={handleSubmit}
                 >
                   {lead ? "Salvar Alterações" : "Criar Lead"}
                 </Button>
@@ -885,4 +834,174 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
       </Sheet>
       
       {/* Diálogo para visualizar uma interação */}
-      <Dialog open={
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Interação</DialogTitle>
+          </DialogHeader>
+          
+          {interacaoSelecionada && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm">
+                <div className="bg-primary/10 p-2 rounded-full">
+                  {getIconForInteraction(interacaoSelecionada.tipo)}
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium capitalize">{interacaoSelecionada.tipo}</p>
+                  <p className="text-muted-foreground text-xs">{interacaoSelecionada.data}</p>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-xs text-muted-foreground">Responsável</Label>
+                <p className="font-medium">{interacaoSelecionada.responsavelNome || getNomeResponsavel(interacaoSelecionada.responsavelId)}</p>
+              </div>
+              
+              <div>
+                <Label className="text-xs text-muted-foreground">Descrição</Label>
+                <div className="mt-1 p-3 bg-muted/50 rounded-md whitespace-pre-wrap">
+                  {interacaoSelecionada.descricao}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Fechar</Button>
+            </DialogClose>
+            <Button 
+              type="button" 
+              onClick={() => {
+                setIsViewDialogOpen(false);
+                if (interacaoSelecionada) prepararEdicaoInteracao(interacaoSelecionada);
+              }}
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              Editar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Diálogo para editar uma interação */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Interação</DialogTitle>
+          </DialogHeader>
+          
+          {interacaoEditavel && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>Tipo de Interação</Label>
+                  <Select
+                    value={interacaoEditavel.tipo}
+                    onValueChange={(value) => handleInteracaoEditavelSelectChange("tipo", value)}
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" className="bg-white">
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="ligacao">Ligação</SelectItem>
+                      <SelectItem value="reuniao">Reunião</SelectItem>
+                      <SelectItem value="mensagem">Mensagem</SelectItem>
+                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                      <SelectItem value="telegram">Telegram</SelectItem>
+                      <SelectItem value="instagram">Direct do Instagram</SelectItem>
+                      <SelectItem value="facebook">Messenger do Facebook</SelectItem>
+                      <SelectItem value="outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Responsável</Label>
+                  <Select
+                    value={interacaoEditavel.responsavelId}
+                    onValueChange={(value) => handleInteracaoEditavelSelectChange("responsavelId", value)}
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Selecione o responsável" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" className="bg-white">
+                      {vendedoresAtivos.map((vendedor) => (
+                        <SelectItem key={vendedor.id} value={vendedor.id}>
+                          {vendedor.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div>
+                <Label>Data da Interação</Label>
+                <Input 
+                  type="text"
+                  name="data"
+                  value={interacaoEditavel.data}
+                  onChange={handleInteracaoEditavelChange}
+                  placeholder="DD/MM/YYYY"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Formato: DD/MM/YYYY</p>
+              </div>
+              
+              <div>
+                <Label>Descrição</Label>
+                <Textarea
+                  name="descricao"
+                  value={interacaoEditavel.descricao}
+                  onChange={handleInteracaoEditavelChange}
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancelar</Button>
+            </DialogClose>
+            <Button type="button" onClick={confirmarEdicaoInteracao}>
+              Salvar Alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Diálogo para confirmar exclusão */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Excluir Interação</DialogTitle>
+            <DialogDescription>
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente esta interação.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p>Tem certeza que deseja excluir esta interação?</p>
+            {interacaoSelecionada && (
+              <div className="mt-2 p-3 bg-muted/50 rounded-md">
+                <p className="text-sm text-muted-foreground">{interacaoSelecionada.data} - {interacaoSelecionada.tipo}</p>
+                <p className="mt-1 font-medium truncate">{interacaoSelecionada.descricao}</p>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancelar</Button>
+            </DialogClose>
+            <Button type="button" variant="destructive" onClick={excluirInteracao}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
