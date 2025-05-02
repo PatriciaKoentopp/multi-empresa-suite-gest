@@ -92,9 +92,10 @@ export const useVendasDashboard = () => {
       if (vendaAnual) {
         vendaAnual.forEach(venda => {
           if (venda.data_venda) {
-            // Extrair o mês da data (0-11)
-            const dataVenda = new Date(venda.data_venda);
-            const mes = dataVenda.getMonth();
+            // CORREÇÃO: Usar o mês diretamente da string da data para evitar problemas de timezone
+            // Formato da data no banco é 'YYYY-MM-DD', então pegamos o mês diretamente (índice 5-6)
+            const mesString = venda.data_venda.substring(5, 7);
+            const mes = parseInt(mesString, 10) - 1; // Converter para índice de array (0-11)
             
             // Calcular o valor total do orçamento
             const valorTotal = venda.orcamentos_itens.reduce(
@@ -102,7 +103,9 @@ export const useVendasDashboard = () => {
             );
             
             // Adicionar ao mês correspondente
-            dadosMensais[mes].faturado += valorTotal;
+            if (mes >= 0 && mes < 12) {
+              dadosMensais[mes].faturado += valorTotal;
+            }
           }
         });
       }
@@ -322,9 +325,10 @@ export const useVendasDashboard = () => {
         if (vendaAnual) {
           vendaAnual.forEach(venda => {
             if (venda.data_venda) {
-              // Extrair o mês da data (0-11)
-              const dataVenda = new Date(venda.data_venda);
-              const mes = dataVenda.getMonth();
+              // CORREÇÃO: Usar o mês diretamente da string da data para evitar problemas de timezone
+              // Formato da data no banco é 'YYYY-MM-DD', então pegamos o mês diretamente (índice 5-6)
+              const mesString = venda.data_venda.substring(5, 7);
+              const mes = parseInt(mesString, 10) - 1; // Converter para índice de array (0-11)
               
               // Calcular o valor total do orçamento
               const valorTotal = venda.orcamentos_itens.reduce(
@@ -332,7 +336,9 @@ export const useVendasDashboard = () => {
               );
               
               // Adicionar ao mês correspondente
-              dadosMensais[mes].faturado += valorTotal;
+              if (mes >= 0 && mes < 12) {
+                dadosMensais[mes].faturado += valorTotal;
+              }
             }
           });
         }
