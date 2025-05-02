@@ -333,7 +333,7 @@ export function Dashboard() {
                 {dashboardData.saldoContas.map(conta => (
                   <div key={conta.id} className="flex items-center justify-between">
                     <p className="text-gray-800">{conta.nome}</p>
-                    <p className={conta.saldo > 0 ? 'text-green-600' : conta.saldo < 0 ? 'text-red-600' : 'text-gray-800'}>
+                    <p className={`${conta.saldo > 0 ? 'text-green-600' : conta.saldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
                       {formatCurrency(conta.saldo)}
                     </p>
                   </div>
