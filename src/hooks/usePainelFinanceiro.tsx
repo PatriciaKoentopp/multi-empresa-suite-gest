@@ -14,6 +14,7 @@ export const usePainelFinanceiro = () => {
     dataFim: new Date(),
     contaId: null,
   });
+  const [saldoInicialPeriodo, setSaldoInicialPeriodo] = useState<number>(0);
   
   useEffect(() => {
     fetchDadosFinanceiros();
@@ -42,11 +43,84 @@ export const usePainelFinanceiro = () => {
     return new Date();
   }
 
+  // Função para calcular o saldo inicial do período para o fluxo de caixa
+  const calcularSaldoInicialPeriodo = async (filtro: FiltroFluxoCaixa) => {
+    try {
+      // Formatar as datas para o formato do Supabase (YYYY-MM-DD)
+      const dataInicioStr = filtro.dataInicio.toISOString().split('T')[0];
+      
+      // Criar a query base para buscar movimentações anteriores ao período do filtro
+      let query = supabase
+        .from('fluxo_caixa')
+        .select(`
+          valor,
+          tipo_operacao
+        `)
+        .lt('data_movimentacao', dataInicioStr);
+      
+      // Adicionar filtro por conta corrente se especificado
+      if (filtro.contaId) {
+        query = query.eq('conta_corrente_id', filtro.contaId);
+      }
+      
+      const { data: movimentacoesAnteriores, error } = await query;
+      
+      if (error) throw error;
+      
+      // Buscar saldo inicial das contas
+      const { data: contasCorrentes, error: errorContas } = await supabase
+        .from('contas_correntes')
+        .select('id, saldo_inicial')
+        .eq('status', 'ativo');
+      
+      if (errorContas) throw errorContas;
+      
+      // Calcular saldo inicial total das contas filtradas
+      let saldoInicial = 0;
+      
+      if (contasCorrentes && contasCorrentes.length > 0) {
+        if (filtro.contaId) {
+          // Se tiver filtro de conta, considerar apenas o saldo inicial da conta específica
+          const contaFiltrada = contasCorrentes.find(c => c.id === filtro.contaId);
+          if (contaFiltrada) {
+            saldoInicial = Number(contaFiltrada.saldo_inicial || 0);
+          }
+        } else {
+          // Se não tiver filtro, somar o saldo inicial de todas as contas
+          saldoInicial = contasCorrentes.reduce((total, conta) => {
+            return total + Number(conta.saldo_inicial || 0);
+          }, 0);
+        }
+      }
+      
+      // Somar as movimentações anteriores ao período
+      if (movimentacoesAnteriores && movimentacoesAnteriores.length > 0) {
+        movimentacoesAnteriores.forEach(mov => {
+          const valor = Number(mov.valor || 0);
+          if (mov.tipo_operacao === 'receber') {
+            saldoInicial += valor;
+          } else if (mov.tipo_operacao === 'pagar') {
+            saldoInicial -= valor;
+          }
+        });
+      }
+      
+      return saldoInicial;
+    } catch (error) {
+      console.error('Erro ao calcular saldo inicial:', error);
+      return 0;
+    }
+  };
+
   const fetchFluxoCaixa = async (filtro: FiltroFluxoCaixa) => {
     try {
       // Formatar as datas para o formato do Supabase (YYYY-MM-DD)
       const dataInicioStr = filtro.dataInicio.toISOString().split('T')[0];
       const dataFimStr = filtro.dataFim.toISOString().split('T')[0];
+      
+      // Calcular o saldo inicial do período
+      const saldoInicial = await calcularSaldoInicialPeriodo(filtro);
+      setSaldoInicialPeriodo(saldoInicial);
       
       // Criar a query base
       let query = supabase
@@ -389,6 +463,7 @@ export const usePainelFinanceiro = () => {
     dadosFinanceiros,
     fetchDadosFinanceiros,
     filtroFluxoCaixa,
-    atualizarFiltroFluxoCaixa
+    atualizarFiltroFluxoCaixa,
+    saldoInicialPeriodo
   };
 };

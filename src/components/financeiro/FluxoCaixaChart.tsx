@@ -9,9 +9,10 @@ import { formatCurrency } from "@/lib/utils";
 
 interface FluxoCaixaChartProps {
   data: FluxoCaixaItem[];
+  saldoInicialPeriodo?: number;
 }
 
-export const FluxoCaixaChart = ({ data }: FluxoCaixaChartProps) => {
+export const FluxoCaixaChart = ({ data, saldoInicialPeriodo = 0 }: FluxoCaixaChartProps) => {
   const [chartData, setChartData] = useState<any[]>([]);
   
   useEffect(() => {
@@ -50,8 +51,8 @@ export const FluxoCaixaChart = ({ data }: FluxoCaixaChartProps) => {
       new Date(a.data).getTime() - new Date(b.data).getTime()
     );
     
-    // Calcular saldo acumulado
-    let saldoAcumulado = 0;
+    // Calcular saldo acumulado considerando o saldo inicial
+    let saldoAcumulado = saldoInicialPeriodo || 0;
     const dataWithCumulativeSaldo = sortedData.map(item => {
       saldoAcumulado += item.saldo;
       return {
@@ -61,7 +62,7 @@ export const FluxoCaixaChart = ({ data }: FluxoCaixaChartProps) => {
     });
     
     setChartData(dataWithCumulativeSaldo);
-  }, [data]);
+  }, [data, saldoInicialPeriodo]);
 
   // Verificar se há dados para exibir
   if (chartData.length === 0) {

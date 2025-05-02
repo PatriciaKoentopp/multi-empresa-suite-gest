@@ -16,7 +16,8 @@ const PainelFinanceiroPage = () => {
     dadosFinanceiros, 
     fetchDadosFinanceiros, 
     filtroFluxoCaixa,
-    atualizarFiltroFluxoCaixa
+    atualizarFiltroFluxoCaixa,
+    saldoInicialPeriodo
   } = usePainelFinanceiro();
 
   const handleRefresh = async () => {
@@ -50,6 +51,7 @@ const PainelFinanceiroPage = () => {
           
           <FluxoCaixaChart 
             data={dadosFinanceiros.fluxo_caixa || []} 
+            saldoInicialPeriodo={saldoInicialPeriodo}
           />
         </>
       )}
