@@ -144,62 +144,65 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
 
   const buscarInteracoes = async (leadId: string) => {
     setCarregandoInteracoes(true);
+    console.log('Buscando interações para lead ID:', leadId);
+    
     try {
-      // Primeiro, buscar todas as interações do lead
-      const { data: interacoesData, error: interacoesError } = await supabase
+      // Consulta principal para buscar todas as interações do lead
+      const { data, error } = await supabase
         .from('leads_interacoes')
-        .select(`
-          id,
-          lead_id,
-          tipo,
-          descricao,
-          data,
-          responsavel_id
-        `)
+        .select('*')
         .eq('lead_id', leadId)
         .order('data', { ascending: false });
       
-      if (interacoesError) throw interacoesError;
-      
-      if (interacoesData && interacoesData.length > 0) {
-        // Agora vamos buscar os nomes dos responsáveis em uma consulta separada
-        const responsaveisIds = interacoesData
-          .filter(item => item.responsavel_id)
-          .map(item => item.responsavel_id);
-        
-        // Se temos responsáveis para buscar
-        let responsaveisMap = new Map();
-        if (responsaveisIds.length > 0) {
-          const { data: responsaveisData, error: responsaveisError } = await supabase
-            .from('usuarios')
-            .select('id, nome')
-            .in('id', responsaveisIds);
-          
-          if (responsaveisError) console.error('Erro ao buscar responsáveis:', responsaveisError);
-          
-          if (responsaveisData) {
-            // Criar um mapa de id -> nome para fácil acesso
-            responsaveisData.forEach(resp => {
-              responsaveisMap.set(resp.id, resp.nome);
-            });
-          }
-        }
-        
-        // Formatar as interações com os nomes dos responsáveis
-        const interacoesFormatadas = interacoesData.map(item => ({
-          id: item.id,
-          leadId: item.lead_id,
-          tipo: item.tipo,
-          descricao: item.descricao,
-          data: new Date(item.data).toLocaleDateString('pt-BR'),
-          responsavelId: item.responsavel_id,
-          responsavelNome: item.responsavel_id ? (responsaveisMap.get(item.responsavel_id) || 'Desconhecido') : 'Não atribuído'
-        }));
-        
-        setInteracoes(interacoesFormatadas);
-      } else {
-        setInteracoes([]);
+      if (error) {
+        console.error('Erro ao buscar interações:', error);
+        throw error;
       }
+      
+      console.log('Interações encontradas:', data?.length, data);
+      
+      if (!data || data.length === 0) {
+        setInteracoes([]);
+        setCarregandoInteracoes(false);
+        return;
+      }
+      
+      // Agora vamos buscar os dados dos responsáveis
+      const responsaveisIds = data
+        .filter(item => item.responsavel_id)
+        .map(item => item.responsavel_id);
+      
+      let responsaveisMap = new Map();
+      
+      if (responsaveisIds.length > 0) {
+        const { data: responsaveisData, error: responsaveisError } = await supabase
+          .from('usuarios')
+          .select('id, nome')
+          .in('id', responsaveisIds);
+        
+        if (responsaveisError) {
+          console.error('Erro ao buscar responsáveis:', responsaveisError);
+        } else if (responsaveisData) {
+          // Criar mapa de ID -> nome para fácil acesso
+          responsaveisData.forEach(resp => {
+            responsaveisMap.set(resp.id, resp.nome);
+          });
+        }
+      }
+      
+      // Formatar as interações com nomes de responsáveis
+      const interacoesFormatadas = data.map(item => ({
+        id: item.id,
+        leadId: item.lead_id,
+        tipo: item.tipo,
+        descricao: item.descricao,
+        data: new Date(item.data).toLocaleDateString('pt-BR'),
+        responsavelId: item.responsavel_id,
+        responsavelNome: item.responsavel_id ? (responsaveisMap.get(item.responsavel_id) || 'Desconhecido') : 'Não atribuído'
+      }));
+      
+      console.log('Interações formatadas:', interacoesFormatadas);
+      setInteracoes(interacoesFormatadas);
     } catch (error) {
       console.error('Erro ao buscar interações:', error);
     } finally {
@@ -996,3 +999,4 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     </>
   );
 }
+
