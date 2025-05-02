@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -776,3 +777,8 @@ export const useVendasDashboard = () => {
     barChartData,
     quarterlyChartData,
     yearlyChartData,
+    yearlyComparisonData,
+    monthlyComparisonData,
+    fetchMonthlySalesData
+  };
+};
