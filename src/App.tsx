@@ -30,6 +30,7 @@ import ContasAPagar from "./pages/financeiro/contas-a-pagar";
 import ContasAReceber from "./pages/financeiro/contas-a-receber";
 import Movimentacao from "./pages/financeiro/movimentacao";
 import IncluirMovimentacao from "./pages/financeiro/incluir-movimentacao";
+import PainelFinanceiroPage from "./pages/financeiro/painel-financeiro";
 
 // Contábil
 import PlanoContas from "./pages/contabil/plano-contas";
@@ -181,6 +182,16 @@ function App() {
             />
 
             {/* Financeiro */}
+            <Route
+              path="/financeiro/painel-financeiro"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <PainelFinanceiroPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
             <Route
               path="/financeiro/fluxo-caixa"
               element={

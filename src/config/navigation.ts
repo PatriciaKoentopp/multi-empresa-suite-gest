@@ -69,6 +69,10 @@ export const navigationConfig: ModuleNavItem[] = [
     icon: "DollarSign",
     subItems: [
       {
+        name: "Painel Financeiro",
+        href: "/financeiro/painel-financeiro",
+      },
+      {
         name: "Fluxo de Caixa",
         href: "/financeiro/fluxo-caixa",
       },
