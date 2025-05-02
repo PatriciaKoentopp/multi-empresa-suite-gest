@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { formatCurrency } from "@/lib/utils";
 import { FluxoMensal } from "@/types/financeiro";
 import { 
