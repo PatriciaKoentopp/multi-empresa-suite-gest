@@ -53,19 +53,13 @@ export const FluxoCaixaChart = ({ data, saldoInicialPeriodo = 0 }: FluxoCaixaCha
       new Date(a.data).getTime() - new Date(b.data).getTime()
     );
     
-    // Iniciar com o saldo inicial do período
+    // Iniciar com o saldo inicial do período fornecido
     let saldoAcumulado = saldoInicialPeriodo || 0;
     
     const dataWithCumulativeSaldo = sortedData.map(item => {
-      // Para as movimentações diárias:
-      // Se for entrada, adicionar ao saldo acumulado
-      // Se for saída, subtrair do saldo acumulado
-      if (item.entradas > 0) {
-        saldoAcumulado += item.entradas;
-      }
-      if (item.saidas > 0) {
-        saldoAcumulado -= item.saidas;
-      }
+      // Calcular saldo acumulado: somar entradas e subtrair saídas
+      const saldoDia = item.entradas - item.saidas;
+      saldoAcumulado += saldoDia;
       
       return {
         ...item,
