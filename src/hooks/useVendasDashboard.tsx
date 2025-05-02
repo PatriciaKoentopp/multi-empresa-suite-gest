@@ -62,15 +62,53 @@ export const useVendasDashboard = () => {
             .map((item: any) => ({
               name: String(item.name || ''),
               faturado: Number(item.faturado || 0),
-              monthNumber: mesesMap[String(item.name)] || 0
+              monthNumber: mesesMap[String(item.name)] || 0,
+              year: year // Adicionar o ano para referência
             }))
             .sort((a, b) => b.monthNumber - a.monthNumber);
           
+          // Buscar dezembro do ano anterior para comparação com janeiro
+          let dezEmbroAnoAnterior = null;
+          if (mesesOrdenadosComNumero.some(m => m.monthNumber === 1)) {
+            try {
+              // Buscar dados de dezembro do ano anterior
+              const { data: dataAnoAnterior, error: errorAnoAnterior } = await supabase
+                .rpc('get_monthly_sales_chart_data', { year_param: year - 1 });
+                
+              if (!errorAnoAnterior && dataAnoAnterior) {
+                // Encontrar dezembro no ano anterior
+                const dezAnoAnterior = dataAnoAnterior.find((item: any) => 
+                  item.name === "Dezembro" && Number(item.faturado) > 0
+                );
+                
+                if (dezAnoAnterior) {
+                  dezEmbroAnoAnterior = {
+                    name: "Dezembro",
+                    faturado: Number(dezAnoAnterior.faturado || 0),
+                    monthNumber: 12,
+                    year: year - 1
+                  };
+                  console.log(`Dezembro do ano anterior (${year-1}) encontrado:`, dezEmbroAnoAnterior);
+                }
+              }
+            } catch (e) {
+              console.warn(`Erro ao buscar dezembro do ano anterior (${year-1})`, e);
+            }
+          }
+          
           // Calcular variações percentuais entre os meses
-          const result = mesesOrdenadosComNumero.map((mes, index) => {
-            const mesAnterior = mesesOrdenadosComNumero.find(m => 
-              m.monthNumber === (mes.monthNumber === 1 ? 12 : mes.monthNumber - 1)
-            );
+          const result = mesesOrdenadosComNumero.map((mes) => {
+            let mesAnterior;
+            
+            // Caso especial: para janeiro, usar dezembro do ano anterior se disponível
+            if (mes.monthNumber === 1) {
+              mesAnterior = dezEmbroAnoAnterior; 
+            } else {
+              // Para outros meses, buscar o mês anterior no mesmo ano
+              mesAnterior = mesesOrdenadosComNumero.find(m => 
+                m.monthNumber === mes.monthNumber - 1
+              );
+            }
             
             let variacao = null;
             if (mesAnterior && mesAnterior.faturado > 0) {
@@ -128,7 +166,8 @@ export const useVendasDashboard = () => {
       const dadosMensais = meses.map((name, index) => ({
         name,
         faturado: 0,
-        monthNumber: index + 1
+        monthNumber: index + 1,
+        year
       }));
       
       // Preencher os valores de cada mês
@@ -158,10 +197,59 @@ export const useVendasDashboard = () => {
         .filter(mes => mes.faturado > 0)
         .sort((a, b) => b.monthNumber - a.monthNumber);
       
+      // Buscar dezembro do ano anterior para janeiro (se existir janeiro)
+      let dezEmbroAnoAnterior = null;
+      if (mesesComVendas.some(m => m.monthNumber === 1)) {
+        try {
+          // Buscar vendas de dezembro do ano anterior
+          const { data: vendaDezAnterior, error: errorDezAnterior } = await supabase
+            .from('orcamentos')
+            .select(`
+              id, 
+              data_venda,
+              orcamentos_itens (valor)
+            `)
+            .eq('tipo', 'venda')
+            .eq('status', 'ativo')
+            .gte('data_venda', `${year-1}-12-01`)
+            .lte('data_venda', `${year-1}-12-31`);
+            
+          if (!errorDezAnterior && vendaDezAnterior && vendaDezAnterior.length > 0) {
+            // Calcular o valor total de dezembro do ano anterior
+            const valorDezAnterior = vendaDezAnterior.reduce((total, orcamento) => {
+              const valorOrcamento = orcamento.orcamentos_itens.reduce(
+                (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+              );
+              return total + valorOrcamento;
+            }, 0);
+            
+            if (valorDezAnterior > 0) {
+              dezEmbroAnoAnterior = {
+                name: "Dezembro",
+                faturado: valorDezAnterior,
+                monthNumber: 12,
+                year: year - 1
+              };
+              console.log(`Dezembro do ano anterior (${year-1}) calculado manualmente:`, dezEmbroAnoAnterior);
+            }
+          }
+        } catch (e) {
+          console.warn(`Erro ao buscar dezembro do ano anterior (${year-1}) manualmente`, e);
+        }
+      }
+      
       // Calcular variações percentuais entre os meses
       const mesesComVariacao = mesesComVendas.map((mes) => {
-        const mesAnteriorNumero = mes.monthNumber === 1 ? 12 : mes.monthNumber - 1;
-        const mesAnterior = dadosMensais.find(m => m.monthNumber === mesAnteriorNumero);
+        let mesAnterior;
+        
+        // Caso especial: para janeiro, usar dezembro do ano anterior se disponível
+        if (mes.monthNumber === 1) {
+          mesAnterior = dezEmbroAnoAnterior;
+        } else {
+          // Para outros meses, buscar o mês anterior no mesmo ano
+          const mesAnteriorNumero = mes.monthNumber - 1;
+          mesAnterior = dadosMensais.find(m => m.monthNumber === mesAnteriorNumero);
+        }
         
         let variacao = null;
         if (mesAnterior && mesAnterior.faturado > 0) {
