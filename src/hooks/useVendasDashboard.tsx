@@ -58,17 +58,33 @@ export const useVendasDashboard = () => {
           };
           
           // Ordenar os meses em ordem decrescente (Dezembro -> Janeiro)
-          return dadosFiltrados
+          const mesesOrdenadosComNumero = dadosFiltrados
             .map((item: any) => ({
               name: String(item.name || ''),
               faturado: Number(item.faturado || 0),
               monthNumber: mesesMap[String(item.name)] || 0
             }))
-            .sort((a, b) => b.monthNumber - a.monthNumber)
-            .map(item => ({
-              name: item.name,
-              faturado: item.faturado
-            }));
+            .sort((a, b) => b.monthNumber - a.monthNumber);
+          
+          // Calcular variações percentuais entre os meses
+          const result = mesesOrdenadosComNumero.map((mes, index) => {
+            const mesAnterior = mesesOrdenadosComNumero.find(m => 
+              m.monthNumber === (mes.monthNumber === 1 ? 12 : mes.monthNumber - 1)
+            );
+            
+            let variacao = null;
+            if (mesAnterior && mesAnterior.faturado > 0) {
+              variacao = ((mes.faturado - mesAnterior.faturado) / mesAnterior.faturado) * 100;
+            }
+            
+            return {
+              name: mes.name,
+              faturado: mes.faturado,
+              variacao_percentual: variacao
+            };
+          });
+          
+          return result;
         }
       } catch (rpcError) {
         console.warn(`Erro na chamada RPC para dados mensais: ${rpcError}`);
@@ -137,17 +153,30 @@ export const useVendasDashboard = () => {
         });
       }
       
-      // Filtrar apenas meses com vendas
+      // Filtrar apenas meses com vendas e ordenar em ordem decrescente
       const mesesComVendas = dadosMensais
         .filter(mes => mes.faturado > 0)
-        .sort((a, b) => b.monthNumber - a.monthNumber) // Ordenar meses em ordem decrescente (Dez -> Jan)
-        .map(mes => ({
-          name: mes.name,
-          faturado: mes.faturado
-        }));
+        .sort((a, b) => b.monthNumber - a.monthNumber);
       
-      console.log(`Dados mensais processados para ${year}:`, mesesComVendas);
-      return mesesComVendas;
+      // Calcular variações percentuais entre os meses
+      const mesesComVariacao = mesesComVendas.map((mes) => {
+        const mesAnteriorNumero = mes.monthNumber === 1 ? 12 : mes.monthNumber - 1;
+        const mesAnterior = dadosMensais.find(m => m.monthNumber === mesAnteriorNumero);
+        
+        let variacao = null;
+        if (mesAnterior && mesAnterior.faturado > 0) {
+          variacao = ((mes.faturado - mesAnterior.faturado) / mesAnterior.faturado) * 100;
+        }
+        
+        return {
+          name: mes.name,
+          faturado: mes.faturado,
+          variacao_percentual: variacao
+        };
+      });
+      
+      console.log(`Dados mensais processados para ${year}:`, mesesComVariacao);
+      return mesesComVariacao;
       
     } catch (error: any) {
       console.error(`Erro ao buscar dados mensais para ${year}:`, error);

@@ -17,7 +17,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface SalesComparisonTableProps {
   yearlyComparisonData: YearlyComparison[];
-  getMonthlySalesData?: (year: number) => Promise<{ name: string; faturado: number; }[]>;
+  getMonthlySalesData?: (year: number) => Promise<{ name: string; faturado: number; variacao_percentual: number | null; }[]>;
 }
 
 export const SalesComparisonTable = ({ 
@@ -25,7 +25,7 @@ export const SalesComparisonTable = ({
   getMonthlySalesData 
 }: SalesComparisonTableProps) => {
   const [expandedYears, setExpandedYears] = useState<{[key: number]: boolean}>({});
-  const [monthlyData, setMonthlyData] = useState<{[key: number]: {name: string; faturado: number}[]}>({});
+  const [monthlyData, setMonthlyData] = useState<{[key: number]: {name: string; faturado: number; variacao_percentual: number | null}[]}>({});
   const [loadingYear, setLoadingYear] = useState<number | null>(null);
   
   // Garantir que temos dados válidos para exibir
@@ -113,7 +113,10 @@ export const SalesComparisonTable = ({
         <TableCell className="text-right font-normal text-sm">
           {formatCurrency(month.faturado || 0)}
         </TableCell>
-        <TableCell colSpan={3}></TableCell>
+        <TableCell className="text-right text-sm">
+          <VariationDisplay value={month.variacao_percentual} />
+        </TableCell>
+        <TableCell colSpan={2}></TableCell>
       </TableRow>
     ));
   };
