@@ -103,7 +103,6 @@ export const usePainelFinanceiro = () => {
       const dataInicialStr = `${anoInicial}-${mesInicial.toString().padStart(2, '0')}-01`;
       
       // Buscar dados de movimentações pagas/recebidas agrupadas por mês de TODAS as contas
-      // Modificado para não filtrar por conta_corrente_id
       const { data: fluxoMensal, error: errorFluxoMensal } = await supabase
         .from('movimentacoes_parcelas')
         .select(`
@@ -119,8 +118,10 @@ export const usePainelFinanceiro = () => {
       
       if (errorFluxoMensal) throw errorFluxoMensal;
 
-      // Processar dados
-      const dataAtualStr = new Date().toISOString().split('T')[0];
+      // Processar dados - Garantir que trabalhamos com datas sem efeito de timezone
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const dataAtualStr = hoje.toISOString().split('T')[0];
       
       // Filtrar corretamente as parcelas de contas a receber
       const parcelasReceberFiltradas = (parcelasReceber || []).filter(p => 
@@ -140,27 +141,39 @@ export const usePainelFinanceiro = () => {
       const totalAPagar = parcelasPagarFiltradas
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
       
-      // Calcular contas vencidas a receber
+      // Calcular contas vencidas a receber - uso do método correto de comparação de datas
       const contasVencidasReceber = parcelasReceberFiltradas
-        .filter(p => p.data_vencimento < dataAtualStr)
+        .filter(p => {
+          const dataVencimento = extrairDataSemTimeZone(p.data_vencimento);
+          return dataVencimento < hoje;
+        })
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
       
-      // Calcular contas vencidas a pagar
+      // Calcular contas vencidas a pagar - uso do método correto de comparação de datas
       const contasVencidasPagar = parcelasPagarFiltradas
-        .filter(p => p.data_vencimento < dataAtualStr)
+        .filter(p => {
+          const dataVencimento = extrairDataSemTimeZone(p.data_vencimento);
+          return dataVencimento < hoje;
+        })
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
       
-      // Calcular contas a vencer a receber
+      // Calcular contas a vencer a receber - uso do método correto de comparação de datas
       const contasAVencerReceber = parcelasReceberFiltradas
-        .filter(p => p.data_vencimento >= dataAtualStr)
+        .filter(p => {
+          const dataVencimento = extrairDataSemTimeZone(p.data_vencimento);
+          return dataVencimento >= hoje;
+        })
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
       
-      // Calcular contas a vencer a pagar
+      // Calcular contas a vencer a pagar - uso do método correto de comparação de datas
       const contasAVencerPagar = parcelasPagarFiltradas
-        .filter(p => p.data_vencimento >= dataAtualStr)
+        .filter(p => {
+          const dataVencimento = extrairDataSemTimeZone(p.data_vencimento);
+          return dataVencimento >= hoje;
+        })
         .reduce((sum, item) => sum + Number(item.valor || 0), 0);
       
-      // Processar o fluxo financeiro mensal - considerando todas as contas
+      // Processar o fluxo financeiro mensal - considerando todas as contas e corrigindo o tratamento de datas
       const mesesMap = new Map<string, FluxoMensal>();
       
       // Inicializar os 12 meses
@@ -188,10 +201,35 @@ export const usePainelFinanceiro = () => {
         });
       }
       
+      // Função auxiliar para extrair a data sem timezone a partir de uma string de data
+      function extrairDataSemTimeZone(dataStr: string): Date {
+        if (!dataStr) return new Date(0); // Data inválida para comparações
+        
+        // Se a data já estiver no formato YYYY-MM-DD
+        if (dataStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          const [ano, mes, dia] = dataStr.split('-').map(Number);
+          return new Date(ano, mes - 1, dia);
+        }
+        
+        // Caso esteja em outro formato, tenta extrair a data ignorando a parte de hora
+        const partes = dataStr.split('T')[0].split('-');
+        if (partes.length === 3) {
+          const ano = parseInt(partes[0], 10);
+          const mes = parseInt(partes[1], 10) - 1; // mês em JS é 0-indexed
+          const dia = parseInt(partes[2], 10);
+          return new Date(ano, mes, dia);
+        }
+        
+        // Se não conseguiu extrair, retorna a data atual
+        return new Date();
+      }
+      
       // Adicionar os valores de cada movimentação ao mês correspondente independente da conta
+      // Corrigindo o problema de timezone nas datas
       fluxoMensal?.forEach(item => {
         if (item.data_pagamento && item.movimentacoes?.tipo_operacao) {
-          const dataPagamento = new Date(item.data_pagamento);
+          // Extrai a data sem efeitos de timezone
+          const dataPagamento = extrairDataSemTimeZone(item.data_pagamento);
           const ano = dataPagamento.getFullYear();
           const mesNumero = dataPagamento.getMonth() + 1;
           const chave = `${ano}-${mesNumero}`;
