@@ -116,9 +116,9 @@ export const SalesComparisonTable = ({
         <TableCell className="text-right text-sm">
           <VariationDisplay value={month.variacao_percentual} />
         </TableCell>
-        {/* Não exibimos a coluna de média mensal para dados mensais */}
-        <TableCell className="text-right text-sm opacity-0 hidden">
-          {/* Célula vazia para manter a estrutura da tabela */}
+        {/* Não exibimos a coluna de média mensal para dados mensais, mas mantemos a célula para preservar o alinhamento */}
+        <TableCell className="text-right text-sm">
+          {/* Célula vazia para manter o alinhamento correto */}
         </TableCell>
         <TableCell className="text-right text-sm">
           <VariationDisplay value={month.variacao_ano_anterior} tooltip={`Comparado a ${month.name}/${year-1}`} />
