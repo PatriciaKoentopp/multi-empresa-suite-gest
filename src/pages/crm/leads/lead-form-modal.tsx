@@ -642,9 +642,9 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                   </form>
                 </TabsContent>
                 {/* INTERAÇÕES */}
-                <TabsContent value="interacoes" className="mt-0 h-full">
-                  <ScrollArea className="h-[calc(100vh-220px)]">
-                    <div className="px-6 py-6 space-y-6">
+                <TabsContent value="interacoes" className="mt-0 h-full flex flex-col overflow-hidden">
+                  <ScrollArea className="flex-1 px-6 py-6" style={{ height: "calc(100vh - 220px)" }}>
+                    <div className="space-y-6">
                       {lead ? (
                         <>
                           {/* Formulário para nova interação */}
@@ -847,7 +847,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
         </SheetContent>
       </Sheet>
       
-      
+      {/* Diálogo para visualizar uma interação */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -878,4 +878,4 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                 <div className="flex items-center gap-2">
                   <UserRound className="h-4 w-4" />
                   <span>
-                    {interacaoSelecionada.responsavelNome || getNomeResponsavel(interacaoSelecionada.responsavel
+                    {
