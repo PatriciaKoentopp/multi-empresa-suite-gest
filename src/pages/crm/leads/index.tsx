@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -146,6 +145,7 @@ export default function LeadsPage() {
       
       if (!funilIdToFetch) return;
       
+      // Modificar a consulta para não usar o join implícito em responsavel_id
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
         .select(`
@@ -162,7 +162,6 @@ export default function LeadsPage() {
           data_criacao, 
           ultimo_contato, 
           responsavel_id,
-          usuarios:responsavel_id (nome),
           produto
         `)
         .eq('funil_id', funilIdToFetch)
@@ -170,6 +169,27 @@ export default function LeadsPage() {
         .eq('status', 'ativo');
 
       if (leadsError) throw leadsError;
+      
+      // Buscar informações dos responsáveis após obter os leads
+      const responsaveisIds = leadsData
+        .filter(lead => lead.responsavel_id)
+        .map(lead => lead.responsavel_id);
+      
+      // Só busca usuários se houver IDs de responsáveis
+      let usuariosInfo = {};
+      if (responsaveisIds.length > 0) {
+        const { data: usuariosData } = await supabase
+          .from('usuarios')
+          .select('id, nome')
+          .in('id', responsaveisIds);
+          
+        if (usuariosData) {
+          usuariosInfo = usuariosData.reduce((acc, user) => {
+            acc[user.id] = user.nome;
+            return acc;
+          }, {});
+        }
+      }
 
       // Transformar os dados para o formato esperado pelo componente
       const leadsFormatados = leadsData.map(lead => ({
@@ -186,7 +206,7 @@ export default function LeadsPage() {
         dataCriacao: new Date(lead.data_criacao).toLocaleDateString('pt-BR'),
         ultimoContato: lead.ultimo_contato ? new Date(lead.ultimo_contato).toLocaleDateString('pt-BR') : null,
         responsavelId: lead.responsavel_id,
-        responsavelNome: lead.usuarios?.nome || 'Não atribuído',
+        responsavelNome: lead.responsavel_id ? usuariosInfo[lead.responsavel_id] || 'Não atribuído' : 'Não atribuído',
         produto: lead.produto
       }));
 
