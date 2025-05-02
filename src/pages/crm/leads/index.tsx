@@ -33,6 +33,7 @@ export default function LeadsPage() {
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [etapaFilter, setEtapaFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("ativo");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<any | null>(null);
   const [origens, setOrigens] = useState<Origem[]>([]);
@@ -164,11 +165,12 @@ export default function LeadsPage() {
           data_criacao, 
           ultimo_contato, 
           responsavel_id,
-          produto
+          produto,
+          status
         `)
         .eq('funil_id', funilIdToFetch)
         .eq('empresa_id', empresaIdToUse)
-        .eq('status', 'ativo');
+        .eq('status', statusFilter);
 
       if (leadsError) throw leadsError;
       
@@ -209,7 +211,8 @@ export default function LeadsPage() {
         ultimoContato: lead.ultimo_contato ? new Date(lead.ultimo_contato).toLocaleDateString('pt-BR') : null,
         responsavelId: lead.responsavel_id,
         responsavelNome: lead.responsavel_id ? usuariosInfo[lead.responsavel_id] || 'Não atribuído' : 'Não atribuído',
-        produto: lead.produto
+        produto: lead.produto,
+        status: lead.status || 'ativo'
       }));
 
       setLeads(leadsFormatados);
@@ -226,7 +229,7 @@ export default function LeadsPage() {
     if (!selectedFunil) return;
     
     fetchLeads();
-  }, [selectedFunilId]);
+  }, [selectedFunilId, statusFilter]);
 
   // Filtrar leads baseado no termo de busca e etapa selecionada
   useEffect(() => {
@@ -283,7 +286,8 @@ export default function LeadsPage() {
         origem_id: leadData.origemId,
         responsavel_id: leadData.responsavelId,
         produto: leadData.produto,
-        empresa_id: leadData.empresa_id || empresaId
+        empresa_id: leadData.empresa_id || empresaId,
+        status: leadData.status || 'ativo'
       };
 
       console.log('Dados a serem salvos:', leadToSave);
@@ -405,6 +409,11 @@ export default function LeadsPage() {
     setEtapaFilter("all"); // Reset do filtro de etapa quando mudar o funil
   };
 
+  // Manipulador para quando o status é alterado
+  const handleStatusChange = (status: string) => {
+    setStatusFilter(status);
+  };
+
   // Obter apenas etapas do funil selecionado para o filtro
   const etapasFunilSelecionado = selectedFunil ? selectedFunil.etapas : [];
 
@@ -453,6 +462,23 @@ export default function LeadsPage() {
                       )}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Seletor de Status */}
+            <div className="w-full md:w-[180px]">
+              <Select
+                value={statusFilter}
+                onValueChange={handleStatusChange}
+              >
+                <SelectTrigger className="w-full bg-white">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  <SelectItem value="ativo">Ativos</SelectItem>
+                  <SelectItem value="fechado">Fechados</SelectItem>
+                  <SelectItem value="inativo">Inativos</SelectItem>
                 </SelectContent>
               </Select>
             </div>

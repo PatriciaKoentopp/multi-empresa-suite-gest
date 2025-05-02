@@ -1,4 +1,5 @@
 
+
 export interface LeadInteracao {
   id: number | string;
   leadId: string;
@@ -22,6 +23,7 @@ export interface Lead {
   ultimoContato: string;
   responsavelId: string;
   produto?: string;
+  status: "ativo" | "inativo" | "fechado";
 }
 
 export interface EtapaFunil {
@@ -30,3 +32,4 @@ export interface EtapaFunil {
   cor: string;
   ordem: number;
 }
+
