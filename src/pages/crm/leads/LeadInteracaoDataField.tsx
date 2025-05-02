@@ -20,6 +20,30 @@ export function LeadInteracaoDataField({
   date,
   onDateChange,
 }: LeadInteracaoDataFieldProps) {
+  // Garantir que estamos trabalhando com um objeto Date válido
+  const ensureValidDate = (dateInput: Date | string | null): Date => {
+    if (!dateInput) return new Date();
+    
+    if (dateInput instanceof Date) {
+      return dateInput;
+    }
+    
+    try {
+      // Se for uma string no formato dd/mm/yyyy
+      if (typeof dateInput === 'string' && dateInput.includes('/')) {
+        const [day, month, year] = dateInput.split('/').map(Number);
+        return new Date(year, month - 1, day);
+      }
+      
+      return new Date(dateInput);
+    } catch (error) {
+      console.error('Erro ao converter data:', error);
+      return new Date();
+    }
+  };
+
+  const safeDate = ensureValidDate(date);
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -32,7 +56,7 @@ export function LeadInteracaoDataField({
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? (
-            format(date, "dd/MM/yyyy", { locale: ptBR })
+            format(safeDate, "dd/MM/yyyy", { locale: ptBR })
           ) : (
             <span>Selecione uma data</span>
           )}
@@ -41,7 +65,7 @@ export function LeadInteracaoDataField({
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
-          selected={date}
+          selected={safeDate}
           onSelect={(newDate) => newDate && onDateChange(newDate)}
           initialFocus
           locale={ptBR}

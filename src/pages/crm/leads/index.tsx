@@ -39,6 +39,7 @@ export default function LeadsPage() {
   const [funis, setFunis] = useState<Funil[]>([]);
   const [motivosPerda, setMotivosPerda] = useState([]);
   const [selectedFunilId, setSelectedFunilId] = useState<string>("");
+  const [empresaId, setEmpresaId] = useState<string | null>(null);
 
   // Obter o funil selecionado
   const selectedFunil = funis.find(funil => funil.id === selectedFunilId) || funis[0];
@@ -52,11 +53,22 @@ export default function LeadsPage() {
   const fetchAllData = async () => {
     setLoading(true);
     try {
+      // Buscar empresa ID primeiro (necessário para todas as outras operações)
+      const { data: empresaData, error: empresaError } = await supabase
+        .from('empresas')
+        .select('id')
+        .limit(1)
+        .single();
+        
+      if (empresaError) throw empresaError;
+      setEmpresaId(empresaData.id);
+      
       // Buscar funis
       const { data: funisData, error: funisError } = await supabase
         .from('funis')
         .select('*, etapas:funil_etapas(id, nome, cor, ordem)')
         .eq('ativo', true)
+        .eq('empresa_id', empresaData.id)
         .order('nome');
 
       if (funisError) throw funisError;
@@ -82,6 +94,7 @@ export default function LeadsPage() {
       const { data: origensData, error: origensError } = await supabase
         .from('origens')
         .select('*')
+        .eq('empresa_id', empresaData.id)
         .order('nome');
 
       if (origensError) throw origensError;
@@ -92,6 +105,7 @@ export default function LeadsPage() {
         .from('usuarios')
         .select('*')
         .eq('vendedor', 'sim')
+        .eq('empresa_id', empresaData.id)
         .order('nome');
 
       if (usuariosError) throw usuariosError;
@@ -102,13 +116,14 @@ export default function LeadsPage() {
         .from('motivos_perda')
         .select('*')
         .eq('status', 'ativo')
+        .eq('empresa_id', empresaData.id)
         .order('nome');
 
       if (motivosPerdaError) throw motivosPerdaError;
       setMotivosPerda(motivosPerdaData);
 
       // Buscar leads após ter os dados de funis
-      await fetchLeads();
+      await fetchLeads(empresaData.id, funisFormatados.length > 0 ? funisFormatados[0].id : null);
       
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -121,15 +136,13 @@ export default function LeadsPage() {
   };
 
   // Função para buscar leads baseado no funil selecionado
-  const fetchLeads = async () => {
+  const fetchLeads = async (empId: string = null, funilId: string = null) => {
     try {
       // Se não temos funil selecionado ainda, retorna
-      if (!selectedFunilId && funis.length > 0) {
-        setSelectedFunilId(funis[0].id);
-        return;
-      }
+      const empresaIdToUse = empId || empresaId;
+      if (!empresaIdToUse) return;
       
-      const funilIdToFetch = selectedFunilId || (funis.length > 0 ? funis[0].id : null);
+      const funilIdToFetch = funilId || selectedFunilId || (funis.length > 0 ? funis[0].id : null);
       
       if (!funilIdToFetch) return;
       
@@ -153,6 +166,7 @@ export default function LeadsPage() {
           produto
         `)
         .eq('funil_id', funilIdToFetch)
+        .eq('empresa_id', empresaIdToUse)
         .eq('status', 'ativo');
 
       if (leadsError) throw leadsError;
@@ -200,7 +214,7 @@ export default function LeadsPage() {
       filtered = filtered.filter(
         (lead) =>
           lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          lead.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          lead.empresa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
@@ -227,6 +241,14 @@ export default function LeadsPage() {
   // Função para salvar um novo lead ou atualizar um existente
   const handleSaveLead = async (leadData) => {
     try {
+      // Garantir que temos um ID de empresa válido
+      if (!leadData.empresa_id && !empresaId) {
+        toast.error("Erro ao salvar lead", {
+          description: "ID da empresa não encontrado."
+        });
+        return;
+      }
+      
       // Preparar os dados para o formato da tabela no Supabase
       const leadToSave = {
         nome: leadData.nome,
@@ -238,8 +260,11 @@ export default function LeadsPage() {
         valor: leadData.valor,
         origem_id: leadData.origemId,
         responsavel_id: leadData.responsavelId,
-        produto: leadData.produto
+        produto: leadData.produto,
+        empresa_id: leadData.empresa_id || empresaId
       };
+
+      console.log('Dados a serem salvos:', leadToSave);
 
       if (editingLead) {
         // Atualizar lead existente
@@ -268,7 +293,7 @@ export default function LeadsPage() {
     } catch (error) {
       console.error('Erro ao salvar lead:', error);
       toast.error("Erro ao salvar lead", {
-        description: "Não foi possível salvar as alterações."
+        description: "Não foi possível salvar as alterações. Detalhes: " + error.message
       });
     }
   };

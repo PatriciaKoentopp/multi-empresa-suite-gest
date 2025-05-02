@@ -466,12 +466,37 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     }
   };
 
+  // Obter o ID da empresa
+  const getEmpresaId = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('empresas')
+        .select('id')
+        .limit(1)
+        .single();
+      
+      if (error) throw error;
+      return data?.id;
+    } catch (error) {
+      console.error('Erro ao obter ID da empresa:', error);
+      return null;
+    }
+  };
+
   // Função para salvar lead e fechamento
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Se estamos editando um lead e temos dados de fechamento
     try {
+      // Obter o ID da empresa
+      const empresaId = await getEmpresaId();
+      
+      if (!empresaId) {
+        console.error('ID da empresa não encontrado');
+        return;
+      }
+      
+      // Se estamos editando um lead e temos dados de fechamento
       if (lead?.id && fechamento) {
         // Formatar a data para o formato do banco
         const dataFormatada = format(fechamento.data, 'yyyy-MM-dd');
@@ -515,9 +540,15 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
           if (error) throw error;
         }
       }
+
+      // Adicionar o ID da empresa aos dados do lead
+      const leadDataWithCompany = {
+        ...formData,
+        empresa_id: empresaId
+      };
       
       // Chamar a função original para salvar os dados do lead
-      onConfirm(formData);
+      onConfirm(leadDataWithCompany);
     } catch (error) {
       console.error('Erro ao salvar fechamento:', error);
     }
