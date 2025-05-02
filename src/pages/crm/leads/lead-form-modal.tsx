@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -879,3 +880,129 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
               <Edit className="mr-2 h-4 w-4" />
               Editar
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo para editar uma interação */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Interação</DialogTitle>
+            <DialogDescription>
+              Atualize os detalhes da interação com o lead.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {interacaoEditavel && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editTipo">Tipo de Interação</Label>
+                  <Select
+                    value={interacaoEditavel.tipo}
+                    onValueChange={(value) => handleInteracaoEditavelSelectChange("tipo", value)}
+                  >
+                    <SelectTrigger id="editTipo" className="bg-white">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="ligacao">Ligação</SelectItem>
+                      <SelectItem value="reuniao">Reunião</SelectItem>
+                      <SelectItem value="mensagem">Mensagem</SelectItem>
+                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                      <SelectItem value="telegram">Telegram</SelectItem>
+                      <SelectItem value="instagram">Direct do Instagram</SelectItem>
+                      <SelectItem value="facebook">Messenger do Facebook</SelectItem>
+                      <SelectItem value="outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editResponsavel">Responsável</Label>
+                  <Select
+                    value={interacaoEditavel.responsavelId}
+                    onValueChange={(value) => handleInteracaoEditavelSelectChange("responsavelId", value)}
+                  >
+                    <SelectTrigger id="editResponsavel" className="bg-white">
+                      <SelectValue placeholder="Selecione o responsável" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      {vendedoresAtivos.map((vendedor) => (
+                        <SelectItem key={vendedor.id} value={vendedor.id}>
+                          {vendedor.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="editData">Data</Label>
+                <Input
+                  id="editData"
+                  name="data"
+                  value={interacaoEditavel.data}
+                  onChange={handleInteracaoEditavelChange}
+                  className="bg-white"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="editDescricao">Descrição</Label>
+                <Textarea
+                  id="editDescricao"
+                  name="descricao"
+                  value={interacaoEditavel.descricao}
+                  onChange={handleInteracaoEditavelChange}
+                  placeholder="Descreva a interação..."
+                  rows={4}
+                  className="resize-none bg-white"
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancelar</Button>
+            </DialogClose>
+            <Button 
+              type="button"
+              onClick={confirmarEdicaoInteracao}
+            >
+              Salvar Alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo para confirmar exclusão */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza de que deseja excluir esta interação? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancelar</Button>
+            </DialogClose>
+            <Button 
+              type="button"
+              variant="destructive"
+              onClick={excluirInteracao}
+            >
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

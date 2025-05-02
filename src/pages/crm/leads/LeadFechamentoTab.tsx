@@ -187,8 +187,8 @@ export function LeadFechamentoTab({
   };
 
   return (
-    <div>
-      <div className="space-y-4 pt-0">
+    <div className="pt-0">
+      <div className="space-y-4">
         <div className="space-y-2">
           <Label>Status de Fechamento</Label>
           <RadioGroup
