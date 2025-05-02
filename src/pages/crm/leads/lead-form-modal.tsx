@@ -1,85 +1,29 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
+  SheetFooter,
   SheetClose,
 } from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
 } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Origem, Usuario, MotivoPerda } from "@/types";
-import { Send, UserRound, Phone, Calendar, Mail, MessageCircle, Eye, Edit, Trash2, MessageSquare } from "lucide-react";
-
 import { LeadDadosTab } from "./LeadDadosTab";
 import { LeadFechamentoTab } from "./LeadFechamentoTab";
-import { LeadInteracaoDataField } from "./LeadInteracaoDataField";
+import { InteracoesTab } from "./components/InteracoesTab";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDate } from "@/lib/utils";
-import { format } from "date-fns";
+import { formatDate } from "./utils/leadUtils";
 import { toast } from "sonner";
-
-interface Lead {
-  id: string;
-  nome: string;
-  empresa: string;
-  email: string;
-  telefone: string;
-  etapaId: string;
-  valor: number;
-  origemId: string;
-  dataCriacao: string;
-  ultimoContato: string;
-  responsavelId: string;
-  produto?: string;
-}
-
-interface EtapaFunil {
-  id: string;
-  nome: string;
-  cor: string;
-  ordem: number;
-}
-
-// Interface para as interações com o lead
-interface LeadInteracao {
-  id: number | string;
-  leadId: string;
-  tipo: "email" | "ligacao" | "reuniao" | "mensagem" | "whatsapp" | "telegram" | "instagram" | "facebook" | "outro";
-  descricao: string;
-  data: string;
-  responsavelId: string;
-  responsavelNome?: string;
-}
+import { LeadInteracao, EtapaFunil } from "./types";
+import { format } from "date-fns";
 
 interface LeadFormModalProps {
   open: boolean;
@@ -92,7 +36,16 @@ interface LeadFormModalProps {
   motivosPerda: MotivoPerda[];
 }
 
-export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens, usuarios, motivosPerda }: LeadFormModalProps) {
+export function LeadFormModal({ 
+  open, 
+  onClose, 
+  onConfirm, 
+  lead, 
+  etapas, 
+  origens, 
+  usuarios, 
+  motivosPerda 
+}: LeadFormModalProps) {
   const [formData, setFormData] = useState({
     nome: "",
     empresa: "",
@@ -114,13 +67,6 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     data: new Date(),
     responsavelId: "",
   });
-
-  // Estados para visualizar/editar interação
-  const [interacaoSelecionada, setInteracaoSelecionada] = useState<LeadInteracao | null>(null);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [interacaoEditavel, setInteracaoEditavel] = useState<LeadInteracao | null>(null);
 
   // Estado para armazenar interações do lead atual
   const [interacoes, setInteracoes] = useState<LeadInteracao[]>([]);
@@ -339,7 +285,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     }
 
     try {
-      const dataFormatada = formatDate(novaInteracao.data, "yyyy-MM-dd");
+      const dataFormatada = format(novaInteracao.data, "yyyy-MM-dd");
       
       // Salvar no Supabase
       const { data, error } = await supabase
@@ -391,95 +337,57 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     }
   };
 
-  // Função para visualizar detalhes de uma interação
-  const visualizarInteracao = (interacao: LeadInteracao) => {
-    setInteracaoSelecionada(interacao);
-    setIsViewDialogOpen(true);
-  };
-
-  // Função para editar uma interação
-  const prepararEdicaoInteracao = (interacao: LeadInteracao) => {
-    setInteracaoEditavel({...interacao});
-    setIsEditDialogOpen(true);
-  };
-
   // Função para confirmar a edição da interação
-  const confirmarEdicaoInteracao = async () => {
-    if (!interacaoEditavel) return;
+  const confirmarEdicaoInteracao = async (interacaoEditada: LeadInteracao) => {
+    if (!interacaoEditada) return;
     
     try {
       // Converter a data de string DD/MM/YYYY para formato ISO
-      const partesData = interacaoEditavel.data.split('/');
+      const partesData = interacaoEditada.data.split('/');
       const dataFormatada = `${partesData[2]}-${partesData[1]}-${partesData[0]}`; // YYYY-MM-DD
       
       const { error } = await supabase
         .from('leads_interacoes')
         .update({
-          tipo: interacaoEditavel.tipo,
-          descricao: interacaoEditavel.descricao,
+          tipo: interacaoEditada.tipo,
+          descricao: interacaoEditada.descricao,
           data: dataFormatada,
-          responsavel_id: interacaoEditavel.responsavelId
+          responsavel_id: interacaoEditada.responsavelId
         })
-        .eq('id', interacaoEditavel.id);
+        .eq('id', interacaoEditada.id);
       
       if (error) throw error;
       
       // Atualizar a lista local
       setInteracoes(prev => prev.map(item => 
-        item.id === interacaoEditavel.id ? {
-          ...interacaoEditavel,
-          responsavelNome: usuarios.find(u => u.id === interacaoEditavel.responsavelId)?.nome || 'Desconhecido'
+        item.id === interacaoEditada.id ? {
+          ...interacaoEditada,
+          responsavelNome: usuarios.find(u => u.id === interacaoEditada.responsavelId)?.nome || 'Desconhecido'
         } : item
       ));
-      
-      setIsEditDialogOpen(false);
-      setInteracaoEditavel(null);
       
     } catch (error) {
       console.error('Erro ao atualizar interação:', error);
     }
   };
 
-  // Função para abrir o diálogo de confirmação de exclusão
-  const prepararExclusaoInteracao = (interacao: LeadInteracao) => {
-    setInteracaoSelecionada(interacao);
-    setIsDeleteDialogOpen(true);
-  };
-
   // Função para excluir uma interação
-  const excluirInteracao = async () => {
-    if (!interacaoSelecionada) return;
+  const excluirInteracao = async (interacaoId: string | number) => {
+    if (!interacaoId) return;
     
     try {
       const { error } = await supabase
         .from('leads_interacoes')
         .delete()
-        .eq('id', interacaoSelecionada.id);
+        .eq('id', interacaoId);
       
       if (error) throw error;
       
       // Atualizar a lista local
-      setInteracoes(prev => prev.filter(item => item.id !== interacaoSelecionada.id));
-      setIsDeleteDialogOpen(false);
-      setInteracaoSelecionada(null);
+      setInteracoes(prev => prev.filter(item => item.id !== interacaoId));
       
     } catch (error) {
       console.error('Erro ao excluir interação:', error);
-    }
-  };
-
-  // Handler para mudanças no formulário de edição de interação
-  const handleInteracaoEditavelChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    if (interacaoEditavel) {
-      setInteracaoEditavel(prev => prev ? { ...prev, [name]: value } : null);
-    }
-  };
-
-  // Handler para seleção no formulário de edição de interação
-  const handleInteracaoEditavelSelectChange = (name: string, value: string) => {
-    if (interacaoEditavel) {
-      setInteracaoEditavel(prev => prev ? { ...prev, [name]: value } : null);
     }
   };
 
@@ -492,30 +400,6 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
   // Função para obter o nome do responsável por ID
   const getNomeResponsavel = (id: string): string => {
     return usuarios.find(u => u.id === id)?.nome || "Não atribuído";
-  };
-
-  // Ícone para cada tipo de interação
-  const getIconForInteraction = (tipo: string) => {
-    switch (tipo) {
-      case "email":
-        return <Mail className="h-4 w-4" />;
-      case "ligacao":
-        return <Phone className="h-4 w-4" />;
-      case "reuniao":
-        return <Calendar className="h-4 w-4" />;
-      case "mensagem":
-        return <MessageCircle className="h-4 w-4" />;
-      case "whatsapp":
-        return <MessageSquare className="h-4 w-4 text-green-500" />;
-      case "telegram":
-        return <Send className="h-4 w-4 text-blue-500" />;
-      case "instagram":
-        return <MessageCircle className="h-4 w-4 text-pink-500" />;
-      case "facebook":
-        return <MessageCircle className="h-4 w-4 text-blue-600" />;
-      default:
-        return <MessageCircle className="h-4 w-4" />;
-    }
   };
 
   // Obter o ID da empresa
@@ -626,181 +510,23 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                     />
                   </form>
                 </TabsContent>
+
                 {/* INTERAÇÕES */}
                 <TabsContent value="interacoes" className="mt-0 h-full flex flex-col overflow-hidden">
-                  <div className="flex-1 overflow-y-auto px-6 py-6">
-                    <div className="space-y-6">
-                      {lead ? (
-                        <>
-                          {/* Formulário para nova interação */}
-                          <div className="border-b pb-6">
-                            <h3 className="text-lg font-medium mb-4">Nova Interação</h3>
-                            <div className="space-y-4">
-                              
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="interacaoTipo">Tipo de Interação</Label>
-                                  <Select
-                                    value={novaInteracao.tipo}
-                                    onValueChange={(value) => handleInteracaoSelectChange("tipo", value)}
-                                  >
-                                    <SelectTrigger id="interacaoTipo" className="bg-white">
-                                      <SelectValue placeholder="Selecione o tipo" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-white z-50">
-                                      <SelectItem value="email">Email</SelectItem>
-                                      <SelectItem value="ligacao">Ligação</SelectItem>
-                                      <SelectItem value="reuniao">Reunião</SelectItem>
-                                      <SelectItem value="mensagem">Mensagem</SelectItem>
-                                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                                      <SelectItem value="telegram">Telegram</SelectItem>
-                                      <SelectItem value="instagram">Direct do Instagram</SelectItem>
-                                      <SelectItem value="facebook">Messenger do Facebook</SelectItem>
-                                      <SelectItem value="outro">Outro</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="interacaoResponsavel">Responsável</Label>
-                                  <Select
-                                    value={novaInteracao.responsavelId}
-                                    onValueChange={(value) => handleInteracaoSelectChange("responsavelId", value)}
-                                  >
-                                    <SelectTrigger id="interacaoResponsavel" className="bg-white">
-                                      <SelectValue placeholder="Selecione o responsável" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-white z-50">
-                                      {vendedoresAtivos.map((vendedor) => (
-                                        <SelectItem key={vendedor.id} value={vendedor.id}>
-                                          {vendedor.nome}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-
-                              {/* Campo data interação */}
-                              <div className="space-y-2">
-                                <Label>Data da Interação</Label>
-                                <LeadInteracaoDataField
-                                  date={novaInteracao.data}
-                                  onDateChange={handleInteracaoDataChange}
-                                />
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label htmlFor="interacaoDescricao">Descrição</Label>
-                                <Textarea
-                                  id="interacaoDescricao"
-                                  name="descricao"
-                                  value={novaInteracao.descricao}
-                                  onChange={handleInteracaoChange}
-                                  placeholder="Descreva a interação..."
-                                  rows={4}
-                                  className="resize-none"
-                                />
-                              </div>
-
-                              <Button
-                                type="button"
-                                onClick={adicionarInteracao}
-                                variant="blue"
-                                className="w-full sm:w-auto"
-                                disabled={novaInteracao.descricao.trim() === "" || !novaInteracao.responsavelId}
-                              >
-                                <Send className="mr-2 h-4 w-4" />
-                                Registrar Interação
-                              </Button>
-                            </div>
-                          </div>
-
-                          {/* Lista de interações existentes */}
-                          <div>
-                            <h3 className="text-lg font-medium mb-4">Histórico de Interações</h3>
-                            {carregandoInteracoes ? (
-                              <div className="text-center py-6">
-                                <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-blue-500 border-r-transparent"></div>
-                                <p className="mt-2 text-sm text-muted-foreground">Carregando interações...</p>
-                              </div>
-                            ) : interacoes.length > 0 ? (
-                              <div className="border rounded-md overflow-hidden">
-                                <div className="overflow-x-auto">
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead>Tipo</TableHead>
-                                        <TableHead>Descrição</TableHead>
-                                        <TableHead>Data</TableHead>
-                                        <TableHead>Responsável</TableHead>
-                                        <TableHead className="text-right">Ações</TableHead>
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {interacoes.map((interacao) => (
-                                        <TableRow key={interacao.id}>
-                                          <TableCell>
-                                            <div className="flex items-center gap-2">
-                                              {getIconForInteraction(interacao.tipo)}
-                                              <span className="capitalize">{interacao.tipo}</span>
-                                            </div>
-                                          </TableCell>
-                                          <TableCell className="max-w-[200px] truncate">
-                                            {interacao.descricao}
-                                          </TableCell>
-                                          <TableCell>{interacao.data}</TableCell>
-                                          <TableCell>
-                                            <div className="flex items-center gap-1">
-                                              <UserRound className="h-3 w-3 text-gray-500" />
-                                              <span>{interacao.responsavelNome || getNomeResponsavel(interacao.responsavelId)}</span>
-                                            </div>
-                                          </TableCell>
-                                          <TableCell className="text-right">
-                                            <div className="flex justify-end gap-1">
-                                              <Button 
-                                                variant="ghost" 
-                                                size="sm"
-                                                onClick={() => visualizarInteracao(interacao)}
-                                              >
-                                                <Eye className="h-4 w-4 text-gray-500" />
-                                              </Button>
-                                              <Button 
-                                                variant="ghost" 
-                                                size="sm"
-                                                onClick={() => prepararEdicaoInteracao(interacao)}
-                                              >
-                                                <Edit className="h-4 w-4 text-blue-500" />
-                                              </Button>
-                                              <Button 
-                                                variant="ghost" 
-                                                size="sm"
-                                                onClick={() => prepararExclusaoInteracao(interacao)}
-                                              >
-                                                <Trash2 className="h-4 w-4 text-red-500" />
-                                              </Button>
-                                            </div>
-                                          </TableCell>
-                                        </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-center py-6 text-muted-foreground border rounded-md">
-                                Nenhuma interação registrada.
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-center py-10 text-muted-foreground">
-                          As interações estarão disponíveis após criar o lead.
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <InteracoesTab
+                    lead={lead}
+                    interacoes={interacoes}
+                    carregandoInteracoes={carregandoInteracoes}
+                    novaInteracao={novaInteracao}
+                    handleInteracaoChange={handleInteracaoChange}
+                    handleInteracaoSelectChange={handleInteracaoSelectChange}
+                    handleInteracaoDataChange={handleInteracaoDataChange}
+                    adicionarInteracao={adicionarInteracao}
+                    vendedoresAtivos={vendedoresAtivos}
+                    getNomeResponsavel={getNomeResponsavel}
+                  />
                 </TabsContent>
+
                 {/* FECHAMENTO */}
                 <TabsContent value="fechamento" className="p-6 mt-0 h-full overflow-y-auto">
                   <LeadFechamentoTab
@@ -832,177 +558,6 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
           </div>
         </SheetContent>
       </Sheet>
-      
-      {/* Diálogo para visualizar uma interação */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Detalhes da Interação</DialogTitle>
-          </DialogHeader>
-          
-          {interacaoSelecionada && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm">
-                <div className="bg-primary/10 p-2 rounded-full">
-                  {getIconForInteraction(interacaoSelecionada.tipo)}
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium capitalize">{interacaoSelecionada.tipo}</p>
-                  <p className="text-muted-foreground text-xs">{interacaoSelecionada.data}</p>
-                </div>
-              </div>
-              
-              <div>
-                <Label className="text-xs text-muted-foreground">Responsável</Label>
-                <p className="font-medium">{interacaoSelecionada.responsavelNome || getNomeResponsavel(interacaoSelecionada.responsavelId)}</p>
-              </div>
-              
-              <div>
-                <Label className="text-xs text-muted-foreground">Descrição</Label>
-                <div className="mt-1 p-3 bg-muted/50 rounded-md whitespace-pre-wrap">
-                  {interacaoSelecionada.descricao}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">Fechar</Button>
-            </DialogClose>
-            <Button 
-              type="button" 
-              onClick={() => {
-                setIsViewDialogOpen(false);
-                if (interacaoSelecionada) prepararEdicaoInteracao(interacaoSelecionada);
-              }}
-            >
-              <Edit className="mr-2 h-4 w-4" />
-              Editar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Diálogo para editar uma interação */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Editar Interação</DialogTitle>
-            <DialogDescription>
-              Atualize os detalhes da interação com o lead.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {interacaoEditavel && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="editTipo">Tipo de Interação</Label>
-                  <Select
-                    value={interacaoEditavel.tipo}
-                    onValueChange={(value) => handleInteracaoEditavelSelectChange("tipo", value)}
-                  >
-                    <SelectTrigger id="editTipo" className="bg-white">
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white">
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="ligacao">Ligação</SelectItem>
-                      <SelectItem value="reuniao">Reunião</SelectItem>
-                      <SelectItem value="mensagem">Mensagem</SelectItem>
-                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                      <SelectItem value="telegram">Telegram</SelectItem>
-                      <SelectItem value="instagram">Direct do Instagram</SelectItem>
-                      <SelectItem value="facebook">Messenger do Facebook</SelectItem>
-                      <SelectItem value="outro">Outro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="editResponsavel">Responsável</Label>
-                  <Select
-                    value={interacaoEditavel.responsavelId}
-                    onValueChange={(value) => handleInteracaoEditavelSelectChange("responsavelId", value)}
-                  >
-                    <SelectTrigger id="editResponsavel" className="bg-white">
-                      <SelectValue placeholder="Selecione o responsável" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white">
-                      {vendedoresAtivos.map((vendedor) => (
-                        <SelectItem key={vendedor.id} value={vendedor.id}>
-                          {vendedor.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="editData">Data</Label>
-                <Input
-                  id="editData"
-                  name="data"
-                  value={interacaoEditavel.data}
-                  onChange={handleInteracaoEditavelChange}
-                  className="bg-white"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="editDescricao">Descrição</Label>
-                <Textarea
-                  id="editDescricao"
-                  name="descricao"
-                  value={interacaoEditavel.descricao}
-                  onChange={handleInteracaoEditavelChange}
-                  placeholder="Descreva a interação..."
-                  rows={4}
-                  className="resize-none bg-white"
-                />
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button 
-              type="button"
-              onClick={confirmarEdicaoInteracao}
-            >
-              Salvar Alterações
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Diálogo para confirmar exclusão */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Confirmar Exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza de que deseja excluir esta interação? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button 
-              type="button"
-              variant="destructive"
-              onClick={excluirInteracao}
-            >
-              Excluir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
