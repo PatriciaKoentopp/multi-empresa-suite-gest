@@ -99,9 +99,9 @@ export default function IncluirMovimentacaoPage() {
     }
   }, [movimentacaoParaEditar, setTipoTitulo]);
   
-  // Log para diagnóstico de parcelas
+  // Log para diagnóstico de parcelas - CORREÇÃO: Verificação de parcelas antes de acessar length
   useEffect(() => {
-    if (parcelas.length > 0) {
+    if (parcelas && parcelas.length > 0) {
       console.log('Parcelas carregadas:', parcelas);
     }
   }, [parcelas]);
@@ -209,7 +209,7 @@ export default function IncluirMovimentacaoPage() {
               formasPagamento={formasPagamento}
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
-              parcelas={parcelas}
+              parcelas={parcelas || []}
               onParcelaValorChange={atualizarValorParcela}
               onParcelaDataChange={atualizarDataVencimento}
               readOnly={modoVisualizacao}
@@ -242,7 +242,7 @@ export default function IncluirMovimentacaoPage() {
               formasPagamento={formasPagamento}
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
-              parcelas={parcelas}
+              parcelas={parcelas || []}
               onParcelaValorChange={atualizarValorParcela}
               onParcelaDataChange={atualizarDataVencimento}
               readOnly={modoVisualizacao}
