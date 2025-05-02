@@ -116,7 +116,8 @@ export const SalesComparisonTable = ({
         <TableCell className="text-right text-sm">
           <VariationDisplay value={month.variacao_percentual} />
         </TableCell>
-        <TableCell className="text-right text-sm">
+        {/* Célula oculta para manter alinhamento, mas não mostra conteúdo */}
+        <TableCell className="text-right text-sm hidden">
           {formatCurrency(month.faturado / 30 || 0)}
         </TableCell>
         <TableCell className="text-right text-sm">
