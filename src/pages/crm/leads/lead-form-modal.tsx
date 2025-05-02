@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +45,7 @@ import { LeadDadosTab } from "./LeadDadosTab";
 import { LeadFechamentoTab } from "./LeadFechamentoTab";
 import { LeadInteracaoDataField } from "./LeadInteracaoDataField";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDate } from "@/lib/utils";
 
 interface Lead {
   id: string;
@@ -197,7 +197,8 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
         leadId: item.lead_id,
         tipo: item.tipo,
         descricao: item.descricao,
-        data: new Date(item.data).toLocaleDateString('pt-BR'),
+        // Importante: usar formatDate para garantir conversão correta sem problemas de timezone
+        data: formatDate(item.data),
         responsavelId: item.responsavel_id,
         responsavelNome: item.responsavel_id ? (responsaveisMap.get(item.responsavel_id) || 'Desconhecido') : 'Não atribuído'
       }));
@@ -325,6 +326,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     }
 
     try {
+      // Usar format do date-fns diretamente para garantir formato YYYY-MM-DD
       const dataFormatada = format(novaInteracao.data, 'yyyy-MM-dd');
       
       // Salvar no Supabase
@@ -356,7 +358,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
           leadId: data[0].lead_id,
           tipo: data[0].tipo,
           descricao: data[0].descricao,
-          data: new Date(data[0].data).toLocaleDateString('pt-BR'),
+          data: formatDate(data[0].data), // Usar função formatDate para garantir data correta
           responsavelId: data[0].responsavel_id,
           responsavelNome: usuarios.find(u => u.id === data[0].responsavel_id)?.nome || 'Desconhecido'
         };
@@ -605,6 +607,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
             </SheetHeader>
 
             <Tabs defaultValue="dados" className="flex-1 overflow-hidden">
+              
               <div className="border-b px-6">
                 <TabsList className="bg-transparent border-b-0 p-0">
                   <TabsTrigger 
@@ -627,6 +630,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                   </TabsTrigger>
                 </TabsList>
               </div>
+              
               <div className="flex-1 overflow-y-auto">
                 {/* DADOS */}
                 <TabsContent value="dados" className="p-6 mt-0">
@@ -642,6 +646,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                     />
                   </form>
                 </TabsContent>
+                
                 {/* INTERAÇÕES */}
                 <TabsContent value="interacoes" className="mt-0">
                   <ScrollArea className="h-full pb-6">
@@ -651,6 +656,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                         <div className="border-b pb-6">
                           <h3 className="text-lg font-medium mb-4">Nova Interação</h3>
                           <div className="space-y-4">
+                            
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label htmlFor="interacaoTipo">Tipo de Interação</Label>
@@ -739,66 +745,64 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                             </div>
                           ) : interacoes.length > 0 ? (
                             <div className="border rounded-md overflow-hidden">
-                              <div className="overflow-x-auto">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Tipo</TableHead>
-                                      <TableHead>Descrição</TableHead>
-                                      <TableHead>Data</TableHead>
-                                      <TableHead>Responsável</TableHead>
-                                      <TableHead className="text-right">Ações</TableHead>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Tipo</TableHead>
+                                    <TableHead>Descrição</TableHead>
+                                    <TableHead>Data</TableHead>
+                                    <TableHead>Responsável</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {interacoes.map((interacao) => (
+                                    <TableRow key={interacao.id}>
+                                      <TableCell>
+                                        <div className="flex items-center gap-2">
+                                          {getIconForInteraction(interacao.tipo)}
+                                          <span className="capitalize">{interacao.tipo}</span>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell className="max-w-[200px] truncate">
+                                        {interacao.descricao}
+                                      </TableCell>
+                                      <TableCell>{interacao.data}</TableCell>
+                                      <TableCell>
+                                        <div className="flex items-center gap-1">
+                                          <UserRound className="h-3 w-3 text-gray-500" />
+                                          <span>{interacao.responsavelNome || getNomeResponsavel(interacao.responsavelId)}</span>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        <div className="flex justify-end gap-1">
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm"
+                                            onClick={() => visualizarInteracao(interacao)}
+                                          >
+                                            <Eye className="h-4 w-4 text-gray-500" />
+                                          </Button>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm"
+                                            onClick={() => prepararEdicaoInteracao(interacao)}
+                                          >
+                                            <Edit className="h-4 w-4 text-blue-500" />
+                                          </Button>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm"
+                                            onClick={() => prepararExclusaoInteracao(interacao)}
+                                          >
+                                            <Trash2 className="h-4 w-4 text-red-500" />
+                                          </Button>
+                                        </div>
+                                      </TableCell>
                                     </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {interacoes.map((interacao) => (
-                                      <TableRow key={interacao.id}>
-                                        <TableCell>
-                                          <div className="flex items-center gap-2">
-                                            {getIconForInteraction(interacao.tipo)}
-                                            <span className="capitalize">{interacao.tipo}</span>
-                                          </div>
-                                        </TableCell>
-                                        <TableCell className="max-w-[200px] truncate">
-                                          {interacao.descricao}
-                                        </TableCell>
-                                        <TableCell>{interacao.data}</TableCell>
-                                        <TableCell>
-                                          <div className="flex items-center gap-1">
-                                            <UserRound className="h-3 w-3 text-gray-500" />
-                                            <span>{interacao.responsavelNome || getNomeResponsavel(interacao.responsavelId)}</span>
-                                          </div>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                          <div className="flex justify-end gap-1">
-                                            <Button 
-                                              variant="ghost" 
-                                              size="sm"
-                                              onClick={() => visualizarInteracao(interacao)}
-                                            >
-                                              <Eye className="h-4 w-4 text-gray-500" />
-                                            </Button>
-                                            <Button 
-                                              variant="ghost" 
-                                              size="sm"
-                                              onClick={() => prepararEdicaoInteracao(interacao)}
-                                            >
-                                              <Edit className="h-4 w-4 text-blue-500" />
-                                            </Button>
-                                            <Button 
-                                              variant="ghost" 
-                                              size="sm"
-                                              onClick={() => prepararExclusaoInteracao(interacao)}
-                                            >
-                                              <Trash2 className="h-4 w-4 text-red-500" />
-                                            </Button>
-                                          </div>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
+                                  ))}
+                                </TableBody>
+                              </Table>
                             </div>
                           ) : (
                             <div className="text-center py-6 text-muted-foreground border rounded-md">
@@ -814,6 +818,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                     )}
                   </ScrollArea>
                 </TabsContent>
+                
                 {/* FECHAMENTO */}
                 <TabsContent value="fechamento" className="p-6 mt-0">
                   <LeadFechamentoTab
@@ -844,6 +849,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
           </div>
         </SheetContent>
       </Sheet>
+      
       
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent>
@@ -879,131 +885,3 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                   </span>
                 </div>
               </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button
-              onClick={() => setIsViewDialogOpen(false)}
-            >
-              Fechar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Interação</DialogTitle>
-            <DialogDescription>
-              Modifique os dados da interação
-            </DialogDescription>
-          </DialogHeader>
-          
-          {interacaoEditavel && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Tipo</Label>
-                  <Select
-                    value={interacaoEditavel.tipo}
-                    onValueChange={(v) => handleInteracaoEditavelSelectChange('tipo', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="ligacao">Ligação</SelectItem>
-                      <SelectItem value="reuniao">Reunião</SelectItem>
-                      <SelectItem value="mensagem">Mensagem</SelectItem>
-                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                      <SelectItem value="telegram">Telegram</SelectItem>
-                      <SelectItem value="instagram">Direct do Instagram</SelectItem>
-                      <SelectItem value="facebook">Messenger do Facebook</SelectItem>
-                      <SelectItem value="outro">Outro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Responsável</Label>
-                  <Select
-                    value={interacaoEditavel.responsavelId}
-                    onValueChange={(v) => handleInteracaoEditavelSelectChange('responsavelId', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vendedoresAtivos.map((vendedor) => (
-                        <SelectItem key={vendedor.id} value={vendedor.id}>
-                          {vendedor.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Data</Label>
-                <Input
-                  name="data"
-                  value={interacaoEditavel.data}
-                  onChange={handleInteracaoEditavelChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Descrição</Label>
-                <Textarea
-                  name="descricao"
-                  value={interacaoEditavel.descricao}
-                  onChange={handleInteracaoEditavelChange}
-                  rows={4}
-                />
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button
-              onClick={confirmarEdicaoInteracao}
-              variant="blue"
-            >
-              Salvar Alterações
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Excluir Interação</DialogTitle>
-            <DialogDescription>
-              Você tem certeza que deseja excluir esta interação? Esta ação não poderá ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button
-              onClick={excluirInteracao}
-              variant="destructive"
-            >
-              Excluir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
