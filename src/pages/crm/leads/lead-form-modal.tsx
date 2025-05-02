@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -643,175 +642,178 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                   </form>
                 </TabsContent>
                 {/* INTERAÇÕES */}
-                <TabsContent value="interacoes" className="mt-0">
-                  <ScrollArea className="h-full pb-6">
-                    {lead ? (
-                      <div className="px-6 space-y-6">
-                        {/* Formulário para nova interação */}
-                        <div className="border-b pb-6">
-                          <h3 className="text-lg font-medium mb-4">Nova Interação</h3>
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="interacaoTipo">Tipo de Interação</Label>
-                                <Select
-                                  value={novaInteracao.tipo}
-                                  onValueChange={(value) => handleInteracaoSelectChange("tipo", value)}
-                                >
-                                  <SelectTrigger id="interacaoTipo" className="bg-white">
-                                    <SelectValue placeholder="Selecione o tipo" />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-white z-50">
-                                    <SelectItem value="email">Email</SelectItem>
-                                    <SelectItem value="ligacao">Ligação</SelectItem>
-                                    <SelectItem value="reuniao">Reunião</SelectItem>
-                                    <SelectItem value="mensagem">Mensagem</SelectItem>
-                                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                                    <SelectItem value="telegram">Telegram</SelectItem>
-                                    <SelectItem value="instagram">Direct do Instagram</SelectItem>
-                                    <SelectItem value="facebook">Messenger do Facebook</SelectItem>
-                                    <SelectItem value="outro">Outro</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                <TabsContent value="interacoes" className="mt-0 h-full">
+                  <ScrollArea className="h-[calc(100vh-220px)]">
+                    <div className="px-6 py-6 space-y-6">
+                      {lead ? (
+                        <>
+                          {/* Formulário para nova interação */}
+                          <div className="border-b pb-6">
+                            <h3 className="text-lg font-medium mb-4">Nova Interação</h3>
+                            <div className="space-y-4">
+                              
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="interacaoTipo">Tipo de Interação</Label>
+                                  <Select
+                                    value={novaInteracao.tipo}
+                                    onValueChange={(value) => handleInteracaoSelectChange("tipo", value)}
+                                  >
+                                    <SelectTrigger id="interacaoTipo" className="bg-white">
+                                      <SelectValue placeholder="Selecione o tipo" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-white z-50">
+                                      <SelectItem value="email">Email</SelectItem>
+                                      <SelectItem value="ligacao">Ligação</SelectItem>
+                                      <SelectItem value="reuniao">Reunião</SelectItem>
+                                      <SelectItem value="mensagem">Mensagem</SelectItem>
+                                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                                      <SelectItem value="telegram">Telegram</SelectItem>
+                                      <SelectItem value="instagram">Direct do Instagram</SelectItem>
+                                      <SelectItem value="facebook">Messenger do Facebook</SelectItem>
+                                      <SelectItem value="outro">Outro</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="interacaoResponsavel">Responsável</Label>
+                                  <Select
+                                    value={novaInteracao.responsavelId}
+                                    onValueChange={(value) => handleInteracaoSelectChange("responsavelId", value)}
+                                  >
+                                    <SelectTrigger id="interacaoResponsavel" className="bg-white">
+                                      <SelectValue placeholder="Selecione o responsável" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-white z-50">
+                                      {vendedoresAtivos.map((vendedor) => (
+                                        <SelectItem key={vendedor.id} value={vendedor.id}>
+                                          {vendedor.nome}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
                               </div>
+
+                              {/* Campo data interação */}
                               <div className="space-y-2">
-                                <Label htmlFor="interacaoResponsavel">Responsável</Label>
-                                <Select
-                                  value={novaInteracao.responsavelId}
-                                  onValueChange={(value) => handleInteracaoSelectChange("responsavelId", value)}
-                                >
-                                  <SelectTrigger id="interacaoResponsavel" className="bg-white">
-                                    <SelectValue placeholder="Selecione o responsável" />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-white z-50">
-                                    {vendedoresAtivos.map((vendedor) => (
-                                      <SelectItem key={vendedor.id} value={vendedor.id}>
-                                        {vendedor.nome}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <Label>Data da Interação</Label>
+                                <LeadInteracaoDataField
+                                  date={novaInteracao.data}
+                                  onDateChange={handleInteracaoDataChange}
+                                />
                               </div>
-                            </div>
 
-                            {/* Campo data interação */}
-                            <div className="space-y-2">
-                              <Label>Data da Interação</Label>
-                              <LeadInteracaoDataField
-                                date={novaInteracao.data}
-                                onDateChange={handleInteracaoDataChange}
-                              />
-                            </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="interacaoDescricao">Descrição</Label>
+                                <Textarea
+                                  id="interacaoDescricao"
+                                  name="descricao"
+                                  value={novaInteracao.descricao}
+                                  onChange={handleInteracaoChange}
+                                  placeholder="Descreva a interação..."
+                                  rows={4}
+                                  className="resize-none"
+                                />
+                              </div>
 
-                            <div className="space-y-2">
-                              <Label htmlFor="interacaoDescricao">Descrição</Label>
-                              <Textarea
-                                id="interacaoDescricao"
-                                name="descricao"
-                                value={novaInteracao.descricao}
-                                onChange={handleInteracaoChange}
-                                placeholder="Descreva a interação..."
-                                rows={4}
-                                className="resize-none"
-                              />
+                              <Button
+                                type="button"
+                                onClick={adicionarInteracao}
+                                variant="blue"
+                                className="w-full sm:w-auto"
+                                disabled={novaInteracao.descricao.trim() === "" || !novaInteracao.responsavelId}
+                              >
+                                <Send className="mr-2 h-4 w-4" />
+                                Registrar Interação
+                              </Button>
                             </div>
-
-                            <Button
-                              type="button"
-                              onClick={adicionarInteracao}
-                              variant="blue"
-                              className="w-full sm:w-auto"
-                              disabled={novaInteracao.descricao.trim() === "" || !novaInteracao.responsavelId}
-                            >
-                              <Send className="mr-2 h-4 w-4" />
-                              Registrar Interação
-                            </Button>
                           </div>
-                        </div>
 
-                        {/* Lista de interações existentes */}
-                        <div>
-                          <h3 className="text-lg font-medium mb-4">Histórico de Interações</h3>
-                          {carregandoInteracoes ? (
-                            <div className="text-center py-6">
-                              <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-blue-500 border-r-transparent"></div>
-                              <p className="mt-2 text-sm text-muted-foreground">Carregando interações...</p>
-                            </div>
-                          ) : interacoes.length > 0 ? (
-                            <div className="border rounded-md overflow-hidden">
-                              <div className="overflow-x-auto">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Tipo</TableHead>
-                                      <TableHead>Descrição</TableHead>
-                                      <TableHead>Data</TableHead>
-                                      <TableHead>Responsável</TableHead>
-                                      <TableHead className="text-right">Ações</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {interacoes.map((interacao) => (
-                                      <TableRow key={interacao.id}>
-                                        <TableCell>
-                                          <div className="flex items-center gap-2">
-                                            {getIconForInteraction(interacao.tipo)}
-                                            <span className="capitalize">{interacao.tipo}</span>
-                                          </div>
-                                        </TableCell>
-                                        <TableCell className="max-w-[200px] truncate">
-                                          {interacao.descricao}
-                                        </TableCell>
-                                        <TableCell>{interacao.data}</TableCell>
-                                        <TableCell>
-                                          <div className="flex items-center gap-1">
-                                            <UserRound className="h-3 w-3 text-gray-500" />
-                                            <span>{interacao.responsavelNome || getNomeResponsavel(interacao.responsavelId)}</span>
-                                          </div>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                          <div className="flex justify-end gap-1">
-                                            <Button 
-                                              variant="ghost" 
-                                              size="sm"
-                                              onClick={() => visualizarInteracao(interacao)}
-                                            >
-                                              <Eye className="h-4 w-4 text-gray-500" />
-                                            </Button>
-                                            <Button 
-                                              variant="ghost" 
-                                              size="sm"
-                                              onClick={() => prepararEdicaoInteracao(interacao)}
-                                            >
-                                              <Edit className="h-4 w-4 text-blue-500" />
-                                            </Button>
-                                            <Button 
-                                              variant="ghost" 
-                                              size="sm"
-                                              onClick={() => prepararExclusaoInteracao(interacao)}
-                                            >
-                                              <Trash2 className="h-4 w-4 text-red-500" />
-                                            </Button>
-                                          </div>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
+                          {/* Lista de interações existentes */}
+                          <div>
+                            <h3 className="text-lg font-medium mb-4">Histórico de Interações</h3>
+                            {carregandoInteracoes ? (
+                              <div className="text-center py-6">
+                                <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-blue-500 border-r-transparent"></div>
+                                <p className="mt-2 text-sm text-muted-foreground">Carregando interações...</p>
                               </div>
-                            </div>
-                          ) : (
-                            <div className="text-center py-6 text-muted-foreground border rounded-md">
-                              Nenhuma interação registrada.
-                            </div>
-                          )}
+                            ) : interacoes.length > 0 ? (
+                              <div className="border rounded-md overflow-hidden">
+                                <div className="overflow-x-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Tipo</TableHead>
+                                        <TableHead>Descrição</TableHead>
+                                        <TableHead>Data</TableHead>
+                                        <TableHead>Responsável</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {interacoes.map((interacao) => (
+                                        <TableRow key={interacao.id}>
+                                          <TableCell>
+                                            <div className="flex items-center gap-2">
+                                              {getIconForInteraction(interacao.tipo)}
+                                              <span className="capitalize">{interacao.tipo}</span>
+                                            </div>
+                                          </TableCell>
+                                          <TableCell className="max-w-[200px] truncate">
+                                            {interacao.descricao}
+                                          </TableCell>
+                                          <TableCell>{interacao.data}</TableCell>
+                                          <TableCell>
+                                            <div className="flex items-center gap-1">
+                                              <UserRound className="h-3 w-3 text-gray-500" />
+                                              <span>{interacao.responsavelNome || getNomeResponsavel(interacao.responsavelId)}</span>
+                                            </div>
+                                          </TableCell>
+                                          <TableCell className="text-right">
+                                            <div className="flex justify-end gap-1">
+                                              <Button 
+                                                variant="ghost" 
+                                                size="sm"
+                                                onClick={() => visualizarInteracao(interacao)}
+                                              >
+                                                <Eye className="h-4 w-4 text-gray-500" />
+                                              </Button>
+                                              <Button 
+                                                variant="ghost" 
+                                                size="sm"
+                                                onClick={() => prepararEdicaoInteracao(interacao)}
+                                              >
+                                                <Edit className="h-4 w-4 text-blue-500" />
+                                              </Button>
+                                              <Button 
+                                                variant="ghost" 
+                                                size="sm"
+                                                onClick={() => prepararExclusaoInteracao(interacao)}
+                                              >
+                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                              </Button>
+                                            </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-center py-6 text-muted-foreground border rounded-md">
+                                Nenhuma interação registrada.
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-10 text-muted-foreground">
+                          As interações estarão disponíveis após criar o lead.
                         </div>
-                      </div>
-                    ) : (
-                      <div className="px-6 text-center py-10 text-muted-foreground">
-                        As interações estarão disponíveis após criar o lead.
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </ScrollArea>
                 </TabsContent>
                 {/* FECHAMENTO */}
@@ -845,6 +847,7 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
         </SheetContent>
       </Sheet>
       
+      
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -875,135 +878,4 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                 <div className="flex items-center gap-2">
                   <UserRound className="h-4 w-4" />
                   <span>
-                    {interacaoSelecionada.responsavelNome || getNomeResponsavel(interacaoSelecionada.responsavelId)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button
-              onClick={() => setIsViewDialogOpen(false)}
-            >
-              Fechar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Interação</DialogTitle>
-            <DialogDescription>
-              Modifique os dados da interação
-            </DialogDescription>
-          </DialogHeader>
-          
-          {interacaoEditavel && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Tipo</Label>
-                  <Select
-                    value={interacaoEditavel.tipo}
-                    onValueChange={(v) => handleInteracaoEditavelSelectChange('tipo', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="ligacao">Ligação</SelectItem>
-                      <SelectItem value="reuniao">Reunião</SelectItem>
-                      <SelectItem value="mensagem">Mensagem</SelectItem>
-                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                      <SelectItem value="telegram">Telegram</SelectItem>
-                      <SelectItem value="instagram">Direct do Instagram</SelectItem>
-                      <SelectItem value="facebook">Messenger do Facebook</SelectItem>
-                      <SelectItem value="outro">Outro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Responsável</Label>
-                  <Select
-                    value={interacaoEditavel.responsavelId}
-                    onValueChange={(v) => handleInteracaoEditavelSelectChange('responsavelId', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vendedoresAtivos.map((vendedor) => (
-                        <SelectItem key={vendedor.id} value={vendedor.id}>
-                          {vendedor.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Data</Label>
-                <Input
-                  name="data"
-                  value={interacaoEditavel.data}
-                  onChange={handleInteracaoEditavelChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Descrição</Label>
-                <Textarea
-                  name="descricao"
-                  value={interacaoEditavel.descricao}
-                  onChange={handleInteracaoEditavelChange}
-                  rows={4}
-                />
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button
-              onClick={confirmarEdicaoInteracao}
-              variant="blue"
-            >
-              Salvar Alterações
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Excluir Interação</DialogTitle>
-            <DialogDescription>
-              Você tem certeza que deseja excluir esta interação? Esta ação não poderá ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button
-              onClick={excluirInteracao}
-              variant="destructive"
-            >
-              Excluir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
+                    {interacaoSelecionada.responsavelNome || getNomeResponsavel(interacaoSelecionada.responsavel
