@@ -51,13 +51,42 @@ export const usePainelFinanceiro = () => {
       
       if (errorPagar) throw errorPagar;
 
-      // Busca saldo das contas correntes
+      // Busca saldo inicial das contas correntes
       const { data: contasCorrentes, error: errorContas } = await supabase
         .from('contas_correntes')
         .select('id, saldo_inicial')
         .eq('status', 'ativo');
       
       if (errorContas) throw errorContas;
+      
+      // Busca dados do fluxo de caixa para calcular o saldo atual
+      const { data: fluxoCaixa, error: errorFluxo } = await supabase
+        .from('fluxo_caixa')
+        .select('id, valor, tipo_operacao');
+      
+      if (errorFluxo) throw errorFluxo;
+      
+      // Calcula o saldo das contas considerando o saldo inicial e as movimentações do fluxo de caixa
+      let saldoInicial = contasCorrentes?.reduce((sum, conta) => 
+        sum + Number(conta.saldo_inicial || 0), 0) || 0;
+      
+      let saldoMovimentacoes = 0;
+      if (fluxoCaixa && fluxoCaixa.length > 0) {
+        saldoMovimentacoes = fluxoCaixa.reduce((sum, movimento) => {
+          if (movimento.tipo_operacao === 'receber') {
+            return sum + Number(movimento.valor || 0);
+          } else if (movimento.tipo_operacao === 'pagar') {
+            return sum - Number(movimento.valor || 0);
+          } else if (movimento.tipo_operacao === 'transferencia') {
+            // Transferências não afetam o saldo total
+            return sum;
+          }
+          return sum;
+        }, 0);
+      }
+      
+      // Saldo final é o saldo inicial mais as movimentações
+      const saldoContas = saldoInicial + saldoMovimentacoes;
 
       // Busca fluxo financeiro dos últimos 12 meses
       const dataAtual = new Date();
@@ -75,7 +104,7 @@ export const usePainelFinanceiro = () => {
       const dataInicialStr = `${anoInicial}-${mesInicial.toString().padStart(2, '0')}-01`;
       
       // Buscar dados de movimentações pagas/recebidas agrupadas por mês
-      const { data: fluxoMensal, error: errorFluxo } = await supabase
+      const { data: fluxoMensal, error: errorFluxoMensal } = await supabase
         .from('movimentacoes_parcelas')
         .select(`
           id,
@@ -88,7 +117,7 @@ export const usePainelFinanceiro = () => {
         .not('data_pagamento', 'is', null)
         .gte('data_pagamento', dataInicialStr);
       
-      if (errorFluxo) throw errorFluxo;
+      if (errorFluxoMensal) throw errorFluxoMensal;
 
       // Processar dados
       const totalAReceber = parcelasReceber
@@ -98,9 +127,6 @@ export const usePainelFinanceiro = () => {
       const totalAPagar = parcelasPagar
         ?.filter(p => p.movimentacoes?.tipo_operacao === 'pagar')
         .reduce((sum, item) => sum + Number(item.valor || 0), 0) || 0;
-      
-      const saldoContas = contasCorrentes?.reduce((sum, conta) => 
-        sum + Number(conta.saldo_inicial || 0), 0) || 0;
       
       const dataAtualStr = new Date().toISOString().split('T')[0];
       
