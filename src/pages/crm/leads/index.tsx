@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import { Origem, Usuario, Funil } from "@/types";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrency } from "./utils/leadUtils";
 
 export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
@@ -387,9 +389,13 @@ export default function LeadsPage() {
   // Agrupar leads por etapa do funil
   const leadsByStage = selectedFunil?.etapas.map(etapa => {
     const stageLeads = filteredLeads.filter(lead => lead.etapaId === etapa.id);
+    // Calcular o valor total dos leads nesta etapa
+    const totalValor = stageLeads.reduce((total, lead) => total + (lead.valor || 0), 0);
+    
     return {
       etapa,
-      leads: stageLeads
+      leads: stageLeads,
+      totalValor
     };
   }) || [];
 
@@ -484,13 +490,18 @@ export default function LeadsPage() {
           {/* Layout Kanban com Drag and Drop */}
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex gap-4 overflow-x-auto pb-4">
-              {leadsByStage?.map(({ etapa, leads }) => (
+              {leadsByStage?.map(({ etapa, leads, totalValor }) => (
                 <div key={etapa.id} className="min-w-[280px] max-w-[280px] flex-shrink-0">
                   <div 
                     className="text-sm font-semibold mb-2 p-2 rounded-md flex justify-between items-center"
                     style={{ backgroundColor: `${etapa.cor}20`, color: etapa.cor }}
                   >
-                    <span>{etapa.nome}</span>
+                    <div>
+                      <span>{etapa.nome}</span>
+                      <div className="text-xs mt-1 opacity-90">
+                        {formatCurrency(totalValor)}
+                      </div>
+                    </div>
                     <span className="px-2 py-0.5 bg-white rounded-full text-xs">
                       {leads.length}
                     </span>
