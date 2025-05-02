@@ -40,7 +40,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Origem, Usuario, MotivoPerda } from "@/types";
 import { format } from "date-fns";
-import { Send, UserRound, Phone, Calendar, Mail, MessageCircle, Eye, Edit, Trash2 } from "lucide-react";
+import { Send, UserRound, Phone, Calendar, Mail, MessageCircle, Eye, Edit, Trash2, MessageSquare } from "lucide-react";
 
 import { LeadDadosTab } from "./LeadDadosTab";
 import { LeadFechamentoTab } from "./LeadFechamentoTab";
@@ -73,7 +73,7 @@ interface EtapaFunil {
 interface LeadInteracao {
   id: number | string;
   leadId: string;
-  tipo: "email" | "ligacao" | "reuniao" | "mensagem" | "outro";
+  tipo: "email" | "ligacao" | "reuniao" | "mensagem" | "whatsapp" | "telegram" | "instagram" | "facebook" | "outro";
   descricao: string;
   data: string;
   responsavelId: string;
@@ -461,6 +461,14 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
         return <Calendar className="h-4 w-4" />;
       case "mensagem":
         return <MessageCircle className="h-4 w-4" />;
+      case "whatsapp":
+        return <MessageSquare className="h-4 w-4 text-green-500" />;
+      case "telegram":
+        return <Send className="h-4 w-4 text-blue-500" />;
+      case "instagram":
+        return <MessageCircle className="h-4 w-4 text-pink-500" />;
+      case "facebook":
+        return <MessageCircle className="h-4 w-4 text-blue-600" />;
       default:
         return <MessageCircle className="h-4 w-4" />;
     }
@@ -628,6 +636,10 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                                     <SelectItem value="ligacao">Ligação</SelectItem>
                                     <SelectItem value="reuniao">Reunião</SelectItem>
                                     <SelectItem value="mensagem">Mensagem</SelectItem>
+                                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                                    <SelectItem value="telegram">Telegram</SelectItem>
+                                    <SelectItem value="instagram">Direct do Instagram</SelectItem>
+                                    <SelectItem value="facebook">Messenger do Facebook</SelectItem>
                                     <SelectItem value="outro">Outro</SelectItem>
                                   </SelectContent>
                                 </Select>
@@ -869,6 +881,10 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                       <SelectItem value="ligacao">Ligação</SelectItem>
                       <SelectItem value="reuniao">Reunião</SelectItem>
                       <SelectItem value="mensagem">Mensagem</SelectItem>
+                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                      <SelectItem value="telegram">Telegram</SelectItem>
+                      <SelectItem value="instagram">Direct do Instagram</SelectItem>
+                      <SelectItem value="facebook">Messenger do Facebook</SelectItem>
                       <SelectItem value="outro">Outro</SelectItem>
                     </SelectContent>
                   </Select>
