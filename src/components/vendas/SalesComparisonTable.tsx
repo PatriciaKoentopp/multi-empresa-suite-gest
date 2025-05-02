@@ -117,9 +117,6 @@ export const SalesComparisonTable = ({
           <VariationDisplay value={month.variacao_percentual} />
         </TableCell>
         <TableCell className="text-right text-sm">
-          {formatCurrency(month.faturado / 30 || 0)}
-        </TableCell>
-        <TableCell className="text-right text-sm">
           <VariationDisplay value={month.variacao_ano_anterior} tooltip={`Comparado a ${month.name}/${year-1}`} />
         </TableCell>
       </TableRow>
@@ -139,7 +136,6 @@ export const SalesComparisonTable = ({
                 <TableHead className="w-[130px] text-left">Período</TableHead>
                 <TableHead className="text-right w-[170px]">Total de Vendas</TableHead>
                 <TableHead className="text-right w-[100px]">Variação</TableHead>
-                <TableHead className="text-right w-[170px]">Média Mensal</TableHead>
                 <TableHead className="text-right w-[100px]">Variação Anual</TableHead>
               </TableRow>
             </TableHeader>
@@ -176,9 +172,6 @@ export const SalesComparisonTable = ({
                     </TableCell>
                     <TableCell className="text-right">
                       <VariationDisplay value={yearData.variacao_total} />
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(yearData.media_mensal || 0)}
                     </TableCell>
                     <TableCell className="text-right">
                       <VariationDisplay value={yearData.variacao_media} />
