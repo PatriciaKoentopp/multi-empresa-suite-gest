@@ -96,6 +96,27 @@ export const useVendasDashboard = () => {
             }
           }
           
+          // Buscar dados dos mesmos meses do ano anterior para comparação
+          const anoAnterior = year - 1;
+          let dadosMesmoMesAnoAnterior: any[] = [];
+          
+          try {
+            const { data: dataAnoAnterior, error: errorAnoAnterior } = await supabase
+              .rpc('get_monthly_sales_chart_data', { year_param: anoAnterior });
+              
+            if (!errorAnoAnterior && dataAnoAnterior) {
+              // Transformar em formato mais fácil de pesquisar
+              dadosMesmoMesAnoAnterior = dataAnoAnterior.map((item: any) => ({
+                name: String(item.name || ''),
+                faturado: Number(item.faturado || 0),
+                monthNumber: mesesMap[String(item.name)] || 0,
+                year: anoAnterior
+              }));
+            }
+          } catch (e) {
+            console.warn(`Erro ao buscar dados do ano anterior (${anoAnterior})`, e);
+          }
+          
           // Calcular variações percentuais entre os meses
           const result = mesesOrdenadosComNumero.map((mes) => {
             let mesAnterior;
@@ -110,15 +131,26 @@ export const useVendasDashboard = () => {
               );
             }
             
+            // Buscar o mesmo mês do ano anterior para comparação
+            const mesmoMesAnoAnterior = dadosMesmoMesAnoAnterior.find(m => 
+              m.monthNumber === mes.monthNumber
+            );
+            
             let variacao = null;
             if (mesAnterior && mesAnterior.faturado > 0) {
               variacao = ((mes.faturado - mesAnterior.faturado) / mesAnterior.faturado) * 100;
             }
             
+            let variacaoAnoAnterior = null;
+            if (mesmoMesAnoAnterior && mesmoMesAnoAnterior.faturado > 0) {
+              variacaoAnoAnterior = ((mes.faturado - mesmoMesAnoAnterior.faturado) / mesmoMesAnoAnterior.faturado) * 100;
+            }
+            
             return {
               name: mes.name,
               faturado: mes.faturado,
-              variacao_percentual: variacao
+              variacao_percentual: variacao,
+              variacao_ano_anterior: variacaoAnoAnterior
             };
           });
           
@@ -149,7 +181,26 @@ export const useVendasDashboard = () => {
         throw vendaAnualError;
       }
       
+      // Buscar todas as vendas do ano anterior
+      const anoAnterior = year - 1;
+      const { data: vendaAnoAnterior, error: vendaAnoAnteriorError } = await supabase
+        .from('orcamentos')
+        .select(`
+          id, 
+          data_venda,
+          orcamentos_itens (valor)
+        `)
+        .eq('tipo', 'venda')
+        .eq('status', 'ativo')
+        .gte('data_venda', `${anoAnterior}-01-01`)
+        .lte('data_venda', `${anoAnterior}-12-31`);
+      
+      if (vendaAnoAnteriorError) {
+        console.error(`Erro ao buscar vendas do ano anterior para ${anoAnterior}:`, vendaAnoAnteriorError);
+      }
+      
       console.log(`Vendas do ano ${year} encontradas:`, vendaAnual?.length);
+      console.log(`Vendas do ano anterior ${anoAnterior} encontradas:`, vendaAnoAnterior?.length);
 
       // Criar estrutura mensal com valores iniciais zerados
       const meses = [
@@ -170,23 +221,45 @@ export const useVendasDashboard = () => {
         year
       }));
       
-      // Preencher os valores de cada mês
+      // Estrutura similar para o ano anterior
+      const dadosMensaisAnoAnterior = meses.map((name, index) => ({
+        name,
+        faturado: 0,
+        monthNumber: index + 1,
+        year: anoAnterior
+      }));
+      
+      // Preencher os valores de cada mês para o ano atual
       if (vendaAnual) {
         vendaAnual.forEach(venda => {
           if (venda.data_venda) {
-            // CORREÇÃO: Usar o mês diretamente da string da data para evitar problemas de timezone
-            // Formato da data no banco é 'YYYY-MM-DD', então pegamos o mês diretamente (índice 5-6)
             const mesString = venda.data_venda.substring(5, 7);
-            const mes = parseInt(mesString, 10) - 1; // Converter para índice de array (0-11)
+            const mes = parseInt(mesString, 10) - 1;
             
-            // Calcular o valor total do orçamento
             const valorTotal = venda.orcamentos_itens.reduce(
               (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
             );
             
-            // Adicionar ao mês correspondente
             if (mes >= 0 && mes < 12) {
               dadosMensais[mes].faturado += valorTotal;
+            }
+          }
+        });
+      }
+      
+      // Preencher os valores de cada mês para o ano anterior
+      if (vendaAnoAnterior) {
+        vendaAnoAnterior.forEach(venda => {
+          if (venda.data_venda) {
+            const mesString = venda.data_venda.substring(5, 7);
+            const mes = parseInt(mesString, 10) - 1;
+            
+            const valorTotal = venda.orcamentos_itens.reduce(
+              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+            );
+            
+            if (mes >= 0 && mes < 12) {
+              dadosMensaisAnoAnterior[mes].faturado += valorTotal;
             }
           }
         });
@@ -251,15 +324,24 @@ export const useVendasDashboard = () => {
           mesAnterior = dadosMensais.find(m => m.monthNumber === mesAnteriorNumero);
         }
         
+        // Buscar o mesmo mês do ano anterior para comparação
+        const mesmoMesAnoAnterior = dadosMensaisAnoAnterior.find(m => m.monthNumber === mes.monthNumber);
+        
         let variacao = null;
         if (mesAnterior && mesAnterior.faturado > 0) {
           variacao = ((mes.faturado - mesAnterior.faturado) / mesAnterior.faturado) * 100;
         }
         
+        let variacaoAnoAnterior = null;
+        if (mesmoMesAnoAnterior && mesmoMesAnoAnterior.faturado > 0) {
+          variacaoAnoAnterior = ((mes.faturado - mesmoMesAnoAnterior.faturado) / mesmoMesAnoAnterior.faturado) * 100;
+        }
+        
         return {
           name: mes.name,
           faturado: mes.faturado,
-          variacao_percentual: variacao
+          variacao_percentual: variacao,
+          variacao_ano_anterior: variacaoAnoAnterior
         };
       });
       

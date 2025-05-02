@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import {
   Table,
@@ -16,7 +17,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface SalesComparisonTableProps {
   yearlyComparisonData: YearlyComparison[];
-  getMonthlySalesData?: (year: number) => Promise<{ name: string; faturado: number; variacao_percentual: number | null; }[]>;
+  getMonthlySalesData?: (year: number) => Promise<{ name: string; faturado: number; variacao_percentual: number | null; variacao_ano_anterior: number | null; }[]>;
 }
 
 export const SalesComparisonTable = ({ 
@@ -24,7 +25,7 @@ export const SalesComparisonTable = ({
   getMonthlySalesData 
 }: SalesComparisonTableProps) => {
   const [expandedYears, setExpandedYears] = useState<{[key: number]: boolean}>({});
-  const [monthlyData, setMonthlyData] = useState<{[key: number]: {name: string; faturado: number; variacao_percentual: number | null}[]}>({});
+  const [monthlyData, setMonthlyData] = useState<{[key: number]: {name: string; faturado: number; variacao_percentual: number | null; variacao_ano_anterior: number | null;}[]}>({});
   const [loadingYear, setLoadingYear] = useState<number | null>(null);
   
   // Garantir que temos dados válidos para exibir
@@ -115,7 +116,12 @@ export const SalesComparisonTable = ({
         <TableCell className="text-right text-sm">
           <VariationDisplay value={month.variacao_percentual} />
         </TableCell>
-        <TableCell colSpan={2}></TableCell>
+        <TableCell className="text-right text-sm">
+          {formatCurrency(month.faturado / 30 || 0)}
+        </TableCell>
+        <TableCell className="text-right text-sm">
+          <VariationDisplay value={month.variacao_ano_anterior} tooltip={`Comparado a ${month.name}/${year-1}`} />
+        </TableCell>
       </TableRow>
     ));
   };
@@ -134,7 +140,7 @@ export const SalesComparisonTable = ({
                 <TableHead className="text-right w-[170px]">Total de Vendas</TableHead>
                 <TableHead className="text-right w-[100px]">Variação</TableHead>
                 <TableHead className="text-right w-[170px]">Média Mensal</TableHead>
-                <TableHead className="text-right w-[100px]">Variação</TableHead>
+                <TableHead className="text-right w-[100px]">Variação Anual</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
