@@ -14,7 +14,8 @@ const PainelVendasPage = () => {
     barChartData,
     quarterlyChartData,
     yearlyChartData,
-    yearlyComparisonData
+    yearlyComparisonData,
+    fetchMonthlySalesData
   } = useVendasDashboard();
 
   useEffect(() => {
@@ -51,7 +52,10 @@ const PainelVendasPage = () => {
         quarterlyChartData={safeQuarterlyChartData}
         yearlyChartData={safeYearlyChartData}
       />
-      <SalesComparisonTable yearlyComparisonData={safeYearlyComparisonData} />
+      <SalesComparisonTable 
+        yearlyComparisonData={safeYearlyComparisonData}
+        getMonthlySalesData={fetchMonthlySalesData}
+      />
     </div>
   );
 };

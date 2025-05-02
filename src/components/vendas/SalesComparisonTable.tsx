@@ -11,12 +11,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VariationDisplay } from "./VariationDisplay";
 import { YearlyComparison } from "@/types";
 import { formatCurrency } from "@/lib/utils";
+import { useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { 
+  Accordion, 
+  AccordionItem, 
+  AccordionTrigger, 
+  AccordionContent 
+} from "@/components/ui/accordion";
 
 interface SalesComparisonTableProps {
   yearlyComparisonData: YearlyComparison[];
+  getMonthlySalesData?: (year: number) => Promise<{ name: string; faturado: number; }[]>;
 }
 
-export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTableProps) => {
+export const SalesComparisonTable = ({ 
+  yearlyComparisonData,
+  getMonthlySalesData 
+}: SalesComparisonTableProps) => {
+  const [expandedYears, setExpandedYears] = useState<{[key: number]: boolean}>({});
+  const [monthlyData, setMonthlyData] = useState<{[key: number]: {name: string; faturado: number}[]}>({});
+  const [loadingYear, setLoadingYear] = useState<number | null>(null);
+  
   // Garantir que temos dados válidos para exibir
   console.log("Dados recebidos na tabela de comparação:", yearlyComparisonData);
   
@@ -54,6 +71,59 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
     );
   }
 
+  // Função para alternar a expansão de um ano
+  const toggleYearExpansion = async (year: number) => {
+    // Se já estamos carregando, não faz nada
+    if (loadingYear !== null) return;
+
+    // Se já temos os dados e estamos apenas alternando a visibilidade
+    if (expandedYears[year]) {
+      setExpandedYears(prev => ({
+        ...prev,
+        [year]: !prev[year]
+      }));
+      return;
+    }
+
+    // Se precisamos buscar os dados
+    if (getMonthlySalesData) {
+      try {
+        setLoadingYear(year);
+        const data = await getMonthlySalesData(year);
+        
+        setMonthlyData(prev => ({
+          ...prev,
+          [year]: data
+        }));
+        
+        setExpandedYears(prev => ({
+          ...prev,
+          [year]: true
+        }));
+      } catch (error) {
+        console.error(`Erro ao buscar dados mensais para ${year}:`, error);
+      } finally {
+        setLoadingYear(null);
+      }
+    }
+  };
+
+  // Renderizar linhas de dados mensais para um ano
+  const renderMonthlyRows = (year: number) => {
+    const data = monthlyData[year];
+    if (!data || !data.length) return null;
+
+    return data.map((month, idx) => (
+      <TableRow key={`month-${year}-${idx}`} className="bg-muted/5 hover:bg-muted/20">
+        <TableCell className="pl-8 font-normal text-sm">{month.name}</TableCell>
+        <TableCell className="text-right font-normal text-sm">
+          {formatCurrency(month.faturado || 0)}
+        </TableCell>
+        <TableCell colSpan={3}></TableCell>
+      </TableRow>
+    ));
+  };
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-muted/30">
@@ -73,24 +143,49 @@ export const SalesComparisonTable = ({ yearlyComparisonData }: SalesComparisonTa
             </TableHeader>
             <TableBody>
               {yearlyComparisonData.map((yearData, index) => (
-                <TableRow 
-                  key={`yearly-comparison-${yearData.year || index}`} 
-                  className={(yearData.year || 0) % 2 === 0 ? "bg-white" : "bg-muted/10"}
-                >
-                  <TableCell className="font-medium">{yearData.year || "N/A"}</TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatCurrency(yearData.total || 0)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <VariationDisplay value={yearData.variacao_total} />
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatCurrency(yearData.media_mensal || 0)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <VariationDisplay value={yearData.variacao_media} />
-                  </TableCell>
-                </TableRow>
+                <React.Fragment key={`yearly-comparison-${yearData.year || index}`}>
+                  <TableRow 
+                    className={(yearData.year || 0) % 2 === 0 ? "bg-white" : "bg-muted/10"}
+                    onClick={() => getMonthlySalesData ? toggleYearExpansion(yearData.year) : null}
+                    style={{ cursor: getMonthlySalesData ? 'pointer' : 'default' }}
+                  >
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {getMonthlySalesData && (
+                          <>
+                            {loadingYear === yearData.year ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                            ) : (
+                              <>
+                                {expandedYears[yearData.year] ? (
+                                  <ChevronDown className="h-4 w-4 text-blue-500" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 text-blue-500" />
+                                )}
+                              </>
+                            )}
+                          </>
+                        )}
+                        {yearData.year || "N/A"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(yearData.total || 0)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <VariationDisplay value={yearData.variacao_total} />
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(yearData.media_mensal || 0)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <VariationDisplay value={yearData.variacao_media} />
+                    </TableCell>
+                  </TableRow>
+                  
+                  {/* Linhas expandidas para mostrar dados mensais */}
+                  {expandedYears[yearData.year] && renderMonthlyRows(yearData.year)}
+                </React.Fragment>
               ))}
             </TableBody>
           </Table>

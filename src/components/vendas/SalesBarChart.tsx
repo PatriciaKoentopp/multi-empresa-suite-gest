@@ -124,22 +124,17 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
               }} 
             />
             {multiColor ? (
-              <Bar
-                dataKey="faturado"
-                name="Faturado"
-                fill="#4CAF50"
-                radius={[4, 4, 0, 0]}
-              >
-                {chartData.map((entry, index) => (
-                  <Bar
-                    key={`bar-${index}`}
-                    dataKey="faturado"
-                    name="Faturado"
-                    fill={CHART_COLORS[index % CHART_COLORS.length]}
-                    radius={[4, 4, 0, 0]}
-                  />
-                ))}
-              </Bar>
+              chartData.map((entry, index) => (
+                <Bar 
+                  key={`bar-${index}`}
+                  dataKey="faturado"
+                  name="Faturado"
+                  fill={CHART_COLORS[index % CHART_COLORS.length]}
+                  radius={[4, 4, 0, 0]}
+                  // Importante: filtrar para mostrar apenas este item
+                  data={[entry]}
+                />
+              ))
             ) : (
               <Bar
                 dataKey="faturado"

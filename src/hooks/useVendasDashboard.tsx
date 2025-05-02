@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +35,91 @@ export const useVendasDashboard = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Nova função para buscar dados mensais por ano
+  const fetchMonthlySalesData = async (year: number) => {
+    try {
+      console.log(`Buscando dados mensais para o ano ${year}`);
+      
+      // Tentar usar a função RPC para dados mensais se disponível
+      try {
+        const { data, error } = await supabase
+          .rpc('get_monthly_sales_chart_data', { year_param: year });
+          
+        if (!error && data) {
+          console.log(`Dados mensais recebidos via RPC para ${year}:`, data);
+          return formatChartData(data);
+        }
+      } catch (rpcError) {
+        console.warn(`Erro na chamada RPC para dados mensais: ${rpcError}`);
+      }
+      
+      // Fallback: buscar dados mensais manualmente
+      console.log(`Buscando dados mensais manualmente para ${year}`);
+      
+      // Buscar todas as vendas do ano especificado
+      const { data: vendaAnual, error: vendaAnualError } = await supabase
+        .from('orcamentos')
+        .select(`
+          id, 
+          data_venda,
+          orcamentos_itens (valor)
+        `)
+        .eq('tipo', 'venda')
+        .eq('status', 'ativo')
+        .gte('data_venda', `${year}-01-01`)
+        .lte('data_venda', `${year}-12-31`);
+      
+      if (vendaAnualError) {
+        console.error(`Erro ao buscar vendas anuais para ${year}:`, vendaAnualError);
+        throw vendaAnualError;
+      }
+      
+      console.log(`Vendas do ano ${year} encontradas:`, vendaAnual?.length);
+
+      // Criar estrutura mensal com valores iniciais zerados
+      const meses = [
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+      ];
+      
+      const dadosMensais = meses.map((name, index) => ({
+        name,
+        faturado: 0
+      }));
+      
+      // Preencher os valores de cada mês
+      if (vendaAnual) {
+        vendaAnual.forEach(venda => {
+          if (venda.data_venda) {
+            // Extrair o mês da data (0-11)
+            const dataVenda = new Date(venda.data_venda);
+            const mes = dataVenda.getMonth();
+            
+            // Calcular o valor total do orçamento
+            const valorTotal = venda.orcamentos_itens.reduce(
+              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+            );
+            
+            // Adicionar ao mês correspondente
+            dadosMensais[mes].faturado += valorTotal;
+          }
+        });
+      }
+      
+      console.log(`Dados mensais processados para ${year}:`, dadosMensais);
+      return dadosMensais;
+      
+    } catch (error: any) {
+      console.error(`Erro ao buscar dados mensais para ${year}:`, error);
+      toast({
+        variant: "destructive",
+        title: `Erro ao carregar dados mensais de ${year}`,
+        description: error.message || "Não foi possível carregar os dados mensais"
+      });
+      return [];
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -356,6 +440,7 @@ export const useVendasDashboard = () => {
     barChartData,
     quarterlyChartData,
     yearlyChartData,
-    yearlyComparisonData
+    yearlyComparisonData,
+    fetchMonthlySalesData
   };
 };
