@@ -187,119 +187,121 @@ export function LeadFechamentoTab({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Label>Status de Fechamento</Label>
-        <RadioGroup
-          value={status || ""}
-          onValueChange={(value) => setStatus(value as "sucesso" | "perda")}
-          className="flex gap-4"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="sucesso" id="sucesso" />
-            <Label htmlFor="sucesso" className="cursor-pointer">
-              <span className="text-green-600 font-medium">Venda Realizada</span>
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="perda" id="perda" />
-            <Label htmlFor="perda" className="cursor-pointer">
-              <span className="text-red-600 font-medium">Oportunidade Perdida</span>
-            </Label>
-          </div>
-        </RadioGroup>
-      </div>
-
-      {status === "perda" && (
+    <div>
+      <div className="space-y-4 pt-0">
         <div className="space-y-2">
-          <Label>Motivo da Perda</Label>
-          <Select
-            value={motivoPerdaId}
-            onValueChange={setMotivoPerdaId}
+          <Label>Status de Fechamento</Label>
+          <RadioGroup
+            value={status || ""}
+            onValueChange={(value) => setStatus(value as "sucesso" | "perda")}
+            className="flex gap-4"
           >
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="Selecione o motivo" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              {motivosPerda.map((motivo) => (
-                <SelectItem key={motivo.id} value={motivo.id}>
-                  {motivo.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {status && (
-        <>
-          <div className="space-y-2">
-            <Label>Data do Fechamento</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? (
-                    format(date, "dd/MM/yyyy", { locale: ptBR })
-                  ) : (
-                    <span>Selecione uma data</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
-                  locale={ptBR}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Observações</Label>
-            <Textarea
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              placeholder={
-                status === "sucesso"
-                  ? "Adicione informações sobre a venda..."
-                  : "Descreva o motivo da perda em detalhes..."
-              }
-              rows={4}
-              className="resize-none"
-            />
-          </div>
-          
-          {leadId && (
-            <div className="pt-2">
-              <Button 
-                type="button" 
-                variant="blue"
-                className="w-full"
-                disabled={isSaving}
-                onClick={salvarFechamento}
-              >
-                {isSaving ? "Salvando..." : "Salvar Fechamento"}
-              </Button>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="sucesso" id="sucesso" />
+              <Label htmlFor="sucesso" className="cursor-pointer">
+                <span className="text-green-600 font-medium">Venda Realizada</span>
+              </Label>
             </div>
-          )}
-        </>
-      )}
-
-      {!status && (
-        <div className="text-center py-8 text-muted-foreground">
-          Selecione um status para registrar o fechamento deste lead.
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="perda" id="perda" />
+              <Label htmlFor="perda" className="cursor-pointer">
+                <span className="text-red-600 font-medium">Oportunidade Perdida</span>
+              </Label>
+            </div>
+          </RadioGroup>
         </div>
-      )}
+
+        {status === "perda" && (
+          <div className="space-y-2">
+            <Label>Motivo da Perda</Label>
+            <Select
+              value={motivoPerdaId}
+              onValueChange={setMotivoPerdaId}
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Selecione o motivo" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                {motivosPerda.map((motivo) => (
+                  <SelectItem key={motivo.id} value={motivo.id}>
+                    {motivo.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {status && (
+          <>
+            <div className="space-y-2">
+              <Label>Data do Fechamento</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? (
+                      format(date, "dd/MM/yyyy", { locale: ptBR })
+                    ) : (
+                      <span>Selecione uma data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Observações</Label>
+              <Textarea
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder={
+                  status === "sucesso"
+                    ? "Adicione informações sobre a venda..."
+                    : "Descreva o motivo da perda em detalhes..."
+                }
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+            
+            {leadId && (
+              <div className="pt-2">
+                <Button 
+                  type="button" 
+                  variant="blue"
+                  className="w-full"
+                  disabled={isSaving}
+                  onClick={salvarFechamento}
+                >
+                  {isSaving ? "Salvando..." : "Salvar Fechamento"}
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+
+        {!status && (
+          <div className="text-center py-4 text-muted-foreground">
+            Selecione um status para registrar o fechamento deste lead.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
