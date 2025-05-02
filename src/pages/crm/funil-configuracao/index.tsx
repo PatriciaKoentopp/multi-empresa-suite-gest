@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, ArrowRight, MoreVertical } from "lucide-react";
@@ -10,70 +11,37 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
 
 interface EtapaFunil {
-  id: number;
+  id: string;
   nome: string;
   cor: string;
   ordem: number;
 }
 
 interface Funil {
-  id: number;
+  id: string;
   nome: string;
-  descricao: string;
+  descricao: string | null;
   ativo: boolean;
-  dataCriacao: string;
+  data_criacao: string;
   etapas: EtapaFunil[];
 }
 
-const etapasIniciais: EtapaFunil[] = [{
-  id: 1,
-  nome: "Prospecção",
-  cor: "#0EA5E9",
-  ordem: 1
-}, {
-  id: 2,
-  nome: "Contato Inicial",
-  cor: "#F59E0B",
-  ordem: 2
-}, {
-  id: 3,
-  nome: "Proposta Enviada",
-  cor: "#10B981",
-  ordem: 3
-}, {
-  id: 4,
-  nome: "Negociação",
-  cor: "#8B5CF6",
-  ordem: 4
-}, {
-  id: 5,
-  nome: "Fechamento",
-  cor: "#F97316",
-  ordem: 5
-}];
-
-// Funil padrão para inicializar o sistema
-const funilPadrao: Funil = {
-  id: 1,
-  nome: "Funil de Vendas Padrão",
-  descricao: "Funil de vendas padrão do sistema",
-  ativo: true,
-  dataCriacao: "21/04/2025",
-  etapas: etapasIniciais
-};
-
 export default function FunilConfiguracaoPage() {
   // Lista de funis
-  const [funis, setFunis] = useState<Funil[]>([funilPadrao]);
+  const [funis, setFunis] = useState<Funil[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { currentCompany } = useCompany();
   
   // Estado para novo funil ou edição de funil existente
   const [novoFunil, setNovoFunil] = useState(false);
   const [funilSelecionado, setFunilSelecionado] = useState<Funil | null>(null);
   
   // Estados para etapas do funil
-  const [etapas, setEtapas] = useState<EtapaFunil[]>(etapasIniciais);
+  const [etapas, setEtapas] = useState<EtapaFunil[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editEtapa, setEditEtapa] = useState<EtapaFunil | null>(null);
   
@@ -82,6 +50,58 @@ export default function FunilConfiguracaoPage() {
   const [nomeFunil, setNomeFunil] = useState("");
   const [descricaoFunil, setDescricaoFunil] = useState("");
   const [ativoFunil, setAtivoFunil] = useState(true);
+  
+  // Função para carregar os dados dos funis do banco
+  async function carregarFunis() {
+    if (!currentCompany) return;
+    
+    setIsLoading(true);
+    try {
+      // Buscar todos os funis da empresa
+      const { data: funisData, error: funisError } = await supabase
+        .from('funis')
+        .select('*')
+        .eq('empresa_id', currentCompany.id)
+        .order('created_at', { ascending: false });
+      
+      if (funisError) throw funisError;
+      
+      // Buscar etapas de todos os funis
+      const { data: etapasData, error: etapasError } = await supabase
+        .from('funil_etapas')
+        .select('*')
+        .in('funil_id', funisData.map(f => f.id))
+        .order('ordem', { ascending: true });
+        
+      if (etapasError) throw etapasError;
+      
+      // Mapear os funis com suas respectivas etapas
+      const funisComEtapas: Funil[] = funisData.map(funil => {
+        const etapasFunil = etapasData.filter(e => e.funil_id === funil.id);
+        return {
+          ...funil,
+          etapas: etapasFunil.map(e => ({
+            id: e.id,
+            nome: e.nome,
+            cor: e.cor,
+            ordem: e.ordem
+          }))
+        };
+      });
+      
+      setFunis(funisComEtapas);
+      
+      // Se não houver um funil selecionado, selecione o primeiro
+      if (funisComEtapas.length > 0 && !funilSelecionado) {
+        selecionarFunil(funisComEtapas[0]);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar funis:", error);
+      toast.error("Não foi possível carregar os funis. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
   
   // Função para selecionar um funil para edição
   function selecionarFunil(funil: Funil) {
@@ -104,74 +124,159 @@ export default function FunilConfiguracaoPage() {
     setNovoFunil(false);
     setFunilSelecionado(funil);
     setNomeFunil(funil.nome);
-    setDescricaoFunil(funil.descricao);
+    setDescricaoFunil(funil.descricao || "");
     setAtivoFunil(funil.ativo);
     setModalFunilOpen(true);
   }
   
   // Função para excluir um funil
-  function excluirFunil(id: number) {
+  async function excluirFunil(id: string) {
+    if (!currentCompany) return;
+    
     if (funis.length <= 1) {
       toast.error("Não é possível excluir o único funil existente.");
       return;
     }
     
-    setFunis(prev => {
-      const novaLista = prev.filter(f => f.id !== id);
+    try {
+      // Verificar se o funil está sendo utilizado em leads
+      const { count, error: countError } = await supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('funil_id', id);
+        
+      if (countError) throw countError;
+      
+      if (count && count > 0) {
+        toast.error("Este funil está sendo utilizado em leads ativos e não pode ser excluído.");
+        return;
+      }
+      
+      // Excluir etapas do funil (a exclusão em cascata deve estar configurada no banco)
+      const { error: deleteEtapasError } = await supabase
+        .from('funil_etapas')
+        .delete()
+        .eq('funil_id', id);
+        
+      if (deleteEtapasError) throw deleteEtapasError;
+      
+      // Excluir o funil
+      const { error: deleteFunilError } = await supabase
+        .from('funis')
+        .delete()
+        .eq('id', id);
+        
+      if (deleteFunilError) throw deleteFunilError;
+      
+      // Atualizar estado local
+      const novaLista = funis.filter(f => f.id !== id);
+      setFunis(novaLista);
+      
       // Se o funil excluído era o selecionado, seleciona o primeiro da lista
-      if (funilSelecionado && funilSelecionado.id === id) {
+      if (funilSelecionado && funilSelecionado.id === id && novaLista.length > 0) {
         selecionarFunil(novaLista[0]);
       }
-      return novaLista;
-    });
-    
-    toast.success("Funil excluído com sucesso!");
+      
+      toast.success("Funil excluído com sucesso!");
+    } catch (error) {
+      console.error("Erro ao excluir funil:", error);
+      toast.error("Não foi possível excluir o funil. Tente novamente.");
+    }
   }
   
   // Função para salvar novo funil ou atualizar existente
-  function salvarFunil() {
+  async function salvarFunil() {
+    if (!currentCompany) return;
+    
     if (!nomeFunil.trim()) {
       toast.error("O nome do funil é obrigatório");
       return;
     }
     
-    // Cria data de criação formatada
-    const agora = new Date();
-    const dia = agora.getDate().toString().padStart(2, '0');
-    const mes = (agora.getMonth() + 1).toString().padStart(2, '0');
-    const ano = agora.getFullYear();
-    const dataFormatada = `${dia}/${mes}/${ano}`;
-    
-    if (novoFunil) {
-      // Cria novo funil
-      const novoId = Math.max(...funis.map(f => f.id)) + 1;
-      const novoFunilObj: Funil = {
-        id: novoId,
-        nome: nomeFunil,
-        descricao: descricaoFunil,
-        ativo: ativoFunil,
-        dataCriacao: dataFormatada,
-        etapas: [...etapasIniciais] // Copia as etapas iniciais para o novo funil
-      };
+    try {
+      if (novoFunil) {
+        // Criar novo funil
+        const { data: novoFunilData, error: novoFunilError } = await supabase
+          .from('funis')
+          .insert([{
+            nome: nomeFunil,
+            descricao: descricaoFunil || null,
+            ativo: ativoFunil,
+            empresa_id: currentCompany.id
+          }])
+          .select('*')
+          .single();
+          
+        if (novoFunilError) throw novoFunilError;
+        
+        // Criar etapas padrão para o novo funil
+        const etapasIniciais = [
+          { nome: "Prospecção", cor: "#0EA5E9", ordem: 1 },
+          { nome: "Contato Inicial", cor: "#F59E0B", ordem: 2 },
+          { nome: "Proposta Enviada", cor: "#10B981", ordem: 3 },
+          { nome: "Negociação", cor: "#8B5CF6", ordem: 4 },
+          { nome: "Fechamento", cor: "#F97316", ordem: 5 }
+        ];
+        
+        const etapasBanco = etapasIniciais.map(etapa => ({
+          funil_id: novoFunilData.id,
+          nome: etapa.nome,
+          cor: etapa.cor,
+          ordem: etapa.ordem
+        }));
+        
+        const { data: etapasData, error: etapasError } = await supabase
+          .from('funil_etapas')
+          .insert(etapasBanco)
+          .select('*');
+          
+        if (etapasError) throw etapasError;
+        
+        // Atualizar estado local
+        const novoFunilCompleto: Funil = {
+          ...novoFunilData,
+          etapas: etapasData.map(e => ({
+            id: e.id,
+            nome: e.nome,
+            cor: e.cor,
+            ordem: e.ordem
+          }))
+        };
+        
+        setFunis([novoFunilCompleto, ...funis]);
+        selecionarFunil(novoFunilCompleto);
+        toast.success("Novo funil criado com sucesso!");
+      } else if (funilSelecionado) {
+        // Atualizar funil existente
+        const { error } = await supabase
+          .from('funis')
+          .update({
+            nome: nomeFunil,
+            descricao: descricaoFunil || null,
+            ativo: ativoFunil
+          })
+          .eq('id', funilSelecionado.id);
+          
+        if (error) throw error;
+        
+        // Atualizar estado local
+        const funilAtualizado: Funil = {
+          ...funilSelecionado,
+          nome: nomeFunil,
+          descricao: descricaoFunil,
+          ativo: ativoFunil
+        };
+        
+        setFunis(funis.map(f => f.id === funilSelecionado.id ? funilAtualizado : f));
+        selecionarFunil(funilAtualizado);
+        toast.success("Funil atualizado com sucesso!");
+      }
       
-      setFunis(prev => [...prev, novoFunilObj]);
-      selecionarFunil(novoFunilObj);
-      toast.success("Novo funil criado com sucesso!");
-    } else if (funilSelecionado) {
-      // Atualiza funil existente
-      const funilAtualizado: Funil = {
-        ...funilSelecionado,
-        nome: nomeFunil,
-        descricao: descricaoFunil,
-        ativo: ativoFunil
-      };
-      
-      setFunis(prev => prev.map(f => f.id === funilSelecionado.id ? funilAtualizado : f));
-      selecionarFunil(funilAtualizado);
-      toast.success("Funil atualizado com sucesso!");
+      setModalFunilOpen(false);
+    } catch (error) {
+      console.error("Erro ao salvar funil:", error);
+      toast.error("Não foi possível salvar o funil. Tente novamente.");
     }
-    
-    setModalFunilOpen(false);
   }
   
   // Funções para gerenciar etapas do funil
@@ -180,43 +285,93 @@ export default function FunilConfiguracaoPage() {
     setModalOpen(true);
   }
   
-  function handleSalvarEtapa(nova: {
+  async function handleSalvarEtapa(nova: {
     nome: string;
     cor: string;
     ordem: number;
   }) {
-    if (!funilSelecionado) return;
+    if (!funilSelecionado || !currentCompany) return;
     
-    let novasEtapas: EtapaFunil[];
-    
-    if (editEtapa) {
-      novasEtapas = etapas.map(e => e.id === editEtapa.id ? {
-        ...e,
-        ...nova
-      } : e);
-    } else {
-      // Cria nova etapa com id incremental calculado
-      const proxId = etapas.length > 0 ? Math.max(...etapas.map(x => x.id)) + 1 : 1;
-      novasEtapas = [...etapas, {
-        id: proxId,
-        ...nova
-      }];
-    }
-    
-    setEtapas(novasEtapas);
-    
-    // Atualiza etapas do funil selecionado
-    setFunis(prev => prev.map(f => {
-      if (f.id === funilSelecionado.id) {
-        return {
-          ...f,
-          etapas: novasEtapas
+    try {
+      if (editEtapa) {
+        // Atualizar etapa existente
+        const { error } = await supabase
+          .from('funil_etapas')
+          .update({
+            nome: nova.nome,
+            cor: nova.cor,
+            ordem: nova.ordem
+          })
+          .eq('id', editEtapa.id)
+          .eq('funil_id', funilSelecionado.id);
+          
+        if (error) throw error;
+        
+        // Atualizar estado local
+        const novasEtapas = etapas.map(e => e.id === editEtapa.id ? {
+          ...e,
+          ...nova
+        } : e);
+        
+        setEtapas(novasEtapas);
+        
+        // Atualizar etapas do funil selecionado
+        setFunis(prev => prev.map(f => {
+          if (f.id === funilSelecionado.id) {
+            return {
+              ...f,
+              etapas: novasEtapas
+            };
+          }
+          return f;
+        }));
+        
+        toast.success("Etapa atualizada com sucesso!");
+      } else {
+        // Criar nova etapa
+        const { data: novaEtapaData, error } = await supabase
+          .from('funil_etapas')
+          .insert([{
+            funil_id: funilSelecionado.id,
+            nome: nova.nome,
+            cor: nova.cor,
+            ordem: nova.ordem
+          }])
+          .select('*')
+          .single();
+          
+        if (error) throw error;
+        
+        // Atualizar estado local
+        const novaEtapa: EtapaFunil = {
+          id: novaEtapaData.id,
+          nome: novaEtapaData.nome,
+          cor: novaEtapaData.cor,
+          ordem: novaEtapaData.ordem
         };
+        
+        const novasEtapas = [...etapas, novaEtapa];
+        setEtapas(novasEtapas);
+        
+        // Atualizar etapas do funil selecionado
+        setFunis(prev => prev.map(f => {
+          if (f.id === funilSelecionado.id) {
+            return {
+              ...f,
+              etapas: novasEtapas
+            };
+          }
+          return f;
+        }));
+        
+        toast.success("Nova etapa adicionada com sucesso!");
       }
-      return f;
-    }));
-    
-    setModalOpen(false);
+      
+      setModalOpen(false);
+    } catch (error) {
+      console.error("Erro ao salvar etapa:", error);
+      toast.error("Não foi possível salvar a etapa. Tente novamente.");
+    }
   }
   
   function handleEditar(etapa: EtapaFunil) {
@@ -224,35 +379,78 @@ export default function FunilConfiguracaoPage() {
     setModalOpen(true);
   }
   
-  function handleExcluir(id: number) {
-    if (!funilSelecionado) return;
+  async function handleExcluir(id: string) {
+    if (!funilSelecionado || !currentCompany) return;
     
     if (etapas.length <= 1) {
       toast.error("Não é possível excluir a única etapa do funil.");
       return;
     }
     
-    const novasEtapas = etapas.filter(e => e.id !== id);
-    setEtapas(novasEtapas);
-    
-    // Atualiza etapas do funil selecionado
-    setFunis(prev => prev.map(f => {
-      if (f.id === funilSelecionado.id) {
-        return {
-          ...f,
-          etapas: novasEtapas
-        };
+    try {
+      // Verificar se a etapa está sendo utilizada em leads
+      const { count, error: countError } = await supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('etapa_id', id);
+        
+      if (countError) throw countError;
+      
+      if (count && count > 0) {
+        toast.error("Esta etapa está sendo utilizada em leads ativos e não pode ser excluída.");
+        return;
       }
-      return f;
-    }));
+      
+      // Excluir etapa
+      const { error } = await supabase
+        .from('funil_etapas')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Atualizar estado local
+      const novasEtapas = etapas.filter(e => e.id !== id);
+      setEtapas(novasEtapas);
+      
+      // Atualizar etapas do funil selecionado
+      setFunis(prev => prev.map(f => {
+        if (f.id === funilSelecionado.id) {
+          return {
+            ...f,
+            etapas: novasEtapas
+          };
+        }
+        return f;
+      }));
+      
+      toast.success("Etapa excluída com sucesso!");
+    } catch (error) {
+      console.error("Erro ao excluir etapa:", error);
+      toast.error("Não foi possível excluir a etapa. Tente novamente.");
+    }
   }
   
-  // Se não houver funil selecionado, seleciona o primeiro
-  React.useEffect(() => {
-    if (funis.length > 0 && !funilSelecionado) {
-      selecionarFunil(funis[0]);
+  // Carregar dados iniciais
+  useEffect(() => {
+    if (currentCompany) {
+      carregarFunis();
     }
-  }, [funis, funilSelecionado]);
+  }, [currentCompany]);
+
+  // Se estiver carregando, exiba indicador de carregamento
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Carregando funis...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -293,65 +491,75 @@ export default function FunilConfiguracaoPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {funis.map(funil => (
-                      <TableRow key={funil.id} className={`hover:bg-accent/30 transition-colors ${funil.id === funilSelecionado?.id ? 'bg-accent/40' : ''}`}>
-                        <TableCell className="font-medium">{funil.nome}</TableCell>
-                        <TableCell>{funil.descricao}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={funil.ativo ? "success" : "destructive"}
-                            className="capitalize"
-                          >
-                            {funil.ativo ? 'Ativo' : 'Inativo'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{funil.dataCriacao}</TableCell>
-                        <TableCell className="text-center">{funil.etapas.length}</TableCell>
-                        <TableCell>
-                          <div className="flex justify-center">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
-                                  <MoreVertical className="h-4 w-4" />
-                                  <span className="sr-only">Abrir menu de ações</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
-                                <DropdownMenuItem
-                                  onClick={() => editarFunil(funil)}
-                                  className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                  Editar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => excluirFunil(funil.id)}
-                                  className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  Excluir
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => selecionarFunil(funil)}
-                                  className="flex items-center gap-2 text-green-500 focus:bg-green-100 focus:text-green-700"
-                                >
-                                  <ArrowRight className="h-4 w-4" />
-                                  Selecionar
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
+                    {funis.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                          Nenhum funil encontrado. Crie um novo funil.
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      funis.map(funil => (
+                        <TableRow key={funil.id} className={`hover:bg-accent/30 transition-colors ${funil.id === funilSelecionado?.id ? 'bg-accent/40' : ''}`}>
+                          <TableCell className="font-medium">{funil.nome}</TableCell>
+                          <TableCell>{funil.descricao || '-'}</TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={funil.ativo ? "success" : "destructive"}
+                              className="capitalize"
+                            >
+                              {funil.ativo ? 'Ativo' : 'Inativo'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{new Date(funil.data_criacao).toLocaleDateString('pt-BR')}</TableCell>
+                          <TableCell className="text-center">{funil.etapas.length}</TableCell>
+                          <TableCell>
+                            <div className="flex justify-center">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="text-neutral-500 hover:bg-gray-100">
+                                    <MoreVertical className="h-4 w-4" />
+                                    <span className="sr-only">Abrir menu de ações</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-36 z-30 bg-white border">
+                                  <DropdownMenuItem
+                                    onClick={() => editarFunil(funil)}
+                                    className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => excluirFunil(funil.id)}
+                                    className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    Excluir
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => selecionarFunil(funil)}
+                                    className="flex items-center gap-2 text-green-500 focus:bg-green-100 focus:text-green-700"
+                                  >
+                                    <ArrowRight className="h-4 w-4" />
+                                    Selecionar
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell colSpan={6} className="font-normal text-right text-muted-foreground text-xs">
-                        Total de funis: <span className="font-semibold text-foreground">{funis.length}</span>
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
+                  {funis.length > 0 && (
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={6} className="font-normal text-right text-muted-foreground text-xs">
+                          Total de funis: <span className="font-semibold text-foreground">{funis.length}</span>
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  )}
                 </Table>
               </div>
             </CardContent>
