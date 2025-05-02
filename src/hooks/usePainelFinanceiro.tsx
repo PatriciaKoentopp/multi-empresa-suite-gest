@@ -2,20 +2,157 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { DadosFinanceiros, FluxoMensal } from "@/types/financeiro";
+import { DadosFinanceiros, FluxoMensal, FiltroFluxoCaixa, FluxoCaixaItem } from "@/types/financeiro";
+import { startOfMonth, subDays } from "date-fns";
 
 export const usePainelFinanceiro = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [dadosFinanceiros, setDadosFinanceiros] = useState<DadosFinanceiros | null>(null);
+  const [filtroFluxoCaixa, setFiltroFluxoCaixa] = useState<FiltroFluxoCaixa>({
+    dataInicio: subDays(new Date(), 30),
+    dataFim: new Date(),
+    contaId: null,
+  });
   
   useEffect(() => {
     fetchDadosFinanceiros();
   }, []);
 
+  // Função para extrair data sem timezone
+  function extrairDataSemTimeZone(dataStr: string): Date {
+    if (!dataStr) return new Date(0); // Data inválida para comparações
+    
+    // Se a data já estiver no formato YYYY-MM-DD
+    if (dataStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [ano, mes, dia] = dataStr.split('-').map(Number);
+      return new Date(ano, mes - 1, dia);
+    }
+    
+    // Caso esteja em outro formato, tenta extrair a data ignorando a parte de hora
+    const partes = dataStr.split('T')[0].split('-');
+    if (partes.length === 3) {
+      const ano = parseInt(partes[0], 10);
+      const mes = parseInt(partes[1], 10) - 1; // mês em JS é 0-indexed
+      const dia = parseInt(partes[2], 10);
+      return new Date(ano, mes, dia);
+    }
+    
+    // Se não conseguiu extrair, retorna a data atual
+    return new Date();
+  }
+
+  const fetchFluxoCaixa = async (filtro: FiltroFluxoCaixa) => {
+    try {
+      // Formatar as datas para o formato do Supabase (YYYY-MM-DD)
+      const dataInicioStr = filtro.dataInicio.toISOString().split('T')[0];
+      const dataFimStr = filtro.dataFim.toISOString().split('T')[0];
+      
+      // Criar a query base
+      let query = supabase
+        .from('fluxo_caixa')
+        .select(`
+          id,
+          data_movimentacao,
+          descricao,
+          valor,
+          tipo_operacao,
+          conta_corrente_id,
+          contas_correntes:conta_corrente_id (
+            id,
+            nome
+          )
+        `)
+        .gte('data_movimentacao', dataInicioStr)
+        .lte('data_movimentacao', dataFimStr)
+        .order('data_movimentacao', { ascending: true });
+      
+      // Adicionar filtro por conta corrente se especificado
+      if (filtro.contaId) {
+        query = query.eq('conta_corrente_id', filtro.contaId);
+      }
+      
+      const { data: fluxoCaixaData, error } = await query;
+      
+      if (error) throw error;
+      
+      // Transformar os dados para o formato correto
+      const fluxoCaixa: FluxoCaixaItem[] = (fluxoCaixaData || []).map(item => ({
+        id: item.id,
+        data: extrairDataSemTimeZone(item.data_movimentacao),
+        descricao: item.descricao || '',
+        conta_nome: item.contas_correntes?.nome || '',
+        conta_id: item.conta_corrente_id,
+        valor: Number(item.valor) || 0,
+        tipo: item.tipo_operacao === 'receber' ? 'entrada' : 'saida',
+      }));
+      
+      return fluxoCaixa;
+    } catch (error) {
+      console.error('Erro ao buscar fluxo de caixa:', error);
+      throw error;
+    }
+  };
+  
+  const fetchContas = async () => {
+    try {
+      const { data: contasCorrentes, error: errorContas } = await supabase
+        .from('contas_correntes')
+        .select('*')
+        .eq('status', 'ativo');
+      
+      if (errorContas) throw errorContas;
+      
+      let totalSaldo = 0;
+      const contas = [];
+      
+      if (contasCorrentes && contasCorrentes.length > 0) {
+        // Para cada conta, buscar TODAS as movimentações ordenadas por data
+        for (const conta of contasCorrentes) {
+          const { data: movimentacoes, error: erroMovimentacoes } = await supabase
+            .from('fluxo_caixa')
+            .select('*')
+            .eq('conta_corrente_id', conta.id)
+            .order('data_movimentacao', { ascending: true });
+
+          if (erroMovimentacoes) throw erroMovimentacoes;
+
+          // Calcular o saldo como na página de fluxo de caixa
+          let saldoAtual = Number(conta.saldo_inicial || 0);
+
+          if (movimentacoes && movimentacoes.length > 0) {
+            // Somar todas as movimentações ordenadas cronologicamente
+            for (const mov of movimentacoes) {
+              saldoAtual += Number(mov.valor);
+            }
+          }
+          
+          contas.push({
+            id: conta.id,
+            nome: conta.nome,
+            saldo: saldoAtual
+          });
+
+          totalSaldo += saldoAtual;
+        }
+      }
+      
+      return { contas, totalSaldo };
+    } catch (error) {
+      console.error('Erro ao buscar contas:', error);
+      throw error;
+    }
+  };
+
   const fetchDadosFinanceiros = async () => {
     try {
       setIsLoading(true);
+      
+      // Buscar contas correntes e seus saldos iniciais
+      const { contas, totalSaldo } = await fetchContas();
+      
+      // Buscar fluxo de caixa com os filtros atuais
+      const fluxoCaixa = await fetchFluxoCaixa(filtroFluxoCaixa);
       
       // Busca dados das parcelas a receber
       const { data: parcelasReceber, error: errorReceber } = await supabase
@@ -50,42 +187,6 @@ export const usePainelFinanceiro = () => {
         .is('data_pagamento', null);
       
       if (errorPagar) throw errorPagar;
-
-      // Busca contas correntes e seus saldos iniciais
-      const { data: contasCorrentes, error: errorContas } = await supabase
-        .from('contas_correntes')
-        .select('*')
-        .eq('status', 'ativo');
-      
-      if (errorContas) throw errorContas;
-
-      // Calcula o saldo total
-      let totalSaldo = 0;
-
-      if (contasCorrentes && contasCorrentes.length > 0) {
-        // Para cada conta, buscar TODAS as movimentações ordenadas por data
-        for (const conta of contasCorrentes) {
-          const { data: movimentacoes, error: erroMovimentacoes } = await supabase
-            .from('fluxo_caixa')
-            .select('*')
-            .eq('conta_corrente_id', conta.id)
-            .order('data_movimentacao', { ascending: true });
-
-          if (erroMovimentacoes) throw erroMovimentacoes;
-
-          // Calcular o saldo como na página de fluxo de caixa
-          let saldoAtual = Number(conta.saldo_inicial || 0);
-
-          if (movimentacoes && movimentacoes.length > 0) {
-            // Somar todas as movimentações ordenadas cronologicamente
-            for (const mov of movimentacoes) {
-              saldoAtual += Number(mov.valor);
-            }
-          }
-
-          totalSaldo += saldoAtual;
-        }
-      }
       
       // Busca fluxo financeiro dos últimos 12 meses
       const dataAtual = new Date();
@@ -201,29 +302,6 @@ export const usePainelFinanceiro = () => {
         });
       }
       
-      // Função auxiliar para extrair a data sem timezone a partir de uma string de data
-      function extrairDataSemTimeZone(dataStr: string): Date {
-        if (!dataStr) return new Date(0); // Data inválida para comparações
-        
-        // Se a data já estiver no formato YYYY-MM-DD
-        if (dataStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-          const [ano, mes, dia] = dataStr.split('-').map(Number);
-          return new Date(ano, mes - 1, dia);
-        }
-        
-        // Caso esteja em outro formato, tenta extrair a data ignorando a parte de hora
-        const partes = dataStr.split('T')[0].split('-');
-        if (partes.length === 3) {
-          const ano = parseInt(partes[0], 10);
-          const mes = parseInt(partes[1], 10) - 1; // mês em JS é 0-indexed
-          const dia = parseInt(partes[2], 10);
-          return new Date(ano, mes, dia);
-        }
-        
-        // Se não conseguiu extrair, retorna a data atual
-        return new Date();
-      }
-      
       // Adicionar os valores de cada movimentação ao mês correspondente independente da conta
       // Corrigindo o problema de timezone nas datas
       fluxoMensal?.forEach(item => {
@@ -265,7 +343,9 @@ export const usePainelFinanceiro = () => {
         contas_vencidas_pagar: contasVencidasPagar,
         contas_a_vencer_receber: contasAVencerReceber,
         contas_a_vencer_pagar: contasAVencerPagar,
-        fluxo_por_mes: fluxoPorMes
+        fluxo_por_mes: fluxoPorMes,
+        fluxo_caixa: fluxoCaixa,
+        contas_correntes: contas
       });
     } catch (error) {
       console.error('Erro ao buscar dados financeiros:', error);
@@ -278,10 +358,37 @@ export const usePainelFinanceiro = () => {
       setIsLoading(false);
     }
   };
+  
+  const atualizarFiltroFluxoCaixa = async (novoFiltro: FiltroFluxoCaixa) => {
+    setFiltroFluxoCaixa(novoFiltro);
+    
+    try {
+      setIsLoading(true);
+      const fluxoCaixa = await fetchFluxoCaixa(novoFiltro);
+      
+      if (dadosFinanceiros) {
+        setDadosFinanceiros({
+          ...dadosFinanceiros,
+          fluxo_caixa: fluxoCaixa
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar fluxo de caixa:', error);
+      toast({
+        title: "Erro ao filtrar dados",
+        description: "Ocorreu um erro ao aplicar os filtros no fluxo de caixa.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
     isLoading,
     dadosFinanceiros,
-    fetchDadosFinanceiros
+    fetchDadosFinanceiros,
+    filtroFluxoCaixa,
+    atualizarFiltroFluxoCaixa
   };
 };
