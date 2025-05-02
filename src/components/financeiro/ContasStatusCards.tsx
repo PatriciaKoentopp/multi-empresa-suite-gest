@@ -21,9 +21,20 @@ export const ContasStatusCards = ({ dadosFinanceiros }: ContasStatusCardsProps) 
             <div className="text-2xl font-bold">
               {formatCurrency(dadosFinanceiros?.contas_vencidas || 0)}
             </div>
-            <p className="text-muted-foreground mt-2 text-sm">
-              Total de contas a pagar e a receber com vencimento anterior a hoje
-            </p>
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-blue-600">A receber:</span>
+                <span className="font-medium">
+                  {formatCurrency(dadosFinanceiros?.contas_vencidas_receber || 0)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-red-600">A pagar:</span>
+                <span className="font-medium">
+                  {formatCurrency(dadosFinanceiros?.contas_vencidas_pagar || 0)}
+                </span>
+              </div>
+            </div>
           </CardContent>
         </Card>
         
@@ -35,9 +46,20 @@ export const ContasStatusCards = ({ dadosFinanceiros }: ContasStatusCardsProps) 
             <div className="text-2xl font-bold">
               {formatCurrency(dadosFinanceiros?.contas_a_vencer || 0)}
             </div>
-            <p className="text-muted-foreground mt-2 text-sm">
-              Total de contas a pagar e a receber com vencimento futuro
-            </p>
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-blue-600">A receber:</span>
+                <span className="font-medium">
+                  {formatCurrency(dadosFinanceiros?.contas_a_vencer_receber || 0)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-red-600">A pagar:</span>
+                <span className="font-medium">
+                  {formatCurrency(dadosFinanceiros?.contas_a_vencer_pagar || 0)}
+                </span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
