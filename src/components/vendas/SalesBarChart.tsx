@@ -110,23 +110,37 @@ export const SalesBarChart = ({ data, className, multiColor = false }: SalesBarC
               tickFormatter={formatCurrency}
             />
             <Tooltip 
-              content={<ChartTooltipContent labelKey="name" formatter={(value) => formatCurrency(Number(value))} />} 
+              content={({ payload, label }) => {
+                if (!payload || !payload.length) return null;
+                
+                return (
+                  <div className="bg-white p-2 border rounded shadow">
+                    <p className="font-medium mb-1">{label}</p>
+                    <p className="text-green-600">
+                      {formatCurrency(Number(payload[0]?.value || 0))}
+                    </p>
+                  </div>
+                );
+              }} 
             />
             {multiColor ? (
-              // Para gráficos com múltiplas cores, iteramos sobre os dados
+              // Para cada item, criamos uma barra separada com sua própria cor
               chartData.map((entry, index) => (
                 <Bar 
-                  key={`bar-${entry.name}-${index}`}
-                  dataKey="faturado" 
-                  name={entry.name}
+                  key={`bar-${index}`}
+                  dataKey="faturado"
+                  name="Faturado"
                   fill={CHART_COLORS[index % CHART_COLORS.length]}
                   radius={[4, 4, 0, 0]}
+                  // Importante: filtrar para mostrar apenas este item
+                  data={[entry]}
                 />
               ))
             ) : (
-              // Para gráficos normais de um só tipo ou anuais
+              // Gráfico normal, todas as barras com a mesma cor
               <Bar
                 dataKey="faturado"
+                name="Faturado"
                 fill="#4CAF50"
                 radius={[4, 4, 0, 0]}
               />

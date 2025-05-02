@@ -44,7 +44,7 @@ export const useVendasDashboard = () => {
       // Formato de data correto para o Supabase: YYYY-MM-DD
       const currentYear = new Date().getFullYear();
       
-      // Buscar dados de comparação anual - Função corrigida
+      // Buscar dados de comparação anual
       console.log("Iniciando busca de dados de comparação anual");
       const { data: yearComparisonData, error: comparisonError } = await supabase
         .rpc('get_yearly_sales_comparison');
@@ -76,7 +76,7 @@ export const useVendasDashboard = () => {
       const startCurrentMonthFormatted = format(startCurrentMonth, 'yyyy-MM-dd');
       const endCurrentMonthFormatted = format(endCurrentMonth, 'yyyy-MM-dd');
       
-      // Buscar vendas do mês atual - usando formato de data e operadores corretos
+      // Buscar vendas do mês atual
       const { data: currentMonthData, error: currentMonthError } = await supabase
         .from('orcamentos')
         .select(`
@@ -96,7 +96,7 @@ export const useVendasDashboard = () => {
         return acc + orcamentoTotal;
       }, 0) || 0;
       
-      // Buscar vendas do mês anterior - usando formato de data e operadores corretos
+      // Buscar vendas do mês anterior
       const startLastMonth = startOfMonth(subMonths(new Date(), 1));
       const endLastMonth = endOfMonth(subMonths(new Date(), 1));
       
@@ -124,7 +124,7 @@ export const useVendasDashboard = () => {
       // Calcular variação percentual
       const variacaoPercentual = vendasMesAnterior === 0 ? 100 : ((vendasMesAtual - vendasMesAnterior) / vendasMesAnterior) * 100;
 
-      // Buscar total anual de vendas do ano atual - usando formato de data correto com datas específicas
+      // Buscar total anual de vendas do ano atual
       const startOfYear = format(new Date(currentYear, 0, 1), 'yyyy-MM-dd');
       const endOfYear = format(new Date(currentYear, 11, 31), 'yyyy-MM-dd');
       
@@ -199,15 +199,15 @@ export const useVendasDashboard = () => {
         clientes_ativos: clientesAtivos
       });
 
-      // Buscar dados para o gráfico de barras (vendas mensais)
-      // AQUI ESTÁ O PROBLEMA - Vamos usar uma SQL Query direta em vez de RPC
+      // Buscar dados para o gráfico de barras MENSAIS de forma manual
       try {
-        console.log("Iniciando busca de dados para gráfico de barras mensais");
+        console.log("Iniciando busca de dados para gráfico mensal");
         
-        const { data: monthlyData, error: monthlyError } = await supabase
+        // Obter todas as vendas do ano atual
+        const { data: vendaAnual, error: vendaAnualError } = await supabase
           .from('orcamentos')
           .select(`
-            id,
+            id, 
             data_venda,
             orcamentos_itens (valor)
           `)
@@ -215,70 +215,70 @@ export const useVendasDashboard = () => {
           .eq('status', 'ativo')
           .gte('data_venda', `${currentYear}-01-01`)
           .lte('data_venda', `${currentYear}-12-31`);
-  
-        if (monthlyError) {
-          console.error("Erro ao buscar dados mensais:", monthlyError);
-          throw monthlyError;
+        
+        if (vendaAnualError) {
+          console.error("Erro ao buscar vendas anuais:", vendaAnualError);
+          throw vendaAnualError;
         }
-  
-        // Processar dados mensais manualmente
-        const monthlyResults = Array(12).fill(0).map((_, i) => ({
-          name: format(new Date(currentYear, i, 1), 'MMM', { locale: require('date-fns/locale/pt-BR') }),
+        
+        console.log(`Vendas do ano ${currentYear} encontradas:`, vendaAnual?.length);
+
+        // Criar estrutura mensal com valores iniciais zerados
+        const meses = [
+          "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+          "Jul", "Ago", "Set", "Out", "Nov", "Dez"
+        ];
+        
+        const dadosMensais = meses.map((name, index) => ({
+          name,
           faturado: 0
         }));
-  
-        monthlyData?.forEach(orcamento => {
-          if (orcamento.data_venda) {
-            const dataVenda = new Date(orcamento.data_venda);
-            const mes = dataVenda.getMonth();
-            
-            const orcamentoTotal = orcamento.orcamentos_itens.reduce(
-              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
-            );
-            
-            monthlyResults[mes].faturado += orcamentoTotal;
-          }
+        
+        // Preencher os valores de cada mês
+        if (vendaAnual) {
+          vendaAnual.forEach(venda => {
+            if (venda.data_venda) {
+              // Extrair o mês da data (0-11)
+              const dataVenda = new Date(venda.data_venda);
+              const mes = dataVenda.getMonth();
+              
+              // Calcular o valor total do orçamento
+              const valorTotal = venda.orcamentos_itens.reduce(
+                (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+              );
+              
+              // Adicionar ao mês correspondente
+              dadosMensais[mes].faturado += valorTotal;
+            }
+          });
+        }
+        
+        console.log("Dados mensais processados:", dadosMensais);
+        setBarChartData(dadosMensais);
+        
+        // Processar dados trimestrais a partir dos dados mensais
+        const dadosTrimestrais = [
+          { name: '1º Trim', faturado: 0 },
+          { name: '2º Trim', faturado: 0 },
+          { name: '3º Trim', faturado: 0 },
+          { name: '4º Trim', faturado: 0 }
+        ];
+        
+        // Somar os meses para formar os trimestres
+        dadosMensais.forEach((mes, index) => {
+          const trimestre = Math.floor(index / 3);
+          dadosTrimestrais[trimestre].faturado += mes.faturado;
         });
-  
-        console.log("Dados mensais processados:", monthlyResults);
-        setBarChartData(monthlyResults);
+        
+        console.log("Dados trimestrais processados:", dadosTrimestrais);
+        setQuarterlyChartData(dadosTrimestrais);
+        
       } catch (monthlyError) {
         console.error("Erro ao processar dados mensais:", monthlyError);
         toast({
           variant: "destructive",
           title: "Erro ao carregar dados mensais",
           description: "Não foi possível processar os dados mensais"
-        });
-      }
-
-      // Buscar dados para gráficos trimestrais
-      try {
-        console.log("Iniciando busca de dados trimestrais");
-        
-        // Processar dados trimestrais manualmente a partir dos dados mensais
-        const quarterlyResults = [
-          { name: '1º Trimestre', faturado: 0 },
-          { name: '2º Trimestre', faturado: 0 },
-          { name: '3º Trimestre', faturado: 0 },
-          { name: '4º Trimestre', faturado: 0 }
-        ];
-        
-        // Usar os dados mensais já calculados para agregar em trimestres
-        if (Array.isArray(monthlyResults)) {
-          for (let i = 0; i < 12; i++) {
-            const trimestre = Math.floor(i / 3);
-            quarterlyResults[trimestre].faturado += monthlyResults[i].faturado;
-          }
-        }
-        
-        console.log("Dados trimestrais processados:", quarterlyResults);
-        setQuarterlyChartData(quarterlyResults);
-      } catch (quarterlyError) {
-        console.error("Erro ao processar dados trimestrais:", quarterlyError);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar dados trimestrais",
-          description: "Não foi possível processar os dados trimestrais"
         });
       }
 
