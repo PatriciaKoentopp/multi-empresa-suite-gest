@@ -77,6 +77,7 @@ interface LeadInteracao {
   descricao: string;
   data: string;
   responsavelId: string;
+  responsavelNome?: string;
 }
 
 interface LeadFormModalProps {
@@ -737,63 +738,70 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
                               <p className="mt-2 text-sm text-muted-foreground">Carregando interações...</p>
                             </div>
                           ) : interacoes.length > 0 ? (
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Tipo</TableHead>
-                                  <TableHead>Descrição</TableHead>
-                                  <TableHead>Data</TableHead>
-                                  <TableHead>Responsável</TableHead>
-                                  <TableHead className="text-right">Ações</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {interacoes.map((interacao) => (
-                                  <TableRow key={interacao.id}>
-                                    <TableCell>
-                                      <div className="flex items-center gap-2">
-                                        {getIconForInteraction(interacao.tipo)}
-                                        <span className="capitalize">{interacao.tipo}</span>
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="max-w-[200px] truncate">
-                                      {interacao.descricao}
-                                    </TableCell>
-                                    <TableCell>{interacao.data}</TableCell>
-                                    <TableCell>
-                                      {interacao.responsavelNome || getNomeResponsavel(interacao.responsavelId)}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      <div className="flex justify-end gap-1">
-                                        <Button 
-                                          variant="ghost" 
-                                          size="sm"
-                                          onClick={() => visualizarInteracao(interacao)}
-                                        >
-                                          <Eye className="h-4 w-4 text-gray-500" />
-                                        </Button>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="sm"
-                                          onClick={() => prepararEdicaoInteracao(interacao)}
-                                        >
-                                          <Edit className="h-4 w-4 text-blue-500" />
-                                        </Button>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="sm"
-                                          onClick={() => prepararExclusaoInteracao(interacao)}
-                                        >
-                                          <Trash2 className="h-4 w-4 text-red-500" />
-                                        </Button>
-                                      </div>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
+                            <div className="border rounded-md overflow-hidden">
+                              <div className="overflow-x-auto">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Tipo</TableHead>
+                                      <TableHead>Descrição</TableHead>
+                                      <TableHead>Data</TableHead>
+                                      <TableHead>Responsável</TableHead>
+                                      <TableHead className="text-right">Ações</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {interacoes.map((interacao) => (
+                                      <TableRow key={interacao.id}>
+                                        <TableCell>
+                                          <div className="flex items-center gap-2">
+                                            {getIconForInteraction(interacao.tipo)}
+                                            <span className="capitalize">{interacao.tipo}</span>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="max-w-[200px] truncate">
+                                          {interacao.descricao}
+                                        </TableCell>
+                                        <TableCell>{interacao.data}</TableCell>
+                                        <TableCell>
+                                          <div className="flex items-center gap-1">
+                                            <UserRound className="h-3 w-3 text-gray-500" />
+                                            <span>{interacao.responsavelNome || getNomeResponsavel(interacao.responsavelId)}</span>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                          <div className="flex justify-end gap-1">
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm"
+                                              onClick={() => visualizarInteracao(interacao)}
+                                            >
+                                              <Eye className="h-4 w-4 text-gray-500" />
+                                            </Button>
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm"
+                                              onClick={() => prepararEdicaoInteracao(interacao)}
+                                            >
+                                              <Edit className="h-4 w-4 text-blue-500" />
+                                            </Button>
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm"
+                                              onClick={() => prepararExclusaoInteracao(interacao)}
+                                            >
+                                              <Trash2 className="h-4 w-4 text-red-500" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </div>
                           ) : (
-                            <div className="text-center py-6 text-muted-foreground">
+                            <div className="text-center py-6 text-muted-foreground border rounded-md">
                               Nenhuma interação registrada.
                             </div>
                           )}
@@ -999,4 +1007,3 @@ export function LeadFormModal({ open, onClose, onConfirm, lead, etapas, origens,
     </>
   );
 }
-
