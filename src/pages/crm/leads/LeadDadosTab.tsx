@@ -47,13 +47,13 @@ export function LeadDadosTab({
                 favorecidos.map((favorecido: Favorecido) => (
                   <SelectItem 
                     key={favorecido.id} 
-                    value={favorecido.nome_fantasia || favorecido.nome}
+                    value={favorecido.nome_fantasia || favorecido.nome || `empresa_${favorecido.id}`}
                   >
                     {favorecido.nome_fantasia || favorecido.nome}
                   </SelectItem>
                 ))
               ) : (
-                <SelectItem value="" disabled>
+                <SelectItem value="sem_empresas_cadastradas">
                   Nenhuma empresa cadastrada
                 </SelectItem>
               )}
