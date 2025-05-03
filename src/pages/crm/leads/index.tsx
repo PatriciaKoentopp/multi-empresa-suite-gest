@@ -26,7 +26,7 @@ import {
 import { Plus, Filter, Search, Check, Square } from "lucide-react";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
-import { Origem, Usuario, Funil } from "@/types"; 
+import { Origem, Usuario, Funil, EtapaFunil } from "@/types"; 
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,8 +88,11 @@ export default function LeadsPage() {
         nome: funil.nome,
         descricao: funil.descricao,
         ativo: funil.ativo,
-        dataCriacao: new Date(funil.data_criacao).toLocaleDateString('pt-BR'),
-        etapas: funil.etapas.sort((a, b) => a.ordem - b.ordem)
+        empresa_id: funil.empresa_id,
+        data_criacao: funil.data_criacao,
+        etapas: funil.etapas.sort((a, b) => a.ordem - b.ordem),
+        created_at: new Date(funil.created_at),
+        updated_at: new Date(funil.updated_at)
       }));
       
       setFunis(funisFormatados);
@@ -118,7 +121,20 @@ export default function LeadsPage() {
         .order('nome');
 
       if (usuariosError) throw usuariosError;
-      setUsuarios(usuariosData);
+      
+      const usuariosFormatados = usuariosData.map(usuario => ({
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        tipo: usuario.tipo,
+        status: usuario.status,
+        vendedor: usuario.vendedor,
+        empresa_id: usuario.empresa_id,
+        created_at: new Date(usuario.created_at),
+        updated_at: new Date(usuario.updated_at)
+      }));
+      
+      setUsuarios(usuariosFormatados);
 
       // Buscar motivos de perda
       const { data: motivosPerdaData, error: motivosPerdaError } = await supabase
@@ -155,6 +171,8 @@ export default function LeadsPage() {
       
       if (!funilIdToFetch) return;
       
+      console.log('Buscando leads para o funil:', funilIdToFetch);
+      
       // Modificar a consulta para não usar o join implícito em responsavel_id
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
@@ -180,6 +198,8 @@ export default function LeadsPage() {
         .eq('status', statusFilter);
 
       if (leadsError) throw leadsError;
+      
+      console.log('Leads encontrados:', leadsData?.length, leadsData);
       
       // Buscar informações dos responsáveis após obter os leads
       const responsaveisIds = leadsData
@@ -400,6 +420,7 @@ export default function LeadsPage() {
 
   // Manipulador para quando o funil é alterado
   const handleFunilChange = (funilId: string) => {
+    console.log('Alterando funil para:', funilId);
     setSelectedFunilId(funilId);
     // Resetar filtros de etapas ao mudar de funil
     setAllStagesSelected(true);
@@ -553,7 +574,7 @@ export default function LeadsPage() {
                     </Badge>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56 p-4" align="start">
+                <PopoverContent className="w-56 p-4 bg-white" align="start">
                   <div className="space-y-2">
                     <h4 className="font-medium mb-3">Etapas</h4>
                     
@@ -587,7 +608,6 @@ export default function LeadsPage() {
           {/* Layout Kanban com Drag and Drop */}
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex gap-4 overflow-x-auto pb-4">
-              {/* CORREÇÃO PRINCIPAL: Usando filteredStages em vez de leadsByStage */}
               {filteredStages.map(({ etapa, leads, totalValor }) => (
                 <div key={etapa.id} className="min-w-[280px] max-w-[280px] flex-shrink-0">
                   <div 

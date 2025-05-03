@@ -1,5 +1,4 @@
 
-
 export interface LeadInteracao {
   id: number | string;
   leadId: string;
@@ -32,4 +31,3 @@ export interface EtapaFunil {
   cor: string;
   ordem: number;
 }
-
