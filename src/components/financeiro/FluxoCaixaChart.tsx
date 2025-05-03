@@ -39,11 +39,12 @@ export const FluxoCaixaChart = ({ data, saldoInicialPeriodo = 0 }: FluxoCaixaCha
       if (item.tipo === 'entrada') {
         acc[dateStr].entradas += Number(item.valor);
       } else {
+        // As saídas já são armazenadas como valores negativos no banco
         acc[dateStr].saidas += Number(item.valor);
       }
       
-      // O saldo do dia é a diferença entre entradas e saídas
-      acc[dateStr].saldo = acc[dateStr].entradas - acc[dateStr].saidas;
+      // O saldo do dia é a soma das entradas e saídas (já negativas)
+      acc[dateStr].saldo = acc[dateStr].entradas + acc[dateStr].saidas;
       
       return acc;
     }, {} as Record<string, any>);
@@ -57,8 +58,8 @@ export const FluxoCaixaChart = ({ data, saldoInicialPeriodo = 0 }: FluxoCaixaCha
     let saldoAcumulado = saldoInicialPeriodo || 0;
     
     const dataWithCumulativeSaldo = sortedData.map(item => {
-      // Calcular saldo acumulado: somar entradas e subtrair saídas
-      saldoAcumulado += item.entradas - item.saidas;
+      // Calcular saldo acumulado: somar entradas e saídas (já com sinal negativo)
+      saldoAcumulado += item.entradas + item.saidas;
       
       return {
         ...item,
@@ -95,7 +96,8 @@ export const FluxoCaixaChart = ({ data, saldoInicialPeriodo = 0 }: FluxoCaixaCha
   // Personalizar tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const saldoDia = payload[0].value - payload[1].value;
+      // As saídas já são valores negativos, então somamos para obter o saldo do dia
+      const saldoDia = payload[0].value + payload[1].value;
       const saldoAcumulado = payload[2].value;
       
       return (

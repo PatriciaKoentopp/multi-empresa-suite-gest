@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,14 +93,13 @@ export const usePainelFinanceiro = () => {
       }
       
       // Somar as movimentações anteriores ao período
+      // Os valores de pagar já vêm com sinal negativo do banco, então apenas somamos
       if (movimentacoesAnteriores && movimentacoesAnteriores.length > 0) {
         movimentacoesAnteriores.forEach(mov => {
           const valor = Number(mov.valor || 0);
-          if (mov.tipo_operacao === 'receber') {
-            saldoInicial += valor; // Entradas somam ao saldo
-          } else if (mov.tipo_operacao === 'pagar') {
-            saldoInicial -= valor; // Saídas subtraem do saldo
-          }
+          // Independente do tipo de operação, apenas somamos o valor
+          // (saídas já vêm com valor negativo)
+          saldoInicial += valor;
         });
       }
       
