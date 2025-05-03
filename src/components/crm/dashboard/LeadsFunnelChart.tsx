@@ -32,7 +32,7 @@ export function LeadsFunnelChart({ data, title, emptyMessage = "Nenhum dado disp
       ...config,
       [item.nome]: {
         label: item.nome,
-        color: item.color,
+        color: item.color || "#9b87f5", // Usando roxo principal como cor padrão
       },
     };
   }, {});
@@ -48,31 +48,32 @@ export function LeadsFunnelChart({ data, title, emptyMessage = "Nenhum dado disp
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={data}
-                margin={{ top: 10, right: 10, left: 10, bottom: 50 }}
+                margin={{ top: 10, right: 30, left: 30, bottom: 50 }}
+                layout="vertical" // Alterado para gráfico de barras vertical
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                 <XAxis
-                  dataKey="nome"
+                  type="number"
                   tickLine={false}
                   axisLine={true}
-                  tick={{ fontSize: 10 }}
-                  angle={-35}
-                  textAnchor="end"
-                  height={80}
+                  tick={{ fontSize: 12 }}
                 />
                 <YAxis
+                  type="category"
+                  dataKey="nome"
                   tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 12 }}
+                  width={120}
                 />
                 <Tooltip content={<ChartTooltipContent />} />
                 <Bar
                   dataKey="quantidade"
                   name="Leads"
-                  radius={[4, 4, 0, 0]}
                   fill="var(--color-quantidade)"
                   fillOpacity={0.9}
-                  barSize={40}
+                  barSize={20}
+                  radius={[0, 4, 4, 0]} // Raio nos cantos direitos das barras
                 />
               </BarChart>
             </ResponsiveContainer>
