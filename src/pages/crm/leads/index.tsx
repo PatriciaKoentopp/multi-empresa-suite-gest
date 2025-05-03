@@ -250,7 +250,7 @@ export default function LeadsPage() {
       );
     }
 
-    // Verificar se "todas as etapas" está selecionado
+    // Aplicar filtro de etapas - CORREÇÃO AQUI
     if (!allStagesSelected && selectedEtapas.length > 0) {
       filtered = filtered.filter(
         (lead) => selectedEtapas.includes(lead.etapaId)
@@ -441,7 +441,9 @@ export default function LeadsPage() {
 
   // Agrupar leads por etapa do funil
   const leadsByStage = selectedFunil?.etapas.map(etapa => {
+    // Filtramos aqui os leads que pertencem a esta etapa e que já estão pré-filtrados
     const stageLeads = filteredLeads.filter(lead => lead.etapaId === etapa.id);
+    
     // Calcular o valor total dos leads nesta etapa
     const totalValor = stageLeads.reduce((total, lead) => total + (lead.valor || 0), 0);
     
@@ -451,6 +453,11 @@ export default function LeadsPage() {
       totalValor
     };
   }) || [];
+
+  // Filtrar as etapas que devem ser exibidas com base na seleção do usuário
+  const filteredStages = allStagesSelected
+    ? leadsByStage
+    : leadsByStage.filter(stage => selectedEtapas.includes(stage.etapa.id));
 
   if (loading) {
     return (
@@ -579,7 +586,8 @@ export default function LeadsPage() {
           {/* Layout Kanban com Drag and Drop */}
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex gap-4 overflow-x-auto pb-4">
-              {leadsByStage?.map(({ etapa, leads, totalValor }) => (
+              {/* CORREÇÃO PRINCIPAL: Usando filteredStages em vez de leadsByStage */}
+              {filteredStages.map(({ etapa, leads, totalValor }) => (
                 <div key={etapa.id} className="min-w-[280px] max-w-[280px] flex-shrink-0">
                   <div 
                     className="text-sm font-semibold mb-2 p-2 rounded-md flex justify-between items-center"
@@ -659,4 +667,156 @@ export default function LeadsPage() {
       />
     </div>
   );
+  
+  // Função para manipular a mudança de funil
+  function handleFunilChange(funilId: string) {
+    setSelectedFunilId(funilId);
+    // Resetar filtros de etapas ao mudar de funil
+    setAllStagesSelected(true);
+    setSelectedEtapas([]);
+  }
+  
+  // Função para manipular a mudança de status
+  function handleStatusChange(status: string) {
+    setStatusFilter(status);
+  }
+  
+  // Função para abrir o modal de formulário
+  function handleOpenFormModal(lead = null) {
+    setEditingLead(lead);
+    setIsFormModalOpen(true);
+  }
+  
+  // Função para fechar o modal de formulário
+  function handleCloseFormModal() {
+    setEditingLead(null);
+    setIsFormModalOpen(false);
+  }
+  
+  // Função para salvar um lead
+  async function handleSaveLead(leadData) {
+    try {
+      // Garantir que temos um ID de empresa válido
+      if (!leadData.empresa_id && !empresaId) {
+        toast.error("Erro ao salvar lead", {
+          description: "ID da empresa não encontrado."
+        });
+        return;
+      }
+      
+      // Preparar os dados para o formato da tabela no Supabase
+      const leadToSave = {
+        nome: leadData.nome,
+        empresa: leadData.empresa,
+        email: leadData.email,
+        telefone: leadData.telefone,
+        etapa_id: leadData.etapaId,
+        funil_id: selectedFunilId,
+        valor: leadData.valor,
+        origem_id: leadData.origemId,
+        responsavel_id: leadData.responsavelId,
+        produto: leadData.produto,
+        empresa_id: leadData.empresa_id || empresaId,
+        status: leadData.status || 'ativo'
+      };
+
+      console.log('Dados a serem salvos:', leadToSave);
+
+      if (editingLead) {
+        // Atualizar lead existente
+        const { error } = await supabase
+          .from('leads')
+          .update(leadToSave)
+          .eq('id', editingLead.id);
+
+        if (error) throw error;
+        
+        toast.success("Lead atualizado com sucesso!");
+      } else {
+        // Criar novo lead
+        const { error } = await supabase
+          .from('leads')
+          .insert([leadToSave]);
+
+        if (error) throw error;
+        
+        toast.success("Lead criado com sucesso!");
+      }
+      
+      // Recarregar dados após salvar
+      fetchLeads();
+      handleCloseFormModal();
+    } catch (error) {
+      console.error('Erro ao salvar lead:', error);
+      toast.error("Erro ao salvar lead", {
+        description: "Não foi possível salvar as alterações. Detalhes: " + error.message
+      });
+    }
+  }
+  
+  // Função para deletar um lead
+  async function handleDeleteLead(id) {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ status: 'inativo' })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      // Atualizar a lista de leads localmente
+      setLeads(leads.filter((lead) => lead.id !== id));
+      toast.success("Lead removido com sucesso!");
+    } catch (error) {
+      console.error('Erro ao remover lead:', error);
+      toast.error("Erro ao remover lead", {
+        description: "Não foi possível remover o lead."
+      });
+    }
+  }
+  
+  // Função para mover lead para outra etapa
+  async function handleMoveLead(leadId: string, newEtapaId: string) {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ etapa_id: newEtapaId })
+        .eq('id', leadId);
+
+      if (error) throw error;
+      
+      // Atualizar a lista de leads localmente
+      const updatedLeads = leads.map(lead => 
+        lead.id === leadId ? { ...lead, etapaId: newEtapaId } : lead
+      );
+      setLeads(updatedLeads);
+      
+      toast.success("Lead movido com sucesso!");
+    } catch (error) {
+      console.error('Erro ao mover lead:', error);
+      toast.error("Erro ao mover lead", {
+        description: "Não foi possível mover o lead para a etapa selecionada."
+      });
+    }
+  }
+  
+  // Função para lidar com o fim do drag and drop
+  function onDragEnd(result: DropResult) {
+    const { destination, source, draggableId } = result;
+
+    // Se não tiver destino ou o destino for o mesmo que a origem, não faz nada
+    if (!destination || 
+        (destination.droppableId === source.droppableId && 
+         destination.index === source.index)) {
+      return;
+    }
+
+    // Convertendo o id da etapa de destino para número
+    const targetEtapaId = destination.droppableId;
+    // Convertendo o id do lead para número
+    const leadId = draggableId;
+
+    // Chamando a função de mover lead
+    handleMoveLead(leadId, targetEtapaId);
+  }
 }
