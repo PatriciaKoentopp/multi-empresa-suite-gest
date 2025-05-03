@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -32,8 +31,10 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "./utils/leadUtils";
 import { StageFilterCheckbox } from "@/components/crm/leads/StageFilterCheckbox";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function LeadsPage() {
+  const { user, userData, isAuthenticated, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [leads, setLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
@@ -49,41 +50,65 @@ export default function LeadsPage() {
   const [motivosPerda, setMotivosPerda] = useState([]);
   const [selectedFunilId, setSelectedFunilId] = useState<string>("");
   const [empresaId, setEmpresaId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Obter o funil selecionado
   const selectedFunil = funis.find(funil => funil.id === selectedFunilId) || (funis.length > 0 ? funis[0] : null);
 
-  // Carregar dados do Supabase quando a página carregar
+  // Esperar que a autenticação seja carregada antes de buscar dados
   useEffect(() => {
-    fetchAllData();
-  }, []);
+    if (!authLoading && isAuthenticated) {
+      console.log('Auth carregada, usuário autenticado:', userData);
+      fetchAllData();
+    } else if (!authLoading && !isAuthenticated) {
+      console.log('Usuário não está autenticado');
+      setLoadError("Usuário não autenticado");
+      setLoading(false);
+    }
+  }, [authLoading, isAuthenticated, userData]);
 
   // Função para buscar todos os dados necessários
   const fetchAllData = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
-      console.log('Iniciando fetchAllData');
-      // Buscar empresa ID primeiro (necessário para todas as outras operações)
-      const { data: empresaData, error: empresaError } = await supabase
-        .from('empresas')
-        .select('id')
-        .limit(1)
-        .single();
+      console.log('Iniciando fetchAllData com userData:', userData);
+      
+      // Obter empresa_id do contexto de autenticação
+      let empresaIdToUse = userData?.empresa_id;
+      
+      // Se o usuário não tem empresa_id, buscar da tabela empresas
+      if (!empresaIdToUse) {
+        console.log('Buscando empresa_id da tabela empresas');
+        const { data: empresaData, error: empresaError } = await supabase
+          .from('empresas')
+          .select('id')
+          .limit(1)
+          .single();
+          
+        if (empresaError) {
+          console.error('Erro ao buscar empresa:', empresaError);
+          throw empresaError;
+        }
         
-      if (empresaError) {
-        console.error('Erro ao buscar empresa:', empresaError);
-        throw empresaError;
+        empresaIdToUse = empresaData?.id;
+        console.log('Empresa ID obtido:', empresaIdToUse);
+      } else {
+        console.log('Usando empresa_id do usuário:', empresaIdToUse);
       }
       
-      console.log('Empresa ID obtido:', empresaData.id);
-      setEmpresaId(empresaData.id);
+      if (!empresaIdToUse) {
+        throw new Error('Não foi possível obter o ID da empresa');
+      }
+      
+      setEmpresaId(empresaIdToUse);
       
       // Buscar funis
       const { data: funisData, error: funisError } = await supabase
         .from('funis')
         .select('*, etapas:funil_etapas(id, nome, cor, ordem)')
         .eq('ativo', true)
-        .eq('empresa_id', empresaData.id)
+        .eq('empresa_id', empresaIdToUse)
         .order('nome');
 
       if (funisError) {
@@ -113,13 +138,15 @@ export default function LeadsPage() {
       if (funisFormatados.length > 0) {
         console.log('Definindo funil padrão:', funisFormatados[0].id);
         setSelectedFunilId(funisFormatados[0].id);
+      } else {
+        console.log('Nenhum funil encontrado');
       }
 
       // Buscar origens
       const { data: origensData, error: origensError } = await supabase
         .from('origens')
         .select('*')
-        .eq('empresa_id', empresaData.id)
+        .eq('empresa_id', empresaIdToUse)
         .order('nome');
 
       if (origensError) {
@@ -134,8 +161,7 @@ export default function LeadsPage() {
       const { data: usuariosData, error: usuariosError } = await supabase
         .from('usuarios')
         .select('*')
-        .eq('vendedor', 'sim')
-        .eq('empresa_id', empresaData.id)
+        .eq('empresa_id', empresaIdToUse)
         .order('nome');
 
       if (usuariosError) {
@@ -143,7 +169,7 @@ export default function LeadsPage() {
         throw usuariosError;
       }
       
-      console.log('Vendedores obtidos:', usuariosData?.length);
+      console.log('Usuários obtidos:', usuariosData?.length);
       
       const usuariosFormatados = usuariosData.map(usuario => ({
         id: usuario.id,
@@ -151,7 +177,7 @@ export default function LeadsPage() {
         email: usuario.email,
         tipo: usuario.tipo,
         status: usuario.status,
-        vendedor: usuario.vendedor,
+        vendedor: usuario.vendedor || 'nao',
         empresa_id: usuario.empresa_id,
         created_at: usuario.created_at ? new Date(usuario.created_at) : undefined,
         updated_at: usuario.updated_at ? new Date(usuario.updated_at) : undefined
@@ -164,7 +190,7 @@ export default function LeadsPage() {
         .from('motivos_perda')
         .select('*')
         .eq('status', 'ativo')
-        .eq('empresa_id', empresaData.id)
+        .eq('empresa_id', empresaIdToUse)
         .order('nome');
 
       if (motivosPerdaError) {
@@ -177,11 +203,17 @@ export default function LeadsPage() {
       
       // Buscar leads após ter os dados de funis
       if (funisFormatados.length > 0) {
-        await fetchLeads(empresaData.id, funisFormatados[0].id);
+        await fetchLeads(empresaIdToUse, funisFormatados[0].id);
+      } else {
+        setLeads([]);
+        toast.error("Nenhum funil encontrado", {
+          description: "Cadastre um funil para gerenciar seus leads."
+        });
       }
       
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
+      setLoadError(`Erro ao carregar dados: ${error.message}`);
       toast.error("Erro ao carregar dados", {
         description: "Não foi possível buscar os dados necessários."
       });
@@ -204,6 +236,7 @@ export default function LeadsPage() {
       
       if (!funilIdToFetch) {
         console.log('Sem funil ID, não é possível buscar leads');
+        setLeads([]);
         return;
       }
       
@@ -238,7 +271,7 @@ export default function LeadsPage() {
         throw leadsError;
       }
       
-      console.log('Leads encontrados:', leadsData?.length, leadsData);
+      console.log('Leads encontrados:', leadsData?.length);
       
       if (!leadsData || leadsData.length === 0) {
         console.log('Nenhum lead encontrado');
@@ -252,21 +285,24 @@ export default function LeadsPage() {
         .map(lead => lead.responsavel_id);
       
       // Só busca usuários se houver IDs de responsáveis
-      let usuariosInfo = {};
+      let responsaveisMap = new Map();
+      
       if (responsaveisIds.length > 0) {
-        const { data: usuariosData } = await supabase
+        const { data: responsaveisData, error: responsaveisError } = await supabase
           .from('usuarios')
           .select('id, nome')
           .in('id', responsaveisIds);
-          
-        if (usuariosData) {
-          usuariosInfo = usuariosData.reduce((acc, user) => {
-            acc[user.id] = user.nome;
-            return acc;
-          }, {});
+        
+        if (responsaveisError) {
+          console.error('Erro ao buscar responsáveis:', responsaveisError);
+        } else if (responsaveisData) {
+          // Criar mapa de ID -> nome para fácil acesso
+          responsaveisData.forEach(resp => {
+            responsaveisMap.set(resp.id, resp.nome);
+          });
         }
       }
-
+      
       // Transformar os dados para o formato esperado pelo componente
       const leadsFormatados = leadsData.map(lead => ({
         id: lead.id,
@@ -282,7 +318,7 @@ export default function LeadsPage() {
         dataCriacao: lead.data_criacao ? new Date(lead.data_criacao).toLocaleDateString('pt-BR') : '',
         ultimoContato: lead.ultimo_contato ? new Date(lead.ultimo_contato).toLocaleDateString('pt-BR') : null,
         responsavelId: lead.responsavel_id || '',
-        responsavelNome: lead.responsavel_id ? usuariosInfo[lead.responsavel_id] || 'Não atribuído' : 'Não atribuído',
+        responsavelNome: lead.responsavel_id ? responsaveisMap.get(lead.responsavel_id) || 'Não atribuído' : 'Não atribuído',
         produto: lead.produto || '',
         status: lead.status || 'ativo'
       }));
@@ -509,6 +545,65 @@ export default function LeadsPage() {
     }
   };
 
+  // Função para obter o nome do responsável por ID
+  const getNomeResponsavel = (id: string): string => {
+    return usuarios.find(u => u.id === id)?.nome || "Não atribuído";
+  };
+
+  // Obter o ID da empresa
+  const getEmpresaId = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('empresas')
+        .select('id')
+        .limit(1)
+        .single();
+      
+      if (error) throw error;
+      return data?.id;
+    } catch (error) {
+      console.error('Erro ao obter ID da empresa:', error);
+      return null;
+    }
+  };
+
+  // Função para salvar lead
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      console.log('Salvando dados do lead...');
+      // Obter o ID da empresa
+      const empresaId = await getEmpresaId();
+      
+      if (!empresaId) {
+        console.error('ID da empresa não encontrado');
+        toast.error("Erro ao salvar", {
+          description: "ID da empresa não encontrado"
+        });
+        return;
+      }
+      
+      // Adicionar o ID da empresa aos dados do lead
+      const leadDataWithCompany = {
+        ...formData,
+        empresa_id: empresaId
+      };
+      
+      // Chamar a função original para salvar os dados do lead
+      console.log('Salvando dados do lead:', leadDataWithCompany);
+      onConfirm(leadDataWithCompany);
+      
+      // Fechar o modal após salvar
+      onClose();
+    } catch (error) {
+      console.error('Erro ao salvar lead:', error);
+      toast.error("Erro ao salvar os dados", {
+        description: "Ocorreu um erro ao salvar o lead."
+      });
+    }
+  };
+
   // Obter apenas etapas do funil selecionado para o filtro
   const etapasFunilSelecionado = selectedFunil ? selectedFunil.etapas : [];
 
@@ -532,10 +627,22 @@ export default function LeadsPage() {
     ? leadsByStage
     : leadsByStage.filter(stage => selectedEtapas.includes(stage.etapa.id));
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <span className="ml-3">Carregando...</span>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex justify-center items-center h-64 flex-col">
+        <div className="text-red-500 mb-4">{loadError}</div>
+        <Button onClick={fetchAllData} variant="outline">
+          Tentar novamente
+        </Button>
       </div>
     );
   }
@@ -566,7 +673,7 @@ export default function LeadsPage() {
                 <SelectTrigger className="w-full bg-white">
                   <SelectValue placeholder="Selecionar funil" />
                 </SelectTrigger>
-                <SelectContent className="bg-white z-10">
+                <SelectContent className="bg-white">
                   {funis.map((funil) => (
                     <SelectItem key={funil.id} value={funil.id}>
                       {funil.nome}
@@ -590,7 +697,7 @@ export default function LeadsPage() {
                 <SelectTrigger className="w-full bg-white">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
-                <SelectContent className="bg-white z-10">
+                <SelectContent className="bg-white">
                   <SelectItem value="ativo">Ativos</SelectItem>
                   <SelectItem value="fechado">Fechados</SelectItem>
                   <SelectItem value="inativo">Inativos</SelectItem>
@@ -625,7 +732,7 @@ export default function LeadsPage() {
                     </Badge>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56 p-4 bg-white z-10" align="start">
+                <PopoverContent className="w-56 p-4 bg-white" align="start">
                   <div className="space-y-2">
                     <h4 className="font-medium mb-3">Etapas</h4>
                     

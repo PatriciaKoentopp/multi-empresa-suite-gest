@@ -16,6 +16,7 @@ export interface Lead {
   email: string;
   telefone: string;
   etapaId: string;
+  funilId?: string; // Tornando explícito que pode existir
   valor: number;
   origemId: string;
   dataCriacao: string;
@@ -23,6 +24,8 @@ export interface Lead {
   responsavelId: string;
   produto?: string;
   status: "ativo" | "inativo" | "fechado";
+  origemNome?: string;
+  responsavelNome?: string;
 }
 
 export interface EtapaFunil {
@@ -30,4 +33,5 @@ export interface EtapaFunil {
   nome: string;
   cor: string;
   ordem: number;
+  funil_id?: string;
 }

@@ -1,4 +1,3 @@
-
 export interface Company {
   id: string;
   razao_social: string;
@@ -209,6 +208,9 @@ export interface ModuleNavItem {
   href?: string;
   items?: SubNavItem[];
   disabled?: boolean;
+  // Aliás para compatibilidade
+  name?: string;
+  subItems?: SubNavItem[];
 }
 
 export interface SubNavItem {
