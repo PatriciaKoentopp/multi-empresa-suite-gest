@@ -15,7 +15,7 @@ import {
   TabsList,
   TabsTrigger
 } from "@/components/ui/tabs";
-import { Origem, Usuario, MotivoPerda } from "@/types";
+import { Origem, Usuario, MotivoPerda, Favorecido } from "@/types";
 import { LeadDadosTab } from "./LeadDadosTab";
 import { LeadFechamentoTab } from "./LeadFechamentoTab";
 import { InteracoesTab } from "./components/InteracoesTab";
@@ -71,6 +71,10 @@ export function LeadFormModal({
   // Estado para armazenar interações do lead atual
   const [interacoes, setInteracoes] = useState<LeadInteracao[]>([]);
   const [carregandoInteracoes, setCarregandoInteracoes] = useState(false);
+  
+  // Estado para armazenar os favorecidos cadastrados
+  const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
+  const [carregandoFavorecidos, setCarregandoFavorecidos] = useState(false);
 
   // Estado para dados de fechamento
   const [fechamento, setFechamento] = useState<{
@@ -93,6 +97,49 @@ export function LeadFormModal({
       setFechamento(null);
     }
   }, [lead]);
+
+  // Carregar favorecidos ao abrir o modal
+  useEffect(() => {
+    if (open) {
+      buscarFavorecidos();
+    }
+  }, [open]);
+
+  const buscarFavorecidos = async () => {
+    setCarregandoFavorecidos(true);
+    try {
+      const { data: empresaData, error: empresaError } = await supabase
+        .from('empresas')
+        .select('id')
+        .limit(1)
+        .single();
+      
+      if (empresaError) {
+        console.error('Erro ao buscar empresa:', empresaError);
+        return;
+      }
+      
+      const empresaId = empresaData?.id;
+      
+      const { data, error } = await supabase
+        .from('favorecidos')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .eq('status', 'ativo');
+      
+      if (error) {
+        console.error('Erro ao buscar favorecidos:', error);
+        return;
+      }
+      
+      console.log('Favorecidos carregados:', data?.length);
+      setFavorecidos(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar favorecidos:', error);
+    } finally {
+      setCarregandoFavorecidos(false);
+    }
+  };
 
   const buscarInteracoes = async (leadId: string) => {
     setCarregandoInteracoes(true);
@@ -499,15 +546,23 @@ export function LeadFormModal({
                 {/* DADOS */}
                 <TabsContent value="dados" className="p-6 mt-0 h-full overflow-y-auto">
                   <form id="dadosLeadForm" onSubmit={handleSubmit}>
-                    <LeadDadosTab
-                      formData={formData}
-                      handleChange={handleChange}
-                      handleSelectChange={handleSelectChange}
-                      etapas={etapas}
-                      origensAtivas={origensAtivas}
-                      vendedoresAtivos={vendedoresAtivos}
-                      handleProdutoChange={handleProdutoChange}
-                    />
+                    {carregandoFavorecidos ? (
+                      <div className="flex justify-center items-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                        <span className="ml-3">Carregando empresas...</span>
+                      </div>
+                    ) : (
+                      <LeadDadosTab
+                        formData={formData}
+                        handleChange={handleChange}
+                        handleSelectChange={handleSelectChange}
+                        etapas={etapas}
+                        origensAtivas={origensAtivas}
+                        vendedoresAtivos={vendedoresAtivos}
+                        handleProdutoChange={handleProdutoChange}
+                        favorecidos={favorecidos}
+                      />
+                    )}
                   </form>
                 </TabsContent>
 
