@@ -63,16 +63,19 @@ interface UseCrmDashboardResult {
   filterByFunnelId: (funnelId: string) => void;
 }
 
+// Paleta de cores mais atraente com base no roxo principal #9b87f5
 const getRandomColor = () => {
   const colors = [
     "#9b87f5", // roxo principal
+    "#7E69AB", // roxo secundário
+    "#6E59A5", // roxo terciário
+    "#8B5CF6", // roxo vívido
     "#E5DEFF", // roxo claro
     "#1EAEDB", // azul brilhante
     "#33C3F0", // azul céu
     "#4CAF50", // verde
     "#F59E0B", // âmbar
     "#EC4899", // rosa
-    "#8B5CF6", // roxo
     "#6366F1", // índigo
     "#069669", // esmeralda
     "#6B7280", // cinza cool
@@ -242,7 +245,15 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
     
     filteredLeads.forEach(lead => {
       if (lead.etapa_nome) {
-        const current = etapasMap.get(lead.etapa_nome) || { quantidade: 0, valor: 0, cor: lead.etapa_cor || getRandomColor() };
+        // Usar a cor da etapa se disponível ou gerar uma cor roxa
+        const cor = lead.etapa_cor || getRandomColor();
+        
+        const current = etapasMap.get(lead.etapa_nome) || { 
+          quantidade: 0, 
+          valor: 0, 
+          cor
+        };
+        
         etapasMap.set(lead.etapa_nome, {
           quantidade: current.quantidade + 1,
           valor: current.valor + (lead.valor || 0),

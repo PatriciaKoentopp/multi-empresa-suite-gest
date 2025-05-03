@@ -44,12 +44,12 @@ export function LeadsFunnelChart({ data, title, emptyMessage = "Nenhum dado disp
       </CardHeader>
       <CardContent>
         {data.length > 0 ? (
-          <ChartContainer className="h-[300px]" config={chartConfig}>
+          <ChartContainer className="h-[300px] w-full" config={chartConfig}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={data}
-                margin={{ top: 10, right: 30, left: 30, bottom: 50 }}
-                layout="vertical" // Alterado para gráfico de barras vertical
+                margin={{ top: 10, right: 40, left: 40, bottom: 20 }}
+                layout="vertical"
               >
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                 <XAxis
@@ -64,13 +64,13 @@ export function LeadsFunnelChart({ data, title, emptyMessage = "Nenhum dado disp
                   tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 12 }}
-                  width={120}
+                  width={100}
                 />
                 <Tooltip content={<ChartTooltipContent />} />
                 <Bar
                   dataKey="quantidade"
                   name="Leads"
-                  fill="var(--color-quantidade)"
+                  fill="#9b87f5" // Cor roxa principal definida explicitamente
                   fillOpacity={0.9}
                   barSize={20}
                   radius={[0, 4, 4, 0]} // Raio nos cantos direitos das barras
