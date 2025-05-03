@@ -43,14 +43,20 @@ export function LeadDadosTab({
               <SelectValue placeholder="Selecione uma empresa" />
             </SelectTrigger>
             <SelectContent className="bg-white z-50">
-              {favorecidos.map((favorecido: Favorecido) => (
-                <SelectItem 
-                  key={favorecido.id} 
-                  value={favorecido.nome_fantasia || favorecido.nome}
-                >
-                  {favorecido.nome_fantasia || favorecido.nome}
+              {favorecidos && favorecidos.length > 0 ? (
+                favorecidos.map((favorecido: Favorecido) => (
+                  <SelectItem 
+                    key={favorecido.id} 
+                    value={favorecido.nome_fantasia || favorecido.nome}
+                  >
+                    {favorecido.nome_fantasia || favorecido.nome}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="" disabled>
+                  Nenhuma empresa cadastrada
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>

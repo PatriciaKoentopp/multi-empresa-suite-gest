@@ -121,6 +121,7 @@ export function LeadFormModal({
       
       const empresaId = empresaData?.id;
       
+      // Buscar favorecidos ativos da empresa atual
       const { data, error } = await supabase
         .from('favorecidos')
         .select('*')
@@ -129,6 +130,9 @@ export function LeadFormModal({
       
       if (error) {
         console.error('Erro ao buscar favorecidos:', error);
+        toast.error("Erro ao carregar empresas", {
+          description: "Houve um problema ao buscar a lista de empresas."
+        });
         return;
       }
       
@@ -136,6 +140,9 @@ export function LeadFormModal({
       setFavorecidos(data || []);
     } catch (error) {
       console.error('Erro ao buscar favorecidos:', error);
+      toast.error("Erro ao carregar empresas", {
+        description: "Houve um problema ao buscar a lista de empresas."
+      });
     } finally {
       setCarregandoFavorecidos(false);
     }
