@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function CrmPainelPage() {
-  const [selectedFunnelId, setSelectedFunnelId] = useState<string>("");
+  const [selectedFunnelId, setSelectedFunnelId] = useState<string>("todos");
   
   const {
     isLoading,
@@ -28,7 +28,7 @@ export default function CrmPainelPage() {
     potentialValue,
     funisList,
     filterByFunnelId,
-  } = useCrmDashboard(selectedFunnelId);
+  } = useCrmDashboard(selectedFunnelId === "todos" ? "" : selectedFunnelId);
 
   const handleFunnelChange = (value: string) => {
     setSelectedFunnelId(value);
@@ -44,7 +44,7 @@ export default function CrmPainelPage() {
               <SelectValue placeholder="Todos os funis" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os funis</SelectItem>
+              <SelectItem value="todos">Todos os funis</SelectItem>
               {funisList.map((funil) => (
                 <SelectItem key={funil.id} value={funil.id}>{funil.nome}</SelectItem>
               ))}
@@ -103,7 +103,7 @@ export default function CrmPainelPage() {
           <>
             <LeadsFunnelChart
               data={leadsByEtapa}
-              title={`Leads por Etapa do Funil ${selectedFunnelId ? '- ' + funisList.find(f => f.id === selectedFunnelId)?.nome : ''}`}
+              title={`Leads por Etapa do Funil ${selectedFunnelId !== "todos" ? '- ' + funisList.find(f => f.id === selectedFunnelId)?.nome : ''}`}
             />
             <LeadsOriginPieChart
               data={leadsByOrigin}

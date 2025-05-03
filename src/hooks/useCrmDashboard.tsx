@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
@@ -161,7 +160,7 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
     }
   };
 
-  // Fetch data when component mounts or date range changes
+  // Carregar dados quando o componente monta ou o intervalo de datas muda
   useEffect(() => {
     const fetchData = async () => {
       if (!currentCompany) return;
@@ -229,7 +228,6 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
     }
   };
 
-  // Cálculos dos dados para os gráficos
   const totalLeads = useMemo(() => filteredLeads.length, [filteredLeads]);
   
   const activeLeads = useMemo(() => 
