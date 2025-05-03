@@ -3,7 +3,6 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Favorecido } from "@/types";
 
 interface LeadDadosTabProps {
   formData: any;
@@ -13,7 +12,6 @@ interface LeadDadosTabProps {
   origensAtivas: any[];
   vendedoresAtivos: any[];
   handleProdutoChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  favorecidos?: Favorecido[];
 }
 
 export function LeadDadosTab({
@@ -23,8 +21,7 @@ export function LeadDadosTab({
   etapas,
   origensAtivas,
   vendedoresAtivos,
-  handleProdutoChange,
-  favorecidos = []
+  handleProdutoChange
 }: LeadDadosTabProps) {
   return (
     <div className="space-y-6">
@@ -35,30 +32,7 @@ export function LeadDadosTab({
         </div>
         <div className="space-y-2">
           <Label>Empresa</Label>
-          <Select
-            value={formData.empresa}
-            onValueChange={(value) => handleSelectChange("empresa", value)}
-          >
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="Selecione uma empresa" />
-            </SelectTrigger>
-            <SelectContent className="bg-white z-50">
-              {favorecidos && favorecidos.length > 0 ? (
-                favorecidos.map((favorecido: Favorecido) => (
-                  <SelectItem 
-                    key={favorecido.id} 
-                    value={favorecido.nome_fantasia || favorecido.nome || `empresa_${favorecido.id}`}
-                  >
-                    {favorecido.nome_fantasia || favorecido.nome}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="sem_empresas_cadastradas">
-                  Nenhuma empresa cadastrada
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+          <Input name="empresa" value={formData.empresa} onChange={handleChange} />
         </div>
       </div>
       <div className="space-y-2">
