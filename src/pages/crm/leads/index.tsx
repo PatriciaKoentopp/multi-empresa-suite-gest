@@ -51,7 +51,7 @@ export default function LeadsPage() {
   const [empresaId, setEmpresaId] = useState<string | null>(null);
 
   // Obter o funil selecionado
-  const selectedFunil = funis.find(funil => funil.id === selectedFunilId) || funis[0];
+  const selectedFunil = funis.find(funil => funil.id === selectedFunilId) || (funis.length > 0 ? funis[0] : null);
 
   // Carregar dados do Supabase quando a página carregar
   useEffect(() => {
@@ -62,6 +62,7 @@ export default function LeadsPage() {
   const fetchAllData = async () => {
     setLoading(true);
     try {
+      console.log('Iniciando fetchAllData');
       // Buscar empresa ID primeiro (necessário para todas as outras operações)
       const { data: empresaData, error: empresaError } = await supabase
         .from('empresas')
@@ -69,7 +70,12 @@ export default function LeadsPage() {
         .limit(1)
         .single();
         
-      if (empresaError) throw empresaError;
+      if (empresaError) {
+        console.error('Erro ao buscar empresa:', empresaError);
+        throw empresaError;
+      }
+      
+      console.log('Empresa ID obtido:', empresaData.id);
       setEmpresaId(empresaData.id);
       
       // Buscar funis
@@ -80,7 +86,12 @@ export default function LeadsPage() {
         .eq('empresa_id', empresaData.id)
         .order('nome');
 
-      if (funisError) throw funisError;
+      if (funisError) {
+        console.error('Erro ao buscar funis:', funisError);
+        throw funisError;
+      }
+      
+      console.log('Funis obtidos:', funisData?.length);
       
       // Transformar dados dos funis para o formato esperado
       const funisFormatados = funisData.map(funil => ({
@@ -91,14 +102,16 @@ export default function LeadsPage() {
         empresa_id: funil.empresa_id,
         data_criacao: funil.data_criacao,
         etapas: funil.etapas.sort((a, b) => a.ordem - b.ordem),
-        created_at: new Date(funil.created_at),
-        updated_at: new Date(funil.updated_at)
+        created_at: funil.created_at ? new Date(funil.created_at) : undefined,
+        updated_at: funil.updated_at ? new Date(funil.updated_at) : undefined
       }));
       
+      console.log('Funis formatados:', funisFormatados?.length);
       setFunis(funisFormatados);
       
       // Definir o funil padrão como o primeiro da lista
-      if (funisFormatados.length > 0 && !selectedFunilId) {
+      if (funisFormatados.length > 0) {
+        console.log('Definindo funil padrão:', funisFormatados[0].id);
         setSelectedFunilId(funisFormatados[0].id);
       }
 
@@ -109,7 +122,12 @@ export default function LeadsPage() {
         .eq('empresa_id', empresaData.id)
         .order('nome');
 
-      if (origensError) throw origensError;
+      if (origensError) {
+        console.error('Erro ao buscar origens:', origensError);
+        throw origensError;
+      }
+      
+      console.log('Origens obtidas:', origensData?.length);
       setOrigens(origensData);
 
       // Buscar usuários vendedores
@@ -120,7 +138,12 @@ export default function LeadsPage() {
         .eq('empresa_id', empresaData.id)
         .order('nome');
 
-      if (usuariosError) throw usuariosError;
+      if (usuariosError) {
+        console.error('Erro ao buscar vendedores:', usuariosError);
+        throw usuariosError;
+      }
+      
+      console.log('Vendedores obtidos:', usuariosData?.length);
       
       const usuariosFormatados = usuariosData.map(usuario => ({
         id: usuario.id,
@@ -130,8 +153,8 @@ export default function LeadsPage() {
         status: usuario.status,
         vendedor: usuario.vendedor,
         empresa_id: usuario.empresa_id,
-        created_at: new Date(usuario.created_at),
-        updated_at: new Date(usuario.updated_at)
+        created_at: usuario.created_at ? new Date(usuario.created_at) : undefined,
+        updated_at: usuario.updated_at ? new Date(usuario.updated_at) : undefined
       }));
       
       setUsuarios(usuariosFormatados);
@@ -144,11 +167,18 @@ export default function LeadsPage() {
         .eq('empresa_id', empresaData.id)
         .order('nome');
 
-      if (motivosPerdaError) throw motivosPerdaError;
+      if (motivosPerdaError) {
+        console.error('Erro ao buscar motivos de perda:', motivosPerdaError);
+        throw motivosPerdaError;
+      }
+      
+      console.log('Motivos de perda obtidos:', motivosPerdaData?.length);
       setMotivosPerda(motivosPerdaData);
-
+      
       // Buscar leads após ter os dados de funis
-      await fetchLeads(empresaData.id, funisFormatados.length > 0 ? funisFormatados[0].id : null);
+      if (funisFormatados.length > 0) {
+        await fetchLeads(empresaData.id, funisFormatados[0].id);
+      }
       
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -165,11 +195,17 @@ export default function LeadsPage() {
     try {
       // Se não temos funil selecionado ainda, retorna
       const empresaIdToUse = empId || empresaId;
-      if (!empresaIdToUse) return;
+      if (!empresaIdToUse) {
+        console.log('Sem empresa ID, não é possível buscar leads');
+        return;
+      }
       
       const funilIdToFetch = funilId || selectedFunilId || (funis.length > 0 ? funis[0].id : null);
       
-      if (!funilIdToFetch) return;
+      if (!funilIdToFetch) {
+        console.log('Sem funil ID, não é possível buscar leads');
+        return;
+      }
       
       console.log('Buscando leads para o funil:', funilIdToFetch);
       
@@ -197,9 +233,18 @@ export default function LeadsPage() {
         .eq('empresa_id', empresaIdToUse)
         .eq('status', statusFilter);
 
-      if (leadsError) throw leadsError;
+      if (leadsError) {
+        console.error('Erro ao buscar leads:', leadsError);
+        throw leadsError;
+      }
       
       console.log('Leads encontrados:', leadsData?.length, leadsData);
+      
+      if (!leadsData || leadsData.length === 0) {
+        console.log('Nenhum lead encontrado');
+        setLeads([]);
+        return;
+      }
       
       // Buscar informações dos responsáveis após obter os leads
       const responsaveisIds = leadsData
@@ -227,21 +272,22 @@ export default function LeadsPage() {
         id: lead.id,
         nome: lead.nome,
         empresa: lead.empresa,
-        email: lead.email,
-        telefone: lead.telefone,
+        email: lead.email || '',
+        telefone: lead.telefone || '',
         etapaId: lead.etapa_id,
         funilId: lead.funil_id,
-        valor: Number(lead.valor),
-        origemId: lead.origem_id,
+        valor: Number(lead.valor || 0),
+        origemId: lead.origem_id || '',
         origemNome: lead.origens?.nome || 'Desconhecida',
-        dataCriacao: new Date(lead.data_criacao).toLocaleDateString('pt-BR'),
+        dataCriacao: lead.data_criacao ? new Date(lead.data_criacao).toLocaleDateString('pt-BR') : '',
         ultimoContato: lead.ultimo_contato ? new Date(lead.ultimo_contato).toLocaleDateString('pt-BR') : null,
-        responsavelId: lead.responsavel_id,
+        responsavelId: lead.responsavel_id || '',
         responsavelNome: lead.responsavel_id ? usuariosInfo[lead.responsavel_id] || 'Não atribuído' : 'Não atribuído',
-        produto: lead.produto,
+        produto: lead.produto || '',
         status: lead.status || 'ativo'
       }));
 
+      console.log('Leads formatados:', leadsFormatados.length);
       setLeads(leadsFormatados);
     } catch (error) {
       console.error('Erro ao buscar leads:', error);
@@ -255,6 +301,7 @@ export default function LeadsPage() {
   useEffect(() => {
     if (!selectedFunil) return;
     
+    console.log('Chamando fetchLeads devido à alteração em selectedFunilId ou statusFilter');
     fetchLeads();
   }, [selectedFunilId, statusFilter]);
 
@@ -265,19 +312,20 @@ export default function LeadsPage() {
     if (searchTerm) {
       filtered = filtered.filter(
         (lead) =>
-          lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          lead.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           lead.empresa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
-    // Aplicar filtro de etapas - CORREÇÃO AQUI
+    // Aplicar filtro de etapas
     if (!allStagesSelected && selectedEtapas.length > 0) {
       filtered = filtered.filter(
         (lead) => selectedEtapas.includes(lead.etapaId)
       );
     }
 
+    console.log('Leads filtrados:', filtered.length);
     setFilteredLeads(filtered);
   }, [leads, searchTerm, selectedEtapas, allStagesSelected]);
 
@@ -429,11 +477,13 @@ export default function LeadsPage() {
 
   // Manipulador para quando o status é alterado
   const handleStatusChange = (status: string) => {
+    console.log('Alterando status para:', status);
     setStatusFilter(status);
   };
   
   // Manipulador para alternar a seleção de "todas as etapas"
   const handleAllStagesToggle = (checked: boolean) => {
+    console.log('Alterando seleção "todas as etapas" para:', checked);
     setAllStagesSelected(checked);
     if (checked) {
       // Se "todas as etapas" for selecionado, limpar etapas individuais
@@ -443,6 +493,7 @@ export default function LeadsPage() {
   
   // Manipulador para alternar a seleção de uma etapa específica
   const handleStageToggle = (etapaId: string, checked: boolean) => {
+    console.log('Alterando seleção da etapa', etapaId, 'para:', checked);
     if (checked) {
       // Adicionar etapa à seleção
       setSelectedEtapas(prev => [...prev, etapaId]);
@@ -509,13 +560,13 @@ export default function LeadsPage() {
             {/* Seletor de Funil */}
             <div className="w-full md:w-[250px]">
               <Select
-                value={selectedFunilId || (funis.length > 0 ? funis[0].id : "")}
+                value={selectedFunilId || ""}
                 onValueChange={handleFunilChange}
               >
                 <SelectTrigger className="w-full bg-white">
                   <SelectValue placeholder="Selecionar funil" />
                 </SelectTrigger>
-                <SelectContent className="bg-white z-50">
+                <SelectContent className="bg-white z-10">
                   {funis.map((funil) => (
                     <SelectItem key={funil.id} value={funil.id}>
                       {funil.nome}
@@ -539,7 +590,7 @@ export default function LeadsPage() {
                 <SelectTrigger className="w-full bg-white">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
-                <SelectContent className="bg-white z-50">
+                <SelectContent className="bg-white z-10">
                   <SelectItem value="ativo">Ativos</SelectItem>
                   <SelectItem value="fechado">Fechados</SelectItem>
                   <SelectItem value="inativo">Inativos</SelectItem>
@@ -574,7 +625,7 @@ export default function LeadsPage() {
                     </Badge>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56 p-4 bg-white" align="start">
+                <PopoverContent className="w-56 p-4 bg-white z-10" align="start">
                   <div className="space-y-2">
                     <h4 className="font-medium mb-3">Etapas</h4>
                     
