@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
@@ -14,7 +13,7 @@ import { ContaCorrente } from "@/types/conta-corrente";
 
 interface DashboardData {
   totalVendas: number;
-  totalOrcamentos: number; // Novo campo para o total de orçamentos
+  totalOrcamentos: number;
   contasReceber: number;
   contasPagar: number;
   ultimasVendas: {
@@ -42,7 +41,7 @@ export function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     totalVendas: 0,
-    totalOrcamentos: 0, // Inicializado com valor zero
+    totalOrcamentos: 0,
     contasReceber: 0,
     contasPagar: 0,
     novosClientes: 0,
@@ -156,7 +155,14 @@ export function Dashboard() {
             )
           `).is('data_pagamento', null).eq('movimentacao.tipo_operacao', 'receber').eq('movimentacao.empresa_id', currentCompany.id);
         if (erroContasReceber) throw erroContasReceber;
-        const totalContasReceber = contasReceber?.reduce((acc, conta) => acc + (Number(conta.valor) || 0), 0) || 0;
+        
+        // Corrigido: Verificar explicitamente o tipo_operacao antes de somar
+        const totalContasReceber = contasReceber?.reduce((acc, conta) => {
+          if (conta.movimentacao?.tipo_operacao === 'receber') {
+            return acc + (Number(conta.valor) || 0);
+          }
+          return acc;
+        }, 0) || 0;
 
         // Filtrar parcelas em atraso
         const parcelasEmAtraso: ContaReceber[] = [];
@@ -258,7 +264,7 @@ export function Dashboard() {
         // Atualizar o estado com todos os dados obtidos
         setDashboardData({
           totalVendas,
-          totalOrcamentos, // Novo valor adicionado
+          totalOrcamentos,
           contasReceber: totalContasReceber,
           contasPagar: totalContasPagar,
           ultimasVendas: vendasFormatadas,
