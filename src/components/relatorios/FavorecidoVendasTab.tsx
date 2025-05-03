@@ -1,11 +1,9 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
-import { ShoppingBag, Calculator, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface FavorecidoVendasTabProps {
@@ -32,13 +30,14 @@ export function FavorecidoVendasTab({ favorecidoId }: FavorecidoVendasTabProps) 
 
       setIsLoading(true);
       try {
-        // Primeiro, buscar os orçamentos/vendas
+        // Primeiro, buscar os orçamentos/vendas com status ativo
         const { data: orcamentos, error } = await supabase
           .from("orcamentos")
           .select("*")
           .eq("favorecido_id", favorecidoId)
           .eq("empresa_id", currentCompany.id)
           .eq("tipo", "venda")
+          .eq("status", "ativo") // Adicionado filtro para status ativo
           .order("data", { ascending: false });
 
         if (error) {
