@@ -2,10 +2,21 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from "@supabase/supabase-js";
-import { useCompany } from "./company-context"; // ADICIONADO PARA USAR O CONTEXTO DA EMPRESA
+import { useCompany } from "./company-context";
+
+interface UserData {
+  id: string;
+  nome: string;
+  email: string;
+  tipo: string;
+  status: string;
+  vendedor: string;
+  empresa_id: string | null;
+}
 
 interface AuthContextType {
   user: SupabaseUser | null;
+  userData: UserData | null;
   session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -22,19 +33,58 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { currentCompany } = useCompany(); // ADICIONADO
+  const { fetchCompanyById } = useCompany();
+
+  // Função para buscar dados do usuário na tabela usuarios
+  const fetchUserData = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        setUserData(data as UserData);
+        
+        // Se o usuário tem uma empresa associada, carregamos essa empresa específica
+        if (data.empresa_id) {
+          fetchCompanyById(data.empresa_id);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao buscar dados do usuário:", error);
+    }
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setSession(session ?? null);
+      
+      // Quando o estado de autenticação muda e temos um usuário, buscamos seus dados
+      if (session?.user) {
+        fetchUserData(session.user.id);
+      } else {
+        setUserData(null);
+      }
     });
 
+    // Verificação inicial da sessão
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setSession(session ?? null);
+      
+      // Se já temos um usuário logado, buscamos seus dados
+      if (session?.user) {
+        fetchUserData(session.user.id);
+      }
+      
       setIsLoading(false);
     });
 
@@ -50,6 +100,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setUser(data.user);
     setSession(data.session);
+    
+    // Após o login bem-sucedido, buscamos os dados do usuário
+    if (data.user) {
+      await fetchUserData(data.user.id);
+    }
+    
     setIsLoading(false);
   };
 
@@ -78,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             status: "ativo",
             tipo: "Administrador",
             vendedor: "nao",
-            empresa_id: currentCompany?.id ?? null // ADICIONADO VÍNCULO COM EMPRESA
+            empresa_id: null // O administrador deve vincular o usuário a uma empresa posteriormente
           }
         ]);
       if (userDbError) {
@@ -100,6 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setUser(null);
+    setUserData(null);
     setSession(null);
     setIsLoading(false);
   };
@@ -108,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        userData,
         session,
         isAuthenticated: !!user,
         isLoading,

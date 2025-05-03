@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
@@ -10,6 +11,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
 import { ContaCorrente } from "@/types/conta-corrente";
+import { useAuth } from "@/contexts/auth-context";
 
 interface DashboardData {
   totalVendas: number;
@@ -38,6 +40,7 @@ export function Dashboard() {
   const {
     toast
   } = useToast();
+  const { userData } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     totalVendas: 0,
@@ -56,6 +59,17 @@ export function Dashboard() {
       try {
         setIsLoading(true);
         if (!currentCompany?.id) return;
+
+        // Verificar se o usuário tem acesso a esta empresa
+        if (userData && userData.empresa_id && userData.empresa_id !== currentCompany.id) {
+          toast({
+            variant: "destructive",
+            title: "Erro de permissão",
+            description: "Você não tem permissão para acessar os dados desta empresa"
+          });
+          setIsLoading(false);
+          return;
+        }
 
         // Data atual e primeiro dia do mês
         const hoje = new Date();
@@ -284,7 +298,7 @@ export function Dashboard() {
       }
     };
     fetchDados();
-  }, [currentCompany?.id, toast]);
+  }, [currentCompany?.id, userData, toast]);
 
   return <div className="space-y-6">
       <div>

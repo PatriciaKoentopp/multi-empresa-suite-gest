@@ -9,6 +9,7 @@ interface CompanyContextType {
   currentCompany: Company | null;
   setCurrentCompany: (company: Company) => void;
   fetchCompanies: () => Promise<void>;
+  fetchCompanyById: (companyId: string) => Promise<void>;
   createCompany: (company: Partial<Company>) => Promise<void>;
   updateCompany: (id: string, company: Partial<Company>) => Promise<void>;
   loading: boolean;
@@ -19,6 +20,7 @@ const CompanyContext = createContext<CompanyContextType>({
   currentCompany: null,
   setCurrentCompany: () => {},
   fetchCompanies: async () => {},
+  fetchCompanyById: async () => {},
   createCompany: async () => {},
   updateCompany: async () => {},
   loading: false,
@@ -55,7 +57,18 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   const fetchCompanies = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.from("empresas").select("*");
+      
+      // Verificamos se temos o ID da empresa do usuário no localStorage
+      const userCompanyId = localStorage.getItem("userCompanyId");
+      
+      let query = supabase.from("empresas").select("*");
+      
+      // Se temos um ID de empresa específico, filtramos por ele
+      if (userCompanyId) {
+        query = query.eq("id", userCompanyId);
+      }
+      
+      const { data, error } = await query;
 
       if (error) {
         console.error("Erro ao carregar empresas:", error);
@@ -116,6 +129,87 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Erro ao carregar empresas:", error);
       toast.error("Erro ao carregar empresas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Nova função para buscar empresa por ID
+  const fetchCompanyById = async (companyId: string) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from("empresas")
+        .select("*")
+        .eq("id", companyId)
+        .single();
+
+      if (error) {
+        console.error("Erro ao carregar empresa:", error);
+        toast.error("Erro ao carregar empresa");
+        return;
+      }
+
+      if (data) {
+        // Salvar o ID da empresa do usuário no localStorage
+        localStorage.setItem("userCompanyId", data.id);
+        
+        // Converter para o formato da aplicação
+        const company: Company = {
+          id: data.id,
+          razao_social: data.razao_social,
+          nome_fantasia: data.nome_fantasia,
+          cnpj: data.cnpj,
+          inscricao_estadual: data.inscricao_estadual,
+          inscricao_municipal: data.inscricao_municipal,
+          email: data.email,
+          telefone: data.telefone,
+          site: data.site,
+          cnae: data.cnae,
+          regime_tributacao: data.regime_tributacao,
+          logo: data.logo,
+          cep: data.cep,
+          logradouro: data.logradouro,
+          numero: data.numero,
+          complemento: data.complemento,
+          bairro: data.bairro,
+          cidade: data.cidade,
+          estado: data.estado,
+          pais: data.pais,
+          created_at: data.created_at ? new Date(data.created_at) : null,
+          updated_at: data.updated_at ? new Date(data.updated_at) : null,
+          
+          // Adicionar aliases em camelCase para compatibilidade
+          razaoSocial: data.razao_social,
+          nomeFantasia: data.nome_fantasia,
+          inscricaoEstadual: data.inscricao_estadual,
+          inscricaoMunicipal: data.inscricao_municipal,
+          regimeTributacao: data.regime_tributacao,
+          createdAt: data.created_at ? new Date(data.created_at) : null,
+          updatedAt: data.updated_at ? new Date(data.updated_at) : null,
+          
+          // Adicionar objeto endereco para compatibilidade
+          endereco: {
+            cep: data.cep,
+            logradouro: data.logradouro,
+            numero: data.numero,
+            complemento: data.complemento,
+            bairro: data.bairro,
+            cidade: data.cidade,
+            estado: data.estado,
+            pais: data.pais,
+          },
+        };
+
+        // Atualizar o estado com a empresa carregada
+        setCompanies([company]);
+        setCurrentCompany(company);
+        localStorage.setItem("currentCompanyId", company.id);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar empresa:", error);
+      toast.error("Erro ao carregar empresa");
     } finally {
       setLoading(false);
     }
@@ -228,6 +322,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem("currentCompanyId", company.id);
         },
         fetchCompanies,
+        fetchCompanyById,
         createCompany,
         updateCompany,
         loading,
