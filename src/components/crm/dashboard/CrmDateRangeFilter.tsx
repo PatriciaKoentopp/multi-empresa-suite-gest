@@ -45,22 +45,20 @@ export function CrmDateRangeFilter({ startDate, endDate, onDateChange }: CrmDate
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2">
-      <div className="flex-1">
-        <Select onValueChange={handlePresetChange}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Período predefinido" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="today">Hoje</SelectItem>
-            <SelectItem value="yesterday">Ontem</SelectItem>
-            <SelectItem value="last7days">Últimos 7 dias</SelectItem>
-            <SelectItem value="last30days">Últimos 30 dias</SelectItem>
-            <SelectItem value="thisMonth">Este mês</SelectItem>
-            <SelectItem value="thisYear">Este ano</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="flex flex-wrap gap-2">
+      <Select onValueChange={handlePresetChange}>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Período" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="today">Hoje</SelectItem>
+          <SelectItem value="yesterday">Ontem</SelectItem>
+          <SelectItem value="last7days">Últimos 7 dias</SelectItem>
+          <SelectItem value="last30days">Últimos 30 dias</SelectItem>
+          <SelectItem value="thisMonth">Este mês</SelectItem>
+          <SelectItem value="thisYear">Este ano</SelectItem>
+        </SelectContent>
+      </Select>
 
       <div className="flex gap-2">
         <Popover>
@@ -68,7 +66,7 @@ export function CrmDateRangeFilter({ startDate, endDate, onDateChange }: CrmDate
             <Button
               variant="outline"
               className={cn(
-                "justify-start text-left font-normal w-[150px]",
+                "justify-start text-left font-normal w-[140px]",
                 !startDate && "text-muted-foreground"
               )}
             >
@@ -91,7 +89,7 @@ export function CrmDateRangeFilter({ startDate, endDate, onDateChange }: CrmDate
             <Button
               variant="outline"
               className={cn(
-                "justify-start text-left font-normal w-[150px]",
+                "justify-start text-left font-normal w-[140px]",
                 !endDate && "text-muted-foreground"
               )}
             >

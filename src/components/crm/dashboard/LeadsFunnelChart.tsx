@@ -48,17 +48,17 @@ export function LeadsFunnelChart({ data, title, emptyMessage = "Nenhum dado disp
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={data}
-                margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
+                margin={{ top: 10, right: 10, left: 10, bottom: 50 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="nome"
                   tickLine={false}
                   axisLine={true}
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
+                  tick={{ fontSize: 10 }}
+                  angle={-35}
                   textAnchor="end"
-                  height={70}
+                  height={80}
                 />
                 <YAxis
                   tickLine={false}

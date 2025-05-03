@@ -10,10 +10,10 @@ interface CrmDashboardHeaderProps {
 
 export function CrmDashboardHeader({ title, description }: CrmDashboardHeaderProps) {
   return (
-    <div className="mb-6">
+    <div className="mb-2">
       <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
       <p className="text-sm text-muted-foreground">
-        {description || `Última atualização: ${format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`}
+        {description || `Última atualização: ${format(new Date(), "dd/MM/yyyy", { locale: ptBR })}`}
       </p>
     </div>
   );

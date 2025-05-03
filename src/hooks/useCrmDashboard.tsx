@@ -41,6 +41,11 @@ interface TimelineData {
   value: number;
 }
 
+interface Funil {
+  id: string;
+  nome: string;
+}
+
 interface UseCrmDashboardResult {
   isLoading: boolean;
   startDate: Date;
@@ -53,39 +58,57 @@ interface UseCrmDashboardResult {
   leadsTimeline: TimelineData[];
   conversionRate: number;
   potentialValue: number;
+  funisList: Funil[];
+  filterByFunnelId: (funnelId: string) => void;
 }
 
 const getRandomColor = () => {
   const colors = [
-    "#3B82F6", // blue
-    "#10B981", // green
-    "#F59E0B", // amber
-    "#EF4444", // red
-    "#8B5CF6", // purple
-    "#EC4899", // pink
-    "#6366F1", // indigo
-    "#D97706", // yellow
-    "#059669", // emerald
-    "#DC2626", // red
-    "#7C3AED", // violet
-    "#2563EB", // blue
-    "#9333EA", // purple
-    "#F43F5E", // rose
+    "#9b87f5", // roxo principal
+    "#E5DEFF", // roxo claro
+    "#1EAEDB", // azul brilhante
+    "#33C3F0", // azul céu
+    "#4CAF50", // verde
+    "#F59E0B", // âmbar
+    "#EC4899", // rosa
+    "#8B5CF6", // roxo
+    "#6366F1", // índigo
+    "#069669", // esmeralda
+    "#6B7280", // cinza cool
   ];
   return colors[Math.floor(Math.random() * colors.length)];
 };
 
-export const useCrmDashboard = (): UseCrmDashboardResult => {
+export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
   const { currentCompany } = useCompany();
   const [isLoading, setIsLoading] = useState(true);
   const [leads, setLeads] = useState<DashboardLead[]>([]);
+  const [filteredLeads, setFilteredLeads] = useState<DashboardLead[]>([]);
   const [etapas, setEtapas] = useState<any[]>([]);
   const [origens, setOrigens] = useState<any[]>([]);
+  const [funis, setFunis] = useState<Funil[]>([]);
   const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState<Date>(new Date());
 
+  const fetchFunis = async () => {
+    if (!currentCompany) return [];
+    
+    try {
+      const { data } = await supabase
+        .from("funis")
+        .select("id, nome")
+        .eq("empresa_id", currentCompany.id)
+        .eq("status", "ativo");
+      
+      return data || [];
+    } catch (error) {
+      console.error("Erro ao buscar funis:", error);
+      return [];
+    }
+  };
+
   const fetchEtapas = async () => {
-    if (!currentCompany) return;
+    if (!currentCompany) return [];
     
     try {
       const { data } = await supabase
@@ -101,7 +124,7 @@ export const useCrmDashboard = (): UseCrmDashboardResult => {
   };
 
   const fetchOrigens = async () => {
-    if (!currentCompany) return;
+    if (!currentCompany) return [];
     
     try {
       const { data } = await supabase
@@ -118,7 +141,7 @@ export const useCrmDashboard = (): UseCrmDashboardResult => {
   };
 
   const fetchLeads = async () => {
-    if (!currentCompany) return;
+    if (!currentCompany) return [];
     
     setIsLoading(true);
     try {
@@ -145,12 +168,14 @@ export const useCrmDashboard = (): UseCrmDashboardResult => {
       
       setIsLoading(true);
       try {
-        const [etapasData, origensData, leadsData] = await Promise.all([
+        const [funisData, etapasData, origensData, leadsData] = await Promise.all([
+          fetchFunis(),
           fetchEtapas(),
           fetchOrigens(),
           fetchLeads(),
         ]);
         
+        setFunis(funisData || []);
         setEtapas(etapasData || []);
         setOrigens(origensData || []);
         
@@ -169,6 +194,7 @@ export const useCrmDashboard = (): UseCrmDashboardResult => {
         });
         
         setLeads(enrichedLeads);
+        setFilteredLeads(enrichedLeads);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
       } finally {
@@ -179,22 +205,41 @@ export const useCrmDashboard = (): UseCrmDashboardResult => {
     fetchData();
   }, [currentCompany, startDate, endDate]);
 
+  // Filtrar leads por funil quando o funnelId mudar
+  useEffect(() => {
+    if (funnelId && funnelId !== "") {
+      const filtered = leads.filter(lead => lead.funil_id === funnelId);
+      setFilteredLeads(filtered);
+    } else {
+      setFilteredLeads(leads);
+    }
+  }, [leads, funnelId]);
+
   const setDateRange = (start: Date, end: Date) => {
     setStartDate(start);
     setEndDate(end);
   };
 
+  const filterByFunnelId = (funnelId: string) => {
+    if (funnelId && funnelId !== "") {
+      const filtered = leads.filter(lead => lead.funil_id === funnelId);
+      setFilteredLeads(filtered);
+    } else {
+      setFilteredLeads(leads);
+    }
+  };
+
   // Cálculos dos dados para os gráficos
-  const totalLeads = useMemo(() => leads.length, [leads]);
+  const totalLeads = useMemo(() => filteredLeads.length, [filteredLeads]);
   
   const activeLeads = useMemo(() => 
-    leads.filter(lead => lead.status === "ativo").length, 
-  [leads]);
+    filteredLeads.filter(lead => lead.status === "ativo").length, 
+  [filteredLeads]);
 
   const leadsByEtapa: FunnelData[] = useMemo(() => {
     const etapasMap = new Map<string, { quantidade: number; valor: number; cor: string }>();
     
-    leads.forEach(lead => {
+    filteredLeads.forEach(lead => {
       if (lead.etapa_nome) {
         const current = etapasMap.get(lead.etapa_nome) || { quantidade: 0, valor: 0, cor: lead.etapa_cor || getRandomColor() };
         etapasMap.set(lead.etapa_nome, {
@@ -211,12 +256,12 @@ export const useCrmDashboard = (): UseCrmDashboardResult => {
       valor: data.valor,
       color: data.cor,
     }));
-  }, [leads]);
+  }, [filteredLeads]);
 
   const leadsByOrigin: OriginData[] = useMemo(() => {
     const origensMap = new Map<string, number>();
     
-    leads.forEach(lead => {
+    filteredLeads.forEach(lead => {
       const origem = lead.origem_nome || "Não especificada";
       origensMap.set(origem, (origensMap.get(origem) || 0) + 1);
     });
@@ -228,12 +273,12 @@ export const useCrmDashboard = (): UseCrmDashboardResult => {
         color: getRandomColor(),
       }))
       .sort((a, b) => b.value - a.value);
-  }, [leads]);
+  }, [filteredLeads]);
 
   const leadsTimeline: TimelineData[] = useMemo(() => {
     const timelineMap = new Map<string, number>();
     
-    leads.forEach(lead => {
+    filteredLeads.forEach(lead => {
       const date = lead.data_criacao ? format(new Date(lead.data_criacao), "dd/MM") : "Sem data";
       timelineMap.set(date, (timelineMap.get(date) || 0) + 1);
     });
@@ -249,20 +294,20 @@ export const useCrmDashboard = (): UseCrmDashboardResult => {
         }
         return dayA - dayB;
       });
-  }, [leads]);
+  }, [filteredLeads]);
 
   // Taxa de conversão (estimada com base em leads fechados vs total)
   const conversionRate = useMemo(() => {
-    const closed = leads.filter(lead => lead.status !== "ativo").length;
+    const closed = filteredLeads.filter(lead => lead.status !== "ativo").length;
     return totalLeads > 0 ? Math.round((closed / totalLeads) * 100) : 0;
-  }, [leads, totalLeads]);
+  }, [filteredLeads, totalLeads]);
 
   // Valor potencial (soma do valor de leads ativos)
   const potentialValue = useMemo(() => 
-    leads
+    filteredLeads
       .filter(lead => lead.status === "ativo")
       .reduce((sum, lead) => sum + (lead.valor || 0), 0),
-  [leads]);
+  [filteredLeads]);
 
   return {
     isLoading,
@@ -276,5 +321,7 @@ export const useCrmDashboard = (): UseCrmDashboardResult => {
     leadsTimeline,
     conversionRate,
     potentialValue,
+    funisList: funis,
+    filterByFunnelId,
   };
 };

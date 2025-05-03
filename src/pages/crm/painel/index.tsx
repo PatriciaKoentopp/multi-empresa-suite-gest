@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useCrmDashboard } from "@/hooks/useCrmDashboard";
 import { CrmDashboardHeader } from "@/components/crm/dashboard/CrmDashboardHeader";
 import { CrmDateRangeFilter } from "@/components/crm/dashboard/CrmDateRangeFilter";
@@ -9,8 +9,11 @@ import { LeadsOriginPieChart } from "@/components/crm/dashboard/LeadsOriginPieCh
 import { LeadsTimelineChart } from "@/components/crm/dashboard/LeadsTimelineChart";
 import { formatCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function CrmPainelPage() {
+  const [selectedFunnelId, setSelectedFunnelId] = useState<string>("");
+  
   const {
     isLoading,
     startDate,
@@ -23,17 +26,36 @@ export default function CrmPainelPage() {
     leadsTimeline,
     conversionRate,
     potentialValue,
-  } = useCrmDashboard();
+    funisList,
+    filterByFunnelId,
+  } = useCrmDashboard(selectedFunnelId);
+
+  const handleFunnelChange = (value: string) => {
+    setSelectedFunnelId(value);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <CrmDashboardHeader title="Painel do CRM" />
-        <CrmDateRangeFilter 
-          startDate={startDate}
-          endDate={endDate}
-          onDateChange={setDateRange}
-        />
+        <div className="flex flex-col md:flex-row gap-3">
+          <Select value={selectedFunnelId} onValueChange={handleFunnelChange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Todos os funis" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos os funis</SelectItem>
+              {funisList.map((funil) => (
+                <SelectItem key={funil.id} value={funil.id}>{funil.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <CrmDateRangeFilter 
+            startDate={startDate}
+            endDate={endDate}
+            onDateChange={setDateRange}
+          />
+        </div>
       </div>
 
       {isLoading ? (
@@ -71,7 +93,7 @@ export default function CrmPainelPage() {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         {isLoading ? (
           <>
             <Skeleton className="h-[400px] w-full" />
@@ -81,7 +103,7 @@ export default function CrmPainelPage() {
           <>
             <LeadsFunnelChart
               data={leadsByEtapa}
-              title="Leads por Etapa do Funil"
+              title={`Leads por Etapa do Funil ${selectedFunnelId ? '- ' + funisList.find(f => f.id === selectedFunnelId)?.nome : ''}`}
             />
             <LeadsOriginPieChart
               data={leadsByOrigin}
