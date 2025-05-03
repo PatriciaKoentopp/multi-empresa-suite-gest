@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Filter, Search } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Plus, Filter, Search, Check, Square } from "lucide-react";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
 import { Origem, Usuario, Funil } from "@/types"; 
@@ -26,13 +30,15 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautif
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "./utils/leadUtils";
+import { StageFilterCheckbox } from "@/components/crm/leads/StageFilterCheckbox";
 
 export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [leads, setLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [etapaFilter, setEtapaFilter] = useState<string>("all");
+  const [selectedEtapas, setSelectedEtapas] = useState<string[]>([]);
+  const [allStagesSelected, setAllStagesSelected] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("ativo");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<any | null>(null);
@@ -231,7 +237,7 @@ export default function LeadsPage() {
     fetchLeads();
   }, [selectedFunilId, statusFilter]);
 
-  // Filtrar leads baseado no termo de busca e etapa selecionada
+  // Filtrar leads baseado no termo de busca e etapas selecionadas
   useEffect(() => {
     let filtered = [...leads];
 
@@ -244,14 +250,15 @@ export default function LeadsPage() {
       );
     }
 
-    if (etapaFilter !== "all") {
+    // Verificar se "todas as etapas" está selecionado
+    if (!allStagesSelected && selectedEtapas.length > 0) {
       filtered = filtered.filter(
-        (lead) => lead.etapaId === etapaFilter
+        (lead) => selectedEtapas.includes(lead.etapaId)
       );
     }
 
     setFilteredLeads(filtered);
-  }, [leads, searchTerm, etapaFilter]);
+  }, [leads, searchTerm, selectedEtapas, allStagesSelected]);
 
   const handleOpenFormModal = (lead = null) => {
     setEditingLead(lead);
@@ -390,6 +397,48 @@ export default function LeadsPage() {
     handleMoveLead(leadId, targetEtapaId);
   };
 
+  // Manipulador para quando o funil é alterado
+  const handleFunilChange = (funilId: string) => {
+    setSelectedFunilId(funilId);
+    // Resetar filtros de etapas ao mudar de funil
+    setAllStagesSelected(true);
+    setSelectedEtapas([]);
+  };
+
+  // Manipulador para quando o status é alterado
+  const handleStatusChange = (status: string) => {
+    setStatusFilter(status);
+  };
+  
+  // Manipulador para alternar a seleção de "todas as etapas"
+  const handleAllStagesToggle = (checked: boolean) => {
+    setAllStagesSelected(checked);
+    if (checked) {
+      // Se "todas as etapas" for selecionado, limpar etapas individuais
+      setSelectedEtapas([]);
+    }
+  };
+  
+  // Manipulador para alternar a seleção de uma etapa específica
+  const handleStageToggle = (etapaId: string, checked: boolean) => {
+    if (checked) {
+      // Adicionar etapa à seleção
+      setSelectedEtapas(prev => [...prev, etapaId]);
+      // Se estiver selecionando uma etapa, desmarcar "todas as etapas"
+      setAllStagesSelected(false);
+    } else {
+      // Remover etapa da seleção
+      setSelectedEtapas(prev => prev.filter(id => id !== etapaId));
+      // Se não houver etapas selecionadas, marcar "todas as etapas"
+      if (selectedEtapas.filter(id => id !== etapaId).length === 0) {
+        setAllStagesSelected(true);
+      }
+    }
+  };
+
+  // Obter apenas etapas do funil selecionado para o filtro
+  const etapasFunilSelecionado = selectedFunil ? selectedFunil.etapas : [];
+
   // Agrupar leads por etapa do funil
   const leadsByStage = selectedFunil?.etapas.map(etapa => {
     const stageLeads = filteredLeads.filter(lead => lead.etapaId === etapa.id);
@@ -402,20 +451,6 @@ export default function LeadsPage() {
       totalValor
     };
   }) || [];
-
-  // Manipulador para quando o funil é alterado
-  const handleFunilChange = (funilId: string) => {
-    setSelectedFunilId(funilId);
-    setEtapaFilter("all"); // Reset do filtro de etapa quando mudar o funil
-  };
-
-  // Manipulador para quando o status é alterado
-  const handleStatusChange = (status: string) => {
-    setStatusFilter(status);
-  };
-
-  // Obter apenas etapas do funil selecionado para o filtro
-  const etapasFunilSelecionado = selectedFunil ? selectedFunil.etapas : [];
 
   if (loading) {
     return (
@@ -492,24 +527,52 @@ export default function LeadsPage() {
                 className="pl-9"
               />
             </div>
+            
+            {/* Filtro de Etapas com Checkboxes */}
             <div className="w-full md:w-[200px]">
-              <Select
-                value={etapaFilter}
-                onValueChange={setEtapaFilter}
-              >
-                <SelectTrigger className="w-full bg-white">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Filtrar por etapa" />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  <SelectItem value="all">Todas as etapas</SelectItem>
-                  {etapasFunilSelecionado.map((etapa) => (
-                    <SelectItem key={etapa.id} value={etapa.id}>
-                      {etapa.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between"
+                  >
+                    <div className="flex items-center">
+                      <Filter className="mr-2 h-4 w-4" />
+                      <span>Filtrar por etapa</span>
+                    </div>
+                    <Badge className="ml-2">
+                      {allStagesSelected ? "Todas" : selectedEtapas.length}
+                    </Badge>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-4" align="start">
+                  <div className="space-y-2">
+                    <h4 className="font-medium mb-3">Etapas</h4>
+                    
+                    {/* Opção "Todas as etapas" */}
+                    <StageFilterCheckbox
+                      id="all-stages"
+                      label="Todas as etapas"
+                      checked={allStagesSelected}
+                      onCheckedChange={handleAllStagesToggle}
+                    />
+                    
+                    <div className="border-t my-2"></div>
+                    
+                    {/* Lista de etapas do funil selecionado */}
+                    {etapasFunilSelecionado.map((etapa) => (
+                      <StageFilterCheckbox
+                        key={etapa.id}
+                        id={etapa.id}
+                        label={etapa.nome}
+                        color={etapa.cor}
+                        checked={allStagesSelected || selectedEtapas.includes(etapa.id)}
+                        onCheckedChange={(checked) => handleStageToggle(etapa.id, checked)}
+                      />
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
