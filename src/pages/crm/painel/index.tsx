@@ -46,7 +46,9 @@ export default function CrmPainelPage() {
             <SelectContent>
               <SelectItem value="todos">Todos os funis</SelectItem>
               {funisList.map((funil) => (
-                <SelectItem key={funil.id} value={funil.id}>{funil.nome}</SelectItem>
+                <SelectItem key={funil.id} value={funil.id}>
+                  {funil.descricao || funil.nome}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -103,7 +105,7 @@ export default function CrmPainelPage() {
           <>
             <LeadsFunnelChart
               data={leadsByEtapa}
-              title={`Leads por Etapa do Funil ${selectedFunnelId !== "todos" ? '- ' + funisList.find(f => f.id === selectedFunnelId)?.nome : ''}`}
+              title={`Leads por Etapa do Funil ${selectedFunnelId !== "todos" ? '- ' + (funisList.find(f => f.id === selectedFunnelId)?.descricao || funisList.find(f => f.id === selectedFunnelId)?.nome) : ''}`}
             />
             <LeadsOriginPieChart
               data={leadsByOrigin}

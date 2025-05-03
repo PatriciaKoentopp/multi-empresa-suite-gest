@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
@@ -43,6 +44,7 @@ interface TimelineData {
 interface Funil {
   id: string;
   nome: string;
+  descricao?: string;
 }
 
 interface UseCrmDashboardResult {
@@ -95,9 +97,9 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
     try {
       const { data } = await supabase
         .from("funis")
-        .select("id, nome")
+        .select("id, nome, descricao")
         .eq("empresa_id", currentCompany.id)
-        .eq("status", "ativo");
+        .eq("ativo", true);
       
       return data || [];
     } catch (error) {
@@ -148,6 +150,7 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
         .from("leads")
         .select("*")
         .eq("empresa_id", currentCompany.id)
+        .eq("status", "ativo") // Filtrar apenas leads ativos
         .gte("data_criacao", format(startDate, "yyyy-MM-dd"))
         .lte("data_criacao", format(endDate, "yyyy-MM-dd"));
       
