@@ -14,6 +14,7 @@ interface FavorecidoContasReceberTabProps {
 interface ContaReceber {
   id: string;
   numeroParcela: string;
+  numeroTitulo?: string;
   dataVencimento: Date;
   dataRecebimento?: Date;
   valor: number;
@@ -34,7 +35,7 @@ export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasRec
         // Primeiro, buscar as movimentações do tipo 'receber' para este favorecido
         const { data: movimentacoes, error: movError } = await supabase
           .from("movimentacoes")
-          .select("id")
+          .select("id, numero_documento")
           .eq("favorecido_id", favorecidoId)
           .eq("empresa_id", currentCompany.id)
           .eq("tipo_operacao", "receber");
@@ -49,6 +50,12 @@ export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasRec
           setIsLoading(false);
           return;
         }
+
+        // Criar um mapa de números de documento por movimentação para uso posterior
+        const numerosPorMovimentacao = movimentacoes.reduce((acc, mov) => {
+          acc[mov.id] = mov.numero_documento || '';
+          return acc;
+        }, {} as Record<string, string>);
 
         // Obter os IDs das movimentações
         const movimentacoesIds = movimentacoes.map(m => m.id);
@@ -83,6 +90,7 @@ export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasRec
           return {
             id: parcela.id,
             numeroParcela: `${parcela.numero}`,
+            numeroTitulo: numerosPorMovimentacao[parcela.movimentacao_id],
             dataVencimento,
             dataRecebimento,
             valor: parcela.valor,
@@ -199,7 +207,15 @@ export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasRec
             ) : (
               contasReceber.map((conta) => (
                 <TableRow key={conta.id}>
-                  <TableCell>{conta.numeroParcela}</TableCell>
+                  <TableCell>
+                    {(conta.numeroTitulo || conta.numeroParcela) ? (
+                      <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
+                        {`${conta.numeroTitulo || '-'}/${conta.numeroParcela || '1'}`}
+                      </span>
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
                   <TableCell>{formatDate(conta.dataVencimento)}</TableCell>
                   <TableCell>{conta.dataRecebimento ? formatDate(conta.dataRecebimento) : "-"}</TableCell>
                   <TableCell className="text-right">{formatCurrency(conta.valor)}</TableCell>

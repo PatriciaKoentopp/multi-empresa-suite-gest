@@ -14,6 +14,7 @@ interface FavorecidoContasPagarTabProps {
 interface ContaPagar {
   id: string;
   numeroParcela: string;
+  numeroTitulo?: string;
   descricao: string;
   dataVencimento: Date;
   dataPagamento?: Date;
@@ -35,7 +36,7 @@ export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagar
         // Primeiro, buscar as movimentações do tipo 'pagar' para este favorecido
         const { data: movimentacoes, error: movError } = await supabase
           .from("movimentacoes")
-          .select("id, descricao")
+          .select("id, descricao, numero_documento")
           .eq("favorecido_id", favorecidoId)
           .eq("empresa_id", currentCompany.id)
           .eq("tipo_operacao", "pagar");
@@ -51,11 +52,14 @@ export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagar
           return;
         }
 
-        // Criar um mapa de descrições de movimentação para uso posterior
-        const descricoesPorMovimentacao = movimentacoes.reduce((acc, mov) => {
-          acc[mov.id] = mov.descricao || '';
+        // Criar um mapa de descrições e números de documento de movimentação para uso posterior
+        const dadosPorMovimentacao = movimentacoes.reduce((acc, mov) => {
+          acc[mov.id] = {
+            descricao: mov.descricao || '',
+            numeroTitulo: mov.numero_documento || ''
+          };
           return acc;
-        }, {} as Record<string, string>);
+        }, {} as Record<string, { descricao: string; numeroTitulo: string }>);
 
         // Obter os IDs das movimentações
         const movimentacoesIds = movimentacoes.map(m => m.id);
@@ -87,10 +91,13 @@ export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagar
             status = "em_aberto"; // Em aberto e atrasado
           }
 
+          const dadosMovimentacao = dadosPorMovimentacao[parcela.movimentacao_id] || { descricao: '', numeroTitulo: '' };
+
           return {
             id: parcela.id,
             numeroParcela: `${parcela.numero}`,
-            descricao: descricoesPorMovimentacao[parcela.movimentacao_id] || '',
+            numeroTitulo: dadosMovimentacao.numeroTitulo,
+            descricao: dadosMovimentacao.descricao,
             dataVencimento,
             dataPagamento,
             valor: parcela.valor,
@@ -208,7 +215,15 @@ export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagar
             ) : (
               contasPagar.map((conta) => (
                 <TableRow key={conta.id}>
-                  <TableCell>{conta.numeroParcela}</TableCell>
+                  <TableCell>
+                    {(conta.numeroTitulo || conta.numeroParcela) ? (
+                      <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
+                        {`${conta.numeroTitulo || '-'}/${conta.numeroParcela || '1'}`}
+                      </span>
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
                   <TableCell>{formatDate(conta.dataVencimento)}</TableCell>
                   <TableCell>{conta.dataPagamento ? formatDate(conta.dataPagamento) : "-"}</TableCell>
                   <TableCell>{conta.descricao || "-"}</TableCell>
