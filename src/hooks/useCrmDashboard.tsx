@@ -150,7 +150,7 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
         .from("leads")
         .select("*")
         .eq("empresa_id", currentCompany.id)
-        .eq("status", "ativo") // Filtrar apenas leads ativos
+        .neq("status", "inativo") // Filtrar excluindo apenas leads inativos
         .gte("data_criacao", format(startDate, "yyyy-MM-dd"))
         .lte("data_criacao", format(endDate, "yyyy-MM-dd"));
       
