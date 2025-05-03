@@ -58,8 +58,7 @@ export const FluxoCaixaChart = ({ data, saldoInicialPeriodo = 0 }: FluxoCaixaCha
     
     const dataWithCumulativeSaldo = sortedData.map(item => {
       // Calcular saldo acumulado: somar entradas e subtrair saídas
-      const saldoDia = item.entradas - item.saidas;
-      saldoAcumulado += saldoDia;
+      saldoAcumulado += item.entradas - item.saidas;
       
       return {
         ...item,
