@@ -17,6 +17,7 @@ interface FunnelData {
   quantidade: number;
   valor: number;
   color: string;
+  ordem?: number; // Adicionado para mostrar que o campo existe, mesmo que não seja usado diretamente aqui
 }
 
 interface LeadsFunnelChartProps {

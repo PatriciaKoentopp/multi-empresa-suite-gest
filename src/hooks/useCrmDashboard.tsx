@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
@@ -13,6 +12,7 @@ interface DashboardLead {
   etapa_id: string;
   etapa_nome?: string;
   etapa_cor?: string;
+  etapa_ordem?: number; // Adicionando ordem da etapa
   funil_id: string;
   funil_nome?: string;
   valor: number;
@@ -28,6 +28,7 @@ interface FunnelData {
   quantidade: number;
   valor: number;
   color: string;
+  ordem: number; // Adicionando ordem para ordenação
 }
 
 interface OriginData {
@@ -117,7 +118,7 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
     try {
       const { data } = await supabase
         .from("funil_etapas")
-        .select("id, nome, cor, funil_id, funis(nome)")
+        .select("id, nome, cor, ordem, funil_id, funis(nome)")
         .order("ordem", { ascending: true });
       
       return data || [];
@@ -193,6 +194,7 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
             ...lead,
             etapa_nome: etapa?.nome || "Não especificada",
             etapa_cor: etapa?.cor || "#999999",
+            etapa_ordem: etapa?.ordem || 999, // Adicionando a ordem da etapa
             funil_nome: etapa?.funis?.nome || "Não especificado",
             origem_nome: origem?.nome || "Não especificada",
           };
@@ -241,33 +243,39 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
   [filteredLeads]);
 
   const leadsByEtapa: FunnelData[] = useMemo(() => {
-    const etapasMap = new Map<string, { quantidade: number; valor: number; cor: string }>();
+    const etapasMap = new Map<string, { quantidade: number; valor: number; cor: string; ordem: number }>();
     
     filteredLeads.forEach(lead => {
       if (lead.etapa_nome) {
         // Usar a cor da etapa se disponível ou gerar uma cor roxa
         const cor = lead.etapa_cor || getRandomColor();
+        const ordem = lead.etapa_ordem || 999;
         
         const current = etapasMap.get(lead.etapa_nome) || { 
           quantidade: 0, 
           valor: 0, 
-          cor
+          cor,
+          ordem
         };
         
         etapasMap.set(lead.etapa_nome, {
           quantidade: current.quantidade + 1,
           valor: current.valor + (lead.valor || 0),
           cor: current.cor,
+          ordem: current.ordem
         });
       }
     });
     
-    return Array.from(etapasMap.entries()).map(([nome, data]) => ({
-      nome,
-      quantidade: data.quantidade,
-      valor: data.valor,
-      color: data.cor,
-    }));
+    return Array.from(etapasMap.entries())
+      .map(([nome, data]) => ({
+        nome,
+        quantidade: data.quantidade,
+        valor: data.valor,
+        color: data.cor,
+        ordem: data.ordem
+      }))
+      .sort((a, b) => a.ordem - b.ordem); // Ordenar por ordem crescente
   }, [filteredLeads]);
 
   const leadsByOrigin: OriginData[] = useMemo(() => {
