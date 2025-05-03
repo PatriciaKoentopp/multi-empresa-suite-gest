@@ -24,6 +24,10 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
   const [contaDestino, setContaDestino] = useState(movimentacaoEditando?.conta_destino_id || "");
   const [parcelas, setParcelas] = useState(movimentacaoEditando?.parcelas || []);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Novos campos
+  const [mesReferencia, setMesReferencia] = useState(movimentacaoEditando?.mes_referencia || "");
+  const [documentoPdf, setDocumentoPdf] = useState(movimentacaoEditando?.documento_pdf || "");
 
   const handleValorChange = (e) => {
     const value = e.target.value.replace(/[^0-9,.]/g, '');
@@ -64,6 +68,59 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     setParcelas(novasParcelas);
   };
 
+  // Função auxiliar para formatar mês/ano no padrão MM/YYYY
+  const formatarMesReferencia = (data) => {
+    if (!data) return "";
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const ano = data.getFullYear();
+    return `${mes}/${ano}`;
+  };
+
+  // Atualizar mês de referência quando a data de lançamento mudar (inicialmente)
+  useEffect(() => {
+    if (dataLancamento && !mesReferencia) {
+      setMesReferencia(formatarMesReferencia(dataLancamento));
+    }
+  }, [dataLancamento]);
+
+  // Função para fazer upload do documento PDF
+  const uploadDocumentoPdf = async (file) => {
+    if (!file || !currentCompany?.id) return null;
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${currentCompany.id}/movimentacoes/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('documentos')
+        .upload(filePath, file);
+      
+      if (uploadError) throw uploadError;
+      
+      // Obter URL pública do arquivo
+      const { data } = supabase.storage
+        .from('documentos')
+        .getPublicUrl(filePath);
+        
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Erro ao fazer upload do arquivo:', error);
+      toast.error('Erro ao fazer upload do documento');
+      return null;
+    }
+  };
+
+  const handleDocumentoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = await uploadDocumentoPdf(file);
+      if (url) {
+        setDocumentoPdf(url);
+      }
+    }
+  };
+
   const handleSalvar = async () => {
     if (!currentCompany?.id) {
       toast.error("Nenhuma empresa selecionada");
@@ -102,6 +159,8 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
         data_lancamento: dataLancamentoFormatada,
         valor: valorNumerico,
         descricao,
+        mes_referencia: mesReferencia,
+        documento_pdf: documentoPdf,
       };
 
       // Adicionando dados específicos por tipo de operação
@@ -219,6 +278,11 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     parcelas,
     atualizarValorParcela,
     atualizarDataVencimento,
+    mesReferencia,
+    setMesReferencia,
+    documentoPdf,
+    setDocumentoPdf,
+    handleDocumentoChange,
     handleSalvar,
     isLoading
   };

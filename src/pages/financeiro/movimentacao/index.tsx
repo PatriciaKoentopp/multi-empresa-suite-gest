@@ -151,6 +151,8 @@ export default function MovimentacaoPage() {
             tipo_operacao: mov.tipo_operacao,
             tipo_titulo_id: mov.tipo_titulo_id,
             dataLancamento: mov.data_lancamento ? new Date(mov.data_lancamento + "T12:00:00Z") : undefined,
+            mes_referencia: mov.mes_referencia,
+            documento_pdf: mov.documento_pdf
           }));
 
           setMovimentacoes(movimentacoesFormatadas);
@@ -181,7 +183,7 @@ export default function MovimentacaoPage() {
   // Filtro com o novo campo de tipo de título e filtro de datas
   const filteredMovimentacoes = useMemo(() => {
     return movimentacoes.filter((movimentacao) => {
-      const textoBusca = (movimentacao.favorecido + " " + (movimentacao.descricao || ""))
+      const textoBusca = (movimentacao.favorecido + " " + (movimentacao.descricao || "") + " " + ((movimentacao as any).mes_referencia || ""))
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const tipoTituloOk = tipoTituloId === "todos" || movimentacao.tipo_titulo_id === tipoTituloId;
@@ -319,7 +321,7 @@ export default function MovimentacaoPage() {
                 </button>
                 <Input
                   ref={inputBuscaRef}
-                  placeholder="Buscar favorecido ou descrição"
+                  placeholder="Buscar favorecido, descrição ou referência"
                   className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -434,8 +436,9 @@ export default function MovimentacaoPage() {
             <AlertDialogAction 
               onClick={confirmarExclusao} 
               className="bg-red-600 hover:bg-red-700 text-white px-6"
+              disabled={isLoading}
             >
-              Excluir
+              {isLoading ? "Excluindo..." : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

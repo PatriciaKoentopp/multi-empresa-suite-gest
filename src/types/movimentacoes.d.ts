@@ -19,6 +19,8 @@ export interface Movimentacao {
   conta_destino_id?: string;
   created_at: string;
   updated_at: string;
+  mes_referencia?: string;
+  documento_pdf?: string;
 }
 
 export interface MovimentacaoParcela {

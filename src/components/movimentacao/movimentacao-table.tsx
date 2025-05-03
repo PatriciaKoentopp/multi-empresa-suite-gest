@@ -9,12 +9,13 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { Edit, MoreHorizontal, Eye, Trash } from "lucide-react";
+import { Edit, MoreHorizontal, Eye, Trash, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { ContaPagar } from "../contas-a-pagar/contas-a-pagar-table";
 import { formatDate, formatCurrency } from "@/lib/utils";
@@ -77,6 +78,7 @@ export function MovimentacaoTable({
             <TableHead>Título/Parcela</TableHead>
             <TableHead>Favorecido</TableHead>
             <TableHead>Descrição</TableHead>
+            <TableHead>Ref.</TableHead>
             <TableHead>Tipo</TableHead>
             <TableHead>Valor</TableHead>
             <TableHead className="w-[60px] text-center">Ações</TableHead>
@@ -85,7 +87,7 @@ export function MovimentacaoTable({
         <TableBody>
           {sortedMovimentacoes.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                 Nenhum resultado encontrado
               </TableCell>
             </TableRow>
@@ -104,6 +106,7 @@ export function MovimentacaoTable({
                 </TableCell>
                 <TableCell>{movimentacao.favorecido}</TableCell>
                 <TableCell>{movimentacao.descricao}</TableCell>
+                <TableCell>{(movimentacao as any).mes_referencia || "-"}</TableCell>
                 <TableCell>{getTipoOperacao(movimentacao.tipo_operacao)}</TableCell>
                 <TableCell>{formatCurrency(movimentacao.valor)}</TableCell>
                 <TableCell className="text-center">
@@ -126,6 +129,20 @@ export function MovimentacaoTable({
                         <Eye className="h-4 w-4" />
                         Visualizar
                       </DropdownMenuItem>
+                      
+                      {(movimentacao as any).documento_pdf && (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => window.open((movimentacao as any).documento_pdf, '_blank')}
+                            className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                          >
+                            <FileText className="h-4 w-4" />
+                            Ver documento
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      
                       <DropdownMenuItem
                         onClick={() => onEdit(movimentacao)}
                         className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
@@ -149,7 +166,7 @@ export function MovimentacaoTable({
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={5} className="font-bold text-right">Total</TableCell>
+            <TableCell colSpan={6} className="font-bold text-right">Total</TableCell>
             <TableCell className="font-bold">{formatCurrency(totalValor)}</TableCell>
             <TableCell />
           </TableRow>

@@ -660,10 +660,12 @@ export type Database = {
           data_emissao: string | null
           data_lancamento: string
           descricao: string | null
+          documento_pdf: string | null
           empresa_id: string
           favorecido_id: string | null
           forma_pagamento: string | null
           id: string
+          mes_referencia: string | null
           numero_documento: string | null
           numero_parcelas: number
           primeiro_vencimento: string | null
@@ -681,10 +683,12 @@ export type Database = {
           data_emissao?: string | null
           data_lancamento: string
           descricao?: string | null
+          documento_pdf?: string | null
           empresa_id: string
           favorecido_id?: string | null
           forma_pagamento?: string | null
           id?: string
+          mes_referencia?: string | null
           numero_documento?: string | null
           numero_parcelas?: number
           primeiro_vencimento?: string | null
@@ -702,10 +706,12 @@ export type Database = {
           data_emissao?: string | null
           data_lancamento?: string
           descricao?: string | null
+          documento_pdf?: string | null
           empresa_id?: string
           favorecido_id?: string | null
           forma_pagamento?: string | null
           id?: string
+          mes_referencia?: string | null
           numero_documento?: string | null
           numero_parcelas?: number
           primeiro_vencimento?: string | null

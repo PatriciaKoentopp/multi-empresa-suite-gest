@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { FavorecidosForm } from "@/components/favorecidos/favorecidos-form";
 import { PlanoContasForm } from "@/components/plano-contas/plano-contas-form";
 import { useMovimentacaoForm } from "@/hooks/useMovimentacaoForm";
@@ -14,6 +15,7 @@ import { RecebimentoForm } from "@/components/movimentacao/RecebimentoForm";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { Upload } from "lucide-react";
 
 // Formas de pagamento fixas
 const formasPagamento = [
@@ -77,12 +79,17 @@ export default function IncluirMovimentacaoPage() {
     handleSalvar,
     parcelas,
     atualizarValorParcela,
-    atualizarDataVencimento
+    atualizarDataVencimento,
+    mesReferencia,
+    setMesReferencia,
+    documentoPdf,
+    handleDocumentoChange,
+    isLoading
   } = useMovimentacaoForm(movimentacaoParaEditar);
 
   const { favorecidos, categorias, contasCorrente, tiposTitulos } = useMovimentacaoDados();
   
-  // Novo: Filtrar tipos de títulos baseado na operação
+  // Filtrar tipos de títulos baseado na operação
   const tiposTitulosFiltrados = tiposTitulos.filter(tipo => {
     if (operacao === "pagar") return tipo.tipo === "pagar";
     if (operacao === "receber") return tipo.tipo === "receber";
@@ -99,7 +106,7 @@ export default function IncluirMovimentacaoPage() {
     }
   }, [movimentacaoParaEditar, setTipoTitulo]);
   
-  // Log para diagnóstico de parcelas - CORREÇÃO: Verificação de parcelas antes de acessar length
+  // Log para diagnóstico de parcelas
   useEffect(() => {
     if (parcelas && parcelas.length > 0) {
       console.log('Parcelas carregadas:', parcelas);
@@ -116,6 +123,21 @@ export default function IncluirMovimentacaoPage() {
     // Implementação do salvamento da nova categoria
     setIsModalNovaCategoria(false);
     toast.success("Nova categoria cadastrada com sucesso!");
+  };
+
+  // Função para formatar o mês de referência
+  const handleMesReferenciaChange = (e) => {
+    let value = e.target.value.replace(/[^0-9/]/g, '');
+    
+    // Formatar como MM/YYYY
+    if (value.length > 2 && value.indexOf('/') === -1) {
+      value = value.substring(0, 2) + '/' + value.substring(2);
+    }
+    
+    // Limitar o tamanho máximo (MM/YYYY = 7 caracteres)
+    if (value.length <= 7) {
+      setMesReferencia(value);
+    }
   };
 
   return (
@@ -161,6 +183,71 @@ export default function IncluirMovimentacaoPage() {
                 onChange={setDataLancamento}
                 disabled={modoVisualizacao}
               />
+            </div>
+          </div>
+
+          {/* Campos adicionais para todos os tipos de operação */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="flex flex-col gap-1">
+              <Label>Mês de Referência (MM/AAAA)</Label>
+              <Input
+                value={mesReferencia}
+                onChange={handleMesReferenciaChange}
+                placeholder="05/2025"
+                className="bg-white"
+                maxLength={7}
+                disabled={modoVisualizacao}
+              />
+            </div>
+            
+            <div className="flex flex-col gap-1">
+              <Label>Documento (PDF)</Label>
+              <div className="flex items-center">
+                {documentoPdf ? (
+                  <div className="flex gap-2 w-full">
+                    <a 
+                      href={documentoPdf} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-500 underline flex-grow truncate"
+                    >
+                      Ver documento
+                    </a>
+                    {!modoVisualizacao && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="h-10"
+                        onClick={() => document.getElementById('documento-upload').click()}
+                      >
+                        Alterar
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="relative w-full">
+                    <Input
+                      type="file"
+                      id="documento-upload"
+                      onChange={handleDocumentoChange}
+                      className="hidden"
+                      accept=".pdf"
+                      disabled={modoVisualizacao}
+                    />
+                    {!modoVisualizacao && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="w-full flex items-center gap-2"
+                        onClick={() => document.getElementById('documento-upload').click()}
+                      >
+                        <Upload size={16} />
+                        Anexar documento
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -243,8 +330,6 @@ export default function IncluirMovimentacaoPage() {
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
               parcelas={parcelas || []}
-              onParcelaValorChange={atualizarValorParcela}
-              onParcelaDataChange={atualizarDataVencimento}
               readOnly={modoVisualizacao}
             />
           ) : null}
@@ -255,8 +340,12 @@ export default function IncluirMovimentacaoPage() {
               {modoVisualizacao ? "Voltar" : "Cancelar"}
             </Button>
             {!modoVisualizacao && (
-              <Button variant="blue" onClick={handleSalvar}>
-                Salvar
+              <Button 
+                variant="blue" 
+                onClick={handleSalvar} 
+                disabled={isLoading}
+              >
+                {isLoading ? "Salvando..." : "Salvar"}
               </Button>
             )}
           </div>
