@@ -48,6 +48,7 @@ import Faturamento from "./pages/vendas/faturamento";
 // CRM
 import FunilConfiguracao from "./pages/crm/funil-configuracao";
 import Leads from "./pages/crm/leads";
+import CrmPainelPage from "./pages/crm/painel";
 
 // Relatórios
 import Relatorios from "./pages/relatorios";
@@ -338,6 +339,16 @@ function App() {
             />
 
             {/* CRM */}
+            <Route
+              path="/crm/painel"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <CrmPainelPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
             <Route
               path="/crm/funil-configuracao"
               element={

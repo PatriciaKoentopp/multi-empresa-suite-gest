@@ -143,6 +143,10 @@ export const navigationConfig: ModuleNavItem[] = [
     icon: "Users",
     subItems: [
       {
+        name: "Painel do CRM",
+        href: "/crm/painel",
+      },
+      {
         name: "Leads",
         href: "/crm/leads",
       },

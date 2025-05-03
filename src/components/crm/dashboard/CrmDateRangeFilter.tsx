@@ -1,0 +1,114 @@
+
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format, subDays, startOfMonth, endOfMonth, startOfYear } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { CalendarIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface CrmDateRangeFilterProps {
+  startDate: Date;
+  endDate: Date;
+  onDateChange: (start: Date, end: Date) => void;
+}
+
+export function CrmDateRangeFilter({ startDate, endDate, onDateChange }: CrmDateRangeFilterProps) {
+  const handlePresetChange = (value: string) => {
+    const today = new Date();
+    
+    switch (value) {
+      case "today":
+        onDateChange(today, today);
+        break;
+      case "yesterday":
+        const yesterday = subDays(today, 1);
+        onDateChange(yesterday, yesterday);
+        break;
+      case "last7days":
+        onDateChange(subDays(today, 7), today);
+        break;
+      case "last30days":
+        onDateChange(subDays(today, 30), today);
+        break;
+      case "thisMonth":
+        onDateChange(startOfMonth(today), endOfMonth(today));
+        break;
+      case "thisYear":
+        onDateChange(startOfYear(today), today);
+        break;
+      default:
+        break;
+    }
+  };
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex-1">
+        <Select onValueChange={handlePresetChange}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Período predefinido" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="today">Hoje</SelectItem>
+            <SelectItem value="yesterday">Ontem</SelectItem>
+            <SelectItem value="last7days">Últimos 7 dias</SelectItem>
+            <SelectItem value="last30days">Últimos 30 dias</SelectItem>
+            <SelectItem value="thisMonth">Este mês</SelectItem>
+            <SelectItem value="thisYear">Este ano</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex gap-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "justify-start text-left font-normal w-[150px]",
+                !startDate && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {startDate ? format(startDate, "dd/MM/yyyy") : "Data inicial"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={startDate}
+              onSelect={(date) => date && onDateChange(date, endDate)}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "justify-start text-left font-normal w-[150px]",
+                !endDate && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {endDate ? format(endDate, "dd/MM/yyyy") : "Data final"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={endDate}
+              onSelect={(date) => date && onDateChange(startDate, date)}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
+}
