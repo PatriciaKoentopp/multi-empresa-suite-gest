@@ -4,8 +4,10 @@ import { useCompany } from "@/contexts/company-context";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { BanknoteIcon, CalendarX, CreditCard, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
 import { ContaCorrente } from "@/types/conta-corrente";
 import { useAuth } from "@/contexts/auth-context";
@@ -212,7 +214,6 @@ export function Dashboard() {
         // Combinar contas a pagar e receber para processamento conjunto
         const todasParcelas = [...(contasReceber || []), ...(contasPagar || [])];
 
-        // Garantir que as parcelas em atraso e as que vencem hoje tenham as datas corretamente formatadas
         if (todasParcelas.length > 0) {
           // Buscar IDs dos favorecidos únicos
           const favorecidoIds = todasParcelas
@@ -231,37 +232,17 @@ export function Dashboard() {
           if (favorecidos) {
             favorecidos.forEach(fav => favorecidosMap.set(fav.id, fav.nome));
           }
-          
+
           // Separar parcelas em atraso e as que vencem hoje
           todasParcelas.forEach(parcela => {
             if (!parcela.movimentacao) return;
             
-            // Criar data de vencimento sem alteração de timezone
-            let dataVencimento: Date;
-            
-            if (typeof parcela.data_vencimento === 'string') {
-              if (parcela.data_vencimento.includes('-')) {
-                // Formato ISO YYYY-MM-DD
-                const [ano, mes, dia] = parcela.data_vencimento.split('-').map(Number);
-                dataVencimento = new Date(ano, mes - 1, dia);
-              } else if (parcela.data_vencimento.includes('/')) {
-                // Formato DD/MM/YYYY
-                const [dia, mes, ano] = parcela.data_vencimento.split('/').map(Number);
-                dataVencimento = new Date(ano, mes - 1, dia);
-              } else {
-                dataVencimento = new Date(parcela.data_vencimento);
-              }
-            } else {
-              dataVencimento = new Date(parcela.data_vencimento);
-            }
-            
-            // Data de hoje, zerando horas
-            const dataHoje = new Date();
-            dataHoje.setHours(0, 0, 0, 0);
-            
-            // Zerar horas na data de vencimento também
+            const dataVencimento = new Date(parcela.data_vencimento);
             dataVencimento.setHours(0, 0, 0, 0);
             
+            const dataHoje = new Date();
+            dataHoje.setHours(0, 0, 0, 0);
+
             const favorecidoNome = favorecidosMap.get(parcela.movimentacao.favorecido_id) || 'Desconhecido';
             
             const parcelaFormatada: ContaReceber = {
@@ -270,7 +251,7 @@ export function Dashboard() {
               descricao: parcela.movimentacao.descricao || 'Sem descrição',
               dataVencimento: dataVencimento,
               valor: Number(parcela.valor),
-              status: 'em_aberto',
+              status: 'em_aberto' as 'em_aberto',
               numeroParcela: parcela.movimentacao.numero_documento || '-',
               origem: 'Movimentação',
               movimentacao_id: parcela.movimentacao_id,

@@ -28,8 +28,8 @@ export function formatDate(date: Date | undefined | string, formatString = "dd/M
       const [year, month, day] = datePart.split('-').map(Number);
       dateObj = new Date(year, month - 1, day);
     } 
-    // Se já estiver no formato DD/MM/YYYY
-    else if (date.includes('/')) {
+    // Qualquer outro formato de data
+    else {
       const parts = date.split('/');
       if (parts.length === 3) {
         const day = parseInt(parts[0], 10);
@@ -39,10 +39,6 @@ export function formatDate(date: Date | undefined | string, formatString = "dd/M
       } else {
         dateObj = new Date(date);
       }
-    }
-    // Qualquer outro formato de data
-    else {
-      dateObj = new Date(date);
     }
   } 
   // Se já for um objeto Date
