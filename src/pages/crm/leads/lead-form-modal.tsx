@@ -497,7 +497,7 @@ export function LeadFormModal({
               </div>
               <div className="flex-1 overflow-auto">
                 {/* DADOS */}
-                <TabsContent value="dados" className="p-6 mt-0 h-full overflow-y-auto">
+                <TabsContent value="dados" className="p-6 mt-0">
                   <form id="dadosLeadForm" onSubmit={handleSubmit}>
                     <LeadDadosTab
                       formData={formData}
@@ -512,7 +512,7 @@ export function LeadFormModal({
                 </TabsContent>
 
                 {/* INTERAÇÕES */}
-                <TabsContent value="interacoes" className="mt-0 h-full flex flex-col overflow-hidden">
+                <TabsContent value="interacoes" className="mt-0 flex flex-col overflow-hidden">
                   <InteracoesTab
                     lead={lead}
                     interacoes={interacoes}
@@ -528,7 +528,7 @@ export function LeadFormModal({
                 </TabsContent>
 
                 {/* FECHAMENTO */}
-                <TabsContent value="fechamento" className="p-6 mt-0 h-full overflow-y-auto">
+                <TabsContent value="fechamento" className="p-6 mt-0">
                   <LeadFechamentoTab
                     fechamento={fechamento}
                     setFechamento={setFechamento}

@@ -187,23 +187,23 @@ export function LeadFechamentoTab({
   };
 
   return (
-    <div className="space-y-4 pt-0">
-      <div className="space-y-2">
-        <Label>Status de Fechamento</Label>
+    <div className="space-y-4">
+      <div className="space-y-2 pt-0">
+        <Label className="text-base font-medium">Status de Fechamento</Label>
         <RadioGroup
           value={status || ""}
           onValueChange={(value) => setStatus(value as "sucesso" | "perda")}
-          className="flex gap-4"
+          className="flex flex-wrap gap-6 mt-2"
         >
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="sucesso" id="sucesso" />
-            <Label htmlFor="sucesso" className="cursor-pointer">
+            <RadioGroupItem value="sucesso" id="sucesso" className="border-2" />
+            <Label htmlFor="sucesso" className="cursor-pointer text-base">
               <span className="text-green-600 font-medium">Venda Realizada</span>
             </Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="perda" id="perda" />
-            <Label htmlFor="perda" className="cursor-pointer">
+            <RadioGroupItem value="perda" id="perda" className="border-2" />
+            <Label htmlFor="perda" className="cursor-pointer text-base">
               <span className="text-red-600 font-medium">Oportunidade Perdida</span>
             </Label>
           </div>
@@ -211,8 +211,8 @@ export function LeadFechamentoTab({
       </div>
 
       {status === "perda" && (
-        <div className="space-y-2">
-          <Label>Motivo da Perda</Label>
+        <div className="space-y-2 mt-6">
+          <Label className="text-base font-medium">Motivo da Perda</Label>
           <Select
             value={motivoPerdaId}
             onValueChange={setMotivoPerdaId}
@@ -233,8 +233,8 @@ export function LeadFechamentoTab({
 
       {status && (
         <>
-          <div className="space-y-2">
-            <Label>Data do Fechamento</Label>
+          <div className="space-y-2 mt-6">
+            <Label className="text-base font-medium">Data do Fechamento</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -264,8 +264,8 @@ export function LeadFechamentoTab({
             </Popover>
           </div>
 
-          <div className="space-y-2">
-            <Label>Observações</Label>
+          <div className="space-y-2 mt-6">
+            <Label className="text-base font-medium">Observações</Label>
             <Textarea
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
@@ -280,7 +280,7 @@ export function LeadFechamentoTab({
           </div>
           
           {leadId && (
-            <div className="pt-2">
+            <div className="pt-4">
               <Button 
                 type="button" 
                 variant="blue"
@@ -296,7 +296,7 @@ export function LeadFechamentoTab({
       )}
 
       {!status && (
-        <div className="text-center py-4 text-muted-foreground">
+        <div className="text-center py-8 text-muted-foreground">
           Selecione um status para registrar o fechamento deste lead.
         </div>
       )}
