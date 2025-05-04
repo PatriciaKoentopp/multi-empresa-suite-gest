@@ -8,35 +8,24 @@ const Index = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    // Se o usuário estiver autenticado, redireciona para o dashboard
-    if (isAuthenticated && !isLoading) {
-      navigate("/dashboard");
-    } else if (!isLoading) {
-      // Se o usuário não estiver autenticado e não estiver carregando, redireciona para o login
-      navigate("/login");
+    // Verificação mais robusta para evitar redirecionamentos inadequados
+    if (!isLoading) {
+      if (isAuthenticated) {
+        console.log("Usuário autenticado, redirecionando para o dashboard");
+        navigate("/dashboard", { replace: true });
+      } else {
+        console.log("Usuário não autenticado, redirecionando para o login");
+        navigate("/login", { replace: true });
+      }
     }
   }, [isAuthenticated, isLoading, navigate]);
 
   // Se estiver carregando, exibe um indicador de carregamento
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="flex flex-col items-center gap-2">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-r-transparent" />
-          <p className="text-sm text-gray-600">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Este retorno só é usado brevemente antes do redirecionamento
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
-      <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md text-center">
-        <h1 className="text-3xl font-bold mb-4 text-blue-600">Sistema de Gestão Empresarial</h1>
-        <p className="text-lg text-gray-600 mb-6">
-          Redirecionando...
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-r-transparent" />
+        <p className="text-sm text-gray-600">Carregando...</p>
       </div>
     </div>
   );

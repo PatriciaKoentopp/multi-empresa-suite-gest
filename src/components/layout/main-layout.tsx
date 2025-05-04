@@ -11,7 +11,7 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const { isAuthenticated, isLoading } = useAuth();
   
-  // If loading, show loading state
+  // Se loading, mostrar estado de carregamento
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -23,13 +23,13 @@ export function MainLayout({ children }: MainLayoutProps) {
     );
   }
 
-  // If not authenticated, redirect to login
+  // Se não estiver autenticado, redirecionar para login
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen w-full">
       <Sidebar />
       <div className="flex flex-1 flex-col">
         <Header />
