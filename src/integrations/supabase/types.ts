@@ -582,6 +582,7 @@ export type Database = {
           id: string
           lead_id: string
           responsavel_id: string | null
+          status: string
           tipo: string
           updated_at: string
         }
@@ -592,6 +593,7 @@ export type Database = {
           id?: string
           lead_id: string
           responsavel_id?: string | null
+          status?: string
           tipo: string
           updated_at?: string
         }
@@ -602,6 +604,7 @@ export type Database = {
           id?: string
           lead_id?: string
           responsavel_id?: string | null
+          status?: string
           tipo?: string
           updated_at?: string
         }

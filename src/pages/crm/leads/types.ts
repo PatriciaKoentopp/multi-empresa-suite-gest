@@ -1,4 +1,3 @@
-
 export interface LeadInteracao {
   id: number | string;
   leadId: string;
@@ -7,6 +6,7 @@ export interface LeadInteracao {
   data: string;
   responsavelId: string;
   responsavelNome?: string;
+  status: string; // Adicionado campo de status
 }
 
 export interface Lead {

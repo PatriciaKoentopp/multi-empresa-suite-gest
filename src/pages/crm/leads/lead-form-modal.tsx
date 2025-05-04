@@ -95,72 +95,73 @@ export function LeadFormModal({
   }, [lead]);
 
   const buscarInteracoes = async (leadId: string) => {
-    setCarregandoInteracoes(true);
-    console.log('Buscando interações para lead ID:', leadId);
+  setCarregandoInteracoes(true);
+  console.log('Buscando interações para lead ID:', leadId);
+  
+  try {
+    // Consulta principal para buscar todas as interações do lead
+    const { data, error } = await supabase
+      .from('leads_interacoes')
+      .select('*')
+      .eq('lead_id', leadId)
+      .order('data', { ascending: false });
     
-    try {
-      // Consulta principal para buscar todas as interações do lead
-      const { data, error } = await supabase
-        .from('leads_interacoes')
-        .select('*')
-        .eq('lead_id', leadId)
-        .order('data', { ascending: false });
-      
-      if (error) {
-        console.error('Erro ao buscar interações:', error);
-        throw error;
-      }
-      
-      console.log('Interações encontradas:', data?.length, data);
-      
-      if (!data || data.length === 0) {
-        setInteracoes([]);
-        setCarregandoInteracoes(false);
-        return;
-      }
-      
-      // Agora vamos buscar os dados dos responsáveis
-      const responsaveisIds = data
-        .filter(item => item.responsavel_id)
-        .map(item => item.responsavel_id);
-      
-      let responsaveisMap = new Map();
-      
-      if (responsaveisIds.length > 0) {
-        const { data: responsaveisData, error: responsaveisError } = await supabase
-          .from('usuarios')
-          .select('id, nome')
-          .in('id', responsaveisIds);
-        
-        if (responsaveisError) {
-          console.error('Erro ao buscar responsáveis:', responsaveisError);
-        } else if (responsaveisData) {
-          // Criar mapa de ID -> nome para fácil acesso
-          responsaveisData.forEach(resp => {
-            responsaveisMap.set(resp.id, resp.nome);
-          });
-        }
-      }
-      
-      // Formatar as interações com nomes de responsáveis
-      const interacoesFormatadas = data.map(item => ({
-        id: item.id,
-        leadId: item.lead_id,
-        tipo: item.tipo,
-        descricao: item.descricao,
-        data: formatDate(item.data),
-        responsavelId: item.responsavel_id,
-        responsavelNome: item.responsavel_id ? (responsaveisMap.get(item.responsavel_id) || 'Desconhecido') : 'Não atribuído'
-      }));
-      
-      console.log('Interações formatadas:', interacoesFormatadas);
-      setInteracoes(interacoesFormatadas);
-    } catch (error) {
+    if (error) {
       console.error('Erro ao buscar interações:', error);
-    } finally {
-      setCarregandoInteracoes(false);
+      throw error;
     }
-  };
+    
+    console.log('Interações encontradas:', data?.length, data);
+    
+    if (!data || data.length === 0) {
+      setInteracoes([]);
+      setCarregandoInteracoes(false);
+      return;
+    }
+    
+    // Agora vamos buscar os dados dos responsáveis
+    const responsaveisIds = data
+      .filter(item => item.responsavel_id)
+      .map(item => item.responsavel_id);
+    
+    let responsaveisMap = new Map();
+    
+    if (responsaveisIds.length > 0) {
+      const { data: responsaveisData, error: responsaveisError } = await supabase
+        .from('usuarios')
+        .select('id, nome')
+        .in('id', responsaveisIds);
+      
+      if (responsaveisError) {
+        console.error('Erro ao buscar responsáveis:', responsaveisError);
+      } else if (responsaveisData) {
+        // Criar mapa de ID -> nome para fácil acesso
+        responsaveisData.forEach(resp => {
+          responsaveisMap.set(resp.id, resp.nome);
+        });
+      }
+    }
+    
+    // Formatar as interações com nomes de responsáveis
+    const interacoesFormatadas = data.map(item => ({
+      id: item.id,
+      leadId: item.lead_id,
+      tipo: item.tipo,
+      descricao: item.descricao,
+      data: formatDate(item.data),
+      responsavelId: item.responsavel_id,
+      responsavelNome: item.responsavel_id ? (responsaveisMap.get(item.responsavel_id) || 'Desconhecido') : 'Não atribuído',
+      status: item.status || 'Aberto' // Incluir o status, com valor padrão "Aberto" se não existir
+    }));
+    
+    console.log('Interações formatadas:', interacoesFormatadas);
+    setInteracoes(interacoesFormatadas);
+  } catch (error) {
+    console.error('Erro ao buscar interações:', error);
+  } finally {
+    setCarregandoInteracoes(false);
+  }
+};
 
   const buscarFechamento = async (leadId: string) => {
     try {
@@ -275,101 +276,104 @@ export function LeadFormModal({
 
   // Handler para seleção no formulário de nova interação
   const handleInteracaoSelectChange = (name: string, value: string) => {
-    setNovaInteracao(prev => ({ ...prev, [name]: value }));
+    setNovaInteracao(prev) => ({ ...prev, [name]: value });
   };
 
   // Adicionar interação ao banco de dados
   const adicionarInteracao = async () => {
-    if (!lead?.id || novaInteracao.descricao.trim() === "" || !novaInteracao.responsavelId) {
-      return;
+  if (!lead?.id || novaInteracao.descricao.trim() === "" || !novaInteracao.responsavelId) {
+    return;
+  }
+
+  try {
+    const dataFormatada = format(novaInteracao.data, "yyyy-MM-dd");
+    
+    // Salvar no Supabase
+    const { data, error } = await supabase
+      .from('leads_interacoes')
+      .insert([
+        {
+          lead_id: lead.id,
+          tipo: novaInteracao.tipo,
+          descricao: novaInteracao.descricao,
+          data: dataFormatada,
+          responsavel_id: novaInteracao.responsavelId,
+          status: 'Aberto' // Definir o status inicial como "Aberto"
+        }
+      ])
+      .select();
+    
+    if (error) throw error;
+    
+    // Atualizar último contato do lead
+    await supabase
+      .from('leads')
+      .update({ ultimo_contato: dataFormatada })
+      .eq('id', lead.id);
+    
+    // Atualizar a lista local
+    if (data && data[0]) {
+      const novaInteracaoCompleta = {
+        id: data[0].id,
+        leadId: data[0].lead_id,
+        tipo: data[0].tipo,
+        descricao: data[0].descricao,
+        data: formatDate(data[0].data),
+        responsavelId: data[0].responsavel_id,
+        responsavelNome: usuarios.find(u => u.id === data[0].responsavel_id)?.nome || 'Desconhecido',
+        status: data[0].status || 'Aberto'
+      };
+
+      setInteracoes(prev => [novaInteracaoCompleta, ...prev]);
     }
 
-    try {
-      const dataFormatada = format(novaInteracao.data, "yyyy-MM-dd");
-      
-      // Salvar no Supabase
-      const { data, error } = await supabase
-        .from('leads_interacoes')
-        .insert([
-          {
-            lead_id: lead.id,
-            tipo: novaInteracao.tipo,
-            descricao: novaInteracao.descricao,
-            data: dataFormatada,
-            responsavel_id: novaInteracao.responsavelId
-          }
-        ])
-        .select();
-      
-      if (error) throw error;
-      
-      // Atualizar último contato do lead
-      await supabase
-        .from('leads')
-        .update({ ultimo_contato: dataFormatada })
-        .eq('id', lead.id);
-      
-      // Atualizar a lista local
-      if (data && data[0]) {
-        const novaInteracaoCompleta = {
-          id: data[0].id,
-          leadId: data[0].lead_id,
-          tipo: data[0].tipo,
-          descricao: data[0].descricao,
-          data: formatDate(data[0].data),
-          responsavelId: data[0].responsavel_id,
-          responsavelNome: usuarios.find(u => u.id === data[0].responsavel_id)?.nome || 'Desconhecido'
-        };
+    // Limpar o formulário
+    setNovaInteracao({
+      tipo: "mensagem",
+      descricao: "",
+      data: new Date(),
+      responsavelId: novaInteracao.responsavelId
+    });
 
-        setInteracoes(prev => [novaInteracaoCompleta, ...prev]);
-      }
-
-      // Limpar o formulário
-      setNovaInteracao({
-        tipo: "mensagem",
-        descricao: "",
-        data: new Date(),
-        responsavelId: novaInteracao.responsavelId
-      });
-
-    } catch (error) {
-      console.error('Erro ao salvar interação:', error);
-    }
-  };
+  } catch (error) {
+    console.error('Erro ao salvar interação:', error);
+  }
+};
 
   // Função para confirmar a edição da interação
   const confirmarEdicaoInteracao = async (interacaoEditada: LeadInteracao) => {
-    if (!interacaoEditada) return;
+  if (!interacaoEditada) return;
+  
+  try {
+    // Converter a data de string DD/MM/YYYY para formato ISO
+    const partesData = interacaoEditada.data.split('/');
+    const dataFormatada = `${partesData[2]}-${partesData[1]}-${partesData[0]}`; // YYYY-MM-DD
     
-    try {
-      // Converter a data de string DD/MM/YYYY para formato ISO
-      const partesData = interacaoEditada.data.split('/');
-      const dataFormatada = `${partesData[2]}-${partesData[1]}-${partesData[0]}`; // YYYY-MM-DD
-      
-      const { error } = await supabase
-        .from('leads_interacoes')
-        .update({
-          tipo: interacaoEditada.tipo,
-          descricao: interacaoEditada.descricao,
-          data: dataFormatada,
-          responsavel_id: interacaoEditada.responsavelId
-        })
-        .eq('id', interacaoEditada.id);
-      
-      if (error) throw error;
-      
-      // Atualizar a lista local
-      setInteracoes(prev => prev.map(item => 
-        item.id === interacaoEditada.id ? {
-          ...interacaoEditada,
-          responsavelNome: usuarios.find(u => u.id === interacaoEditada.responsavelId)?.nome || 'Desconhecido'
-        } : item
-      ));
-      
-    } catch (error) {
-      console.error('Erro ao atualizar interação:', error);
-    }
-  };
+    const { error } = await supabase
+      .from('leads_interacoes')
+      .update({
+        tipo: interacaoEditada.tipo,
+        descricao: interacaoEditada.descricao,
+        data: dataFormatada,
+        responsavel_id: interacaoEditada.responsavelId,
+        status: interacaoEditada.status || 'Aberto' // Incluir o campo status na atualização
+      })
+      .eq('id', interacaoEditada.id);
+    
+    if (error) throw error;
+    
+    // Atualizar a lista local
+    setInteracoes(prev => prev.map(item => 
+      item.id === interacaoEditada.id ? {
+        ...interacaoEditada,
+        responsavelNome: usuarios.find(u => u.id === interacaoEditada.responsavelId)?.nome || 'Desconhecido'
+      } : item
+    ));
+    
+  } catch (error) {
+    console.error('Erro ao atualizar interação:', error);
+  }
+};
 
   // Função para excluir uma interação
   const excluirInteracao = async (interacaoId: string | number) => {

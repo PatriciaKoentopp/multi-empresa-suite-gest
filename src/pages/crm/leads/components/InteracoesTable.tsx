@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UserRound, Eye, Edit, Trash2 } from "lucide-react";
+import { UserRound, Eye, Edit, Trash2, CheckCircle, Circle } from "lucide-react";
 import { LeadInteracao } from "../types";
 import { getIconForInteraction } from "../utils/leadUtils";
 
@@ -11,6 +11,7 @@ interface InteracoesTableProps {
   onView: (interacao: LeadInteracao) => void;
   onEdit: (interacao: LeadInteracao) => void;
   onDelete: (interacao: LeadInteracao) => void;
+  onToggleStatus: (interacao: LeadInteracao) => void;
   getNomeResponsavel: (id: string) => string;
 }
 
@@ -19,6 +20,7 @@ export function InteracoesTable({
   onView, 
   onEdit, 
   onDelete,
+  onToggleStatus,
   getNomeResponsavel
 }: InteracoesTableProps) {
   return (
@@ -31,6 +33,7 @@ export function InteracoesTable({
               <TableHead>Descrição</TableHead>
               <TableHead>Data</TableHead>
               <TableHead>Responsável</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -53,6 +56,18 @@ export function InteracoesTable({
                     <span>{interacao.responsavelNome || getNomeResponsavel(interacao.responsavelId)}</span>
                   </div>
                 </TableCell>
+                <TableCell>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    interacao.status === "Realizado" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
+                  }`}>
+                    {interacao.status === "Realizado" ? (
+                      <CheckCircle className="mr-1 h-3 w-3" />
+                    ) : (
+                      <Circle className="mr-1 h-3 w-3" />
+                    )}
+                    {interacao.status}
+                  </span>
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
                     <Button 
@@ -68,6 +83,18 @@ export function InteracoesTable({
                       onClick={() => onEdit(interacao)}
                     >
                       <Edit className="h-4 w-4 text-blue-500" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => onToggleStatus(interacao)}
+                      title={interacao.status === "Realizado" ? "Marcar como Aberto" : "Marcar como Realizado"}
+                    >
+                      {interacao.status === "Realizado" ? (
+                        <Circle className="h-4 w-4 text-blue-500" />
+                      ) : (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      )}
                     </Button>
                     <Button 
                       variant="ghost" 

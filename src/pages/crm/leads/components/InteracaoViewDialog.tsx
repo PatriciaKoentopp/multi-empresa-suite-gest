@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { UserRound } from "lucide-react";
+import { UserRound, CheckCircle, Circle } from "lucide-react";
 import { LeadInteracao } from "../types";
 import { getIconForInteraction } from "../utils/leadUtils";
 
@@ -39,6 +39,18 @@ export function InteracaoViewDialog({
             <div className="flex-1">
               <p className="font-medium capitalize">{interacao.tipo}</p>
               <p className="text-muted-foreground text-xs">{interacao.data}</p>
+            </div>
+            <div>
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                interacao.status === "Realizado" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
+              }`}>
+                {interacao.status === "Realizado" ? (
+                  <CheckCircle className="mr-1 h-3 w-3" />
+                ) : (
+                  <Circle className="mr-1 h-3 w-3" />
+                )}
+                {interacao.status}
+              </span>
             </div>
           </div>
           

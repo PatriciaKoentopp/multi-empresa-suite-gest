@@ -84,15 +84,32 @@ export function InteracaoEditDialog({
             </div>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="editData">Data</Label>
-            <Input
-              id="editData"
-              name="data"
-              value={interacao.data}
-              onChange={onInteracaoChange}
-              className="bg-white"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="editData">Data</Label>
+              <Input
+                id="editData"
+                name="data"
+                value={interacao.data}
+                onChange={onInteracaoChange}
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editStatus">Status</Label>
+              <Select
+                value={interacao.status || "Aberto"}
+                onValueChange={(value) => onInteracaoSelectChange("status", value)}
+              >
+                <SelectTrigger id="editStatus" className="bg-white">
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="Aberto">Aberto</SelectItem>
+                  <SelectItem value="Realizado">Realizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
           <div className="space-y-2">
