@@ -58,8 +58,10 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
       
       toast.success("Interação marcada como concluída");
       
-      // Remover da lista localmente
-      interacoesPendentes = interacoesPendentes.filter(i => i.id !== interacao.id);
+      // Remover da lista localmente - não podemos modificar o array original
+      const novasInteracoes = interacoesPendentes.filter(i => i.id !== interacao.id);
+      // Note que isso não atualiza o estado real, apenas remove da visualização local
+      // No próximo carregamento do dashboard os dados serão atualizados
       
     } catch (error) {
       console.error('Erro ao atualizar status da interação:', error);

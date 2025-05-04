@@ -218,8 +218,8 @@ export function Dashboard() {
             const dataVencimento = new Date(parcela.data_vencimento);
             dataVencimento.setHours(0, 0, 0, 0);
             
-            const hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
+            const dataHoje = new Date(); // Renomeado para evitar conflito
+            dataHoje.setHours(0, 0, 0, 0);
 
             const favorecidoNome = favorecidosMap.get(parcela.movimentacao?.favorecido_id) || 'Desconhecido';
             const movInfo = movimentacoesMap.get(parcela.movimentacao_id);
@@ -236,9 +236,9 @@ export function Dashboard() {
               movimentacao_id: parcela.movimentacao_id
             };
 
-            if (dataVencimento < hoje) {
+            if (dataVencimento < dataHoje) {
               parcelasEmAtraso.push(parcelaFormatada);
-            } else if (dataVencimento.getTime() === hoje.getTime()) {
+            } else if (dataVencimento.getTime() === dataHoje.getTime()) {
               parcelasHoje.push(parcelaFormatada);
             }
           });
@@ -291,8 +291,9 @@ export function Dashboard() {
         }) || [];
 
         // 6. Buscar interações de leads pendentes com data igual ou anterior a hoje
-        const hoje = new Date();
-        hoje.setHours(23, 59, 59, 999); // Final do dia hoje
+        // Corrigido: Evitando redeclarar a variável hoje
+        const dataLimiteInteracoes = new Date();
+        dataLimiteInteracoes.setHours(23, 59, 59, 999); // Final do dia hoje
         
         const {
           data: interacoes,
