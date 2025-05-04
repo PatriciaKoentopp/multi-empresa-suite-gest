@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,26 +40,39 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
       return data;
     }
     
-    let dataObj: Date;
-    
-    if (typeof data === "string") {
-      // Usar split para garantir que não haja problemas com timezone
-      if (data.includes("-")) {
-        const [ano, mes, dia] = data.split("T")[0].split("-");
+    // Se for uma string no formato ISO YYYY-MM-DD
+    if (typeof data === "string" && data.includes("-")) {
+      // Extrair a parte da data (sem a hora)
+      const [dataCompleta] = data.split("T");
+      const [ano, mes, dia] = dataCompleta.split("-");
+      if (ano && mes && dia) {
         return `${dia}/${mes}/${ano}`;
       }
-      // Se não tem o formato esperado, tentar criar um objeto Date
-      dataObj = new Date(data);
-    } else {
-      dataObj = data;
     }
     
-    // Formatar manualmente para evitar problemas de timezone
-    const dia = String(dataObj.getDate()).padStart(2, "0");
-    const mes = String(dataObj.getMonth() + 1).padStart(2, "0");
-    const ano = dataObj.getFullYear();
+    // Para objetos Date
+    if (data instanceof Date) {
+      const dia = String(data.getDate()).padStart(2, "0");
+      const mes = String(data.getMonth() + 1).padStart(2, "0");
+      const ano = data.getFullYear();
+      return `${dia}/${mes}/${ano}`;
+    }
     
-    return `${dia}/${mes}/${ano}`;
+    // Tentar converter para Date como último recurso
+    try {
+      const dataObj = new Date(data);
+      if (!isNaN(dataObj.getTime())) {
+        const dia = String(dataObj.getDate()).padStart(2, "0");
+        const mes = String(dataObj.getMonth() + 1).padStart(2, "0");
+        const ano = dataObj.getFullYear();
+        return `${dia}/${mes}/${ano}`;
+      }
+    } catch (e) {
+      console.error("Erro ao formatar data:", e);
+    }
+    
+    // Fallback
+    return typeof data === "string" ? data : "-";
   }
   
   // Função para navegar para a página de contas a receber
@@ -627,4 +639,3 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
     </Card>
   );
 }
-
