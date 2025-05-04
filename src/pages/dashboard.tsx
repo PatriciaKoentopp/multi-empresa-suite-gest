@@ -290,11 +290,11 @@ export function Dashboard() {
           };
         }) || [];
 
-        // 6. Buscar interações de leads pendentes com data igual ou anterior a hoje
+        // 6. Buscar interações de leads pendentes com status "Aberto" e data igual ou anterior a hoje
         const dataLimiteInteracoes = new Date();
         dataLimiteInteracoes.setHours(23, 59, 59, 999); // Final do dia hoje
         
-        // CORREÇÃO: Modificando a query para não usar relacionamentos que estão causando erro
+        // MODIFICAÇÃO: Buscar apenas interações com status "Aberto" e data igual ou anterior a hoje
         const {
           data: interacoes,
           error: erroInteracoes

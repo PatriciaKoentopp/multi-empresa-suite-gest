@@ -123,12 +123,6 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
     );
   }
 
-  // Separar parcelas por tipo (receber/pagar)
-  const parcelasVencidasReceber = parcelasVencidas.filter(p => p.tipo === 'receber');
-  const parcelasVencidasPagar = parcelasVencidas.filter(p => p.tipo === 'pagar');
-  const parcelasHojeReceber = parcelasHoje.filter(p => p.tipo === 'receber');
-  const parcelasHojePagar = parcelasHoje.filter(p => p.tipo === 'pagar');
-
   return (
     <Card className="shadow-md">
       <CardHeader className="pb-3">
@@ -166,13 +160,13 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
           
           <TabsContent value="tudo" className="space-y-4">
             {/* Contas a receber em atraso */}
-            {parcelasVencidasReceber.length > 0 && (
+            {parcelasVencidas.filter(p => p.tipo === 'receber').length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-medium text-destructive flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" /> Contas a Receber em atraso
                 </h3>
                 <div className="divide-y">
-                  {parcelasVencidasReceber.slice(0, 3).map(parcela => (
+                  {parcelasVencidas.filter(p => p.tipo === 'receber').slice(0, 3).map(parcela => (
                     <div key={parcela.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
@@ -193,10 +187,10 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                     </div>
                   ))}
                 </div>
-                {parcelasVencidasReceber.length > 3 && (
+                {parcelasVencidas.filter(p => p.tipo === 'receber').length > 3 && (
                   <div className="text-center pt-2">
                     <Button variant="outline" size="sm" onClick={navegarParaContasReceber}>
-                      Ver mais {parcelasVencidasReceber.length - 3} contas a receber em atraso
+                      Ver mais {parcelasVencidas.filter(p => p.tipo === 'receber').length - 3} contas a receber em atraso
                     </Button>
                   </div>
                 )}
@@ -204,13 +198,13 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
             )}
             
             {/* Contas a pagar em atraso */}
-            {parcelasVencidasPagar.length > 0 && (
+            {parcelasVencidas.filter(p => p.tipo === 'pagar').length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-medium text-destructive flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" /> Contas a Pagar em atraso
                 </h3>
                 <div className="divide-y">
-                  {parcelasVencidasPagar.slice(0, 3).map(parcela => (
+                  {parcelasVencidas.filter(p => p.tipo === 'pagar').slice(0, 3).map(parcela => (
                     <div key={parcela.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
@@ -231,10 +225,10 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                     </div>
                   ))}
                 </div>
-                {parcelasVencidasPagar.length > 3 && (
+                {parcelasVencidas.filter(p => p.tipo === 'pagar').length > 3 && (
                   <div className="text-center pt-2">
                     <Button variant="outline" size="sm" onClick={navegarParaContasPagar}>
-                      Ver mais {parcelasVencidasPagar.length - 3} contas a pagar em atraso
+                      Ver mais {parcelasVencidas.filter(p => p.tipo === 'pagar').length - 3} contas a pagar em atraso
                     </Button>
                   </div>
                 )}
@@ -242,13 +236,13 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
             )}
             
             {/* Parcelas a receber que vencem hoje */}
-            {parcelasHojeReceber.length > 0 && (
+            {parcelasHoje.filter(p => p.tipo === 'receber').length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-medium text-amber-600 flex items-center gap-1">
                   <Calendar className="h-4 w-4" /> Contas a Receber vencem hoje
                 </h3>
                 <div className="divide-y">
-                  {parcelasHojeReceber.slice(0, 3).map(parcela => (
+                  {parcelasHoje.filter(p => p.tipo === 'receber').slice(0, 3).map(parcela => (
                     <div key={parcela.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
@@ -267,10 +261,10 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                     </div>
                   ))}
                 </div>
-                {parcelasHojeReceber.length > 3 && (
+                {parcelasHoje.filter(p => p.tipo === 'receber').length > 3 && (
                   <div className="text-center pt-2">
                     <Button variant="outline" size="sm" onClick={navegarParaContasReceber}>
-                      Ver mais {parcelasHojeReceber.length - 3} contas a receber para hoje
+                      Ver mais {parcelasHoje.filter(p => p.tipo === 'receber').length - 3} contas a receber para hoje
                     </Button>
                   </div>
                 )}
@@ -278,13 +272,13 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
             )}
             
             {/* Parcelas a pagar que vencem hoje */}
-            {parcelasHojePagar.length > 0 && (
+            {parcelasHoje.filter(p => p.tipo === 'pagar').length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-medium text-amber-600 flex items-center gap-1">
                   <Calendar className="h-4 w-4" /> Contas a Pagar vencem hoje
                 </h3>
                 <div className="divide-y">
-                  {parcelasHojePagar.slice(0, 3).map(parcela => (
+                  {parcelasHoje.filter(p => p.tipo === 'pagar').slice(0, 3).map(parcela => (
                     <div key={parcela.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
@@ -303,10 +297,10 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                     </div>
                   ))}
                 </div>
-                {parcelasHojePagar.length > 3 && (
+                {parcelasHoje.filter(p => p.tipo === 'pagar').length > 3 && (
                   <div className="text-center pt-2">
                     <Button variant="outline" size="sm" onClick={navegarParaContasPagar}>
-                      Ver mais {parcelasHojePagar.length - 3} contas a pagar para hoje
+                      Ver mais {parcelasHoje.filter(p => p.tipo === 'pagar').length - 3} contas a pagar para hoje
                     </Button>
                   </div>
                 )}
@@ -382,13 +376,13 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
           
           <TabsContent value="financeiro" className="space-y-4">
             {/* Contas a Receber em atraso */}
-            {parcelasVencidasReceber.length > 0 && (
+            {parcelasVencidas.filter(p => p.tipo === 'receber').length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-medium text-destructive flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" /> Contas a Receber em atraso
                 </h3>
                 <div className="divide-y">
-                  {parcelasVencidasReceber.map(parcela => (
+                  {parcelasVencidas.filter(p => p.tipo === 'receber').map(parcela => (
                     <div key={parcela.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
@@ -413,13 +407,13 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
             )}
             
             {/* Contas a Pagar em atraso */}
-            {parcelasVencidasPagar.length > 0 && (
+            {parcelasVencidas.filter(p => p.tipo === 'pagar').length > 0 && (
               <div className="space-y-2 mt-4">
                 <h3 className="font-medium text-destructive flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" /> Contas a Pagar em atraso
                 </h3>
                 <div className="divide-y">
-                  {parcelasVencidasPagar.map(parcela => (
+                  {parcelasVencidas.filter(p => p.tipo === 'pagar').map(parcela => (
                     <div key={parcela.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
@@ -444,13 +438,13 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
             )}
             
             {/* Contas a receber para hoje */}
-            {parcelasHojeReceber.length > 0 && (
+            {parcelasHoje.filter(p => p.tipo === 'receber').length > 0 && (
               <div className="space-y-2 mt-4">
                 <h3 className="font-medium text-amber-600 flex items-center gap-1">
                   <Calendar className="h-4 w-4" /> Contas a Receber vencem hoje
                 </h3>
                 <div className="divide-y">
-                  {parcelasHojeReceber.map(parcela => (
+                  {parcelasHoje.filter(p => p.tipo === 'receber').map(parcela => (
                     <div key={parcela.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
@@ -473,13 +467,13 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
             )}
             
             {/* Contas a pagar para hoje */}
-            {parcelasHojePagar.length > 0 && (
+            {parcelasHoje.filter(p => p.tipo === 'pagar').length > 0 && (
               <div className="space-y-2 mt-4">
                 <h3 className="font-medium text-amber-600 flex items-center gap-1">
                   <Calendar className="h-4 w-4" /> Contas a Pagar vencem hoje
                 </h3>
                 <div className="divide-y">
-                  {parcelasHojePagar.map(parcela => (
+                  {parcelasHoje.filter(p => p.tipo === 'pagar').map(parcela => (
                     <div key={parcela.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
@@ -501,8 +495,8 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
               </div>
             )}
             
-            {parcelasVencidasReceber.length === 0 && parcelasVencidasPagar.length === 0 && 
-             parcelasHojeReceber.length === 0 && parcelasHojePagar.length === 0 && (
+            {parcelasVencidas.filter(p => p.tipo === 'receber').length === 0 && parcelasVencidas.filter(p => p.tipo === 'pagar').length === 0 && 
+             parcelasHoje.filter(p => p.tipo === 'receber').length === 0 && parcelasHoje.filter(p => p.tipo === 'pagar').length === 0 && (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <CheckCircle2 className="h-12 w-12 text-green-500 mb-2" />
                 <h3 className="text-lg font-medium">Sem pendências financeiras</h3>
@@ -513,8 +507,8 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
             )}
             
             {/* Botões de ação - removidos os botões duplicados, mantido apenas um conjunto */}
-            {(parcelasVencidasReceber.length > 0 || parcelasVencidasPagar.length > 0 || 
-              parcelasHojeReceber.length > 0 || parcelasHojePagar.length > 0) && (
+            {(parcelasVencidas.filter(p => p.tipo === 'receber').length > 0 || parcelasVencidas.filter(p => p.tipo === 'pagar').length > 0 || 
+              parcelasHoje.filter(p => p.tipo === 'receber').length > 0 || parcelasHoje.filter(p => p.tipo === 'pagar').length > 0) && (
               <div className="grid gap-4 grid-cols-2 pt-4">
                 <Button onClick={navegarParaContasReceber}>
                   Gerenciar contas a receber
@@ -604,3 +598,4 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
     </Card>
   );
 }
+
