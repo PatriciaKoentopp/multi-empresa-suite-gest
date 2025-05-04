@@ -13,6 +13,6 @@ export interface ContaReceber {
   tipo?: string;
 }
 
-// Re-exportando o componente da tabela de contas a receber
+// Exportando o componente da tabela de contas a receber
 // Esta linha é necessária pois há imports deste componente em outros arquivos
-export { default as ContasAReceberTable } from "./contas-a-receber-table";
+export { ContasAReceberTable } from "./contas-a-receber-table";
