@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -95,6 +94,7 @@ export function ContasAReceberTable({
     }
   }
 
+  
   return (
     <div className="border rounded-md">
       <Table>
@@ -199,7 +199,7 @@ export function ContasAReceberTable({
         <TableFooter>
           <TableRow>
             <TableCell colSpan={7} className="font-bold text-right">Total</TableCell>
-            <TableCell className="font-bold">{formatCurrency(contas.reduce((soma, conta) => soma + (conta.valor || 0), 0))}</TableCell>
+            <TableCell className="font-bold">{formatCurrency(totalValor)}</TableCell>
             <TableCell />
           </TableRow>
         </TableFooter>

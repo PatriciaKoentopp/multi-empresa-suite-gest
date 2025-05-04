@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { formatDate } from "@/lib/utils";
 
 export default function ContasAReceberPage() {
   const { currentCompany } = useCompany();
@@ -62,6 +63,17 @@ export default function ContasAReceberPage() {
       carregarContasReceber();
     }
   }, [currentCompany]);
+
+  // Função auxiliar para criar uma data a partir da string do banco sem timezone
+  function criarDataSemTimezone(dataStr?: string): Date | undefined {
+    if (!dataStr) return undefined;
+    
+    // Separar a data em partes (formato esperado: YYYY-MM-DD)
+    const [ano, mes, dia] = dataStr.split('-').map(Number);
+    
+    // Criar um objeto Date usando as partes da data (mês em JS é 0-indexed)
+    return new Date(ano, mes - 1, dia);
+  }
 
   async function carregarContasReceber() {
     try {
@@ -100,15 +112,15 @@ export default function ContasAReceberPage() {
       const contasReceber: ContaReceber[] = (movimentacoesParcelas || [])
         .filter(parcela => parcela.movimentacao)
         .map(parcela => {
-          // Criar data sem ajuste de timezone
-          const dataVencimento = new Date(parcela.data_vencimento + 'T12:00:00Z');
-          const dataRecebimento = parcela.data_pagamento ? new Date(parcela.data_pagamento + 'T12:00:00Z') : undefined;
+          // Criar objeto Date sem conversão de timezone
+          const dataVencimento = criarDataSemTimezone(parcela.data_vencimento);
+          const dataRecebimento = criarDataSemTimezone(parcela.data_pagamento);
           
           return {
             id: parcela.id,
             cliente: parcela.movimentacao.favorecido?.nome || 'Cliente não identificado',
             descricao: parcela.movimentacao.descricao || '',
-            dataVencimento,
+            dataVencimento: dataVencimento!,
             dataRecebimento,
             status: determinarStatus(parcela.data_vencimento, parcela.data_pagamento),
             valor: Number(parcela.valor),
@@ -130,9 +142,13 @@ export default function ContasAReceberPage() {
   function determinarStatus(dataVencimento: string, dataPagamento?: string): ContaReceber['status'] {
     if (!dataPagamento) return "em_aberto";
     
-    // Parse sem ajuste de timezone (usando 12:00Z para evitar problemas)
-    const vencimento = new Date(dataVencimento + 'T12:00:00Z');
-    const pagamento = new Date(dataPagamento + 'T12:00:00Z');
+    // Comparar datas sem conversão de timezone
+    const vencimentoParts = dataVencimento.split('-').map(Number);
+    const pagamentoParts = dataPagamento.split('-').map(Number);
+    
+    // Criar objetos Date usando ano, mês, dia (sem preocupação com timezone)
+    const vencimento = new Date(vencimentoParts[0], vencimentoParts[1] - 1, vencimentoParts[2]);
+    const pagamento = new Date(pagamentoParts[0], pagamentoParts[1] - 1, pagamentoParts[2]);
     
     return pagamento > vencimento ? "recebido_em_atraso" : "recebido";
   }
@@ -423,23 +439,23 @@ export default function ContasAReceberPage() {
       // Aplicar filtros de data sem problemas de timezone
       let vencimentoDentroRange = true;
       if (dataVencInicio) {
-        const dataInicio = new Date(dataVencInicio + 'T12:00:00Z');
+        const dataInicio = criarDataSemTimezone(dataVencInicio)!;
         vencimentoDentroRange = vencimentoDentroRange && conta.dataVencimento >= dataInicio;
       }
       
       if (dataVencFim) {
-        const dataFim = new Date(dataVencFim + 'T12:00:00Z');
+        const dataFim = criarDataSemTimezone(dataVencFim)!;
         vencimentoDentroRange = vencimentoDentroRange && conta.dataVencimento <= dataFim;
       }
       
       let recebimentoDentroRange = true;
       if (dataRecInicio && conta.dataRecebimento) {
-        const dataInicio = new Date(dataRecInicio + 'T12:00:00Z');
+        const dataInicio = criarDataSemTimezone(dataRecInicio)!;
         recebimentoDentroRange = recebimentoDentroRange && conta.dataRecebimento >= dataInicio;
       }
       
       if (dataRecFim && conta.dataRecebimento) {
-        const dataFim = new Date(dataRecFim + 'T12:00:00Z');
+        const dataFim = criarDataSemTimezone(dataRecFim)!;
         recebimentoDentroRange = recebimentoDentroRange && conta.dataRecebimento <= dataFim;
       }
       
