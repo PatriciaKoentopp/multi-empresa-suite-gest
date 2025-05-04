@@ -8,6 +8,8 @@ export interface LeadInteracao {
   responsavelId: string;
   responsavelNome?: string;
   status: string; // Status pode ser "Aberto" ou "Realizado"
+  leadNome?: string;
+  leadEmpresa?: string;
 }
 
 export interface Lead {

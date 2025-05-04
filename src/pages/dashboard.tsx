@@ -12,6 +12,8 @@ import { ptBR } from "date-fns/locale";
 import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
 import { ContaCorrente } from "@/types/conta-corrente";
 import { useAuth } from "@/contexts/auth-context";
+import { AlertsSection } from "@/components/dashboard/AlertsSection";
+import { LeadInteracao } from "@/pages/crm/leads/types";
 
 interface DashboardData {
   totalVendas: number;
@@ -25,12 +27,14 @@ interface DashboardData {
     data: string;
   }[];
   parcelasEmAtraso: ContaReceber[];
+  parcelasHoje: ContaReceber[];
   saldoContas: {
     nome: string;
     saldo: number;
     id: string;
   }[];
   totalSaldo: number;
+  interacoesPendentes: LeadInteracao[];
 }
 
 export function Dashboard() {
@@ -47,11 +51,12 @@ export function Dashboard() {
     totalOrcamentos: 0,
     contasReceber: 0,
     contasPagar: 0,
-    novosClientes: 0,
     ultimasVendas: [],
     parcelasEmAtraso: [],
+    parcelasHoje: [],
     saldoContas: [],
-    totalSaldo: 0
+    totalSaldo: 0,
+    interacoesPendentes: []
   });
 
   useEffect(() => {
@@ -178,55 +183,65 @@ export function Dashboard() {
           return acc;
         }, 0) || 0;
 
-        // Filtrar parcelas em atraso
+        // Filtrar parcelas em atraso e as que vencem hoje
         const parcelasEmAtraso: ContaReceber[] = [];
+        const parcelasHoje: ContaReceber[] = [];
 
         if (contasReceber && contasReceber.length > 0) {
-          const parcelasAtrasadas = contasReceber.filter(parcela => new Date(parcela.data_vencimento) < hoje && parcela.movimentacao?.tipo_operacao === 'receber');
-          if (parcelasAtrasadas.length > 0) {
-            // Buscar IDs dos favorecidos únicos
-            const favorecidoIds = [...new Set(parcelasAtrasadas.map(p => p.movimentacao?.favorecido_id).filter(Boolean))];
+          // Buscar IDs dos favorecidos únicos
+          const favorecidoIds = [...new Set(contasReceber.map(p => p.movimentacao?.favorecido_id).filter(Boolean))];
 
-            // Buscar dados dos favorecidos
-            const {
-              data: favorecidos
-            } = await supabase.from('favorecidos').select('id, nome').in('id', favorecidoIds);
-            const favorecidosMap = new Map();
-            if (favorecidos) {
-              favorecidos.forEach(fav => favorecidosMap.set(fav.id, fav.nome));
-            }
+          // Buscar dados dos favorecidos
+          const {
+            data: favorecidos
+          } = await supabase.from('favorecidos').select('id, nome').in('id', favorecidoIds);
+          const favorecidosMap = new Map();
+          if (favorecidos) {
+            favorecidos.forEach(fav => favorecidosMap.set(fav.id, fav.nome));
+          }
 
-            // Buscar informações das movimentações (para descrição)
-            const movimentacaoIds = [...new Set(parcelasAtrasadas.map(p => p.movimentacao_id))];
-            const {
-              data: movimentacoes
-            } = await supabase.from('movimentacoes').select('id, descricao, numero_documento').in('id', movimentacaoIds);
-            const movimentacoesMap = new Map();
-            if (movimentacoes) {
-              movimentacoes.forEach(mov => movimentacoesMap.set(mov.id, {
-                descricao: mov.descricao,
-                numeroDocumento: mov.numero_documento
-              }));
-            }
-
-            // Montar as parcelas em atraso com todos os dados necessários
-            parcelasEmAtraso.push(...parcelasAtrasadas.map(parcela => {
-              const favorecidoNome = favorecidosMap.get(parcela.movimentacao?.favorecido_id) || 'Desconhecido';
-              const movInfo = movimentacoesMap.get(parcela.movimentacao_id);
-              return {
-                id: parcela.id,
-                cliente: favorecidoNome,
-                descricao: movInfo?.descricao || 'Sem descrição',
-                dataVencimento: new Date(parcela.data_vencimento),
-                valor: Number(parcela.valor),
-                status: 'em_aberto' as 'em_aberto',
-                // Tipagem explícita
-                numeroParcela: movInfo?.numeroDocumento || '-',
-                origem: 'Movimentação',
-                movimentacao_id: parcela.movimentacao_id
-              };
+          // Buscar informações das movimentações (para descrição)
+          const movimentacaoIds = [...new Set(contasReceber.map(p => p.movimentacao_id).filter(Boolean))];
+          const {
+            data: movimentacoes
+          } = await supabase.from('movimentacoes').select('id, descricao, numero_documento').in('id', movimentacaoIds);
+          const movimentacoesMap = new Map();
+          if (movimentacoes) {
+            movimentacoes.forEach(mov => movimentacoesMap.set(mov.id, {
+              descricao: mov.descricao,
+              numeroDocumento: mov.numero_documento
             }));
           }
+
+          // Separar parcelas em atraso e as que vencem hoje
+          contasReceber.forEach(parcela => {
+            const dataVencimento = new Date(parcela.data_vencimento);
+            dataVencimento.setHours(0, 0, 0, 0);
+            
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+
+            const favorecidoNome = favorecidosMap.get(parcela.movimentacao?.favorecido_id) || 'Desconhecido';
+            const movInfo = movimentacoesMap.get(parcela.movimentacao_id);
+
+            const parcelaFormatada = {
+              id: parcela.id,
+              cliente: favorecidoNome,
+              descricao: movInfo?.descricao || 'Sem descrição',
+              dataVencimento: dataVencimento,
+              valor: Number(parcela.valor),
+              status: 'em_aberto' as 'em_aberto',
+              numeroParcela: movInfo?.numeroDocumento || '-',
+              origem: 'Movimentação',
+              movimentacao_id: parcela.movimentacao_id
+            };
+
+            if (dataVencimento < hoje) {
+              parcelasEmAtraso.push(parcelaFormatada);
+            } else if (dataVencimento.getTime() === hoje.getTime()) {
+              parcelasHoje.push(parcelaFormatada);
+            }
+          });
         }
 
         // 3. Buscar contas a pagar em aberto
@@ -275,6 +290,51 @@ export function Dashboard() {
           };
         }) || [];
 
+        // 6. Buscar interações de leads pendentes com data igual ou anterior a hoje
+        const hoje = new Date();
+        hoje.setHours(23, 59, 59, 999); // Final do dia hoje
+        
+        const {
+          data: interacoes,
+          error: erroInteracoes
+        } = await supabase
+          .from('leads_interacoes')
+          .select(`
+            id,
+            lead_id,
+            tipo,
+            descricao,
+            data,
+            responsavel_id,
+            status,
+            leads:lead_id (
+              nome,
+              empresa
+            ),
+            usuarios:responsavel_id (
+              nome
+            )
+          `)
+          .eq('status', 'Aberto')
+          .lte('data', hojeFormatado)
+          .eq('leads.empresa_id', currentCompany.id);
+        
+        if (erroInteracoes) throw erroInteracoes;
+
+        // Formatar interações pendentes
+        const interacoesPendentes: LeadInteracao[] = interacoes?.map(interacao => ({
+          id: interacao.id,
+          leadId: interacao.lead_id,
+          tipo: interacao.tipo as any,
+          descricao: interacao.descricao,
+          data: interacao.data,
+          responsavelId: interacao.responsavel_id,
+          responsavelNome: interacao.usuarios?.nome,
+          status: interacao.status,
+          leadNome: interacao.leads?.nome,
+          leadEmpresa: interacao.leads?.empresa
+        })) || [];
+
         // Atualizar o estado com todos os dados obtidos
         setDashboardData({
           totalVendas,
@@ -283,8 +343,10 @@ export function Dashboard() {
           contasPagar: totalContasPagar,
           ultimasVendas: vendasFormatadas,
           parcelasEmAtraso,
+          parcelasHoje,
           saldoContas,
-          totalSaldo
+          totalSaldo,
+          interacoesPendentes
         });
         setIsLoading(false);
       } catch (error: any) {
@@ -308,58 +370,72 @@ export function Dashboard() {
         </p>
       </div>
       
+      {/* Nova seção de alertas */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="md:col-span-2">
+          <AlertsSection 
+            parcelasVencidas={dashboardData.parcelasEmAtraso}
+            parcelasHoje={dashboardData.parcelasHoje}
+            interacoesPendentes={dashboardData.interacoesPendentes}
+            isLoading={isLoading}
+          />
+        </div>
+        
+        {/* Card para Saldo das Contas */}
+        <div>
+          <Card className="bg-white">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-blue-500" /> 
+                Saldo das Contas
+              </CardTitle>
+              <CardDescription>
+                Saldo atual em todas as contas correntes
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                </div>
+              ) : dashboardData.saldoContas.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Total geral */}
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <p className="font-semibold text-lg">Saldo Total</p>
+                    <p className={`font-bold text-lg ${dashboardData.totalSaldo > 0 ? 'text-green-600' : dashboardData.totalSaldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                      {formatCurrency(dashboardData.totalSaldo)}
+                    </p>
+                  </div>
+                  
+                  {/* Lista de contas */}
+                  <div className="space-y-2">
+                    {dashboardData.saldoContas.map(conta => (
+                      <div key={conta.id} className="flex items-center justify-between">
+                        <p className="text-gray-800">{conta.nome}</p>
+                        <p className={`${conta.saldo > 0 ? 'text-green-600' : conta.saldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                          {formatCurrency(conta.saldo)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-4">
+                  Nenhuma conta corrente encontrada
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <SalesDashboardCard title="Vendas do Mês" value={formatCurrency(dashboardData.totalVendas)} description="Total do mês atual" icon="money" />
         <SalesDashboardCard title="Total de Orçamentos" value={formatCurrency(dashboardData.totalOrcamentos)} description="Soma de todos os orçamentos ativos" icon="chart" />
         <SalesDashboardCard title="Contas a Pagar" value={formatCurrency(dashboardData.contasPagar)} description="Pagamentos pendentes" icon="sales" />
         <SalesDashboardCard title="Contas a Receber" value={formatCurrency(dashboardData.contasReceber)} description={`${dashboardData.parcelasEmAtraso.length} título(s) em atraso`} icon="users" />
       </div>
-
-      {/* Card para Saldo das Contas */}
-      <Card className="bg-white">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-blue-500" /> 
-            Saldo das Contas
-          </CardTitle>
-          <CardDescription>
-            Saldo atual em todas as contas correntes
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-6">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-            </div>
-          ) : dashboardData.saldoContas.length > 0 ? (
-            <div className="space-y-4">
-              {/* Total geral */}
-              <div className="flex items-center justify-between border-b pb-2">
-                <p className="font-semibold text-lg">Saldo Total</p>
-                <p className={`font-bold text-lg ${dashboardData.totalSaldo > 0 ? 'text-green-600' : dashboardData.totalSaldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                  {formatCurrency(dashboardData.totalSaldo)}
-                </p>
-              </div>
-              
-              {/* Lista de contas */}
-              <div className="space-y-2">
-                {dashboardData.saldoContas.map(conta => (
-                  <div key={conta.id} className="flex items-center justify-between">
-                    <p className="text-gray-800">{conta.nome}</p>
-                    <p className={`${conta.saldo > 0 ? 'text-green-600' : conta.saldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                      {formatCurrency(conta.saldo)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-4">
-              Nenhuma conta corrente encontrada
-            </p>
-          )}
-        </CardContent>
-      </Card>
       
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="col-span-1">
@@ -430,4 +506,5 @@ export function Dashboard() {
       </div>
     </div>;
 }
+
 export default Dashboard;
