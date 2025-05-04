@@ -406,11 +406,6 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                     </div>
                   ))}
                 </div>
-                <div className="text-center pt-2">
-                  <Button variant="outline" size="sm" onClick={navegarParaContasReceber}>
-                    Gerenciar contas a receber
-                  </Button>
-                </div>
               </div>
             )}
             
@@ -441,11 +436,6 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                       </div>
                     </div>
                   ))}
-                </div>
-                <div className="text-center pt-2">
-                  <Button variant="outline" size="sm" onClick={navegarParaContasPagar}>
-                    Gerenciar contas a pagar
-                  </Button>
                 </div>
               </div>
             )}
@@ -519,6 +509,7 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
               </div>
             )}
             
+            {/* Botões de ação - removidos os botões duplicados, mantido apenas um conjunto */}
             {(parcelasVencidasReceber.length > 0 || parcelasVencidasPagar.length > 0 || 
               parcelasHojeReceber.length > 0 || parcelasHojePagar.length > 0) && (
               <div className="grid gap-4 grid-cols-2 pt-4">
