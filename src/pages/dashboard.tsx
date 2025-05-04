@@ -398,63 +398,15 @@ export function Dashboard() {
         </p>
       </div>
       
-      {/* Nova seção de alertas */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2">
+      {/* Nova seção de alertas - ajustada para largura total */}
+      <div className="grid gap-6">
+        <div className="col-span-1">
           <AlertsSection 
             parcelasVencidas={dashboardData.parcelasEmAtraso}
             parcelasHoje={dashboardData.parcelasHoje}
             interacoesPendentes={dashboardData.interacoesPendentes}
             isLoading={isLoading}
           />
-        </div>
-        
-        {/* Card para Saldo das Contas */}
-        <div>
-          <Card className="bg-white">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-blue-500" /> 
-                Saldo das Contas
-              </CardTitle>
-              <CardDescription>
-                Saldo atual em todas as contas correntes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-6">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-                </div>
-              ) : dashboardData.saldoContas.length > 0 ? (
-                <div className="space-y-4">
-                  {/* Total geral */}
-                  <div className="flex items-center justify-between border-b pb-2">
-                    <p className="font-semibold text-lg">Saldo Total</p>
-                    <p className={`font-bold text-lg ${dashboardData.totalSaldo > 0 ? 'text-green-600' : dashboardData.totalSaldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                      {formatCurrency(dashboardData.totalSaldo)}
-                    </p>
-                  </div>
-                  
-                  {/* Lista de contas */}
-                  <div className="space-y-2">
-                    {dashboardData.saldoContas.map(conta => (
-                      <div key={conta.id} className="flex items-center justify-between">
-                        <p className="text-gray-800">{conta.nome}</p>
-                        <p className={`${conta.saldo > 0 ? 'text-green-600' : conta.saldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                          {formatCurrency(conta.saldo)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-4">
-                  Nenhuma conta corrente encontrada
-                </p>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
 
@@ -463,6 +415,54 @@ export function Dashboard() {
         <SalesDashboardCard title="Total de Orçamentos" value={formatCurrency(dashboardData.totalOrcamentos)} description="Soma de todos os orçamentos ativos" icon="chart" />
         <SalesDashboardCard title="Contas a Pagar" value={formatCurrency(dashboardData.contasPagar)} description="Pagamentos pendentes" icon="sales" />
         <SalesDashboardCard title="Contas a Receber" value={formatCurrency(dashboardData.contasReceber)} description={`${dashboardData.parcelasEmAtraso.filter(p => p.tipo === 'receber').length} título(s) em atraso`} icon="users" />
+      </div>
+      
+      {/* Card para Saldo das Contas - movido para antes das últimas vendas */}
+      <div>
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-blue-500" /> 
+              Saldo das Contas
+            </CardTitle>
+            <CardDescription>
+              Saldo atual em todas as contas correntes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+              </div>
+            ) : dashboardData.saldoContas.length > 0 ? (
+              <div className="space-y-4">
+                {/* Total geral */}
+                <div className="flex items-center justify-between border-b pb-2">
+                  <p className="font-semibold text-lg">Saldo Total</p>
+                  <p className={`font-bold text-lg ${dashboardData.totalSaldo > 0 ? 'text-green-600' : dashboardData.totalSaldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                    {formatCurrency(dashboardData.totalSaldo)}
+                  </p>
+                </div>
+                
+                {/* Lista de contas */}
+                <div className="space-y-2">
+                  {dashboardData.saldoContas.map(conta => (
+                    <div key={conta.id} className="flex items-center justify-between">
+                      <p className="text-gray-800">{conta.nome}</p>
+                      <p className={`${conta.saldo > 0 ? 'text-green-600' : conta.saldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                        {formatCurrency(conta.saldo)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-4">
+                Nenhuma conta corrente encontrada
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
       
       <div className="grid gap-6 md:grid-cols-1">

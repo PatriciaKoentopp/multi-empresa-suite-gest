@@ -1,5 +1,5 @@
 
-// Se o arquivo não existir, vamos criar com o tipo correto
+// Definição do tipo ContaReceber
 export interface ContaReceber {
   id: string;
   cliente: string;
@@ -12,3 +12,7 @@ export interface ContaReceber {
   movimentacao_id?: string;
   tipo?: string;
 }
+
+// Re-exportando o componente da tabela de contas a receber
+// Esta linha é necessária pois há imports deste componente em outros arquivos
+export { default as ContasAReceberTable } from "./contas-a-receber-table";
