@@ -4,164 +4,164 @@ import { ModuleNavItem } from "@/types";
 // Esta configuração define os itens de navegação do sistema
 export const navigationConfig: ModuleNavItem[] = [
   {
-    name: "Dashboard",
+    title: "Dashboard",
     href: "/dashboard",
     icon: "Grid",
   },
   {
-    name: "Administrativo",
+    title: "Administrativo",
     icon: "Settings",
     subItems: [
       {
-        name: "Empresas",
+        title: "Empresas",
         href: "/admin/empresas",
       },
       {
-        name: "Usuários",
+        title: "Usuários",
         href: "/admin/usuarios",
       },
       {
-        name: "Permissões",
+        title: "Permissões",
         href: "/admin/permissoes",
       },
       {
-        name: "Parâmetros",
+        title: "Parâmetros",
         href: "/admin/parametros",
       },
     ],
   },
   {
-    name: "Cadastros",
+    title: "Cadastros",
     icon: "List",
     subItems: [
       {
-        name: "Grupo de Favorecidos",
+        title: "Grupo de Favorecidos",
         href: "/cadastros/grupo-favorecidos",
       },
       {
-        name: "Favorecidos",
+        title: "Favorecidos",
         href: "/cadastros/favorecidos",
       },
       {
-        name: "Profissões",
+        title: "Profissões",
         href: "/cadastros/profissoes",
       },
       {
-        name: "Origens",
+        title: "Origens",
         href: "/cadastros/origens",
       },
       {
-        name: "Motivos de Perda",
+        title: "Motivos de Perda",
         href: "/cadastros/motivos-perda",
       },
       {
-        name: "Conta Corrente",
+        title: "Conta Corrente",
         href: "/cadastros/conta-corrente",
       },
       {
-        name: "Tipos de Títulos",
+        title: "Tipos de Títulos",
         href: "/cadastros/tipos-titulos",
       },
     ],
   },
   {
-    name: "Financeiro",
+    title: "Financeiro",
     icon: "DollarSign",
     subItems: [
       {
-        name: "Painel Financeiro",
+        title: "Painel Financeiro",
         href: "/financeiro/painel-financeiro",
       },
       {
-        name: "Fluxo de Caixa",
+        title: "Fluxo de Caixa",
         href: "/financeiro/fluxo-caixa",
       },
       {
-        name: "Movimentação",
+        title: "Movimentação",
         href: "/financeiro/movimentacao",
       },
       {
-        name: "Contas a Pagar",
+        title: "Contas a Pagar",
         href: "/financeiro/contas-a-pagar",
       },
       {
-        name: "Contas a Receber",
+        title: "Contas a Receber",
         href: "/financeiro/contas-receber",
       },
     ],
   },
   {
-    name: "Contábil",
+    title: "Contábil",
     icon: "Calculator",
     subItems: [
       {
-        name: "Plano de Contas",
+        title: "Plano de Contas",
         href: "/contabil/plano-contas",
       },
       {
-        name: "Lançamentos",
+        title: "Lançamentos",
         href: "/contabil/lancamentos",
       },
       {
-        name: "DRE",
+        title: "DRE",
         href: "/contabil/dre",
       },
       {
-        name: "Balanço",
+        title: "Balanço",
         href: "/contabil/balanco",
       },
     ],
   },
   {
-    name: "Vendas",
+    title: "Vendas",
     icon: "ShoppingBag",
     subItems: [
       {
-        name: "Painel de Vendas",
+        title: "Painel de Vendas",
         href: "/vendas/painel-vendas",
       },
       {
-        name: "Serviços",
+        title: "Serviços",
         href: "/vendas/servicos",
       },
       {
-        name: "Tabela de Preços",
+        title: "Tabela de Preços",
         href: "/vendas/tabela-precos",
       },
       {
-        name: "Orçamentos",
+        title: "Orçamentos",
         href: "/vendas/orcamento",
       },
       {
-        name: "Faturamento",
+        title: "Faturamento",
         href: "/vendas/faturamento",
       },
     ],
   },
   {
-    name: "CRM",
+    title: "CRM",
     icon: "Users",
     subItems: [
       {
-        name: "Painel do CRM",
+        title: "Painel do CRM",
         href: "/crm/painel",
       },
       {
-        name: "Leads",
+        title: "Leads",
         href: "/crm/leads",
       },
       {
-        name: "Conf. do Funil",
+        title: "Conf. do Funil",
         href: "/crm/funil-configuracao",
       },
       {
-        name: "Marketing",
+        title: "Marketing",
         href: "/crm/marketing",
       },
     ],
   },
   {
-    name: "Relatórios",
+    title: "Relatórios",
     icon: "BarChart",
     href: "/relatorios",
   },
@@ -169,18 +169,19 @@ export const navigationConfig: ModuleNavItem[] = [
 
 export const userNavigation: ModuleNavItem[] = [
   {
-    name: "Perfil",
+    title: "Perfil",
     href: "/perfil",
     icon: "User",
   },
   {
-    name: "Configurações",
+    title: "Configurações",
     href: "/configuracoes",
     icon: "Settings",
   },
   {
-    name: "Ajuda",
+    title: "Ajuda",
     href: "/ajuda",
     icon: "HelpCircle",
   }
 ];
+

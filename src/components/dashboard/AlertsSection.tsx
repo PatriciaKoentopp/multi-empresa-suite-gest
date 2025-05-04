@@ -33,7 +33,8 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
   
   // Função para navegar para a página de contas a receber
   const navegarParaContasReceber = () => {
-    navigate("/financeiro/contas-a-receber");
+    // Aqui está a correção, mudando para o caminho correto
+    navigate("/financeiro/contas-receber");
   };
   
   // Função para navegar para a página de contas a pagar
@@ -49,7 +50,7 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
   // Função para marcar interação como concluída
   const marcarInteracaoConcluida = async (interacao: LeadInteracao) => {
     try {
-      setAtualizandoStatus(String(interacao.id)); // Convertendo para string explicitamente
+      setAtualizandoStatus(String(interacao.id));
       
       // Atualizar no banco de dados
       const { error } = await supabase
@@ -601,3 +602,4 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
     </Card>
   );
 }
+
