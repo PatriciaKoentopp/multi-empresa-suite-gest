@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,8 +26,11 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
   const [selectedTab, setSelectedTab] = useState<string>("tudo");
   const [atualizandoStatus, setAtualizandoStatus] = useState<string | null>(null);
   
+  // Filtrando apenas interações com status "Aberto"
+  const interacoesAbertas = interacoesPendentes.filter(interacao => interacao.status === "Aberto");
+  
   // Contar totais para cada categoria
-  const totalInteracoes = interacoesPendentes.length;
+  const totalInteracoes = interacoesAbertas.length;
   const totalParcelas = parcelasVencidas.length + parcelasHoje.length;
   const total = totalInteracoes + totalParcelas;
   
@@ -48,7 +52,7 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
   // Função para marcar interação como concluída
   const marcarInteracaoConcluida = async (interacao: LeadInteracao) => {
     try {
-      setAtualizandoStatus(String(interacao.id));
+      setAtualizandoStatus(interacao.id);
       
       // Atualizar no banco de dados
       const { error } = await supabase
@@ -63,7 +67,7 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
       toast.success("Interação marcada como concluída");
       
       // Remover da lista localmente - não podemos modificar o array original
-      const novasInteracoes = interacoesPendentes.filter(i => i.id !== interacao.id);
+      const novasInteracoes = interacoesAbertas.filter(i => i.id !== interacao.id);
       // Note que isso não atualiza o estado real, apenas remove da visualização local
       // No próximo carregamento do dashboard os dados serão atualizados
       
@@ -309,14 +313,14 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
               </div>
             )}
             
-            {/* Interações pendentes */}
-            {interacoesPendentes.length > 0 && (
+            {/* Interações pendentes - agora exibindo apenas com status "Aberto" */}
+            {interacoesAbertas.length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-medium text-blue-600 flex items-center gap-1">
                   <Clock className="h-4 w-4" /> Interações pendentes
                 </h3>
                 <div className="divide-y">
-                  {interacoesPendentes.slice(0, 3).map(interacao => (
+                  {interacoesAbertas.slice(0, 3).map(interacao => (
                     <div key={interacao.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
@@ -352,9 +356,9 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                             variant="secondary" 
                             className="px-2 h-8"
                             onClick={() => marcarInteracaoConcluida(interacao)}
-                            disabled={atualizandoStatus === String(interacao.id)}
+                            disabled={atualizandoStatus === interacao.id}
                           >
-                            {atualizandoStatus === String(interacao.id) ? (
+                            {atualizandoStatus === interacao.id ? (
                               <div className="h-4 w-4 animate-spin rounded-full border-2 border-r-transparent" />
                             ) : (
                               "Concluir"
@@ -365,10 +369,10 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                     </div>
                   ))}
                 </div>
-                {interacoesPendentes.length > 3 && (
+                {interacoesAbertas.length > 3 && (
                   <div className="text-center pt-2">
                     <Button variant="outline" size="sm" onClick={() => navigate("/crm/leads")}>
-                      Ver mais {interacoesPendentes.length - 3} interações pendentes
+                      Ver mais {interacoesAbertas.length - 3} interações pendentes
                     </Button>
                   </div>
                 )}
@@ -523,14 +527,14 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
           </TabsContent>
           
           <TabsContent value="crm" className="space-y-4">
-            {/* Interações pendentes */}
-            {interacoesPendentes.length > 0 ? (
+            {/* Interações pendentes - agora exibindo apenas com status "Aberto" */}
+            {interacoesAbertas.length > 0 ? (
               <div className="space-y-2">
                 <h3 className="font-medium text-blue-600 flex items-center gap-1">
                   <Clock className="h-4 w-4" /> Interações pendentes
                 </h3>
                 <div className="divide-y">
-                  {interacoesPendentes.map(interacao => (
+                  {interacoesAbertas.map(interacao => (
                     <div key={interacao.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
@@ -566,9 +570,9 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                             variant="secondary" 
                             className="px-2 h-8"
                             onClick={() => marcarInteracaoConcluida(interacao)}
-                            disabled={atualizandoStatus === String(interacao.id)}
+                            disabled={atualizandoStatus === interacao.id}
                           >
-                            {atualizandoStatus === String(interacao.id) ? (
+                            {atualizandoStatus === interacao.id ? (
                               <div className="h-4 w-4 animate-spin rounded-full border-2 border-r-transparent" />
                             ) : (
                               "Concluir"
