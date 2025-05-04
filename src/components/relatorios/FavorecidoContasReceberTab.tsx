@@ -65,7 +65,7 @@ export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasRec
           .from("movimentacoes_parcelas")
           .select("*")
           .in("movimentacao_id", movimentacoesIds)
-          .order("data_vencimento");
+          .order("data_vencimento", { ascending: false }); // Ordenado por data de vencimento decrescente
 
         if (parcError) {
           console.error("Erro ao buscar parcelas:", parcError);
