@@ -166,7 +166,9 @@ export function Dashboard() {
             movimentacao:movimentacao_id(
               tipo_operacao,
               favorecido_id,
-              empresa_id
+              empresa_id,
+              descricao,
+              numero_documento
             )
           `).is('data_pagamento', null).eq('movimentacao.tipo_operacao', 'receber').eq('movimentacao.empresa_id', currentCompany.id);
         if (erroContasReceber) throw erroContasReceber;
@@ -179,77 +181,24 @@ export function Dashboard() {
           return acc;
         }, 0) || 0;
 
-        // Filtrar parcelas em atraso e as que vencem hoje
+        // Buscar parcelas em atraso e as que vencem hoje
         const parcelasEmAtraso: ContaReceber[] = [];
         const parcelasHoje: ContaReceber[] = [];
 
-        if (contasReceber && contasReceber.length > 0) {
-          // Buscar IDs dos favorecidos únicos
-          const favorecidoIds = [...new Set(contasReceber.map(p => p.movimentacao?.favorecido_id).filter(Boolean))];
-
-          // Buscar dados dos favorecidos
-          const {
-            data: favorecidos
-          } = await supabase.from('favorecidos').select('id, nome').in('id', favorecidoIds);
-          const favorecidosMap = new Map();
-          if (favorecidos) {
-            favorecidos.forEach(fav => favorecidosMap.set(fav.id, fav.nome));
-          }
-
-          // Buscar informações das movimentações (para descrição)
-          const movimentacaoIds = [...new Set(contasReceber.map(p => p.movimentacao_id).filter(Boolean))];
-          const {
-            data: movimentacoes
-          } = await supabase.from('movimentacoes').select('id, descricao, numero_documento').in('id', movimentacaoIds);
-          const movimentacoesMap = new Map();
-          if (movimentacoes) {
-            movimentacoes.forEach(mov => movimentacoesMap.set(mov.id, {
-              descricao: mov.descricao,
-              numeroDocumento: mov.numero_documento
-            }));
-          }
-
-          // Separar parcelas em atraso e as que vencem hoje
-          contasReceber.forEach(parcela => {
-            const dataVencimento = new Date(parcela.data_vencimento);
-            dataVencimento.setHours(0, 0, 0, 0);
-            
-            const dataHoje = new Date(); // Renomeado para evitar conflito
-            dataHoje.setHours(0, 0, 0, 0);
-
-            const favorecidoNome = favorecidosMap.get(parcela.movimentacao?.favorecido_id) || 'Desconhecido';
-            const movInfo = movimentacoesMap.get(parcela.movimentacao_id);
-
-            const parcelaFormatada = {
-              id: parcela.id,
-              cliente: favorecidoNome,
-              descricao: movInfo?.descricao || 'Sem descrição',
-              dataVencimento: dataVencimento,
-              valor: Number(parcela.valor),
-              status: 'em_aberto' as 'em_aberto',
-              numeroParcela: movInfo?.numeroDocumento || '-',
-              origem: 'Movimentação',
-              movimentacao_id: parcela.movimentacao_id
-            };
-
-            if (dataVencimento < dataHoje) {
-              parcelasEmAtraso.push(parcelaFormatada);
-            } else if (dataVencimento.getTime() === dataHoje.getTime()) {
-              parcelasHoje.push(parcelaFormatada);
-            }
-          });
-        }
-
-        // 3. Buscar contas a pagar em aberto
+        // Buscar contas a pagar em aberto
         const {
           data: contasPagar,
           error: erroContasPagar
         } = await supabase.from('movimentacoes_parcelas').select(`
             id,
             valor,
+            data_vencimento,
             movimentacao:movimentacao_id(
               tipo_operacao,
-              empresa_id
+              favorecido_id,
+              empresa_id,
+              descricao,
+              numero_documento
             )
           `).is('data_pagamento', null).eq('movimentacao.tipo_operacao', 'pagar').eq('movimentacao.empresa_id', currentCompany.id);
         if (erroContasPagar) throw erroContasPagar;
@@ -262,6 +211,61 @@ export function Dashboard() {
           }
           return acc;
         }, 0) || 0;
+
+        // Combinar contas a pagar e receber para processamento conjunto
+        const todasParcelas = [...(contasReceber || []), ...(contasPagar || [])];
+
+        if (todasParcelas.length > 0) {
+          // Buscar IDs dos favorecidos únicos
+          const favorecidoIds = todasParcelas
+            .map(p => p.movimentacao?.favorecido_id)
+            .filter(Boolean) as string[];
+
+          // Buscar dados dos favorecidos
+          const {
+            data: favorecidos
+          } = await supabase
+            .from('favorecidos')
+            .select('id, nome')
+            .in('id', favorecidoIds);
+          
+          const favorecidosMap = new Map();
+          if (favorecidos) {
+            favorecidos.forEach(fav => favorecidosMap.set(fav.id, fav.nome));
+          }
+
+          // Separar parcelas em atraso e as que vencem hoje
+          todasParcelas.forEach(parcela => {
+            if (!parcela.movimentacao) return;
+            
+            const dataVencimento = new Date(parcela.data_vencimento);
+            dataVencimento.setHours(0, 0, 0, 0);
+            
+            const dataHoje = new Date();
+            dataHoje.setHours(0, 0, 0, 0);
+
+            const favorecidoNome = favorecidosMap.get(parcela.movimentacao.favorecido_id) || 'Desconhecido';
+            
+            const parcelaFormatada: ContaReceber = {
+              id: parcela.id,
+              cliente: favorecidoNome,
+              descricao: parcela.movimentacao.descricao || 'Sem descrição',
+              dataVencimento: dataVencimento,
+              valor: Number(parcela.valor),
+              status: 'em_aberto' as 'em_aberto',
+              numeroParcela: parcela.movimentacao.numero_documento || '-',
+              origem: 'Movimentação',
+              movimentacao_id: parcela.movimentacao_id,
+              tipo: parcela.movimentacao.tipo_operacao
+            };
+
+            if (dataVencimento < dataHoje) {
+              parcelasEmAtraso.push(parcelaFormatada);
+            } else if (dataVencimento.getTime() === dataHoje.getTime()) {
+              parcelasHoje.push(parcelaFormatada);
+            }
+          });
+        }
         
         // 5. Buscar últimas vendas
         const {
@@ -458,7 +462,7 @@ export function Dashboard() {
         <SalesDashboardCard title="Vendas do Mês" value={formatCurrency(dashboardData.totalVendas)} description="Total do mês atual" icon="money" />
         <SalesDashboardCard title="Total de Orçamentos" value={formatCurrency(dashboardData.totalOrcamentos)} description="Soma de todos os orçamentos ativos" icon="chart" />
         <SalesDashboardCard title="Contas a Pagar" value={formatCurrency(dashboardData.contasPagar)} description="Pagamentos pendentes" icon="sales" />
-        <SalesDashboardCard title="Contas a Receber" value={formatCurrency(dashboardData.contasReceber)} description={`${dashboardData.parcelasEmAtraso.length} título(s) em atraso`} icon="users" />
+        <SalesDashboardCard title="Contas a Receber" value={formatCurrency(dashboardData.contasReceber)} description={`${dashboardData.parcelasEmAtraso.filter(p => p.tipo === 'receber').length} título(s) em atraso`} icon="users" />
       </div>
       
       <div className="grid gap-6 md:grid-cols-2">

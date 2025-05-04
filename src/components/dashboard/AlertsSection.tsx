@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,6 +34,11 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
   // Função para navegar para a página de contas a receber
   const navegarParaContasReceber = () => {
     navigate("/financeiro/contas-a-receber");
+  };
+  
+  // Função para navegar para a página de contas a pagar
+  const navegarParaContasPagar = () => {
+    navigate("/financeiro/contas-a-pagar");
   };
   
   // Função para navegar para a página de leads
@@ -114,6 +120,12 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
     );
   }
 
+  // Separar parcelas por tipo (receber/pagar)
+  const parcelasVencidasReceber = parcelasVencidas.filter(p => p.tipo === 'receber');
+  const parcelasVencidasPagar = parcelasVencidas.filter(p => p.tipo === 'pagar');
+  const parcelasHojeReceber = parcelasHoje.filter(p => p.tipo === 'receber');
+  const parcelasHojePagar = parcelasHoje.filter(p => p.tipo === 'pagar');
+
   return (
     <Card className="shadow-md">
       <CardHeader className="pb-3">
@@ -150,19 +162,19 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
           </TabsList>
           
           <TabsContent value="tudo" className="space-y-4">
-            {/* Parcelas em atraso */}
-            {parcelasVencidas.length > 0 && (
+            {/* Contas a receber em atraso */}
+            {parcelasVencidasReceber.length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-medium text-destructive flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" /> Contas em atraso
+                  <AlertCircle className="h-4 w-4" /> Contas a Receber em atraso
                 </h3>
                 <div className="divide-y">
-                  {parcelasVencidas.slice(0, 3).map(parcela => (
+                  {parcelasVencidasReceber.slice(0, 3).map(parcela => (
                     <div key={parcela.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
                           <p className="font-medium">{parcela.cliente}</p>
-                          <p className="text-sm text-muted-foreground">{parcela.descricao}</p>
+                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
                           <div className="flex items-center gap-2 text-sm">
                             <CalendarClock className="h-3.5 w-3.5 text-red-600" />
                             <span className="text-red-600">
@@ -178,29 +190,67 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                     </div>
                   ))}
                 </div>
-                {parcelasVencidas.length > 3 && (
+                {parcelasVencidasReceber.length > 3 && (
                   <div className="text-center pt-2">
                     <Button variant="outline" size="sm" onClick={navegarParaContasReceber}>
-                      Ver mais {parcelasVencidas.length - 3} contas em atraso
+                      Ver mais {parcelasVencidasReceber.length - 3} contas a receber em atraso
                     </Button>
                   </div>
                 )}
               </div>
             )}
             
-            {/* Parcelas de hoje */}
-            {parcelasHoje.length > 0 && (
+            {/* Contas a pagar em atraso */}
+            {parcelasVencidasPagar.length > 0 && (
               <div className="space-y-2">
-                <h3 className="font-medium text-amber-600 flex items-center gap-1">
-                  <Calendar className="h-4 w-4" /> Contas vencem hoje
+                <h3 className="font-medium text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-4 w-4" /> Contas a Pagar em atraso
                 </h3>
                 <div className="divide-y">
-                  {parcelasHoje.slice(0, 3).map(parcela => (
+                  {parcelasVencidasPagar.slice(0, 3).map(parcela => (
                     <div key={parcela.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
                           <p className="font-medium">{parcela.cliente}</p>
-                          <p className="text-sm text-muted-foreground">{parcela.descricao}</p>
+                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
+                          <div className="flex items-center gap-2 text-sm">
+                            <CalendarClock className="h-3.5 w-3.5 text-red-600" />
+                            <span className="text-red-600">
+                              Vencido em {format(new Date(parcela.dataVencimento), 'dd/MM/yyyy')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-destructive">{formatCurrency(parcela.valor)}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{parcela.numeroParcela}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {parcelasVencidasPagar.length > 3 && (
+                  <div className="text-center pt-2">
+                    <Button variant="outline" size="sm" onClick={navegarParaContasPagar}>
+                      Ver mais {parcelasVencidasPagar.length - 3} contas a pagar em atraso
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Parcelas a receber que vencem hoje */}
+            {parcelasHojeReceber.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium text-amber-600 flex items-center gap-1">
+                  <Calendar className="h-4 w-4" /> Contas a Receber vencem hoje
+                </h3>
+                <div className="divide-y">
+                  {parcelasHojeReceber.slice(0, 3).map(parcela => (
+                    <div key={parcela.id} className="py-2">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="font-medium">{parcela.cliente}</p>
+                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
                           <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-3.5 w-3.5 text-amber-600" />
                             <span className="text-amber-600">Vence hoje</span>
@@ -214,10 +264,46 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                     </div>
                   ))}
                 </div>
-                {parcelasHoje.length > 3 && (
+                {parcelasHojeReceber.length > 3 && (
                   <div className="text-center pt-2">
                     <Button variant="outline" size="sm" onClick={navegarParaContasReceber}>
-                      Ver mais {parcelasHoje.length - 3} contas de hoje
+                      Ver mais {parcelasHojeReceber.length - 3} contas a receber para hoje
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Parcelas a pagar que vencem hoje */}
+            {parcelasHojePagar.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium text-amber-600 flex items-center gap-1">
+                  <Calendar className="h-4 w-4" /> Contas a Pagar vencem hoje
+                </h3>
+                <div className="divide-y">
+                  {parcelasHojePagar.slice(0, 3).map(parcela => (
+                    <div key={parcela.id} className="py-2">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="font-medium">{parcela.cliente}</p>
+                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="h-3.5 w-3.5 text-amber-600" />
+                            <span className="text-amber-600">Vence hoje</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-amber-600">{formatCurrency(parcela.valor)}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{parcela.numeroParcela}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {parcelasHojePagar.length > 3 && (
+                  <div className="text-center pt-2">
+                    <Button variant="outline" size="sm" onClick={navegarParaContasPagar}>
+                      Ver mais {parcelasHojePagar.length - 3} contas a pagar para hoje
                     </Button>
                   </div>
                 )}
@@ -292,19 +378,19 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
           </TabsContent>
           
           <TabsContent value="financeiro" className="space-y-4">
-            {/* Parcelas em atraso */}
-            {parcelasVencidas.length > 0 && (
+            {/* Contas a Receber em atraso */}
+            {parcelasVencidasReceber.length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-medium text-destructive flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" /> Contas em atraso
+                  <AlertCircle className="h-4 w-4" /> Contas a Receber em atraso
                 </h3>
                 <div className="divide-y">
-                  {parcelasVencidas.map(parcela => (
+                  {parcelasVencidasReceber.map(parcela => (
                     <div key={parcela.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
                           <p className="font-medium">{parcela.cliente}</p>
-                          <p className="text-sm text-muted-foreground">{parcela.descricao}</p>
+                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
                           <div className="flex items-center gap-2 text-sm">
                             <CalendarClock className="h-3.5 w-3.5 text-red-600" />
                             <span className="text-red-600">
@@ -320,22 +406,63 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                     </div>
                   ))}
                 </div>
+                <div className="text-center pt-2">
+                  <Button variant="outline" size="sm" onClick={navegarParaContasReceber}>
+                    Gerenciar contas a receber
+                  </Button>
+                </div>
               </div>
             )}
             
-            {/* Parcelas de hoje */}
-            {parcelasHoje.length > 0 && (
+            {/* Contas a Pagar em atraso */}
+            {parcelasVencidasPagar.length > 0 && (
               <div className="space-y-2 mt-4">
-                <h3 className="font-medium text-amber-600 flex items-center gap-1">
-                  <Calendar className="h-4 w-4" /> Contas vencem hoje
+                <h3 className="font-medium text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-4 w-4" /> Contas a Pagar em atraso
                 </h3>
                 <div className="divide-y">
-                  {parcelasHoje.map(parcela => (
+                  {parcelasVencidasPagar.map(parcela => (
                     <div key={parcela.id} className="py-2">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
                           <p className="font-medium">{parcela.cliente}</p>
-                          <p className="text-sm text-muted-foreground">{parcela.descricao}</p>
+                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
+                          <div className="flex items-center gap-2 text-sm">
+                            <CalendarClock className="h-3.5 w-3.5 text-red-600" />
+                            <span className="text-red-600">
+                              Vencido em {format(new Date(parcela.dataVencimento), 'dd/MM/yyyy')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-destructive">{formatCurrency(parcela.valor)}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{parcela.numeroParcela}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-center pt-2">
+                  <Button variant="outline" size="sm" onClick={navegarParaContasPagar}>
+                    Gerenciar contas a pagar
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Contas a receber para hoje */}
+            {parcelasHojeReceber.length > 0 && (
+              <div className="space-y-2 mt-4">
+                <h3 className="font-medium text-amber-600 flex items-center gap-1">
+                  <Calendar className="h-4 w-4" /> Contas a Receber vencem hoje
+                </h3>
+                <div className="divide-y">
+                  {parcelasHojeReceber.map(parcela => (
+                    <div key={parcela.id} className="py-2">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="font-medium">{parcela.cliente}</p>
+                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
                           <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-3.5 w-3.5 text-amber-600" />
                             <span className="text-amber-600">Vence hoje</span>
@@ -352,7 +479,37 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
               </div>
             )}
             
-            {parcelasVencidas.length === 0 && parcelasHoje.length === 0 && (
+            {/* Contas a pagar para hoje */}
+            {parcelasHojePagar.length > 0 && (
+              <div className="space-y-2 mt-4">
+                <h3 className="font-medium text-amber-600 flex items-center gap-1">
+                  <Calendar className="h-4 w-4" /> Contas a Pagar vencem hoje
+                </h3>
+                <div className="divide-y">
+                  {parcelasHojePagar.map(parcela => (
+                    <div key={parcela.id} className="py-2">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="font-medium">{parcela.cliente}</p>
+                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="h-3.5 w-3.5 text-amber-600" />
+                            <span className="text-amber-600">Vence hoje</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-amber-600">{formatCurrency(parcela.valor)}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{parcela.numeroParcela}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {parcelasVencidasReceber.length === 0 && parcelasVencidasPagar.length === 0 && 
+             parcelasHojeReceber.length === 0 && parcelasHojePagar.length === 0 && (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <CheckCircle2 className="h-12 w-12 text-green-500 mb-2" />
                 <h3 className="text-lg font-medium">Sem pendências financeiras</h3>
@@ -362,10 +519,14 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
               </div>
             )}
             
-            {(parcelasVencidas.length > 0 || parcelasHoje.length > 0) && (
-              <div className="text-center pt-4">
+            {(parcelasVencidasReceber.length > 0 || parcelasVencidasPagar.length > 0 || 
+              parcelasHojeReceber.length > 0 || parcelasHojePagar.length > 0) && (
+              <div className="grid gap-4 grid-cols-2 pt-4">
                 <Button onClick={navegarParaContasReceber}>
                   Gerenciar contas a receber
+                </Button>
+                <Button onClick={navegarParaContasPagar}>
+                  Gerenciar contas a pagar
                 </Button>
               </div>
             )}
