@@ -1,15 +1,13 @@
 
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 // Função para mesclar classes CSS, mantendo a original
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Função para formatar datas sem considerar timezone
+// Função para formatar datas sem considerar timezone, mantendo o formato original
 export function formatDate(date: Date | undefined | string, formatString = "dd/MM/yyyy"): string {
   if (!date) return "";
   
@@ -35,16 +33,15 @@ export function formatDate(date: Date | undefined | string, formatString = "dd/M
   }
   
   try {
-    // Para objetos Date, usar a formatação do date-fns
+    // Para objetos Date, extrair componentes e formatar manualmente
     if (date instanceof Date) {
-      // Extrair componentes da data para recriar sem timezone
       const day = String(date.getDate()).padStart(2, '0');
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const year = date.getFullYear();
       return `${day}/${month}/${year}`;
     }
     
-    // Último recurso: tentar criar um Date e formatar
+    // Último recurso: tentar criar um Date e formatar manualmente
     const dateObj = new Date(date as any);
     const day = String(dateObj.getDate()).padStart(2, '0');
     const month = String(dateObj.getMonth() + 1).padStart(2, '0');

@@ -1,10 +1,11 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
 import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
 import { BanknoteIcon, CalendarX, CreditCard, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
 import { ContaCorrente } from "@/types/conta-corrente";
@@ -287,7 +288,7 @@ export function Dashboard() {
             favorecido: venda.favorecido?.nome || 'Cliente não identificado',
             codigo: venda.codigo,
             valor: totalVenda,
-            data: venda.data_venda ? format(new Date(venda.data_venda), 'dd/MM/yyyy') : '-'
+            data: venda.data_venda ? formatDate(venda.data_venda) : '-'
           };
         }) || [];
 
