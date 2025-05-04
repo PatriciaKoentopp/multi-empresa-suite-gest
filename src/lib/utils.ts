@@ -13,45 +13,46 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDate(date: Date | undefined | string, formatString = "dd/MM/yyyy"): string {
   if (!date) return "";
   
-  let dateObj: Date;
-  
-  // Se for string, precisamos converter para Date
+  // Se for string no formato ISO YYYY-MM-DD
   if (typeof date === "string") {
-    // Se a data estiver no formato ISO ou YYYY-MM-DD
+    // Caso seja apenas data: YYYY-MM-DD
     if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      const [year, month, day] = date.split('-').map(Number);
-      dateObj = new Date(year, month - 1, day);
-    } 
-    // Se for uma string ISO com data e hora
-    else if (date.includes('T')) {
-      const datePart = date.split('T')[0];
-      const [year, month, day] = datePart.split('-').map(Number);
-      dateObj = new Date(year, month - 1, day);
-    } 
-    // Qualquer outro formato de data
-    else {
-      const parts = date.split('/');
-      if (parts.length === 3) {
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const year = parseInt(parts[2], 10);
-        dateObj = new Date(year, month, day);
-      } else {
-        dateObj = new Date(date);
-      }
+      const [year, month, day] = date.split('-');
+      return `${day}/${month}/${year}`;
     }
-  } 
-  // Se já for um objeto Date
-  else {
-    dateObj = date;
+    
+    // Caso seja ISO com tempo: YYYY-MM-DDThh:mm:ss
+    if (date.includes('T')) {
+      const dataPart = date.split('T')[0];
+      const [year, month, day] = dataPart.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    
+    // Se já estiver no formato DD/MM/YYYY, retorne como está
+    if (date.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      return date;
+    }
   }
   
-  // Formatar a data usando date-fns
   try {
-    return format(dateObj, formatString, { locale: ptBR });
+    // Para objetos Date, usar a formatação do date-fns
+    if (date instanceof Date) {
+      // Extrair componentes da data para recriar sem timezone
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+    
+    // Último recurso: tentar criar um Date e formatar
+    const dateObj = new Date(date as any);
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const year = dateObj.getFullYear();
+    return `${day}/${month}/${year}`;
   } catch (error) {
     console.error("Erro ao formatar data:", error);
-    return "";
+    return String(date);
   }
 }
 

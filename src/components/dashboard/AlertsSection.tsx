@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Bell, CalendarClock, CreditCard, Clock, Calendar, AlertCircle, CheckCircle2 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
 import { LeadInteracao } from "@/pages/crm/leads/types";
@@ -31,71 +30,6 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
   const totalInteracoes = interacoesAbertas.length;
   const totalParcelas = parcelasVencidas.length + parcelasHoje.length;
   const total = totalInteracoes + totalParcelas;
-  
-  // Função para formatar data no padrão DD/MM/YYYY sem timezone
-  function formatDate(data: Date | string | undefined): string {
-    if (!data) return "-";
-    
-    // Se já for uma string no formato DD/MM/YYYY, retornar como está
-    if (typeof data === "string" && /^\d{2}\/\d{2}\/\d{4}$/.test(data)) {
-      return data;
-    }
-    
-    // Se for uma string ISO com formato YYYY-MM-DD
-    if (typeof data === "string" && data.includes("-")) {
-      // Pode ser um formato ISO completo (com T) ou apenas YYYY-MM-DD
-      const dataParts = data.split("T")[0].split("-");
-      if (dataParts.length === 3) {
-        const [ano, mes, dia] = dataParts;
-        // Garantir que não haja alteração na data por causa do timezone
-        return `${dia}/${mes}/${ano}`;
-      }
-    }
-    
-    // Para objetos Date, criar string manualmente para evitar problemas de timezone
-    if (data instanceof Date) {
-      // Usar UTC para evitar qualquer ajuste de timezone
-      const dia = String(data.getUTCDate()).padStart(2, "0");
-      const mes = String(data.getUTCMonth() + 1).padStart(2, "0");
-      const ano = data.getUTCFullYear();
-      return `${dia}/${mes}/${ano}`;
-    }
-    
-    // Se chegou aqui, tentar criar uma data e usar UTC para formatar
-    try {
-      // Criar a data usando o parser manual para evitar ajustes de timezone
-      const dataStr = String(data);
-      
-      // Se for formato ISO com data e hora (YYYY-MM-DDThh:mm:ss)
-      if (dataStr.includes("T")) {
-        const [dataPart] = dataStr.split("T");
-        const [ano, mes, dia] = dataPart.split("-").map(Number);
-        // Criar data usando componentes específicos (ano, mês, dia) para evitar ajuste de timezone
-        return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${ano}`;
-      }
-      
-      // Se for formato YYYY-MM-DD
-      if (dataStr.includes("-")) {
-        const [ano, mes, dia] = dataStr.split("-").map(Number);
-        return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${ano}`;
-      }
-      
-      // Último recurso - criar data e extrair componentes
-      const dataObj = new Date(dataStr);
-      if (!isNaN(dataObj.getTime())) {
-        // Usar getUTCDate para evitar ajustes de timezone
-        const dia = String(dataObj.getUTCDate()).padStart(2, "0");
-        const mes = String(dataObj.getUTCMonth() + 1).padStart(2, "0");
-        const ano = dataObj.getUTCFullYear();
-        return `${dia}/${mes}/${ano}`;
-      }
-    } catch (e) {
-      console.error("Erro ao formatar data:", e, "Data original:", data);
-    }
-    
-    // Fallback caso nenhum método funcione
-    return typeof data === "string" ? data : "-";
-  }
   
   // Função para navegar para a página de contas a receber
   const navegarParaContasReceber = () => {

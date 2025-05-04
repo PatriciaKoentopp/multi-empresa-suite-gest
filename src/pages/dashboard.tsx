@@ -6,8 +6,6 @@ import { BanknoteIcon, CalendarX, CreditCard, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
 import { ContaCorrente } from "@/types/conta-corrente";
 import { useAuth } from "@/contexts/auth-context";
@@ -77,9 +75,9 @@ export function Dashboard() {
         const inicioMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
 
         // Formato para o Supabase: YYYY-MM-DD
-        const hojeFormatado = format(hoje, 'yyyy-MM-dd');
-        const inicioMesFormatado = format(inicioMes, 'yyyy-MM-dd');
-        const inicioMesAnteriorFormatado = format(inicioMesAnterior, 'yyyy-MM-dd');
+        const hojeFormatado = hoje.toISOString().split('T')[0];
+        const inicioMesFormatado = inicioMes.toISOString().split('T')[0];
+        const inicioMesAnteriorFormatado = inicioMesAnterior.toISOString().split('T')[0];
 
         // 1. Buscar contas correntes e seus saldos
         const { data: contasCorrentes, error: erroContasCorrentes } = await supabase
@@ -234,22 +232,24 @@ export function Dashboard() {
           }
 
           // Separar parcelas em atraso e as que vencem hoje
+          const parcelasEmAtraso: ContaReceber[] = [];
+          const parcelasHoje: ContaReceber[] = [];
+          
           todasParcelas.forEach(parcela => {
             if (!parcela.movimentacao) return;
             
-            const dataVencimento = new Date(parcela.data_vencimento);
-            dataVencimento.setHours(0, 0, 0, 0);
+            const dataVencimento = parcela.data_vencimento;
+            const dataHoje = hojeFormatado;
             
-            const dataHoje = new Date();
-            dataHoje.setHours(0, 0, 0, 0);
-
             const favorecidoNome = favorecidosMap.get(parcela.movimentacao.favorecido_id) || 'Desconhecido';
             
+            // IMPORTANTE: Não converter as datas para objetos Date
+            // Usar diretamente a string da data do banco
             const parcelaFormatada: ContaReceber = {
               id: parcela.id,
               cliente: favorecidoNome,
               descricao: parcela.movimentacao.descricao || 'Sem descrição',
-              dataVencimento: dataVencimento,
+              dataVencimento: parcela.data_vencimento, // Usar a data como string diretamente
               valor: Number(parcela.valor),
               status: 'em_aberto' as 'em_aberto',
               numeroParcela: parcela.movimentacao.numero_documento || '-',
@@ -258,12 +258,14 @@ export function Dashboard() {
               tipo: parcela.movimentacao.tipo_operacao
             };
 
+            // Comparar as strings de data diretamente
             if (dataVencimento < dataHoje) {
               parcelasEmAtraso.push(parcelaFormatada);
-            } else if (dataVencimento.getTime() === dataHoje.getTime()) {
+            } else if (dataVencimento === dataHoje) {
               parcelasHoje.push(parcelaFormatada);
             }
           });
+
         }
         
         // 5. Buscar últimas vendas
