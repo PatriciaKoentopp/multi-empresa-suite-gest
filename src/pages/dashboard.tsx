@@ -38,12 +38,8 @@ interface DashboardData {
 }
 
 export function Dashboard() {
-  const {
-    currentCompany
-  } = useCompany();
-  const {
-    toast
-  } = useToast();
+  const { currentCompany } = useCompany();
+  const { toast } = useToast();
   const { userData } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData>({
