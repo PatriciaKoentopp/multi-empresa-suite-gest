@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -326,8 +327,8 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                           </p>
                           <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-3.5 w-3.5 text-blue-600" />
-                            <span className={new Date(interacao.data) < new Date() ? "text-red-600" : "text-blue-600"}>
-                              {new Date(interacao.data) < new Date() 
+                            <span className={interacao.data < hojeFormatado ? "text-red-600" : "text-blue-600"}>
+                              {interacao.data < hojeFormatado 
                                 ? `Atrasado desde ${formatDate(interacao.data)}` 
                                 : formatDate(interacao.data)}
                             </span>
@@ -540,8 +541,8 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                           </p>
                           <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-3.5 w-3.5 text-blue-600" />
-                            <span className={new Date(interacao.data) < new Date() ? "text-red-600" : "text-blue-600"}>
-                              {new Date(interacao.data) < new Date() 
+                            <span className={interacao.data < hojeFormatado ? "text-red-600" : "text-blue-600"}>
+                              {interacao.data < hojeFormatado 
                                 ? `Atrasado desde ${formatDate(interacao.data)}` 
                                 : formatDate(interacao.data)}
                             </span>
@@ -595,3 +596,8 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
     </Card>
   );
 }
+
+// Definir a data de hoje para comparações (formato YYYY-MM-DD)
+const hoje = new Date();
+const hojeFormatado = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+

@@ -233,9 +233,6 @@ export function Dashboard() {
           }
 
           // Separar parcelas em atraso e as que vencem hoje
-          const parcelasEmAtraso: ContaReceber[] = [];
-          const parcelasHoje: ContaReceber[] = [];
-          
           todasParcelas.forEach(parcela => {
             if (!parcela.movimentacao) return;
             
@@ -244,13 +241,11 @@ export function Dashboard() {
             
             const favorecidoNome = favorecidosMap.get(parcela.movimentacao.favorecido_id) || 'Desconhecido';
             
-            // IMPORTANTE: Não converter as datas para objetos Date
-            // Usar diretamente a string da data do banco
             const parcelaFormatada: ContaReceber = {
               id: parcela.id,
               cliente: favorecidoNome,
               descricao: parcela.movimentacao.descricao || 'Sem descrição',
-              dataVencimento: parcela.data_vencimento, // Usar a data como string diretamente
+              dataVencimento: dataVencimento, // Mantido como string
               valor: Number(parcela.valor),
               status: 'em_aberto' as 'em_aberto',
               numeroParcela: parcela.movimentacao.numero_documento || '-',
@@ -266,7 +261,6 @@ export function Dashboard() {
               parcelasHoje.push(parcelaFormatada);
             }
           });
-
         }
         
         // 5. Buscar últimas vendas
@@ -282,6 +276,7 @@ export function Dashboard() {
           ascending: false
         }).limit(3);
         if (erroUltimasVendas) throw erroUltimasVendas;
+        
         const vendasFormatadas = ultimasVendas?.map(venda => {
           const totalVenda = venda.orcamentos_itens.reduce((acc: number, item: any) => acc + (Number(item.valor) || 0), 0);
           return {
