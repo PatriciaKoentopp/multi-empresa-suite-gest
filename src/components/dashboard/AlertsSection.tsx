@@ -1,9 +1,9 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Bell, CalendarClock, CreditCard, Clock, Calendar, AlertCircle, CheckCircle2 } from "lucide-react";
-import { formatDate } from "@/pages/crm/leads/utils/leadUtils";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
@@ -31,6 +31,37 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
   const totalInteracoes = interacoesAbertas.length;
   const totalParcelas = parcelasVencidas.length + parcelasHoje.length;
   const total = totalInteracoes + totalParcelas;
+  
+  // Função para formatar data no padrão DD/MM/YYYY sem timezone
+  function formatDate(data: Date | string): string {
+    if (!data) return "-";
+    
+    // Se já for uma string no formato DD/MM/YYYY, retornar como está
+    if (typeof data === "string" && /^\d{2}\/\d{2}\/\d{4}$/.test(data)) {
+      return data;
+    }
+    
+    let dataObj: Date;
+    
+    if (typeof data === "string") {
+      // Usar split para garantir que não haja problemas com timezone
+      if (data.includes("-")) {
+        const [ano, mes, dia] = data.split("T")[0].split("-");
+        return `${dia}/${mes}/${ano}`;
+      }
+      // Se não tem o formato esperado, tentar criar um objeto Date
+      dataObj = new Date(data);
+    } else {
+      dataObj = data;
+    }
+    
+    // Formatar manualmente para evitar problemas de timezone
+    const dia = String(dataObj.getDate()).padStart(2, "0");
+    const mes = String(dataObj.getMonth() + 1).padStart(2, "0");
+    const ano = dataObj.getFullYear();
+    
+    return `${dia}/${mes}/${ano}`;
+  }
   
   // Função para navegar para a página de contas a receber
   const navegarParaContasReceber = () => {
@@ -596,3 +627,4 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
     </Card>
   );
 }
+
