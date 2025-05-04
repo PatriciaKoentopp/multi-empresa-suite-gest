@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,14 +63,14 @@ export default function ContasAReceberPage() {
     }
   }, [currentCompany]);
 
-  // Função auxiliar para criar uma data a partir da string do banco sem timezone
+  // Função para criar uma data a partir de uma string YYYY-MM-DD sem conversão de timezone
   function criarDataSemTimezone(dataStr?: string): Date | undefined {
     if (!dataStr) return undefined;
     
     // Separar a data em partes (formato esperado: YYYY-MM-DD)
     const [ano, mes, dia] = dataStr.split('-').map(Number);
     
-    // Criar um objeto Date usando as partes da data (mês em JS é 0-indexed)
+    // Criar um objeto Date com ano, mês e dia (sem hora para evitar problemas de timezone)
     return new Date(ano, mes - 1, dia);
   }
 
@@ -142,13 +141,13 @@ export default function ContasAReceberPage() {
   function determinarStatus(dataVencimento: string, dataPagamento?: string): ContaReceber['status'] {
     if (!dataPagamento) return "em_aberto";
     
-    // Comparar datas sem conversão de timezone
-    const vencimentoParts = dataVencimento.split('-').map(Number);
-    const pagamentoParts = dataPagamento.split('-').map(Number);
+    // Separar as datas em partes (formato esperado: YYYY-MM-DD)
+    const [anoVenc, mesVenc, diaVenc] = dataVencimento.split('-').map(Number);
+    const [anoPag, mesPag, diaPag] = dataPagamento.split('-').map(Number);
     
     // Criar objetos Date usando ano, mês, dia (sem preocupação com timezone)
-    const vencimento = new Date(vencimentoParts[0], vencimentoParts[1] - 1, vencimentoParts[2]);
-    const pagamento = new Date(pagamentoParts[0], pagamentoParts[1] - 1, pagamentoParts[2]);
+    const vencimento = new Date(anoVenc, mesVenc - 1, diaVenc);
+    const pagamento = new Date(anoPag, mesPag - 1, diaPag);
     
     return pagamento > vencimento ? "recebido_em_atraso" : "recebido";
   }
@@ -313,8 +312,11 @@ export default function ContasAReceberPage() {
   }) {
     if (!contaParaBaixar) return;
 
-    // Formatar data para YYYY-MM-DD sem timezone
-    const dataFormated = `${dataRecebimento.getFullYear()}-${String(dataRecebimento.getMonth() + 1).padStart(2, '0')}-${String(dataRecebimento.getDate()).padStart(2, '0')}`;
+    // Formatar data para YYYY-MM-DD (sem timezone)
+    const dia = String(dataRecebimento.getDate()).padStart(2, '0');
+    const mes = String(dataRecebimento.getMonth() + 1).padStart(2, '0');
+    const ano = dataRecebimento.getFullYear();
+    const dataFormated = `${ano}-${mes}-${dia}`;
 
     // Atualiza no banco
     supabase

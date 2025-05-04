@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ export function ContasAReceberTable({
   function formatData(data?: Date) {
     if (!data) return "-";
     
-    // Formatar a data diretamente como DD/MM/YYYY sem considerar timezone
+    // Formatar a data no padrão DD/MM/YYYY sem considerar timezone
     const dia = String(data.getDate()).padStart(2, '0');
     const mes = String(data.getMonth() + 1).padStart(2, '0');
     const ano = data.getFullYear();
