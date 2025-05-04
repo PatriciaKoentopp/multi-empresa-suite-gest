@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
@@ -310,14 +309,15 @@ export function Dashboard() {
         let interacoesPendentes: LeadInteracao[] = [];
         
         if (interacoes && interacoes.length > 0) {
-          // Filtrar apenas interações de leads da empresa atual
+          // Filtrar apenas interações de leads da empresa atual e com status ativo
           const leadIds = [...new Set(interacoes.map(i => i.lead_id))];
           
           const { data: leadsInfo } = await supabase
             .from('leads')
-            .select('id, nome, empresa, empresa_id')
+            .select('id, nome, empresa, empresa_id, status')
             .in('id', leadIds)
-            .eq('empresa_id', currentCompany.id);
+            .eq('empresa_id', currentCompany.id)
+            .eq('status', 'ativo'); // MODIFICAÇÃO: Apenas leads com status "ativo"
             
           // Criar um mapa para lookups rápidos
           const leadsMap = new Map();
@@ -338,11 +338,11 @@ export function Dashboard() {
             usuariosInfo.forEach(user => usuariosMap.set(user.id, user));
           }
           
-          // Agora formatamos as interações apenas para leads da empresa atual
+          // Agora formatamos as interações apenas para leads da empresa atual e com status "ativo"
           interacoesPendentes = interacoes
             .filter(interacao => {
               const lead = leadsMap.get(interacao.lead_id);
-              return lead && lead.empresa_id === currentCompany.id;
+              return lead && lead.empresa_id === currentCompany.id && lead.status === 'ativo';
             })
             .map(interacao => {
               const lead = leadsMap.get(interacao.lead_id);
