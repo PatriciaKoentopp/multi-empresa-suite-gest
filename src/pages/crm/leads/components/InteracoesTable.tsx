@@ -96,13 +96,16 @@ export function InteracoesTable({
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       )}
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => onDelete(interacao)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                    {interacao.status === "Aberto" && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => onDelete(interacao)}
+                        title="Excluir interação"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

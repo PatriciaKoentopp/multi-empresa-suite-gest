@@ -60,8 +60,44 @@ export function InteracoesTab({
 
   // Função para abrir o diálogo de confirmação de exclusão
   const prepararExclusaoInteracao = (interacao: LeadInteracao) => {
+    // Verificar se a interação está aberta antes de permitir a exclusão
+    if (interacao.status !== "Aberto") {
+      toast.error("Não é possível excluir", {
+        description: "Somente interações com status Aberto podem ser excluídas."
+      });
+      return;
+    }
+    
     setInteracaoSelecionada(interacao);
     setIsDeleteDialogOpen(true);
+  };
+  
+  // Função para excluir uma interação selecionada
+  const excluirInteracaoSelecionada = async () => {
+    if (!interacaoSelecionada || !interacaoSelecionada.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('leads_interacoes')
+        .delete()
+        .eq('id', interacaoSelecionada.id);
+      
+      if (error) throw error;
+      
+      // Remover do estado local
+      const interacoesAtualizadas = interacoes.filter(item => item.id !== interacaoSelecionada.id);
+      // Como não temos acesso direto ao setter da lista de interações, vamos usar toast para informar o usuário
+      toast.success("Interação excluída com sucesso");
+      
+      // Fechar o diálogo
+      setIsDeleteDialogOpen(false);
+      
+    } catch (error) {
+      console.error('Erro ao excluir interação:', error);
+      toast.error("Erro ao excluir", {
+        description: "Não foi possível excluir a interação."
+      });
+    }
   };
 
   // Handler para mudanças no formulário de edição de interação
@@ -204,13 +240,7 @@ export function InteracoesTab({
       <InteracaoDeleteDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        onDelete={() => {
-          if (typeof window !== 'undefined') {
-            // Este é um placeholder, a função real será passada pelo componente pai
-            console.log("Excluindo interação", interacaoSelecionada);
-          }
-          setIsDeleteDialogOpen(false);
-        }}
+        onDelete={excluirInteracaoSelecionada}
       />
     </div>
   );

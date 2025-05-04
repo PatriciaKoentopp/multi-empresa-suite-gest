@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -341,6 +340,40 @@ export function LeadFormModal({
   }
 };
 
+  // Função para excluir uma interação
+  const excluirInteracao = async (interacaoId: string | number) => {
+    if (!interacaoId) return;
+    
+    try {
+      // Verificar o status da interação antes de excluir
+      const interacaoParaExcluir = interacoes.find(item => item.id === interacaoId);
+      if (interacaoParaExcluir && interacaoParaExcluir.status !== "Aberto") {
+        toast.error("Não é possível excluir", {
+          description: "Somente interações com status Aberto podem ser excluídas."
+        });
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('leads_interacoes')
+        .delete()
+        .eq('id', interacaoId);
+      
+      if (error) throw error;
+      
+      // Atualizar a lista local
+      setInteracoes(prev => prev.filter(item => item.id !== interacaoId));
+      
+      toast.success("Interação excluída com sucesso");
+      
+    } catch (error) {
+      console.error('Erro ao excluir interação:', error);
+      toast.error("Erro ao excluir", {
+        description: "Ocorreu um erro ao excluir a interação."
+      });
+    }
+  };
+
   // Função para confirmar a edição da interação
   const confirmarEdicaoInteracao = async (interacaoEditada: LeadInteracao) => {
   if (!interacaoEditada) return;
@@ -375,26 +408,6 @@ export function LeadFormModal({
     console.error('Erro ao atualizar interação:', error);
   }
 };
-
-  // Função para excluir uma interação
-  const excluirInteracao = async (interacaoId: string | number) => {
-    if (!interacaoId) return;
-    
-    try {
-      const { error } = await supabase
-        .from('leads_interacoes')
-        .delete()
-        .eq('id', interacaoId);
-      
-      if (error) throw error;
-      
-      // Atualizar a lista local
-      setInteracoes(prev => prev.filter(item => item.id !== interacaoId));
-      
-    } catch (error) {
-      console.error('Erro ao excluir interação:', error);
-    }
-  };
 
   // Filtrar apenas origens ativas
   const origensAtivas = origens.filter(origem => origem.status === "ativo");
