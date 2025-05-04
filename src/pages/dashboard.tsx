@@ -287,50 +287,77 @@ export function Dashboard() {
         }) || [];
 
         // 6. Buscar interações de leads pendentes com data igual ou anterior a hoje
-        // Corrigido: Evitando redeclarar a variável hoje
         const dataLimiteInteracoes = new Date();
         dataLimiteInteracoes.setHours(23, 59, 59, 999); // Final do dia hoje
         
+        // CORREÇÃO: Modificando a query para não usar relacionamentos que estão causando erro
         const {
           data: interacoes,
           error: erroInteracoes
         } = await supabase
           .from('leads_interacoes')
-          .select(`
-            id,
-            lead_id,
-            tipo,
-            descricao,
-            data,
-            responsavel_id,
-            status,
-            leads:lead_id (
-              nome,
-              empresa
-            ),
-            usuarios:responsavel_id (
-              nome
-            )
-          `)
+          .select('*')
           .eq('status', 'Aberto')
-          .lte('data', hojeFormatado)
-          .eq('leads.empresa_id', currentCompany.id);
+          .lte('data', hojeFormatado);
         
         if (erroInteracoes) throw erroInteracoes;
 
-        // Formatar interações pendentes
-        const interacoesPendentes: LeadInteracao[] = interacoes?.map(interacao => ({
-          id: interacao.id,
-          leadId: interacao.lead_id,
-          tipo: interacao.tipo as any,
-          descricao: interacao.descricao,
-          data: interacao.data,
-          responsavelId: interacao.responsavel_id,
-          responsavelNome: interacao.usuarios?.nome,
-          status: interacao.status,
-          leadNome: interacao.leads?.nome,
-          leadEmpresa: interacao.leads?.empresa
-        })) || [];
+        // Precisamos buscar as informações dos leads separadamente
+        let interacoesPendentes: LeadInteracao[] = [];
+        
+        if (interacoes && interacoes.length > 0) {
+          // Filtrar apenas interações de leads da empresa atual
+          const leadIds = [...new Set(interacoes.map(i => i.lead_id))];
+          
+          const { data: leadsInfo } = await supabase
+            .from('leads')
+            .select('id, nome, empresa, empresa_id')
+            .in('id', leadIds)
+            .eq('empresa_id', currentCompany.id);
+            
+          // Criar um mapa para lookups rápidos
+          const leadsMap = new Map();
+          if (leadsInfo) {
+            leadsInfo.forEach(lead => leadsMap.set(lead.id, lead));
+          }
+          
+          // Buscar informações dos responsáveis
+          const responsavelIds = [...new Set(interacoes.map(i => i.responsavel_id).filter(Boolean))];
+          
+          const { data: usuariosInfo } = await supabase
+            .from('usuarios')
+            .select('id, nome')
+            .in('id', responsavelIds);
+            
+          const usuariosMap = new Map();
+          if (usuariosInfo) {
+            usuariosInfo.forEach(user => usuariosMap.set(user.id, user));
+          }
+          
+          // Agora formatamos as interações apenas para leads da empresa atual
+          interacoesPendentes = interacoes
+            .filter(interacao => {
+              const lead = leadsMap.get(interacao.lead_id);
+              return lead && lead.empresa_id === currentCompany.id;
+            })
+            .map(interacao => {
+              const lead = leadsMap.get(interacao.lead_id);
+              const responsavel = usuariosMap.get(interacao.responsavel_id);
+              
+              return {
+                id: interacao.id,
+                leadId: interacao.lead_id,
+                tipo: interacao.tipo as any,
+                descricao: interacao.descricao,
+                data: interacao.data,
+                responsavelId: interacao.responsavel_id,
+                responsavelNome: responsavel?.nome || "Não atribuído",
+                status: interacao.status,
+                leadNome: lead?.nome || "Lead não encontrado",
+                leadEmpresa: lead?.empresa || ""
+              };
+            });
+        }
 
         // Atualizar o estado com todos os dados obtidos
         setDashboardData({

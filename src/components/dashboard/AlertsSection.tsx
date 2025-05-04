@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,7 +43,7 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
   // Função para marcar interação como concluída
   const marcarInteracaoConcluida = async (interacao: LeadInteracao) => {
     try {
-      setAtualizandoStatus(interacao.id.toString());
+      setAtualizandoStatus(String(interacao.id)); // Convertendo para string explicitamente
       
       // Atualizar no banco de dados
       const { error } = await supabase
@@ -268,9 +267,9 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                             variant="secondary" 
                             className="px-2 h-8"
                             onClick={() => marcarInteracaoConcluida(interacao)}
-                            disabled={atualizandoStatus === interacao.id.toString()}
+                            disabled={atualizandoStatus === String(interacao.id)}
                           >
-                            {atualizandoStatus === interacao.id.toString() ? (
+                            {atualizandoStatus === String(interacao.id) ? (
                               <div className="h-4 w-4 animate-spin rounded-full border-2 border-r-transparent" />
                             ) : (
                               "Concluir"
@@ -416,9 +415,9 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                             variant="secondary" 
                             className="px-2 h-8"
                             onClick={() => marcarInteracaoConcluida(interacao)}
-                            disabled={atualizandoStatus === interacao.id.toString()}
+                            disabled={atualizandoStatus === String(interacao.id)}
                           >
-                            {atualizandoStatus === interacao.id.toString() ? (
+                            {atualizandoStatus === String(interacao.id) ? (
                               <div className="h-4 w-4 animate-spin rounded-full border-2 border-r-transparent" />
                             ) : (
                               "Concluir"
