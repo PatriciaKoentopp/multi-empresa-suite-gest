@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -276,7 +277,7 @@ export function LeadFormModal({
 
   // Handler para seleção no formulário de nova interação
   const handleInteracaoSelectChange = (name: string, value: string) => {
-    setNovaInteracao(prev) => ({ ...prev, [name]: value });
+    setNovaInteracao(prev => ({ ...prev, [name]: value }));
   };
 
   // Adicionar interação ao banco de dados
