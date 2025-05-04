@@ -1,11 +1,9 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Bell, CalendarClock, CreditCard, Clock, Calendar, AlertCircle, CheckCircle2 } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatDate } from "@/pages/crm/leads/utils/leadUtils";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
@@ -175,7 +173,7 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                           <div className="flex items-center gap-2 text-sm">
                             <CalendarClock className="h-3.5 w-3.5 text-red-600" />
                             <span className="text-red-600">
-                              Vencido em {format(new Date(parcela.dataVencimento), 'dd/MM/yyyy')}
+                              Vencido em {formatDate(parcela.dataVencimento)}
                             </span>
                           </div>
                         </div>
@@ -213,7 +211,7 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                           <div className="flex items-center gap-2 text-sm">
                             <CalendarClock className="h-3.5 w-3.5 text-red-600" />
                             <span className="text-red-600">
-                              Vencido em {format(new Date(parcela.dataVencimento), 'dd/MM/yyyy')}
+                              Vencido em {formatDate(parcela.dataVencimento)}
                             </span>
                           </div>
                         </div>
@@ -331,8 +329,8 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                             <Calendar className="h-3.5 w-3.5 text-blue-600" />
                             <span className={new Date(interacao.data) < new Date() ? "text-red-600" : "text-blue-600"}>
                               {new Date(interacao.data) < new Date() 
-                                ? `Atrasado desde ${format(new Date(interacao.data), 'dd/MM/yyyy')}` 
-                                : format(new Date(interacao.data), 'dd/MM/yyyy')}
+                                ? `Atrasado desde ${formatDate(interacao.data)}` 
+                                : formatDate(interacao.data)}
                             </span>
                           </div>
                         </div>
@@ -391,7 +389,7 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                           <div className="flex items-center gap-2 text-sm">
                             <CalendarClock className="h-3.5 w-3.5 text-red-600" />
                             <span className="text-red-600">
-                              Vencido em {format(new Date(parcela.dataVencimento), 'dd/MM/yyyy')}
+                              Vencido em {formatDate(parcela.dataVencimento)}
                             </span>
                           </div>
                         </div>
@@ -422,7 +420,7 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                           <div className="flex items-center gap-2 text-sm">
                             <CalendarClock className="h-3.5 w-3.5 text-red-600" />
                             <span className="text-red-600">
-                              Vencido em {format(new Date(parcela.dataVencimento), 'dd/MM/yyyy')}
+                              Vencido em {formatDate(parcela.dataVencimento)}
                             </span>
                           </div>
                         </div>
@@ -545,8 +543,8 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                             <Calendar className="h-3.5 w-3.5 text-blue-600" />
                             <span className={new Date(interacao.data) < new Date() ? "text-red-600" : "text-blue-600"}>
                               {new Date(interacao.data) < new Date() 
-                                ? `Atrasado desde ${format(new Date(interacao.data), 'dd/MM/yyyy')}` 
-                                : format(new Date(interacao.data), 'dd/MM/yyyy')}
+                                ? `Atrasado desde ${formatDate(interacao.data)}` 
+                                : formatDate(interacao.data)}
                             </span>
                           </div>
                         </div>
@@ -598,4 +596,3 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
     </Card>
   );
 }
-

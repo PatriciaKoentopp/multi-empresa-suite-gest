@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Label } from "@/components/ui/label";
 import { UserRound, CheckCircle, Circle } from "lucide-react";
 import { LeadInteracao } from "../types";
-import { getIconForInteraction } from "../utils/leadUtils";
+import { getIconForInteraction, formatDate } from "../utils/leadUtils";
 
 interface InteracaoViewDialogProps {
   open: boolean;
@@ -24,31 +24,6 @@ export function InteracaoViewDialog({
 }: InteracaoViewDialogProps) {
   if (!interacao) return null;
 
-  // Função para formatar a data no padrão brasileiro DD/MM/YYYY
-  const formatarDataBR = (dataStr: string): string => {
-    if (!dataStr) return "-";
-    
-    // Se já estiver no formato DD/MM/YYYY, retornar como está
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataStr)) return dataStr;
-    
-    // Se estiver no formato ISO (YYYY-MM-DD)
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) {
-      const [ano, mes, dia] = dataStr.split('-');
-      return `${dia}/${mes}/${ano}`;
-    }
-    
-    // Para outros formatos, tentar converter
-    try {
-      const data = new Date(dataStr);
-      const dia = String(data.getDate()).padStart(2, '0');
-      const mes = String(data.getMonth() + 1).padStart(2, '0');
-      const ano = data.getFullYear();
-      return `${dia}/${mes}/${ano}`;
-    } catch (e) {
-      return dataStr; // Retornar o valor original se falhar
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -63,7 +38,7 @@ export function InteracaoViewDialog({
             </div>
             <div className="flex-1">
               <p className="font-medium capitalize">{interacao.tipo}</p>
-              <p className="text-muted-foreground text-xs">{formatarDataBR(interacao.data)}</p>
+              <p className="text-muted-foreground text-xs">{formatDate(interacao.data)}</p>
             </div>
             <div>
               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${

@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { formatDate } from "./utils/leadUtils";
 
 interface LeadInteracaoDataFieldProps {
   date: Date;
@@ -62,7 +63,7 @@ export function LeadInteracaoDataField({
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? (
-            format(safeDate, "dd/MM/yyyy", { locale: ptBR })
+            formatDate(safeDate)
           ) : (
             <span>Selecione uma data</span>
           )}
