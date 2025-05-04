@@ -13,6 +13,5 @@ export interface ContaReceber {
   tipo?: string;
 }
 
-// Exportando o componente da tabela de contas a receber
-// Esta linha é necessária pois há imports deste componente em outros arquivos
-export { ContasAReceberTable } from "./contas-a-receber-table";
+// Este arquivo é apenas para exportação do tipo
+// O componente real está no arquivo contas-a-receber-table.tsx
