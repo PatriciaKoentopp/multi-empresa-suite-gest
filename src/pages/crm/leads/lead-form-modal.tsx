@@ -142,16 +142,16 @@ export function LeadFormModal({
       }
     }
     
-    // Formatar as interações com nomes de responsáveis
+    // Formatar as interações com nomes de responsáveis, mas sem converter as datas
     const interacoesFormatadas = data.map(item => ({
       id: item.id,
       leadId: item.lead_id,
       tipo: item.tipo,
       descricao: item.descricao,
-      data: formatDate(item.data),
+      data: item.data,  // Usar a data exatamente como vem do banco
       responsavelId: item.responsavel_id,
       responsavelNome: item.responsavel_id ? (responsaveisMap.get(item.responsavel_id) || 'Desconhecido') : 'Não atribuído',
-      status: item.status || 'Aberto' // Incluir o status, com valor padrão "Aberto" se não existir
+      status: item.status || 'Aberto'
     }));
     
     console.log('Interações formatadas:', interacoesFormatadas);
@@ -379,18 +379,15 @@ export function LeadFormModal({
   if (!interacaoEditada) return;
   
   try {
-    // Converter a data de string DD/MM/YYYY para formato ISO
-    const partesData = interacaoEditada.data.split('/');
-    const dataFormatada = `${partesData[2]}-${partesData[1]}-${partesData[0]}`; // YYYY-MM-DD
-    
+    // Não converter a data, usar como string diretamente
     const { error } = await supabase
       .from('leads_interacoes')
       .update({
         tipo: interacaoEditada.tipo,
         descricao: interacaoEditada.descricao,
-        data: dataFormatada,
+        data: interacaoEditada.data,
         responsavel_id: interacaoEditada.responsavelId,
-        status: interacaoEditada.status || 'Aberto' // Incluir o campo status na atualização
+        status: interacaoEditada.status || 'Aberto'
       })
       .eq('id', interacaoEditada.id);
     
