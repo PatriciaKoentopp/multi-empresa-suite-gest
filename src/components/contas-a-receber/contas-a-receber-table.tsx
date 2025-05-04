@@ -47,12 +47,11 @@ export function ContasAReceberTable({
   function formatData(data?: Date) {
     if (!data) return "-";
     
-    // Obter o dia, mês e ano diretamente da data sem conversão de timezone
+    // Formatar a data diretamente como DD/MM/YYYY sem considerar timezone
     const dia = String(data.getDate()).padStart(2, '0');
     const mes = String(data.getMonth() + 1).padStart(2, '0');
     const ano = data.getFullYear();
     
-    // Formatar como DD/MM/YYYY
     return `${dia}/${mes}/${ano}`;
   }
 
