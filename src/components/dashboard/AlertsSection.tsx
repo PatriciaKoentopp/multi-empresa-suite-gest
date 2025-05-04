@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,7 +32,7 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
   const total = totalInteracoes + totalParcelas;
   
   // Função para formatar data no padrão DD/MM/YYYY sem timezone
-  function formatDate(data: Date | string | undefined): string {
+  const formatDate = (data: Date | string | undefined): string => {
     if (!data) return "-";
     
     // Se já for uma string no formato DD/MM/YYYY, retornar como está
@@ -41,61 +40,42 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
       return data;
     }
     
-    // Se for uma string ISO com formato YYYY-MM-DD
-    if (typeof data === "string" && data.includes("-")) {
-      // Pode ser um formato ISO completo (com T) ou apenas YYYY-MM-DD
-      const dataParts = data.split("T")[0].split("-");
-      if (dataParts.length === 3) {
-        const [ano, mes, dia] = dataParts;
-        // Garantir que não haja alteração na data por causa do timezone
+    try {
+      let dia, mes, ano;
+      
+      // Formato ISO YYYY-MM-DD ou YYYY-MM-DDThh:mm:ss
+      if (typeof data === "string" && data.includes("-")) {
+        const dataParts = data.split("T")[0].split("-");
+        if (dataParts.length === 3) {
+          [ano, mes, dia] = dataParts;
+          return `${dia}/${mes}/${ano}`;
+        }
+      }
+      
+      // Para objetos Date, extrair os componentes sem usar UTC
+      if (data instanceof Date) {
+        dia = String(data.getDate()).padStart(2, "0");
+        mes = String(data.getMonth() + 1).padStart(2, "0");
+        ano = data.getFullYear();
         return `${dia}/${mes}/${ano}`;
       }
-    }
-    
-    // Para objetos Date, criar string manualmente para evitar problemas de timezone
-    if (data instanceof Date) {
-      // Usar UTC para evitar qualquer ajuste de timezone
-      const dia = String(data.getUTCDate()).padStart(2, "0");
-      const mes = String(data.getUTCMonth() + 1).padStart(2, "0");
-      const ano = data.getUTCFullYear();
-      return `${dia}/${mes}/${ano}`;
-    }
-    
-    // Se chegou aqui, tentar criar uma data e usar UTC para formatar
-    try {
-      // Criar a data usando o parser manual para evitar ajustes de timezone
-      const dataStr = String(data);
       
-      // Se for formato ISO com data e hora (YYYY-MM-DDThh:mm:ss)
-      if (dataStr.includes("T")) {
-        const [dataPart] = dataStr.split("T");
-        const [ano, mes, dia] = dataPart.split("-").map(Number);
-        // Criar data usando componentes específicos (ano, mês, dia) para evitar ajuste de timezone
-        return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${ano}`;
-      }
-      
-      // Se for formato YYYY-MM-DD
-      if (dataStr.includes("-")) {
-        const [ano, mes, dia] = dataStr.split("-").map(Number);
-        return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${ano}`;
-      }
-      
-      // Último recurso - criar data e extrair componentes
-      const dataObj = new Date(dataStr);
+      // Último recurso: criar um objeto Date e extrair componentes
+      const dataObj = new Date(String(data));
       if (!isNaN(dataObj.getTime())) {
-        // Usar getUTCDate para evitar ajustes de timezone
-        const dia = String(dataObj.getUTCDate()).padStart(2, "0");
-        const mes = String(dataObj.getUTCMonth() + 1).padStart(2, "0");
-        const ano = dataObj.getUTCFullYear();
+        // Importante: NÃO usar UTC para preservar a data exatamente como está
+        dia = String(dataObj.getDate()).padStart(2, "0");
+        mes = String(dataObj.getMonth() + 1).padStart(2, "0");
+        ano = dataObj.getFullYear();
         return `${dia}/${mes}/${ano}`;
       }
     } catch (e) {
       console.error("Erro ao formatar data:", e, "Data original:", data);
     }
     
-    // Fallback caso nenhum método funcione
+    // Fallback
     return typeof data === "string" ? data : "-";
-  }
+  };
   
   // Função para navegar para a página de contas a receber
   const navegarParaContasReceber = () => {
