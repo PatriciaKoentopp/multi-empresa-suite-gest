@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Filter, X, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
-import { ContasAReceberTable, ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
+import { ContasAReceberTable, ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table.tsx";
 import {
   Select,
   SelectContent,
