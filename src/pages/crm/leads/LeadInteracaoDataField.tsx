@@ -35,6 +35,12 @@ export function LeadInteracaoDataField({
         return new Date(year, month - 1, day);
       }
       
+      // Se for uma string no formato ISO (yyyy-mm-dd)
+      if (typeof dateInput === 'string' && dateInput.includes('-')) {
+        const [year, month, day] = dateInput.split('-').map(Number);
+        return new Date(year, month - 1, day);
+      }
+      
       return new Date(dateInput);
     } catch (error) {
       console.error('Erro ao converter data:', error);

@@ -26,20 +26,31 @@ export const getIconForInteraction = (tipo: string) => {
   }
 };
 
-// Função para formatar data
+// Função para formatar data no padrão DD/MM/YYYY
 export const formatDate = (date: string | Date): string => {
   if (!date) return '';
   
-  if (typeof date === 'string') {
-    // Se já estiver no formato DD/MM/YYYY, retornar como está
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(date)) return date;
-    
-    // Converter string para objeto Date
-    const dateObj = new Date(date);
-    return `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${dateObj.getFullYear()}`;
-  } else {
-    // Se for um objeto Date
-    return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+  // Se for uma string já no formato DD/MM/YYYY, retornar como está
+  if (typeof date === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
+    return date;
+  }
+  
+  // Se for uma string no formato ISO (YYYY-MM-DD)
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [ano, mes, dia] = date.split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
+  
+  // Para datas em formato de objeto Date ou outras strings
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const dia = String(dateObj.getDate()).padStart(2, '0');
+    const mes = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const ano = dateObj.getFullYear();
+    return `${dia}/${mes}/${ano}`;
+  } catch (e) {
+    // Em caso de erro, retornar string vazia ou a string original
+    return typeof date === 'string' ? date : '';
   }
 };
 

@@ -23,6 +23,31 @@ export function InteracoesTable({
   onToggleStatus,
   getNomeResponsavel
 }: InteracoesTableProps) {
+  // Função para formatar a data no padrão brasileiro DD/MM/YYYY
+  const formatarDataBR = (dataStr: string): string => {
+    if (!dataStr) return "-";
+    
+    // Se já estiver no formato DD/MM/YYYY, retornar como está
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataStr)) return dataStr;
+    
+    // Se estiver no formato ISO (YYYY-MM-DD)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) {
+      const [ano, mes, dia] = dataStr.split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
+    
+    // Para outros formatos, tentar converter
+    try {
+      const data = new Date(dataStr);
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      const ano = data.getFullYear();
+      return `${dia}/${mes}/${ano}`;
+    } catch (e) {
+      return dataStr; // Retornar o valor original se falhar
+    }
+  };
+
   return (
     <div className="border rounded-md overflow-hidden">
       <div className="overflow-x-auto">
@@ -49,7 +74,7 @@ export function InteracoesTable({
                 <TableCell className="max-w-[200px] truncate">
                   {interacao.descricao}
                 </TableCell>
-                <TableCell>{interacao.data}</TableCell>
+                <TableCell>{formatarDataBR(interacao.data)}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
                     <UserRound className="h-3 w-3 text-gray-500" />
