@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,7 +32,6 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
   
   // Função para navegar para a página de contas a receber
   const navegarParaContasReceber = () => {
-    // Aqui está a correção, mudando para o caminho correto
     navigate("/financeiro/contas-receber");
   };
   
@@ -602,4 +600,3 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
     </Card>
   );
 }
-

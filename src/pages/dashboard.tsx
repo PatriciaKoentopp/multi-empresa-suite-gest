@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
@@ -465,7 +464,7 @@ export function Dashboard() {
         <SalesDashboardCard title="Contas a Receber" value={formatCurrency(dashboardData.contasReceber)} description={`${dashboardData.parcelasEmAtraso.filter(p => p.tipo === 'receber').length} título(s) em atraso`} icon="users" />
       </div>
       
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-1">
         <Card className="col-span-1">
           <CardHeader>
             <CardTitle>Últimas Vendas</CardTitle>
@@ -487,47 +486,6 @@ export function Dashboard() {
                   </div>) : <p className="text-center text-muted-foreground py-4">
                   Nenhuma venda encontrada
                 </p>}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarX className="h-5 w-5 text-red-500" /> 
-              Parcelas em Atraso
-            </CardTitle>
-            
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {isLoading ? <div className="flex items-center justify-center py-6">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-                </div> : dashboardData.parcelasEmAtraso.length > 0 ? dashboardData.parcelasEmAtraso.slice(0, 3).map(parcela => <div key={parcela.id} className="flex items-start gap-4">
-                    <div className="mt-1 h-4 w-4 rounded-full bg-red-100 border border-red-500"></div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">{parcela.cliente}</p>
-                        <p className="text-red-600 font-medium">{formatCurrency(parcela.valor)}</p>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                          Vencimento: {format(new Date(parcela.dataVencimento), 'dd/MM/yyyy')}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {parcela.numeroParcela}
-                        </p>
-                      </div>
-                    </div>
-                  </div>) : <p className="text-center text-muted-foreground py-4">
-                  Nenhuma parcela em atraso
-                </p>}
-              
-              {dashboardData.parcelasEmAtraso.length > 3 && <div className="text-center pt-2">
-                  <p className="text-sm text-muted-foreground">
-                    + {dashboardData.parcelasEmAtraso.length - 3} outras parcelas em atraso
-                  </p>
-                </div>}
             </div>
           </CardContent>
         </Card>
