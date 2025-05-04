@@ -83,7 +83,7 @@ export function SidebarNav({ items, className, isCollapsed, closeSidebar, ...pro
                 >
                   <div className="flex items-center gap-3">
                     {renderIcon(item.icon)}
-                    {!isCollapsed && <span>{item.name}</span>}
+                    {!isCollapsed && <span>{item.title}</span>}
                   </div>
                   {!isCollapsed && item.subItems && item.subItems.length > 0 && (
                     <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
@@ -109,7 +109,7 @@ export function SidebarNav({ items, className, isCollapsed, closeSidebar, ...pro
                             )}
                           >
                             <ChevronRight className="h-4 w-4" />
-                            <span>{subItem.name}</span>
+                            <span>{subItem.title}</span>
                           </Button>
                         </Link>
                       );
@@ -136,7 +136,7 @@ export function SidebarNav({ items, className, isCollapsed, closeSidebar, ...pro
               )}
             >
               {renderIcon(item.icon)}
-              {!isCollapsed && <span>{item.name}</span>}
+              {!isCollapsed && <span>{item.title}</span>}
             </Button>
           </Link>
         );
