@@ -16,6 +16,7 @@ import { DateInput } from "@/components/movimentacao/DateInput";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 
 // Formas de pagamento fixas
 const formasPagamento = [
@@ -37,7 +38,7 @@ export default function IncluirMovimentacaoPage() {
       ...movimentacaoParaEditar,
       parcelas: movimentacaoParaEditar.parcelas.map(parcela => ({
         ...parcela,
-        dataVencimento: parcela.data_vencimento ? new Date(parcela.data_vencimento + 'T12:00:00Z') : new Date()
+        dataVencimento: parcela.data_vencimento ? new Date(formatDate(parcela.data_vencimento)) : new Date()
       }))
     };
     

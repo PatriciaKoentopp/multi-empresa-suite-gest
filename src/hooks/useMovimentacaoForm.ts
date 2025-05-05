@@ -4,12 +4,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
+import { formatDate, parseDateString } from "@/lib/utils";
 
 export const useMovimentacaoForm = (movimentacaoEditando) => {
   const { currentCompany } = useCompany();
   const [operacao, setOperacao] = useState(movimentacaoEditando?.tipo_operacao || "pagar");
-  const [dataEmissao, setDataEmissao] = useState(movimentacaoEditando?.data_emissao ? new Date(movimentacaoEditando.data_emissao) : new Date());
-  const [dataLancamento, setDataLancamento] = useState(movimentacaoEditando?.data_lancamento ? new Date(movimentacaoEditando.data_lancamento) : new Date());
+  const [dataEmissao, setDataEmissao] = useState(movimentacaoEditando?.data_emissao ? parseDateString(formatDate(movimentacaoEditando.data_emissao)) : new Date());
+  const [dataLancamento, setDataLancamento] = useState(movimentacaoEditando?.data_lancamento ? parseDateString(formatDate(movimentacaoEditando.data_lancamento)) : new Date());
   const [numDoc, setNumDoc] = useState(movimentacaoEditando?.numero_documento || "");
   const [tipoTitulo, setTipoTitulo] = useState(movimentacaoEditando?.tipo_titulo_id || "");
   const [favorecido, setFavorecido] = useState(movimentacaoEditando?.favorecido_id || "");
@@ -18,7 +19,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
   const [descricao, setDescricao] = useState(movimentacaoEditando?.descricao || "");
   const [valor, setValor] = useState(movimentacaoEditando?.valor ? movimentacaoEditando.valor.toString() : "0");
   const [numParcelas, setNumParcelas] = useState(movimentacaoEditando?.numero_parcelas || 1);
-  const [dataPrimeiroVenc, setDataPrimeiroVenc] = useState(movimentacaoEditando?.primeiro_vencimento ? new Date(movimentacaoEditando.primeiro_vencimento) : new Date());
+  const [dataPrimeiroVenc, setDataPrimeiroVenc] = useState(movimentacaoEditando?.primeiro_vencimento ? parseDateString(formatDate(movimentacaoEditando.primeiro_vencimento)) : new Date());
   const [considerarDRE, setConsiderarDRE] = useState(movimentacaoEditando?.considerar_dre || true);
   const [contaOrigem, setContaOrigem] = useState(movimentacaoEditando?.conta_origem_id || "");
   const [contaDestino, setContaDestino] = useState(movimentacaoEditando?.conta_destino_id || "");
