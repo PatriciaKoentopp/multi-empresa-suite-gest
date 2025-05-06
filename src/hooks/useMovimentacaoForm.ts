@@ -87,7 +87,12 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
 
   // Função para fazer upload do documento PDF
   const uploadDocumentoPdf = async (file) => {
-    if (!file || !currentCompany?.id) return null;
+    if (!file || !currentCompany?.id) {
+      toast.error("Erro ao fazer upload", {
+        description: "Arquivo inválido ou empresa não selecionada."
+      });
+      return null;
+    }
     
     try {
       setIsUploading(true);
@@ -95,18 +100,27 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${currentCompany.id}/movimentacoes/${fileName}`;
       
-      const { error: uploadError } = await supabase.storage
+      console.log("Iniciando upload para:", filePath);
+      
+      const { data, error: uploadError } = await supabase.storage
         .from('documentos')
         .upload(filePath, file);
       
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Erro no upload:", uploadError);
+        throw uploadError;
+      }
+      
+      console.log("Upload concluído:", data);
       
       // Obter URL pública do arquivo
-      const { data } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from('documentos')
         .getPublicUrl(filePath);
-        
-      return data.publicUrl;
+      
+      console.log("URL pública gerada:", urlData?.publicUrl);
+      
+      return urlData?.publicUrl || null;
     } catch (error) {
       console.error('Erro ao fazer upload do arquivo:', error);
       toast.error('Erro ao fazer upload do documento');
@@ -119,6 +133,15 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
   const handleDocumentoChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      console.log("Arquivo selecionado:", file.name, file.type, file.size);
+      
+      if (file.type !== 'application/pdf') {
+        toast.error("Formato inválido", { description: "Por favor, selecione um arquivo PDF." });
+        return;
+      }
+      
+      toast.info("Enviando documento...", { duration: 2000 });
+      
       const url = await uploadDocumentoPdf(file);
       if (url) {
         setDocumentoPdf(url);
