@@ -11,6 +11,7 @@ import { ContaCorrente } from "@/types/conta-corrente";
 import { useAuth } from "@/contexts/auth-context";
 import { AlertsSection } from "@/components/dashboard/AlertsSection";
 import { LeadInteracao } from "@/pages/crm/leads/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface DashboardData {
   totalVendas: number;
@@ -26,12 +27,15 @@ interface DashboardData {
   }[];
   totalSaldo: number;
   interacoesPendentes: LeadInteracao[];
-  topClientes: {
+  topClientesAnoAtual: {
     id: string;
     nome: string;
-    totalAnoAtual: number;
-    totalAnoAnterior: number;
-    variacao: number;
+    totalVendas: number;
+  }[];
+  topClientesAnoAnterior: {
+    id: string;
+    nome: string;
+    totalVendas: number;
   }[];
 }
 
@@ -50,7 +54,8 @@ export function Dashboard() {
     saldoContas: [],
     totalSaldo: 0,
     interacoesPendentes: [],
-    topClientes: []
+    topClientesAnoAtual: [],
+    topClientesAnoAnterior: []
   });
 
   useEffect(() => {
@@ -269,8 +274,7 @@ export function Dashboard() {
           });
         }
         
-        // Novo: Buscar top 5 clientes por valor de vendas no ano atual e anterior
-        // Vendas do ano atual por cliente
+        // Buscar top 5 clientes para o ano atual
         const { data: vendasAnoAtual, error: erroVendasAnoAtual } = await supabase
           .from('orcamentos')
           .select(`
@@ -286,7 +290,7 @@ export function Dashboard() {
           
         if (erroVendasAnoAtual) throw erroVendasAnoAtual;
         
-        // Vendas do ano anterior por cliente
+        // Buscar top 5 clientes para o ano anterior
         const { data: vendasAnoAnterior, error: erroVendasAnoAnterior } = await supabase
           .from('orcamentos')
           .select(`
@@ -316,11 +320,11 @@ export function Dashboard() {
               clientesAnoAtual[venda.favorecido_id] = {
                 id: venda.favorecido_id,
                 nome: venda.favorecido?.nome || 'Cliente não identificado',
-                total: 0
+                totalVendas: 0
               };
             }
             
-            clientesAnoAtual[venda.favorecido_id].total += valorTotal;
+            clientesAnoAtual[venda.favorecido_id].totalVendas += valorTotal;
           });
         }
         
@@ -338,40 +342,24 @@ export function Dashboard() {
               clientesAnoAnterior[venda.favorecido_id] = {
                 id: venda.favorecido_id,
                 nome: venda.favorecido?.nome || 'Cliente não identificado',
-                total: 0
+                totalVendas: 0
               };
             }
             
-            clientesAnoAnterior[venda.favorecido_id].total += valorTotal;
+            clientesAnoAnterior[venda.favorecido_id].totalVendas += valorTotal;
           });
         }
         
-        // Combinar dados e calcular a variação
-        const todosClientesIds = new Set([
-          ...Object.keys(clientesAnoAtual),
-          ...Object.keys(clientesAnoAnterior)
-        ]);
+        // Obter top 5 clientes do ano atual
+        const topClientesAnoAtual = Object.values(clientesAnoAtual)
+          .sort((a: any, b: any) => b.totalVendas - a.totalVendas)
+          .slice(0, 5);
         
-        const topClientes = Array.from(todosClientesIds).map(clienteId => {
-          const totalAnoAtual = clientesAnoAtual[clienteId]?.total || 0;
-          const totalAnoAnterior = clientesAnoAnterior[clienteId]?.total || 0;
-          let variacao = 0;
-          
-          if (totalAnoAnterior > 0) {
-            variacao = ((totalAnoAtual - totalAnoAnterior) / totalAnoAnterior) * 100;
-          } else if (totalAnoAtual > 0) {
-            variacao = 100; // Se não tinha vendas no ano anterior, é 100% de aumento
-          }
-          
-          return {
-            id: clienteId,
-            nome: clientesAnoAtual[clienteId]?.nome || clientesAnoAnterior[clienteId]?.nome,
-            totalAnoAtual,
-            totalAnoAnterior,
-            variacao
-          };
-        }).sort((a, b) => b.totalAnoAtual - a.totalAnoAtual).slice(0, 5); // Top 5 por valor atual
-        
+        // Obter top 5 clientes do ano anterior
+        const topClientesAnoAnterior = Object.values(clientesAnoAnterior)
+          .sort((a: any, b: any) => b.totalVendas - a.totalVendas)
+          .slice(0, 5);
+
         // 6. Buscar interações de leads pendentes com status "Aberto" e data igual ou anterior a hoje
         const dataLimiteInteracoes = new Date();
         dataLimiteInteracoes.setHours(23, 59, 59, 999); // Final do dia hoje
@@ -457,7 +445,8 @@ export function Dashboard() {
           saldoContas,
           totalSaldo,
           interacoesPendentes,
-          topClientes
+          topClientesAnoAtual,
+          topClientesAnoAnterior
         });
         setIsLoading(false);
       } catch (error: any) {
@@ -560,42 +549,72 @@ export function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-6">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-                </div>
-              ) : dashboardData.topClientes.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left pb-2">Cliente</th>
-                        <th className="text-right pb-2">{new Date().getFullYear()}</th>
-                        <th className="text-right pb-2">{new Date().getFullYear() - 1}</th>
-                        <th className="text-right pb-2">Variação</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dashboardData.topClientes.map((cliente) => (
-                        <tr key={cliente.id} className="border-b">
-                          <td className="py-2 font-medium">{cliente.nome}</td>
-                          <td className="py-2 text-right">{formatCurrency(cliente.totalAnoAtual)}</td>
-                          <td className="py-2 text-right">{formatCurrency(cliente.totalAnoAnterior)}</td>
-                          <td className={`py-2 text-right ${cliente.variacao > 0 ? 'text-green-600' : cliente.variacao < 0 ? 'text-red-600' : 'text-gray-500'}`}>
-                            {cliente.variacao > 0 ? '+' : ''}{cliente.variacao.toFixed(1)}%
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-4">
-                  Nenhuma venda encontrada
-                </p>
-              )}
-            </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+              </div>
+            ) : (
+              <Tabs defaultValue={`${new Date().getFullYear()}`} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value={`${new Date().getFullYear()}`}>{new Date().getFullYear()}</TabsTrigger>
+                  <TabsTrigger value={`${new Date().getFullYear() - 1}`}>{new Date().getFullYear() - 1}</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value={`${new Date().getFullYear()}`}>
+                  {dashboardData.topClientesAnoAtual.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left pb-2">Cliente</th>
+                            <th className="text-right pb-2">Valor Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dashboardData.topClientesAnoAtual.map((cliente) => (
+                            <tr key={cliente.id} className="border-b">
+                              <td className="py-2 font-medium">{cliente.nome}</td>
+                              <td className="py-2 text-right">{formatCurrency(cliente.totalVendas)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-4">
+                      Nenhuma venda encontrada em {new Date().getFullYear()}
+                    </p>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value={`${new Date().getFullYear() - 1}`}>
+                  {dashboardData.topClientesAnoAnterior.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left pb-2">Cliente</th>
+                            <th className="text-right pb-2">Valor Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dashboardData.topClientesAnoAnterior.map((cliente) => (
+                            <tr key={cliente.id} className="border-b">
+                              <td className="py-2 font-medium">{cliente.nome}</td>
+                              <td className="py-2 text-right">{formatCurrency(cliente.totalVendas)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-4">
+                      Nenhuma venda encontrada em {new Date().getFullYear() - 1}
+                    </p>
+                  )}
+                </TabsContent>
+              </Tabs>
+            )}
           </CardContent>
         </Card>
       </div>
