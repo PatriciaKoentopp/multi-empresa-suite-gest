@@ -60,8 +60,8 @@ const contasDRE = [
   "(-) Custos",
   "Lucro Bruto",
   "(-) Despesas Operacionais",
-  "Resultado Operacional",
-  "(-) Despesas financeiras",
+  "(+) Receitas Financeiras",
+  "(-) Despesas Financeiras",
   "Resultado Antes IR",
   "(-) IRPJ/CSLL",
   "Lucro Líquido do Exercício",
@@ -97,7 +97,8 @@ export default function DrePage() {
               *,
               movimentacoes (
                 categoria_id,
-                tipo_operacao
+                tipo_operacao,
+                considerar_dre
               ),
               plano_contas:movimentacoes(plano_contas(tipo, descricao))
             `)
@@ -120,7 +121,8 @@ export default function DrePage() {
               *,
               movimentacoes (
                 categoria_id,
-                tipo_operacao
+                tipo_operacao,
+                considerar_dre
               ),
               plano_contas:movimentacoes(plano_contas(tipo, descricao))
             `)
@@ -132,7 +134,8 @@ export default function DrePage() {
 
           // Agrupa movimentações por mês
           const movimentacoesPorMes = (movimentacoes || []).reduce((acc: any, mov) => {
-            const mesMovimentacao = format(new Date(mov.data_movimentacao), 'MM');
+            // Usando a data exatamente como está armazenada no banco, sem timezone
+            const mesMovimentacao = mov.data_movimentacao.substring(5, 7); // Formato: YYYY-MM-DD
             if (!acc[mesMovimentacao]) {
               acc[mesMovimentacao] = [];
             }
@@ -160,7 +163,8 @@ export default function DrePage() {
                 *,
                 movimentacoes (
                   categoria_id,
-                  tipo_operacao
+                  tipo_operacao,
+                  considerar_dre
                 ),
                 plano_contas:movimentacoes(plano_contas(tipo, descricao))
               `)
@@ -185,7 +189,8 @@ export default function DrePage() {
               *,
               movimentacoes (
                 categoria_id,
-                tipo_operacao
+                tipo_operacao,
+                considerar_dre
               ),
               plano_contas:movimentacoes(plano_contas(tipo, descricao))
             `)
@@ -215,8 +220,9 @@ export default function DrePage() {
       "Deduções": [],
       "Custos": [],
       "Despesas Operacionais": [],
+      "Receitas Financeiras": [], // Novo grupo para receitas financeiras
       "Despesas Financeiras": [],
-      "Distribuição de Lucros": [], // Adicionado grupo separado para Distribuição de Lucros
+      "Distribuição de Lucros": [],
       "IRPJ/CSLL": []
     };
 
@@ -224,52 +230,89 @@ export default function DrePage() {
     let deducoes = 0;
     let custos = 0;
     let despesasOperacionais = 0;
+    let receitasFinanceiras = 0; // Novo valor para rastrear receitas financeiras
     let despesasFinanceiras = 0;
-    let distribuicaoLucros = 0; // Novo valor para rastrear Distribuição de Lucros
+    let distribuicaoLucros = 0;
     let impostos = 0;
 
     movimentacoes.forEach(mov => {
+      // Verifica se devemos considerar no DRE
+      const considerarDre = mov.movimentacoes?.considerar_dre !== false;
+      if (!considerarDre) return;
+      
       const valor = Number(mov.valor);
       const tipoOperacao = mov.movimentacoes?.tipo_operacao;
       const planoContas = mov.plano_contas?.plano_contas;
       const categoriaId = mov.movimentacoes?.categoria_id;
       const descricaoCategoria = planoContas?.descricao || 'Sem categoria';
 
+      // Formata a data exatamente como está no banco, sem ajustar timezone
+      const dataFormatada = mov.data_movimentacao ? 
+        mov.data_movimentacao.substring(8, 10) + "/" + 
+        mov.data_movimentacao.substring(5, 7) + "/" + 
+        mov.data_movimentacao.substring(0, 4) : '';
+
       const detalhe: MovimentacaoDetalhe = {
-        data_movimentacao: format(new Date(mov.data_movimentacao), 'dd/MM/yyyy'),
+        data_movimentacao: dataFormatada,
         descricao: mov.descricao || descricaoCategoria,
         valor: valor,
         categoria: descricaoCategoria
       };
 
-      // Se for recebimento e não tiver categoria, considera como receita bruta
-      if (tipoOperacao === 'receber' && !categoriaId) {
+      // Se for recebimento e não tiver categoria ou plano de contas, considera como receita bruta
+      if (tipoOperacao === 'receber' && (!categoriaId || !planoContas)) {
         receitaBruta += valor;
         grupos["Receita Bruta"].push(detalhe);
       } 
-      // Para as demais, usa o plano de contas
+      // Para os demais, usa o plano de contas
       else if (planoContas) {
         const { tipo, descricao } = planoContas;
-        if (tipo === 'despesa') {
-          switch (descricao) {
-            case 'DAS - Simples Nacional':
+        
+        // Receitas
+        if (tipo === 'receita') {
+          if (descricao.toLowerCase().includes('financeira') || 
+              descricao.toLowerCase().includes('juros') || 
+              descricao.toLowerCase().includes('rendimento')) {
+            receitasFinanceiras += valor;
+            grupos["Receitas Financeiras"].push(detalhe);
+          } else {
+            receitaBruta += valor;
+            grupos["Receita Bruta"].push(detalhe);
+          }
+        }
+        // Despesas
+        else if (tipo === 'despesa') {
+          switch (descricao.toLowerCase()) {
+            case 'das - simples nacional':
               deducoes += Math.abs(valor);
               grupos["Deduções"].push(detalhe);
               break;
-            case 'Pró-Labore':
-            case 'INSS':
-            case 'Honorários Contábeis':
+            case 'pró-labore':
+            case 'pro-labore':
+            case 'pró labore':
+            case 'pro labore':
+            case 'inss':
+            case 'honorários contábeis':
+            case 'honorarios contabeis':
               despesasOperacionais += Math.abs(valor);
               grupos["Despesas Operacionais"].push(detalhe);
               break;
-            case 'Distribuição de Lucros':
-              // Movido da categoria de despesas financeiras para sua própria categoria
+            case 'distribuição de lucros':
+            case 'distribuicao de lucros':
               distribuicaoLucros += Math.abs(valor);
               grupos["Distribuição de Lucros"].push(detalhe);
               break;
             default:
-              custos += Math.abs(valor);
-              grupos["Custos"].push(detalhe);
+              // Verifica se é despesa financeira
+              if (descricao.toLowerCase().includes('financeira') || 
+                  descricao.toLowerCase().includes('juros') || 
+                  descricao.toLowerCase().includes('tarifas')) {
+                despesasFinanceiras += Math.abs(valor);
+                grupos["Despesas Financeiras"].push(detalhe);
+              } else {
+                custos += Math.abs(valor);
+                grupos["Custos"].push(detalhe);
+              }
           }
         }
       }
@@ -278,9 +321,10 @@ export default function DrePage() {
     const receitaLiquida = receitaBruta - deducoes;
     const lucroBruto = receitaLiquida - custos;
     const resultadoOperacional = lucroBruto - despesasOperacionais;
-    const resultadoAntesIR = resultadoOperacional - despesasFinanceiras;
+    const resultadoFinanceiro = resultadoOperacional + receitasFinanceiras - despesasFinanceiras;
+    const resultadoAntesIR = resultadoFinanceiro;
     const lucroLiquido = resultadoAntesIR - impostos;
-    const resultadoExercicio = lucroLiquido - distribuicaoLucros; // Novo cálculo para Resultado do Exercício
+    const resultadoExercicio = lucroLiquido - distribuicaoLucros;
 
     return [
       { tipo: "Receita Bruta", valor: receitaBruta, detalhes: grupos["Receita Bruta"] },
@@ -290,7 +334,8 @@ export default function DrePage() {
       { tipo: "Lucro Bruto", valor: lucroBruto, detalhes: [] },
       { tipo: "(-) Despesas Operacionais", valor: -despesasOperacionais, detalhes: grupos["Despesas Operacionais"] },
       { tipo: "Resultado Operacional", valor: resultadoOperacional, detalhes: [] },
-      { tipo: "(-) Despesas financeiras", valor: -despesasFinanceiras, detalhes: grupos["Despesas Financeiras"] },
+      { tipo: "(+) Receitas Financeiras", valor: receitasFinanceiras, detalhes: grupos["Receitas Financeiras"] },
+      { tipo: "(-) Despesas Financeiras", valor: -despesasFinanceiras, detalhes: grupos["Despesas Financeiras"] },
       { tipo: "Resultado Antes IR", valor: resultadoAntesIR, detalhes: [] },
       { tipo: "(-) IRPJ/CSLL", valor: -impostos, detalhes: grupos["IRPJ/CSLL"] },
       { tipo: "Lucro Líquido do Exercício", valor: lucroLiquido, detalhes: [] },
@@ -387,7 +432,7 @@ export default function DrePage() {
                 </span>
               </div>
             )}
-            {/* NOVO: Ano + mês para visualização mensal */}
+            {/* Ano + mês para visualização mensal */}
             {visualizacao === "mensal" && (
               <>
                 <div>
@@ -579,4 +624,3 @@ export default function DrePage() {
     </div>
   );
 }
-
