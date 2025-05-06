@@ -20,11 +20,12 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
   const [valor, setValor] = useState(movimentacaoEditando?.valor ? movimentacaoEditando.valor.toString() : "0");
   const [numParcelas, setNumParcelas] = useState(movimentacaoEditando?.numero_parcelas || 1);
   const [dataPrimeiroVenc, setDataPrimeiroVenc] = useState(movimentacaoEditando?.primeiro_vencimento ? parseDateString(formatDate(movimentacaoEditando.primeiro_vencimento)) : new Date());
-  const [considerarDRE, setConsiderarDRE] = useState(movimentacaoEditando?.considerar_dre || true);
+  const [considerarDRE, setConsiderarDRE] = useState(movimentacaoEditando?.considerar_dre ?? true);
   const [contaOrigem, setContaOrigem] = useState(movimentacaoEditando?.conta_origem_id || "");
   const [contaDestino, setContaDestino] = useState(movimentacaoEditando?.conta_destino_id || "");
   const [parcelas, setParcelas] = useState(movimentacaoEditando?.parcelas || []);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   // Novos campos
   const [mesReferencia, setMesReferencia] = useState(movimentacaoEditando?.mes_referencia || "");
@@ -89,6 +90,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     if (!file || !currentCompany?.id) return null;
     
     try {
+      setIsUploading(true);
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${currentCompany.id}/movimentacoes/${fileName}`;
@@ -109,6 +111,8 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       console.error('Erro ao fazer upload do arquivo:', error);
       toast.error('Erro ao fazer upload do documento');
       return null;
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -118,6 +122,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       const url = await uploadDocumentoPdf(file);
       if (url) {
         setDocumentoPdf(url);
+        toast.success("Documento anexado com sucesso!");
       }
     }
   };
@@ -285,6 +290,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     setDocumentoPdf,
     handleDocumentoChange,
     handleSalvar,
-    isLoading
+    isLoading,
+    isUploading
   };
 };

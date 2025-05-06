@@ -15,7 +15,7 @@ import { RecebimentoForm } from "@/components/movimentacao/RecebimentoForm";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { FileText } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 // Formas de pagamento fixas
@@ -84,8 +84,10 @@ export default function IncluirMovimentacaoPage() {
     mesReferencia,
     setMesReferencia,
     documentoPdf,
+    setDocumentoPdf,
     handleDocumentoChange,
-    isLoading
+    isLoading,
+    isUploading
   } = useMovimentacaoForm(movimentacaoParaEditar);
 
   const { favorecidos, categorias, contasCorrente, tiposTitulos } = useMovimentacaoDados();
@@ -206,14 +208,15 @@ export default function IncluirMovimentacaoPage() {
               <div className="flex items-center">
                 {documentoPdf ? (
                   <div className="flex gap-2 w-full">
-                    <a 
-                      href={documentoPdf} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-500 underline flex-grow truncate"
+                    <Button 
+                      type="button" 
+                      variant="blue"
+                      className="flex-grow flex items-center gap-2"
+                      onClick={() => window.open(documentoPdf, '_blank')}
                     >
-                      Ver documento
-                    </a>
+                      <FileText size={16} />
+                      Baixar Documento
+                    </Button>
                     {!modoVisualizacao && (
                       <Button 
                         type="button" 
@@ -233,7 +236,7 @@ export default function IncluirMovimentacaoPage() {
                       onChange={handleDocumentoChange}
                       className="hidden"
                       accept=".pdf"
-                      disabled={modoVisualizacao}
+                      disabled={modoVisualizacao || isUploading}
                     />
                     {!modoVisualizacao && (
                       <Button 
@@ -241,14 +244,21 @@ export default function IncluirMovimentacaoPage() {
                         variant="outline" 
                         className="w-full flex items-center gap-2"
                         onClick={() => document.getElementById('documento-upload').click()}
+                        disabled={isUploading}
                       >
-                        <Upload size={16} />
+                        <FileText size={16} />
                         Anexar documento
                       </Button>
                     )}
                   </div>
                 )}
               </div>
+              {isUploading && (
+                <div className="mt-2 text-sm flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 mr-2 border-t-2 border-blue-500"></div>
+                  Fazendo upload...
+                </div>
+              )}
             </div>
           </div>
 
@@ -344,9 +354,9 @@ export default function IncluirMovimentacaoPage() {
               <Button 
                 variant="blue" 
                 onClick={handleSalvar} 
-                disabled={isLoading}
+                disabled={isLoading || isUploading}
               >
-                {isLoading ? "Salvando..." : "Salvar"}
+                {isLoading || isUploading ? "Salvando..." : "Salvar"}
               </Button>
             )}
           </div>
