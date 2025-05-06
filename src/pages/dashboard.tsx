@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
@@ -18,12 +17,6 @@ interface DashboardData {
   totalOrcamentos: number;
   contasReceber: number;
   contasPagar: number;
-  ultimasVendas: {
-    favorecido: string;
-    codigo: string;
-    valor: number;
-    data: string;
-  }[];
   parcelasEmAtraso: ContaReceber[];
   parcelasHoje: ContaReceber[];
   saldoContas: {
@@ -33,6 +26,13 @@ interface DashboardData {
   }[];
   totalSaldo: number;
   interacoesPendentes: LeadInteracao[];
+  topClientes: {
+    id: string;
+    nome: string;
+    totalAnoAtual: number;
+    totalAnoAnterior: number;
+    variacao: number;
+  }[];
 }
 
 export function Dashboard() {
@@ -45,12 +45,12 @@ export function Dashboard() {
     totalOrcamentos: 0,
     contasReceber: 0,
     contasPagar: 0,
-    ultimasVendas: [],
     parcelasEmAtraso: [],
     parcelasHoje: [],
     saldoContas: [],
     totalSaldo: 0,
-    interacoesPendentes: []
+    interacoesPendentes: [],
+    topClientes: []
   });
 
   useEffect(() => {
@@ -72,6 +72,8 @@ export function Dashboard() {
 
         // Data atual e primeiro dia do mês
         const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+        const anoAnterior = anoAtual - 1;
         const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
         const inicioMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
 
@@ -79,6 +81,10 @@ export function Dashboard() {
         const hojeFormatado = hoje.toISOString().split('T')[0];
         const inicioMesFormatado = inicioMes.toISOString().split('T')[0];
         const inicioMesAnteriorFormatado = inicioMesAnterior.toISOString().split('T')[0];
+        const inicioAnoAtual = `${anoAtual}-01-01`;
+        const fimAnoAtual = `${anoAtual}-12-31`;
+        const inicioAnoAnterior = `${anoAnterior}-01-01`;
+        const fimAnoAnterior = `${anoAnterior}-12-31`;
 
         // 1. Buscar contas correntes e seus saldos
         const { data: contasCorrentes, error: erroContasCorrentes } = await supabase
@@ -263,30 +269,109 @@ export function Dashboard() {
           });
         }
         
-        // 5. Buscar últimas vendas
-        const {
-          data: ultimasVendas,
-          error: erroUltimasVendas
-        } = await supabase.from('orcamentos').select(`
-            codigo,
-            data_venda,
-            favorecido:favorecido_id(nome),
+        // Novo: Buscar top 5 clientes por valor de vendas no ano atual e anterior
+        // Vendas do ano atual por cliente
+        const { data: vendasAnoAtual, error: erroVendasAnoAtual } = await supabase
+          .from('orcamentos')
+          .select(`
+            favorecido_id,
+            favorecido:favorecidos!inner(nome),
             orcamentos_itens(valor)
-          `).eq('empresa_id', currentCompany.id).eq('tipo', 'venda').eq('status', 'ativo').order('data_venda', {
-          ascending: false
-        }).limit(3);
-        if (erroUltimasVendas) throw erroUltimasVendas;
+          `)
+          .eq('empresa_id', currentCompany.id)
+          .eq('tipo', 'venda')
+          .eq('status', 'ativo')
+          .gte('data_venda', inicioAnoAtual)
+          .lte('data_venda', fimAnoAtual);
+          
+        if (erroVendasAnoAtual) throw erroVendasAnoAtual;
         
-        const vendasFormatadas = ultimasVendas?.map(venda => {
-          const totalVenda = venda.orcamentos_itens.reduce((acc: number, item: any) => acc + (Number(item.valor) || 0), 0);
+        // Vendas do ano anterior por cliente
+        const { data: vendasAnoAnterior, error: erroVendasAnoAnterior } = await supabase
+          .from('orcamentos')
+          .select(`
+            favorecido_id,
+            favorecido:favorecidos!inner(nome),
+            orcamentos_itens(valor)
+          `)
+          .eq('empresa_id', currentCompany.id)
+          .eq('tipo', 'venda')
+          .eq('status', 'ativo')
+          .gte('data_venda', inicioAnoAnterior)
+          .lte('data_venda', fimAnoAnterior);
+          
+        if (erroVendasAnoAnterior) throw erroVendasAnoAnterior;
+        
+        // Agregar dados por cliente para o ano atual
+        const clientesAnoAtual = {};
+        if (vendasAnoAtual) {
+          vendasAnoAtual.forEach(venda => {
+            if (!venda.favorecido_id) return;
+            
+            const valorTotal = venda.orcamentos_itens.reduce(
+              (sum, item) => sum + (Number(item.valor) || 0), 0
+            );
+            
+            if (!clientesAnoAtual[venda.favorecido_id]) {
+              clientesAnoAtual[venda.favorecido_id] = {
+                id: venda.favorecido_id,
+                nome: venda.favorecido?.nome || 'Cliente não identificado',
+                total: 0
+              };
+            }
+            
+            clientesAnoAtual[venda.favorecido_id].total += valorTotal;
+          });
+        }
+        
+        // Agregar dados por cliente para o ano anterior
+        const clientesAnoAnterior = {};
+        if (vendasAnoAnterior) {
+          vendasAnoAnterior.forEach(venda => {
+            if (!venda.favorecido_id) return;
+            
+            const valorTotal = venda.orcamentos_itens.reduce(
+              (sum, item) => sum + (Number(item.valor) || 0), 0
+            );
+            
+            if (!clientesAnoAnterior[venda.favorecido_id]) {
+              clientesAnoAnterior[venda.favorecido_id] = {
+                id: venda.favorecido_id,
+                nome: venda.favorecido?.nome || 'Cliente não identificado',
+                total: 0
+              };
+            }
+            
+            clientesAnoAnterior[venda.favorecido_id].total += valorTotal;
+          });
+        }
+        
+        // Combinar dados e calcular a variação
+        const todosClientesIds = new Set([
+          ...Object.keys(clientesAnoAtual),
+          ...Object.keys(clientesAnoAnterior)
+        ]);
+        
+        const topClientes = Array.from(todosClientesIds).map(clienteId => {
+          const totalAnoAtual = clientesAnoAtual[clienteId]?.total || 0;
+          const totalAnoAnterior = clientesAnoAnterior[clienteId]?.total || 0;
+          let variacao = 0;
+          
+          if (totalAnoAnterior > 0) {
+            variacao = ((totalAnoAtual - totalAnoAnterior) / totalAnoAnterior) * 100;
+          } else if (totalAnoAtual > 0) {
+            variacao = 100; // Se não tinha vendas no ano anterior, é 100% de aumento
+          }
+          
           return {
-            favorecido: venda.favorecido?.nome || 'Cliente não identificado',
-            codigo: venda.codigo,
-            valor: totalVenda,
-            data: venda.data_venda ? formatDate(venda.data_venda) : '-'
+            id: clienteId,
+            nome: clientesAnoAtual[clienteId]?.nome || clientesAnoAnterior[clienteId]?.nome,
+            totalAnoAtual,
+            totalAnoAnterior,
+            variacao
           };
-        }) || [];
-
+        }).sort((a, b) => b.totalAnoAtual - a.totalAnoAtual).slice(0, 5); // Top 5 por valor atual
+        
         // 6. Buscar interações de leads pendentes com status "Aberto" e data igual ou anterior a hoje
         const dataLimiteInteracoes = new Date();
         dataLimiteInteracoes.setHours(23, 59, 59, 999); // Final do dia hoje
@@ -367,12 +452,12 @@ export function Dashboard() {
           totalOrcamentos,
           contasReceber: totalContasReceber,
           contasPagar: totalContasPagar,
-          ultimasVendas: vendasFormatadas,
           parcelasEmAtraso,
           parcelasHoje,
           saldoContas,
           totalSaldo,
-          interacoesPendentes
+          interacoesPendentes,
+          topClientes
         });
         setIsLoading(false);
       } catch (error: any) {
@@ -466,25 +551,50 @@ export function Dashboard() {
       <div className="grid gap-6 md:grid-cols-1">
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Últimas Vendas</CardTitle>
-            
+            <CardTitle className="flex items-center gap-2">
+              <BanknoteIcon className="h-5 w-5 text-blue-500" />
+              Top 5 Clientes
+            </CardTitle>
+            <CardDescription>
+              Clientes com maior valor de vendas em {new Date().getFullYear()} e {new Date().getFullYear() - 1}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {isLoading ? <div className="flex items-center justify-center py-6">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-6">
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-                </div> : dashboardData.ultimasVendas.length > 0 ? dashboardData.ultimasVendas.map((venda, index) => <div key={index} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{venda.favorecido}</p>
-                      <p className="text-sm text-muted-foreground">Pedido #{venda.codigo}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">{formatCurrency(venda.valor)}</p>
-                      <p className="text-sm text-muted-foreground">{venda.data}</p>
-                    </div>
-                  </div>) : <p className="text-center text-muted-foreground py-4">
+                </div>
+              ) : dashboardData.topClientes.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left pb-2">Cliente</th>
+                        <th className="text-right pb-2">{new Date().getFullYear()}</th>
+                        <th className="text-right pb-2">{new Date().getFullYear() - 1}</th>
+                        <th className="text-right pb-2">Variação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dashboardData.topClientes.map((cliente) => (
+                        <tr key={cliente.id} className="border-b">
+                          <td className="py-2 font-medium">{cliente.nome}</td>
+                          <td className="py-2 text-right">{formatCurrency(cliente.totalAnoAtual)}</td>
+                          <td className="py-2 text-right">{formatCurrency(cliente.totalAnoAnterior)}</td>
+                          <td className={`py-2 text-right ${cliente.variacao > 0 ? 'text-green-600' : cliente.variacao < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                            {cliente.variacao > 0 ? '+' : ''}{cliente.variacao.toFixed(1)}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-4">
                   Nenhuma venda encontrada
-                </p>}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
