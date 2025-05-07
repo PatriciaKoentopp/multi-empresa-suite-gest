@@ -23,6 +23,13 @@ export default function Relatorios() {
       route: "/relatorios/vendas"
     },
     {
+      id: "classificacaoabc",
+      title: "Classificação ABC de Clientes",
+      description: "Análise de clientes por volume de compras, frequência e ticket médio",
+      icon: <Users className="h-8 w-8 text-purple-500" />,
+      route: "/relatorios/classificacao-abc"
+    },
+    {
       id: "financeiro",
       title: "Relatório Financeiro",
       description: "Fluxo de caixa e análise de receitas e despesas",
@@ -55,7 +62,7 @@ export default function Relatorios() {
         {relatorios.map(relatorio => (
           <Card 
             key={relatorio.id} 
-            className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id !== 'favorecido' ? 'opacity-60' : ''}`}
+            className={`cursor-pointer transition-shadow hover:shadow-lg ${(relatorio.id !== 'favorecido' && relatorio.id !== 'classificacaoabc') ? 'opacity-60' : ''}`}
             onClick={() => handleCardClick(relatorio.route)}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -71,7 +78,7 @@ export default function Relatorios() {
             </CardHeader>
             <CardContent>
               <Button 
-                variant={relatorio.id === 'favorecido' ? "default" : "outline"} 
+                variant={(relatorio.id === 'favorecido' || relatorio.id === 'classificacaoabc') ? "default" : "outline"} 
                 className="w-full"
                 onClick={() => handleCardClick(relatorio.route)}
               >
