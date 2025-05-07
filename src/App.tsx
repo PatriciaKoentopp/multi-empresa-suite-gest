@@ -1,23 +1,71 @@
-
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { AuthProvider } from './contexts/auth-context';
-import { CompanyProvider } from './contexts/company-context';
-import { MainLayout } from './components/layout/main-layout';
+import React, { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Index from "./pages/Index";
+import { Login } from "./pages/login";
+import { Dashboard } from "./pages/dashboard";
+import { MainLayout } from "./components/layout/main-layout";
+import { CompanyProvider } from "./contexts/company-context";
+import { AuthProvider, useAuth } from "./contexts/auth-context";
+import NotFound from "./pages/NotFound";
 import { Toaster } from "sonner";
+import StyleGuide from "./pages/style-guide";
+import Empresas from "./pages/empresas";
 
-const LoginPage = lazy(() => import('./pages/login'));
-const Dashboard = lazy(() => import('./pages/dashboard'));
-const Relatorios = lazy(() => import('./pages/relatorios'));
-const RelatorioFavorecido = lazy(() => import('./pages/relatorios/favorecido'));
-const Favorecidos = lazy(() => import('./pages/cadastros/favorecidos'));
-const ClassificacaoABC = lazy(() => import('./pages/relatorios/classificacao-abc'));
-const Empresas = lazy(() => import('./pages/empresas'));
-const NotFound = lazy(() => import('./pages/NotFound'));
+// Admin
+import Usuarios from "./pages/admin/usuarios";
 
-// Componente para rotas protegidas
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  return <MainLayout>{children}</MainLayout>;
+// Cadastros
+import GrupoFavorecidos from "./pages/cadastros/grupo-favorecidos";
+import Favorecidos from "./pages/cadastros/favorecidos";
+import Origens from "./pages/cadastros/origens";
+import Profissoes from "./pages/cadastros/profissoes";
+import MotivosPerdas from "./pages/cadastros/motivos-perda";
+import ContaCorrente from "./pages/cadastros/conta-corrente";
+import TiposTitulos from "./pages/cadastros/tipos-titulos";
+
+// Financeiro
+import FluxoCaixa from "./pages/financeiro/fluxo-caixa";
+import ContasAPagar from "./pages/financeiro/contas-a-pagar";
+import ContasAReceber from "./pages/financeiro/contas-a-receber";
+import Movimentacao from "./pages/financeiro/movimentacao";
+import IncluirMovimentacao from "./pages/financeiro/incluir-movimentacao";
+import PainelFinanceiroPage from "./pages/financeiro/painel-financeiro";
+
+// Contábil
+import PlanoContas from "./pages/contabil/plano-contas";
+import Lancamentos from "./pages/contabil/lancamentos";
+import DRE from "./pages/contabil/dre";
+import Balanco from "./pages/contabil/balanco";
+
+// Vendas
+import PainelVendas from "./pages/vendas/painel-vendas";
+import Servicos from "./pages/vendas/servicos";
+import TabelaPrecos from "./pages/vendas/tabela-precos";
+import Orcamento from "./pages/vendas/orcamento";
+import Faturamento from "./pages/vendas/faturamento";
+
+// CRM
+import FunilConfiguracao from "./pages/crm/funil-configuracao";
+import Leads from "./pages/crm/leads";
+import CrmPainelPage from "./pages/crm/painel";
+
+// Relatórios
+import Relatorios from "./pages/relatorios";
+import RelatorioFavorecido from "./pages/relatorios/favorecido";
+
+// Authentication wrapper
+interface PrivateRouteProps {
+  children: React.ReactNode;
+}
+
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <div>Carregando...</div>;
+  }
+
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 };
 
 function App() {
@@ -25,20 +73,340 @@ function App() {
     <AuthProvider>
       <CompanyProvider>
         <Router>
-          <Suspense fallback={<div className="flex items-center justify-center h-screen">Carregando...</div>}>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
-              <Route path="/relatorios/favorecido" element={<ProtectedRoute><RelatorioFavorecido /></ProtectedRoute>} />
-              <Route path="/cadastros/favorecidos" element={<ProtectedRoute><Favorecidos /></ProtectedRoute>} />
-              <Route path="/relatorios/classificacao-abc" element={<ProtectedRoute><ClassificacaoABC /></ProtectedRoute>} />
-              <Route path="/admin/empresas" element={<ProtectedRoute><Empresas /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          <Toaster />
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Index />} />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Dashboard />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Admin */}
+            <Route
+              path="/admin/usuarios"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Usuarios />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/empresas"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Empresas />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Cadastros */}
+            <Route
+              path="/cadastros/grupo-favorecidos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <GrupoFavorecidos />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/cadastros/favorecidos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Favorecidos />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/cadastros/profissoes"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Profissoes />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/cadastros/origens"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Origens />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/cadastros/motivos-perda"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <MotivosPerdas />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/cadastros/conta-corrente"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <ContaCorrente />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/cadastros/tipos-titulos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <TiposTitulos />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Financeiro */}
+            <Route
+              path="/financeiro/painel-financeiro"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <PainelFinanceiroPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/financeiro/fluxo-caixa"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <FluxoCaixa />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/financeiro/movimentacao"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Movimentacao />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/financeiro/incluir-movimentacao"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <IncluirMovimentacao />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/financeiro/contas-a-pagar"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <ContasAPagar />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/financeiro/contas-receber"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <ContasAReceber />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Contábil */}
+            <Route
+              path="/contabil/plano-contas"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <PlanoContas />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/contabil/lancamentos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Lancamentos />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/contabil/dre"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <DRE />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/contabil/balanco"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Balanco />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Vendas */}
+            <Route
+              path="/vendas/painel-vendas"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <PainelVendas />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/vendas/servicos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Servicos />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/vendas/tabela-precos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <TabelaPrecos />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/vendas/orcamento"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Orcamento />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/vendas/faturamento"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Faturamento />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            {/* CRM */}
+            <Route
+              path="/crm/painel"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <CrmPainelPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/crm/funil-configuracao"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <FunilConfiguracao />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/crm/leads"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Leads />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Relatórios */}
+            <Route
+              path="/relatorios"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Relatorios />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/relatorios/favorecido"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <RelatorioFavorecido />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Style Guide */}
+            <Route
+              path="/style-guide"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <StyleGuide />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </Router>
+        <Toaster />
       </CompanyProvider>
     </AuthProvider>
   );
