@@ -772,4 +772,5 @@ export const useVendasDashboard = () => {
         // Buscar vendas por ano para os últimos 3 anos
         for (let i = 0; i < yearsToShow; i++) {
           const year = currentYear - i;
-          const
+          
+          // Buscar
