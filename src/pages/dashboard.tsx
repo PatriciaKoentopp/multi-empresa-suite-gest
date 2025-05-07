@@ -554,66 +554,40 @@ export function Dashboard() {
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
               </div>
             ) : (
-              <Tabs defaultValue={`${new Date().getFullYear()}`} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value={`${new Date().getFullYear()}`}>{new Date().getFullYear()}</TabsTrigger>
-                  <TabsTrigger value={`${new Date().getFullYear() - 1}`}>{new Date().getFullYear() - 1}</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value={`${new Date().getFullYear()}`}>
-                  {dashboardData.topClientesAnoAtual.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left pb-2">Cliente</th>
-                            <th className="text-right pb-2">Valor Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {dashboardData.topClientesAnoAtual.map((cliente) => (
-                            <tr key={cliente.id} className="border-b">
-                              <td className="py-2 font-medium">{cliente.nome}</td>
-                              <td className="py-2 text-right">{formatCurrency(cliente.totalVendas)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <p className="text-center text-muted-foreground py-4">
-                      Nenhuma venda encontrada em {new Date().getFullYear()}
-                    </p>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value={`${new Date().getFullYear() - 1}`}>
-                  {dashboardData.topClientesAnoAnterior.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left pb-2">Cliente</th>
-                            <th className="text-right pb-2">Valor Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {dashboardData.topClientesAnoAnterior.map((cliente) => (
-                            <tr key={cliente.id} className="border-b">
-                              <td className="py-2 font-medium">{cliente.nome}</td>
-                              <td className="py-2 text-right">{formatCurrency(cliente.totalVendas)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <p className="text-center text-muted-foreground py-4">
-                      Nenhuma venda encontrada em {new Date().getFullYear() - 1}
-                    </p>
-                  )}
-                </TabsContent>
-              </Tabs>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left pb-2">Cliente</th>
+                      <th className="text-right pb-2">Valor Total ({new Date().getFullYear()})</th>
+                      <th className="text-left pb-2">Cliente</th>
+                      <th className="text-right pb-2">Valor Total ({new Date().getFullYear() - 1})</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <tr key={index} className="border-b">
+                        <td className="py-2 font-medium">
+                          {dashboardData.topClientesAnoAtual[index]?.nome || "-"}
+                        </td>
+                        <td className="py-2 text-right">
+                          {dashboardData.topClientesAnoAtual[index]
+                            ? formatCurrency(dashboardData.topClientesAnoAtual[index].totalVendas)
+                            : "-"}
+                        </td>
+                        <td className="py-2 font-medium">
+                          {dashboardData.topClientesAnoAnterior[index]?.nome || "-"}
+                        </td>
+                        <td className="py-2 text-right">
+                          {dashboardData.topClientesAnoAnterior[index]
+                            ? formatCurrency(dashboardData.topClientesAnoAnterior[index].totalVendas)
+                            : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </CardContent>
         </Card>
