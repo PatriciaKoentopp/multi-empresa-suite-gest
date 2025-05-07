@@ -604,43 +604,6 @@ export const useVendasDashboard = () => {
 
       const mediaTicket = ticketData?.length ? totalVendasPeriodo / ticketData.length : 0;
       
-      // Calcular ticket médio por projeto
-      const { data: projetosData, error: projetosError } = await supabase
-        .from('orcamentos')
-        .select(`
-          id,
-          codigo_projeto,
-          orcamentos_itens (valor)
-        `)
-        .eq('tipo', 'venda')
-        .eq('status', 'ativo')
-        .not('codigo_projeto', 'is', null)
-        .gte('data_venda', startOfYear)
-        .lte('data_venda', endOfYear);
-
-      if (projetosError) throw projetosError;
-      
-      // Contar projetos únicos
-      const projetosUnicos = new Set();
-      let totalValorProjetos = 0;
-      
-      if (projetosData) {
-        projetosData.forEach(orcamento => {
-          if (orcamento.codigo_projeto) {
-            projetosUnicos.add(orcamento.codigo_projeto);
-            
-            // Somar valor deste orçamento
-            const valorOrcamento = orcamento.orcamentos_itens.reduce(
-              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
-            );
-            totalValorProjetos += valorOrcamento;
-          }
-        });
-      }
-      
-      // Calcular ticket médio por projeto
-      const mediaTicketPorProjeto = projetosUnicos.size > 0 ? totalValorProjetos / projetosUnicos.size : 0;
-      
       // Buscar clientes ativos (com vendas nos últimos 90 dias)
       const ninetyDaysAgo = subDays(new Date(), 90);
       const ninetyDaysAgoFormatted = format(ninetyDaysAgo, 'yyyy-MM-dd');
@@ -664,13 +627,70 @@ export const useVendasDashboard = () => {
       
       const clientesAtivos = clientesUnicos.size;
 
+      // Calcular ticket médio por projeto
+      // Primeiro buscamos os dados de ticket por projeto
+      const ticketProjetoData = await fetchTicketMedioPorProjeto();
+      setTicketMedioPorProjetoData(ticketProjetoData);
+      
+      // Pegamos o valor do ano atual se existir, caso contrário, usamos 0
+      const anoAtualDados = ticketProjetoData.find(item => item.name === currentYear.toString());
+      const mediaTicketPorProjeto = anoAtualDados ? anoAtualDados.ticket_medio : 0;
+      
+      // Buscar vendas do ano atual para projetos
+      const startOfYear = format(new Date(currentYear, 0, 1), 'yyyy-MM-dd');
+      const endOfYear = format(new Date(currentYear, 11, 31), 'yyyy-MM-dd');
+      
+      // Buscar dados para projetos com código
+      const { data: projetosData, error: projetosError } = await supabase
+        .from('orcamentos')
+        .select(`
+          id,
+          codigo_projeto,
+          orcamentos_itens (valor)
+        `)
+        .eq('tipo', 'venda')
+        .eq('status', 'ativo')
+        .not('codigo_projeto', 'is', null)
+        .gte('data_venda', startOfYear)
+        .lte('data_venda', endOfYear);
+      
+      if (projetosError) {
+        console.error("Erro ao buscar dados de projetos:", projetosError);
+        throw projetosError;
+      }
+      
+      // Calcular o valor médio por projeto
+      const projetosUnicos = new Set();
+      let totalValorProjetos = 0;
+      
+      if (projetosData && projetosData.length > 0) {
+        projetosData.forEach(orcamento => {
+          if (orcamento.codigo_projeto) {
+            projetosUnicos.add(orcamento.codigo_projeto);
+            
+            // Somar valor deste orçamento
+            const valorOrcamento = orcamento.orcamentos_itens.reduce(
+              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+            );
+            totalValorProjetos += valorOrcamento;
+          }
+        });
+      }
+      
+      // Ticket médio por projeto - usar o mesmo cálculo usado no gráfico
+      const valorTicketMedioPorProjeto = projetosUnicos.size > 0 
+        ? totalValorProjetos / projetosUnicos.size 
+        : 0;
+      
+      console.log("Ticket médio por projeto calculado:", valorTicketMedioPorProjeto);
+
       setSalesData({
         total_vendas: totalVendas,
         vendas_mes_atual: vendasMesAtual,
         vendas_mes_anterior: vendasMesAnterior,
         variacao_percentual: variacaoPercentual,
         media_ticket: mediaTicket,
-        media_ticket_projeto: mediaTicketPorProjeto, // Adicionado campo para ticket médio por projeto
+        media_ticket_projeto: valorTicketMedioPorProjeto, // Usando o valor calculado para projetos
         clientes_ativos: clientesAtivos
       });
 
@@ -738,39 +758,10 @@ export const useVendasDashboard = () => {
         const dadosTrimestrais = [
           { name: '1º Trim', faturado: 0 },
           { name: '2º Trim', faturado: 0 },
-          { name: '3º Trim', faturado: 0 },
-          { name: '4º Trim', faturado: 0 }
+          { name: '3º Trim', faturado: 0 }
         ];
         
         // Somar os meses para formar os trimestres
         dadosMensais.forEach((mes, index) => {
           const trimestre = Math.floor(index / 3);
-          dadosTrimestrais[trimestre].faturado += mes.faturado;
-        });
-        
-        console.log("Dados trimestrais processados:", dadosTrimestrais);
-        setQuarterlyChartData(dadosTrimestrais);
-        
-      } catch (monthlyError) {
-        console.error("Erro ao processar dados mensais:", monthlyError);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar dados mensais",
-          description: "Não foi possível processar os dados mensais"
-        });
-      }
-
-      // Buscar dados para gráficos anuais
-      try {
-        console.log("Iniciando busca de dados anuais");
-        
-        // Vamos buscar dados dos últimos 3 anos
-        const yearsToShow = 3;
-        const currentYear = new Date().getFullYear();
-        const yearlyResults = [];
-        
-        // Buscar vendas por ano para os últimos 3 anos
-        for (let i = 0; i < yearsToShow; i++) {
-          const year = currentYear - i;
-          
-          // Buscar
+          dadosTrimestrais
