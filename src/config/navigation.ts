@@ -5,7 +5,7 @@ import { ModuleNavItem } from "@/types";
 export const navigationConfig: ModuleNavItem[] = [
   {
     title: "Dashboard",
-    href: "/dashboard",
+    href: "/",
     icon: "Grid",
   },
   {

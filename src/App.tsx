@@ -12,6 +12,7 @@ const Relatorios = lazy(() => import('./pages/relatorios'));
 const RelatorioFavorecido = lazy(() => import('./pages/relatorios/favorecido'));
 const Favorecidos = lazy(() => import('./pages/cadastros/favorecidos'));
 const ClassificacaoABC = lazy(() => import('./pages/relatorios/classificacao-abc'));
+const Empresas = lazy(() => import('./pages/empresas'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Componente para rotas protegidas
@@ -32,6 +33,7 @@ function App() {
               <Route path="/relatorios/favorecido" element={<ProtectedRoute><RelatorioFavorecido /></ProtectedRoute>} />
               <Route path="/cadastros/favorecidos" element={<ProtectedRoute><Favorecidos /></ProtectedRoute>} />
               <Route path="/relatorios/classificacao-abc" element={<ProtectedRoute><ClassificacaoABC /></ProtectedRoute>} />
+              <Route path="/admin/empresas" element={<ProtectedRoute><Empresas /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
