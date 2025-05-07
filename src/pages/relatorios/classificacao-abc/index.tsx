@@ -17,6 +17,7 @@ import { ptBR } from "date-fns/locale";
 type Cliente = {
   id: string;
   nome: string;
+  nome_fantasia: string;
   totalVendas: number;
   quantidadeCompras: number;
   ticketMedio: number;
@@ -71,7 +72,7 @@ export default function ClassificacaoABC() {
       // Primeiro, buscar todas as vendas no período
       const { data: vendas, error: vendasError } = await supabase
         .from("orcamentos")
-        .select("id, data_venda, favorecido_id, favorecido:favorecidos(id, nome)")
+        .select("id, data_venda, favorecido_id, favorecido:favorecidos(id, nome, nome_fantasia)")
         .eq("tipo", "venda")
         .eq("status", "ativo")
         .gte("data_venda", format(startDate, "yyyy-MM-dd"))
@@ -94,12 +95,14 @@ export default function ClassificacaoABC() {
         
         const clienteId = venda.favorecido.id;
         const clienteNome = venda.favorecido.nome;
+        const clienteNomeFantasia = venda.favorecido.nome_fantasia || venda.favorecido.nome;
         const dataVenda = venda.data_venda;
         
         if (!clientesMap.has(clienteId)) {
           clientesMap.set(clienteId, {
             id: clienteId,
             nome: clienteNome,
+            nome_fantasia: clienteNomeFantasia,
             totalVendas: 0,
             quantidadeCompras: 0,
             vendas: [],
@@ -132,6 +135,7 @@ export default function ClassificacaoABC() {
         return {
           id: cliente.id,
           nome: cliente.nome,
+          nome_fantasia: cliente.nome_fantasia,
           totalVendas: cliente.totalVendas,
           quantidadeCompras: cliente.quantidadeCompras,
           ticketMedio: ticketMedio,
@@ -160,6 +164,7 @@ export default function ClassificacaoABC() {
       setFilteredClientes(clientes);
     } else {
       const filtered = clientes.filter(cliente => 
+        cliente.nome_fantasia.toLowerCase().includes(searchTerm.toLowerCase()) ||
         cliente.nome.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredClientes(filtered);
@@ -171,15 +176,15 @@ export default function ClassificacaoABC() {
     const headers = [
       "Cliente",
       "Classificação",
-      "Total de Vendas",
-      "Quantidade de Compras",
-      "Ticket Médio",
+      "Vendas",
+      "Qtde",
+      "Ticket",
       "Frequência (meses)",
       "Última Compra"
     ].join(";");
 
     const rows = filteredClientes.map(cliente => [
-      cliente.nome,
+      cliente.nome_fantasia,
       cliente.classificacao,
       cliente.totalVendas.toFixed(2).replace(".", ","),
       cliente.quantidadeCompras,
@@ -363,9 +368,9 @@ export default function ClassificacaoABC() {
             <TableRow>
               <TableHead>Cliente</TableHead>
               <TableHead>Classificação</TableHead>
-              <TableHead className="text-right">Total de Vendas</TableHead>
-              <TableHead className="text-right">Quantidade de Compras</TableHead>
-              <TableHead className="text-right">Ticket Médio</TableHead>
+              <TableHead className="text-right">Vendas</TableHead>
+              <TableHead className="text-right">Qtde</TableHead>
+              <TableHead className="text-right">Ticket</TableHead>
               <TableHead className="text-right">Frequência (meses)</TableHead>
               <TableHead>Última Compra</TableHead>
             </TableRow>
@@ -402,7 +407,7 @@ export default function ClassificacaoABC() {
             ) : filteredClientes.length > 0 ? (
               filteredClientes.map((cliente) => (
                 <TableRow key={cliente.id}>
-                  <TableCell>{cliente.nome}</TableCell>
+                  <TableCell>{cliente.nome_fantasia || cliente.nome}</TableCell>
                   <TableCell>
                     <Badge
                       className={cn(
