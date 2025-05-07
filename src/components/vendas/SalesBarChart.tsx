@@ -59,13 +59,16 @@ export const SalesBarChart = ({
   }
 
   // Identificar as chaves que representam valores (além de "name")
-  const valueKeys = valueKey ? 
-    [valueKey] : 
-    Object.keys(chartData[0]).filter(key => key !== "name");
+  // Para comparativo mensal, precisamos pegar os anos que estão como chaves
+  const valueKeys = isMonthlyComparison ? 
+    Object.keys(chartData[0]).filter(key => key !== "name" && !isNaN(Number(key))) :
+    valueKey ? 
+      [valueKey] : 
+      Object.keys(chartData[0]).filter(key => key !== "name");
   
   // Verificar se todos os valores são zero
   const allZeros = chartData.every(item => 
-    valueKeys.every(key => item[key] === 0)
+    valueKeys.every(key => !item[key] || item[key] === 0)
   );
   
   if (allZeros) {
@@ -110,7 +113,7 @@ export const SalesBarChart = ({
         {isMonthlyComparison ? (
           // Para o comparativo mensal, usar uma div com overflow para permitir scroll horizontal
           <div className="overflow-x-auto pb-4" style={{ width: '100%' }}>
-            <div style={{ width: minWidth, height: `${chartHeight}px` }}>
+            <div style={{ width: minWidth, height: `${chartHeight}px`, minWidth: '800px' }}>
               <BarChart
                 data={chartData}
                 width={chartData.length * 100}
