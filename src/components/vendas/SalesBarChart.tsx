@@ -17,7 +17,8 @@ interface SalesBarChartProps {
   }[];
   className?: string;
   multiColor?: boolean;
-  isMonthlyComparison?: boolean; // Nova propriedade para identificar o comparativo mensal
+  isMonthlyComparison?: boolean;
+  valueKey?: string; // Nova propriedade para especificar qual chave usar para valores
 }
 
 const CHART_COLORS = [
@@ -39,7 +40,8 @@ export const SalesBarChart = ({
   data, 
   className, 
   multiColor = false,
-  isMonthlyComparison = false 
+  isMonthlyComparison = false,
+  valueKey = "faturado" // Valor padrão é "faturado" para manter compatibilidade
 }: SalesBarChartProps) => {
   // Verificar se os dados estão presentes e em formato correto
   const chartData = Array.isArray(data) ? data : [];
@@ -57,7 +59,9 @@ export const SalesBarChart = ({
   }
 
   // Identificar as chaves que representam valores (além de "name")
-  const valueKeys = Object.keys(chartData[0]).filter(key => key !== "name");
+  const valueKeys = valueKey ? 
+    [valueKey] : 
+    Object.keys(chartData[0]).filter(key => key !== "name");
   
   // Verificar se todos os valores são zero
   const allZeros = chartData.every(item => 
@@ -97,8 +101,8 @@ export const SalesBarChart = ({
       <ChartContainer
         className={`h-[${chartHeight}px]`}
         config={{
-          faturado: {
-            label: "Faturado",
+          [valueKey]: {
+            label: valueKey === "ticket_medio" ? "Ticket Médio" : "Faturado",
             color: "#4CAF50",
           },
         }}
@@ -199,15 +203,25 @@ export const SalesBarChart = ({
                   return (
                     <div className="bg-white p-2 border rounded shadow">
                       <p className="font-medium mb-1">{label}</p>
-                      {payload.map((entry, index) => (
-                        <p 
-                          key={`tooltip-item-${index}`} 
-                          className="text-sm" 
-                          style={{ color: entry.color }}
-                        >
-                          {entry.name}: {formatCurrency(Number(entry.value || 0))}
-                        </p>
-                      ))}
+                      {payload.map((entry, index) => {
+                        // Mostrar informação de contagem de projetos se disponível
+                        const showCount = entry.name === "ticket_medio" && chartData.find(d => d.name === label)?.contagem;
+                        return (
+                          <div key={`tooltip-item-${index}`}>
+                            <p 
+                              className="text-sm" 
+                              style={{ color: entry.color }}
+                            >
+                              {entry.name === "ticket_medio" ? "Ticket Médio" : entry.name}: {formatCurrency(Number(entry.value || 0))}
+                            </p>
+                            {showCount && (
+                              <p className="text-xs text-gray-600">
+                                Projetos: {chartData.find(d => d.name === label)?.contagem}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 }} 
@@ -225,8 +239,8 @@ export const SalesBarChart = ({
                 ))
               ) : (
                 <Bar
-                  dataKey="faturado"
-                  name="Faturado"
+                  dataKey={valueKey}
+                  name={valueKey === "ticket_medio" ? "Ticket Médio" : "Faturado"}
                   fill="#4CAF50"
                   radius={[4, 4, 0, 0]}
                 />

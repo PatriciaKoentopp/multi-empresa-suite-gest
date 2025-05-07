@@ -7,21 +7,24 @@ interface SalesPerformanceTabsProps {
   barChartData: any[];
   quarterlyChartData: any[];
   yearlyChartData: any[];
-  monthlyComparisonData: any[]; // Novo tipo de dados para comparação mensal
+  monthlyComparisonData: any[]; // Dados para comparação mensal
+  ticketMedioPorProjetoData: any[]; // Novo tipo de dados para ticket médio por projeto
 }
 
 export const SalesPerformanceTabs = ({
   barChartData,
   quarterlyChartData,
   yearlyChartData,
-  monthlyComparisonData
+  monthlyComparisonData,
+  ticketMedioPorProjetoData
 }: SalesPerformanceTabsProps) => {
   // Verificar se todos os dados estão presentes
   console.log("SalesPerformanceTabs - Dados recebidos:", {
     barChartData,
     quarterlyChartData,
     yearlyChartData,
-    monthlyComparisonData
+    monthlyComparisonData,
+    ticketMedioPorProjetoData
   });
 
   return (
@@ -34,6 +37,7 @@ export const SalesPerformanceTabs = ({
             <TabsTrigger value="quarterly">Trimestral</TabsTrigger>
             <TabsTrigger value="yearly">Anual</TabsTrigger>
             <TabsTrigger value="monthly-comparison">Comparativo Mensal</TabsTrigger>
+            <TabsTrigger value="ticket-medio-projeto">Ticket por Projeto</TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="monthly" className="mt-4">
@@ -76,6 +80,24 @@ export const SalesPerformanceTabs = ({
                 data={monthlyComparisonData} 
                 multiColor={true} 
                 isMonthlyComparison={true} 
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="ticket-medio-projeto">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ticket Médio por Projeto por Ano</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SalesBarChart 
+                data={ticketMedioPorProjetoData.map(item => ({
+                  name: item.name,
+                  ticket_medio: item.ticket_medio,
+                  contagem: item.contagem_projetos
+                }))} 
+                multiColor={true}
+                valueKey="ticket_medio"
               />
             </CardContent>
           </Card>

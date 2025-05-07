@@ -16,6 +16,7 @@ const PainelVendasPage = () => {
     yearlyChartData,
     yearlyComparisonData,
     monthlyComparisonData,
+    ticketMedioPorProjetoData,
     fetchMonthlySalesData
   } = useVendasDashboard();
 
@@ -31,9 +32,10 @@ const PainelVendasPage = () => {
       yearlyChartData,
       yearlyComparisonDataLength: yearlyComparisonData?.length,
       yearlyComparisonData,
-      monthlyComparisonData
+      monthlyComparisonData,
+      ticketMedioPorProjetoData
     });
-  }, [isLoading, salesData, barChartData, quarterlyChartData, yearlyChartData, yearlyComparisonData, monthlyComparisonData]);
+  }, [isLoading, salesData, barChartData, quarterlyChartData, yearlyChartData, yearlyComparisonData, monthlyComparisonData, ticketMedioPorProjetoData]);
 
   if (isLoading) {
     return <SalesLoadingState />;
@@ -45,6 +47,7 @@ const PainelVendasPage = () => {
   const safeYearlyChartData = Array.isArray(yearlyChartData) ? yearlyChartData : [];
   const safeYearlyComparisonData = Array.isArray(yearlyComparisonData) ? yearlyComparisonData : [];
   const safeMonthlyComparisonData = Array.isArray(monthlyComparisonData) ? monthlyComparisonData : [];
+  const safeTicketMedioPorProjetoData = Array.isArray(ticketMedioPorProjetoData) ? ticketMedioPorProjetoData : [];
 
   return (
     <div className="space-y-6">
@@ -55,6 +58,7 @@ const PainelVendasPage = () => {
         quarterlyChartData={safeQuarterlyChartData}
         yearlyChartData={safeYearlyChartData}
         monthlyComparisonData={safeMonthlyComparisonData}
+        ticketMedioPorProjetoData={safeTicketMedioPorProjetoData}
       />
       <SalesComparisonTable 
         yearlyComparisonData={safeYearlyComparisonData}
