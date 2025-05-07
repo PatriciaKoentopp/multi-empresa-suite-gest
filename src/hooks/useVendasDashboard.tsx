@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +10,7 @@ interface SalesData {
   vendas_mes_anterior: number;
   variacao_percentual: number;
   media_ticket: number;
+  media_ticket_projeto: number; // Adicionado campo para ticket médio por projeto
   clientes_ativos: number;
 }
 
@@ -604,6 +604,43 @@ export const useVendasDashboard = () => {
 
       const mediaTicket = ticketData?.length ? totalVendasPeriodo / ticketData.length : 0;
       
+      // Calcular ticket médio por projeto
+      const { data: projetosData, error: projetosError } = await supabase
+        .from('orcamentos')
+        .select(`
+          id,
+          codigo_projeto,
+          orcamentos_itens (valor)
+        `)
+        .eq('tipo', 'venda')
+        .eq('status', 'ativo')
+        .not('codigo_projeto', 'is', null)
+        .gte('data_venda', startOfYear)
+        .lte('data_venda', endOfYear);
+
+      if (projetosError) throw projetosError;
+      
+      // Contar projetos únicos
+      const projetosUnicos = new Set();
+      let totalValorProjetos = 0;
+      
+      if (projetosData) {
+        projetosData.forEach(orcamento => {
+          if (orcamento.codigo_projeto) {
+            projetosUnicos.add(orcamento.codigo_projeto);
+            
+            // Somar valor deste orçamento
+            const valorOrcamento = orcamento.orcamentos_itens.reduce(
+              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+            );
+            totalValorProjetos += valorOrcamento;
+          }
+        });
+      }
+      
+      // Calcular ticket médio por projeto
+      const mediaTicketPorProjeto = projetosUnicos.size > 0 ? totalValorProjetos / projetosUnicos.size : 0;
+      
       // Buscar clientes ativos (com vendas nos últimos 90 dias)
       const ninetyDaysAgo = subDays(new Date(), 90);
       const ninetyDaysAgoFormatted = format(ninetyDaysAgo, 'yyyy-MM-dd');
@@ -633,6 +670,7 @@ export const useVendasDashboard = () => {
         vendas_mes_anterior: vendasMesAnterior,
         variacao_percentual: variacaoPercentual,
         media_ticket: mediaTicket,
+        media_ticket_projeto: mediaTicketPorProjeto, // Adicionado campo para ticket médio por projeto
         clientes_ativos: clientesAtivos
       });
 
@@ -734,156 +772,4 @@ export const useVendasDashboard = () => {
         // Buscar vendas por ano para os últimos 3 anos
         for (let i = 0; i < yearsToShow; i++) {
           const year = currentYear - i;
-          const startDate = `${year}-01-01`;
-          const endDate = `${year}-12-31`;
-          
-          const { data: yearData, error: yearError } = await supabase
-            .from('orcamentos')
-            .select(`
-              id,
-              data_venda,
-              orcamentos_itens (valor)
-            `)
-            .eq('tipo', 'venda')
-            .eq('status', 'ativo')
-            .gte('data_venda', startDate)
-            .lte('data_venda', endDate);
-          
-          if (yearError) throw yearError;
-          
-          const totalYearSales = yearData?.reduce((acc, orcamento) => {
-            const orcamentoTotal = orcamento.orcamentos_itens.reduce(
-              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
-            );
-            return acc + orcamentoTotal;
-          }, 0) || 0;
-          
-          yearlyResults.push({
-            name: year.toString(),
-            faturado: totalYearSales
-          });
-        }
-        
-        // Invertemos a ordem para o mais antigo aparecer primeiro
-        yearlyResults.reverse();
-        
-        console.log("Dados anuais processados:", yearlyResults);
-        setYearlyChartData(yearlyResults);
-      } catch (yearlyError) {
-        console.error("Erro ao processar dados anuais:", yearlyError);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar dados anuais",
-          description: "Não foi possível processar os dados anuais"
-        });
-      }
-      
-      // Buscar dados para comparativo mensal entre anos
-      try {
-        console.log("Iniciando busca de dados para comparativo mensal entre anos");
-        const ultimosAnos = 3; // Comparar os últimos 3 anos
-        const anoAtual = new Date().getFullYear();
-        
-        // Criar estrutura para dados comparativos por mês
-        const meses = [
-          "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
-          "Jul", "Ago", "Set", "Out", "Nov", "Dez"
-        ];
-        
-        const dadosComparativos = meses.map(mes => {
-          const item: any = { name: mes };
-          
-          // Adicionar campo para cada ano
-          for (let i = 0; i < ultimosAnos; i++) {
-            const ano = anoAtual - i;
-            item[ano.toString()] = 0;
-          }
-          
-          return item;
-        });
-        
-        // Para cada um dos últimos anos, buscar vendas mensais
-        for (let i = 0; i < ultimosAnos; i++) {
-          const ano = anoAtual - i;
-          const startDate = `${ano}-01-01`;
-          const endDate = `${ano}-12-31`;
-          
-          const { data: vendaAnual, error: vendaAnualError } = await supabase
-            .from('orcamentos')
-            .select(`
-              id, 
-              data_venda,
-              orcamentos_itens (valor)
-            `)
-            .eq('tipo', 'venda')
-            .eq('status', 'ativo')
-            .gte('data_venda', startDate)
-            .lte('data_venda', endDate);
-          
-          if (vendaAnualError) {
-            console.error(`Erro ao buscar vendas para o ano ${ano}:`, vendaAnualError);
-            continue;
-          }
-          
-          // Processar as vendas para este ano
-          if (vendaAnual) {
-            vendaAnual.forEach(venda => {
-              if (venda.data_venda) {
-                const mesString = venda.data_venda.substring(5, 7);
-                const mesIndex = parseInt(mesString, 10) - 1; // 0-11
-                
-                const valorTotal = venda.orcamentos_itens.reduce(
-                  (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
-                );
-                
-                if (mesIndex >= 0 && mesIndex < 12) {
-                  dadosComparativos[mesIndex][ano.toString()] += valorTotal;
-                }
-              }
-            });
-          }
-        }
-        
-        console.log("Dados comparativos mensais processados:", dadosComparativos);
-        setMonthlyComparisonData(dadosComparativos);
-      } catch (compareError) {
-        console.error("Erro ao processar dados comparativos mensais:", compareError);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar dados comparativos",
-          description: "Não foi possível processar os dados comparativos"
-        });
-      }
-
-      // Buscar dados de ticket médio por projeto
-      try {
-        const dadosTicketMedio = await fetchTicketMedioPorProjeto();
-        setTicketMedioPorProjetoData(dadosTicketMedio);
-      } catch (ticketError) {
-        console.error("Erro ao processar dados de ticket médio:", ticketError);
-      }
-      
-    } catch (error: any) {
-      console.error("Erro ao buscar dados:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar dados",
-        description: error.message || "Não foi possível carregar os dados de vendas"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return {
-    isLoading,
-    salesData,
-    barChartData,
-    quarterlyChartData,
-    yearlyChartData,
-    yearlyComparisonData,
-    monthlyComparisonData,
-    ticketMedioPorProjetoData,
-    fetchMonthlySalesData
-  };
-};
+          const

@@ -12,6 +12,7 @@ interface SalesDashboardCardsProps {
     variacao_percentual: number;
     media_ticket: number;
     clientes_ativos: number;
+    media_ticket_projeto?: number; // Campo opcional para ticket médio por projeto
   } | null;
 }
 
@@ -35,9 +36,9 @@ export const SalesDashboardCards = ({ salesData }: SalesDashboardCardsProps) => 
         icon="chart"
       />
       <SalesDashboardCard
-        title="Ticket Médio"
-        value={formatCurrency(salesData?.media_ticket || 0)}
-        description={`Por venda em ${currentYear}`}
+        title="Ticket Médio por Projeto"
+        value={formatCurrency(salesData?.media_ticket_projeto || salesData?.media_ticket || 0)}
+        description={`Por projeto em ${currentYear}`}
         icon="sales"
       />
       <SalesDashboardCard
