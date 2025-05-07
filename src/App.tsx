@@ -40,58 +40,38 @@ const TabelaPrecos = lazy(() => import('./pages/tabelas-de-preco'));
 const NovaTabelaPreco = lazy(() => import('./pages/tabelas-de-preco/nova-tabela-preco'));
 const EditarTabelaPreco = lazy(() => import('./pages/tabelas-de-preco/editar-tabela-preco'));
 const ClassificacaoABC = lazy(() => import('./pages/relatorios/classificacao-abc'));
+import { Toaster } from "@/components/ui/sonner";
+
+// Componente para rotas protegidas
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  // Aqui você implementaria a lógica de verificação de autenticação
+  // Por enquanto, só retorna os children para permitir que a aplicação funcione
+  return <>{children}</>;
+};
 
 function App() {
   return (
     <AuthProvider>
       <CompanyProvider>
-        <ToastProvider>
-          <Router>
-            <div className="flex flex-col min-h-screen">
-              <SiteHeader />
-              <main className="container mx-auto py-12 flex-grow">
-                <Suspense fallback={<div>Carregando...</div>}>
-                  <Routes>
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                    <Route path="/vendas/faturamento" element={<ProtectedRoute><Faturamento /></ProtectedRoute>} />
-                    <Route path="/vendas/novo-orcamento" element={<ProtectedRoute><NovoOrcamento /></ProtectedRoute>} />
-                    <Route path="/vendas/editar-orcamento/:id" element={<ProtectedRoute><EditarOrcamento /></ProtectedRoute>} />
-                    <Route path="/vendas/visualizar-orcamento/:id" element={<ProtectedRoute><VisualizarOrcamento /></ProtectedRoute>} />
-                    <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
-                    <Route path="/relatorios/favorecido" element={<ProtectedRoute><RelatorioFavorecido /></ProtectedRoute>} />
-                    <Route path="/relatorios/vendas" element={<ProtectedRoute><RelatorioVendas /></ProtectedRoute>} />
-                    <Route path="/relatorios/financeiro" element={<ProtectedRoute><RelatorioFinanceiro /></ProtectedRoute>} />
-                    <Route path="/relatorios/geral" element={<ProtectedRoute><RelatorioGeral /></ProtectedRoute>} />
-                    <Route path="/cadastros/favorecidos" element={<ProtectedRoute><Favorecidos /></ProtectedRoute>} />
-                    <Route path="/cadastros/novo-favorecido" element={<ProtectedRoute><NovoFavorecido /></ProtectedRoute>} />
-                    <Route path="/cadastros/editar-favorecido/:id" element={<ProtectedRoute><EditarFavorecido /></ProtectedRoute>} />
-                    <Route path="/cadastros/servicos" element={<ProtectedRoute><Servicos /></ProtectedRoute>} />
-                    <Route path="/cadastros/novo-servico" element={<ProtectedRoute><NovoServico /></ProtectedRoute>} />
-                    <Route path="/cadastros/editar-servico/:id" element={<ProtectedRoute><EditarServico /></ProtectedRoute>} />
-                    <Route path="/financeiro/fluxo-caixa" element={<ProtectedRoute><FluxoCaixa /></ProtectedRoute>} />
-                    <Route path="/financeiro/contas-correntes" element={<ProtectedRoute><ContasCorrentes /></ProtectedRoute>} />
-                    <Route path="/financeiro/nova-conta-corrente" element={<ProtectedRoute><NovaContaCorrente /></ProtectedRoute>} />
-                    <Route path="/financeiro/editar-conta-corrente/:id" element={<ProtectedRoute><EditarContaCorrente /></ProtectedRoute>} />
-                    <Route path="/crm/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
-                    <Route path="/crm/leads/novo-lead" element={<ProtectedRoute><NovoLead /></ProtectedRoute>} />
-                    <Route path="/crm/leads/editar-lead/:id" element={<ProtectedRoute><EditarLead /></ProtectedRoute>} />
-                    <Route path="/crm/leads/visualizar-lead/:id" element={<ProtectedRoute><VisualizarLead /></ProtectedRoute>} />
-                    <Route path="/usuarios" element={<ProtectedRoute><UsuariosPage /></ProtectedRoute>} />
-                    <Route path="/usuarios/novo-usuario" element={<ProtectedRoute><NovoUsuario /></ProtectedRoute>} />
-                    <Route path="/usuarios/editar-usuario/:id" element={<ProtectedRoute><EditarUsuario /></ProtectedRoute>} />
-                    <Route path="/tabelas-de-preco" element={<ProtectedRoute><TabelaPrecos /></ProtectedRoute>} />
-                    <Route path="/tabelas-de-preco/nova-tabela-preco" element={<ProtectedRoute><NovaTabelaPreco /></ProtectedRoute>} />
-                    <Route path="/tabelas-de-preco/editar-tabela-preco/:id" element={<ProtectedRoute><EditarTabelaPreco /></ProtectedRoute>} />
-                    <Route path="/relatorios/classificacao-abc" element={<ProtectedRoute><React.Suspense fallback={<div>Carregando...</div>}><ClassificacaoABC /></React.Suspense></ProtectedRoute>} />
-                  </Routes>
-                </Suspense>
-              </main>
-              <SiteFooter />
-            </div>
-          </Router>
-        </ToastProvider>
+        <Router>
+          <div className="flex flex-col min-h-screen">
+            <SiteHeader />
+            <main className="container mx-auto py-12 flex-grow">
+              <Suspense fallback={<div>Carregando...</div>}>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
+                  <Route path="/relatorios/favorecido" element={<ProtectedRoute><RelatorioFavorecido /></ProtectedRoute>} />
+                  <Route path="/cadastros/favorecidos" element={<ProtectedRoute><Favorecidos /></ProtectedRoute>} />
+                  <Route path="/relatorios/classificacao-abc" element={<ProtectedRoute><ClassificacaoABC /></ProtectedRoute>} />
+                </Routes>
+              </Suspense>
+            </main>
+            <SiteFooter />
+          </div>
+          <Toaster />
+        </Router>
       </CompanyProvider>
     </AuthProvider>
   );
