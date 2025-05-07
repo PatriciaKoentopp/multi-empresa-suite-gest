@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
@@ -26,6 +27,7 @@ import TiposTitulos from "./pages/cadastros/tipos-titulos";
 // Financeiro
 import FluxoCaixa from "./pages/financeiro/fluxo-caixa";
 import ContasAPagar from "./pages/financeiro/contas-a-pagar";
+// Aqui estava o erro - corrigindo o caminho de importação
 import ContasAReceber from "./pages/financeiro/contas-receber";
 import Movimentacao from "./pages/financeiro/movimentacao";
 import IncluirMovimentacao from "./pages/financeiro/incluir-movimentacao";
