@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
@@ -31,11 +30,13 @@ interface DashboardData {
   topClientesAnoAtual: {
     id: string;
     nome: string;
+    nomeFantasia: string;
     totalVendas: number;
   }[];
   topClientesAnoAnterior: {
     id: string;
     nome: string;
+    nomeFantasia: string;
     totalVendas: number;
   }[];
 }
@@ -93,6 +94,8 @@ export function Dashboard() {
         const fimAnoAnterior = `${anoAnterior}-12-31`;
 
         // 1. Buscar contas correntes e seus saldos
+        
+        // 1. Buscar contas correntes e seus saldos
         const { data: contasCorrentes, error: erroContasCorrentes } = await supabase
           .from('contas_correntes')
           .select('*')
@@ -136,6 +139,7 @@ export function Dashboard() {
             totalSaldo += saldoAtual;
           }
         }
+        
         
         // 1. Buscar total de vendas do mês atual
         const {
@@ -275,12 +279,12 @@ export function Dashboard() {
           });
         }
         
-        // Buscar top 5 clientes para o ano atual
+        // Buscar top 5 clientes para o ano atual - Alterado para incluir nome_fantasia
         const { data: vendasAnoAtual, error: erroVendasAnoAtual } = await supabase
           .from('orcamentos')
           .select(`
             favorecido_id,
-            favorecido:favorecidos!inner(nome),
+            favorecido:favorecidos!inner(nome, nome_fantasia),
             orcamentos_itens(valor)
           `)
           .eq('empresa_id', currentCompany.id)
@@ -291,12 +295,12 @@ export function Dashboard() {
           
         if (erroVendasAnoAtual) throw erroVendasAnoAtual;
         
-        // Buscar top 5 clientes para o ano anterior
+        // Buscar top 5 clientes para o ano anterior - Alterado para incluir nome_fantasia
         const { data: vendasAnoAnterior, error: erroVendasAnoAnterior } = await supabase
           .from('orcamentos')
           .select(`
             favorecido_id,
-            favorecido:favorecidos!inner(nome),
+            favorecido:favorecidos!inner(nome, nome_fantasia),
             orcamentos_itens(valor)
           `)
           .eq('empresa_id', currentCompany.id)
@@ -307,7 +311,7 @@ export function Dashboard() {
           
         if (erroVendasAnoAnterior) throw erroVendasAnoAnterior;
         
-        // Agregar dados por cliente para o ano atual
+        // Agregar dados por cliente para o ano atual - Alterado para incluir nome_fantasia
         const clientesAnoAtual = {};
         if (vendasAnoAtual) {
           vendasAnoAtual.forEach(venda => {
@@ -321,6 +325,7 @@ export function Dashboard() {
               clientesAnoAtual[venda.favorecido_id] = {
                 id: venda.favorecido_id,
                 nome: venda.favorecido?.nome || 'Cliente não identificado',
+                nomeFantasia: venda.favorecido?.nome_fantasia || '',
                 totalVendas: 0
               };
             }
@@ -329,7 +334,7 @@ export function Dashboard() {
           });
         }
         
-        // Agregar dados por cliente para o ano anterior
+        // Agregar dados por cliente para o ano anterior - Alterado para incluir nome_fantasia
         const clientesAnoAnterior = {};
         if (vendasAnoAnterior) {
           vendasAnoAnterior.forEach(venda => {
@@ -343,6 +348,7 @@ export function Dashboard() {
               clientesAnoAnterior[venda.favorecido_id] = {
                 id: venda.favorecido_id,
                 nome: venda.favorecido?.nome || 'Cliente não identificado',
+                nomeFantasia: venda.favorecido?.nome_fantasia || '',
                 totalVendas: 0
               };
             }
@@ -360,7 +366,8 @@ export function Dashboard() {
         const topClientesAnoAnterior = Object.values(clientesAnoAnterior)
           .sort((a: any, b: any) => b.totalVendas - a.totalVendas)
           .slice(0, 5);
-
+          
+        
         // 6. Buscar interações de leads pendentes com status "Aberto" e data igual ou anterior a hoje
         const dataLimiteInteracoes = new Date();
         dataLimiteInteracoes.setHours(23, 59, 59, 999); // Final do dia hoje
@@ -569,7 +576,8 @@ export function Dashboard() {
                     {Array.from({ length: 5 }).map((_, index) => (
                       <tr key={index} className="border-b">
                         <td className="py-2 font-medium pr-2">
-                          {dashboardData.topClientesAnoAtual[index]?.nome || "-"}
+                          {dashboardData.topClientesAnoAtual[index]?.nomeFantasia || 
+                           dashboardData.topClientesAnoAtual[index]?.nome || "-"}
                         </td>
                         <td className="py-2 text-right pr-8">
                           {dashboardData.topClientesAnoAtual[index]
@@ -577,7 +585,8 @@ export function Dashboard() {
                             : "-"}
                         </td>
                         <td className="py-2 font-medium pl-8 border-l">
-                          {dashboardData.topClientesAnoAnterior[index]?.nome || "-"}
+                          {dashboardData.topClientesAnoAnterior[index]?.nomeFantasia || 
+                           dashboardData.topClientesAnoAnterior[index]?.nome || "-"}
                         </td>
                         <td className="py-2 text-right">
                           {dashboardData.topClientesAnoAnterior[index]
