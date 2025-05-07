@@ -11,7 +11,7 @@ import { Download, FilterIcon, Calendar as CalendarIcon } from "lucide-react";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import { format, subMonths } from "date-fns";
+import { format, subMonths, differenceInMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type Cliente = {
@@ -22,6 +22,7 @@ type Cliente = {
   quantidadeCompras: number;
   ticketMedio: number;
   ultimaCompra: string;
+  mesesSemCompra: number;
   frequenciaCompra: number;
   classificacao: "A" | "B" | "C";
 };
@@ -37,6 +38,13 @@ export default function ClassificacaoABC() {
   const calculateFrequency = (totalDays: number, quantidadeCompras: number): number => {
     if (quantidadeCompras <= 1) return 0;
     return Math.round(totalDays / (quantidadeCompras - 1) / 30);
+  };
+  
+  const calculateMonthsSinceLastPurchase = (lastPurchaseDate: string | null): number => {
+    if (!lastPurchaseDate) return 0;
+    const today = new Date();
+    const lastPurchase = new Date(lastPurchaseDate);
+    return differenceInMonths(today, lastPurchase);
   };
 
   const classifyCustomers = (data: Cliente[]): Cliente[] => {
@@ -131,6 +139,7 @@ export default function ClassificacaoABC() {
         const ticketMedio = cliente.totalVendas / cliente.quantidadeCompras;
         const totalDays = Math.max(1, Math.round((new Date().getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)));
         const frequenciaCompra = calculateFrequency(totalDays, cliente.quantidadeCompras);
+        const mesesSemCompra = calculateMonthsSinceLastPurchase(cliente.ultimaCompra);
         
         return {
           id: cliente.id,
@@ -140,6 +149,7 @@ export default function ClassificacaoABC() {
           quantidadeCompras: cliente.quantidadeCompras,
           ticketMedio: ticketMedio,
           ultimaCompra: cliente.ultimaCompra,
+          mesesSemCompra: mesesSemCompra,
           frequenciaCompra: frequenciaCompra,
           classificacao: "C" as "A" | "B" | "C" // será atualizado na classificação
         };
@@ -180,7 +190,7 @@ export default function ClassificacaoABC() {
       "Qtde",
       "Ticket",
       "Frequência (meses)",
-      "Última Compra"
+      "Meses Sem Compra"
     ].join(";");
 
     const rows = filteredClientes.map(cliente => [
@@ -190,7 +200,7 @@ export default function ClassificacaoABC() {
       cliente.quantidadeCompras,
       cliente.ticketMedio.toFixed(2).replace(".", ","),
       cliente.frequenciaCompra,
-      cliente.ultimaCompra ? formatDate(cliente.ultimaCompra) : "-"
+      cliente.mesesSemCompra
     ].join(";"));
 
     const csvContent = [headers, ...rows].join("\n");
@@ -372,7 +382,7 @@ export default function ClassificacaoABC() {
               <TableHead className="text-right">Qtde</TableHead>
               <TableHead className="text-right">Ticket</TableHead>
               <TableHead className="text-right">Frequência (meses)</TableHead>
-              <TableHead>Última Compra</TableHead>
+              <TableHead className="text-right">Meses Sem Compra</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -431,8 +441,8 @@ export default function ClassificacaoABC() {
                   <TableCell className="text-right">
                     {cliente.frequenciaCompra > 0 ? cliente.frequenciaCompra : "-"}
                   </TableCell>
-                  <TableCell>
-                    {cliente.ultimaCompra ? formatDate(cliente.ultimaCompra) : "-"}
+                  <TableCell className="text-right">
+                    {cliente.mesesSemCompra}
                   </TableCell>
                 </TableRow>
               ))
