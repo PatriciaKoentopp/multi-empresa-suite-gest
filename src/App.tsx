@@ -27,8 +27,7 @@ import TiposTitulos from "./pages/cadastros/tipos-titulos";
 // Financeiro
 import FluxoCaixa from "./pages/financeiro/fluxo-caixa";
 import ContasAPagar from "./pages/financeiro/contas-a-pagar";
-// Aqui estava o erro - corrigindo o caminho de importação
-import ContasAReceber from "./pages/financeiro/contas-receber";
+import ContasAReceber from "./pages/financeiro/contas-a-receber"; // Corrigido o caminho de importação
 import Movimentacao from "./pages/financeiro/movimentacao";
 import IncluirMovimentacao from "./pages/financeiro/incluir-movimentacao";
 import PainelFinanceiroPage from "./pages/financeiro/painel-financeiro";
