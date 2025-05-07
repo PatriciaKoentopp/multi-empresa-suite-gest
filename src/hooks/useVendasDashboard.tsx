@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -636,10 +637,6 @@ export const useVendasDashboard = () => {
       const anoAtualDados = ticketProjetoData.find(item => item.name === currentYear.toString());
       const mediaTicketPorProjeto = anoAtualDados ? anoAtualDados.ticket_medio : 0;
       
-      // Buscar vendas do ano atual para projetos
-      const startOfYear = format(new Date(currentYear, 0, 1), 'yyyy-MM-dd');
-      const endOfYear = format(new Date(currentYear, 11, 31), 'yyyy-MM-dd');
-      
       // Buscar dados para projetos com código
       const { data: projetosData, error: projetosError } = await supabase
         .from('orcamentos')
@@ -758,10 +755,116 @@ export const useVendasDashboard = () => {
         const dadosTrimestrais = [
           { name: '1º Trim', faturado: 0 },
           { name: '2º Trim', faturado: 0 },
-          { name: '3º Trim', faturado: 0 }
+          { name: '3º Trim', faturado: 0 },
+          { name: '4º Trim', faturado: 0 }
         ];
         
         // Somar os meses para formar os trimestres
         dadosMensais.forEach((mes, index) => {
           const trimestre = Math.floor(index / 3);
-          dadosTrimestrais
+          if (trimestre >= 0 && trimestre < 4) {
+            dadosTrimestrais[trimestre].faturado += mes.faturado;
+          }
+        });
+        
+        console.log("Dados trimestrais processados:", dadosTrimestrais);
+        setQuarterlyChartData(dadosTrimestrais);
+        
+        // Buscar dados para o gráfico de vendas anuais
+        console.log("Iniciando busca de dados para gráfico anual");
+        
+        // Definir anos para busca (últimos 5 anos)
+        const anoAtual = new Date().getFullYear();
+        const anosParaGrafico = [];
+        for (let i = 0; i < 5; i++) {
+          anosParaGrafico.push(anoAtual - i);
+        }
+        
+        anosParaGrafico.sort(); // Ordenar anos crescentemente
+        
+        // Criar estrutura para dados anuais
+        const dadosAnuais = await Promise.all(anosParaGrafico.map(async (ano) => {
+          // Buscar vendas para cada ano
+          const { data: vendasAno, error: vendasAnoError } = await supabase
+            .from('orcamentos')
+            .select(`
+              id, 
+              data_venda,
+              orcamentos_itens (valor)
+            `)
+            .eq('tipo', 'venda')
+            .eq('status', 'ativo')
+            .gte('data_venda', `${ano}-01-01`)
+            .lte('data_venda', `${ano}-12-31`);
+          
+          if (vendasAnoError) {
+            console.error(`Erro ao buscar vendas para o ano ${ano}:`, vendasAnoError);
+            return { name: String(ano), faturado: 0 };
+          }
+          
+          // Calcular valor total para o ano
+          const valorAno = vendasAno?.reduce((total, venda) => {
+            const valorVenda = venda.orcamentos_itens.reduce(
+              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+            );
+            return total + valorVenda;
+          }, 0) || 0;
+          
+          return { name: String(ano), faturado: valorAno };
+        }));
+        
+        console.log("Dados anuais processados:", dadosAnuais);
+        setYearlyChartData(dadosAnuais);
+        
+        // Buscar dados para o gráfico de comparação mensal
+        console.log("Iniciando busca de dados para comparação mensal");
+        const dadosMensaisAnoAtual = await fetchMonthlySalesData(currentYear);
+        setMonthlyComparisonData(dadosMensaisAnoAtual);
+        
+      } catch (error: any) {
+        console.error("Erro ao processar dados para gráficos:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar dados dos gráficos",
+          description: error.message || "Não foi possível processar os dados para visualização"
+        });
+        
+        // Definir arrays vazios para evitar erros de renderização
+        setBarChartData([]);
+        setQuarterlyChartData([]);
+        setYearlyChartData([]);
+        setMonthlyComparisonData([]);
+      }
+      
+    } catch (error: any) {
+      console.error("Erro ao buscar dados:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar dados de vendas",
+        description: error.message || "Não foi possível carregar os dados do painel de vendas"
+      });
+      
+      // Definir estado inicial para evitar erros de renderização
+      setSalesData(null);
+      setBarChartData([]);
+      setQuarterlyChartData([]);
+      setYearlyChartData([]);
+      setYearlyComparisonData([]);
+      setMonthlyComparisonData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    isLoading,
+    salesData,
+    barChartData,
+    quarterlyChartData,
+    yearlyChartData,
+    yearlyComparisonData,
+    monthlyComparisonData,
+    ticketMedioPorProjetoData,
+    fetchMonthlySalesData
+  };
+};
