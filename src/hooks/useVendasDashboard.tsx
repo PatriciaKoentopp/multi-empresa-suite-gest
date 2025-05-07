@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -361,7 +360,7 @@ export const useVendasDashboard = () => {
     }
   };
 
-  // Nova função para buscar dados de ticket médio por projeto por ano
+  // Função para buscar dados de ticket médio por projeto por ano
   const fetchTicketMedioPorProjeto = async () => {
     try {
       console.log("Buscando dados de ticket médio por projeto por ano");
@@ -376,6 +375,10 @@ export const useVendasDashboard = () => {
 
       const resultados = [];
 
+      // Armazenar temporariamente os valores para calcular variação
+      const valoresPorAno: { [key: number]: number } = {};
+
+      // Primeiro passo: calcular valor do ticket por ano
       for (const ano of anosDisponiveis) {
         const startDate = `${ano}-01-01`;
         const endDate = `${ano}-12-31`;
@@ -425,6 +428,9 @@ export const useVendasDashboard = () => {
         // Calcular ticket médio por projeto
         const ticketMedio = contagemProjetos > 0 ? valorTotalVendas / contagemProjetos : 0;
         
+        // Armazenar para cálculo de variação
+        valoresPorAno[ano] = ticketMedio;
+
         resultados.push({
           name: ano.toString(),
           ticket_medio: ticketMedio,
@@ -433,8 +439,28 @@ export const useVendasDashboard = () => {
         });
       }
 
-      console.log("Dados de ticket médio por projeto processados:", resultados);
-      return resultados;
+      // Segundo passo: calcular variações percentuais
+      const resultadosComVariacao = resultados.map(item => {
+        const anoAtual = parseInt(item.name, 10);
+        const anoAnterior = anoAtual - 1;
+        
+        // Verificar se temos dados do ano anterior
+        if (valoresPorAno[anoAnterior] && valoresPorAno[anoAnterior] > 0) {
+          const variacaoPercentual = ((item.ticket_medio - valoresPorAno[anoAnterior]) / valoresPorAno[anoAnterior]) * 100;
+          return {
+            ...item,
+            variacao_percentual: variacaoPercentual
+          };
+        }
+        
+        return {
+          ...item,
+          variacao_percentual: null // Sem dados para comparar
+        };
+      });
+
+      console.log("Dados de ticket médio por projeto processados:", resultadosComVariacao);
+      return resultadosComVariacao;
     } catch (error: any) {
       console.error("Erro ao processar dados de ticket médio por projeto:", error);
       toast({
@@ -749,123 +775,3 @@ export const useVendasDashboard = () => {
           title: "Erro ao carregar dados anuais",
           description: "Não foi possível processar os dados anuais"
         });
-      }
-
-      // NOVO: Buscar dados para comparação mensal (mês a mês ao longo dos anos)
-      try {
-        console.log("Iniciando busca de dados para comparação mensal");
-
-        // Vamos buscar dados dos últimos 3 anos
-        const yearsToShow = 3;
-        const currentYear = new Date().getFullYear();
-        
-        // Estrutura de meses
-        const mesesNomes = [
-          "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
-          "Jul", "Ago", "Set", "Out", "Nov", "Dez"
-        ];
-
-        // Dados de vendas por mês para cada ano
-        const dadosMensaisPorAno: { [key: string]: { [key: string]: number } } = {};
-        
-        // Buscar dados para cada ano
-        for (let i = 0; i < yearsToShow; i++) {
-          const year = currentYear - i;
-          const startDate = `${year}-01-01`;
-          const endDate = `${year}-12-31`;
-          
-          dadosMensaisPorAno[year] = {};
-          mesesNomes.forEach(mes => {
-            dadosMensaisPorAno[year][mes] = 0;
-          });
-          
-          const { data: yearData, error: yearError } = await supabase
-            .from('orcamentos')
-            .select(`
-              id,
-              data_venda,
-              orcamentos_itens (valor)
-            `)
-            .eq('tipo', 'venda')
-            .eq('status', 'ativo')
-            .gte('data_venda', startDate)
-            .lte('data_venda', endDate);
-          
-          if (yearError) {
-            console.error(`Erro ao buscar vendas para o ano ${year}:`, yearError);
-            continue;
-          }
-          
-          // Preencher os valores de cada mês para este ano
-          if (yearData) {
-            yearData.forEach(venda => {
-              if (venda.data_venda) {
-                const mesString = venda.data_venda.substring(5, 7);
-                const mesIndex = parseInt(mesString, 10) - 1;
-                
-                if (mesIndex >= 0 && mesIndex < 12) {
-                  const mesNome = mesesNomes[mesIndex];
-                  const valorTotal = venda.orcamentos_itens.reduce(
-                    (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
-                  );
-                  
-                  dadosMensaisPorAno[year][mesNome] += valorTotal;
-                }
-              }
-            });
-          }
-        }
-        
-        // Formar os dados comparativos mensais
-        const dadosComparativosMensais = mesesNomes.map(mes => {
-          const dadosMes: any = { name: mes };
-          
-          // Adicionar dados de cada ano ao mês
-          for (let i = 0; i < yearsToShow; i++) {
-            const year = currentYear - i;
-            dadosMes[year] = dadosMensaisPorAno[year][mes];
-          }
-          
-          return dadosMes;
-        });
-        
-        console.log("Dados comparativos mensais processados:", dadosComparativosMensais);
-        setMonthlyComparisonData(dadosComparativosMensais);
-
-        // Carregar dados de ticket médio por projeto
-        const ticketMedioData = await fetchTicketMedioPorProjeto();
-        setTicketMedioPorProjetoData(ticketMedioData);
-
-      } catch (compareError) {
-        console.error("Erro ao processar dados comparativos mensais:", compareError);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar dados comparativos",
-          description: "Não foi possível processar os dados comparativos mensais"
-        });
-      }
-
-      setIsLoading(false);
-    } catch (error: any) {
-      console.error("Erro no carregamento dos dados:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar dados",
-        description: error.message || "Ocorreu um erro ao carregar os dados de vendas"
-      });
-      setIsLoading(false);
-    }
-  };
-
-  return {
-    isLoading,
-    salesData,
-    barChartData,
-    quarterlyChartData,
-    yearlyChartData,
-    yearlyComparisonData,
-    monthlyComparisonData,
-    ticketMedioPorProjetoData,
-    fetchMonthlySalesData
-  };
-};

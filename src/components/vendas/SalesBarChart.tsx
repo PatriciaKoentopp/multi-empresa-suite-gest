@@ -90,6 +90,11 @@ export const SalesBarChart = ({
     });
   };
 
+  // Formatador para variação percentual
+  const formatPercent = (value: number) => {
+    return `${value > 0 ? '+' : ''}${value.toFixed(2).replace('.', ',')}%`;
+  };
+
   // Definir a largura do gráfico com base no tipo de comparativo
   const chartHeight = 300;
   
@@ -209,6 +214,9 @@ export const SalesBarChart = ({
                       {payload.map((entry, index) => {
                         // Mostrar informação de contagem de projetos se disponível
                         const showCount = entry.name === "ticket_medio" && chartData.find(d => d.name === label)?.contagem;
+                        const showVariacao = entry.name === "ticket_medio" && chartData.find(d => d.name === label)?.variacao_percentual !== undefined;
+                        const variacao = chartData.find(d => d.name === label)?.variacao_percentual;
+                        
                         return (
                           <div key={`tooltip-item-${index}`}>
                             <p 
@@ -219,7 +227,12 @@ export const SalesBarChart = ({
                             </p>
                             {showCount && (
                               <p className="text-xs text-gray-600">
-                                Projetos: {chartData.find(d => d.name === label)?.contagem}
+                                Projetos: {chartData.find(d => d.name === label)?.contagem_projetos}
+                              </p>
+                            )}
+                            {showVariacao && variacao !== null && variacao !== undefined && (
+                              <p className={`text-xs ${variacao >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                Variação: {formatPercent(variacao)}
                               </p>
                             )}
                           </div>
