@@ -212,10 +212,11 @@ export const SalesBarChart = ({
                     <div className="bg-white p-2 border rounded shadow">
                       <p className="font-medium mb-1">{label}</p>
                       {payload.map((entry, index) => {
-                        // Mostrar informação de contagem de projetos se disponível
-                        const showCount = entry.name === "ticket_medio" && chartData.find(d => d.name === label)?.contagem;
-                        const showVariacao = entry.name === "ticket_medio" && chartData.find(d => d.name === label)?.variacao_percentual !== undefined;
-                        const variacao = chartData.find(d => d.name === label)?.variacao_percentual;
+                        // Verificar se temos dados de projetos e variação para exibir
+                        const itemData = chartData.find(d => d.name === label);
+                        const showCount = valueKey === "ticket_medio" && itemData?.contagem_projetos;
+                        const showVariacao = valueKey === "ticket_medio" && itemData?.variacao_percentual !== undefined;
+                        const variacao = itemData?.variacao_percentual;
                         
                         return (
                           <div key={`tooltip-item-${index}`}>
@@ -227,7 +228,7 @@ export const SalesBarChart = ({
                             </p>
                             {showCount && (
                               <p className="text-xs text-gray-600">
-                                Projetos: {chartData.find(d => d.name === label)?.contagem_projetos}
+                                Total de Projetos: {itemData.contagem_projetos}
                               </p>
                             )}
                             {showVariacao && variacao !== null && variacao !== undefined && (

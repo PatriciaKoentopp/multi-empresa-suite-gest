@@ -91,11 +91,7 @@ export const SalesPerformanceTabs = ({
             </CardHeader>
             <CardContent>
               <SalesBarChart 
-                data={ticketMedioPorProjetoData.map(item => ({
-                  name: item.name,
-                  ticket_medio: item.ticket_medio,
-                  contagem: item.contagem_projetos
-                }))} 
+                data={ticketMedioPorProjetoData} 
                 multiColor={true}
                 valueKey="ticket_medio"
               />
