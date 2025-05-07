@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
@@ -558,24 +559,24 @@ export function Dashboard() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left pb-2">Cliente</th>
-                      <th className="text-right pb-2">Valor Total ({new Date().getFullYear()})</th>
-                      <th className="text-left pb-2">Cliente</th>
-                      <th className="text-right pb-2">Valor Total ({new Date().getFullYear() - 1})</th>
+                      <th className="text-left pb-2 pr-2 w-[25%]">Cliente</th>
+                      <th className="text-right pb-2 pr-8 w-[25%]">{new Date().getFullYear()}</th>
+                      <th className="text-left pb-2 pl-8 w-[25%]">Cliente</th>
+                      <th className="text-right pb-2 w-[25%]">{new Date().getFullYear() - 1}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {Array.from({ length: 5 }).map((_, index) => (
                       <tr key={index} className="border-b">
-                        <td className="py-2 font-medium">
+                        <td className="py-2 font-medium pr-2">
                           {dashboardData.topClientesAnoAtual[index]?.nome || "-"}
                         </td>
-                        <td className="py-2 text-right">
+                        <td className="py-2 text-right pr-8">
                           {dashboardData.topClientesAnoAtual[index]
                             ? formatCurrency(dashboardData.topClientesAnoAtual[index].totalVendas)
                             : "-"}
                         </td>
-                        <td className="py-2 font-medium">
+                        <td className="py-2 font-medium pl-8 border-l">
                           {dashboardData.topClientesAnoAnterior[index]?.nome || "-"}
                         </td>
                         <td className="py-2 text-right">
