@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Users, Calculator, BarChart } from "lucide-react";
+import { FileText, Users, Calculator, BarChart, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Relatorios() {
@@ -21,6 +21,13 @@ export default function Relatorios() {
       description: "Análise detalhada das vendas por período",
       icon: <BarChart className="h-8 w-8 text-green-500" />,
       route: "/relatorios/vendas"
+    },
+    {
+      id: "classificacaoABC",
+      title: "Classificação ABC de Clientes",
+      description: "Análise de clientes por volume de vendas e frequência de compra",
+      icon: <Award className="h-8 w-8 text-amber-500" />,
+      route: "/relatorios/classificacao-abc"
     },
     {
       id: "financeiro",
@@ -55,7 +62,7 @@ export default function Relatorios() {
         {relatorios.map(relatorio => (
           <Card 
             key={relatorio.id} 
-            className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id !== 'favorecido' ? 'opacity-60' : ''}`}
+            className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' ? '' : 'opacity-60'}`}
             onClick={() => handleCardClick(relatorio.route)}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -71,7 +78,7 @@ export default function Relatorios() {
             </CardHeader>
             <CardContent>
               <Button 
-                variant={relatorio.id === 'favorecido' ? "default" : "outline"} 
+                variant={relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' ? "default" : "outline"} 
                 className="w-full"
                 onClick={() => handleCardClick(relatorio.route)}
               >

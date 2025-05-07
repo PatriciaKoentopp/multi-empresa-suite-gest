@@ -26,7 +26,7 @@ import TiposTitulos from "./pages/cadastros/tipos-titulos";
 // Financeiro
 import FluxoCaixa from "./pages/financeiro/fluxo-caixa";
 import ContasAPagar from "./pages/financeiro/contas-a-pagar";
-import ContasAReceber from "./pages/financeiro/contas-a-receber";
+import ContasAReceber from "./pages/financeiro/contas-receber";
 import Movimentacao from "./pages/financeiro/movimentacao";
 import IncluirMovimentacao from "./pages/financeiro/incluir-movimentacao";
 import PainelFinanceiroPage from "./pages/financeiro/painel-financeiro";
@@ -52,6 +52,7 @@ import CrmPainelPage from "./pages/crm/painel";
 // Relatórios
 import Relatorios from "./pages/relatorios";
 import RelatorioFavorecido from "./pages/relatorios/favorecido";
+import ClassificacaoABC from "./pages/relatorios/classificacao-abc";
 
 // Authentication wrapper
 interface PrivateRouteProps {
@@ -386,6 +387,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <RelatorioFavorecido />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/relatorios/classificacao-abc"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <ClassificacaoABC />
                   </MainLayout>
                 </PrivateRoute>
               }
