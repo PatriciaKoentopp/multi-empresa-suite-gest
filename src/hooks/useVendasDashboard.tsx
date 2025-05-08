@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -770,4 +771,32 @@ export const useVendasDashboard = () => {
         toast({
           variant: "destructive",
           title: "Erro ao carregar dados dos gráficos",
-          description: error.message || "Não foi possível process
+          description: error.message || "Não foi possível processar os dados dos gráficos"
+        });
+      }
+
+      setIsLoading(false);
+      
+    } catch (error: any) {
+      console.error("Erro ao carregar dados:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar dados do painel",
+        description: error.message || "Não foi possível carregar os dados do painel de vendas"
+      });
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    isLoading,
+    salesData,
+    barChartData,
+    quarterlyChartData,
+    yearlyChartData,
+    yearlyComparisonData,
+    monthlyComparisonData,
+    ticketMedioPorProjetoData,
+    fetchMonthlySalesData
+  };
+};

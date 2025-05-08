@@ -46,7 +46,7 @@ export const SalesBarChart = ({
   // Verificar se os dados estão presentes e em formato correto
   const chartData = Array.isArray(data) ? data : [];
   
-  console.log("Dados do gráfico processados:", chartData);
+  console.log("Dados do gráfico SalesBarChart:", chartData);
 
   // Verificar se temos dados válidos para o gráfico
   if (!chartData.length) {
@@ -61,7 +61,7 @@ export const SalesBarChart = ({
   // Identificar as chaves que representam valores (além de "name")
   // Para comparativo mensal, precisamos identificar corretamente os anos como chaves
   const valueKeys = isMonthlyComparison ? 
-    Object.keys(chartData[0]).filter(key => key !== "name" && key !== "variacao_percentual" && key !== "variacao_ano_anterior") :
+    Object.keys(chartData[0]).filter(key => key !== "name" && key !== "variacao_percentual" && key !== "variacao_ano_anterior" && key !== "monthNumber") :
     valueKey ? 
       [valueKey] : 
       Object.keys(chartData[0]).filter(key => key !== "name");
@@ -74,7 +74,7 @@ export const SalesBarChart = ({
   );
   
   if (allZeros) {
-    console.warn("Todos os valores do gráfico são zero");
+    console.log("Todos os valores do gráfico são zero:", chartData);
     return (
       <div className={className || "h-[300px] flex items-center justify-center"}>
         <p className="text-muted-foreground">Sem dados de faturamento para o período selecionado</p>
@@ -97,7 +97,7 @@ export const SalesBarChart = ({
     return `${value > 0 ? '+' : ''}${value.toFixed(2).replace('.', ',')}%`;
   };
 
-  // Definir a largura do gráfico com base no tipo de comparativo
+  // Definir a altura do gráfico com base no tipo de comparativo
   const chartHeight = 300;
   
   // Calcular a largura mínima para o gráfico mensal (50px por mês * número de meses)
