@@ -166,20 +166,22 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                 <div className="divide-y">
                   {parcelasVencidas.filter(p => p.tipo === 'receber').slice(0, 3).map(parcela => (
                     <div key={parcela.id} className="py-2">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">{parcela.cliente}</p>
-                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
-                          <div className="flex items-center gap-2 text-sm">
-                            <CalendarClock className="h-3.5 w-3.5 text-red-600" />
-                            <span className="text-red-600">
-                              Vencido em {formatDate(parcela.dataVencimento)}
-                            </span>
-                          </div>
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <CalendarClock className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                          <span className="text-xs text-red-600 truncate">
+                            {formatDate(parcela.dataVencimento)}
+                          </span>
+                        </div>
+                        <div className="col-span-2 text-right">
                           <p className="font-medium text-destructive">{formatCurrency(parcela.valor)}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{parcela.numeroParcela}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
                         </div>
                       </div>
                     </div>
@@ -204,20 +206,22 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                 <div className="divide-y">
                   {parcelasVencidas.filter(p => p.tipo === 'pagar').slice(0, 3).map(parcela => (
                     <div key={parcela.id} className="py-2">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">{parcela.cliente}</p>
-                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
-                          <div className="flex items-center gap-2 text-sm">
-                            <CalendarClock className="h-3.5 w-3.5 text-red-600" />
-                            <span className="text-red-600">
-                              Vencido em {formatDate(parcela.dataVencimento)}
-                            </span>
-                          </div>
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <CalendarClock className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                          <span className="text-xs text-red-600 truncate">
+                            {formatDate(parcela.dataVencimento)}
+                          </span>
+                        </div>
+                        <div className="col-span-2 text-right">
                           <p className="font-medium text-destructive">{formatCurrency(parcela.valor)}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{parcela.numeroParcela}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
                         </div>
                       </div>
                     </div>
@@ -242,18 +246,20 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                 <div className="divide-y">
                   {parcelasHoje.filter(p => p.tipo === 'receber').slice(0, 3).map(parcela => (
                     <div key={parcela.id} className="py-2">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">{parcela.cliente}</p>
-                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Calendar className="h-3.5 w-3.5 text-amber-600" />
-                            <span className="text-amber-600">Vence hoje</span>
-                          </div>
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5 text-amber-600 flex-shrink-0" />
+                          <span className="text-xs text-amber-600 truncate">Vence hoje</span>
+                        </div>
+                        <div className="col-span-2 text-right">
                           <p className="font-medium text-amber-600">{formatCurrency(parcela.valor)}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{parcela.numeroParcela}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
                         </div>
                       </div>
                     </div>
@@ -278,18 +284,20 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                 <div className="divide-y">
                   {parcelasHoje.filter(p => p.tipo === 'pagar').slice(0, 3).map(parcela => (
                     <div key={parcela.id} className="py-2">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">{parcela.cliente}</p>
-                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Calendar className="h-3.5 w-3.5 text-amber-600" />
-                            <span className="text-amber-600">Vence hoje</span>
-                          </div>
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5 text-amber-600 flex-shrink-0" />
+                          <span className="text-xs text-amber-600 truncate">Vence hoje</span>
+                        </div>
+                        <div className="col-span-2 text-right">
                           <p className="font-medium text-amber-600">{formatCurrency(parcela.valor)}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{parcela.numeroParcela}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
                         </div>
                       </div>
                     </div>
@@ -382,20 +390,22 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                 <div className="divide-y">
                   {parcelasVencidas.filter(p => p.tipo === 'receber').map(parcela => (
                     <div key={parcela.id} className="py-2">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">{parcela.cliente}</p>
-                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
-                          <div className="flex items-center gap-2 text-sm">
-                            <CalendarClock className="h-3.5 w-3.5 text-red-600" />
-                            <span className="text-red-600">
-                              Vencido em {formatDate(parcela.dataVencimento)}
-                            </span>
-                          </div>
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <CalendarClock className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                          <span className="text-xs text-red-600 truncate">
+                            {formatDate(parcela.dataVencimento)}
+                          </span>
+                        </div>
+                        <div className="col-span-2 text-right">
                           <p className="font-medium text-destructive">{formatCurrency(parcela.valor)}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{parcela.numeroParcela}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
                         </div>
                       </div>
                     </div>
@@ -413,20 +423,22 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                 <div className="divide-y">
                   {parcelasVencidas.filter(p => p.tipo === 'pagar').map(parcela => (
                     <div key={parcela.id} className="py-2">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">{parcela.cliente}</p>
-                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
-                          <div className="flex items-center gap-2 text-sm">
-                            <CalendarClock className="h-3.5 w-3.5 text-red-600" />
-                            <span className="text-red-600">
-                              Vencido em {formatDate(parcela.dataVencimento)}
-                            </span>
-                          </div>
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <CalendarClock className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                          <span className="text-xs text-red-600 truncate">
+                            {formatDate(parcela.dataVencimento)}
+                          </span>
+                        </div>
+                        <div className="col-span-2 text-right">
                           <p className="font-medium text-destructive">{formatCurrency(parcela.valor)}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{parcela.numeroParcela}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
                         </div>
                       </div>
                     </div>
@@ -444,18 +456,20 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                 <div className="divide-y">
                   {parcelasHoje.filter(p => p.tipo === 'receber').map(parcela => (
                     <div key={parcela.id} className="py-2">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">{parcela.cliente}</p>
-                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Calendar className="h-3.5 w-3.5 text-amber-600" />
-                            <span className="text-amber-600">Vence hoje</span>
-                          </div>
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5 text-amber-600 flex-shrink-0" />
+                          <span className="text-xs text-amber-600 truncate">Vence hoje</span>
+                        </div>
+                        <div className="col-span-2 text-right">
                           <p className="font-medium text-amber-600">{formatCurrency(parcela.valor)}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{parcela.numeroParcela}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
                         </div>
                       </div>
                     </div>
@@ -473,18 +487,20 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
                 <div className="divide-y">
                   {parcelasHoje.filter(p => p.tipo === 'pagar').map(parcela => (
                     <div key={parcela.id} className="py-2">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">{parcela.cliente}</p>
-                          <p className="text-sm text-muted-foreground">{parcela.descricao || "Sem descrição"}</p>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Calendar className="h-3.5 w-3.5 text-amber-600" />
-                            <span className="text-amber-600">Vence hoje</span>
-                          </div>
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5 text-amber-600 flex-shrink-0" />
+                          <span className="text-xs text-amber-600 truncate">Vence hoje</span>
+                        </div>
+                        <div className="col-span-2 text-right">
                           <p className="font-medium text-amber-600">{formatCurrency(parcela.valor)}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{parcela.numeroParcela}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
                         </div>
                       </div>
                     </div>
@@ -600,4 +616,3 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
 // Definir a data de hoje para comparações (formato YYYY-MM-DD)
 const hoje = new Date();
 const hojeFormatado = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-
