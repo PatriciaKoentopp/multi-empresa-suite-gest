@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +42,15 @@ export const useVendasDashboard = () => {
   // Nova função para buscar dados mensais por ano
   const fetchMonthlySalesData = async (year: number) => {
     try {
+      // Se o ano for anterior a 2023, não exibimos dados para o comparativo mensal
+      if (year < 2023) {
+        console.log(`Ano ${year} é anterior a 2023, não exibindo dados para o comparativo mensal`);
+        return [{
+          name: `Dados disponíveis a partir de 2023`,
+          [year]: 0
+        }];
+      }
+      
       console.log(`Buscando dados mensais para o ano ${year}`);
       
       // Tentar usar a função RPC para dados mensais se disponível
@@ -113,6 +121,13 @@ export const useVendasDashboard = () => {
           
           // Buscar dados dos mesmos meses do ano anterior para comparação
           const anoAnterior = year - 1;
+          
+          // Verificar se o ano anterior é pelo menos 2023 (primeiro ano com dados disponíveis)
+          if (anoAnterior < 2023) {
+            console.log(`Ano anterior ${anoAnterior} é anterior a 2023, não exibindo comparativos`);
+            return mesesOrdenadosComNumero;
+          }
+          
           let dadosMesmoMesAnoAnterior: any[] = [];
           
           try {
@@ -147,8 +162,7 @@ export const useVendasDashboard = () => {
               name: mesAtual.name,
               [year]: mesAtual[year],
               [anoAnterior]: mesAnterior ? mesAnterior[anoAnterior] : 0,
-              variacao_percentual: mesAtual.variacao_percentual,
-              variacao_ano_anterior: mesAtual.variacao_ano_anterior
+              monthNumber: mesAtual.monthNumber
             };
           });
           
@@ -180,22 +194,28 @@ export const useVendasDashboard = () => {
         throw vendaAnualError;
       }
       
-      // Buscar todas as vendas do ano anterior
+      // Se o ano anterior for pelo menos 2023, buscar os dados para comparação
       const anoAnterior = year - 1;
-      const { data: vendaAnoAnterior, error: vendaAnoAnteriorError } = await supabase
-        .from('orcamentos')
-        .select(`
-          id, 
-          data_venda,
-          orcamentos_itens (valor)
-        `)
-        .eq('tipo', 'venda')
-        .eq('status', 'ativo')
-        .gte('data_venda', `${anoAnterior}-01-01`)
-        .lte('data_venda', `${anoAnterior}-12-31`);
+      let vendaAnoAnterior = null;
       
-      if (vendaAnoAnteriorError) {
-        console.error(`Erro ao buscar vendas do ano anterior para ${anoAnterior}:`, vendaAnoAnteriorError);
+      if (anoAnterior >= 2023) {
+        const { data: vendasAnoAnterior, error: vendaAnoAnteriorError } = await supabase
+          .from('orcamentos')
+          .select(`
+            id, 
+            data_venda,
+            orcamentos_itens (valor)
+          `)
+          .eq('tipo', 'venda')
+          .eq('status', 'ativo')
+          .gte('data_venda', `${anoAnterior}-01-01`)
+          .lte('data_venda', `${anoAnterior}-12-31`);
+        
+        if (vendaAnoAnteriorError) {
+          console.error(`Erro ao buscar vendas do ano anterior para ${anoAnterior}:`, vendaAnoAnteriorError);
+        } else {
+          vendaAnoAnterior = vendasAnoAnterior;
+        }
       }
       
       console.log(`Vendas do ano ${year} encontradas:`, vendaAnual?.length);
@@ -248,7 +268,7 @@ export const useVendasDashboard = () => {
       
       // Preencher os valores de cada mês para o ano anterior
       if (vendaAnoAnterior) {
-        vendaAnoAnterior.forEach(venda => {
+        vendaAnoAnterior.forEach((venda: any) => {
           if (venda.data_venda) {
             const mesString = venda.data_venda.substring(5, 7);
             const mes = parseInt(mesString, 10) - 1;
@@ -272,17 +292,17 @@ export const useVendasDashboard = () => {
         return {
           name,
           [year]: mesAtual[year],
-          [anoAnterior]: mesAnterior[anoAnterior],
+          [anoAnterior]: anoAnterior >= 2023 ? mesAnterior[anoAnterior] : 0,
           monthNumber: index + 1
         };
-      }).filter(mes => mes[year] > 0 || mes[anoAnterior] > 0);
+      }).filter(mes => mes[year] > 0 || (anoAnterior >= 2023 && mes[anoAnterior] > 0));
       
       // Se não temos dados em nenhum dos anos, retornar pelo menos um item para mostrar o gráfico vazio
       if (mesesCombinados.length === 0) {
         return [{
-          name: `Sem dados para ${year}-${anoAnterior}`,
+          name: `Sem dados para ${year}${anoAnterior >= 2023 ? `-${anoAnterior}` : ''}`,
           [year]: 0,
-          [anoAnterior]: 0
+          [anoAnterior]: anoAnterior >= 2023 ? 0 : undefined
         }];
       }
       
@@ -313,7 +333,7 @@ export const useVendasDashboard = () => {
       console.log("Buscando dados de ticket médio por projeto por ano");
       const currentYear = new Date().getFullYear();
       
-      // Vamos buscar dados a partir de 2024
+      // Vamos buscar dados a partir de 2024 (ajustado conforme solicitado)
       const anoInicial = 2024;
       const anosDisponiveis = [];
       for (let ano = anoInicial; ano <= currentYear; ano++) {
@@ -744,59 +764,4 @@ export const useVendasDashboard = () => {
           
           if (vendasAnoError) {
             console.error(`Erro ao buscar vendas para o ano ${ano}:`, vendasAnoError);
-            return { name: String(ano), faturado: 0 };
-          }
-          
-          // Calcular valor total para o ano
-          const valorAno = vendasAno?.reduce((total, venda) => {
-            const valorVenda = venda.orcamentos_itens.reduce(
-              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
-            );
-            return total + valorVenda;
-          }, 0) || 0;
-          
-          return { name: String(ano), faturado: valorAno };
-        }));
-        
-        console.log("Dados anuais processados:", dadosAnuais);
-        setYearlyChartData(dadosAnuais);
-        
-        // Buscar dados para o gráfico de comparação mensal
-        console.log("Iniciando busca de dados para comparação mensal");
-        const dadosMensaisAnoAtual = await fetchMonthlySalesData(currentYear);
-        setMonthlyComparisonData(dadosMensaisAnoAtual);
-        
-      } catch (error: any) {
-        console.error("Erro ao processar dados para gráficos:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar dados dos gráficos",
-          description: error.message || "Não foi possível processar os dados dos gráficos"
-        });
-      }
-
-      setIsLoading(false);
-      
-    } catch (error: any) {
-      console.error("Erro ao carregar dados:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar dados do painel",
-        description: error.message || "Não foi possível carregar os dados do painel de vendas"
-      });
-      setIsLoading(false);
-    }
-  };
-
-  return {
-    isLoading,
-    salesData,
-    barChartData,
-    quarterlyChartData,
-    yearlyChartData,
-    yearlyComparisonData,
-    monthlyComparisonData,
-    ticketMedioPorProjetoData,
-    fetchMonthlySalesData
-  };
-};
+            return { name: String

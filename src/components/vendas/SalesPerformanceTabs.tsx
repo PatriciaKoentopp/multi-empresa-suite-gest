@@ -20,11 +20,11 @@ export const SalesPerformanceTabs = ({
 }: SalesPerformanceTabsProps) => {
   // Verificar se todos os dados estão presentes
   console.log("SalesPerformanceTabs - Dados recebidos:", {
-    barChartData,
-    quarterlyChartData,
-    yearlyChartData,
-    monthlyComparisonData,
-    ticketMedioPorProjetoData
+    barChartDataLength: barChartData?.length,
+    quarterlyChartDataLength: quarterlyChartData?.length,
+    yearlyChartDataLength: yearlyChartData?.length,
+    monthlyComparisonDataLength: monthlyComparisonData?.length,
+    ticketMedioPorProjetoDataLength: ticketMedioPorProjetoData?.length
   });
 
   return (
@@ -74,6 +74,7 @@ export const SalesPerformanceTabs = ({
           <Card>
             <CardHeader>
               <CardTitle>Comparativo Mensal por Ano</CardTitle>
+              <p className="text-sm text-muted-foreground">Dados disponíveis a partir de 2023</p>
             </CardHeader>
             <CardContent className="pb-0">
               <SalesBarChart 
@@ -88,6 +89,7 @@ export const SalesPerformanceTabs = ({
           <Card>
             <CardHeader>
               <CardTitle>Ticket Médio por Projeto por Ano</CardTitle>
+              <p className="text-sm text-muted-foreground">Dados disponíveis a partir de 2024</p>
             </CardHeader>
             <CardContent>
               <SalesBarChart 
