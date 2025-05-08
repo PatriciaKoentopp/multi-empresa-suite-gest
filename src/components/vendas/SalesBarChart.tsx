@@ -7,6 +7,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  Legend
 } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "../ui/chart";
 
@@ -61,7 +62,13 @@ export const SalesBarChart = ({
   // Identificar as chaves que representam valores (além de "name")
   // Para comparativo mensal, precisamos identificar corretamente os anos como chaves
   const valueKeys = isMonthlyComparison ? 
-    Object.keys(chartData[0]).filter(key => key !== "name" && key !== "variacao_percentual" && key !== "variacao_ano_anterior" && key !== "monthNumber") :
+    Object.keys(chartData[0]).filter(key => 
+      key !== "name" && 
+      key !== "variacao_percentual" && 
+      key !== "variacao_ano_anterior" && 
+      key !== "monthNumber" &&
+      !isNaN(Number(key)) // Garantir que são apenas os anos (valores numéricos)
+    ).sort((a, b) => Number(b) - Number(a)) : // Ordenar anos em ordem decrescente
     valueKey ? 
       [valueKey] : 
       Object.keys(chartData[0]).filter(key => key !== "name");
@@ -146,6 +153,7 @@ export const SalesBarChart = ({
                   tick={{ fontSize: 12 }}
                   tickFormatter={formatCurrency}
                 />
+                <Legend />
                 <Tooltip 
                   content={({ payload, label }) => {
                     if (!payload || !payload.length) return null;

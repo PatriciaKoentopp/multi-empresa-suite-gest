@@ -24,7 +24,8 @@ export const SalesPerformanceTabs = ({
     quarterlyChartDataLength: quarterlyChartData?.length,
     yearlyChartDataLength: yearlyChartData?.length,
     monthlyComparisonDataLength: monthlyComparisonData?.length,
-    ticketMedioPorProjetoDataLength: ticketMedioPorProjetoData?.length
+    ticketMedioPorProjetoDataLength: ticketMedioPorProjetoData?.length,
+    monthlyComparisonSample: monthlyComparisonData?.slice(0, 2)
   });
 
   return (
@@ -74,7 +75,7 @@ export const SalesPerformanceTabs = ({
           <Card>
             <CardHeader>
               <CardTitle>Comparativo Mensal por Ano</CardTitle>
-              <p className="text-sm text-muted-foreground">Dados disponíveis a partir de 2023</p>
+              <p className="text-sm text-muted-foreground">Comparação de todos os anos com dados de vendas</p>
             </CardHeader>
             <CardContent className="pb-0">
               <SalesBarChart 
