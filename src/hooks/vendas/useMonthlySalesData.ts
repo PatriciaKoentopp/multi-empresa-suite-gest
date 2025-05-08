@@ -72,21 +72,28 @@ export const useMonthlySalesData = () => {
           // Calcular percentuais de variação mês a mês
           const dadosComVariacao = mesesProcessados.map((mesAtual) => {
             // Mês anterior no mesmo ano (para calcular variação em relação ao mês anterior)
-            const mesAnteriorNumero = mesAtual.monthNumber > 1 ? mesAtual.monthNumber - 1 : null;
-            const mesAnteriorMesmoAno = mesAnteriorNumero 
-              ? mesesProcessados.find(m => m.monthNumber === mesAnteriorNumero) 
-              : null;
+            let mesAnteriorMesmoAno = null;
+            let variacaoMesAnterior = null;
+            
+            if (mesAtual.monthNumber > 1) {
+              // Se não é janeiro, usamos o mês anterior do mesmo ano
+              const mesAnteriorNumero = mesAtual.monthNumber - 1;
+              mesAnteriorMesmoAno = mesesProcessados.find(m => m.monthNumber === mesAnteriorNumero);
+            } else {
+              // Se é janeiro, usamos dezembro do ano anterior
+              const dezAnoAnterior = dadosMesmoMesAnoAnterior.find(m => m.monthNumber === 12);
+              mesAnteriorMesmoAno = dezAnoAnterior;
+            }
+            
+            // Calculamos a variação em relação ao mês anterior (mesmo se dezembro do ano anterior)
+            if (mesAnteriorMesmoAno && mesAnteriorMesmoAno.faturado > 0) {
+              variacaoMesAnterior = ((mesAtual.faturado - mesAnteriorMesmoAno.faturado) / mesAnteriorMesmoAno.faturado) * 100;
+            }
             
             // Mesmo mês no ano anterior (para calcular variação em relação ao mesmo mês do ano anterior)
             const mesmoMesAnoAnterior = dadosMesmoMesAnoAnterior.find(
               m => m.monthNumber === mesAtual.monthNumber
             );
-            
-            // Calcular variação em relação ao mês anterior
-            let variacaoMesAnterior = null;
-            if (mesAnteriorMesmoAno && mesAnteriorMesmoAno.faturado > 0) {
-              variacaoMesAnterior = ((mesAtual.faturado - mesAnteriorMesmoAno.faturado) / mesAnteriorMesmoAno.faturado) * 100;
-            }
             
             // Calcular variação em relação ao mesmo mês no ano anterior
             let variacaoAnoAnterior = null;
@@ -204,9 +211,18 @@ export const useMonthlySalesData = () => {
       // Calcular percentuais de variação mês a mês
       for (let i = 0; i < dadosMensais.length; i++) {
         // Calcular variação em relação ao mês anterior
-        if (i > 0 && dadosMensais[i-1].faturado > 0) {
-          dadosMensais[i].variacao_percentual = 
-            ((dadosMensais[i].faturado - dadosMensais[i-1].faturado) / dadosMensais[i-1].faturado) * 100;
+        if (i > 0) {
+          // Para meses de fevereiro a dezembro, compara com mês anterior do mesmo ano
+          if (dadosMensais[i-1].faturado > 0) {
+            dadosMensais[i].variacao_percentual = 
+              ((dadosMensais[i].faturado - dadosMensais[i-1].faturado) / dadosMensais[i-1].faturado) * 100;
+          }
+        } else {
+          // Para janeiro, compara com dezembro do ano anterior
+          if (dadosMensaisAnoAnterior[11].faturado > 0) {
+            dadosMensais[i].variacao_percentual = 
+              ((dadosMensais[i].faturado - dadosMensaisAnoAnterior[11].faturado) / dadosMensaisAnoAnterior[11].faturado) * 100;
+          }
         }
         
         // Calcular variação em relação ao mesmo mês do ano anterior
