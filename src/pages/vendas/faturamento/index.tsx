@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -338,75 +339,81 @@ export default function FaturamentoPage() {
         </Button>
       </div>
 
-      {/* Filtros - Layout melhorado */}
+      {/* Filtros com layout melhorado e consistente */}
       <div className="bg-white border rounded-md p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {/* Campo de busca com ícone */}
-          <div className="relative lg:col-span-2">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
-            <Input
-              placeholder="Buscar por código, favorecido ou projeto"
-              value={busca}
-              onChange={e => setBusca(e.target.value)}
-              className="pl-8 h-10"
-            />
+        <div className="space-y-4">
+          {/* Primeira linha de filtros */}
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {/* Campo de busca com ícone */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
+              <Input
+                placeholder="Buscar por código, favorecido ou projeto"
+                value={busca}
+                onChange={e => setBusca(e.target.value)}
+                className="pl-8 bg-white border-gray-300 shadow-sm"
+              />
+            </div>
+
+            {/* Select de Status */}
+            <div>
+              <Select value={statusFilter} onValueChange={(value: "ativo" | "inativo" | "todos") => {
+                setStatusFilter(value);
+              }}>
+                <SelectTrigger className="bg-white border-gray-300 shadow-sm">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos Status</SelectItem>
+                  <SelectItem value="ativo">Ativos</SelectItem>
+                  <SelectItem value="inativo">Inativos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Select de Tipo */}
+            <div>
+              <Select value={tipo} onValueChange={setTipo}>
+                <SelectTrigger className="bg-white border-gray-300 shadow-sm">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tipos.map(opt => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Select de Favorecido */}
+            <div>
+              <Select value={favorecido} onValueChange={setFavorecido}>
+                <SelectTrigger className="bg-white border-gray-300 shadow-sm">
+                  <SelectValue placeholder="Favorecido" />
+                </SelectTrigger>
+                <SelectContent>
+                  {favorecidos.map(f => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Select de Status */}
-          <div>
-            <Select value={statusFilter} onValueChange={(value: "ativo" | "inativo" | "todos") => {
-              setStatusFilter(value);
-            }}>
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos Status</SelectItem>
-                <SelectItem value="ativo">Ativos</SelectItem>
-                <SelectItem value="inativo">Inativos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Select de Tipo */}
-          <div>
-            <Select value={tipo} onValueChange={setTipo}>
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                {tipos.map(opt => (
-                  <SelectItem key={opt} value={opt}>
-                    {opt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Select de Favorecido */}
-          <div>
-            <Select value={favorecido} onValueChange={setFavorecido}>
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder="Favorecido" />
-              </SelectTrigger>
-              <SelectContent>
-                {favorecidos.map(f => (
-                  <SelectItem key={f.id} value={f.id}>
-                    {f.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Data Inicial e Final - Agora em uma mesma linha na visualização mobile */}
-          <div className="grid grid-cols-2 gap-2 lg:col-span-2">
+          {/* Segunda linha com campos de data */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Data Inicial */}
             <DateInput
               label="Data inicial"
               value={dataInicial}
               onChange={setDataInicial}
             />
+            
+            {/* Data Final */}
             <DateInput
               label="Data final"
               value={dataFinal}
@@ -414,22 +421,21 @@ export default function FaturamentoPage() {
             />
           </div>
 
-          {/* Botão Limpar Filtros - agora à direita da última linha */}
-          <div className="flex items-end justify-end col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-6">
+          {/* Botão Limpar Filtros - com ícone X conforme padrão da aplicação */}
+          <div className="flex justify-end">
             <Button 
               variant="outline"
               onClick={limparFiltros}
-              size="default"
-              className="gap-1 h-10"
+              className="flex items-center gap-2"
             >
-              <X className="w-4 h-4" />
-              <span>Limpar filtros</span>
+              <X className="h-4 w-4" />
+              Limpar filtros
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Cards de resumo - agora sem títulos e com números alinhados à direita */}
+      {/* Cards de resumo */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SalesCard
           title=""
