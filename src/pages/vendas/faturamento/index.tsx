@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,7 +84,6 @@ export default function FaturamentoPage() {
 
   const navigate = useNavigate();
 
-  // Buscar orçamentos e vendas
   useEffect(() => {
     if (currentCompany?.id) {
       carregarFaturamentos();
@@ -148,13 +146,11 @@ export default function FaturamentoPage() {
     }
   }
 
-  // Função para abrir diálogo de confirmação
   const prepararExclusao = (item: Orcamento) => {
     setExcluirItem(item);
     setShowToastConfirm(true);
   };
 
-  // Função para excluir uma venda/orçamento após confirmação
   const confirmarExclusao = async () => {
     if (!excluirItem) return;
     
@@ -240,7 +236,6 @@ export default function FaturamentoPage() {
     }
   };
 
-  // Função para cancelar exclusão
   function handleCancelarExclusao() {
     setExcluirItem(null);
     setShowToastConfirm(false);
@@ -256,7 +251,6 @@ export default function FaturamentoPage() {
     setStatusFilter("ativo");
   }
 
-  // Filtros aplicados
   const itemsFiltrados = faturamentos.filter(item => {
     const buscaMatch = busca
       ? (
@@ -266,60 +260,47 @@ export default function FaturamentoPage() {
         )
       : true;
     
-    // Corrige o filtro de tipo, mapeando "Orçamento" para "orcamento" e "Venda" para "venda"
     const tipoMatch = tipo && tipo !== "Todos" 
       ? (tipo === "Orçamento" && item.tipo === "orcamento") || (tipo === "Venda" && item.tipo === "venda")
       : true;
     
     const favMatch = favorecido ? item.favorecido_id === favorecido : true;
     
-    // Obter data como string no formato YYYY-MM-DD (formato do banco)
     const itemDataStr = item.tipo === 'venda' ? item.data_venda : item.data;
-    
-    // Converter as datas do filtro para string no formato YYYY-MM-DD
     const dataInicialStr = dateToDBFormat(dataInicial);
     const dataFinalStr = dateToDBFormat(dataFinal);
     
-    // Comparar diretamente as strings de data, sem conversão para objeto Date
-    // Isso evita qualquer problema com timezone ou horário
     const dataI_Match = dataInicialStr ? itemDataStr >= dataInicialStr : true;
     const dataF_Match = dataFinalStr ? itemDataStr <= dataFinalStr : true;
 
     return buscaMatch && tipoMatch && favMatch && dataI_Match && dataF_Match;
   });
 
-  // Ordenação da tabela: primeiro por tipo, depois por código
   const itemsOrdenados = [...itemsFiltrados].sort((a, b) => {
-    // Primeiro critério: ordenar por tipo (orcamento vem antes de venda)
     if (a.tipo !== b.tipo) {
       return a.tipo === "orcamento" ? -1 : 1;
     }
-    // Segundo critério: ordenar por código
     return a.codigo.localeCompare(b.codigo);
   });
 
-  // Calcular totais para os cards
   const orcamentos = itemsFiltrados.filter(item => item.tipo === 'orcamento');
   const vendas = itemsFiltrados.filter(item => item.tipo === 'venda');
   
   const totalOrcamentos = orcamentos.reduce((acc, item) => acc + Number(item.valor || 0), 0);
   const totalVendas = vendas.reduce((acc, item) => acc + Number(item.valor || 0), 0);
 
-  // Função Visualizar: abre orçamento em modo visualização
   function handleVisualizar(item: Orcamento) {
     const url = `/vendas/orcamento?id=${item.id}&visualizar=1`;
     console.log("Redirecionando para visualização:", url);
     navigate(url);
   }
 
-  // Função Editar: abre orçamento para edição
   function handleEditar(item: Orcamento) {
     const url = `/vendas/orcamento?id=${item.id}`;
     console.log("Redirecionando para edição:", url);
     navigate(url);
   }
 
-  // Calcular total de valor dos itens filtrados
   const totalValor = itemsFiltrados.reduce((acc, item) => acc + Number(item.valor || 0), 0);
 
   return (
@@ -339,97 +320,99 @@ export default function FaturamentoPage() {
         </Button>
       </div>
 
-      {/* Filtros com layout melhorado e consistente */}
-      <div className="bg-white border rounded-md p-4">
-        <div className="space-y-4">
-          {/* Primeira linha de filtros */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {/* Campo de busca com ícone */}
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
-              <Input
-                placeholder="Buscar por código, favorecido ou projeto"
-                value={busca}
-                onChange={e => setBusca(e.target.value)}
-                className="pl-8 bg-white border-gray-300 shadow-sm"
-              />
-            </div>
-
-            {/* Select de Status */}
-            <div>
-              <Select value={statusFilter} onValueChange={(value: "ativo" | "inativo" | "todos") => {
-                setStatusFilter(value);
-              }}>
-                <SelectTrigger className="bg-white border-gray-300 shadow-sm">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos Status</SelectItem>
-                  <SelectItem value="ativo">Ativos</SelectItem>
-                  <SelectItem value="inativo">Inativos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Select de Tipo */}
-            <div>
-              <Select value={tipo} onValueChange={setTipo}>
-                <SelectTrigger className="bg-white border-gray-300 shadow-sm">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tipos.map(opt => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Select de Favorecido */}
-            <div>
-              <Select value={favorecido} onValueChange={setFavorecido}>
-                <SelectTrigger className="bg-white border-gray-300 shadow-sm">
-                  <SelectValue placeholder="Favorecido" />
-                </SelectTrigger>
-                <SelectContent>
-                  {favorecidos.map(f => (
-                    <SelectItem key={f.id} value={f.id}>
-                      {f.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Filtros com layout compacto */}
+      <div className="bg-white border rounded-md p-3">
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Campo de busca com ícone */}
+          <div className="relative w-full sm:w-auto sm:min-w-[240px] flex-grow">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
+            <Input
+              placeholder="Buscar por código, favorecido ou projeto"
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              className="pl-8 h-9 bg-white border-gray-300"
+            />
           </div>
 
-          {/* Segunda linha com campos de data */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Data Inicial */}
+          {/* Select de Status */}
+          <div className="w-full sm:w-auto sm:min-w-[120px]">
+            <Select value={statusFilter} onValueChange={(value: "ativo" | "inativo" | "todos") => {
+              setStatusFilter(value);
+            }}>
+              <SelectTrigger className="h-9 bg-white border-gray-300">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos Status</SelectItem>
+                <SelectItem value="ativo">Ativos</SelectItem>
+                <SelectItem value="inativo">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Select de Tipo */}
+          <div className="w-full sm:w-auto sm:min-w-[120px]">
+            <Select value={tipo} onValueChange={setTipo}>
+              <SelectTrigger className="h-9 bg-white border-gray-300">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {tipos.map(opt => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Select de Favorecido */}
+          <div className="w-full sm:w-auto sm:min-w-[150px]">
+            <Select value={favorecido} onValueChange={setFavorecido}>
+              <SelectTrigger className="h-9 bg-white border-gray-300">
+                <SelectValue placeholder="Favorecido" />
+              </SelectTrigger>
+              <SelectContent>
+                {favorecidos.map(f => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Data Inicial */}
+          <div className="w-full sm:w-auto sm:min-w-[130px]">
             <DateInput
-              label="Data inicial"
               value={dataInicial}
               onChange={setDataInicial}
+              disabled={false}
+              label=""
             />
-            
-            {/* Data Final */}
+          </div>
+          
+          {/* Data Final */}
+          <div className="w-full sm:w-auto sm:min-w-[130px]">
             <DateInput
-              label="Data final"
               value={dataFinal}
               onChange={setDataFinal}
+              disabled={false}
+              label=""
             />
           </div>
 
-          {/* Botão Limpar Filtros - com ícone X conforme padrão da aplicação */}
-          <div className="flex justify-end">
+          {/* Botão para limpar filtros - apenas com ícone X */}
+          <div>
             <Button 
               variant="outline"
               onClick={limparFiltros}
-              className="flex items-center gap-2"
+              size="icon"
+              title="Limpar filtros"
+              className="h-9 w-9"
             >
               <X className="h-4 w-4" />
-              Limpar filtros
+              <span className="sr-only">Limpar filtros</span>
             </Button>
           </div>
         </div>

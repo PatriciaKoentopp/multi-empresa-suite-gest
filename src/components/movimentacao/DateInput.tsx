@@ -89,7 +89,7 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
   };
 
   return (
-    <div className="flex flex-col gap-1 w-full">
+    <div className={`flex flex-col ${label ? 'gap-1' : ''} w-full`}>
       {label && <label className="text-sm font-medium">{label}</label>}
       <div className="relative flex w-full">
         <Popover open={open} onOpenChange={setOpen}>
@@ -100,7 +100,7 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
               onChange={handleChange}
               onBlur={handleBlur}
               placeholder="DD/MM/AAAA"
-              className="bg-white pr-10"
+              className="bg-white h-9 pr-8 text-sm"
               disabled={disabled}
               maxLength={10}
             />
@@ -108,12 +108,12 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
               <Button
                 variant="ghost"
                 className={cn(
-                  "absolute right-0 h-full px-2 hover:bg-gray-100",
+                  "absolute right-0 h-full px-1 hover:bg-gray-100",
                   disabled && "opacity-50 cursor-not-allowed"
                 )}
                 disabled={disabled}
               >
-                <CalendarIcon className="h-4 w-4" />
+                <CalendarIcon className="h-3 w-3" />
               </Button>
             </PopoverTrigger>
           </div>
