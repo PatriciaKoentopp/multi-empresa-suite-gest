@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -764,4 +765,64 @@ export const useVendasDashboard = () => {
           
           if (vendasAnoError) {
             console.error(`Erro ao buscar vendas para o ano ${ano}:`, vendasAnoError);
-            return { name: String
+            return { name: String(ano), faturado: 0 };
+          }
+          
+          // Calcular total faturado
+          let totalFaturadoAno = 0;
+          if (vendasAno) {
+            vendasAno.forEach(venda => {
+              const valorOrcamento = venda.orcamentos_itens.reduce(
+                (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
+              );
+              totalFaturadoAno += valorOrcamento;
+            });
+          }
+          
+          return {
+            name: String(ano),
+            faturado: totalFaturadoAno
+          };
+        }));
+        
+        console.log("Dados anuais processados:", dadosAnuais);
+        setYearlyChartData(dadosAnuais);
+        
+        // Buscar dados de comparação mensal do ano atual
+        const anoAtualMensal = await fetchMonthlySalesData(currentYear);
+        setMonthlyComparisonData(anoAtualMensal);
+        
+      } catch (error: any) {
+        console.error("Erro ao processar dados dos gráficos:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar dados dos gráficos",
+          description: error.message || "Não foi possível processar os dados dos gráficos"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+      
+    } catch (error: any) {
+      console.error("Erro ao carregar dados do dashboard:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar dashboard de vendas",
+        description: error.message || "Não foi possível carregar os dados do dashboard de vendas"
+      });
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    isLoading,
+    salesData,
+    barChartData,
+    quarterlyChartData,
+    yearlyChartData,
+    yearlyComparisonData,
+    monthlyComparisonData,
+    ticketMedioPorProjetoData,
+    fetchMonthlySalesData
+  };
+};
