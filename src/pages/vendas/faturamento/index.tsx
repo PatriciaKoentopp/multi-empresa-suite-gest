@@ -1,15 +1,6 @@
-
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -43,6 +34,7 @@ import { Orcamento, Favorecido } from "@/types";
 import { EfetivarVendaModal } from "@/components/vendas/EfetivarVendaModal";
 import { formatDate } from "@/lib/utils";
 import { SalesCard } from "@/components/vendas/SalesCard";
+import { DateInput } from "@/components/movimentacao/DateInput";
 
 // Opções de tipo
 const tipos = ["Todos", "Orçamento", "Venda"];
@@ -401,57 +393,23 @@ export default function FaturamentoPage() {
           </SelectContent>
         </Select>
 
-        {/* Data Inicial */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="min-w-[135px] justify-start bg-white"
-            >
-              {dataInicial ? (
-                formatDateBR(dataInicial)
-              ) : (
-                <span>Data inicial</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 pointer-events-auto bg-white z-50" align="start">
-            <Calendar
-              mode="single"
-              selected={dataInicial}
-              onSelect={setDataInicial}
-              className="p-3 pointer-events-auto"
-              locale={ptBR}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+        {/* Data Inicial - Usando o componente DateInput padronizado */}
+        <div className="flex-1 min-w-[140px] max-w-[170px]">
+          <DateInput
+            label="Data inicial"
+            value={dataInicial}
+            onChange={setDataInicial}
+          />
+        </div>
 
-        {/* Data Final */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="min-w-[135px] justify-start bg-white"
-            >
-              {dataFinal ? (
-                formatDateBR(dataFinal)
-              ) : (
-                <span>Data final</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 pointer-events-auto bg-white z-50" align="start">
-            <Calendar
-              mode="single"
-              selected={dataFinal}
-              onSelect={setDataFinal}
-              className="p-3 pointer-events-auto"
-              locale={ptBR}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+        {/* Data Final - Usando o componente DateInput padronizado */}
+        <div className="flex-1 min-w-[140px] max-w-[170px]">
+          <DateInput
+            label="Data final"
+            value={dataFinal}
+            onChange={setDataFinal}
+          />
+        </div>
 
         {/* Botão Limpar Filtros - agora apenas com ícone */}
         <Button 
