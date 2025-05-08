@@ -338,89 +338,95 @@ export default function FaturamentoPage() {
         </Button>
       </div>
 
-      {/* Filtros */}
-      <div className="flex flex-wrap gap-2 items-center bg-white border p-4 rounded-md mb-1">
-        {/* Campo de busca com ícone ao lado */}
-        <div className="relative flex items-center max-w-xs">
-          <Search className="absolute left-2 text-gray-400 h-4 w-4 pointer-events-none" />
-          <Input
-            placeholder="Buscar por código, favorecido ou projeto"
-            value={busca}
-            onChange={e => setBusca(e.target.value)}
-            className="pl-8"
-          />
+      {/* Filtros - Layout melhorado */}
+      <div className="bg-white border rounded-md p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {/* Campo de busca com ícone */}
+          <div className="relative lg:col-span-2">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
+            <Input
+              placeholder="Buscar por código, favorecido ou projeto"
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              className="pl-8 h-10"
+            />
+          </div>
+
+          {/* Select de Status */}
+          <div>
+            <Select value={statusFilter} onValueChange={(value: "ativo" | "inativo" | "todos") => {
+              setStatusFilter(value);
+            }}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos Status</SelectItem>
+                <SelectItem value="ativo">Ativos</SelectItem>
+                <SelectItem value="inativo">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Select de Tipo */}
+          <div>
+            <Select value={tipo} onValueChange={setTipo}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {tipos.map(opt => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Select de Favorecido */}
+          <div>
+            <Select value={favorecido} onValueChange={setFavorecido}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Favorecido" />
+              </SelectTrigger>
+              <SelectContent>
+                {favorecidos.map(f => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Data Inicial e Final - Agora em uma mesma linha na visualização mobile */}
+          <div className="grid grid-cols-2 gap-2 lg:col-span-2">
+            <DateInput
+              label="Data inicial"
+              value={dataInicial}
+              onChange={setDataInicial}
+            />
+            <DateInput
+              label="Data final"
+              value={dataFinal}
+              onChange={setDataFinal}
+            />
+          </div>
+
+          {/* Botão Limpar Filtros - agora à direita da última linha */}
+          <div className="flex items-end justify-end col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-6">
+            <Button 
+              variant="outline"
+              onClick={limparFiltros}
+              size="default"
+              className="gap-1 h-10"
+            >
+              <X className="w-4 h-4" />
+              <span>Limpar filtros</span>
+            </Button>
+          </div>
         </div>
-
-        {/* Select de Status */}
-        <Select value={statusFilter} onValueChange={(value: "ativo" | "inativo" | "todos") => {
-          setStatusFilter(value);
-        }}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos Status</SelectItem>
-            <SelectItem value="ativo">Ativos</SelectItem>
-            <SelectItem value="inativo">Inativos</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Select de Tipo */}
-        <Select value={tipo} onValueChange={setTipo}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            {tipos.map(opt => (
-              <SelectItem key={opt} value={opt}>
-                {opt}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Select de Favorecido */}
-        <Select value={favorecido} onValueChange={setFavorecido}>
-          <SelectTrigger className="w-[170px]">
-            <SelectValue placeholder="Favorecido" />
-          </SelectTrigger>
-          <SelectContent>
-            {favorecidos.map(f => (
-              <SelectItem key={f.id} value={f.id}>
-                {f.nome}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Data Inicial - Usando o componente DateInput padronizado */}
-        <div className="flex-1 min-w-[140px] max-w-[170px]">
-          <DateInput
-            label="Data inicial"
-            value={dataInicial}
-            onChange={setDataInicial}
-          />
-        </div>
-
-        {/* Data Final - Usando o componente DateInput padronizado */}
-        <div className="flex-1 min-w-[140px] max-w-[170px]">
-          <DateInput
-            label="Data final"
-            value={dataFinal}
-            onChange={setDataFinal}
-          />
-        </div>
-
-        {/* Botão Limpar Filtros - agora apenas com ícone */}
-        <Button 
-          variant="outline"
-          onClick={limparFiltros}
-          size="icon"
-          className="ml-2"
-          title="Limpar filtros"
-        >
-          <X className="w-4 h-4" />
-        </Button>
       </div>
 
       {/* Cards de resumo - agora sem títulos e com números alinhados à direita */}
@@ -514,7 +520,7 @@ export default function FaturamentoPage() {
                           Visualizar
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleEditar(item)}
+                          onClick={()={() => handleEditar(item)}
                           className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
                         >
                           <Edit className="w-4 h-4" />
