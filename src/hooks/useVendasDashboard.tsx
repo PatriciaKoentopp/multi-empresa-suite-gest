@@ -52,6 +52,12 @@ export const useVendasDashboard = () => {
       const anoAtualMensal = await fetchMonthlySalesData(currentYear);
       setMonthlyComparisonData(anoAtualMensal);
       
+      console.log('Dados do dashboard carregados com sucesso:', {
+        yearlyComparisonData: yearlyComparisonResult,
+        monthlyComparisonData: anoAtualMensal,
+        ticketMedioPorProjetoData: ticketProjetoData
+      });
+      
     } catch (error: any) {
       console.error("Erro ao carregar dados do dashboard:", error);
       toast({

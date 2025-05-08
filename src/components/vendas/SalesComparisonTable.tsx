@@ -83,7 +83,9 @@ export const SalesComparisonTable = ({
     if (getMonthlySalesData) {
       try {
         setLoadingYear(year);
+        console.log(`Buscando dados mensais para o ano ${year}`);
         const data = await getMonthlySalesData(year);
+        console.log(`Dados mensais recebidos para o ano ${year}:`, data);
         
         setMonthlyData(prev => ({
           ...prev,
@@ -197,4 +199,3 @@ export const SalesComparisonTable = ({
     </Card>
   );
 };
-
