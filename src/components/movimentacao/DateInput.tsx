@@ -18,6 +18,7 @@ type DateInputProps = {
 
 export function DateInput({ label, value, onChange, disabled = false }: DateInputProps) {
   const [inputValue, setInputValue] = useState('');
+  const [open, setOpen] = useState(false);
   
   // Atualiza o valor do input quando o value de fora muda
   useEffect(() => {
@@ -68,34 +69,37 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
     ));
     
     onChange(utcDate);
+    setOpen(false);
   };
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 w-full">
       {label && <label className="text-sm font-medium">{label}</label>}
-      <div className="relative flex">
-        <Input
-          type="text"
-          value={inputValue}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="DD/MM/AAAA"
-          className="bg-white"
-          disabled={disabled}
-        />
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "absolute right-0 h-full px-2 hover:bg-gray-100",
-                disabled && "opacity-50 cursor-not-allowed"
-              )}
+      <div className="relative flex w-full">
+        <Popover open={open} onOpenChange={setOpen}>
+          <div className="relative flex w-full">
+            <Input
+              type="text"
+              value={inputValue}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              placeholder="DD/MM/AAAA"
+              className="bg-white pr-10"
               disabled={disabled}
-            >
-              <CalendarIcon className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
+            />
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "absolute right-0 h-full px-2 hover:bg-gray-100",
+                  disabled && "opacity-50 cursor-not-allowed"
+                )}
+                disabled={disabled}
+              >
+                <CalendarIcon className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+          </div>
           <PopoverContent className="w-auto p-0" align="end">
             <Calendar
               mode="single"

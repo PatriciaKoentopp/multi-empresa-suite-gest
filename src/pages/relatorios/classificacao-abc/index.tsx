@@ -2,17 +2,16 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Download, FilterIcon, Calendar as CalendarIcon } from "lucide-react";
+import { Download, FilterIcon } from "lucide-react";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { format, subMonths, differenceInMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { DateInput } from "@/components/movimentacao/DateInput";
 
 type Cliente = {
   id: string;
@@ -306,60 +305,26 @@ export default function ClassificacaoABC() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm">De:</span>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "justify-start text-left font-normal w-[200px]",
-                  !startDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {startDate ? format(startDate, "dd/MM/yyyy") : "Selecione a data"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={startDate}
-                onSelect={(date) => setStartDate(date || new Date())}
-                disabled={(date) =>
-                  date > new Date() || (endDate ? date > endDate : false)
-                }
-              />
-            </PopoverContent>
-          </Popover>
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <span className="text-sm whitespace-nowrap">De:</span>
+          <div className="w-full">
+            <DateInput
+              value={startDate}
+              onChange={(date) => date && setStartDate(date)}
+              disabled={loading}
+            />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm">Até:</span>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "justify-start text-left font-normal w-[200px]",
-                  !endDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {endDate ? format(endDate, "dd/MM/yyyy") : "Selecione a data"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={(date) => setEndDate(date || new Date())}
-                disabled={(date) =>
-                  date > new Date() || (startDate ? date < startDate : false)
-                }
-              />
-            </PopoverContent>
-          </Popover>
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <span className="text-sm whitespace-nowrap">Até:</span>
+          <div className="w-full">
+            <DateInput
+              value={endDate}
+              onChange={(date) => date && setEndDate(date)}
+              disabled={loading}
+            />
+          </div>
         </div>
 
         <div className="flex-1">
