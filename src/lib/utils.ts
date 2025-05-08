@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Função para formatar datas sem considerar timezone, mantendo o formato original
-export function formatDate(date: Date | undefined | string, formatString = "dd/MM/yyyy"): string {
+export function formatDate(date: Date | undefined | string | null, formatString = "dd/MM/yyyy"): string {
   if (!date) return "";
   
   // Se for string no formato ISO YYYY-MM-DD
@@ -33,19 +33,20 @@ export function formatDate(date: Date | undefined | string, formatString = "dd/M
   }
   
   try {
-    // Para objetos Date, extrair componentes e formatar manualmente
+    // Para objetos Date, extrair componentes e formatar manualmente sem depender do timezone
     if (date instanceof Date) {
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
+      // Usando UTC para evitar problemas com timezone
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const year = date.getUTCFullYear();
       return `${day}/${month}/${year}`;
     }
     
     // Último recurso: tentar criar um Date e formatar manualmente
     const dateObj = new Date(date as any);
-    const day = String(dateObj.getDate()).padStart(2, '0');
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const year = dateObj.getFullYear();
+    const day = String(dateObj.getUTCDate()).padStart(2, '0');
+    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+    const year = dateObj.getUTCFullYear();
     return `${day}/${month}/${year}`;
   } catch (error) {
     console.error("Erro ao formatar data:", error);
@@ -54,39 +55,55 @@ export function formatDate(date: Date | undefined | string, formatString = "dd/M
 }
 
 // Função para converter string DD/MM/YYYY para Date
-export function parseDateString(dateString: string): Date | undefined {
-  if (!dateString || typeof dateString !== 'string') return undefined;
+export function parseDateString(dateString: string | Date): Date | undefined {
+  if (!dateString) return undefined;
   
-  // Se já estiver no formato ISO YYYY-MM-DD
-  if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day);
-  }
+  // Se já for um objeto Date, retorna ele mesmo
+  if (dateString instanceof Date) return dateString;
   
-  // Se estiver no formato DD/MM/YYYY
-  if (dateString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-    const parts = dateString.split('/');
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // mês em JS é 0-indexed
-    const year = parseInt(parts[2], 10);
+  // Se for string no formato ISO YYYY-MM-DD
+  if (typeof dateString === 'string') {
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateString.split('-').map(Number);
+      // Cria uma data no formato UTC para evitar problemas de timezone
+      return new Date(Date.UTC(year, month - 1, day));
+    }
     
-    if (isNaN(day) || isNaN(month) || isNaN(year)) return undefined;
-    
-    return new Date(year, month, day);
+    // Se estiver no formato DD/MM/YYYY
+    if (dateString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      const [day, month, year] = dateString.split('/').map(Number);
+      
+      if (isNaN(day) || isNaN(month) || isNaN(year)) return undefined;
+      
+      // Cria uma data no formato UTC para evitar problemas de timezone
+      return new Date(Date.UTC(year, month - 1, day));
+    }
   }
   
   // Tentativa genérica de conversão
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? undefined : date;
+  try {
+    const dateObj = new Date(dateString);
+    if (isNaN(dateObj.getTime())) return undefined;
+    
+    // Extrai os componentes e cria uma nova data UTC
+    const year = dateObj.getFullYear();
+    const month = dateObj.getMonth();
+    const day = dateObj.getDate();
+    
+    return new Date(Date.UTC(year, month, day));
+  } catch (error) {
+    console.error("Erro ao converter data:", error);
+    return undefined;
+  }
 }
 
 // Função para converter Date para formato YYYY-MM-DD para banco de dados
-export function dateToISOString(date: Date | undefined): string | null {
+export function dateToISOString(date: Date | undefined | null): string | null {
   if (!date) return null;
   
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
   
   return `${year}-${month}-${day}`;
 }

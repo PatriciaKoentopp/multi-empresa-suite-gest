@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { TabelaPrecoModal } from "./tabela-preco-modal";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { TabelaPreco, Servico } from "@/types";
+import { formatDate } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,11 +50,11 @@ export default function TabelaPrecosPage() {
 
       if (error) throw error;
       
-      // Converter datas de string para objetos Date
+      // Converter datas corretamente sem considerar timezone
       const tabelasConvertidas = data?.map(tab => ({
         ...tab,
-        vigencia_inicial: tab.vigencia_inicial ? new Date(tab.vigencia_inicial) : null,
-        vigencia_final: tab.vigencia_final ? new Date(tab.vigencia_final) : null,
+        vigencia_inicial: tab.vigencia_inicial ? parseDateString(tab.vigencia_inicial) : null,
+        vigencia_final: tab.vigencia_final ? parseDateString(tab.vigencia_final) : null,
         created_at: new Date(tab.created_at),
         updated_at: new Date(tab.updated_at)
       })) as TabelaPreco[];
@@ -66,6 +68,24 @@ export default function TabelaPrecosPage() {
         variant: "destructive",
       });
     }
+  }
+
+  // Função para converter string YYYY-MM-DD para objeto Date sem considerar timezone
+  function parseDateString(dateStr: string): Date {
+    // Se já for um objeto Date, retorna ele mesmo
+    if (dateStr instanceof Date) return dateStr;
+    
+    // Caso contrário, tenta converter a data sem ajuste de timezone
+    if (typeof dateStr === 'string') {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        // Cria uma nova data usando UTC para evitar qualquer ajuste de timezone
+        return new Date(Date.UTC(year, month - 1, day));
+      }
+    }
+    
+    // Fallback
+    return new Date(dateStr);
   }
 
   async function carregarServicos() {
@@ -278,12 +298,12 @@ export default function TabelaPrecosPage() {
                   <TableCell className="font-semibold">{tab.nome}</TableCell>
                   <TableCell>
                     {tab.vigencia_inicial
-                      ? tab.vigencia_inicial.toLocaleDateString("pt-BR")
+                      ? formatDate(tab.vigencia_inicial)
                       : "-"}
                   </TableCell>
                   <TableCell>
                     {tab.vigencia_final
-                      ? tab.vigencia_final.toLocaleDateString("pt-BR")
+                      ? formatDate(tab.vigencia_final)
                       : "-"}
                   </TableCell>
                   <TableCell>

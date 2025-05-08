@@ -11,8 +11,8 @@ import { ptBR } from 'date-fns/locale';
 
 type DateInputProps = {
   label?: string;
-  value?: Date;
-  onChange: (date?: Date) => void;
+  value?: Date | null;
+  onChange: (date?: Date | null) => void;
   disabled?: boolean;
 };
 
@@ -56,11 +56,18 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
   // Função para lidar com a seleção do calendário
   const handleCalendarSelect = (date?: Date) => {
     if (!date) {
-      onChange(undefined);
+      onChange(null);
       return;
     }
     
-    onChange(date);
+    // Cria uma data no formato UTC para evitar problemas de timezone
+    const utcDate = new Date(Date.UTC(
+      date.getFullYear(), 
+      date.getMonth(), 
+      date.getDate()
+    ));
+    
+    onChange(utcDate);
   };
 
   return (
@@ -92,7 +99,7 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
           <PopoverContent className="w-auto p-0" align="end">
             <Calendar
               mode="single"
-              selected={value}
+              selected={value ? new Date(value) : undefined}
               onSelect={handleCalendarSelect}
               initialFocus
               disabled={disabled}

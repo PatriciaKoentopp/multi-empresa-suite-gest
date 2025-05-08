@@ -24,6 +24,8 @@ import {
 import { toast } from "@/components/ui/use-toast";
 import { TabelaPreco, Servico, TabelaPrecoItem } from "@/types";
 import { useCompany } from "@/contexts/company-context";
+import { DateInput } from "@/components/movimentacao/DateInput";
+import { formatDate, parseDateString } from "@/lib/utils";
 
 interface TabelaPrecoModalProps {
   open: boolean;
@@ -335,69 +337,19 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block font-medium mb-1">Vigência (início)</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !vigenciaInicial && "text-muted-foreground"
-                    )}
-                    type="button"
-                    disabled={somenteLeitura}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {vigenciaInicial
-                      ? format(vigenciaInicial, "dd/MM/yyyy", { locale: ptBR })
-                      : <span>Selecione...</span>
-                    }
-                  </Button>
-                </PopoverTrigger>
-                {!somenteLeitura && (
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={vigenciaInicial}
-                      onSelect={(date) => setVigenciaInicial(date ?? null)}
-                      initialFocus
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                )}
-              </Popover>
+              <DateInput 
+                value={vigenciaInicial}
+                onChange={setVigenciaInicial}
+                disabled={somenteLeitura}
+              />
             </div>
             <div>
               <label className="block font-medium mb-1">Vigência (final)</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !vigenciaFinal && "text-muted-foreground"
-                    )}
-                    type="button"
-                    disabled={somenteLeitura}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {vigenciaFinal
-                      ? format(vigenciaFinal, "dd/MM/yyyy", { locale: ptBR })
-                      : <span>Selecione...</span>
-                    }
-                  </Button>
-                </PopoverTrigger>
-                {!somenteLeitura && (
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={vigenciaFinal}
-                      onSelect={(date) => setVigenciaFinal(date ?? null)}
-                      initialFocus
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                )}
-              </Popover>
+              <DateInput 
+                value={vigenciaFinal}
+                onChange={setVigenciaFinal}
+                disabled={somenteLeitura}
+              />
             </div>
           </div>
 
