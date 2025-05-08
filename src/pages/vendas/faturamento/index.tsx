@@ -520,7 +520,7 @@ export default function FaturamentoPage() {
                           Visualizar
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={()={() => handleEditar(item)}
+                          onClick={() => handleEditar(item)}
                           className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
                         >
                           <Edit className="w-4 h-4" />
