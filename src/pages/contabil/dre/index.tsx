@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -364,6 +363,20 @@ export default function DrePage() {
     const resultadoAntesIR = resultadoFinanceiro;
     const lucroLiquido = resultadoAntesIR - impostos;
     const resultadoExercicio = lucroLiquido - distribuicaoLucros;
+
+    // Ordena os detalhes de cada grupo por data antes de retornar
+    Object.keys(grupos).forEach(key => {
+      grupos[key].sort((a, b) => {
+        // Converte as datas do formato DD/MM/YYYY para objetos Date para comparação
+        const [diaA, mesA, anoA] = a.data_movimentacao.split('/');
+        const [diaB, mesB, anoB] = b.data_movimentacao.split('/');
+        
+        const dateA = new Date(parseInt(anoA), parseInt(mesA) - 1, parseInt(diaA));
+        const dateB = new Date(parseInt(anoB), parseInt(mesB) - 1, parseInt(diaB));
+        
+        return dateA.getTime() - dateB.getTime();
+      });
+    });
 
     return [
       { tipo: "Receita Bruta", valor: receitaBruta, detalhes: grupos["Receita Bruta"] },
