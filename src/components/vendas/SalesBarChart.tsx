@@ -59,12 +59,14 @@ export const SalesBarChart = ({
   }
 
   // Identificar as chaves que representam valores (além de "name")
-  // Para comparativo mensal, precisamos pegar os anos que estão como chaves
+  // Para comparativo mensal, precisamos identificar corretamente os anos como chaves
   const valueKeys = isMonthlyComparison ? 
-    Object.keys(chartData[0]).filter(key => key !== "name" && !isNaN(Number(key))) :
+    Object.keys(chartData[0]).filter(key => key !== "name" && key !== "variacao_percentual" && key !== "variacao_ano_anterior") :
     valueKey ? 
       [valueKey] : 
       Object.keys(chartData[0]).filter(key => key !== "name");
+  
+  console.log("Chaves de valores identificadas:", valueKeys);
   
   // Verificar se todos os valores são zero
   const allZeros = chartData.every(item => 
