@@ -29,19 +29,35 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
     }
   }, [value]);
 
+  const formatDateInput = (input: string): string => {
+    // Remove tudo que não for número
+    const numbers = input.replace(/\D/g, '');
+    
+    // Aplica a formatação conforme o usuário digita
+    if (numbers.length <= 2) {
+      return numbers;
+    } else if (numbers.length <= 4) {
+      return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
+    } else {
+      return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputText = e.target.value;
-    setInputValue(inputText);
+    const rawValue = e.target.value;
+    const formattedValue = formatDateInput(rawValue);
+    
+    setInputValue(formattedValue);
 
     // Apenas tenta converter para data se tiver o formato completo DD/MM/YYYY
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(inputText)) {
-      const parsedDate = parseDateString(inputText);
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(formattedValue)) {
+      const parsedDate = parseDateString(formattedValue);
       if (parsedDate) {
         onChange(parsedDate);
       } else {
         onChange(undefined);
       }
-    } else if (!inputText) {
+    } else if (!formattedValue) {
       onChange(undefined);
     }
   };
@@ -86,6 +102,7 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
               placeholder="DD/MM/AAAA"
               className="bg-white pr-10"
               disabled={disabled}
+              maxLength={10}
             />
             <PopoverTrigger asChild>
               <Button
