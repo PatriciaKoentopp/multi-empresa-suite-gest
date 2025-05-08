@@ -47,7 +47,7 @@ export default function PlanoContasPage() {
         .from("plano_contas")
         .select("*")
         .eq("empresa_id", currentCompany.id)
-        .order("codigo", { ascending: true }); // Add order by codigo
+        .order("codigo", { ascending: true });
 
       if (error) {
         toast.error("Erro ao carregar plano de contas");
@@ -143,16 +143,20 @@ export default function PlanoContasPage() {
   };
 
   const [categoriaFilter, setCategoriaFilter] = useState<string>("todos");
+  const [classificacaoDreFilter, setClassificacaoDreFilter] = useState<string>("todos");
 
-  // Alterar a lógica de filtro para incluir categoria
+  // Atualizar a lógica de filtro para incluir classificação DRE
   const filteredContas = contas.filter((conta) => {
     const matchesSearch = conta.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          conta.codigo.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTipo = tipoFilter === "todos" || conta.tipo === tipoFilter;
     const matchesStatus = statusFilter === "todos" || conta.status === statusFilter;
     const matchesCategoria = categoriaFilter === "todos" || conta.categoria === categoriaFilter;
+    const matchesClassificacaoDre = classificacaoDreFilter === "todos" || 
+                                   (conta.classificacao_dre === classificacaoDreFilter || 
+                                    (!conta.classificacao_dre && classificacaoDreFilter === "nao_classificado"));
 
-    return matchesSearch && matchesTipo && matchesStatus && matchesCategoria;
+    return matchesSearch && matchesTipo && matchesStatus && matchesCategoria && matchesClassificacaoDre;
   });
 
   return (
@@ -211,6 +215,24 @@ export default function PlanoContasPage() {
                 <SelectItem value="todos">Todas as categorias</SelectItem>
                 <SelectItem value="título">Título</SelectItem>
                 <SelectItem value="movimentação">Movimentação</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={classificacaoDreFilter} onValueChange={setClassificacaoDreFilter}>
+              <SelectTrigger className="w-[180px] bg-background">
+                <SelectValue placeholder="Filtrar por classificação DRE" />
+              </SelectTrigger>
+              <SelectContent className="bg-background">
+                <SelectItem value="todos">Todas as classificações</SelectItem>
+                <SelectItem value="nao_classificado">Não classificado</SelectItem>
+                <SelectItem value="receita_bruta">Receita Bruta</SelectItem>
+                <SelectItem value="deducoes">Deduções</SelectItem>
+                <SelectItem value="custos">Custos</SelectItem>
+                <SelectItem value="despesas_operacionais">Despesas Operacionais</SelectItem>
+                <SelectItem value="receitas_financeiras">Receitas Financeiras</SelectItem>
+                <SelectItem value="despesas_financeiras">Despesas Financeiras</SelectItem>
+                <SelectItem value="distribuicao_lucros">Distribuição de Lucros</SelectItem>
+                <SelectItem value="impostos_irpj_csll">IRPJ/CSLL</SelectItem>
               </SelectContent>
             </Select>
           </div>

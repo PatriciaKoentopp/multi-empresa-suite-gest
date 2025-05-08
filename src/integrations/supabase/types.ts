@@ -1024,6 +1024,7 @@ export type Database = {
       plano_contas: {
         Row: {
           categoria: string
+          classificacao_dre: string | null
           codigo: string
           considerar_dre: boolean
           created_at: string
@@ -1036,6 +1037,7 @@ export type Database = {
         }
         Insert: {
           categoria?: string
+          classificacao_dre?: string | null
           codigo: string
           considerar_dre?: boolean
           created_at?: string
@@ -1048,6 +1050,7 @@ export type Database = {
         }
         Update: {
           categoria?: string
+          classificacao_dre?: string | null
           codigo?: string
           considerar_dre?: boolean
           created_at?: string
@@ -1365,6 +1368,16 @@ export type Database = {
       }
     }
     Enums: {
+      classificacao_dre_tipo:
+        | "receita_bruta"
+        | "deducoes"
+        | "custos"
+        | "despesas_operacionais"
+        | "receitas_financeiras"
+        | "despesas_financeiras"
+        | "distribuicao_lucros"
+        | "impostos_irpj_csll"
+        | "nao_classificado"
       usuario_status: "ativo" | "inativo"
       usuario_tipo: "Administrador" | "Usuário"
       usuario_vendedor: "sim" | "nao"
@@ -1483,6 +1496,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      classificacao_dre_tipo: [
+        "receita_bruta",
+        "deducoes",
+        "custos",
+        "despesas_operacionais",
+        "receitas_financeiras",
+        "despesas_financeiras",
+        "distribuicao_lucros",
+        "impostos_irpj_csll",
+        "nao_classificado",
+      ],
       usuario_status: ["ativo", "inativo"],
       usuario_tipo: ["Administrador", "Usuário"],
       usuario_vendedor: ["sim", "nao"],

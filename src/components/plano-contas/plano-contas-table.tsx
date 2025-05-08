@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { PlanoConta } from "@/types/plano-contas";
 import {
@@ -47,6 +48,25 @@ export function PlanoContasTable({
     }
   };
 
+  // Função para formatar a classificação DRE para exibição
+  const formatarClassificacaoDRE = (classificacao: string | undefined) => {
+    if (!classificacao || classificacao === 'nao_classificado') return "Não classificado";
+    
+    // Mapeia os valores do banco de dados para textos mais amigáveis
+    const mapeamento: Record<string, string> = {
+      'receita_bruta': 'Receita Bruta',
+      'deducoes': 'Deduções',
+      'custos': 'Custos',
+      'despesas_operacionais': 'Despesas Operacionais',
+      'receitas_financeiras': 'Receitas Financeiras',
+      'despesas_financeiras': 'Despesas Financeiras', 
+      'distribuicao_lucros': 'Distribuição de Lucros',
+      'impostos_irpj_csll': 'IRPJ/CSLL'
+    };
+
+    return mapeamento[classificacao] || "Não classificado";
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -56,6 +76,7 @@ export function PlanoContasTable({
             <TableHead>Descrição</TableHead>
             <TableHead>Tipo</TableHead>
             <TableHead>Categoria</TableHead>
+            <TableHead>Classificação DRE</TableHead>
             <TableHead className="w-[150px]">Considerar no DRE</TableHead>
             <TableHead className="w-[100px]">Status</TableHead>
             <TableHead className="w-[80px] text-right">Ações</TableHead>
@@ -64,7 +85,7 @@ export function PlanoContasTable({
         <TableBody>
           {contas.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                 Nenhuma conta encontrada
               </TableCell>
             </TableRow>
@@ -75,6 +96,7 @@ export function PlanoContasTable({
                 <TableCell>{conta.descricao}</TableCell>
                 <TableCell className="capitalize">{conta.tipo}</TableCell>
                 <TableCell className="capitalize">{conta.categoria}</TableCell>
+                <TableCell>{formatarClassificacaoDRE(conta.classificacao_dre)}</TableCell>
                 <TableCell>
                   {conta.considerar_dre ? "Sim" : "Não"}
                 </TableCell>

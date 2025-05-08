@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -26,6 +27,7 @@ const formSchema = z.object({
   tipo: z.enum(["ativo", "passivo", "receita", "despesa", "patrimonio"]),
   categoria: z.enum(["título", "movimentação"]),
   considerar_dre: z.boolean(),
+  classificacao_dre: z.string().optional(),
   status: z.enum(["ativo", "inativo"]),
 });
 
@@ -46,6 +48,7 @@ export function PlanoContasForm({ onSubmit, onCancel, initialData }: PlanoContas
       tipo: initialData?.tipo || "ativo",
       categoria: initialData?.categoria || "movimentação",
       considerar_dre: initialData?.considerar_dre || false,
+      classificacao_dre: initialData?.classificacao_dre || "nao_classificado",
       status: initialData?.status || "ativo",
     },
   });
@@ -121,6 +124,38 @@ export function PlanoContasForm({ onSubmit, onCancel, initialData }: PlanoContas
                 <SelectContent className="bg-background">
                   <SelectItem value="título">Título</SelectItem>
                   <SelectItem value="movimentação">Movimentação</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="classificacao_dre"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Classificação no DRE</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value || "nao_classificado"}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a classificação" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="bg-background">
+                  <SelectItem value="nao_classificado">Não classificado</SelectItem>
+                  <SelectItem value="receita_bruta">Receita Bruta</SelectItem>
+                  <SelectItem value="deducoes">Deduções</SelectItem>
+                  <SelectItem value="custos">Custos</SelectItem>
+                  <SelectItem value="despesas_operacionais">Despesas Operacionais</SelectItem>
+                  <SelectItem value="receitas_financeiras">Receitas Financeiras</SelectItem>
+                  <SelectItem value="despesas_financeiras">Despesas Financeiras</SelectItem>
+                  <SelectItem value="distribuicao_lucros">Distribuição de Lucros</SelectItem>
+                  <SelectItem value="impostos_irpj_csll">IRPJ/CSLL</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
