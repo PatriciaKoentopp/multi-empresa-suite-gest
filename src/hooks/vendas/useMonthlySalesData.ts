@@ -25,20 +25,19 @@ export const useMonthlySalesData = () => {
           // Mapear os nomes dos meses para valores numéricos para ordenação
           const mesesMap = getMesesMap();
           
-          // Ordenar os meses em ordem cronológica (Janeiro -> Dezembro)
-          const mesesOrdenados = data
+          // Processar os dados mensais
+          const mesesProcessados = data
             .map((item: any) => ({
               name: String(item.name || ''),
               faturado: Number(item.faturado || 0),
               monthNumber: mesesMap[String(item.name)] || 0,
               variacao_percentual: null,
               variacao_ano_anterior: null
-            }))
-            .sort((a, b) => a.monthNumber - b.monthNumber); // Ordenar cronologicamente
+            }));
           
-          console.log("Meses ordenados com valores para tabela:", mesesOrdenados);
+          console.log("Meses processados com valores para tabela:", mesesProcessados);
           
-          if (mesesOrdenados.length === 0) {
+          if (mesesProcessados.length === 0) {
             return [{
               name: `Sem dados para ${year}`,
               faturado: 0,
@@ -71,11 +70,11 @@ export const useMonthlySalesData = () => {
           }
           
           // Calcular percentuais de variação mês a mês
-          const dadosComVariacao = mesesOrdenados.map((mesAtual) => {
+          const dadosComVariacao = mesesProcessados.map((mesAtual) => {
             // Mês anterior no mesmo ano (para calcular variação em relação ao mês anterior)
             const mesAnteriorNumero = mesAtual.monthNumber > 1 ? mesAtual.monthNumber - 1 : null;
             const mesAnteriorMesmoAno = mesAnteriorNumero 
-              ? mesesOrdenados.find(m => m.monthNumber === mesAnteriorNumero) 
+              ? mesesProcessados.find(m => m.monthNumber === mesAnteriorNumero) 
               : null;
             
             // Mesmo mês no ano anterior (para calcular variação em relação ao mesmo mês do ano anterior)

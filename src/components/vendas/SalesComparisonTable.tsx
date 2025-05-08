@@ -87,9 +87,26 @@ export const SalesComparisonTable = ({
         const data = await getMonthlySalesData(year);
         console.log(`Dados mensais recebidos para o ano ${year}:`, data);
         
+        // Ordenar os dados mensais em ordem decrescente (dezembro -> janeiro)
+        const orderedData = [...data].sort((a, b) => {
+          // Mapeamento de nomes de meses para números (dezembro = 12, janeiro = 1)
+          const mesesMap: {[key: string]: number} = {
+            "Janeiro": 1, "Fevereiro": 2, "Março": 3, "Abril": 4,
+            "Maio": 5, "Junho": 6, "Julho": 7, "Agosto": 8,
+            "Setembro": 9, "Outubro": 10, "Novembro": 11, "Dezembro": 12
+          };
+          
+          // Obter o valor numérico para cada mês
+          const mesA = mesesMap[a.name] || 0;
+          const mesB = mesesMap[b.name] || 0;
+          
+          // Ordenar de forma decrescente (dezembro primeiro)
+          return mesB - mesA;
+        });
+        
         setMonthlyData(prev => ({
           ...prev,
-          [year]: data
+          [year]: orderedData
         }));
         
         setExpandedYears(prev => ({
