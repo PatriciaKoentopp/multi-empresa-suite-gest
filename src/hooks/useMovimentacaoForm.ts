@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -298,21 +297,21 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
           if (erroDeleteFluxo) throw erroDeleteFluxo;
         }
         
-        // Registrar saída na conta de origem
+        // Registrar saída na conta de origem - usando "saida" como tipo_operacao
         await registrarFluxoCaixa(
           movimentacaoId, 
-          'saida', // Este valor deve corresponder ao que é permitido na constraint
-          -valorNumerico, // valor negativo para saída
+          'saida', // Valor permitido na constraint da coluna tipo_operacao
+          valorNumerico, // Valor positivo pois o sinal já indica a direção
           `Transferência para outra conta - ${descricao || ''}`.trim(), 
           dataLancamento,
           contaOrigem
         );
         
-        // Registrar entrada na conta de destino
+        // Registrar entrada na conta de destino - usando "entrada" como tipo_operacao
         await registrarFluxoCaixa(
           movimentacaoId,
-          'entrada', // Este valor deve corresponder ao que é permitido na constraint
-          valorNumerico, // valor positivo para entrada
+          'entrada', // Valor permitido na constraint da coluna tipo_operacao
+          valorNumerico, // Valor positivo pois é uma entrada
           `Transferência de outra conta - ${descricao || ''}`.trim(),
           dataLancamento,
           contaDestino
