@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -152,6 +151,9 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
 
   // Função auxiliar para registrar lançamentos no fluxo de caixa
   const registrarFluxoCaixa = async (movimentacaoId, tipoOperacao, valorNumerico, descricao, dataMovimentacao, contaId, situacao = 'nao_conciliado') => {
+    // Se for uma operação do tipo "pagar", o valor deve ser registrado como negativo
+    const valorFinal = tipoOperacao === 'pagar' ? -Math.abs(valorNumerico) : Math.abs(valorNumerico);
+    
     const { error } = await supabase
       .from('fluxo_caixa')
       .insert({
@@ -163,7 +165,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
         forma_pagamento: formaPagamento,
         situacao: situacao,
         data_movimentacao: dataMovimentacao.toISOString().split('T')[0],
-        valor: valorNumerico,
+        valor: valorFinal, // Usando o valor ajustado (negativo para "pagar", positivo para "receber")
         saldo: 0, // O saldo será calculado em outro processo
         conta_corrente_id: contaId
       });
@@ -302,7 +304,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
         await registrarFluxoCaixa(
           movimentacaoId, 
           'pagar', // Valor correto para o tipo_operacao conforme constraint
-          valorNumerico, // Valor positivo pois o tipo já indica a direção
+          valorNumerico, // A função registrarFluxoCaixa vai transformar em negativo
           `Transferência para outra conta - ${descricao || ''}`.trim(), 
           dataLancamento,
           contaOrigem
