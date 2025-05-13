@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -179,19 +180,19 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
   const handleSalvar = async () => {
     if (!currentCompany?.id) {
       toast.error("Nenhuma empresa selecionada");
-      return;
+      return false;
     }
 
     // Validações básicas
     if (operacao === "transferencia") {
       if (!contaOrigem || !contaDestino || !valor || Number(valor) <= 0) {
         toast.error("Preencha todos os campos obrigatórios");
-        return;
+        return false;
       }
     } else {
       if (!tipoTitulo || !favorecido || !categoria || !valor || Number(valor) <= 0) {
         toast.error("Preencha todos os campos obrigatórios");
-        return;
+        return false;
       }
     }
 
@@ -322,11 +323,6 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       }
 
       toast.success(movimentacaoEditando?.id ? "Movimentação atualizada com sucesso!" : "Movimentação registrada com sucesso!");
-      
-      // Redirecionar para a página anterior após um breve delay para que a mensagem de sucesso seja visível
-      setTimeout(() => {
-        window.history.back();
-      }, 1000);
       
       return true; // Retornar true para indicar que o salvamento foi bem-sucedido
     } catch (error) {
