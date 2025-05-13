@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { ContaCorrente } from "@/types/conta-corrente";
 import { Button } from "@/components/ui/button";
@@ -109,7 +108,7 @@ export default function ContaCorrentePage() {
         .select('*')
         .eq('empresa_id', currentCompany.id)
         .eq('status', 'ativo')
-        .eq('tipo', 'ativo');
+        .in('tipo', ['ativo', 'passivo']); // Modificado para incluir tipo "passivo"
         
       if (error) {
         throw error;

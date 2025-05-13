@@ -1348,6 +1348,10 @@ export type Database = {
           faturado: number
         }[]
       }
+      get_user_company_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_yearly_sales_comparison: {
         Args: Record<PropertyKey, never>
         Returns: {
