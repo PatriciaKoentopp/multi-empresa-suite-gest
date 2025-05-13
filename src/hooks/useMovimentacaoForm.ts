@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -158,7 +159,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
         movimentacao_id: movimentacaoId,
         origem: 'movimentacao',
         descricao: descricao || `Movimentação - ${tipoOperacao}`,
-        tipo_operacao: tipoOperacao, // Deve ser 'entrada' ou 'saida' conforme constraint do banco
+        tipo_operacao: tipoOperacao, // Deve ser 'pagar' ou 'receber' conforme constraint do banco
         forma_pagamento: formaPagamento,
         situacao: situacao,
         data_movimentacao: dataMovimentacao.toISOString().split('T')[0],
@@ -297,20 +298,20 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
           if (erroDeleteFluxo) throw erroDeleteFluxo;
         }
         
-        // Registrar saída na conta de origem - usando "saida" como tipo_operacao
+        // Registrar saída na conta de origem - usando "pagar" como tipo_operacao
         await registrarFluxoCaixa(
           movimentacaoId, 
-          'saida', // Valor permitido na constraint da coluna tipo_operacao
-          valorNumerico, // Valor positivo pois o sinal já indica a direção
+          'pagar', // Valor correto para o tipo_operacao conforme constraint
+          valorNumerico, // Valor positivo pois o tipo já indica a direção
           `Transferência para outra conta - ${descricao || ''}`.trim(), 
           dataLancamento,
           contaOrigem
         );
         
-        // Registrar entrada na conta de destino - usando "entrada" como tipo_operacao
+        // Registrar entrada na conta de destino - usando "receber" como tipo_operacao
         await registrarFluxoCaixa(
           movimentacaoId,
-          'entrada', // Valor permitido na constraint da coluna tipo_operacao
+          'receber', // Valor correto para o tipo_operacao conforme constraint
           valorNumerico, // Valor positivo pois é uma entrada
           `Transferência de outra conta - ${descricao || ''}`.trim(),
           dataLancamento,
