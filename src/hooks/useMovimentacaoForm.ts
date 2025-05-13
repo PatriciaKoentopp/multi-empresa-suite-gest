@@ -3,180 +3,221 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
-import { toast } from "sonner";
-import { formatDate, parseDateString } from "@/lib/utils";
+import { format } from "date-fns";
 
-export const useMovimentacaoForm = (movimentacaoEditando) => {
+// Definições de tipos locais para o formulário de movimentação
+interface Parcela {
+  numero: number;
+  valor: number;
+  dataVencimento: Date;
+  data_vencimento?: string;  // Para compatibilidade com dados existentes
+}
+
+interface MovimentacaoProps {
+  id?: string;
+  operacao?: "pagar" | "receber" | "transferencia";
+  data_emissao?: string | Date;
+  data_lancamento?: string | Date;
+  num_documento?: string;
+  favorecido_id?: string;
+  categoria_id?: string;
+  tipo_titulo_id?: string;
+  descricao?: string;
+  valor?: number;
+  forma_pagamento_id?: string;
+  parcelas?: Parcela[];
+  conta_origem_id?: string;
+  conta_destino_id?: string;
+  considerar_dre?: boolean;
+  mes_referencia?: string;
+  documento_url?: string;
+}
+
+export function useMovimentacaoForm(movimentacaoEditando?: MovimentacaoProps) {
+  const { toast } = useToast();
   const { currentCompany } = useCompany();
-  const [operacao, setOperacao] = useState(movimentacaoEditando?.tipo_operacao || "pagar");
-  const [dataEmissao, setDataEmissao] = useState(movimentacaoEditando?.data_emissao ? parseDateString(formatDate(movimentacaoEditando.data_emissao)) : new Date());
-  const [dataLancamento, setDataLancamento] = useState(movimentacaoEditando?.data_lancamento ? parseDateString(formatDate(movimentacaoEditando.data_lancamento)) : new Date());
-  const [numDoc, setNumDoc] = useState(movimentacaoEditando?.numero_documento || "");
-  const [tipoTitulo, setTipoTitulo] = useState(movimentacaoEditando?.tipo_titulo_id || "");
+  
+  // Estados do formulário
+  const [operacao, setOperacao] = useState<"pagar" | "receber" | "transferencia">(
+    movimentacaoEditando?.operacao || "pagar"
+  );
+  const [dataEmissao, setDataEmissao] = useState<Date>(
+    movimentacaoEditando?.data_emissao 
+      ? new Date(movimentacaoEditando.data_emissao) 
+      : new Date()
+  );
+  const [dataLancamento, setDataLancamento] = useState<Date>(
+    movimentacaoEditando?.data_lancamento 
+      ? new Date(movimentacaoEditando.data_lancamento) 
+      : new Date()
+  );
+  const [numDoc, setNumDoc] = useState(movimentacaoEditando?.num_documento || "");
   const [favorecido, setFavorecido] = useState(movimentacaoEditando?.favorecido_id || "");
   const [categoria, setCategoria] = useState(movimentacaoEditando?.categoria_id || "");
-  const [formaPagamento, setFormaPagamento] = useState(movimentacaoEditando?.forma_pagamento || "1");
+  const [tipoTitulo, setTipoTitulo] = useState(movimentacaoEditando?.tipo_titulo_id || "");
   const [descricao, setDescricao] = useState(movimentacaoEditando?.descricao || "");
-  const [valor, setValor] = useState(movimentacaoEditando?.valor ? movimentacaoEditando.valor.toString() : "0");
-  const [numParcelas, setNumParcelas] = useState(movimentacaoEditando?.numero_parcelas || 1);
-  const [dataPrimeiroVenc, setDataPrimeiroVenc] = useState(movimentacaoEditando?.primeiro_vencimento ? parseDateString(formatDate(movimentacaoEditando.primeiro_vencimento)) : new Date());
-  const [considerarDRE, setConsiderarDRE] = useState(movimentacaoEditando?.considerar_dre ?? true);
-  const [contaOrigem, setContaOrigem] = useState(movimentacaoEditando?.conta_origem_id || "");
-  const [contaDestino, setContaDestino] = useState(movimentacaoEditando?.conta_destino_id || "");
-  const [parcelas, setParcelas] = useState(movimentacaoEditando?.parcelas || []);
+  const [valor, setValor] = useState(movimentacaoEditando?.valor?.toString() || "");
+  const [formaPagamento, setFormaPagamento] = useState(movimentacaoEditando?.forma_pagamento_id || "1");
+  const [numParcelas, setNumParcelas] = useState(
+    movimentacaoEditando?.parcelas?.length || 1
+  );
+  const [dataPrimeiroVenc, setDataPrimeiroVenc] = useState<Date>(new Date());
+  const [considerarDRE, setConsiderarDRE] = useState(
+    movimentacaoEditando?.considerar_dre !== undefined
+      ? movimentacaoEditando.considerar_dre
+      : true
+  );
+  const [contaOrigem, setContaOrigem] = useState(
+    movimentacaoEditando?.conta_origem_id || ""
+  );
+  const [contaDestino, setContaDestino] = useState(
+    movimentacaoEditando?.conta_destino_id || ""
+  );
+  const [parcelas, setParcelas] = useState<Parcela[]>([]);
+  const [mesReferencia, setMesReferencia] = useState(
+    movimentacaoEditando?.mes_referencia || format(new Date(), "MM/yyyy")
+  );
+  
+  // Estados para documento
+  const [documentoPdf, setDocumentoPdf] = useState<string | null>(
+    movimentacaoEditando?.documento_url || null
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  
-  // Novos campos
-  const [mesReferencia, setMesReferencia] = useState(movimentacaoEditando?.mes_referencia || "");
-  const [documentoPdf, setDocumentoPdf] = useState(movimentacaoEditando?.documento_pdf || "");
 
-  const handleValorChange = (e) => {
-    const value = e.target.value.replace(/[^0-9,.]/g, '');
+  // Efeito para calcular parcelas ao inicializar ou quando valores relevantes mudarem
+  useEffect(() => {
+    if (movimentacaoEditando?.parcelas && movimentacaoEditando.parcelas.length > 0) {
+      // Se estiver editando, use as parcelas existentes
+      setParcelas(movimentacaoEditando.parcelas);
+      
+      // Encontrar a data do primeiro vencimento
+      const primeiraData = movimentacaoEditando.parcelas
+        .map(p => p.dataVencimento || new Date(p.data_vencimento || ""))
+        .sort((a, b) => a.getTime() - b.getTime())[0];
+      
+      if (primeiraData) {
+        setDataPrimeiroVenc(primeiraData);
+      }
+    } else {
+      // Caso contrário, calcular novas parcelas
+      calcularParcelas();
+    }
+  }, [movimentacaoEditando?.parcelas]);
+
+  // Usar useEffect para recalcular parcelas quando valores relevantes mudarem
+  useEffect(() => {
+    if (!movimentacaoEditando) {
+      calcularParcelas();
+    }
+  }, [numParcelas, valor, dataPrimeiroVenc]);
+
+  // Função para calcular as parcelas
+  const calcularParcelas = () => {
+    if (!valor || Number(valor) <= 0 || numParcelas <= 0) {
+      setParcelas([]);
+      return;
+    }
+
+    const valorTotal = Number(valor);
+    const valorParcela = valorTotal / numParcelas;
+    
+    const novasParcelas: Parcela[] = [];
+    
+    for (let i = 0; i < numParcelas; i++) {
+      const dataVenc = new Date(dataPrimeiroVenc);
+      dataVenc.setMonth(dataPrimeiroVenc.getMonth() + i);
+      
+      novasParcelas.push({
+        numero: i + 1,
+        valor: valorParcela,
+        dataVencimento: new Date(dataVenc)
+      });
+    }
+    
+    setParcelas(novasParcelas);
+  };
+
+  // Handler para atualizar valor de uma parcela específica
+  const atualizarValorParcela = (index: number, novoValor: number) => {
+    setParcelas(prevParcelas => {
+      const novasParcelas = [...prevParcelas];
+      novasParcelas[index] = { ...novasParcelas[index], valor: novoValor };
+      return novasParcelas;
+    });
+  };
+
+  // Handler para atualizar data de vencimento de uma parcela específica
+  const atualizarDataVencimento = (index: number, novaData: Date) => {
+    setParcelas(prevParcelas => {
+      const novasParcelas = [...prevParcelas];
+      novasParcelas[index] = { ...novasParcelas[index], dataVencimento: novaData };
+      return novasParcelas;
+    });
+  };
+
+  // Tratar mudança no valor total
+  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
     setValor(value);
   };
 
-  // Calcular parcelas quando os valores relevantes mudarem
-  useEffect(() => {
-    if (operacao !== "transferencia" && Number(numParcelas) > 0 && dataPrimeiroVenc) {
-      const valorNumerico = parseFloat(valor.replace(/\./g, '').replace(',', '.')) || 0;
-      const valorParcela = valorNumerico / Number(numParcelas);
-      
-      const novasParcelas = Array.from({ length: Number(numParcelas) }).map((_, index) => {
-        // Calcular a data de vencimento para cada parcela
-        const dataVencimento = new Date(dataPrimeiroVenc);
-        dataVencimento.setMonth(dataPrimeiroVenc.getMonth() + index);
-
-        return {
-          numero: index + 1,
-          valor: valorParcela,
-          dataVencimento
-        };
-      });
-      
-      setParcelas(novasParcelas);
-    }
-  }, [valor, numParcelas, dataPrimeiroVenc, operacao]);
-
-  const atualizarValorParcela = (index, novoValor) => {
-    const novasParcelas = [...parcelas];
-    novasParcelas[index].valor = novoValor;
-    setParcelas(novasParcelas);
-  };
-
-  const atualizarDataVencimento = (index, novaData) => {
-    const novasParcelas = [...parcelas];
-    novasParcelas[index].dataVencimento = novaData;
-    setParcelas(novasParcelas);
-  };
-
-  // Função auxiliar para formatar mês/ano no padrão MM/YYYY
-  const formatarMesReferencia = (data) => {
-    if (!data) return "";
-    const mes = String(data.getMonth() + 1).padStart(2, '0');
-    const ano = data.getFullYear();
-    return `${mes}/${ano}`;
-  };
-
-  // Atualizar mês de referência quando a data de lançamento mudar (inicialmente)
-  useEffect(() => {
-    if (dataLancamento && !mesReferencia) {
-      setMesReferencia(formatarMesReferencia(dataLancamento));
-    }
-  }, [dataLancamento]);
-
-  // Função para fazer upload do documento PDF
-  const uploadDocumentoPdf = async (file) => {
-    if (!file || !currentCompany?.id) {
-      toast.error("Erro ao fazer upload", {
-        description: "Arquivo inválido ou empresa não selecionada."
-      });
-      return null;
+  // Upload de documento PDF
+  const handleDocumentoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !currentCompany?.id) {
+      return;
     }
     
+    const file = e.target.files[0];
+    if (file.type !== 'application/pdf') {
+      toast({
+        title: "Erro",
+        description: "Apenas arquivos PDF são aceitos",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsUploading(true);
+    
     try {
-      setIsUploading(true);
+      // Gerar nome único para o arquivo
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${currentCompany.id}/movimentacoes/${fileName}`;
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `${currentCompany.id}/documentos/${fileName}`;
       
-      console.log("Iniciando upload para:", filePath);
-      
-      const { data, error: uploadError } = await supabase.storage
-        .from('documentos')
+      // Upload do arquivo para o Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('documentos_financeiros')
         .upload(filePath, file);
+        
+      if (uploadError) throw uploadError;
       
-      if (uploadError) {
-        console.error("Erro no upload:", uploadError);
-        throw uploadError;
-      }
-      
-      console.log("Upload concluído:", data);
-      
-      // Obter URL pública do arquivo
-      const { data: urlData } = supabase.storage
-        .from('documentos')
+      // Gerar URL pública do arquivo
+      const { data } = supabase.storage
+        .from('documentos_financeiros')
         .getPublicUrl(filePath);
+        
+      // Atualizar estado com a URL do documento
+      setDocumentoPdf(data.publicUrl);
       
-      console.log("URL pública gerada:", urlData?.publicUrl);
-      
-      return urlData?.publicUrl || null;
+      toast({
+        title: "Sucesso",
+        description: "Documento anexado com sucesso",
+      });
     } catch (error) {
-      console.error('Erro ao fazer upload do arquivo:', error);
-      toast.error('Erro ao fazer upload do documento');
-      return null;
+      console.error('Erro ao fazer upload do documento:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao fazer upload do documento",
+        variant: "destructive",
+      });
     } finally {
       setIsUploading(false);
     }
   };
-
-  const handleDocumentoChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      console.log("Arquivo selecionado:", file.name, file.type, file.size);
-      
-      if (file.type !== 'application/pdf') {
-        toast.error("Formato inválido", { description: "Por favor, selecione um arquivo PDF." });
-        return;
-      }
-      
-      toast.info("Enviando documento...", { duration: 2000 });
-      
-      const url = await uploadDocumentoPdf(file);
-      if (url) {
-        setDocumentoPdf(url);
-        toast.success("Documento anexado com sucesso!");
-      }
-    }
-  };
-
-  // Função auxiliar para registrar lançamentos no fluxo de caixa
-  const registrarFluxoCaixa = async (movimentacaoId, tipoOperacao, valorNumerico, descricao, dataMovimentacao, contaId, situacao = 'nao_conciliado') => {
-    // Se for uma operação do tipo "pagar", o valor deve ser registrado como negativo
-    const valorFinal = tipoOperacao === 'pagar' ? -Math.abs(valorNumerico) : Math.abs(valorNumerico);
-    
-    const { error } = await supabase
-      .from('fluxo_caixa')
-      .insert({
-        empresa_id: currentCompany.id,
-        movimentacao_id: movimentacaoId,
-        origem: 'movimentacao',
-        descricao: descricao || `Movimentação - ${tipoOperacao}`,
-        tipo_operacao: tipoOperacao, // Deve ser 'pagar' ou 'receber' conforme constraint do banco
-        forma_pagamento: formaPagamento,
-        situacao: situacao,
-        data_movimentacao: dataMovimentacao.toISOString().split('T')[0],
-        valor: valorFinal, // Usando o valor ajustado (negativo para "pagar", positivo para "receber")
-        saldo: 0, // O saldo será calculado em outro processo
-        conta_corrente_id: contaId
-      });
-
-    if (error) {
-      console.error("Erro ao registrar fluxo de caixa:", error);
-      throw error;
-    }
-  };
-
+  
+  // Função principal para salvar a movimentação
   const handleSalvar = async () => {
     if (!currentCompany?.id) {
       toast.error("Nenhuma empresa selecionada");
@@ -196,130 +237,99 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       }
     }
 
-    try {
-      setIsLoading(true);
-      
-      // Formatar valor para o banco de dados
-      const valorNumerico = parseFloat(valor.replace(/\./g, '').replace(',', '.'));
-      
-      // Formatando datas para o formato aceito pelo Supabase
-      const dataEmissaoFormatada = dataEmissao.toISOString().split('T')[0];
-      const dataLancamentoFormatada = dataLancamento.toISOString().split('T')[0];
-      const dataPrimeiroVencFormatada = dataPrimeiroVenc ? dataPrimeiroVenc.toISOString().split('T')[0] : null;
+    setIsLoading(true);
 
-      // Dados comuns para todas as operações
-      const dadosMovimentacao = {
+    try {
+      const dadosComuns = {
         empresa_id: currentCompany.id,
-        tipo_operacao: operacao,
-        data_emissao: dataEmissaoFormatada,
-        data_lancamento: dataLancamentoFormatada,
-        valor: valorNumerico,
+        operacao,
+        data_emissao: format(dataEmissao, "yyyy-MM-dd"),
+        data_lancamento: format(dataLancamento, "yyyy-MM-dd"),
         descricao,
-        mes_referencia: mesReferencia,
-        documento_pdf: documentoPdf,
+        valor: Number(valor),
+        mes_referencia: mesReferencia || format(new Date(), "MM/yyyy"),
+        documento_url: documentoPdf,
+        updated_at: new Date().toISOString(),
       };
 
-      // Adicionando dados específicos por tipo de operação
+      // Dados específicos para cada tipo de operação
       if (operacao === "transferencia") {
-        Object.assign(dadosMovimentacao, {
+        const dadosTransferencia = {
+          ...dadosComuns,
           conta_origem_id: contaOrigem,
           conta_destino_id: contaDestino,
-          numero_parcelas: 1,
-          considerar_dre: false,
-        });
+        };
+
+        if (movimentacaoEditando?.id) {
+          // Atualizar transferência existente
+          await supabase
+            .from("movimentacoes")
+            .update(dadosTransferencia)
+            .eq("id", movimentacaoEditando.id);
+        } else {
+          // Inserir nova transferência
+          await supabase.from("movimentacoes").insert({
+            ...dadosTransferencia,
+            created_at: new Date().toISOString(),
+          });
+        }
       } else {
-        Object.assign(dadosMovimentacao, {
-          numero_documento: numDoc,
-          tipo_titulo_id: tipoTitulo,
+        // Dados para operações de pagamento ou recebimento
+        const dadosTitulo = {
+          ...dadosComuns,
+          num_documento: numDoc,
           favorecido_id: favorecido,
           categoria_id: categoria,
-          forma_pagamento: formaPagamento,
-          numero_parcelas: Number(numParcelas),
-          primeiro_vencimento: dataPrimeiroVencFormatada,
+          tipo_titulo_id: tipoTitulo,
+          forma_pagamento_id: formaPagamento,
           considerar_dre: considerarDRE,
-        });
-      }
+        };
 
-      let movimentacaoId;
+        let movimentacaoId = movimentacaoEditando?.id;
 
-      if (movimentacaoEditando?.id) {
-        // Atualizar movimentação existente
-        const { data, error } = await supabase
-          .from('movimentacoes')
-          .update(dadosMovimentacao)
-          .eq('id', movimentacaoEditando.id)
-          .select();
+        if (movimentacaoId) {
+          // Atualizar movimentação existente
+          await supabase
+            .from("movimentacoes")
+            .update(dadosTitulo)
+            .eq("id", movimentacaoId);
+        } else {
+          // Inserir nova movimentação
+          const { data, error } = await supabase
+            .from("movimentacoes")
+            .insert({
+              ...dadosTitulo,
+              created_at: new Date().toISOString(),
+            })
+            .select("id")
+            .single();
 
-        if (error) throw error;
-        movimentacaoId = movimentacaoEditando.id;
-        
-        // Excluir parcelas antigas para recriá-las
-        if (operacao !== "transferencia") {
-          const { error: erroDeletar } = await supabase
-            .from('movimentacoes_parcelas')
-            .delete()
-            .eq('movimentacao_id', movimentacaoId);
-          
-          if (erroDeletar) throw erroDeletar;
+          if (error) throw error;
+          movimentacaoId = data.id;
         }
-      } else {
-        // Inserir nova movimentação
-        const { data, error } = await supabase
-          .from('movimentacoes')
-          .insert(dadosMovimentacao)
-          .select();
 
-        if (error) throw error;
-        movimentacaoId = data[0].id;
-      }
+        // Tratar parcelas
+        if (movimentacaoId) {
+          // Se estiver editando, excluir parcelas antigas
+          if (movimentacaoEditando?.id) {
+            await supabase
+              .from("parcelas")
+              .delete()
+              .eq("movimentacao_id", movimentacaoId);
+          }
 
-      // Criar parcelas se não for transferência
-      if (operacao !== "transferencia" && parcelas && parcelas.length > 0) {
-        const parcelasFormatadas = parcelas.map(parcela => ({
-          movimentacao_id: movimentacaoId,
-          numero: parcela.numero,
-          valor: parcela.valor,
-          data_vencimento: parcela.dataVencimento.toISOString().split('T')[0],
-        }));
+          // Inserir parcelas atualizadas
+          const parcelasData = parcelas.map((parcela) => ({
+            movimentacao_id: movimentacaoId,
+            numero: parcela.numero,
+            valor: parcela.valor,
+            data_vencimento: format(parcela.dataVencimento, "yyyy-MM-dd"),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }));
 
-        const { error: erroParcelas } = await supabase
-          .from('movimentacoes_parcelas')
-          .insert(parcelasFormatadas);
-
-        if (erroParcelas) throw erroParcelas;
-      }
-      
-      // Registrar no fluxo de caixa para transferências
-      if (operacao === "transferencia") {
-        // Deletar registros existentes do fluxo de caixa (caso seja edição)
-        if (movimentacaoEditando?.id) {
-          const { error: erroDeleteFluxo } = await supabase
-            .from('fluxo_caixa')
-            .delete()
-            .eq('movimentacao_id', movimentacaoId);
-            
-          if (erroDeleteFluxo) throw erroDeleteFluxo;
+          await supabase.from("parcelas").insert(parcelasData);
         }
-        
-        // Registrar saída na conta de origem - usando "pagar" como tipo_operacao
-        await registrarFluxoCaixa(
-          movimentacaoId, 
-          'pagar', // Valor correto para o tipo_operacao conforme constraint
-          valorNumerico, // A função registrarFluxoCaixa vai transformar em negativo
-          `Transferência para outra conta - ${descricao || ''}`.trim(), 
-          dataLancamento,
-          contaOrigem
-        );
-        
-        // Registrar entrada na conta de destino - usando "receber" como tipo_operacao
-        await registrarFluxoCaixa(
-          movimentacaoId,
-          'receber', // Valor correto para o tipo_operacao conforme constraint
-          valorNumerico, // Valor positivo pois é uma entrada
-          `Transferência de outra conta - ${descricao || ''}`.trim(),
-          dataLancamento,
-          contaDestino
-        );
       }
 
       toast.success(movimentacaoEditando?.id ? "Movimentação atualizada com sucesso!" : "Movimentação registrada com sucesso!");
@@ -327,8 +337,8 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       return true; // Retornar true para indicar que o salvamento foi bem-sucedido
     } catch (error) {
       console.error("Erro ao salvar movimentação:", error);
-      toast.error(error.message || "Erro ao salvar movimentação");
-      return false; // Retornar false para indicar que houve um erro no salvamento
+      toast.error("Erro ao salvar movimentação");
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -343,19 +353,18 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     setDataLancamento,
     numDoc,
     setNumDoc,
-    tipoTitulo,
-    setTipoTitulo,
     favorecido,
     setFavorecido,
     categoria,
     setCategoria,
-    formaPagamento,
-    setFormaPagamento,
+    tipoTitulo,
+    setTipoTitulo,
     descricao,
     setDescricao,
     valor,
-    setValor,
     handleValorChange,
+    formaPagamento,
+    setFormaPagamento,
     numParcelas,
     setNumParcelas,
     dataPrimeiroVenc,
@@ -366,6 +375,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     setContaOrigem,
     contaDestino,
     setContaDestino,
+    handleSalvar,
     parcelas,
     atualizarValorParcela,
     atualizarDataVencimento,
@@ -374,8 +384,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     documentoPdf,
     setDocumentoPdf,
     handleDocumentoChange,
-    handleSalvar,
     isLoading,
-    isUploading
+    isUploading,
   };
-};
+}
