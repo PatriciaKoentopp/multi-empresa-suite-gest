@@ -322,10 +322,17 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       }
 
       toast.success(movimentacaoEditando?.id ? "Movimentação atualizada com sucesso!" : "Movimentação registrada com sucesso!");
-      setTimeout(() => window.history.back(), 1000);
+      
+      // Redirecionar para a página anterior após um breve delay para que a mensagem de sucesso seja visível
+      setTimeout(() => {
+        window.history.back();
+      }, 1000);
+      
+      return true; // Retornar true para indicar que o salvamento foi bem-sucedido
     } catch (error) {
       console.error("Erro ao salvar movimentação:", error);
       toast.error(error.message || "Erro ao salvar movimentação");
+      return false; // Retornar false para indicar que houve um erro no salvamento
     } finally {
       setIsLoading(false);
     }

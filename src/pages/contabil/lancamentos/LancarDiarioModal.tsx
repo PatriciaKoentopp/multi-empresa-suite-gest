@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -125,6 +124,7 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
         valor: Number(valor),
       });
       clearForm();
+      onClose(); // Fechar o modal após salvar com sucesso
     } catch (error) {
       console.error("Erro ao salvar lançamento:", error);
       toast.error("Erro ao salvar lançamento");
