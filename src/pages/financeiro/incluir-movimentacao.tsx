@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -275,8 +274,6 @@ export default function IncluirMovimentacaoPage() {
               descricao={descricao}
               onDescricaoChange={(e) => setDescricao(e.target.value)}
               contasCorrente={contasCorrente}
-              onSalvar={handleSalvar}
-              onCancel={() => navigate(-1)}
               readOnly={modoVisualizacao}
             />
           ) : operacao === "pagar" ? (
@@ -345,7 +342,7 @@ export default function IncluirMovimentacaoPage() {
             />
           ) : null}
           
-          {/* Botões de ação */}
+          {/* Botões de ação - agora em um único lugar para evitar duplicação */}
           <div className="flex justify-end gap-2 mt-6">
             <Button variant="outline" onClick={() => navigate(-1)}>
               {modoVisualizacao ? "Voltar" : "Cancelar"}

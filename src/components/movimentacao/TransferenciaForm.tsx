@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,8 +34,6 @@ export function TransferenciaForm({
   descricao,
   onDescricaoChange,
   contasCorrente,
-  onSalvar,
-  onCancel,
   readOnly = false
 }: TransferenciaFormProps) {
   return (
@@ -116,16 +113,7 @@ export function TransferenciaForm({
         </div>
       </div>
 
-      {!readOnly && (
-        <div className="flex justify-end gap-2 mt-6">
-          <Button variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button variant="blue" onClick={onSalvar}>
-            Salvar
-          </Button>
-        </div>
-      )}
+      {/* Removidos os botões duplicados */}
     </div>
   );
 }

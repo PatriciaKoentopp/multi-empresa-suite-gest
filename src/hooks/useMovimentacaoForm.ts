@@ -150,6 +150,30 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     }
   };
 
+  // Função auxiliar para registrar lançamentos no fluxo de caixa
+  const registrarFluxoCaixa = async (movimentacaoId, tipoOperacao, valorNumerico, descricao, dataMovimentacao, contaId, situacao = 'nao_conciliado') => {
+    const { error } = await supabase
+      .from('fluxo_caixa')
+      .insert({
+        empresa_id: currentCompany.id,
+        movimentacao_id: movimentacaoId,
+        origem: 'movimentacao',
+        descricao: descricao || `Movimentação - ${tipoOperacao}`,
+        tipo_operacao: tipoOperacao,
+        forma_pagamento: formaPagamento,
+        situacao: situacao,
+        data_movimentacao: dataMovimentacao.toISOString().split('T')[0],
+        valor: valorNumerico,
+        saldo: 0, // O saldo será calculado em outro processo
+        conta_corrente_id: contaId
+      });
+
+    if (error) {
+      console.error("Erro ao registrar fluxo de caixa:", error);
+      throw error;
+    }
+  };
+
   const handleSalvar = async () => {
     if (!currentCompany?.id) {
       toast.error("Nenhuma empresa selecionada");
@@ -260,6 +284,39 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
           .insert(parcelasFormatadas);
 
         if (erroParcelas) throw erroParcelas;
+      }
+      
+      // Registrar no fluxo de caixa para transferências
+      if (operacao === "transferencia") {
+        // Deletar registros existentes do fluxo de caixa (caso seja edição)
+        if (movimentacaoEditando?.id) {
+          const { error: erroDeleteFluxo } = await supabase
+            .from('fluxo_caixa')
+            .delete()
+            .eq('movimentacao_id', movimentacaoId);
+            
+          if (erroDeleteFluxo) throw erroDeleteFluxo;
+        }
+        
+        // Registrar saída na conta de origem
+        await registrarFluxoCaixa(
+          movimentacaoId, 
+          'saida', 
+          -valorNumerico, // valor negativo para saída
+          `Transferência para outra conta - ${descricao || ''}`.trim(), 
+          dataLancamento,
+          contaOrigem
+        );
+        
+        // Registrar entrada na conta de destino
+        await registrarFluxoCaixa(
+          movimentacaoId,
+          'entrada',
+          valorNumerico, // valor positivo para entrada
+          `Transferência de outra conta - ${descricao || ''}`.trim(),
+          dataLancamento,
+          contaDestino
+        );
       }
 
       toast.success(movimentacaoEditando?.id ? "Movimentação atualizada com sucesso!" : "Movimentação registrada com sucesso!");
