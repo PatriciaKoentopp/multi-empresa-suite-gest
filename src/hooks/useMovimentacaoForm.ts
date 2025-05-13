@@ -159,7 +159,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
         movimentacao_id: movimentacaoId,
         origem: 'movimentacao',
         descricao: descricao || `Movimentação - ${tipoOperacao}`,
-        tipo_operacao: tipoOperacao,
+        tipo_operacao: tipoOperacao, // Deve ser 'entrada' ou 'saida' conforme constraint do banco
         forma_pagamento: formaPagamento,
         situacao: situacao,
         data_movimentacao: dataMovimentacao.toISOString().split('T')[0],
@@ -301,7 +301,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
         // Registrar saída na conta de origem
         await registrarFluxoCaixa(
           movimentacaoId, 
-          'saida', 
+          'saida', // Este valor deve corresponder ao que é permitido na constraint
           -valorNumerico, // valor negativo para saída
           `Transferência para outra conta - ${descricao || ''}`.trim(), 
           dataLancamento,
@@ -311,7 +311,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
         // Registrar entrada na conta de destino
         await registrarFluxoCaixa(
           movimentacaoId,
-          'entrada',
+          'entrada', // Este valor deve corresponder ao que é permitido na constraint
           valorNumerico, // valor positivo para entrada
           `Transferência de outra conta - ${descricao || ''}`.trim(),
           dataLancamento,
