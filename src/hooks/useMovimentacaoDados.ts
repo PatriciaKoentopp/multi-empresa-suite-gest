@@ -49,7 +49,8 @@ export function useMovimentacaoDados() {
         .eq("empresa_id", currentCompany.id)
         .eq("status", "ativo")
         .eq("categoria", "movimentação")
-        .in("tipo", ["receita", "despesa"]); // Adicionado filtro por tipo receita e despesa
+        .in("tipo", ["receita", "despesa", "patrimonio"]) // Adicionado "patrimonio" ao filtro
+        .order("descricao", { ascending: true }); // Ordenação alfabética por descrição
         
       if (errorCategorias) throw errorCategorias;
       
@@ -57,7 +58,8 @@ export function useMovimentacaoDados() {
         .from("contas_correntes")
         .select("id, nome")
         .eq("empresa_id", currentCompany.id)
-        .eq("status", "ativo");
+        .eq("status", "ativo")
+        .order("nome", { ascending: true }); // Ordenação alfabética por nome
         
       if (errorContas) throw errorContas;
       
@@ -65,11 +67,12 @@ export function useMovimentacaoDados() {
         .from("tipos_titulos")
         .select("*")
         .eq("empresa_id", currentCompany.id)
-        .eq("status", "ativo");
+        .eq("status", "ativo")
+        .order("nome", { ascending: true }); // Ordenação alfabética por nome
         
       if (errorTipos) throw errorTipos;
       
-      setFavorecidos(favorecidosData || []);
+      setFavorecidos(favorecidosData?.sort((a, b) => a.nome.localeCompare(b.nome)) || []);
       setCategorias(categoriasData || []);
       setContasCorrente(contasData || []);
       
