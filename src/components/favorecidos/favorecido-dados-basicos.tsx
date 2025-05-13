@@ -26,7 +26,7 @@ export function FavorecidoDadosBasicos({ form, grupos, profissoes, readOnly }: F
             <FormLabel>Grupo</FormLabel>
             <Select
               onValueChange={field.onChange}
-              defaultValue={field.value}
+              value={field.value || ""}
               disabled={readOnly}
             >
               <FormControl>
@@ -35,6 +35,9 @@ export function FavorecidoDadosBasicos({ form, grupos, profissoes, readOnly }: F
                 </SelectTrigger>
               </FormControl>
               <SelectContent className="bg-white dark:bg-gray-800">
+                <SelectItem value="" className="hover:bg-gray-100 dark:hover:bg-gray-700">
+                  Nenhum grupo selecionado
+                </SelectItem>
                 {grupos.map((grupo) => (
                   <SelectItem 
                     key={grupo.id} 
@@ -59,7 +62,7 @@ export function FavorecidoDadosBasicos({ form, grupos, profissoes, readOnly }: F
             <FormLabel>Profissão</FormLabel>
             <Select
               onValueChange={field.onChange}
-              defaultValue={field.value}
+              value={field.value || ""}
               disabled={readOnly}
             >
               <FormControl>
@@ -68,6 +71,9 @@ export function FavorecidoDadosBasicos({ form, grupos, profissoes, readOnly }: F
                 </SelectTrigger>
               </FormControl>
               <SelectContent className="bg-white dark:bg-gray-800">
+                <SelectItem value="" className="hover:bg-gray-100 dark:hover:bg-gray-700">
+                  Nenhuma profissão selecionada
+                </SelectItem>
                 {profissoes.map((profissao) => (
                   <SelectItem 
                     key={profissao.id} 
