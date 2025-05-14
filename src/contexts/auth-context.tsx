@@ -73,13 +73,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Se o usuário tem uma empresa associada, carregamos essa empresa específica
         if (data.empresa_id) {
           console.log("[AuthContext] Carregando empresa do usuário:", data.empresa_id);
-          fetchCompanyById(data.empresa_id);
+          // Guardar o ID da empresa do usuário no localStorage para persistência
+          localStorage.setItem("userCompanyId", data.empresa_id);
+          await fetchCompanyById(data.empresa_id);
         }
       } else {
         console.log("[AuthContext] Nenhum dado de usuário encontrado");
       }
     } catch (error) {
       console.error("[AuthContext] Erro ao buscar dados do usuário:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -94,11 +98,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Quando o estado de autenticação muda e temos um usuário, buscamos seus dados
       if (session?.user) {
         // Usar setTimeout para evitar potenciais problemas de deadlock
-        setTimeout(() => {
-          fetchUserData(session.user.id);
-        }, 0);
+        fetchUserData(session.user.id);
       } else {
         setUserData(null);
+        setIsLoading(false);
       }
     });
 
@@ -111,12 +114,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Se já temos um usuário logado, buscamos seus dados
       if (session?.user) {
-        setTimeout(() => {
-          fetchUserData(session.user.id);
-        }, 0);
+        fetchUserData(session.user.id);
+      } else {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -154,9 +155,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error: any) {
       console.error("[AuthContext] Erro no processo de login:", error);
-      throw error;
-    } finally {
       setIsLoading(false);
+      throw error;
     }
   };
 
@@ -200,11 +200,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(data.user);
       setSession(data.session);
+      
+      // Após o registro bem-sucedido, buscamos os dados do usuário
+      if (data.user) {
+        await fetchUserData(data.user.id);
+      }
     } catch (error: any) {
       console.error("[AuthContext] Erro no registro:", error);
-      throw error;
-    } finally {
       setIsLoading(false);
+      throw error;
     }
   };
 
@@ -230,13 +234,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUserData(null);
       setSession(null);
       
+      // Remover dados de empresa do localStorage
+      localStorage.removeItem("currentCompanyId");
+      localStorage.removeItem("userCompanyId");
+      
       // Forçar recarregamento da página para limpar completamente o estado
       window.location.href = '/login';
     } catch (error) {
       console.error("[AuthContext] Erro no processo de logout:", error);
-      throw error;
-    } finally {
       setIsLoading(false);
+      throw error;
     }
   };
 
