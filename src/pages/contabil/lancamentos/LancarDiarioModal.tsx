@@ -125,7 +125,6 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
         valor: Number(valor),
       });
       clearForm();
-      onClose(); // Fechar o modal após salvar com sucesso
     } catch (error) {
       console.error("Erro ao salvar lançamento:", error);
       toast.error("Erro ao salvar lançamento");

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -140,16 +139,6 @@ export default function IncluirMovimentacaoPage() {
     // Limitar o tamanho máximo (MM/YYYY = 7 caracteres)
     if (value.length <= 7) {
       setMesReferencia(value);
-    }
-  };
-
-  // Função que trata o salvamento e navegação
-  const handleSalvarENavegar = async () => {
-    const sucesso = await handleSalvar();
-    if (sucesso) {
-      // Não é necessário o setTimeout aqui, pois o useMovimentacaoForm já tem um
-      // Apenas garantir que a navegação ocorra
-      navigate(-1);
     }
   };
 
@@ -353,7 +342,7 @@ export default function IncluirMovimentacaoPage() {
             />
           ) : null}
           
-          {/* Botões de ação */}
+          {/* Botões de ação - agora em um único lugar para evitar duplicação */}
           <div className="flex justify-end gap-2 mt-6">
             <Button variant="outline" onClick={() => navigate(-1)}>
               {modoVisualizacao ? "Voltar" : "Cancelar"}
@@ -361,7 +350,7 @@ export default function IncluirMovimentacaoPage() {
             {!modoVisualizacao && (
               <Button 
                 variant="blue" 
-                onClick={handleSalvarENavegar} 
+                onClick={handleSalvar} 
                 disabled={isLoading || isUploading}
               >
                 {isLoading || isUploading ? "Salvando..." : "Salvar"}
