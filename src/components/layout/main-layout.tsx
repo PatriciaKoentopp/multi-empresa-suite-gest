@@ -16,7 +16,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center gap-2">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-r-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-r-transparent" />
           <p className="text-sm text-muted-foreground">Carregando...</p>
         </div>
       </div>
@@ -25,9 +25,11 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   // Se não estiver autenticado, redirecionar para login
   if (!isAuthenticated) {
+    console.log("[MainLayout] Usuário não autenticado, redirecionando para login");
     return <Navigate to="/login" replace />;
   }
 
+  console.log("[MainLayout] Usuário autenticado, renderizando layout principal");
   return (
     <div className="flex min-h-screen w-full">
       <Sidebar />

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
@@ -42,10 +43,11 @@ interface DashboardData {
 }
 
 export function Dashboard() {
-  const { currentCompany } = useCompany();
+  const { currentCompany, loading: companyLoading } = useCompany();
   const { toast } = useToast();
-  const { userData } = useAuth();
+  const { userData, isAuthenticated, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     totalVendas: 0,
     totalOrcamentos: 0,
@@ -60,11 +62,24 @@ export function Dashboard() {
     topClientesAnoAnterior: []
   });
 
+  // Verificar se a autenticação e a empresa foram carregados
   useEffect(() => {
+    if (!authLoading && !companyLoading) {
+      setIsInitialized(true);
+    }
+  }, [authLoading, companyLoading]);
+
+  // Buscar dados somente após inicialização
+  useEffect(() => {
+    if (!isInitialized) return;
+    
     const fetchDados = async () => {
       try {
         setIsLoading(true);
-        if (!currentCompany?.id) return;
+        if (!currentCompany?.id) {
+          setIsLoading(false);
+          return;
+        }
 
         // Verificar se o usuário tem acesso a esta empresa
         if (userData && userData.empresa_id && userData.empresa_id !== currentCompany.id) {
@@ -93,8 +108,6 @@ export function Dashboard() {
         const inicioAnoAnterior = `${anoAnterior}-01-01`;
         const fimAnoAnterior = `${anoAnterior}-12-31`;
 
-        // 1. Buscar contas correntes e seus saldos
-        
         // 1. Buscar contas correntes e seus saldos
         const { data: contasCorrentes, error: erroContasCorrentes } = await supabase
           .from('contas_correntes')
@@ -456,6 +469,8 @@ export function Dashboard() {
           topClientesAnoAtual,
           topClientesAnoAnterior
         });
+        
+        console.log("[Dashboard] Dados carregados com sucesso");
         setIsLoading(false);
       } catch (error: any) {
         console.error("Erro ao carregar dados do dashboard:", error);
@@ -467,8 +482,18 @@ export function Dashboard() {
         setIsLoading(false);
       }
     };
-    fetchDados();
-  }, [currentCompany?.id, userData, toast]);
+    
+    if (isAuthenticated && currentCompany?.id) {
+      console.log("[Dashboard] Iniciando carregamento de dados");
+      fetchDados();
+    } else {
+      console.log("[Dashboard] Aguardando autenticação ou empresa");
+      setIsLoading(false);
+    }
+  }, [isInitialized, currentCompany?.id, isAuthenticated, userData, toast]);
+
+  // Estado de loading combinado: carregando autenticação, empresa ou dashboard
+  const showLoading = authLoading || companyLoading || (isInitialized && isLoading);
 
   return <div className="space-y-6">
       <div>
@@ -478,130 +503,131 @@ export function Dashboard() {
         </p>
       </div>
       
-      {/* Nova seção de alertas - ajustada para largura total */}
-      <div className="grid gap-6">
-        <div className="col-span-1">
-          <AlertsSection 
-            parcelasVencidas={dashboardData.parcelasEmAtraso}
-            parcelasHoje={dashboardData.parcelasHoje}
-            interacoesPendentes={dashboardData.interacoesPendentes}
-            isLoading={isLoading}
-          />
+      {showLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-r-transparent" />
+            <p className="text-sm text-muted-foreground">Carregando dados...</p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Nova seção de alertas - ajustada para largura total */}
+          <div className="grid gap-6">
+            <div className="col-span-1">
+              <AlertsSection 
+                parcelasVencidas={dashboardData.parcelasEmAtraso}
+                parcelasHoje={dashboardData.parcelasHoje}
+                interacoesPendentes={dashboardData.interacoesPendentes}
+                isLoading={false}
+              />
+            </div>
+          </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <SalesDashboardCard title="Vendas do Mês" value={formatCurrency(dashboardData.totalVendas)} description="Total do mês atual" icon="money" />
-        <SalesDashboardCard title="Total de Orçamentos" value={formatCurrency(dashboardData.totalOrcamentos)} description="Soma de todos os orçamentos ativos" icon="chart" />
-        <SalesDashboardCard title="Contas a Pagar" value={formatCurrency(dashboardData.contasPagar)} description="Pagamentos pendentes" icon="sales" />
-        <SalesDashboardCard title="Contas a Receber" value={formatCurrency(dashboardData.contasReceber)} description={`${dashboardData.parcelasEmAtraso.filter(p => p.tipo === 'receber').length} título(s) em atraso`} icon="users" />
-      </div>
-      
-      {/* Card para Saldo das Contas - movido para antes das últimas vendas */}
-      <div>
-        <Card className="bg-white">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-blue-500" /> 
-              Saldo das Contas
-            </CardTitle>
-            <CardDescription>
-              Saldo atual em todas as contas correntes
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-              </div>
-            ) : dashboardData.saldoContas.length > 0 ? (
-              <div className="space-y-4">
-                {/* Total geral */}
-                <div className="flex items-center justify-between border-b pb-2">
-                  <p className="font-semibold text-lg">Saldo Total</p>
-                  <p className={`font-bold text-lg ${dashboardData.totalSaldo > 0 ? 'text-green-600' : dashboardData.totalSaldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                    {formatCurrency(dashboardData.totalSaldo)}
-                  </p>
-                </div>
-                
-                {/* Lista de contas */}
-                <div className="space-y-2">
-                  {dashboardData.saldoContas.map(conta => (
-                    <div key={conta.id} className="flex items-center justify-between">
-                      <p className="text-gray-800">{conta.nome}</p>
-                      <p className={`${conta.saldo > 0 ? 'text-green-600' : conta.saldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                        {formatCurrency(conta.saldo)}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <SalesDashboardCard title="Vendas do Mês" value={formatCurrency(dashboardData.totalVendas)} description="Total do mês atual" icon="money" />
+            <SalesDashboardCard title="Total de Orçamentos" value={formatCurrency(dashboardData.totalOrcamentos)} description="Soma de todos os orçamentos ativos" icon="chart" />
+            <SalesDashboardCard title="Contas a Pagar" value={formatCurrency(dashboardData.contasPagar)} description="Pagamentos pendentes" icon="sales" />
+            <SalesDashboardCard title="Contas a Receber" value={formatCurrency(dashboardData.contasReceber)} description={`${dashboardData.parcelasEmAtraso.filter(p => p.tipo === 'receber').length} título(s) em atraso`} icon="users" />
+          </div>
+          
+          {/* Card para Saldo das Contas - movido para antes das últimas vendas */}
+          <div>
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wallet className="h-5 w-5 text-blue-500" /> 
+                  Saldo das Contas
+                </CardTitle>
+                <CardDescription>
+                  Saldo atual em todas as contas correntes
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {dashboardData.saldoContas.length > 0 ? (
+                  <div className="space-y-4">
+                    {/* Total geral */}
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <p className="font-semibold text-lg">Saldo Total</p>
+                      <p className={`font-bold text-lg ${dashboardData.totalSaldo > 0 ? 'text-green-600' : dashboardData.totalSaldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                        {formatCurrency(dashboardData.totalSaldo)}
                       </p>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground py-4">
-                Nenhuma conta corrente encontrada
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="grid gap-6 md:grid-cols-1">
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BanknoteIcon className="h-5 w-5 text-blue-500" />
-              Top 5 Clientes
-            </CardTitle>
-            <CardDescription>
-              Clientes com maior valor de vendas em {new Date().getFullYear()} e {new Date().getFullYear() - 1}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left pb-2 pr-2 w-[25%]">Cliente</th>
-                      <th className="text-right pb-2 pr-8 w-[25%]">{new Date().getFullYear()}</th>
-                      <th className="text-left pb-2 pl-8 w-[25%]">Cliente</th>
-                      <th className="text-right pb-2 w-[25%]">{new Date().getFullYear() - 1}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.from({ length: 5 }).map((_, index) => (
-                      <tr key={index} className="border-b">
-                        <td className="py-2 font-medium pr-2">
-                          {dashboardData.topClientesAnoAtual[index]?.nomeFantasia || 
-                           dashboardData.topClientesAnoAtual[index]?.nome || "-"}
-                        </td>
-                        <td className="py-2 text-right pr-8">
-                          {dashboardData.topClientesAnoAtual[index]
-                            ? formatCurrency(dashboardData.topClientesAnoAtual[index].totalVendas)
-                            : "-"}
-                        </td>
-                        <td className="py-2 font-medium pl-8 border-l">
-                          {dashboardData.topClientesAnoAnterior[index]?.nomeFantasia || 
-                           dashboardData.topClientesAnoAnterior[index]?.nome || "-"}
-                        </td>
-                        <td className="py-2 text-right">
-                          {dashboardData.topClientesAnoAnterior[index]
-                            ? formatCurrency(dashboardData.topClientesAnoAnterior[index].totalVendas)
-                            : "-"}
-                        </td>
+                    
+                    {/* Lista de contas */}
+                    <div className="space-y-2">
+                      {dashboardData.saldoContas.map(conta => (
+                        <div key={conta.id} className="flex items-center justify-between">
+                          <p className="text-gray-800">{conta.nome}</p>
+                          <p className={`${conta.saldo > 0 ? 'text-green-600' : conta.saldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                            {formatCurrency(conta.saldo)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4">
+                    Nenhuma conta corrente encontrada
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-1">
+            <Card className="col-span-1">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BanknoteIcon className="h-5 w-5 text-blue-500" />
+                  Top 5 Clientes
+                </CardTitle>
+                <CardDescription>
+                  Clientes com maior valor de vendas em {new Date().getFullYear()} e {new Date().getFullYear() - 1}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left pb-2 pr-2 w-[25%]">Cliente</th>
+                        <th className="text-right pb-2 pr-8 w-[25%]">{new Date().getFullYear()}</th>
+                        <th className="text-left pb-2 pl-8 w-[25%]">Cliente</th>
+                        <th className="text-right pb-2 w-[25%]">{new Date().getFullYear() - 1}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <tr key={index} className="border-b">
+                          <td className="py-2 font-medium pr-2">
+                            {dashboardData.topClientesAnoAtual[index]?.nomeFantasia || 
+                             dashboardData.topClientesAnoAtual[index]?.nome || "-"}
+                          </td>
+                          <td className="py-2 text-right pr-8">
+                            {dashboardData.topClientesAnoAtual[index]
+                              ? formatCurrency(dashboardData.topClientesAnoAtual[index].totalVendas)
+                              : "-"}
+                          </td>
+                          <td className="py-2 font-medium pl-8 border-l">
+                            {dashboardData.topClientesAnoAnterior[index]?.nomeFantasia || 
+                             dashboardData.topClientesAnoAnterior[index]?.nome || "-"}
+                          </td>
+                          <td className="py-2 text-right">
+                            {dashboardData.topClientesAnoAnterior[index]
+                              ? formatCurrency(dashboardData.topClientesAnoAnterior[index].totalVendas)
+                              : "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
     </div>;
 }
 
