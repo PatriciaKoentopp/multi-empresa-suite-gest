@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
@@ -534,7 +533,7 @@ export function Dashboard() {
             <SalesDashboardCard title="Contas a Receber" value={formatCurrency(dashboardData.contasReceber)} description={`${dashboardData.parcelasEmAtraso.filter(p => p.tipo === 'receber').length} título(s) em atraso`} icon="users" />
           </div>
           
-          {/* Card para Saldo das Contas - movido para antes das últimas vendas */}
+          {/* Card para Saldo das Contas - agora filtrando apenas contas com considerar_saldo=true */}
           <div>
             <Card className="bg-white">
               <CardHeader>
@@ -543,7 +542,7 @@ export function Dashboard() {
                   Saldo das Contas
                 </CardTitle>
                 <CardDescription>
-                  Saldo atual em todas as contas correntes
+                  Saldo atual em contas correntes consideradas no cálculo
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -557,16 +556,23 @@ export function Dashboard() {
                       </p>
                     </div>
                     
-                    {/* Lista de contas */}
+                    {/* Lista de contas - Filtrar apenas as contas que devem ser consideradas no saldo */}
                     <div className="space-y-2">
-                      {dashboardData.saldoContas.map(conta => (
-                        <div key={conta.id} className="flex items-center justify-between">
-                          <p className="text-gray-800">{conta.nome}</p>
-                          <p className={`${conta.saldo > 0 ? 'text-green-600' : conta.saldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                            {formatCurrency(conta.saldo)}
-                          </p>
-                        </div>
-                      ))}
+                      {dashboardData.saldoContas
+                        .filter(conta => {
+                          // Buscar a conta correspondente no array original para verificar o considerar_saldo
+                          const contaOriginal = contasCorrentes?.find(c => c.id === conta.id);
+                          return contaOriginal?.considerar_saldo === true;
+                        })
+                        .map(conta => (
+                          <div key={conta.id} className="flex items-center justify-between">
+                            <p className="text-gray-800">{conta.nome}</p>
+                            <p className={`${conta.saldo > 0 ? 'text-green-600' : conta.saldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                              {formatCurrency(conta.saldo)}
+                            </p>
+                          </div>
+                        ))
+                      }
                     </div>
                   </div>
                 ) : (
