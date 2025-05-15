@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -641,7 +640,7 @@ export default function FluxoCaixaPage() {
 
           {/* Linha de busca */}
           <div className="mt-4 flex flex-row gap-2">
-            <div className="relative flex-1 min-w-[180px]">
+            <div className="relative flex-1">
               <span
                 className="absolute left-3 top-1/2 -translate-y-1/2 p-0 m-0 bg-transparent border-none cursor-pointer text-neutral-400"
                 style={{ lineHeight: 0 }}
@@ -653,7 +652,7 @@ export default function FluxoCaixaPage() {
               <Input
                 id="busca-extrato"
                 placeholder="Buscar favorecido ou descrição"
-                className="pl-10 bg-white border rounded-lg h-[52px] text-base font-normal border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
+                className="pl-10 bg-white border rounded-lg h-[52px] text-base font-normal border-gray-300 shadow-sm focus:bg-white"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 autoComplete="off"

@@ -43,4 +43,5 @@ export interface FiltroFluxoCaixa {
   dataInicio: Date;
   dataFim: Date;
   contaId: string | null;
+  situacao?: string | null;
 }

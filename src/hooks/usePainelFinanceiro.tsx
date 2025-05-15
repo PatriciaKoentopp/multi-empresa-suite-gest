@@ -13,6 +13,7 @@ export const usePainelFinanceiro = () => {
     dataInicio: subDays(new Date(), 30),
     dataFim: new Date(),
     contaId: null,
+    situacao: null,
   });
   const [saldoInicialPeriodo, setSaldoInicialPeriodo] = useState<number>(0);
   
@@ -156,6 +157,7 @@ export const usePainelFinanceiro = () => {
           valor,
           tipo_operacao,
           conta_corrente_id,
+          situacao,
           contas_correntes:conta_corrente_id (
             id,
             nome,
@@ -169,6 +171,11 @@ export const usePainelFinanceiro = () => {
       // Adicionar filtro por conta corrente se especificado
       if (filtro.contaId) {
         query = query.eq('conta_corrente_id', filtro.contaId);
+      }
+
+      // Adicionar filtro por situação se especificado
+      if (filtro.situacao && filtro.situacao !== 'todos') {
+        query = query.eq('situacao', filtro.situacao);
       }
       
       const { data: fluxoCaixaData, error } = await query;
