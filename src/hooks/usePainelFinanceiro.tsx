@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,7 +54,8 @@ export const usePainelFinanceiro = () => {
         .from('fluxo_caixa')
         .select(`
           valor,
-          tipo_operacao
+          tipo_operacao,
+          conta_corrente_id
         `)
         .lt('data_movimentacao', dataInicioStr);
       
@@ -66,11 +68,21 @@ export const usePainelFinanceiro = () => {
       
       if (error) throw error;
       
-      // Buscar saldo inicial das contas
-      const { data: contasCorrentes, error: errorContas } = await supabase
+      // Buscar saldo inicial das contas e considerar apenas as contas com considerar_saldo = true
+      let queryContas = supabase
         .from('contas_correntes')
-        .select('id, saldo_inicial')
+        .select('id, saldo_inicial, considerar_saldo')
         .eq('status', 'ativo');
+      
+      // Se houver filtro por conta, aplicar também aqui
+      if (filtro.contaId) {
+        queryContas = queryContas.eq('id', filtro.contaId);
+      } else {
+        // Quando não filtrar por conta específica, usar apenas contas com considerar_saldo = true
+        queryContas = queryContas.eq('considerar_saldo', true);
+      }
+      
+      const { data: contasCorrentes, error: errorContas } = await queryContas;
       
       if (errorContas) throw errorContas;
       
@@ -85,22 +97,36 @@ export const usePainelFinanceiro = () => {
             saldoInicial = Number(contaFiltrada.saldo_inicial || 0);
           }
         } else {
-          // Se não tiver filtro, somar o saldo inicial de todas as contas
+          // Se não tiver filtro, somar o saldo inicial de todas as contas consideráveis
           saldoInicial = contasCorrentes.reduce((total, conta) => {
             return total + Number(conta.saldo_inicial || 0);
           }, 0);
         }
       }
       
-      // Somar as movimentações anteriores ao período
-      // Os valores de pagar já vêm com sinal negativo do banco, então apenas somamos
+      // Filtrar as movimentações para considerar apenas contas que devem entrar no cálculo
       if (movimentacoesAnteriores && movimentacoesAnteriores.length > 0) {
-        movimentacoesAnteriores.forEach(mov => {
-          const valor = Number(mov.valor || 0);
-          // Independente do tipo de operação, apenas somamos o valor
-          // (saídas já vêm com valor negativo)
-          saldoInicial += valor;
-        });
+        // Se não há filtro de conta específica, precisamos verificar conta por conta
+        if (!filtro.contaId) {
+          // Criar um mapa das contas que devem ser consideradas no cálculo
+          const contasConsideraveis = new Map();
+          contasCorrentes.forEach(conta => {
+            contasConsideraveis.set(conta.id, conta.considerar_saldo);
+          });
+          
+          // Somar apenas as movimentações de contas que devem ser consideradas
+          for (const mov of movimentacoesAnteriores) {
+            // Verificar se a conta da movimentação deve ser considerada
+            if (contasConsideraveis.get(mov.conta_corrente_id)) {
+              saldoInicial += Number(mov.valor || 0);
+            }
+          }
+        } else {
+          // Se há filtro de conta específica, somar todas as movimentações dessa conta
+          movimentacoesAnteriores.forEach(mov => {
+            saldoInicial += Number(mov.valor || 0);
+          });
+        }
       }
       
       return saldoInicial;
@@ -132,7 +158,8 @@ export const usePainelFinanceiro = () => {
           conta_corrente_id,
           contas_correntes:conta_corrente_id (
             id,
-            nome
+            nome,
+            considerar_saldo
           )
         `)
         .gte('data_movimentacao', dataInicioStr)
@@ -149,15 +176,18 @@ export const usePainelFinanceiro = () => {
       if (error) throw error;
       
       // Transformar os dados para o formato correto
-      const fluxoCaixa: FluxoCaixaItem[] = (fluxoCaixaData || []).map(item => ({
-        id: item.id,
-        data: extrairDataSemTimeZone(item.data_movimentacao),
-        descricao: item.descricao || '',
-        conta_nome: item.contas_correntes?.nome || '',
-        conta_id: item.conta_corrente_id,
-        valor: Number(item.valor) || 0,
-        tipo: item.tipo_operacao === 'receber' ? 'entrada' : 'saida',
-      }));
+      // Quando não tem filtro de conta específica, filtrar para considerar apenas contas com considerar_saldo = true
+      const fluxoCaixa: FluxoCaixaItem[] = (fluxoCaixaData || [])
+        .filter(item => filtro.contaId || item.contas_correntes?.considerar_saldo)
+        .map(item => ({
+          id: item.id,
+          data: extrairDataSemTimeZone(item.data_movimentacao),
+          descricao: item.descricao || '',
+          conta_nome: item.contas_correntes?.nome || '',
+          conta_id: item.conta_corrente_id,
+          valor: Number(item.valor) || 0,
+          tipo: item.tipo_operacao === 'receber' ? 'entrada' : 'saida',
+        }));
       
       return fluxoCaixa;
     } catch (error) {
@@ -168,9 +198,10 @@ export const usePainelFinanceiro = () => {
   
   const fetchContas = async () => {
     try {
+      // Buscar contas correntes com status ativo e incluindo o campo considerar_saldo
       const { data: contasCorrentes, error: errorContas } = await supabase
         .from('contas_correntes')
-        .select('*')
+        .select('id, nome, saldo_inicial, status, considerar_saldo')
         .eq('status', 'ativo');
       
       if (errorContas) throw errorContas;
@@ -202,10 +233,14 @@ export const usePainelFinanceiro = () => {
           contas.push({
             id: conta.id,
             nome: conta.nome,
-            saldo: saldoAtual
+            saldo: saldoAtual,
+            considerar_saldo: conta.considerar_saldo
           });
 
-          totalSaldo += saldoAtual;
+          // Adicionar ao total apenas se a conta deve ser considerada no saldo
+          if (conta.considerar_saldo) {
+            totalSaldo += saldoAtual;
+          }
         }
       }
       

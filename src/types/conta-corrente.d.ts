@@ -11,4 +11,5 @@ export interface ContaCorrente {
   updatedAt: Date;
   data?: Date; // nova data (campo opcional para cadastro)
   saldoInicial?: number; // novo saldo inicial (campo opcional para cadastro)
+  considerar_saldo: boolean; // indica se a conta deve ser considerada nos cards de saldo
 }

@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           agencia: string
           banco: string
+          considerar_saldo: boolean
           conta_contabil_id: string
           created_at: string
           data: string | null
@@ -27,6 +28,7 @@ export type Database = {
         Insert: {
           agencia: string
           banco: string
+          considerar_saldo?: boolean
           conta_contabil_id: string
           created_at?: string
           data?: string | null
@@ -41,6 +43,7 @@ export type Database = {
         Update: {
           agencia?: string
           banco?: string
+          considerar_saldo?: boolean
           conta_contabil_id?: string
           created_at?: string
           data?: string | null

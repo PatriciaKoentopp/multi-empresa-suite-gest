@@ -45,7 +45,7 @@ const PainelFinanceiroPage = () => {
         <>
           <FluxoCaixaFilter 
             filtro={filtroFluxoCaixa}
-            contas={dadosFinanceiros.contas_correntes || []}
+            contas={dadosFinanceiros.contas_correntes.filter(c => c.considerar_saldo) || []}
             onFiltroChange={atualizarFiltroFluxoCaixa}
           />
           

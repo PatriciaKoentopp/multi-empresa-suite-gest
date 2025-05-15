@@ -111,7 +111,7 @@ export function Dashboard() {
         // 1. Buscar contas correntes e seus saldos
         const { data: contasCorrentes, error: erroContasCorrentes } = await supabase
           .from('contas_correntes')
-          .select('*')
+          .select('id, nome, saldo_inicial, status, considerar_saldo')
           .eq('empresa_id', currentCompany.id)
           .eq('status', 'ativo');
 
@@ -149,7 +149,10 @@ export function Dashboard() {
               saldo: saldoAtual
             });
 
-            totalSaldo += saldoAtual;
+            // Adicionar ao total APENAS se a conta deve ser considerada no saldo
+            if (conta.considerar_saldo) {
+              totalSaldo += saldoAtual;
+            }
           }
         }
         

@@ -36,6 +36,7 @@ export interface ContaCorrenteItem {
   id: string;
   nome: string;
   saldo: number;
+  considerar_saldo: boolean;
 }
 
 export interface FiltroFluxoCaixa {
