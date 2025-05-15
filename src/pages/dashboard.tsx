@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
@@ -21,9 +22,10 @@ interface DashboardData {
   parcelasEmAtraso: ContaReceber[];
   parcelasHoje: ContaReceber[];
   saldoContas: {
+    id: string;
     nome: string;
     saldo: number;
-    id: string;
+    considerar_saldo: boolean;
   }[];
   totalSaldo: number;
   interacoesPendentes: LeadInteracao[];
@@ -145,7 +147,8 @@ export function Dashboard() {
             saldoContas.push({
               id: conta.id,
               nome: conta.nome,
-              saldo: saldoAtual
+              saldo: saldoAtual,
+              considerar_saldo: conta.considerar_saldo
             });
 
             // Adicionar ao total APENAS se a conta deve ser considerada no saldo
@@ -559,11 +562,7 @@ export function Dashboard() {
                     {/* Lista de contas - Filtrar apenas as contas que devem ser consideradas no saldo */}
                     <div className="space-y-2">
                       {dashboardData.saldoContas
-                        .filter(conta => {
-                          // Buscar a conta correspondente no array original para verificar o considerar_saldo
-                          const contaOriginal = contasCorrentes?.find(c => c.id === conta.id);
-                          return contaOriginal?.considerar_saldo === true;
-                        })
+                        .filter(conta => conta.considerar_saldo)
                         .map(conta => (
                           <div key={conta.id} className="flex items-center justify-between">
                             <p className="text-gray-800">{conta.nome}</p>
