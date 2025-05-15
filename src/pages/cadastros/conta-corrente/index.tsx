@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { ContaCorrente } from "@/types/conta-corrente";
 import { Button } from "@/components/ui/button";
@@ -86,7 +87,8 @@ export default function ContaCorrentePage() {
         createdAt: new Date(item.created_at),
         updatedAt: new Date(item.updated_at),
         data: item.data ? new Date(item.data) : undefined,
-        saldoInicial: item.saldo_inicial
+        saldoInicial: item.saldo_inicial,
+        considerar_saldo: item.considerar_saldo
       }));
       
       setContas(formattedData);
@@ -166,6 +168,7 @@ export default function ContaCorrentePage() {
             status: data.status,
             data: data.data?.toISOString(),
             saldo_inicial: data.saldoInicial,
+            considerar_saldo: data.considerar_saldo,
             updated_at: new Date().toISOString()
           })
           .eq('id', editingConta.id);
@@ -186,7 +189,8 @@ export default function ContaCorrentePage() {
             conta_contabil_id: data.contaContabilId,
             status: data.status,
             data: data.data?.toISOString(),
-            saldo_inicial: data.saldoInicial
+            saldo_inicial: data.saldoInicial,
+            considerar_saldo: data.considerar_saldo
           });
           
         if (error) throw error;

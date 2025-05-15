@@ -27,6 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import React from "react";
+import { Switch } from "@/components/ui/switch";
 
 const formSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
@@ -37,6 +38,7 @@ const formSchema = z.object({
   status: z.enum(["ativo", "inativo"]),
   data: z.date({ required_error: "Data é obrigatória" }),
   saldoInicial: z.coerce.number(),
+  considerar_saldo: z.boolean().default(true),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -65,6 +67,7 @@ export function ContaCorrenteForm({
       status: initialData?.status || "ativo",
       data: initialData?.data ? new Date(initialData.data) : new Date(),
       saldoInicial: initialData?.saldoInicial ?? 0,
+      considerar_saldo: initialData?.considerar_saldo !== undefined ? initialData.considerar_saldo : true,
     },
   });
 
@@ -208,6 +211,29 @@ export function ContaCorrenteForm({
                   step="0.01"
                   {...field}
                   onChange={e => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Campo Considerar no Saldo */}
+        <FormField
+          control={form.control}
+          name="considerar_saldo"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+              <div className="space-y-0.5">
+                <FormLabel>Considerar no Saldo</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  Incluir esta conta nos cards de saldo do painel financeiro
+                </p>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
                 />
               </FormControl>
               <FormMessage />
