@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -266,15 +267,18 @@ export default function DrePage() {
             grupos["Receita Bruta"].push(detalhe);
             break;
           case 'deducoes':
-            deducoes += Math.abs(valor);
+            // Removida conversão para valor absoluto
+            deducoes += valor;
             grupos["Deduções"].push(detalhe);
             break;
           case 'custos':
-            custos += Math.abs(valor);
+            // Removida conversão para valor absoluto
+            custos += valor;
             grupos["Custos"].push(detalhe);
             break;
           case 'despesas_operacionais':
-            despesasOperacionais += Math.abs(valor);
+            // Removida conversão para valor absoluto
+            despesasOperacionais += valor;
             grupos["Despesas Operacionais"].push(detalhe);
             break;
           case 'receitas_financeiras':
@@ -282,15 +286,18 @@ export default function DrePage() {
             grupos["Receitas Financeiras"].push(detalhe);
             break;
           case 'despesas_financeiras':
-            despesasFinanceiras += Math.abs(valor);
+            // Removida conversão para valor absoluto
+            despesasFinanceiras += valor;
             grupos["Despesas Financeiras"].push(detalhe);
             break;
           case 'distribuicao_lucros':
-            distribuicaoLucros += Math.abs(valor);
+            // Removida conversão para valor absoluto
+            distribuicaoLucros += valor;
             grupos["Distribuição de Lucros"].push(detalhe);
             break;
           case 'impostos_irpj_csll':
-            impostos += Math.abs(valor);
+            // Removida conversão para valor absoluto
+            impostos += valor;
             grupos["IRPJ/CSLL"].push(detalhe);
             break;
         }
@@ -321,7 +328,8 @@ export default function DrePage() {
           else if (tipo === 'despesa') {
             switch (descricao.toLowerCase()) {
               case 'das - simples nacional':
-                deducoes += Math.abs(valor);
+                // Removida conversão para valor absoluto
+                deducoes += valor;
                 grupos["Deduções"].push(detalhe);
                 break;
               case 'pró-labore':
@@ -331,12 +339,14 @@ export default function DrePage() {
               case 'inss':
               case 'honorários contábeis':
               case 'honorarios contabeis':
-                despesasOperacionais += Math.abs(valor);
+                // Removida conversão para valor absoluto
+                despesasOperacionais += valor;
                 grupos["Despesas Operacionais"].push(detalhe);
                 break;
               case 'distribuição de lucros':
               case 'distribuicao de lucros':
-                distribuicaoLucros += Math.abs(valor);
+                // Removida conversão para valor absoluto
+                distribuicaoLucros += valor;
                 grupos["Distribuição de Lucros"].push(detalhe);
                 break;
               default:
@@ -344,10 +354,12 @@ export default function DrePage() {
                 if (descricao.toLowerCase().includes('financeira') || 
                     descricao.toLowerCase().includes('juros') || 
                     descricao.toLowerCase().includes('tarifas')) {
-                  despesasFinanceiras += Math.abs(valor);
+                  // Removida conversão para valor absoluto
+                  despesasFinanceiras += valor;
                   grupos["Despesas Financeiras"].push(detalhe);
                 } else {
-                  custos += Math.abs(valor);
+                  // Removida conversão para valor absoluto
+                  custos += valor;
                   grupos["Custos"].push(detalhe);
                 }
             }
@@ -356,13 +368,13 @@ export default function DrePage() {
       }
     });
 
-    const receitaLiquida = receitaBruta - deducoes;
-    const lucroBruto = receitaLiquida - custos;
-    const resultadoOperacional = lucroBruto - despesasOperacionais;
-    const resultadoFinanceiro = resultadoOperacional + receitasFinanceiras - despesasFinanceiras;
+    const receitaLiquida = receitaBruta + deducoes; // Deduções já contém o sinal negativo, então somamos
+    const lucroBruto = receitaLiquida + custos; // Custos já contém o sinal negativo, então somamos
+    const resultadoOperacional = lucroBruto + despesasOperacionais; // Despesas já contêm o sinal negativo
+    const resultadoFinanceiro = resultadoOperacional + receitasFinanceiras + despesasFinanceiras; // Despesas financeiras já contêm o sinal negativo
     const resultadoAntesIR = resultadoFinanceiro;
-    const lucroLiquido = resultadoAntesIR - impostos;
-    const resultadoExercicio = lucroLiquido - distribuicaoLucros;
+    const lucroLiquido = resultadoAntesIR + impostos; // Impostos já contêm o sinal negativo
+    const resultadoExercicio = lucroLiquido + distribuicaoLucros; // Distribuição já contém o sinal negativo
 
     // Ordena os detalhes de cada grupo por data antes de retornar
     Object.keys(grupos).forEach(key => {
@@ -378,20 +390,22 @@ export default function DrePage() {
       });
     });
 
+    // Os sinais dos valores são preservados conforme registrados no banco, não usamos mais Math.abs()
+    // Na apresentação, mantemos o nome da conta com o sinal negativo para indicar visualmente que se trata de redução
     return [
       { tipo: "Receita Bruta", valor: receitaBruta, detalhes: grupos["Receita Bruta"] },
-      { tipo: "(-) Deduções", valor: -deducoes, detalhes: grupos["Deduções"] },
+      { tipo: "(-) Deduções", valor: deducoes, detalhes: grupos["Deduções"] },
       { tipo: "Receita Líquida", valor: receitaLiquida, detalhes: [] },
-      { tipo: "(-) Custos", valor: -custos, detalhes: grupos["Custos"] },
+      { tipo: "(-) Custos", valor: custos, detalhes: grupos["Custos"] },
       { tipo: "Lucro Bruto", valor: lucroBruto, detalhes: [] },
-      { tipo: "(-) Despesas Operacionais", valor: -despesasOperacionais, detalhes: grupos["Despesas Operacionais"] },
+      { tipo: "(-) Despesas Operacionais", valor: despesasOperacionais, detalhes: grupos["Despesas Operacionais"] },
       { tipo: "Resultado Operacional", valor: resultadoOperacional, detalhes: [] },
       { tipo: "(+) Receitas Financeiras", valor: receitasFinanceiras, detalhes: grupos["Receitas Financeiras"] },
-      { tipo: "(-) Despesas Financeiras", valor: -despesasFinanceiras, detalhes: grupos["Despesas Financeiras"] },
+      { tipo: "(-) Despesas Financeiras", valor: despesasFinanceiras, detalhes: grupos["Despesas Financeiras"] },
       { tipo: "Resultado Antes IR", valor: resultadoAntesIR, detalhes: [] },
-      { tipo: "(-) IRPJ/CSLL", valor: -impostos, detalhes: grupos["IRPJ/CSLL"] },
+      { tipo: "(-) IRPJ/CSLL", valor: impostos, detalhes: grupos["IRPJ/CSLL"] },
       { tipo: "Lucro Líquido do Exercício", valor: lucroLiquido, detalhes: [] },
-      { tipo: "(-) Distribuição de Lucros", valor: -distribuicaoLucros, detalhes: grupos["Distribuição de Lucros"] },
+      { tipo: "(-) Distribuição de Lucros", valor: distribuicaoLucros, detalhes: grupos["Distribuição de Lucros"] },
       { tipo: "Resultado do Exercício", valor: resultadoExercicio, detalhes: [] }
     ];
   }
