@@ -1,91 +1,45 @@
-import React, { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
-import { AlertCircle, ArrowDown, ArrowUp, ChevronDown, MinusCircle, Info } from "lucide-react";
-import { useCompany } from "@/contexts/company-context";
-import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { AnaliseVariacao, DetalhesMensaisConta, FiltroAnaliseDre, ValorMensal } from "@/types/financeiro";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import "../../../styles/collapsible.css";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { VariationDisplay } from "@/components/vendas/VariationDisplay";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle,
-  DialogTrigger 
-} from "@/components/ui/dialog";
+import { useQuery } from "@tanstack/react-query";
+import { useCompany } from "@/contexts/company-context";
+import { supabase } from "@/integrations/supabase/client";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from 'date-fns/locale';
+import { AnaliseVariacao, DetalhesMensaisConta, FiltroAnaliseDre, ValorMensal } from "@/types/financeiro";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
+import { AnaliseVariacaoRow } from "@/components/contabil/AnaliseVariacaoRow";
 
-// Array de meses
-const meses = [
-  { label: "Janeiro", value: "01" },
-  { label: "Fevereiro", value: "02" },
-  { label: "Março", value: "03" },
-  { label: "Abril", value: "04" },
-  { label: "Maio", value: "05" },
-  { label: "Junho", value: "06" },
-  { label: "Julho", value: "07" },
-  { label: "Agosto", value: "08" },
-  { label: "Setembro", value: "09" },
-  { label: "Outubro", value: "10" },
-  { label: "Novembro", value: "11" },
-  { label: "Dezembro", value: "12" },
-];
-
-// Array de anos (últimos 5 anos)
-const anos: number[] = [];
-const anoAtual = new Date().getFullYear();
-for (let a = anoAtual; a >= anoAtual - 4; a--) anos.push(a);
-
-// Interface para detalhes de movimentação
-interface MovimentacaoDetalhe {
-  data_movimentacao: string;
-  descricao: string;
-  valor: number;
-  categoria?: string;
-  conta_id?: string;
-  conta_descricao?: string;
-}
-
-// Interface para agrupamento de movimentações por conta contábil
-interface ContaContabilAgrupamento {
-  conta_id: string;
-  descricao: string;
-  valor: number;
-  detalhes: MovimentacaoDetalhe[];
-}
-
-// Interface para grupo de movimentações
-interface GrupoMovimentacao {
-  tipo: string;
-  valor: number;
-  detalhes: MovimentacaoDetalhe[];
-  contas?: ContaContabilAgrupamento[]; // Para agrupamento por contas
-}
+// Por padrão, o módulo date-fns já faz o uso do locale correto, mas podemos garantir que estamos usando pt-BR
+const localePtBR = ptBR;
 
 export default function AnaliseDrePage() {
   const { currentCompany } = useCompany();
   const [filtro, setFiltro] = useState<FiltroAnaliseDre>({
-    tipo_comparacao: "mes_anterior",
+    tipo_comparacao: 'mes_anterior',
+    mes: new Date().getMonth(),
     ano: new Date().getFullYear(),
-    mes: new Date().getMonth() + 1,
     percentual_minimo: 10
   });
-  const [contasExpandidas, setContasExpandidas] = useState<Record<string, boolean>>({});
-  const [tabAtiva, setTabAtiva] = useState<string>("todos");
-  const [mostrarTodasContas, setMostrarTodasContas] = useState<boolean>(false);
-  const [contaSelecionadaDetalhes, setContaSelecionadaDetalhes] = useState<DetalhesMensaisConta | null>(null);
+
+  const [periodoAtualLabel, setPeriodoAtualLabel] = useState<string>("");
+  const [periodoCompLabel, setPeriodoCompLabel] = useState<string>("");
+  const [periodoInicio, setPeriodoInicio] = useState<string>("");
+  const [periodoFim, setPeriodoFim] = useState<string>("");
 
   // Query para buscar dados do DRE para análise
   const { data: dadosAnalise = [], isLoading } = useQuery({
@@ -93,56 +47,60 @@ export default function AnaliseDrePage() {
     queryFn: async () => {
       if (!currentCompany?.id) return [];
 
+      // Definimos os períodos com base no tipo de comparação
+      const periodoAtual = new Date(filtro.ano, filtro.mes, 1);
+      let dataAtualInicio: Date;
+      let dataAtualFim: Date;
+      let dataCompInicio: Date;
+      let dataCompFim: Date;
+      
+      const mesAtual = filtro.mes;
+      const anoAtual = filtro.ano;
+
+      // Configurar o período atual (mês escolhido no filtro)
+      dataAtualInicio = new Date(anoAtual, mesAtual, 1);
+      // Último dia do mês
+      dataAtualFim = new Date(anoAtual, mesAtual + 1, 0); 
+
+      if (filtro.tipo_comparacao === "mes_anterior") {
+        // Mês anterior
+        const mesAnterior = mesAtual - 1 < 0 ? 11 : mesAtual - 1;
+        const anoAnterior = mesAtual - 1 < 0 ? anoAtual - 1 : anoAtual;
+        
+        dataCompInicio = new Date(anoAnterior, mesAnterior, 1);
+        dataCompFim = new Date(anoAnterior, mesAnterior + 1, 0);
+        
+        setPeriodoAtualLabel(`${format(dataAtualInicio, 'MMMM/yyyy', { locale: localePtBR })}`);
+        setPeriodoCompLabel(`${format(dataCompInicio, 'MMMM/yyyy', { locale: localePtBR })}`);
+        setPeriodoInicio("");
+        setPeriodoFim("");
+      }
+      else if (filtro.tipo_comparacao === "ano_anterior") {
+        // Mesmo mês do ano anterior
+        dataCompInicio = new Date(anoAtual - 1, mesAtual, 1);
+        dataCompFim = new Date(anoAtual - 1, mesAtual + 1, 0);
+        
+        setPeriodoAtualLabel(`${format(dataAtualInicio, 'MMMM/yyyy', { locale: localePtBR })}`);
+        setPeriodoCompLabel(`${format(dataCompInicio, 'MMMM/yyyy', { locale: localePtBR })}`);
+        setPeriodoInicio("");
+        setPeriodoFim("");
+      }
+      else if (filtro.tipo_comparacao === "media_12_meses") {
+        // Últimos 12 meses (excluindo o mês atual)
+        // A data de início é exatamente o mesmo mês do ano anterior
+        // A data de fim é o último dia do mês anterior
+        dataCompInicio = new Date(anoAtual - 1, mesAtual, 1);
+        dataCompFim = new Date(anoAtual, mesAtual, 0); // Último dia do mês anterior
+        
+        setPeriodoAtualLabel(`${format(dataAtualInicio, 'MMMM/yyyy', { locale: localePtBR })}`);
+        setPeriodoCompLabel(`Média 12 meses anteriores`);
+        setPeriodoInicio(format(dataCompInicio, 'MMMM/yyyy', { locale: localePtBR }));
+        setPeriodoFim(format(dataCompFim, 'MMMM/yyyy', { locale: localePtBR }));
+      }
+
       try {
-        // Determinar períodos para comparação
-        let dataAtualInicio: Date, dataAtualFim: Date;
-        let dataCompInicio: Date, dataCompFim: Date;
-        
-        const mesAtual = filtro.mes;
-        const anoAtual = filtro.ano;
-        
-        // Configurar datas atuais (período de análise)
-        dataAtualInicio = new Date(anoAtual, mesAtual - 1, 1);
-        dataAtualFim = new Date(anoAtual, mesAtual, 0); // Último dia do mês atual
-        
-        // Configurar datas de comparação com base no tipo selecionado
-        if (filtro.tipo_comparacao === "mes_anterior") {
-          // Mês anterior
-          let mesAnterior = mesAtual - 1;
-          let anoAnterior = anoAtual;
-          
-          if (mesAnterior === 0) {
-            mesAnterior = 12;
-            anoAnterior = anoAtual - 1;
-          }
-          
-          dataCompInicio = new Date(anoAnterior, mesAnterior - 1, 1);
-          dataCompFim = new Date(anoAnterior, mesAnterior, 0);
-        } 
-        else if (filtro.tipo_comparacao === "ano_anterior") {
-          // Mesmo mês do ano anterior
-          dataCompInicio = new Date(anoAtual - 1, mesAtual - 1, 1);
-          dataCompFim = new Date(anoAtual - 1, mesAtual, 0);
-        }
-        else if (filtro.tipo_comparacao === "media_12_meses") {
-          // Últimos 12 meses (excluindo o mês atual)
-          dataCompInicio = new Date(anoAtual - 1, mesAtual, 1);
-          dataCompFim = new Date(anoAtual, mesAtual - 1, 0);
-        }
-        
-        // Formatar datas para consulta
-        const dataAtualInicioStr = format(dataAtualInicio, 'yyyy-MM-dd');
-        const dataAtualFimStr = format(dataAtualFim, 'yyyy-MM-dd');
-        const dataCompInicioStr = format(dataCompInicio, 'yyyy-MM-dd');
-        const dataCompFimStr = format(dataCompFim, 'yyyy-MM-dd');
-        
-        console.log("Períodos de análise:", {
-          atual: { inicio: dataAtualInicioStr, fim: dataAtualFimStr },
-          comparacao: { inicio: dataCompInicioStr, fim: dataCompFimStr },
-        });
-        
-        // Buscar movimentações para o período atual
-        const { data: movAtual, error: errorAtual } = await supabase
+        // Buscamos as movimentações para o período ATUAL
+        const { data: movsAtual, error: errorAtual } = await supabase
           .from('fluxo_caixa')
           .select(`
             *,
@@ -154,13 +112,13 @@ export default function AnaliseDrePage() {
             plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
           `)
           .eq('empresa_id', currentCompany.id)
-          .gte('data_movimentacao', dataAtualInicioStr)
-          .lte('data_movimentacao', dataAtualFimStr);
+          .gte('data_movimentacao', format(dataAtualInicio, 'yyyy-MM-dd'))
+          .lte('data_movimentacao', format(dataAtualFim, 'yyyy-MM-dd'));
 
         if (errorAtual) throw errorAtual;
-        
-        // Buscar movimentações para o período de comparação
-        const { data: movComp, error: errorComp } = await supabase
+
+        // Buscamos as movimentações para o período de COMPARAÇÃO
+        const { data: movsComp, error: errorComp } = await supabase
           .from('fluxo_caixa')
           .select(`
             *,
@@ -172,1272 +130,755 @@ export default function AnaliseDrePage() {
             plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
           `)
           .eq('empresa_id', currentCompany.id)
-          .gte('data_movimentacao', dataCompInicioStr)
-          .lte('data_movimentacao', dataCompFimStr);
+          .gte('data_movimentacao', format(dataCompInicio, 'yyyy-MM-dd'))
+          .lte('data_movimentacao', format(dataCompFim, 'yyyy-MM-dd'));
 
         if (errorComp) throw errorComp;
+
+        // Se for média de 12 meses, precisamos buscar os dados mensais para cada conta
+        let detalhes_mensais = null;
         
-        // Processar dados atuais
-        const dadosAtuais = processarMovimentacoesDRE(movAtual || []);
-        
-        // Processar dados de comparação
-        const dadosComparacao = processarMovimentacoesDRE(movComp || []);
-        
-        // Para média dos últimos 12 meses, buscar também os dados mensais
-        let dadosMensais = [];
         if (filtro.tipo_comparacao === "media_12_meses") {
-          dadosMensais = await buscarDadosMensais(
-            anoAtual - 1, 
-            mesAtual, 
-            anoAtual, 
-            mesAtual - 1,
-            currentCompany.id
-          );
+          // Separamos os dados por mês para análise detalhada
+          detalhes_mensais = extrairDetalhesMensaisPorConta(movsComp);
+        }
+
+        // Processa e compara os dados
+        const analiseResult = analisarVariacao(movsAtual, movsComp, detalhes_mensais);
+        
+        // Filtra para mostrar apenas as variações acima do percentual mínimo
+        if (filtro.percentual_minimo > 0) {
+          return filtrarPorPercentualMinimo(analiseResult, filtro.percentual_minimo);
         }
         
-        // Gerar análise comparativa
-        return gerarAnaliseComparativa(
-          dadosAtuais, 
-          dadosComparacao, 
-          filtro.tipo_comparacao, 
-          filtro.percentual_minimo, 
-          dataAtualInicio, 
-          dataCompInicio, 
-          dataCompFim,
-          dadosMensais
-        );
+        return analiseResult;
       } catch (error) {
         console.error('Erro ao buscar dados para análise:', error);
-        toast.error('Erro ao carregar dados para análise do DRE');
+        toast.error('Erro ao carregar dados para análise');
         return [];
       }
-    }
+    },
+    enabled: !!currentCompany?.id
   });
 
-  // Função para buscar dados mensais para visualização detalhada
-  async function buscarDadosMensais(anoInicio: number, mesInicio: number, anoFim: number, mesFim: number, empresaId: string) {
-    const dadosMensais = [];
-    const dataInicio = new Date(anoInicio, mesInicio - 1, 1);
-    const dataFim = new Date(anoFim, mesFim, 0);
+  // Função para extrair detalhes mensais organizados por conta contábil
+  function extrairDetalhesMensaisPorConta(movimentacoes: any[]) {
+    // Vamos agrupar as movimentações por conta e por mês
+    const contasPorMes: Record<string, Record<string, ValorMensal[]>> = {};
     
-    const dataInicioStr = format(dataInicio, 'yyyy-MM-dd');
-    const dataFimStr = format(dataFim, 'yyyy-MM-dd');
-    
-    // Buscar todas as movimentações do período de 12 meses
-    const { data: movimentacoes, error } = await supabase
-      .from('fluxo_caixa')
-      .select(`
-        *,
-        movimentacoes (
-          categoria_id,
-          tipo_operacao,
-          considerar_dre
-        ),
-        plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
-      `)
-      .eq('empresa_id', empresaId)
-      .gte('data_movimentacao', dataInicioStr)
-      .lte('data_movimentacao', dataFimStr);
-      
-    if (error) {
-      console.error('Erro ao buscar dados mensais:', error);
-      return [];
-    }
-    
-    // Agrupar por conta e mês
-    const contas: Record<string, Record<string, number>> = {};
-    
-    movimentacoes?.forEach(mov => {
+    movimentacoes.forEach(mov => {
+      // Verifica se devemos considerar no DRE
       const considerarDre = mov.movimentacoes?.considerar_dre !== false;
       if (!considerarDre) return;
       
       const planoContas = mov.plano_contas?.plano_contas;
       if (!planoContas) return;
       
+      const classificacaoDre = planoContas.classificacao_dre;
+      if (!classificacaoDre || classificacaoDre === 'nao_classificado') return;
+      
       const contaId = planoContas.id;
       const contaNome = planoContas.descricao;
       const valor = Number(mov.valor);
       
-      // Extrair ano e mês da data
+      // Extrair o mês e ano da data de movimentação (sem ajustes de timezone)
+      // A data vem no formato YYYY-MM-DD do banco
       const dataStr = mov.data_movimentacao;
+      if (!dataStr) return;
+      
       const ano = parseInt(dataStr.substring(0, 4));
-      const mes = parseInt(dataStr.substring(5, 7));
-      const chave = `${ano}-${mes.toString().padStart(2, '0')}`;
+      const mes = parseInt(dataStr.substring(5, 7)) - 1; // Mês é 0-indexed em JS
       
-      // Inicializar conta se não existir
-      if (!contas[contaNome]) {
-        contas[contaNome] = { contaId };
+      // Criar o nome do mês
+      const dataMov = new Date(ano, mes, 1);
+      const mesNome = format(dataMov, 'MMMM', { locale: localePtBR });
+      
+      // Inicializar estruturas se necessário
+      if (!contasPorMes[classificacaoDre]) {
+        contasPorMes[classificacaoDre] = {};
       }
       
-      // Adicionar valor ao mês
-      if (!contas[contaNome][chave]) {
-        contas[contaNome][chave] = 0;
+      if (!contasPorMes[classificacaoDre][contaId]) {
+        contasPorMes[classificacaoDre][contaId] = [];
       }
       
-      contas[contaNome][chave] += valor;
+      // Procurar se já existe um registro para este mês/ano
+      let mesExistente = contasPorMes[classificacaoDre][contaId].find(
+        m => m.ano === ano && m.mes === mes
+      );
+      
+      if (mesExistente) {
+        // Adicionar ao valor existente
+        mesExistente.valor += valor;
+      } else {
+        // Criar novo registro mensal
+        contasPorMes[classificacaoDre][contaId].push({
+          mes,
+          ano,
+          mes_nome: mesNome,
+          valor
+        });
+      }
     });
     
-    // Converter para o formato de detalhes mensais
-    Object.entries(contas).forEach(([nomeConta, dados]) => {
-      const valoresMensais: ValorMensal[] = [];
-      const contaId = dados.contaId as string;
-      let somaTotal = 0;
-      let contMeses = 0;
+    // Converter para o formato final com médias calculadas
+    const detalhesFinais: Record<string, Record<string, DetalhesMensaisConta>> = {};
+    
+    Object.keys(contasPorMes).forEach(classificacao => {
+      detalhesFinais[classificacao] = {};
       
-      // Inicializar valores para todos os 12 meses
-      for (let m = 0; m < 12; m++) {
-        // Calcular ano e mês corretos
-        let anoMes = anoInicio;
-        let mesMes = mesInicio + m;
+      Object.keys(contasPorMes[classificacao]).forEach(contaId => {
+        const valoresMensais = contasPorMes[classificacao][contaId];
         
-        // Ajustar para virada de ano
-        if (mesMes > 12) {
-          mesMes -= 12;
-          anoMes += 1;
-        }
+        // Calcular a média considerando apenas os meses com dados
+        const totalValor = valoresMensais.reduce((sum, item) => sum + item.valor, 0);
+        const mediaValor = valoresMensais.length > 0 ? totalValor / valoresMensais.length : 0;
         
-        const chave = `${anoMes}-${mesMes.toString().padStart(2, '0')}`;
-        const valor = dados[chave] || 0;
+        // Obter o nome da conta do primeiro item (todos terão o mesmo)
+        const contaNome = valoresMensais.length > 0 && 
+                          movimentacoes.find(m => 
+                            m.plano_contas?.plano_contas?.id === contaId
+                          )?.plano_contas?.plano_contas?.descricao || "Conta desconhecida";
         
-        // Adicionar à lista de valores mensais
-        valoresMensais.push({
-          mes: mesMes,
-          ano: anoMes,
-          mes_nome: meses.find(m => parseInt(m.value) === mesMes)?.label || "",
-          valor: valor
-        });
-        
-        // Somar para média
-        somaTotal += valor;
-        contMeses++;
-      }
-      
-      // Calcular média
-      const media = contMeses > 0 ? somaTotal / contMeses : 0;
-      
-      // Adicionar aos detalhes mensais
-      dadosMensais.push({
-        nome_conta: nomeConta,
-        contaId,
-        valores_mensais: valoresMensais,
-        media
+        detalhesFinais[classificacao][contaId] = {
+          nome_conta: contaNome,
+          valores_mensais: valoresMensais,
+          media: mediaValor
+        };
       });
     });
     
-    return dadosMensais;
+    return detalhesFinais;
   }
 
-  // Função para obter os detalhes mensais de uma conta específica
-  const obterDetalhesMensaisConta = (nomeConta: string) => {
-    // Verificar se estamos usando o modo de média dos últimos 12 meses
-    if (filtro.tipo_comparacao !== "media_12_meses") {
-      toast.warning("Os detalhes mensais só estão disponíveis no modo de comparação com a média dos 12 meses");
-      return;
+  // Função para analisar variações entre períodos
+  function analisarVariacao(movsAtual: any[], movsComp: any[], detalhesContaMensal: any = null) {
+    // Processamento dos dados para o período atual e o período de comparação
+    const dadosAtual = processarMovimentacoesPorTipoConta(movsAtual);
+    const dadosComp = processarMovimentacoesPorTipoConta(movsComp, filtro.tipo_comparacao === 'media_12_meses');
+    
+    // Lista para armazenar os resultados da análise
+    const resultado: AnaliseVariacao[] = [];
+    
+    // Analisar Receitas
+    const receitaBrutaAtual = dadosAtual.receita_bruta || 0;
+    const receitaBrutaComp = dadosComp.receita_bruta || 0;
+    const variacaoReceitaBruta = receitaBrutaAtual - receitaBrutaComp;
+    const percentualReceitaBruta = receitaBrutaComp !== 0 ? (variacaoReceitaBruta / Math.abs(receitaBrutaComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "Receita Bruta",
+      valor_atual: receitaBrutaAtual,
+      valor_comparacao: receitaBrutaComp,
+      variacao_valor: variacaoReceitaBruta,
+      variacao_percentual: percentualReceitaBruta,
+      tipo_conta: 'receita',
+      avaliacao: avaliarVariacao('receita', percentualReceitaBruta),
+      nivel: 'principal',
+      subcontas: processarSubcontas('receita_bruta', dadosAtual, dadosComp, detalhesContaMensal)
+    });
+    
+    // Analisar Deduções
+    const deducoesAtual = dadosAtual.deducoes || 0;
+    const deducoesComp = dadosComp.deducoes || 0;
+    const variacaoDeducoes = deducoesAtual - deducoesComp;
+    const percentualDeducoes = deducoesComp !== 0 ? (variacaoDeducoes / Math.abs(deducoesComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "Deduções",
+      valor_atual: deducoesAtual,
+      valor_comparacao: deducoesComp,
+      variacao_valor: variacaoDeducoes,
+      variacao_percentual: percentualDeducoes,
+      tipo_conta: 'despesa',
+      avaliacao: avaliarVariacao('despesa', percentualDeducoes),
+      nivel: 'principal',
+      subcontas: processarSubcontas('deducoes', dadosAtual, dadosComp, detalhesContaMensal)
+    });
+    
+    // Receita Líquida (Calculada)
+    const receitaLiquidaAtual = receitaBrutaAtual + deducoesAtual; // Deduções já são negativas
+    const receitaLiquidaComp = receitaBrutaComp + deducoesComp;
+    const variacaoReceitaLiquida = receitaLiquidaAtual - receitaLiquidaComp;
+    const percentualReceitaLiquida = receitaLiquidaComp !== 0 ? (variacaoReceitaLiquida / Math.abs(receitaLiquidaComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "Receita Líquida",
+      valor_atual: receitaLiquidaAtual,
+      valor_comparacao: receitaLiquidaComp,
+      variacao_valor: variacaoReceitaLiquida,
+      variacao_percentual: percentualReceitaLiquida,
+      tipo_conta: 'receita',
+      avaliacao: avaliarVariacao('receita', percentualReceitaLiquida),
+      nivel: 'principal'
+    });
+    
+    // Analisar Custos
+    const custosAtual = dadosAtual.custos || 0;
+    const custosComp = dadosComp.custos || 0;
+    const variacaoCustos = custosAtual - custosComp;
+    const percentualCustos = custosComp !== 0 ? (variacaoCustos / Math.abs(custosComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "Custos",
+      valor_atual: custosAtual,
+      valor_comparacao: custosComp,
+      variacao_valor: variacaoCustos,
+      variacao_percentual: percentualCustos,
+      tipo_conta: 'despesa',
+      avaliacao: avaliarVariacao('despesa', percentualCustos),
+      nivel: 'principal',
+      subcontas: processarSubcontas('custos', dadosAtual, dadosComp, detalhesContaMensal)
+    });
+    
+    // Lucro Bruto (Calculado)
+    const lucroBrutoAtual = receitaLiquidaAtual + custosAtual; // Custos já são negativos
+    const lucroBrutoComp = receitaLiquidaComp + custosComp;
+    const variacaoLucroBruto = lucroBrutoAtual - lucroBrutoComp;
+    const percentualLucroBruto = lucroBrutoComp !== 0 ? (variacaoLucroBruto / Math.abs(lucroBrutoComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "Lucro Bruto",
+      valor_atual: lucroBrutoAtual,
+      valor_comparacao: lucroBrutoComp,
+      variacao_valor: variacaoLucroBruto,
+      variacao_percentual: percentualLucroBruto,
+      tipo_conta: 'receita',
+      avaliacao: avaliarVariacao('receita', percentualLucroBruto),
+      nivel: 'principal'
+    });
+    
+    // Analisar Despesas Operacionais
+    const despesasOperacionaisAtual = dadosAtual.despesas_operacionais || 0;
+    const despesasOperacionaisComp = dadosComp.despesas_operacionais || 0;
+    const variacaoDespesasOp = despesasOperacionaisAtual - despesasOperacionaisComp;
+    const percentualDespesasOp = despesasOperacionaisComp !== 0 ? (variacaoDespesasOp / Math.abs(despesasOperacionaisComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "Despesas Operacionais",
+      valor_atual: despesasOperacionaisAtual,
+      valor_comparacao: despesasOperacionaisComp,
+      variacao_valor: variacaoDespesasOp,
+      variacao_percentual: percentualDespesasOp,
+      tipo_conta: 'despesa',
+      avaliacao: avaliarVariacao('despesa', percentualDespesasOp),
+      nivel: 'principal',
+      subcontas: processarSubcontas('despesas_operacionais', dadosAtual, dadosComp, detalhesContaMensal)
+    });
+    
+    // Resultado Operacional (Calculado)
+    const resultadoOpAtual = lucroBrutoAtual + despesasOperacionaisAtual; // Despesas já são negativas
+    const resultadoOpComp = lucroBrutoComp + despesasOperacionaisComp;
+    const variacaoResultadoOp = resultadoOpAtual - resultadoOpComp;
+    const percentualResultadoOp = resultadoOpComp !== 0 ? (variacaoResultadoOp / Math.abs(resultadoOpComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "Resultado Operacional",
+      valor_atual: resultadoOpAtual,
+      valor_comparacao: resultadoOpComp,
+      variacao_valor: variacaoResultadoOp,
+      variacao_percentual: percentualResultadoOp,
+      tipo_conta: 'receita',
+      avaliacao: avaliarVariacao('receita', percentualResultadoOp),
+      nivel: 'principal'
+    });
+    
+    // Analisar Receitas Financeiras
+    const receitasFinanceirasAtual = dadosAtual.receitas_financeiras || 0;
+    const receitasFinanceirasComp = dadosComp.receitas_financeiras || 0;
+    const variacaoReceitasFin = receitasFinanceirasAtual - receitasFinanceirasComp;
+    const percentualReceitasFin = receitasFinanceirasComp !== 0 ? (variacaoReceitasFin / Math.abs(receitasFinanceirasComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "(+) Receitas Financeiras",
+      valor_atual: receitasFinanceirasAtual,
+      valor_comparacao: receitasFinanceirasComp,
+      variacao_valor: variacaoReceitasFin,
+      variacao_percentual: percentualReceitasFin,
+      tipo_conta: 'receita',
+      avaliacao: avaliarVariacao('receita', percentualReceitasFin),
+      nivel: 'principal',
+      subcontas: processarSubcontas('receitas_financeiras', dadosAtual, dadosComp, detalhesContaMensal)
+    });
+    
+    // Analisar Despesas Financeiras
+    const despesasFinanceirasAtual = dadosAtual.despesas_financeiras || 0;
+    const despesasFinanceirasComp = dadosComp.despesas_financeiras || 0;
+    const variacaoDespesasFin = despesasFinanceirasAtual - despesasFinanceirasComp;
+    const percentualDespesasFin = despesasFinanceirasComp !== 0 ? (variacaoDespesasFin / Math.abs(despesasFinanceirasComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "(-) Despesas Financeiras",
+      valor_atual: despesasFinanceirasAtual,
+      valor_comparacao: despesasFinanceirasComp,
+      variacao_valor: variacaoDespesasFin,
+      variacao_percentual: percentualDespesasFin,
+      tipo_conta: 'despesa',
+      avaliacao: avaliarVariacao('despesa', percentualDespesasFin),
+      nivel: 'principal',
+      subcontas: processarSubcontas('despesas_financeiras', dadosAtual, dadosComp, detalhesContaMensal)
+    });
+    
+    // Resultado Antes IR (Calculado)
+    const resultadoAntesIRAtual = resultadoOpAtual + receitasFinanceirasAtual + despesasFinanceirasAtual;
+    const resultadoAntesIRComp = resultadoOpComp + receitasFinanceirasComp + despesasFinanceirasComp;
+    const variacaoResultadoAntesIR = resultadoAntesIRAtual - resultadoAntesIRComp;
+    const percentualResultadoAntesIR = resultadoAntesIRComp !== 0 ? (variacaoResultadoAntesIR / Math.abs(resultadoAntesIRComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "Resultado Antes IR",
+      valor_atual: resultadoAntesIRAtual,
+      valor_comparacao: resultadoAntesIRComp,
+      variacao_valor: variacaoResultadoAntesIR,
+      variacao_percentual: percentualResultadoAntesIR,
+      tipo_conta: 'receita',
+      avaliacao: avaliarVariacao('receita', percentualResultadoAntesIR),
+      nivel: 'principal'
+    });
+    
+    // Analisar IRPJ/CSLL
+    const impostosAtual = dadosAtual.impostos_irpj_csll || 0;
+    const impostosComp = dadosComp.impostos_irpj_csll || 0;
+    const variacaoImpostos = impostosAtual - impostosComp;
+    const percentualImpostos = impostosComp !== 0 ? (variacaoImpostos / Math.abs(impostosComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "(-) IRPJ/CSLL",
+      valor_atual: impostosAtual,
+      valor_comparacao: impostosComp,
+      variacao_valor: variacaoImpostos,
+      variacao_percentual: percentualImpostos,
+      tipo_conta: 'despesa',
+      avaliacao: avaliarVariacao('despesa', percentualImpostos),
+      nivel: 'principal',
+      subcontas: processarSubcontas('impostos_irpj_csll', dadosAtual, dadosComp, detalhesContaMensal)
+    });
+    
+    // Lucro Líquido (Calculado)
+    const lucroLiquidoAtual = resultadoAntesIRAtual + impostosAtual;
+    const lucroLiquidoComp = resultadoAntesIRComp + impostosComp;
+    const variacaoLucroLiquido = lucroLiquidoAtual - lucroLiquidoComp;
+    const percentualLucroLiquido = lucroLiquidoComp !== 0 ? (variacaoLucroLiquido / Math.abs(lucroLiquidoComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "Lucro Líquido do Exercício",
+      valor_atual: lucroLiquidoAtual,
+      valor_comparacao: lucroLiquidoComp,
+      variacao_valor: variacaoLucroLiquido,
+      variacao_percentual: percentualLucroLiquido,
+      tipo_conta: 'receita',
+      avaliacao: avaliarVariacao('receita', percentualLucroLiquido),
+      nivel: 'principal'
+    });
+    
+    // Analisar Distribuição de Lucros
+    const distribLucrosAtual = dadosAtual.distribuicao_lucros || 0;
+    const distribLucrosComp = dadosComp.distribuicao_lucros || 0;
+    const variacaoDistribLucros = distribLucrosAtual - distribLucrosComp;
+    const percentualDistribLucros = distribLucrosComp !== 0 ? (variacaoDistribLucros / Math.abs(distribLucrosComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "(-) Distribuição de Lucros",
+      valor_atual: distribLucrosAtual,
+      valor_comparacao: distribLucrosComp,
+      variacao_valor: variacaoDistribLucros,
+      variacao_percentual: percentualDistribLucros,
+      tipo_conta: 'despesa',
+      avaliacao: avaliarVariacao('despesa', percentualDistribLucros),
+      nivel: 'principal',
+      subcontas: processarSubcontas('distribuicao_lucros', dadosAtual, dadosComp, detalhesContaMensal)
+    });
+    
+    // Resultado do Exercício (Calculado)
+    const resultadoExercicioAtual = lucroLiquidoAtual + distribLucrosAtual;
+    const resultadoExercicioComp = lucroLiquidoComp + distribLucrosComp;
+    const variacaoResultadoExercicio = resultadoExercicioAtual - resultadoExercicioComp;
+    const percentualResultadoExercicio = resultadoExercicioComp !== 0 ? (variacaoResultadoExercicio / Math.abs(resultadoExercicioComp)) * 100 : 100;
+    
+    resultado.push({
+      nome: "Resultado do Exercício",
+      valor_atual: resultadoExercicioAtual,
+      valor_comparacao: resultadoExercicioComp,
+      variacao_valor: variacaoResultadoExercicio,
+      variacao_percentual: percentualResultadoExercicio,
+      tipo_conta: 'receita',
+      avaliacao: avaliarVariacao('receita', percentualResultadoExercicio),
+      nivel: 'principal'
+    });
+    
+    return resultado;
+  }
+
+  // Função para processar subcontas em um determinado tipo de conta
+  function processarSubcontas(tipoContaId: string, dadosAtual: any, dadosComp: any, detalhesContaMensal: any = null) {
+    if (!dadosAtual.subcontas || !dadosAtual.subcontas[tipoContaId] || 
+        !dadosComp.subcontas || !dadosComp.subcontas[tipoContaId]) {
+      return undefined;
     }
     
-    // Buscar os detalhes da conta
-    buscarDadosConta(nomeConta)
-      .then((detalhes) => {
-        if (detalhes) {
-          setContaSelecionadaDetalhes(detalhes);
-        } else {
-          toast.error("Não foi possível encontrar os dados mensais da conta");
-        }
-      })
-      .catch((error) => {
-        console.error("Erro ao buscar detalhes da conta:", error);
-        toast.error("Erro ao buscar detalhes mensais da conta");
-      });
-  };
-  
-  // Função para buscar dados de uma conta específica
-  const buscarDadosConta = async (nomeConta: string): Promise<DetalhesMensaisConta | null> => {
-    if (!currentCompany?.id) return null;
-
-    try {
-      // Determinar o período para busca (últimos 12 meses)
-      const mesAtual = filtro.mes;
-      const anoAtual = filtro.ano;
+    // Combina as chaves de ambos os períodos para garantir que todas as contas sejam analisadas
+    const todasSubContas = new Set<string>();
+    Object.keys(dadosAtual.subcontas[tipoContaId] || {}).forEach(k => todasSubContas.add(k));
+    Object.keys(dadosComp.subcontas[tipoContaId] || {}).forEach(k => todasSubContas.add(k));
+    
+    const resultado: AnaliseVariacao[] = [];
+    
+    todasSubContas.forEach(contaId => {
+      const valorAtual = (dadosAtual.subcontas[tipoContaId] && dadosAtual.subcontas[tipoContaId][contaId]) || 0;
+      const valorComp = (dadosComp.subcontas[tipoContaId] && dadosComp.subcontas[tipoContaId][contaId]) || 0;
       
-      const dataCompInicio = new Date(anoAtual - 1, mesAtual, 1);
-      const dataCompFim = new Date(anoAtual, mesAtual - 1, 0);
+      const nomeConta = valorAtual.nome || valorComp.nome || "Conta desconhecida";
+      const valorAtualNum = valorAtual.valor || 0;
+      const valorCompNum = valorComp.valor || 0;
       
-      const dataCompInicioStr = format(dataCompInicio, 'yyyy-MM-dd');
-      const dataCompFimStr = format(dataCompFim, 'yyyy-MM-dd');
+      const variacao = valorAtualNum - valorCompNum;
+      const variacao_percentual = valorCompNum !== 0 ? (variacao / Math.abs(valorCompNum)) * 100 : 100;
       
-      // Buscar todas as movimentações da conta específica
-      const { data: movimentacoes, error } = await supabase
-        .from('fluxo_caixa')
-        .select(`
-          *,
-          movimentacoes (
-            categoria_id,
-            tipo_operacao,
-            considerar_dre
-          ),
-          plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
-        `)
-        .eq('empresa_id', currentCompany.id)
-        .gte('data_movimentacao', dataCompInicioStr)
-        .lte('data_movimentacao', dataCompFimStr);
-        
-      if (error) throw error;
+      // Determinar o tipo da conta baseado no tipo de grupo
+      const tipoConta = ['receita_bruta', 'receitas_financeiras'].includes(tipoContaId) ? 'receita' : 'despesa';
       
-      // Filtrar apenas movimentações da conta especificada
-      const movConta = movimentacoes?.filter(mov => {
-        const planoContas = mov.plano_contas?.plano_contas;
-        return planoContas?.descricao === nomeConta;
-      }) || [];
-      
-      // Agrupar por mês
-      const valoresPorMes: Record<string, number> = {};
-      
-      movConta.forEach(mov => {
-        const dataStr = mov.data_movimentacao;
-        const ano = parseInt(dataStr.substring(0, 4));
-        const mes = parseInt(dataStr.substring(5, 7));
-        const chave = `${ano}-${mes}`;
-        
-        if (!valoresPorMes[chave]) {
-          valoresPorMes[chave] = 0;
-        }
-        
-        valoresPorMes[chave] += Number(mov.valor);
-      });
-      
-      // Converter para o formato de detalhes mensais
-      const valoresMensais: ValorMensal[] = [];
-      let somaTotal = 0;
-      let contMeses = 0;
-      
-      // Inicializar valores para todos os 12 meses
-      for (let m = 0; m < 12; m++) {
-        // Calcular ano e mês corretos
-        let anoMes = anoAtual - 1;
-        let mesMes = mesAtual + m;
-        
-        // Ajustar para virada de ano
-        if (mesMes > 12) {
-          mesMes -= 12;
-          anoMes += 1;
-        }
-        
-        const chave = `${anoMes}-${mesMes}`;
-        const valor = valoresPorMes[chave] || 0;
-        
-        // Adicionar à lista de valores mensais
-        valoresMensais.push({
-          mes: mesMes,
-          ano: anoMes,
-          mes_nome: meses.find(m => parseInt(m.value) === mesMes)?.label || "",
-          valor: valor
-        });
-        
-        // Somar para média
-        somaTotal += valor;
-        contMeses++;
+      // Obter detalhes mensais da conta se disponíveis
+      let detalheMensal = undefined;
+      if (detalhesContaMensal && detalhesContaMensal[tipoContaId] && detalhesContaMensal[tipoContaId][contaId]) {
+        detalheMensal = detalhesContaMensal[tipoContaId][contaId];
       }
       
-      // Calcular média
-      const media = contMeses > 0 ? somaTotal / contMeses : 0;
-      
-      return {
-        nome_conta: nomeConta,
-        valores_mensais: valoresMensais,
-        media
-      };
-      
-    } catch (error) {
-      console.error('Erro ao buscar dados da conta:', error);
-      return null;
-    }
-  };
+      resultado.push({
+        nome: nomeConta,
+        valor_atual: valorAtualNum,
+        valor_comparacao: valorCompNum,
+        variacao_valor: variacao,
+        variacao_percentual: variacao_percentual,
+        tipo_conta: tipoConta,
+        grupo_pai: tipoContaId,
+        avaliacao: avaliarVariacao(tipoConta, variacao_percentual),
+        nivel: 'subconta',
+        detalhes_mensais: detalheMensal
+      });
+    });
+    
+    // Ordena as subcontas por valor absoluto da variação (decrescente)
+    return resultado.sort((a, b) => Math.abs(b.variacao_valor) - Math.abs(a.variacao_valor));
+  }
 
-  // Função para processar movimentações e calcular DRE
-  function processarMovimentacoesDRE(movimentacoes: any[]) {
-    const grupos: { [key: string]: MovimentacaoDetalhe[] } = {
-      "Receita Bruta": [],
-      "Deduções": [],
-      "Custos": [],
-      "Despesas Operacionais": [],
-      "Receitas Financeiras": [],
-      "Despesas Financeiras": [],
-      "Distribuição de Lucros": [],
-      "IRPJ/CSLL": []
+  // Função para processar movimentações agrupadas por tipo de conta
+  function processarMovimentacoesPorTipoConta(movimentacoes: any[], calcularMedia = false) {
+    const resultado: any = {
+      receita_bruta: 0,
+      deducoes: 0,
+      custos: 0,
+      despesas_operacionais: 0,
+      receitas_financeiras: 0,
+      despesas_financeiras: 0,
+      impostos_irpj_csll: 0,
+      distribuicao_lucros: 0,
+      subcontas: {
+        receita_bruta: {},
+        deducoes: {},
+        custos: {},
+        despesas_operacionais: {},
+        receitas_financeiras: {},
+        despesas_financeiras: {},
+        impostos_irpj_csll: {},
+        distribuicao_lucros: {}
+      }
     };
     
-    // Estrutura para agrupar por conta contábil
-    const contasAgrupamento: { [key: string]: { [contaId: string]: MovimentacaoDetalhe[] } } = {
-      "Receita Bruta": {},
-      "Deduções": {},
-      "Custos": {},
-      "Despesas Operacionais": {},
-      "Receitas Financeiras": {},
-      "Despesas Financeiras": {},
-      "Distribuição de Lucros": {},
-      "IRPJ/CSLL": {}
+    // Contador de meses para cálculo de média (quando aplicável)
+    const mesesContados: Record<string, Set<string>> = {
+      receita_bruta: new Set(),
+      deducoes: new Set(),
+      custos: new Set(),
+      despesas_operacionais: new Set(),
+      receitas_financeiras: new Set(),
+      despesas_financeiras: new Set(),
+      impostos_irpj_csll: new Set(),
+      distribuicao_lucros: new Set()
     };
-
-    let receitaBruta = 0;
-    let deducoes = 0;
-    let custos = 0;
-    let despesasOperacionais = 0;
-    let receitasFinanceiras = 0;
-    let despesasFinanceiras = 0;
-    let distribuicaoLucros = 0;
-    let impostos = 0;
-
+    
     movimentacoes.forEach(mov => {
-      // Verificar se é para considerar no DRE
+      // Verifica se devemos considerar no DRE
       const considerarDre = mov.movimentacoes?.considerar_dre !== false;
       if (!considerarDre) return;
       
       const valor = Number(mov.valor);
-      const tipoOperacao = mov.movimentacoes?.tipo_operacao;
       const planoContas = mov.plano_contas?.plano_contas;
-      const descricaoCategoria = planoContas?.descricao || 'Sem categoria';
-      const contaId = planoContas?.id || 'sem_conta';
-
-      // Formatar a data sem timezone
-      const dataFormatada = mov.data_movimentacao ? 
-        mov.data_movimentacao.substring(8, 10) + "/" + 
-        mov.data_movimentacao.substring(5, 7) + "/" + 
-        mov.data_movimentacao.substring(0, 4) : '';
-
-      const detalhe: MovimentacaoDetalhe = {
-        data_movimentacao: dataFormatada,
-        descricao: mov.descricao || descricaoCategoria,
-        valor: valor,
-        categoria: descricaoCategoria,
-        conta_id: contaId,
-        conta_descricao: descricaoCategoria
-      };
-
-      // Classificação baseada no campo classificacao_dre ou inferência
-      if (planoContas && planoContas.classificacao_dre && planoContas.classificacao_dre !== 'nao_classificado') {
-        let grupoDestino = "";
-        
-        switch (planoContas.classificacao_dre) {
-          case 'receita_bruta':
-            receitaBruta += valor;
-            grupoDestino = "Receita Bruta";
-            break;
-          case 'deducoes':
-            deducoes += valor;
-            grupoDestino = "Deduções";
-            break;
-          case 'custos':
-            custos += valor;
-            grupoDestino = "Custos";
-            break;
-          case 'despesas_operacionais':
-            despesasOperacionais += valor;
-            grupoDestino = "Despesas Operacionais";
-            break;
-          case 'receitas_financeiras':
-            receitasFinanceiras += valor;
-            grupoDestino = "Receitas Financeiras";
-            break;
-          case 'despesas_financeiras':
-            despesasFinanceiras += valor;
-            grupoDestino = "Despesas Financeiras";
-            break;
-          case 'distribuicao_lucros':
-            distribuicaoLucros += valor;
-            grupoDestino = "Distribuição de Lucros";
-            break;
-          case 'impostos_irpj_csll':
-            impostos += valor;
-            grupoDestino = "IRPJ/CSLL";
-            break;
-        }
-        
-        if (grupoDestino) {
-          grupos[grupoDestino].push(detalhe);
-          
-          // Agrupamento por conta contábil
-          if (!contasAgrupamento[grupoDestino][contaId]) {
-            contasAgrupamento[grupoDestino][contaId] = [];
-          }
-          contasAgrupamento[grupoDestino][contaId].push(detalhe);
-        }
-      } else {
-        // Classificação por inferência
-        if (tipoOperacao === 'receber' && (!mov.movimentacoes?.categoria_id || !planoContas)) {
-          receitaBruta += valor;
-          grupoDestino = "Receita Bruta";
-          
-          if (!contasAgrupamento["Receita Bruta"][contaId]) {
-            contasAgrupamento["Receita Bruta"][contaId] = [];
-          }
-          contasAgrupamento["Receita Bruta"][contaId].push(detalhe);
-          grupos["Receita Bruta"].push(detalhe);
-        } 
-        else if (planoContas) {
-          const { tipo, descricao } = planoContas;
-          let grupoDestino = "";
-          
-          // Receitas
-          if (tipo === 'receita') {
-            if (descricao.toLowerCase().includes('financeira') || 
-                descricao.toLowerCase().includes('juros') || 
-                descricao.toLowerCase().includes('rendimento')) {
-              receitasFinanceiras += valor;
-              grupoDestino = "Receitas Financeiras";
-            } else {
-              receitaBruta += valor;
-              grupoDestino = "Receita Bruta";
-            }
-          }
-          // Despesas
-          else if (tipo === 'despesa') {
-            switch (descricao.toLowerCase()) {
-              case 'das - simples nacional':
-                deducoes += valor;
-                grupoDestino = "Deduções";
-                break;
-              case 'pró-labore':
-              case 'pro-labore':
-              case 'pró labore':
-              case 'pro labore':
-              case 'inss':
-              case 'honorários contábeis':
-              case 'honorarios contabeis':
-                despesasOperacionais += valor;
-                grupoDestino = "Despesas Operacionais";
-                break;
-              case 'distribuição de lucros':
-              case 'distribuicao de lucros':
-                distribuicaoLucros += valor;
-                grupoDestino = "Distribuição de Lucros";
-                break;
-              default:
-                if (descricao.toLowerCase().includes('financeira') || 
-                    descricao.toLowerCase().includes('juros') || 
-                    descricao.toLowerCase().includes('tarifas')) {
-                  despesasFinanceiras += valor;
-                  grupoDestino = "Despesas Financeiras";
-                } else {
-                  custos += valor;
-                  grupoDestino = "Custos";
-                }
-            }
-          }
-          
-          if (grupoDestino) {
-            grupos[grupoDestino].push(detalhe);
-            
-            if (!contasAgrupamento[grupoDestino][contaId]) {
-              contasAgrupamento[grupoDestino][contaId] = [];
-            }
-            contasAgrupamento[grupoDestino][contaId].push(detalhe);
-          }
-        }
-      }
-    });
-
-    // Converter o agrupamento de contas para o formato estruturado
-    const converterAgrupamentoContas = (grupoNome: string) => {
-      const contas: ContaContabilAgrupamento[] = [];
-      const contasObj = contasAgrupamento[grupoNome];
       
-      Object.keys(contasObj).forEach(contaId => {
-        const detalhes = contasObj[contaId];
-        const valorTotal = detalhes.reduce((sum, d) => sum + d.valor, 0);
+      if (!planoContas) return;
+      
+      const classificacaoDre = planoContas.classificacao_dre;
+      const contaId = planoContas.id;
+      const contaNome = planoContas.descricao;
+      
+      if (!classificacaoDre || classificacaoDre === 'nao_classificado') return;
+      
+      // Se estamos calculando média, atualizamos o contador de meses
+      if (calcularMedia) {
+        // A data vem no formato YYYY-MM-DD do banco
+        const dataStr = mov.data_movimentacao;
+        if (!dataStr) return;
         
-        if (detalhes.length === 0 || contaId === "sem_conta") return;
-        
-        contas.push({
-          conta_id: contaId,
-          descricao: detalhes[0].conta_descricao || "Conta sem descrição",
-          valor: valorTotal,
-          detalhes: detalhes
-        });
+        const anoMes = dataStr.substring(0, 7); // formato: YYYY-MM
+        mesesContados[classificacaoDre].add(anoMes);
+      }
+      
+      // Acumula o valor no grupo correspondente e nas subcontas
+      resultado[classificacaoDre] += valor;
+      
+      // Inicializa a subconta se necessário
+      if (!resultado.subcontas[classificacaoDre][contaId]) {
+        resultado.subcontas[classificacaoDre][contaId] = {
+          nome: contaNome,
+          valor: 0
+        };
+      }
+      
+      resultado.subcontas[classificacaoDre][contaId].valor += valor;
+    });
+    
+    // Se estamos calculando médias, dividimos pelo número de meses
+    if (calcularMedia) {
+      Object.keys(resultado).forEach(key => {
+        if (key !== 'subcontas' && mesesContados[key].size > 0) {
+          resultado[key] = resultado[key] / mesesContados[key].size;
+        }
       });
       
-      return contas.sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor));
-    };
-
-    // Calcular os totais do DRE
-    const receitaLiquida = receitaBruta + deducoes; 
-    const lucroBruto = receitaLiquida + custos; 
-    const resultadoOperacional = lucroBruto + despesasOperacionais; 
-    const resultadoFinanceiro = resultadoOperacional + receitasFinanceiras + despesasFinanceiras; 
-    const resultadoAntesIR = resultadoFinanceiro;
-    const lucroLiquido = resultadoAntesIR + impostos; 
-    const resultadoExercicio = lucroLiquido + distribuicaoLucros;
-
-    return [
-      { tipo: "Receita Bruta", valor: receitaBruta, detalhes: grupos["Receita Bruta"], contas: converterAgrupamentoContas("Receita Bruta") },
-      { tipo: "(-) Deduções", valor: deducoes, detalhes: grupos["Deduções"], contas: converterAgrupamentoContas("Deduções") },
-      { tipo: "Receita Líquida", valor: receitaLiquida, detalhes: [] },
-      { tipo: "(-) Custos", valor: custos, detalhes: grupos["Custos"], contas: converterAgrupamentoContas("Custos") },
-      { tipo: "Lucro Bruto", valor: lucroBruto, detalhes: [] },
-      { tipo: "(-) Despesas Operacionais", valor: despesasOperacionais, detalhes: grupos["Despesas Operacionais"], contas: converterAgrupamentoContas("Despesas Operacionais") },
-      { tipo: "Resultado Operacional", valor: resultadoOperacional, detalhes: [] },
-      { tipo: "(+) Receitas Financeiras", valor: receitasFinanceiras, detalhes: grupos["Receitas Financeiras"], contas: converterAgrupamentoContas("Receitas Financeiras") },
-      { tipo: "(-) Despesas Financeiras", valor: despesasFinanceiras, detalhes: grupos["Despesas Financeiras"], contas: converterAgrupamentoContas("Despesas Financeiras") },
-      { tipo: "Resultado Antes IR", valor: resultadoAntesIR, detalhes: [] },
-      { tipo: "(-) IRPJ/CSLL", valor: impostos, detalhes: grupos["IRPJ/CSLL"], contas: converterAgrupamentoContas("IRPJ/CSLL") },
-      { tipo: "Lucro Líquido do Exercício", valor: lucroLiquido, detalhes: [] },
-      { tipo: "(-) Distribuição de Lucros", valor: distribuicaoLucros, detalhes: grupos["Distribuição de Lucros"], contas: converterAgrupamentoContas("Distribuição de Lucros") },
-      { tipo: "Resultado do Exercício", valor: resultadoExercicio, detalhes: [] }
-    ];
-  }
-
-  // Função para gerar análise comparativa
-  function gerarAnaliseComparativa(
-    dadosAtuais: GrupoMovimentacao[],
-    dadosComparacao: GrupoMovimentacao[],
-    tipoComparacao: string,
-    percentualMinimo: number,
-    dataAtual: Date,
-    dataCompInicio: Date, 
-    dataCompFim: Date,
-    dadosMensais: any[] = []
-  ): AnaliseVariacao[] {
-    const analise: AnaliseVariacao[] = [];
-    const subcontasVariacao: AnaliseVariacao[] = [];
-    
-    // Calcular número de meses para média
-    let numMesesAtual = 1; // Por padrão é 1 mês
-    let numMesesComparacao = 1;
-    
-    if (tipoComparacao === "media_12_meses") {
-      // Para últimos 12 meses, calcular número de meses exatos
-      const mesesDif = (dataCompFim.getFullYear() - dataCompInicio.getFullYear()) * 12 + 
-                      (dataCompFim.getMonth() - dataCompInicio.getMonth()) + 1;
-      numMesesComparacao = Math.max(1, mesesDif);
-    }
-    
-    // Percorrer grupos principais do DRE
-    dadosAtuais.forEach((grupoAtual) => {
-      // Encontrar grupo correspondente nos dados de comparação
-      const grupoComp = dadosComparacao.find(g => g.tipo === grupoAtual.tipo);
-      
-      // Se não tiver contas, é um total calculado
-      if (!grupoAtual.contas || grupoAtual.contas.length === 0) {
-        return; // Pular totais calculados na análise por subcontas
-      }
-      
-      // Identificar se é uma conta de despesa ou dedução (contas negativas)
-      const tiposDespesas = ['(-) Deduções', '(-) Custos', '(-) Despesas Operacionais', 
-                            '(-) Despesas Financeiras', '(-) IRPJ/CSLL', '(-) Distribuição de Lucros'];
-      const ehContaDespesa = tiposDespesas.includes(grupoAtual.tipo);
-      
-      // Calcular valor médio mensal
-      const valorAtualMedio = grupoAtual.valor / numMesesAtual;
-      const valorCompMedio = grupoComp ? (grupoComp.valor / numMesesComparacao) : 0;
-      
-      // Se ambos os valores forem 0, não incluir na análise 
-      if (valorAtualMedio === 0 && valorCompMedio === 0) return;
-      
-      const variacaoValor = valorAtualMedio - valorCompMedio;
-      let variacaoPercentual = 0;
-      
-      // Calcular variação percentual evitando divisão por zero
-      if (valorCompMedio !== 0) {
-        variacaoPercentual = (variacaoValor / Math.abs(valorCompMedio)) * 100;
-      } else if (valorAtualMedio !== 0) {
-        // Se o valor de comparação for zero, mas o atual não for
-        variacaoPercentual = 100; // 100% de aumento
-      }
-      
-      // Avaliação da variação
-      let avaliacao: 'positiva' | 'negativa' | 'estavel' | 'atencao' = 'estavel';
-      
-      if (Math.abs(variacaoPercentual) < percentualMinimo) {
-        avaliacao = 'estavel';
-      } else {
-        if (ehContaDespesa) {
-          // Para despesas, a lógica é invertida
-          avaliacao = variacaoPercentual > 0 ? 'positiva' : 'negativa';
-        } else {
-          avaliacao = variacaoPercentual > 0 ? 'positiva' : 'negativa';
-        }
-      }
-      
-      // Adicionar variações das subcontas
-      const subcontas: AnaliseVariacao[] = [];
-      
-      // Para cada subconta, fazer análise similar
-      if (grupoAtual.contas) {
-        grupoAtual.contas.forEach(contaAtual => {
-          // Procurar subconta correspondente no período de comparação
-          let contaComp = null;
-          if (grupoComp && grupoComp.contas) {
-            contaComp = grupoComp.contas.find(c => c.conta_id === contaAtual.conta_id);
-          }
-          
-          // Calcular valores médios para subcontas
-          const valorSubcontaAtual = contaAtual.valor / numMesesAtual; 
-          const valorSubcontaComp = contaComp ? (contaComp.valor / numMesesComparacao) : 0;
-          
-          // Se ambos os valores forem 0, não incluir na análise de subcontas
-          if (valorSubcontaAtual === 0 && valorSubcontaComp === 0) return;
-          
-          const variacaoSubcontaValor = valorSubcontaAtual - valorSubcontaComp;
-          let variacaoSubcontaPercentual = 0;
-          
-          // Calcular variação percentual da subconta
-          if (valorSubcontaComp !== 0) {
-            variacaoSubcontaPercentual = (variacaoSubcontaValor / Math.abs(valorSubcontaComp)) * 100;
-          } else if (valorSubcontaAtual !== 0) {
-            variacaoSubcontaPercentual = 100;
-          }
-          
-          // Avaliação da variação da subconta
-          let avaliacaoSubconta: 'positiva' | 'negativa' | 'estavel' | 'atencao' = 'estavel';
-          
-          // Avaliação inicial baseada no percentual mínimo
-          if (Math.abs(variacaoSubcontaPercentual) < percentualMinimo) {
-            avaliacaoSubconta = 'estavel';
-          } else {
-            // Aplicar a mesma lógica usada para o grupo principal
-            if (ehContaDespesa) {
-              // Para subcontas de despesas, a lógica é invertida
-              avaliacaoSubconta = variacaoPercentual > 0 ? 'positiva' : 'negativa';
-            } else {
-              // Para subcontas de receitas
-              avaliacaoSubconta = variacaoPercentual > 0 ? 'positiva' : 'negativa';
-            }
-            
-            // Marcar como atenção se a variação for muito alta
-            if (Math.abs(variacaoSubcontaPercentual) > percentualMinimo * 3) {
-              avaliacaoSubconta = 'atencao';
-            }
-          }
-
-          // Se ultrapassar o percentual mínimo, adicionar à lista de variações significativas
-          if (Math.abs(variacaoSubcontaPercentual) >= percentualMinimo) {
-            const variacaoSubconta = {
-              nome: contaAtual.descricao,
-              valor_atual: valorSubcontaAtual,
-              valor_comparacao: valorSubcontaComp,
-              variacao_valor: variacaoSubcontaValor,
-              variacao_percentual: variacaoSubcontaPercentual,
-              tipo_conta: grupoAtual.tipo,
-              grupo_pai: grupoAtual.tipo,
-              avaliacao: avaliacaoSubconta,
-              nivel: 'subconta' as 'subconta' | 'principal'
-            };
-            
-            subcontasVariacao.push(variacaoSubconta);
-          }
-          
-          // Adicionar subconta ao grupo mesmo se não tiver variação significativa
-          subcontas.push({
-            nome: contaAtual.descricao,
-            valor_atual: valorSubcontaAtual,
-            valor_comparacao: valorSubcontaComp,
-            variacao_valor: variacaoSubcontaValor,
-            variacao_percentual: variacaoSubcontaPercentual,
-            tipo_conta: grupoAtual.tipo,
-            avaliacao: avaliacaoSubconta,
-            nivel: 'subconta'
+      // Também calculamos médias para as subcontas
+      Object.keys(resultado.subcontas).forEach(group => {
+        if (mesesContados[group].size > 0) {
+          Object.keys(resultado.subcontas[group]).forEach(contaId => {
+            resultado.subcontas[group][contaId].valor = 
+              resultado.subcontas[group][contaId].valor / mesesContados[group].size;
           });
-        });
+        }
+      });
+    }
+    
+    return resultado;
+  }
+
+  // Função para avaliar a variação como positiva, negativa ou estável
+  function avaliarVariacao(tipoConta: string, percentual: number) {
+    if (Math.abs(percentual) < 5) {
+      return 'estavel';
+    }
+    
+    if (tipoConta === 'receita') {
+      if (percentual > 0) return 'positiva';
+      return 'negativa';
+    } else {
+      // Para despesas, aumentar despesas é ruim (negativo)
+      if (percentual < 0) return 'positiva'; // Diminuição de despesas é positivo
+      if (percentual > 15) return 'atencao'; // Aumento acentuado de despesas merece atenção
+      return 'negativa'; // Aumento de despesas é negativo
+    }
+  }
+
+  // Função para filtrar apenas variações significativas
+  function filtrarPorPercentualMinimo(analise: AnaliseVariacao[], percentualMinimo: number) {
+    return analise.map(item => {
+      // Para itens principais, preservamos todos, mas filtramos as subcontas
+      if (item.nivel === 'principal') {
+        if (item.subcontas) {
+          item.subcontas = item.subcontas.filter(
+            sub => Math.abs(sub.variacao_percentual) >= percentualMinimo
+          );
+        }
+        return item;
       }
       
-      // Adicionar grupo principal com suas subcontas
-      analise.push({
-        nome: grupoAtual.tipo,
-        valor_atual: valorAtualMedio,
-        valor_comparacao: valorCompMedio,
-        variacao_valor: variacaoValor,
-        variacao_percentual: variacaoPercentual,
-        tipo_conta: grupoAtual.tipo,
-        subcontas: subcontas,
-        avaliacao,
-        nivel: 'principal'
-      });
-    });
-    
-    // Se estamos no modo de mostrar todas as contas, retornar a análise completa
-    // Caso contrário, retornar apenas as subcontas com variação significativa
-    return mostrarTodasContas ? analise : subcontasVariacao;
-  }
-  
-  // Função para formatar moeda
-  function formatCurrency(value: number) {
-    return value.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-      minimumFractionDigits: 2,
-    });
-  }
-  
-  // Função para formatar percentual
-  function formatPercentual(value: number) {
-    return value.toLocaleString("pt-BR", {
-      style: "decimal",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }) + "%";
-  }
-  
-  // Retorna o ícone e a cor com base na avaliação
-  function getAvaliacaoIcone(avaliacao: string) {
-    switch (avaliacao) {
-      case 'positiva':
-        return { icon: <ArrowUp className="h-4 w-4 text-green-500" />, cor: 'text-green-500' };
-      case 'negativa':
-        return { icon: <ArrowDown className="h-4 w-4 text-red-500" />, cor: 'text-red-500' };
-      case 'atencao':
-        return { icon: <AlertCircle className="h-4 w-4 text-amber-500" />, cor: 'text-amber-500' };
-      default:
-        return { icon: <MinusCircle className="h-4 w-4 text-gray-500" />, cor: 'text-gray-500' };
-    }
-  }
-  
-  // Determinar descrição do período de comparação
-  function getDescricaoComparacao() {
-    const mesNome = meses.find(m => parseInt(m.value) === filtro.mes)?.label || "";
-    
-    switch (filtro.tipo_comparacao) {
-      case 'mes_anterior':
-        const mesAnteriorNum = filtro.mes - 1 === 0 ? 12 : filtro.mes - 1;
-        const mesAnteriorNome = meses.find(m => parseInt(m.value) === mesAnteriorNum)?.label || "";
-        const anoAnterior = filtro.mes === 1 ? filtro.ano - 1 : filtro.ano;
-        return `${mesNome}/${filtro.ano} vs ${mesAnteriorNome}/${anoAnterior}`;
-        
-      case 'ano_anterior':
-        return `${mesNome}/${filtro.ano} vs ${mesNome}/${filtro.ano - 1}`;
-        
-      case 'media_12_meses':
-        return `${mesNome}/${filtro.ano} vs Média dos 12 meses anteriores`;
-        
-      default:
-        return "Comparação de períodos";
-    }
-  }
-  
-  // Função para alternar exibição de subconta
-  function toggleContaExpansao(tipo: string) {
-    setContasExpandidas(prev => ({
-      ...prev,
-      [tipo]: !prev[tipo]
-    }));
-  }
-  
-  // Filtrar dados por avaliação para tabs
-  const getAnaliseFiltrada = (tipo: string) => {
-    if (!dadosAnalise || dadosAnalise.length === 0) return [];
-    
-    if (tipo === 'todos') return dadosAnalise;
-    if (tipo === 'positivas') return dadosAnalise.filter(item => item.avaliacao === 'positiva');
-    if (tipo === 'negativas') return dadosAnalise.filter(item => item.avaliacao === 'negativa');
-    if (tipo === 'atencao') return dadosAnalise.filter(item => 
-      item.avaliacao === 'atencao' || 
-      (item.subcontas && item.subcontas.some(s => s.avaliacao === 'atencao'))
-    );
-    return dadosAnalise;
-  };
-  
-  // Função para atualizar valor do filtro
-  const updateFiltro = (campo: keyof FiltroAnaliseDre, valor: any) => {
-    setFiltro(prev => ({
-      ...prev,
-      [campo]: valor
-    }));
-  };
-
-  // Função para agrupar subcontas por grupo pai
-  const agruparPorGrupo = (dados: AnaliseVariacao[]) => {
-    if (!dados || dados.length === 0) return {};
-    
-    const grupos: {[key: string]: AnaliseVariacao[]} = {};
-    
-    dados.forEach(subconta => {
-      const grupoPai = subconta.grupo_pai || subconta.tipo_conta;
-      if (!grupos[grupoPai]) {
-        grupos[grupoPai] = [];
+      // Para outros níveis (se houver), filtramos com base no percentual
+      if (Math.abs(item.variacao_percentual) >= percentualMinimo) {
+        return item;
       }
-      grupos[grupoPai].push(subconta);
-    });
-    
-    return grupos;
-  };
+      
+      return null;
+    }).filter(item => item !== null) as AnaliseVariacao[];
+  }
+
+  // Atualização da lista de meses com os nomes em português
+  const meses = [
+    { label: "Janeiro", value: "0" },
+    { label: "Fevereiro", value: "1" },
+    { label: "Março", value: "2" },
+    { label: "Abril", value: "3" },
+    { label: "Maio", value: "4" },
+    { label: "Junho", value: "5" },
+    { label: "Julho", value: "6" },
+    { label: "Agosto", value: "7" },
+    { label: "Setembro", value: "8" },
+    { label: "Outubro", value: "9" },
+    { label: "Novembro", value: "10" },
+    { label: "Dezembro", value: "11" }
+  ];
+
+  // Lista de anos (máx. últimos 5 anos)
+  const anos = [];
+  const anoAtual = new Date().getFullYear();
+  for (let a = anoAtual; a >= anoAtual - 4; a--) {
+    anos.push(a);
+  }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl md:text-2xl">Análise do DRE</CardTitle>
-          <CardDescription>
-            Análise comparativa das contas do DRE, destacando variações significativas
-          </CardDescription>
+          <CardTitle className="text-xl">Análise do DRE</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Filtros */}
-          <div className="grid gap-4 mb-6 md:grid-cols-2 lg:grid-cols-5 items-end">
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Tipo de Comparação</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* Tipo de comparação */}
+            <div>
+              <Label htmlFor="tipoComparacao">Tipo de Comparação</Label>
               <Select
                 value={filtro.tipo_comparacao}
-                onValueChange={(val) => updateFiltro('tipo_comparacao', val)}
+                onValueChange={(val) => setFiltro({ ...filtro, tipo_comparacao: val as any })}
               >
-                <SelectTrigger className="bg-white">
+                <SelectTrigger id="tipoComparacao" className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="mes_anterior">Mês Atual vs Mês Anterior</SelectItem>
-                  <SelectItem value="ano_anterior">Mês Atual vs Mesmo Mês do Ano Anterior</SelectItem>
+                  <SelectItem value="ano_anterior">Mês Atual vs Mesmo Mês Ano Anterior</SelectItem>
                   <SelectItem value="media_12_meses">Mês Atual vs Média dos Últimos 12 Meses</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Ano</label>
+
+            {/* Mês */}
+            <div>
+              <Label htmlFor="mes">Mês</Label>
+              <Select
+                value={filtro.mes.toString()}
+                onValueChange={(val) => setFiltro({ ...filtro, mes: parseInt(val) })}
+              >
+                <SelectTrigger id="mes" className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {meses.map((mes) => (
+                    <SelectItem key={mes.value} value={mes.value}>
+                      {mes.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Ano */}
+            <div>
+              <Label htmlFor="ano">Ano</Label>
               <Select
                 value={filtro.ano.toString()}
-                onValueChange={(val) => updateFiltro('ano', parseInt(val))}
+                onValueChange={(val) => setFiltro({ ...filtro, ano: parseInt(val) })}
               >
-                <SelectTrigger className="bg-white">
+                <SelectTrigger id="ano" className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {anos.map(a => (
-                    <SelectItem value={a.toString()} key={a}>{a}</SelectItem>
+                  {anos.map((ano) => (
+                    <SelectItem key={ano} value={ano.toString()}>
+                      {ano}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Mês</label>
-              <Select
-                value={filtro.mes.toString().padStart(2, '0')}
-                onValueChange={(val) => updateFiltro('mes', parseInt(val))}
-              >
-                <SelectTrigger className="bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {meses.map(m => (
-                    <SelectItem value={m.value} key={m.value}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium">% Mínimo para Alerta</label>
-              <div className="flex items-center gap-2">
-                <Input 
-                  type="number" 
-                  value={filtro.percentual_minimo} 
-                  min={1}
-                  max={100}
-                  className="bg-white"
-                  onChange={(e) => updateFiltro('percentual_minimo', Number(e.target.value))}
-                />
-                <span className="text-sm">%</span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Visualização</label>
-              <Select
-                value={mostrarTodasContas ? "todas" : "significativas"}
-                onValueChange={(val) => setMostrarTodasContas(val === "todas")}
-              >
-                <SelectTrigger className="bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="significativas">Apenas Variações Significativas</SelectItem>
-                  <SelectItem value="todas">Todas as Contas</SelectItem>
-                </SelectContent>
-              </Select>
+
+            {/* Percentual mínimo */}
+            <div>
+              <Label htmlFor="percentualMinimo">
+                % Mínimo de Variação <span className="text-muted-foreground">(Subcontas)</span>
+              </Label>
+              <Input
+                id="percentualMinimo"
+                type="number"
+                className="mt-1"
+                value={filtro.percentual_minimo}
+                onChange={(e) => setFiltro({ ...filtro, percentual_minimo: parseInt(e.target.value) || 0 })}
+              />
             </div>
           </div>
-
-          {/* Estado de carregamento */}
+          
+          <Separator className="my-6" />
+          
           {isLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-pulse">Carregando dados para análise...</div>
+            <div className="flex items-center justify-center py-10">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+              <span className="ml-3">Carregando dados para análise...</span>
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Resumo da comparação */}
-              <div className="flex items-center justify-between px-2">
-                <h3 className="text-lg font-medium">
-                  {getDescricaoComparacao()}
-                </h3>
-                
-                <div className="flex gap-2">
-                  <div className="flex items-center gap-1 text-sm">
-                    <ArrowUp className="h-4 w-4 text-green-500" />
-                    <span>Positiva</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm">
-                    <ArrowDown className="h-4 w-4 text-red-500" />
-                    <span>Negativa</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm">
-                    <AlertCircle className="h-4 w-4 text-amber-500" />
-                    <span>Atenção</span>
-                  </div>
-                </div>
+            <>
+              {/* Info do período */}
+              <div className="mb-6">
+                <Alert className="bg-muted/30 text-foreground">
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Comparando <strong>{periodoAtualLabel}</strong> com <strong>{periodoCompLabel}</strong>
+                  </AlertDescription>
+                </Alert>
               </div>
-
-              {/* Tabs de filtro */}
-              <Tabs defaultValue="todos" value={tabAtiva} onValueChange={setTabAtiva}>
-                <TabsList className="mb-4">
-                  <TabsTrigger value="todos">Todas as Variações</TabsTrigger>
-                  <TabsTrigger value="positivas">Variações Positivas</TabsTrigger>
-                  <TabsTrigger value="negativas">Variações Negativas</TabsTrigger>
-                  <TabsTrigger value="atencao">Atenção</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value={tabAtiva}>
-                  {getAnaliseFiltrada(tabAtiva).length > 0 ? (
-                    mostrarTodasContas ? (
-                      // Visualização original por grupos principais
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[40%]">Conta</TableHead>
-                            <TableHead className="text-right">Valor Atual (Média)</TableHead>
-                            <TableHead className="text-right">Valor Anterior (Média)</TableHead>
-                            <TableHead className="text-right">Variação</TableHead>
-                            <TableHead className="text-right w-[10%]">%</TableHead>
-                            <TableHead className="text-right">Avaliação</TableHead>
-                            {filtro.tipo_comparacao === "media_12_meses" && <TableHead className="text-center">Detalhes Mensais</TableHead>}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {getAnaliseFiltrada(tabAtiva).map((conta, index) => {
-                            const { icon, cor } = getAvaliacaoIcone(conta.avaliacao);
-                            const estaExpandida = contasExpandidas[conta.nome] || false;
-                            const temSubcontas = conta.subcontas && conta.subcontas.length > 0;
-
-                            return (
-                              <React.Fragment key={`${conta.nome}-${index}`}>
-                                {/* Linha da conta principal */}
-                                <TableRow 
-                                  className={`hover:bg-gray-50 ${estaExpandida ? "bg-gray-50" : ""}`}
-                                  onClick={() => temSubcontas && toggleContaExpansao(conta.nome)}
-                                >
-                                  <TableCell className="font-medium">
-                                    <div className="flex items-center">
-                                      {temSubcontas && (
-                                        <ChevronDown 
-                                          className={`h-5 w-5 mr-2 shrink-0 transition-transform duration-200 ${estaExpandida ? 'rotate-180' : ''} text-gray-500`} 
-                                        />
-                                      )}
-                                      {conta.nome}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="text-right">{formatCurrency(conta.valor_atual)}</TableCell>
-                                  <TableCell className="text-right">{formatCurrency(conta.valor_comparacao)}</TableCell>
-                                  <TableCell className="text-right">{formatCurrency(conta.variacao_valor)}</TableCell>
-                                  <TableCell className={`text-right ${cor}`}>
-                                    {formatPercentual(conta.variacao_percentual)}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <div className="flex items-center justify-end gap-1">
-                                      {icon}
-                                      <span className={cor}>{conta.avaliacao.charAt(0).toUpperCase() + conta.avaliacao.slice(1)}</span>
-                                    </div>
-                                  </TableCell>
-                                  {filtro.tipo_comparacao === "media_12_meses" && (
-                                    <TableCell className="text-center">
-                                      <Button 
-                                        variant="ghost" 
-                                        className="p-2 h-auto" 
-                                        onClick={(e) => { 
-                                          e.stopPropagation();
-                                          // Usar o nome da conta principal para mostrar detalhes mensais não é necessário
-                                        }}
-                                        disabled={true}
-                                      >
-                                        <Info className="h-4 w-4" />
-                                      </Button>
-                                    </TableCell>
-                                  )}
-                                </TableRow>
-                                
-                                {/* Linhas das subcontas, quando expandidas */}
-                                {estaExpandida && conta.subcontas && conta.subcontas.map((subconta, subIndex) => {
-                                  const { icon: subIcon, cor: subCor } = getAvaliacaoIcone(subconta.avaliacao);
-                                  
-                                  return (
-                                    <TableRow key={`${conta.nome}-sub-${subIndex}`} className="bg-gray-50/50">
-                                      <TableCell className="pl-10">
-                                        {subconta.nome}
-                                      </TableCell>
-                                      <TableCell className="text-right">{formatCurrency(subconta.valor_atual)}</TableCell>
-                                      <TableCell className="text-right">{formatCurrency(subconta.valor_comparacao)}</TableCell>
-                                      <TableCell className="text-right">{formatCurrency(subconta.variacao_valor)}</TableCell>
-                                      <TableCell className={`text-right ${subCor}`}>{formatPercentual(subconta.variacao_percentual)}</TableCell>
-                                      <TableCell className="text-right">
-                                        <div className="flex items-center justify-end gap-1">
-                                          {subIcon}
-                                          <span className={subCor}>{subconta.avaliacao.charAt(0).toUpperCase() + subconta.avaliacao.slice(1)}</span>
-                                        </div>
-                                      </TableCell>
-                                      {filtro.tipo_comparacao === "media_12_meses" && (
-                                        <TableCell className="text-center">
-                                          <Dialog>
-                                            <DialogTrigger asChild>
-                                              <Button 
-                                                variant="ghost" 
-                                                className="p-2 h-auto" 
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  obterDetalhesMensaisConta(subconta.nome);
-                                                }}
-                                              >
-                                                <Info className="h-4 w-4" />
-                                              </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="max-w-4xl">
-                                              <DialogHeader>
-                                                <DialogTitle>
-                                                  Valores Mensais - {subconta.nome}
-                                                </DialogTitle>
-                                                <DialogDescription>
-                                                  Detalhamento mensal dos valores da conta para o período de 12 meses
-                                                </DialogDescription>
-                                              </DialogHeader>
-                                              
-                                              {contaSelecionadaDetalhes?.nome_conta === subconta.nome ? (
-                                                <div className="space-y-4">
-                                                  <Card className="overflow-hidden">
-                                                    <CardContent className="p-0">
-                                                      <Table>
-                                                        <TableHeader>
-                                                          <TableRow>
-                                                            <TableHead>Mês/Ano</TableHead>
-                                                            <TableHead className="text-right">Valor</TableHead>
-                                                          </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                          {contaSelecionadaDetalhes.valores_mensais.map((valor, idx) => (
-                                                            <TableRow key={idx}>
-                                                              <TableCell>
-                                                                {valor.mes_nome}/{valor.ano}
-                                                              </TableCell>
-                                                              <TableCell className="text-right">
-                                                                {formatCurrency(valor.valor)}
-                                                              </TableCell>
-                                                            </TableRow>
-                                                          ))}
-                                                          <TableRow className="bg-muted/50">
-                                                            <TableCell className="font-medium">Média</TableCell>
-                                                            <TableCell className="text-right font-medium">
-                                                              {formatCurrency(contaSelecionadaDetalhes.media)}
-                                                            </TableCell>
-                                                          </TableRow>
-                                                        </TableBody>
-                                                      </Table>
-                                                    </CardContent>
-                                                  </Card>
-                                                  
-                                                  <Alert>
-                                                    <AlertTitle className="flex items-center gap-2">
-                                                      <Info className="h-4 w-4" />
-                                                      Período de análise
-                                                    </AlertTitle>
-                                                    <AlertDescription>
-                                                      Os valores apresentados correspondem aos 12 meses anteriores a {filtro.mes}/{filtro.ano}, 
-                                                      desde {meses.find(m => m.value === filtro.mes.toString().padStart(2, '0'))?.label}/{filtro.ano - 1} até {meses.find(m => {
-                                                        const mesFim = filtro.mes - 1 === 0 ? 12 : filtro.mes - 1;
-                                                        return m.value === mesFim.toString().padStart(2, '0');
-                                                      })?.label}/{filtro.mes - 1 === 0 ? filtro.ano - 1 : filtro.ano}.
-                                                    </AlertDescription>
-                                                  </Alert>
-                                                </div>
-                                              ) : (
-                                                <div className="flex justify-center items-center py-10">
-                                                  <span className="animate-pulse">Carregando dados mensais...</span>
-                                                </div>
-                                              )}
-                                              
-                                              <DialogFooter>
-                                                <Button variant="outline" onClick={() => setContaSelecionadaDetalhes(null)}>
-                                                  Fechar
-                                                </Button>
-                                              </DialogFooter>
-                                            </DialogContent>
-                                          </Dialog>
-                                        </TableCell>
-                                      )}
-                                    </TableRow>
-                                  );
-                                })}
-                              </React.Fragment>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    ) : (
-                      // Nova visualização focada em subcontas com variações significativas, agrupadas por tipo
-                      <div className="space-y-6">
-                        {Object.entries(agruparPorGrupo(getAnaliseFiltrada(tabAtiva))).map(([grupoPai, subcontas], groupIndex) => (
-                          <Card key={`grupo-${groupIndex}`} className="overflow-hidden">
-                            <CardHeader className="py-2 px-4 bg-muted">
-                              <CardTitle className="text-sm font-medium">{grupoPai}</CardTitle>
-                            </CardHeader>
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="w-[40%]">Subconta</TableHead>
-                                  <TableHead className="text-right">Valor Atual (Média)</TableHead>
-                                  <TableHead className="text-right">Valor Anterior (Média)</TableHead>
-                                  <TableHead className="text-right">Variação</TableHead>
-                                  <TableHead className="text-right w-[10%]">%</TableHead>
-                                  <TableHead className="text-right">Avaliação</TableHead>
-                                  {filtro.tipo_comparacao === "media_12_meses" && <TableHead className="text-center">Detalhes Mensais</TableHead>}
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {subcontas.map((subconta, index) => {
-                                  const { icon: subIcon, cor: subCor } = getAvaliacaoIcone(subconta.avaliacao);
-                                  
-                                  return (
-                                    <TableRow key={`${subconta.nome}-${index}`}>
-                                      <TableCell>
-                                        {subconta.nome}
-                                      </TableCell>
-                                      <TableCell className="text-right">{formatCurrency(subconta.valor_atual)}</TableCell>
-                                      <TableCell className="text-right">{formatCurrency(subconta.valor_comparacao)}</TableCell>
-                                      <TableCell className="text-right">{formatCurrency(subconta.variacao_valor)}</TableCell>
-                                      <TableCell className={`text-right ${subCor}`}>{formatPercentual(subconta.variacao_percentual)}</TableCell>
-                                      <TableCell className="text-right">
-                                        <div className="flex items-center justify-end gap-1">
-                                          {subIcon}
-                                          <span className={subCor}>{subconta.avaliacao.charAt(0).toUpperCase() + subconta.avaliacao.slice(1)}</span>
-                                        </div>
-                                      </TableCell>
-                                      {filtro.tipo_comparacao === "media_12_meses" && (
-                                        <TableCell className="text-center">
-                                          <Dialog>
-                                            <DialogTrigger asChild>
-                                              <Button 
-                                                variant="ghost" 
-                                                className="p-2 h-auto" 
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  obterDetalhesMensaisConta(subconta.nome);
-                                                }}
-                                              >
-                                                <Info className="h-4 w-4" />
-                                              </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="max-w-4xl">
-                                              <DialogHeader>
-                                                <DialogTitle>
-                                                  Valores Mensais - {subconta.nome}
-                                                </DialogTitle>
-                                                <DialogDescription>
-                                                  Detalhamento mensal dos valores da conta para o período de 12 meses
-                                                </DialogDescription>
-                                              </DialogHeader>
-                                              
-                                              {contaSelecionadaDetalhes?.nome_conta === subconta.nome ? (
-                                                <div className="space-y-4">
-                                                  <Card className="overflow-hidden">
-                                                    <CardContent className="p-0">
-                                                      <Table>
-                                                        <TableHeader>
-                                                          <TableRow>
-                                                            <TableHead>Mês/Ano</TableHead>
-                                                            <TableHead className="text-right">Valor</TableHead>
-                                                          </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                          {contaSelecionadaDetalhes.valores_mensais.map((valor, idx) => (
-                                                            <TableRow key={idx}>
-                                                              <TableCell>
-                                                                {valor.mes_nome}/{valor.ano}
-                                                              </TableCell>
-                                                              <TableCell className="text-right">
-                                                                {formatCurrency(valor.valor)}
-                                                              </TableCell>
-                                                            </TableRow>
-                                                          ))}
-                                                          <TableRow className="bg-muted/50">
-                                                            <TableCell className="font-medium">Média</TableCell>
-                                                            <TableCell className="text-right font-medium">
-                                                              {formatCurrency(contaSelecionadaDetalhes.media)}
-                                                            </TableCell>
-                                                          </TableRow>
-                                                        </TableBody>
-                                                      </Table>
-                                                    </CardContent>
-                                                  </Card>
-                                                  
-                                                  <Alert>
-                                                    <AlertTitle className="flex items-center gap-2">
-                                                      <Info className="h-4 w-4" />
-                                                      Período de análise
-                                                    </AlertTitle>
-                                                    <AlertDescription>
-                                                      Os valores apresentados correspondem aos 12 meses anteriores a {filtro.mes}/{filtro.ano}, 
-                                                      desde {meses.find(m => m.value === filtro.mes.toString().padStart(2, '0'))?.label}/{filtro.ano - 1} até {meses.find(m => {
-                                                        const mesFim = filtro.mes - 1 === 0 ? 12 : filtro.mes - 1;
-                                                        return m.value === mesFim.toString().padStart(2, '0');
-                                                      })?.label}/{filtro.mes - 1 === 0 ? filtro.ano - 1 : filtro.ano}.
-                                                    </AlertDescription>
-                                                  </Alert>
-                                                </div>
-                                              ) : (
-                                                <div className="flex justify-center items-center py-10">
-                                                  <span className="animate-pulse">Carregando dados mensais...</span>
-                                                </div>
-                                              )}
-                                              
-                                              <DialogFooter>
-                                                <Button variant="outline" onClick={() => setContaSelecionadaDetalhes(null)}>
-                                                  Fechar
-                                                </Button>
-                                              </DialogFooter>
-                                            </DialogContent>
-                                          </Dialog>
-                                        </TableCell>
-                                      )}
-                                    </TableRow>
-                                  );
-                                })}
-                              </TableBody>
-                            </Table>
-                          </Card>
-                        ))}
-                      </div>
-                    )
-                  ) : (
-                    <Alert>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Nenhum resultado encontrado</AlertTitle>
-                      <AlertDescription>
-                        Não há contas com variações significativas que atendam aos critérios selecionados.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </TabsContent>
-              </Tabs>
               
-              {/* Legenda e ações */}
-              <div className="flex flex-col md:flex-row gap-3 justify-between">
-                <div className="text-sm text-muted-foreground">
-                  * As variações são calculadas usando a média mensal dos valores em cada período para garantir comparabilidade.
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => {
-                    // Resetar filtros
-                    setFiltro({
-                      tipo_comparacao: "mes_anterior",
-                      ano: new Date().getFullYear(),
-                      mes: new Date().getMonth() + 1,
-                      percentual_minimo: 10
-                    });
-                    setMostrarTodasContas(false);
-                  }}>
-                    Resetar Filtros
-                  </Button>
-                </div>
+              {/* Tabela de análise de variação */}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Conta</TableHead>
+                      <TableHead className="text-right">Valor Atual</TableHead>
+                      <TableHead className="text-right">Valor Anterior</TableHead>
+                      <TableHead className="text-right">Variação</TableHead>
+                      <TableHead className="text-right">%</TableHead>
+                      <TableHead className="text-center">Detalhes Mensais</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dadosAnalise && dadosAnalise.length > 0 ? (
+                      <>
+                        {dadosAnalise.map((analise: AnaliseVariacao, index) => (
+                          <React.Fragment key={`analise-${index}`}>
+                            {/* Linha da conta principal */}
+                            <AnaliseVariacaoRow 
+                              analise={analise} 
+                              periodoInicio={periodoInicio} 
+                              periodoFim={periodoFim}
+                            />
+                            
+                            {/* Linhas das subcontas, se houver */}
+                            {analise.subcontas && analise.subcontas.length > 0 && 
+                              analise.subcontas.map((subconta, subIdx) => (
+                                <AnaliseVariacaoRow 
+                                  key={`subconta-${index}-${subIdx}`} 
+                                  analise={subconta}
+                                  periodoInicio={periodoInicio} 
+                                  periodoFim={periodoFim}
+                                />
+                              ))
+                            }
+                            
+                            {/* Separador visual entre grupos de contas */}
+                            {index < dadosAnalise.length - 1 && (
+                              <TableRow>
+                                <TableCell colSpan={6} className="p-0">
+                                  <Separator className="my-1" />
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </>
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                          Nenhum dado disponível para análise
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-            </div>
+            </>
           )}
         </CardContent>
       </Card>
