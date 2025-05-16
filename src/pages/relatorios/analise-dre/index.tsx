@@ -6,17 +6,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
-import { AlertCircle, ArrowDown, ArrowUp, ChevronDown, MinusCircle } from "lucide-react";
+import { AlertCircle, ArrowDown, ArrowUp, ChevronDown, MinusCircle, Info } from "lucide-react";
 import { useCompany } from "@/contexts/company-context";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { AnaliseVariacao, FiltroAnaliseDre } from "@/types/financeiro";
+import { AnaliseVariacao, DetalhesMensaisConta, FiltroAnaliseDre, ValorMensal } from "@/types/financeiro";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import "../../../styles/collapsible.css";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { VariationDisplay } from "@/components/vendas/VariationDisplay";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger 
+} from "@/components/ui/dialog";
 
 // Array de meses
 const meses = [
@@ -76,6 +85,7 @@ export default function AnaliseDrePage() {
   const [contasExpandidas, setContasExpandidas] = useState<Record<string, boolean>>({});
   const [tabAtiva, setTabAtiva] = useState<string>("todos");
   const [mostrarTodasContas, setMostrarTodasContas] = useState<boolean>(false);
+  const [contaSelecionadaDetalhes, setContaSelecionadaDetalhes] = useState<DetalhesMensaisConta | null>(null);
 
   // Query para buscar dados do DRE para análise
   const { data: dadosAnalise = [], isLoading } = useQuery({
@@ -173,6 +183,18 @@ export default function AnaliseDrePage() {
         // Processar dados de comparação
         const dadosComparacao = processarMovimentacoesDRE(movComp || []);
         
+        // Para média dos últimos 12 meses, buscar também os dados mensais
+        let dadosMensais = [];
+        if (filtro.tipo_comparacao === "media_12_meses") {
+          dadosMensais = await buscarDadosMensais(
+            anoAtual - 1, 
+            mesAtual, 
+            anoAtual, 
+            mesAtual - 1,
+            currentCompany.id
+          );
+        }
+        
         // Gerar análise comparativa
         return gerarAnaliseComparativa(
           dadosAtuais, 
@@ -181,7 +203,8 @@ export default function AnaliseDrePage() {
           filtro.percentual_minimo, 
           dataAtualInicio, 
           dataCompInicio, 
-          dataCompFim
+          dataCompFim,
+          dadosMensais
         );
       } catch (error) {
         console.error('Erro ao buscar dados para análise:', error);
@@ -190,6 +213,245 @@ export default function AnaliseDrePage() {
       }
     }
   });
+
+  // Função para buscar dados mensais para visualização detalhada
+  async function buscarDadosMensais(anoInicio: number, mesInicio: number, anoFim: number, mesFim: number, empresaId: string) {
+    const dadosMensais = [];
+    const dataInicio = new Date(anoInicio, mesInicio - 1, 1);
+    const dataFim = new Date(anoFim, mesFim, 0);
+    
+    const dataInicioStr = format(dataInicio, 'yyyy-MM-dd');
+    const dataFimStr = format(dataFim, 'yyyy-MM-dd');
+    
+    // Buscar todas as movimentações do período de 12 meses
+    const { data: movimentacoes, error } = await supabase
+      .from('fluxo_caixa')
+      .select(`
+        *,
+        movimentacoes (
+          categoria_id,
+          tipo_operacao,
+          considerar_dre
+        ),
+        plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
+      `)
+      .eq('empresa_id', empresaId)
+      .gte('data_movimentacao', dataInicioStr)
+      .lte('data_movimentacao', dataFimStr);
+      
+    if (error) {
+      console.error('Erro ao buscar dados mensais:', error);
+      return [];
+    }
+    
+    // Agrupar por conta e mês
+    const contas: Record<string, Record<string, number>> = {};
+    
+    movimentacoes?.forEach(mov => {
+      const considerarDre = mov.movimentacoes?.considerar_dre !== false;
+      if (!considerarDre) return;
+      
+      const planoContas = mov.plano_contas?.plano_contas;
+      if (!planoContas) return;
+      
+      const contaId = planoContas.id;
+      const contaNome = planoContas.descricao;
+      const valor = Number(mov.valor);
+      
+      // Extrair ano e mês da data
+      const dataStr = mov.data_movimentacao;
+      const ano = parseInt(dataStr.substring(0, 4));
+      const mes = parseInt(dataStr.substring(5, 7));
+      const chave = `${ano}-${mes.toString().padStart(2, '0')}`;
+      
+      // Inicializar conta se não existir
+      if (!contas[contaNome]) {
+        contas[contaNome] = { contaId };
+      }
+      
+      // Adicionar valor ao mês
+      if (!contas[contaNome][chave]) {
+        contas[contaNome][chave] = 0;
+      }
+      
+      contas[contaNome][chave] += valor;
+    });
+    
+    // Converter para o formato de detalhes mensais
+    Object.entries(contas).forEach(([nomeConta, dados]) => {
+      const valoresMensais: ValorMensal[] = [];
+      const contaId = dados.contaId as string;
+      let somaTotal = 0;
+      let contMeses = 0;
+      
+      // Inicializar valores para todos os 12 meses
+      for (let m = 0; m < 12; m++) {
+        // Calcular ano e mês corretos
+        let anoMes = anoInicio;
+        let mesMes = mesInicio + m;
+        
+        // Ajustar para virada de ano
+        if (mesMes > 12) {
+          mesMes -= 12;
+          anoMes += 1;
+        }
+        
+        const chave = `${anoMes}-${mesMes.toString().padStart(2, '0')}`;
+        const valor = dados[chave] || 0;
+        
+        // Adicionar à lista de valores mensais
+        valoresMensais.push({
+          mes: mesMes,
+          ano: anoMes,
+          mes_nome: meses.find(m => parseInt(m.value) === mesMes)?.label || "",
+          valor: valor
+        });
+        
+        // Somar para média
+        somaTotal += valor;
+        contMeses++;
+      }
+      
+      // Calcular média
+      const media = contMeses > 0 ? somaTotal / contMeses : 0;
+      
+      // Adicionar aos detalhes mensais
+      dadosMensais.push({
+        nome_conta: nomeConta,
+        contaId,
+        valores_mensais: valoresMensais,
+        media
+      });
+    });
+    
+    return dadosMensais;
+  }
+
+  // Função para obter os detalhes mensais de uma conta específica
+  const obterDetalhesMensaisConta = (nomeConta: string) => {
+    // Verificar se estamos usando o modo de média dos últimos 12 meses
+    if (filtro.tipo_comparacao !== "media_12_meses") {
+      toast.warning("Os detalhes mensais só estão disponíveis no modo de comparação com a média dos 12 meses");
+      return;
+    }
+    
+    // Buscar os detalhes da conta
+    buscarDadosConta(nomeConta)
+      .then((detalhes) => {
+        if (detalhes) {
+          setContaSelecionadaDetalhes(detalhes);
+        } else {
+          toast.error("Não foi possível encontrar os dados mensais da conta");
+        }
+      })
+      .catch((error) => {
+        console.error("Erro ao buscar detalhes da conta:", error);
+        toast.error("Erro ao buscar detalhes mensais da conta");
+      });
+  };
+  
+  // Função para buscar dados de uma conta específica
+  const buscarDadosConta = async (nomeConta: string): Promise<DetalhesMensaisConta | null> => {
+    if (!currentCompany?.id) return null;
+
+    try {
+      // Determinar o período para busca (últimos 12 meses)
+      const mesAtual = filtro.mes;
+      const anoAtual = filtro.ano;
+      
+      const dataCompInicio = new Date(anoAtual - 1, mesAtual, 1);
+      const dataCompFim = new Date(anoAtual, mesAtual - 1, 0);
+      
+      const dataCompInicioStr = format(dataCompInicio, 'yyyy-MM-dd');
+      const dataCompFimStr = format(dataCompFim, 'yyyy-MM-dd');
+      
+      // Buscar todas as movimentações da conta específica
+      const { data: movimentacoes, error } = await supabase
+        .from('fluxo_caixa')
+        .select(`
+          *,
+          movimentacoes (
+            categoria_id,
+            tipo_operacao,
+            considerar_dre
+          ),
+          plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
+        `)
+        .eq('empresa_id', currentCompany.id)
+        .gte('data_movimentacao', dataCompInicioStr)
+        .lte('data_movimentacao', dataCompFimStr);
+        
+      if (error) throw error;
+      
+      // Filtrar apenas movimentações da conta especificada
+      const movConta = movimentacoes?.filter(mov => {
+        const planoContas = mov.plano_contas?.plano_contas;
+        return planoContas?.descricao === nomeConta;
+      }) || [];
+      
+      // Agrupar por mês
+      const valoresPorMes: Record<string, number> = {};
+      
+      movConta.forEach(mov => {
+        const dataStr = mov.data_movimentacao;
+        const ano = parseInt(dataStr.substring(0, 4));
+        const mes = parseInt(dataStr.substring(5, 7));
+        const chave = `${ano}-${mes}`;
+        
+        if (!valoresPorMes[chave]) {
+          valoresPorMes[chave] = 0;
+        }
+        
+        valoresPorMes[chave] += Number(mov.valor);
+      });
+      
+      // Converter para o formato de detalhes mensais
+      const valoresMensais: ValorMensal[] = [];
+      let somaTotal = 0;
+      let contMeses = 0;
+      
+      // Inicializar valores para todos os 12 meses
+      for (let m = 0; m < 12; m++) {
+        // Calcular ano e mês corretos
+        let anoMes = anoAtual - 1;
+        let mesMes = mesAtual + m;
+        
+        // Ajustar para virada de ano
+        if (mesMes > 12) {
+          mesMes -= 12;
+          anoMes += 1;
+        }
+        
+        const chave = `${anoMes}-${mesMes}`;
+        const valor = valoresPorMes[chave] || 0;
+        
+        // Adicionar à lista de valores mensais
+        valoresMensais.push({
+          mes: mesMes,
+          ano: anoMes,
+          mes_nome: meses.find(m => parseInt(m.value) === mesMes)?.label || "",
+          valor: valor
+        });
+        
+        // Somar para média
+        somaTotal += valor;
+        contMeses++;
+      }
+      
+      // Calcular média
+      const media = contMeses > 0 ? somaTotal / contMeses : 0;
+      
+      return {
+        nome_conta: nomeConta,
+        valores_mensais: valoresMensais,
+        media
+      };
+      
+    } catch (error) {
+      console.error('Erro ao buscar dados da conta:', error);
+      return null;
+    }
+  };
 
   // Função para processar movimentações e calcular DRE
   function processarMovimentacoesDRE(movimentacoes: any[]) {
@@ -423,7 +685,7 @@ export default function AnaliseDrePage() {
     ];
   }
 
-  // Função para gerar análise comparativa - MELHORADA
+  // Função para gerar análise comparativa
   function gerarAnaliseComparativa(
     dadosAtuais: GrupoMovimentacao[],
     dadosComparacao: GrupoMovimentacao[],
@@ -431,7 +693,8 @@ export default function AnaliseDrePage() {
     percentualMinimo: number,
     dataAtual: Date,
     dataCompInicio: Date, 
-    dataCompFim: Date
+    dataCompFim: Date,
+    dadosMensais: any[] = []
   ): AnaliseVariacao[] {
     const analise: AnaliseVariacao[] = [];
     const subcontasVariacao: AnaliseVariacao[] = [];
@@ -838,6 +1101,7 @@ export default function AnaliseDrePage() {
                             <TableHead className="text-right">Variação</TableHead>
                             <TableHead className="text-right w-[10%]">%</TableHead>
                             <TableHead className="text-right">Avaliação</TableHead>
+                            {filtro.tipo_comparacao === "media_12_meses" && <TableHead className="text-center">Detalhes Mensais</TableHead>}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -875,6 +1139,21 @@ export default function AnaliseDrePage() {
                                       <span className={cor}>{conta.avaliacao.charAt(0).toUpperCase() + conta.avaliacao.slice(1)}</span>
                                     </div>
                                   </TableCell>
+                                  {filtro.tipo_comparacao === "media_12_meses" && (
+                                    <TableCell className="text-center">
+                                      <Button 
+                                        variant="ghost" 
+                                        className="p-2 h-auto" 
+                                        onClick={(e) => { 
+                                          e.stopPropagation();
+                                          // Usar o nome da conta principal para mostrar detalhes mensais não é necessário
+                                        }}
+                                        disabled={true}
+                                      >
+                                        <Info className="h-4 w-4" />
+                                      </Button>
+                                    </TableCell>
+                                  )}
                                 </TableRow>
                                 
                                 {/* Linhas das subcontas, quando expandidas */}
@@ -896,6 +1175,93 @@ export default function AnaliseDrePage() {
                                           <span className={subCor}>{subconta.avaliacao.charAt(0).toUpperCase() + subconta.avaliacao.slice(1)}</span>
                                         </div>
                                       </TableCell>
+                                      {filtro.tipo_comparacao === "media_12_meses" && (
+                                        <TableCell className="text-center">
+                                          <Dialog>
+                                            <DialogTrigger asChild>
+                                              <Button 
+                                                variant="ghost" 
+                                                className="p-2 h-auto" 
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  obterDetalhesMensaisConta(subconta.nome);
+                                                }}
+                                              >
+                                                <Info className="h-4 w-4" />
+                                              </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="max-w-4xl">
+                                              <DialogHeader>
+                                                <DialogTitle>
+                                                  Valores Mensais - {subconta.nome}
+                                                </DialogTitle>
+                                                <DialogDescription>
+                                                  Detalhamento mensal dos valores da conta para o período de 12 meses
+                                                </DialogDescription>
+                                              </DialogHeader>
+                                              
+                                              {contaSelecionadaDetalhes?.nome_conta === subconta.nome ? (
+                                                <div className="space-y-4">
+                                                  <Card className="overflow-hidden">
+                                                    <CardContent className="p-0">
+                                                      <Table>
+                                                        <TableHeader>
+                                                          <TableRow>
+                                                            <TableHead>Mês/Ano</TableHead>
+                                                            <TableHead className="text-right">Valor</TableHead>
+                                                          </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                          {contaSelecionadaDetalhes.valores_mensais.map((valor, idx) => (
+                                                            <TableRow key={idx}>
+                                                              <TableCell>
+                                                                {valor.mes_nome}/{valor.ano}
+                                                              </TableCell>
+                                                              <TableCell className="text-right">
+                                                                {formatCurrency(valor.valor)}
+                                                              </TableCell>
+                                                            </TableRow>
+                                                          ))}
+                                                          <TableRow className="bg-muted/50">
+                                                            <TableCell className="font-medium">Média</TableCell>
+                                                            <TableCell className="text-right font-medium">
+                                                              {formatCurrency(contaSelecionadaDetalhes.media)}
+                                                            </TableCell>
+                                                          </TableRow>
+                                                        </TableBody>
+                                                      </Table>
+                                                    </CardContent>
+                                                  </Card>
+                                                  
+                                                  <Alert>
+                                                    <AlertTitle className="flex items-center gap-2">
+                                                      <Info className="h-4 w-4" />
+                                                      Período de análise
+                                                    </AlertTitle>
+                                                    <AlertDescription>
+                                                      Os valores apresentados correspondem aos 12 meses anteriores a {filtro.mes}/{filtro.ano}, 
+                                                      desde {meses.find(m => m.value === filtro.mes.toString().padStart(2, '0'))?.label}/{filtro.ano - 1} até {meses.find(m => {
+                                                        const mesFim = filtro.mes - 1 === 0 ? 12 : filtro.mes - 1;
+                                                        return m.value === mesFim.toString().padStart(2, '0');
+                                                      })?.label}/{filtro.mes - 1 === 0 ? filtro.ano - 1 : filtro.ano}.
+                                                    </AlertDescription>
+                                                  </Alert>
+                                                </div>
+                                              ) : (
+                                                <div className="flex justify-center items-center py-10">
+                                                  <span className="animate-pulse">Carregando dados mensais...</span>
+                                                </div>
+                                              )}
+                                              
+                                              <DialogFooter>
+                                                <Button variant="outline" onClick={() => setContaSelecionadaDetalhes(null)}>
+                                                  Fechar
+                                                </Button>
+                                              </DialogFooter>
+                                            </DialogContent>
+                                          </Dialog>
+                                        </TableCell>
+                                      )}
                                     </TableRow>
                                   );
                                 })}
@@ -921,6 +1287,7 @@ export default function AnaliseDrePage() {
                                   <TableHead className="text-right">Variação</TableHead>
                                   <TableHead className="text-right w-[10%]">%</TableHead>
                                   <TableHead className="text-right">Avaliação</TableHead>
+                                  {filtro.tipo_comparacao === "media_12_meses" && <TableHead className="text-center">Detalhes Mensais</TableHead>}
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -942,6 +1309,93 @@ export default function AnaliseDrePage() {
                                           <span className={subCor}>{subconta.avaliacao.charAt(0).toUpperCase() + subconta.avaliacao.slice(1)}</span>
                                         </div>
                                       </TableCell>
+                                      {filtro.tipo_comparacao === "media_12_meses" && (
+                                        <TableCell className="text-center">
+                                          <Dialog>
+                                            <DialogTrigger asChild>
+                                              <Button 
+                                                variant="ghost" 
+                                                className="p-2 h-auto" 
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  obterDetalhesMensaisConta(subconta.nome);
+                                                }}
+                                              >
+                                                <Info className="h-4 w-4" />
+                                              </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="max-w-4xl">
+                                              <DialogHeader>
+                                                <DialogTitle>
+                                                  Valores Mensais - {subconta.nome}
+                                                </DialogTitle>
+                                                <DialogDescription>
+                                                  Detalhamento mensal dos valores da conta para o período de 12 meses
+                                                </DialogDescription>
+                                              </DialogHeader>
+                                              
+                                              {contaSelecionadaDetalhes?.nome_conta === subconta.nome ? (
+                                                <div className="space-y-4">
+                                                  <Card className="overflow-hidden">
+                                                    <CardContent className="p-0">
+                                                      <Table>
+                                                        <TableHeader>
+                                                          <TableRow>
+                                                            <TableHead>Mês/Ano</TableHead>
+                                                            <TableHead className="text-right">Valor</TableHead>
+                                                          </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                          {contaSelecionadaDetalhes.valores_mensais.map((valor, idx) => (
+                                                            <TableRow key={idx}>
+                                                              <TableCell>
+                                                                {valor.mes_nome}/{valor.ano}
+                                                              </TableCell>
+                                                              <TableCell className="text-right">
+                                                                {formatCurrency(valor.valor)}
+                                                              </TableCell>
+                                                            </TableRow>
+                                                          ))}
+                                                          <TableRow className="bg-muted/50">
+                                                            <TableCell className="font-medium">Média</TableCell>
+                                                            <TableCell className="text-right font-medium">
+                                                              {formatCurrency(contaSelecionadaDetalhes.media)}
+                                                            </TableCell>
+                                                          </TableRow>
+                                                        </TableBody>
+                                                      </Table>
+                                                    </CardContent>
+                                                  </Card>
+                                                  
+                                                  <Alert>
+                                                    <AlertTitle className="flex items-center gap-2">
+                                                      <Info className="h-4 w-4" />
+                                                      Período de análise
+                                                    </AlertTitle>
+                                                    <AlertDescription>
+                                                      Os valores apresentados correspondem aos 12 meses anteriores a {filtro.mes}/{filtro.ano}, 
+                                                      desde {meses.find(m => m.value === filtro.mes.toString().padStart(2, '0'))?.label}/{filtro.ano - 1} até {meses.find(m => {
+                                                        const mesFim = filtro.mes - 1 === 0 ? 12 : filtro.mes - 1;
+                                                        return m.value === mesFim.toString().padStart(2, '0');
+                                                      })?.label}/{filtro.mes - 1 === 0 ? filtro.ano - 1 : filtro.ano}.
+                                                    </AlertDescription>
+                                                  </Alert>
+                                                </div>
+                                              ) : (
+                                                <div className="flex justify-center items-center py-10">
+                                                  <span className="animate-pulse">Carregando dados mensais...</span>
+                                                </div>
+                                              )}
+                                              
+                                              <DialogFooter>
+                                                <Button variant="outline" onClick={() => setContaSelecionadaDetalhes(null)}>
+                                                  Fechar
+                                                </Button>
+                                              </DialogFooter>
+                                            </DialogContent>
+                                          </Dialog>
+                                        </TableCell>
+                                      )}
                                     </TableRow>
                                   );
                                 })}

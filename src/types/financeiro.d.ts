@@ -1,3 +1,4 @@
+
 export interface DadosFinanceiros {
   total_a_receber: number;
   total_a_pagar: number;
@@ -64,4 +65,18 @@ export interface FiltroAnaliseDre {
   ano: number;
   mes: number; 
   percentual_minimo: number;
+}
+
+// Nova interface para detalhes mensais das contas
+export interface DetalhesMensaisConta {
+  nome_conta: string;
+  valores_mensais: ValorMensal[];
+  media: number;
+}
+
+export interface ValorMensal {
+  mes: number;
+  ano: number;
+  mes_nome: string;
+  valor: number;
 }
