@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,6 +16,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import "../../../styles/collapsible.css";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { VariationDisplay } from "@/components/vendas/VariationDisplay";
 
 // Array de meses
 const meses = [
@@ -422,7 +422,7 @@ export default function AnaliseDrePage() {
     ];
   }
 
-  // Função para gerar análise comparativa
+  // Função para gerar análise comparativa - CORRIGIDA
   function gerarAnaliseComparativa(
     dadosAtuais: GrupoMovimentacao[],
     dadosComparacao: GrupoMovimentacao[],
@@ -473,24 +473,31 @@ export default function AnaliseDrePage() {
         variacaoPercentual = 100; // 100% de aumento
       }
       
+      // Identificar se é uma conta de despesa ou dedução (contas negativas)
+      // CORREÇÃO: Usamos o tipo para identificar contas com valores negativos
+      const tiposDespesas = ['(-) Deduções', '(-) Custos', '(-) Despesas Operacionais', 
+                            '(-) Despesas Financeiras', '(-) IRPJ/CSLL', '(-) Distribuição de Lucros'];
+      const ehContaDespesa = tiposDespesas.includes(grupoAtual.tipo);
+      
       // Avaliação da variação
       let avaliacao: 'positiva' | 'negativa' | 'estavel' | 'atencao' = 'estavel';
       
       if (Math.abs(variacaoPercentual) < percentualMinimo) {
         avaliacao = 'estavel';
       } else {
-        // Conta do tipo receita (variação positiva é boa)
-        const tiposReceita = ['Receita Bruta', 'Receita Líquida', 'Lucro Bruto', 
-                             'Resultado Operacional', '(+) Receitas Financeiras',
-                             'Resultado Antes IR', 'Lucro Líquido do Exercício',
-                             'Resultado do Exercício'];
-        
-        if (tiposReceita.includes(grupoAtual.tipo)) {
+        // CORREÇÃO: Para despesas/deduções (com valores negativos):
+        // - Se a despesa aumentou (valor mais negativo), isso é NEGATIVO (variacaoPercentual negativa)
+        // - Se a despesa diminuiu (valor menos negativo), isso é POSITIVO (variacaoPercentual positiva)
+        if (ehContaDespesa) {
+          // Para despesas, a lógica é invertida:
+          // Se a despesa aumentou (valores mais negativos), isso é ruim
+          // Se a despesa diminuiu (valores menos negativos), isso é bom
           avaliacao = variacaoPercentual > 0 ? 'positiva' : 'negativa';
-        } 
-        // Conta do tipo despesa (variação negativa é boa)
-        else {
-          avaliacao = variacaoPercentual < 0 ? 'positiva' : 'negativa';
+        } else {
+          // Para receitas e resultados positivos:
+          // Se aumentou (variacaoPercentual > 0), isso é bom
+          // Se diminuiu (variacaoPercentual < 0), isso é ruim
+          avaliacao = variacaoPercentual > 0 ? 'positiva' : 'negativa';
         }
       }
       
@@ -523,19 +530,19 @@ export default function AnaliseDrePage() {
             variacaoSubcontaPercentual = 100;
           }
           
-          // Avaliação da variação da subconta
+          // Avaliação da variação da subconta - CORRIGIDA
           let avaliacaoSubconta: 'positiva' | 'negativa' | 'estavel' | 'atencao' = 'estavel';
           
           if (Math.abs(variacaoSubcontaPercentual) < percentualMinimo) {
             avaliacaoSubconta = 'estavel';
           } else {
-            // Para contas de receita, aumento é positivo
-            if (grupoAtual.tipo === 'Receita Bruta' || grupoAtual.tipo.includes('Receitas')) {
+            // CORREÇÃO: Aplicar a mesma lógica usada para o grupo principal
+            if (ehContaDespesa) {
+              // Para subcontas de despesas, a lógica é invertida
               avaliacaoSubconta = variacaoSubcontaPercentual > 0 ? 'positiva' : 'negativa';
-            } 
-            // Para deduções, custos e despesas, redução é positiva
-            else {
-              avaliacaoSubconta = variacaoSubcontaPercentual < 0 ? 'positiva' : 'negativa';
+            } else {
+              // Para subcontas de receitas
+              avaliacaoSubconta = variacaoSubcontaPercentual > 0 ? 'positiva' : 'negativa';
             }
             
             // Marcar como atenção se a variação for muito alta
