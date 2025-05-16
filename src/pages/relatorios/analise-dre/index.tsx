@@ -23,6 +23,7 @@ import { AnaliseVariacao, DetalhesMensaisConta, FiltroAnaliseDre, ValorMensal } 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 import { AnaliseVariacaoRow } from "@/components/contabil/AnaliseVariacaoRow";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Por padrão, o módulo date-fns já faz o uso do locale correto, mas podemos garantir que estamos usando pt-BR
 const localePtBR = ptBR;
@@ -40,6 +41,7 @@ export default function AnaliseDrePage() {
   const [periodoCompLabel, setPeriodoCompLabel] = useState<string>("");
   const [periodoInicio, setPeriodoInicio] = useState<string>("");
   const [periodoFim, setPeriodoFim] = useState<string>("");
+  const [showAll, setShowAll] = useState<boolean>(false);
 
   // Query para buscar dados do DRE para análise
   const { data: dadosAnalise = [], isLoading } = useQuery({
@@ -99,6 +101,12 @@ export default function AnaliseDrePage() {
       }
 
       try {
+        // Formatamos para YYYY-MM-DD para evitar problemas de fuso horário
+        const dataAtualInicioStr = format(dataAtualInicio, 'yyyy-MM-dd');
+        const dataAtualFimStr = format(dataAtualFim, 'yyyy-MM-dd');
+        const dataCompInicioStr = format(dataCompInicio, 'yyyy-MM-dd');
+        const dataCompFimStr = format(dataCompFim, 'yyyy-MM-dd');
+        
         // Buscamos as movimentações para o período ATUAL
         const { data: movsAtual, error: errorAtual } = await supabase
           .from('fluxo_caixa')
@@ -112,8 +120,8 @@ export default function AnaliseDrePage() {
             plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
           `)
           .eq('empresa_id', currentCompany.id)
-          .gte('data_movimentacao', format(dataAtualInicio, 'yyyy-MM-dd'))
-          .lte('data_movimentacao', format(dataAtualFim, 'yyyy-MM-dd'));
+          .gte('data_movimentacao', dataAtualInicioStr)
+          .lte('data_movimentacao', dataAtualFimStr);
 
         if (errorAtual) throw errorAtual;
 
@@ -130,8 +138,8 @@ export default function AnaliseDrePage() {
             plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
           `)
           .eq('empresa_id', currentCompany.id)
-          .gte('data_movimentacao', format(dataCompInicio, 'yyyy-MM-dd'))
-          .lte('data_movimentacao', format(dataCompFim, 'yyyy-MM-dd'));
+          .gte('data_movimentacao', dataCompInicioStr)
+          .lte('data_movimentacao', dataCompFimStr);
 
         if (errorComp) throw errorComp;
 
@@ -146,12 +154,13 @@ export default function AnaliseDrePage() {
         // Processa e compara os dados
         const analiseResult = analisarVariacao(movsAtual, movsComp, detalhes_mensais);
         
-        // Filtra para mostrar apenas as variações acima do percentual mínimo
-        if (filtro.percentual_minimo > 0) {
-          return filtrarPorPercentualMinimo(analiseResult, filtro.percentual_minimo);
+        // Se não quisermos filtrar por percentual mínimo, retornamos todos os dados
+        if (showAll || filtro.percentual_minimo <= 0) {
+          return analiseResult;
         }
         
-        return analiseResult;
+        // Filtra para mostrar apenas as variações acima do percentual mínimo
+        return filtrarPorPercentualMinimo(analiseResult, filtro.percentual_minimo);
       } catch (error) {
         console.error('Erro ao buscar dados para análise:', error);
         toast.error('Erro ao carregar dados para análise');
@@ -798,6 +807,18 @@ export default function AnaliseDrePage() {
                 value={filtro.percentual_minimo}
                 onChange={(e) => setFiltro({ ...filtro, percentual_minimo: parseInt(e.target.value) || 0 })}
               />
+              <div className="mt-2 flex items-center">
+                <input
+                  type="checkbox"
+                  id="showAll"
+                  checked={showAll}
+                  onChange={(e) => setShowAll(e.target.checked)}
+                  className="mr-2"
+                />
+                <Label htmlFor="showAll" className="text-sm cursor-pointer">
+                  Mostrar todas as contas
+                </Label>
+              </div>
             </div>
           </div>
           
@@ -820,64 +841,150 @@ export default function AnaliseDrePage() {
                 </Alert>
               </div>
               
-              {/* Tabela de análise de variação */}
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Conta</TableHead>
-                      <TableHead className="text-right">Valor Atual</TableHead>
-                      <TableHead className="text-right">Valor Anterior</TableHead>
-                      <TableHead className="text-right">Variação</TableHead>
-                      <TableHead className="text-right">%</TableHead>
-                      <TableHead className="text-center">Detalhes Mensais</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dadosAnalise && dadosAnalise.length > 0 ? (
-                      <>
-                        {dadosAnalise.map((analise: AnaliseVariacao, index) => (
-                          <React.Fragment key={`analise-${index}`}>
-                            {/* Linha da conta principal */}
-                            <AnaliseVariacaoRow 
-                              analise={analise} 
-                              periodoInicio={periodoInicio} 
-                              periodoFim={periodoFim}
-                            />
-                            
-                            {/* Linhas das subcontas, se houver */}
-                            {analise.subcontas && analise.subcontas.length > 0 && 
-                              analise.subcontas.map((subconta, subIdx) => (
+              <Tabs defaultValue="analise">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="analise">Análise de Variação</TabsTrigger>
+                  <TabsTrigger value="alertas">Alertas</TabsTrigger>
+                </TabsList>
+                
+                {/* Análise de Variação */}
+                <TabsContent value="analise">
+                  {/* Tabela de análise de variação */}
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Conta</TableHead>
+                          <TableHead className="text-right">Valor Atual</TableHead>
+                          <TableHead className="text-right">Valor Anterior</TableHead>
+                          <TableHead className="text-right">Variação</TableHead>
+                          <TableHead className="text-right">%</TableHead>
+                          <TableHead className="text-center">Detalhes Mensais</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {dadosAnalise && dadosAnalise.length > 0 ? (
+                          <>
+                            {dadosAnalise.map((analise: AnaliseVariacao, index) => (
+                              <React.Fragment key={`analise-${index}`}>
+                                {/* Linha da conta principal */}
                                 <AnaliseVariacaoRow 
-                                  key={`subconta-${index}-${subIdx}`} 
-                                  analise={subconta}
+                                  analise={analise} 
                                   periodoInicio={periodoInicio} 
                                   periodoFim={periodoFim}
                                 />
-                              ))
-                            }
-                            
-                            {/* Separador visual entre grupos de contas */}
-                            {index < dadosAnalise.length - 1 && (
-                              <TableRow>
-                                <TableCell colSpan={6} className="p-0">
-                                  <Separator className="my-1" />
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </React.Fragment>
-                        ))}
-                      </>
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
-                          Nenhum dado disponível para análise
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                                
+                                {/* Linhas das subcontas, se houver */}
+                                {analise.subcontas && analise.subcontas.length > 0 && 
+                                  analise.subcontas.map((subconta, subIdx) => (
+                                    <AnaliseVariacaoRow 
+                                      key={`subconta-${index}-${subIdx}`} 
+                                      analise={subconta}
+                                      periodoInicio={periodoInicio} 
+                                      periodoFim={periodoFim}
+                                    />
+                                  ))
+                                }
+                                
+                                {/* Separador visual entre grupos de contas */}
+                                {index < dadosAnalise.length - 1 && (
+                                  <TableRow>
+                                    <TableCell colSpan={6} className="p-0">
+                                      <Separator className="my-1" />
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </>
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={6} className="h-24 text-center">
+                              Nenhum dado disponível para análise
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+                
+                {/* Alertas */}
+                <TabsContent value="alertas">
+                  <div className="space-y-6">
+                    {/* Alertas para variações significativas */}
+                    <Card className="border-red-200">
+                      <CardHeader className="bg-red-50/50 py-3">
+                        <CardTitle className="text-base">Variações Negativas Significativas</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <ul className="space-y-2">
+                          {dadosAnalise && dadosAnalise.length > 0 ? (
+                            <>
+                              {dadosAnalise.flatMap(analise => [
+                                ...(analise.avaliacao === 'negativa' && analise.nivel === 'principal' && Math.abs(analise.variacao_percentual) >= 15 ? [{
+                                  nome: analise.nome,
+                                  variacao: analise.variacao_percentual,
+                                  tipo: 'principal'
+                                }] : []),
+                                ...(analise.subcontas?.filter(sub => sub.avaliacao === 'negativa' && Math.abs(sub.variacao_percentual) >= 15) || []).map(sub => ({
+                                  nome: `${sub.nome} (${analise.nome})`,
+                                  variacao: sub.variacao_percentual,
+                                  tipo: 'subconta'
+                                }))
+                              ]).map((alerta, idx) => (
+                                <li key={idx} className="flex items-center justify-between">
+                                  <div>{alerta.nome}</div>
+                                  <div className="font-medium text-red-600">{alerta.variacao.toFixed(2)}%</div>
+                                </li>
+                              ))}
+                            </>
+                          ) : (
+                            <li className="text-center text-muted-foreground py-4">
+                              Nenhum alerta negativo significativo
+                            </li>
+                          )}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                      
+                    <Card className="border-green-200">
+                      <CardHeader className="bg-green-50/50 py-3">
+                        <CardTitle className="text-base">Variações Positivas Significativas</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <ul className="space-y-2">
+                          {dadosAnalise && dadosAnalise.length > 0 ? (
+                            <>
+                              {dadosAnalise.flatMap(analise => [
+                                ...(analise.avaliacao === 'positiva' && analise.nivel === 'principal' && Math.abs(analise.variacao_percentual) >= 15 ? [{
+                                  nome: analise.nome,
+                                  variacao: analise.variacao_percentual,
+                                  tipo: 'principal'
+                                }] : []),
+                                ...(analise.subcontas?.filter(sub => sub.avaliacao === 'positiva' && Math.abs(sub.variacao_percentual) >= 15) || []).map(sub => ({
+                                  nome: `${sub.nome} (${analise.nome})`,
+                                  variacao: sub.variacao_percentual,
+                                  tipo: 'subconta'
+                                }))
+                              ]).map((alerta, idx) => (
+                                <li key={idx} className="flex items-center justify-between">
+                                  <div>{alerta.nome}</div>
+                                  <div className="font-medium text-green-600">+{alerta.variacao.toFixed(2)}%</div>
+                                </li>
+                              ))}
+                            </>
+                          ) : (
+                            <li className="text-center text-muted-foreground py-4">
+                              Nenhum alerta positivo significativo
+                            </li>
+                          )}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </>
           )}
         </CardContent>
