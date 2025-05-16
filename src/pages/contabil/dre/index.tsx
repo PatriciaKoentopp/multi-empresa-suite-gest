@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,13 @@ interface GrupoMovimentacao {
   contas?: ContaContabilAgrupamento[]; // Nova propriedade para agrupamento por contas
 }
 
+// Interface para resultado mensal com contas agrupadas
+interface ResultadoMensal {
+  mes: string;
+  dados: GrupoMovimentacao[];
+  contasPorTipo?: Record<string, ContaContabilAgrupamento[]>;
+}
+
 // Lista de contas padrão do DRE para garantir consistência nas visualizações
 const contasDRE = [
   "Receita Bruta",
@@ -89,6 +97,7 @@ export default function DrePage() {
   const [mes, setMes] = useState("01");
   const [anoMensal, setAnoMensal] = useState(new Date().getFullYear().toString());
   const { currentCompany } = useCompany();
+  const [contaExpandida, setContaExpandida] = useState<string | null>(null);
 
   // Query para buscar dados do DRE
   const { data: dadosDRE = [], isLoading } = useQuery({
@@ -157,10 +166,28 @@ export default function DrePage() {
           }, {});
 
           // Processa movimentações para cada mês
-          dadosAgrupados = Object.entries(movimentacoesPorMes).map(([mesDado, movs]) => ({
-            mes: mesDado,
-            dados: processarMovimentacoes(movs as any[])
-          }));
+          const resultadosMensais: ResultadoMensal[] = [];
+
+          for (const [mesDado, movs] of Object.entries(movimentacoesPorMes)) {
+            const dados = processarMovimentacoes(movs as any[]);
+            
+            // Criar estrutura de contas por tipo para facilitar a visualização por subconta
+            const contasPorTipo: Record<string, ContaContabilAgrupamento[]> = {};
+            
+            dados.forEach((grupo: GrupoMovimentacao) => {
+              if (grupo.contas && grupo.contas.length > 0) {
+                contasPorTipo[grupo.tipo] = grupo.contas;
+              }
+            });
+            
+            resultadosMensais.push({
+              mes: mesDado,
+              dados,
+              contasPorTipo
+            });
+          }
+
+          return resultadosMensais.sort((a, b) => a.mes.localeCompare(b.mes));
 
         } else if (visualizacao === "comparar_anos") {
           // Busca dados para cada ano selecionado
@@ -495,6 +522,14 @@ export default function DrePage() {
     });
   }
 
+  function handleToggleContaExpansao(tipoConta: string) {
+    setContaExpandida(contaExpandida === tipoConta ? null : tipoConta);
+  }
+
+  function getNomeMes(numeroMes: string): string {
+    return meses.find(m => m.value === numeroMes)?.label || numeroMes;
+  }
+
   return (
     <div className="w-full">
       <Card className="w-full">
@@ -814,36 +849,110 @@ export default function DrePage() {
                 </Accordion>
               )}
 
-              {/* Mensal todos os meses em colunas */}
+              {/* Mensal todos os meses em colunas com expansão para contas */}
               {visualizacao === "mensal" && mes === "todos" && (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Conta</TableHead>
-                        {meses.map(m => (
-                          <TableHead key={m.value} className="text-center">{m.label}</TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {contasDRE.map(conta => (
-                        <TableRow key={conta}>
-                          <TableCell>{conta}</TableCell>
-                          {meses.map(m => {
-                            const dadosMes = (dadosDRE as any[]).find(x => x.mes === m.value);
-                            const linhaMes = dadosMes?.dados?.find((i: GrupoMovimentacao) => i.tipo === conta);
-                            return (
-                              <TableCell key={m.value} className="text-right">
-                                {formatCurrency(linhaMes?.valor || 0)}
-                              </TableCell>
-                            );
-                          })}
+                <>
+                  {/* Tabela principal de contas por mês */}
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Conta</TableHead>
+                          {meses.map(m => (
+                            <TableHead key={m.value} className="text-center">{m.label}</TableHead>
+                          ))}
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {contasDRE.map(conta => (
+                          <TableRow 
+                            key={conta} 
+                            className={conta === contaExpandida ? "bg-muted" : ""}
+                            onClick={() => {
+                              // Apenas expandir contas que podem ter subcontas
+                              const contemSubcontas = ["Receita Bruta", "(-) Deduções", "(-) Custos", "(-) Despesas Operacionais", 
+                                "(+) Receitas Financeiras", "(-) Despesas Financeiras", "(-) IRPJ/CSLL", "(-) Distribuição de Lucros"].includes(conta);
+                              if (contemSubcontas) {
+                                handleToggleContaExpansao(conta);
+                              }
+                            }}
+                          >
+                            <TableCell className="cursor-pointer">
+                              <div className="flex items-center">
+                                {["Receita Bruta", "(-) Deduções", "(-) Custos", "(-) Despesas Operacionais", 
+                                  "(+) Receitas Financeiras", "(-) Despesas Financeiras", "(-) IRPJ/CSLL", "(-) Distribuição de Lucros"].includes(conta) && (
+                                  <ChevronDown 
+                                    className={`h-4 w-4 mr-2 transition-transform duration-200 ${contaExpandida === conta ? 'rotate-180' : ''}`} 
+                                  />
+                                )}
+                                {conta}
+                              </div>
+                            </TableCell>
+                            
+                            {meses.map(m => {
+                              const dadosMes = (dadosDRE as ResultadoMensal[]).find(x => x.mes === m.value);
+                              const linhaMes = dadosMes?.dados?.find((i: GrupoMovimentacao) => i.tipo === conta);
+                              return (
+                                <TableCell key={m.value} className="text-right">
+                                  {formatCurrency(linhaMes?.valor || 0)}
+                                </TableCell>
+                              );
+                            })}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Expansão das contas selecionadas mostrando apenas as subcontas (sem movimentações) */}
+                  {contaExpandida && (
+                    <div className="mt-4 bg-muted/50 p-4 rounded-md">
+                      <h3 className="text-md font-semibold mb-3">
+                        Detalhamento das subcontas: {contaExpandida}
+                      </h3>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Subconta</TableHead>
+                              {meses.map(m => (
+                                <TableHead key={m.value} className="text-center">{m.label}</TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {Array.from(new Set((dadosDRE as ResultadoMensal[])
+                              .flatMap(resultadoMensal => {
+                                // Busca o grupo correto dentro dos dados do mês
+                                const grupo = resultadoMensal.dados?.find(
+                                  g => g.tipo === contaExpandida
+                                );
+                                // Retorna as contas desse grupo se existirem
+                                return grupo?.contas?.map(c => c.descricao) || [];
+                              })))
+                              .sort()
+                              .map(descricaoConta => (
+                                <TableRow key={descricaoConta}>
+                                  <TableCell>{descricaoConta}</TableCell>
+                                  {meses.map(m => {
+                                    const resultadoMensal = (dadosDRE as ResultadoMensal[]).find(x => x.mes === m.value);
+                                    const grupo = resultadoMensal?.dados?.find(g => g.tipo === contaExpandida);
+                                    const conta = grupo?.contas?.find(c => c.descricao === descricaoConta);
+                                    
+                                    return (
+                                      <TableCell key={m.value} className="text-right">
+                                        {formatCurrency(conta?.valor || 0)}
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
