@@ -98,6 +98,8 @@ export default function DrePage() {
   const { currentCompany } = useCompany();
   const [contaExpandida, setContaExpandida] = useState<string | null>(null);
   const [contasExpandidasTodosMeses, setContasExpandidasTodosMeses] = useState<Record<string, boolean>>({});
+  // Novo estado para controlar expansão de contas na comparação entre anos
+  const [contasExpandidasComparacao, setContasExpandidasComparacao] = useState<Record<string, boolean>>({});
 
   // Query para buscar dados do DRE
   const { data: dadosDRE = [], isLoading } = useQuery({
@@ -501,6 +503,19 @@ export default function DrePage() {
   const temContas = (grupo: GrupoMovimentacao) => 
     grupo.contas && grupo.contas.length > 0;
 
+  // Função para verificar se a conta tem subcontas na comparação entre anos
+  const temSubcontasNaComparacao = (conta: string) => {
+    if (!dadosDRE || visualizacao !== "comparar_anos") return false;
+    
+    const dadosComparativos = dadosDRE as Record<string, GrupoMovimentacao[]>;
+    
+    // Verifica se algum dos anos tem subcontas para esta conta
+    return anosComparar.some(ano => {
+      const grupo = dadosComparativos[ano]?.find(g => g.tipo === conta);
+      return grupo?.contas && grupo.contas.length > 0;
+    });
+  };
+
   function handleAnoCompararChange(anoAlterado: string) {
     let result: string[] = [];
     if (anosComparar.includes(anoAlterado)) {
@@ -527,6 +542,13 @@ export default function DrePage() {
 
   function toggleContaExpandidaTodosMeses(conta: string) {
     setContasExpandidasTodosMeses(prev => ({
+      ...prev,
+      [conta]: !prev[conta]
+    }));
+  }
+
+  function toggleContaExpandidaComparacao(conta: string) {
+    setContasExpandidasComparacao(prev => ({
       ...prev,
       [conta]: !prev[conta]
     }));
@@ -744,22 +766,77 @@ export default function DrePage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {contasDRE.map(conta => (
-                        <TableRow key={conta}>
-                          <TableCell>{conta}</TableCell>
-                          {anosComparar.map(anoComp => {
-                            // Dados do DRE são um objeto com anos como chaves
-                            const dadosAno = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoComp] || [];
-                            // Procurar a conta específica nos dados do ano
-                            const contaData = dadosAno.find(item => item.tipo === conta);
-                            return (
-                              <TableCell key={anoComp} className="text-right">
-                                {formatCurrency(contaData?.valor || 0)}
+                      {contasDRE.map(conta => {
+                        // Verifica se conta atual pode ter subcontas
+                        const contemSubcontas = temSubcontasNaComparacao(conta);
+                        
+                        // Verifica se a conta está expandida
+                        const estaExpandida = contasExpandidasComparacao[conta] || false;
+                        
+                        return (
+                          <React.Fragment key={conta}>
+                            {/* Linha da Conta Principal */}
+                            <TableRow 
+                              className={contemSubcontas && estaExpandida ? "bg-muted/50" : ""}
+                              onClick={() => contemSubcontas && toggleContaExpandidaComparacao(conta)}
+                            >
+                              <TableCell className={contemSubcontas ? "cursor-pointer" : ""}>
+                                <div className="flex items-center">
+                                  {contemSubcontas && (
+                                    <ChevronDown 
+                                      className={`h-4 w-4 mr-2 transition-transform duration-200 ${estaExpandida ? 'rotate-180' : ''} collapsible-icon`} 
+                                    />
+                                  )}
+                                  {conta}
+                                </div>
                               </TableCell>
-                            );
-                          })}
-                        </TableRow>
-                      ))}
+                              
+                              {anosComparar.map(anoComp => {
+                                // Dados do DRE são um objeto com anos como chaves
+                                const dadosAno = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoComp] || [];
+                                // Procurar a conta específica nos dados do ano
+                                const contaData = dadosAno.find(item => item.tipo === conta);
+                                return (
+                                  <TableCell key={anoComp} className="text-right">
+                                    {formatCurrency(contaData?.valor || 0)}
+                                  </TableCell>
+                                );
+                              })}
+                            </TableRow>
+                            
+                            {/* Linhas das Subcontas (quando expandidas) */}
+                            {contemSubcontas && estaExpandida && 
+                              // Montamos uma lista de todas as subcontas encontradas em todos os anos
+                              Array.from(
+                                new Set(
+                                  anosComparar.flatMap(anoComp => {
+                                    const dadosAno = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoComp] || [];
+                                    const grupo = dadosAno.find(g => g.tipo === conta);
+                                    return grupo?.contas?.map(c => c.descricao) || [];
+                                  })
+                                )
+                              ).sort().map(descricaoConta => (
+                                <TableRow key={`${conta}-${descricaoConta}`} className="bg-muted/20">
+                                  <TableCell className="pl-10 text-sm font-normal">
+                                    {descricaoConta}
+                                  </TableCell>
+                                  {anosComparar.map(anoComp => {
+                                    const dadosAno = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoComp] || [];
+                                    const grupo = dadosAno.find(g => g.tipo === conta);
+                                    const subconta = grupo?.contas?.find(c => c.descricao === descricaoConta);
+                                    
+                                    return (
+                                      <TableCell key={`${conta}-${descricaoConta}-${anoComp}`} className="text-right text-sm">
+                                        {formatCurrency(subconta?.valor || 0)}
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              ))
+                            }
+                          </React.Fragment>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
@@ -855,7 +932,7 @@ export default function DrePage() {
                 </Accordion>
               )}
 
-              {/* Mensal todos os meses em colunas com expansão para contas diretamente na tabela */}
+              {/* Mensal todos os meses em colunas com expansão para subcontas */}
               {visualizacao === "mensal" && mes === "todos" && (
                 <>
                   {/* Tabela principal de contas por mês com expansão para subcontas */}
