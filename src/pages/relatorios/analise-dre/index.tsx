@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -336,9 +335,12 @@ export default function AnaliseDrePage() {
       const tipoOperacao = item.tipo_operacao;
       
       // Extrair ano e mês da data sem manipulação de timezone
-      const dataStr = item.data_movimentacao;
-      const [anoMes] = dataStr.split('-', 2);
-      const [ano, mes] = anoMes.split('-').map(Number);
+      const dataMovimentacao = item.data_movimentacao;
+      if (!dataMovimentacao) return;
+      
+      // Usar diretamente ano e mês da string de data (formato YYYY-MM-DD)
+      const ano = parseInt(dataMovimentacao.substring(0, 4));
+      const mes = parseInt(dataMovimentacao.substring(5, 7));
       const chaveData = `${ano}-${mes}`;
       
       // Inicializar objetos se necessário
@@ -365,7 +367,8 @@ export default function AnaliseDrePage() {
       
       // Para garantir que todos os 12 meses estejam representados
       // Calcular início e fim do período
-      const dataPeriodo = new Date(filtros.ano, filtros.mes - 1, 1);
+      const dataPeriodo = new Date();
+      dataPeriodo.setFullYear(filtros.ano, filtros.mes - 1, 1);
       dataPeriodo.setMonth(dataPeriodo.getMonth() - 1); // Mês anterior
       
       for (let i = 0; i < 12; i++) {
