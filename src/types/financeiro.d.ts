@@ -58,7 +58,6 @@ export interface AnaliseVariacao {
   subcontas?: AnaliseVariacao[];
   avaliacao: 'positiva' | 'negativa' | 'estavel' | 'atencao';
   nivel: 'principal' | 'subconta';
-  detalhes_mensais?: DetalhesMensaisConta; // Adicionando detalhes mensais
 }
 
 export interface FiltroAnaliseDre {
