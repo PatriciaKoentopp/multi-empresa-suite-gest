@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -98,6 +97,7 @@ export default function DrePage() {
   const [anoMensal, setAnoMensal] = useState(new Date().getFullYear().toString());
   const { currentCompany } = useCompany();
   const [contaExpandida, setContaExpandida] = useState<string | null>(null);
+  const [contasExpandidasTodosMeses, setContasExpandidasTodosMeses] = useState<Record<string, boolean>>({});
 
   // Query para buscar dados do DRE
   const { data: dadosDRE = [], isLoading } = useQuery({
@@ -364,7 +364,6 @@ export default function DrePage() {
           contasAgrupamento[grupoDestino][contaId].push(detalhe);
         }
       } else {
-        // Lógica antiga para compatibilidade com dados antigos sem classificação
         // Se for recebimento e não tiver categoria ou plano de contas, considera como receita bruta
         if (tipoOperacao === 'receber' && (!mov.movimentacoes?.categoria_id || !planoContas)) {
           receitaBruta += valor;
@@ -524,6 +523,13 @@ export default function DrePage() {
 
   function handleToggleContaExpansao(tipoConta: string) {
     setContaExpandida(contaExpandida === tipoConta ? null : tipoConta);
+  }
+
+  function toggleContaExpandidaTodosMeses(conta: string) {
+    setContasExpandidasTodosMeses(prev => ({
+      ...prev,
+      [conta]: !prev[conta]
+    }));
   }
 
   function getNomeMes(numeroMes: string): string {
@@ -849,10 +855,10 @@ export default function DrePage() {
                 </Accordion>
               )}
 
-              {/* Mensal todos os meses em colunas com expansão para contas */}
+              {/* Mensal todos os meses em colunas com expansão para contas diretamente na tabela */}
               {visualizacao === "mensal" && mes === "todos" && (
                 <>
-                  {/* Tabela principal de contas por mês */}
+                  {/* Tabela principal de contas por mês com expansão para subcontas */}
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
@@ -864,94 +870,74 @@ export default function DrePage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {contasDRE.map(conta => (
-                          <TableRow 
-                            key={conta} 
-                            className={conta === contaExpandida ? "bg-muted" : ""}
-                            onClick={() => {
-                              // Apenas expandir contas que podem ter subcontas
-                              const contemSubcontas = ["Receita Bruta", "(-) Deduções", "(-) Custos", "(-) Despesas Operacionais", 
-                                "(+) Receitas Financeiras", "(-) Despesas Financeiras", "(-) IRPJ/CSLL", "(-) Distribuição de Lucros"].includes(conta);
-                              if (contemSubcontas) {
-                                handleToggleContaExpansao(conta);
-                              }
-                            }}
-                          >
-                            <TableCell className="cursor-pointer">
-                              <div className="flex items-center">
-                                {["Receita Bruta", "(-) Deduções", "(-) Custos", "(-) Despesas Operacionais", 
-                                  "(+) Receitas Financeiras", "(-) Despesas Financeiras", "(-) IRPJ/CSLL", "(-) Distribuição de Lucros"].includes(conta) && (
-                                  <ChevronDown 
-                                    className={`h-4 w-4 mr-2 transition-transform duration-200 ${contaExpandida === conta ? 'rotate-180' : ''}`} 
-                                  />
-                                )}
-                                {conta}
-                              </div>
-                            </TableCell>
-                            
-                            {meses.map(m => {
-                              const dadosMes = (dadosDRE as ResultadoMensal[]).find(x => x.mes === m.value);
-                              const linhaMes = dadosMes?.dados?.find((i: GrupoMovimentacao) => i.tipo === conta);
-                              return (
-                                <TableCell key={m.value} className="text-right">
-                                  {formatCurrency(linhaMes?.valor || 0)}
+                        {contasDRE.map(conta => {
+                          // Verifica se conta atual pode ter subcontas
+                          const contemSubcontas = ["Receita Bruta", "(-) Deduções", "(-) Custos", "(-) Despesas Operacionais", 
+                            "(+) Receitas Financeiras", "(-) Despesas Financeiras", "(-) IRPJ/CSLL", "(-) Distribuição de Lucros"].includes(conta);
+                          
+                          // Verifica se a conta está expandida
+                          const estaExpandida = contasExpandidasTodosMeses[conta] || false;
+                          
+                          return (
+                            <React.Fragment key={conta}>
+                              {/* Linha da Conta Principal */}
+                              <TableRow 
+                                className={contemSubcontas && estaExpandida ? "bg-muted/50" : ""}
+                                onClick={() => contemSubcontas && toggleContaExpandidaTodosMeses(conta)}
+                              >
+                                <TableCell className={contemSubcontas ? "cursor-pointer" : ""}>
+                                  <div className="flex items-center">
+                                    {contemSubcontas && (
+                                      <ChevronDown 
+                                        className={`h-4 w-4 mr-2 transition-transform duration-200 ${estaExpandida ? 'rotate-180' : ''} collapsible-icon`} 
+                                      />
+                                    )}
+                                    {conta}
+                                  </div>
                                 </TableCell>
-                              );
-                            })}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  {/* Expansão das contas selecionadas mostrando apenas as subcontas (sem movimentações) */}
-                  {contaExpandida && (
-                    <div className="mt-4 bg-muted/50 p-4 rounded-md">
-                      <h3 className="text-md font-semibold mb-3">
-                        Detalhamento das subcontas: {contaExpandida}
-                      </h3>
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Subconta</TableHead>
-                              {meses.map(m => (
-                                <TableHead key={m.value} className="text-center">{m.label}</TableHead>
-                              ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {Array.from(new Set((dadosDRE as ResultadoMensal[])
-                              .flatMap(resultadoMensal => {
-                                // Busca o grupo correto dentro dos dados do mês
-                                const grupo = resultadoMensal.dados?.find(
-                                  g => g.tipo === contaExpandida
-                                );
-                                // Retorna as contas desse grupo se existirem
-                                return grupo?.contas?.map(c => c.descricao) || [];
-                              })))
-                              .sort()
-                              .map(descricaoConta => (
-                                <TableRow key={descricaoConta}>
-                                  <TableCell>{descricaoConta}</TableCell>
+                                
+                                {meses.map(m => {
+                                  const dadosMes = (dadosDRE as ResultadoMensal[]).find(x => x.mes === m.value);
+                                  const linhaMes = dadosMes?.dados?.find((i: GrupoMovimentacao) => i.tipo === conta);
+                                  return (
+                                    <TableCell key={m.value} className="text-right">
+                                      {formatCurrency(linhaMes?.valor || 0)}
+                                    </TableCell>
+                                  );
+                                })}
+                              </TableRow>
+                              
+                              {/* Linhas das Subcontas */}
+                              {contemSubcontas && estaExpandida && Array.from(
+                                new Set((dadosDRE as ResultadoMensal[])
+                                  .flatMap(resultadoMensal => {
+                                    const grupo = resultadoMensal.dados?.find(g => g.tipo === conta);
+                                    return grupo?.contas?.map(c => c.descricao) || [];
+                                  }))
+                              ).sort().map(descricaoConta => (
+                                <TableRow key={`${conta}-${descricaoConta}`} className="bg-muted/20">
+                                  <TableCell className="pl-10 text-sm font-normal">
+                                    {descricaoConta}
+                                  </TableCell>
                                   {meses.map(m => {
                                     const resultadoMensal = (dadosDRE as ResultadoMensal[]).find(x => x.mes === m.value);
-                                    const grupo = resultadoMensal?.dados?.find(g => g.tipo === contaExpandida);
-                                    const conta = grupo?.contas?.find(c => c.descricao === descricaoConta);
+                                    const grupo = resultadoMensal?.dados?.find(g => g.tipo === conta);
+                                    const subconta = grupo?.contas?.find(c => c.descricao === descricaoConta);
                                     
                                     return (
-                                      <TableCell key={m.value} className="text-right">
-                                        {formatCurrency(conta?.valor || 0)}
+                                      <TableCell key={`${conta}-${descricaoConta}-${m.value}`} className="text-right text-sm">
+                                        {formatCurrency(subconta?.valor || 0)}
                                       </TableCell>
                                     );
                                   })}
                                 </TableRow>
                               ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                  )}
+                            </React.Fragment>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </>
               )}
             </div>
