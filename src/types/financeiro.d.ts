@@ -1,4 +1,3 @@
-
 export interface DadosFinanceiros {
   total_a_receber: number;
   total_a_pagar: number;
@@ -54,6 +53,7 @@ export interface AnaliseVariacao {
   variacao_valor: number;
   variacao_percentual: number;
   tipo_conta: string;
+  grupo_pai?: string;
   subcontas?: AnaliseVariacao[];
   avaliacao: 'positiva' | 'negativa' | 'estavel' | 'atencao';
   nivel: 'principal' | 'subconta';

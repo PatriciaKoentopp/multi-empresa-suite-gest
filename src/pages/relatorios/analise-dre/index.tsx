@@ -75,6 +75,7 @@ export default function AnaliseDrePage() {
   });
   const [contasExpandidas, setContasExpandidas] = useState<Record<string, boolean>>({});
   const [tabAtiva, setTabAtiva] = useState<string>("todos");
+  const [mostrarTodasContas, setMostrarTodasContas] = useState<boolean>(false);
 
   // Query para buscar dados do DRE para análise
   const { data: dadosAnalise = [], isLoading } = useQuery({
@@ -177,9 +178,9 @@ export default function AnaliseDrePage() {
           dadosAtuais, 
           dadosComparacao, 
           filtro.tipo_comparacao, 
-          filtro.percentual_minimo,
-          dataAtualInicio,
-          dataCompInicio,
+          filtro.percentual_minimo, 
+          dataAtualInicio, 
+          dataCompInicio, 
           dataCompFim
         );
       } catch (error) {
@@ -422,7 +423,7 @@ export default function AnaliseDrePage() {
     ];
   }
 
-  // Função para gerar análise comparativa - CORRIGIDA
+  // Função para gerar análise comparativa - MELHORADA
   function gerarAnaliseComparativa(
     dadosAtuais: GrupoMovimentacao[],
     dadosComparacao: GrupoMovimentacao[],
@@ -433,6 +434,7 @@ export default function AnaliseDrePage() {
     dataCompFim: Date
   ): AnaliseVariacao[] {
     const analise: AnaliseVariacao[] = [];
+    const subcontasVariacao: AnaliseVariacao[] = [];
     
     // Calcular número de meses para média
     let numMesesAtual = 1; // Por padrão é 1 mês
@@ -450,10 +452,15 @@ export default function AnaliseDrePage() {
       // Encontrar grupo correspondente nos dados de comparação
       const grupoComp = dadosComparacao.find(g => g.tipo === grupoAtual.tipo);
       
-      // Se não tiver contas, é um total calculado (não analisamos as subcontas de resultados calculados)
+      // Se não tiver contas, é um total calculado
       if (!grupoAtual.contas || grupoAtual.contas.length === 0) {
         return; // Pular totais calculados na análise por subcontas
       }
+      
+      // Identificar se é uma conta de despesa ou dedução (contas negativas)
+      const tiposDespesas = ['(-) Deduções', '(-) Custos', '(-) Despesas Operacionais', 
+                            '(-) Despesas Financeiras', '(-) IRPJ/CSLL', '(-) Distribuição de Lucros'];
+      const ehContaDespesa = tiposDespesas.includes(grupoAtual.tipo);
       
       // Calcular valor médio mensal
       const valorAtualMedio = grupoAtual.valor / numMesesAtual;
@@ -473,30 +480,16 @@ export default function AnaliseDrePage() {
         variacaoPercentual = 100; // 100% de aumento
       }
       
-      // Identificar se é uma conta de despesa ou dedução (contas negativas)
-      // CORREÇÃO: Usamos o tipo para identificar contas com valores negativos
-      const tiposDespesas = ['(-) Deduções', '(-) Custos', '(-) Despesas Operacionais', 
-                            '(-) Despesas Financeiras', '(-) IRPJ/CSLL', '(-) Distribuição de Lucros'];
-      const ehContaDespesa = tiposDespesas.includes(grupoAtual.tipo);
-      
       // Avaliação da variação
       let avaliacao: 'positiva' | 'negativa' | 'estavel' | 'atencao' = 'estavel';
       
       if (Math.abs(variacaoPercentual) < percentualMinimo) {
         avaliacao = 'estavel';
       } else {
-        // CORREÇÃO: Para despesas/deduções (com valores negativos):
-        // - Se a despesa aumentou (valor mais negativo), isso é NEGATIVO (variacaoPercentual negativa)
-        // - Se a despesa diminuiu (valor menos negativo), isso é POSITIVO (variacaoPercentual positiva)
         if (ehContaDespesa) {
-          // Para despesas, a lógica é invertida:
-          // Se a despesa aumentou (valores mais negativos), isso é ruim
-          // Se a despesa diminuiu (valores menos negativos), isso é bom
+          // Para despesas, a lógica é invertida
           avaliacao = variacaoPercentual > 0 ? 'positiva' : 'negativa';
         } else {
-          // Para receitas e resultados positivos:
-          // Se aumentou (variacaoPercentual > 0), isso é bom
-          // Se diminuiu (variacaoPercentual < 0), isso é ruim
           avaliacao = variacaoPercentual > 0 ? 'positiva' : 'negativa';
         }
       }
@@ -530,19 +523,20 @@ export default function AnaliseDrePage() {
             variacaoSubcontaPercentual = 100;
           }
           
-          // Avaliação da variação da subconta - CORRIGIDA
+          // Avaliação da variação da subconta
           let avaliacaoSubconta: 'positiva' | 'negativa' | 'estavel' | 'atencao' = 'estavel';
           
+          // Avaliação inicial baseada no percentual mínimo
           if (Math.abs(variacaoSubcontaPercentual) < percentualMinimo) {
             avaliacaoSubconta = 'estavel';
           } else {
-            // CORREÇÃO: Aplicar a mesma lógica usada para o grupo principal
+            // Aplicar a mesma lógica usada para o grupo principal
             if (ehContaDespesa) {
               // Para subcontas de despesas, a lógica é invertida
-              avaliacaoSubconta = variacaoSubcontaPercentual > 0 ? 'positiva' : 'negativa';
+              avaliacaoSubconta = variacaoPercentual > 0 ? 'positiva' : 'negativa';
             } else {
               // Para subcontas de receitas
-              avaliacaoSubconta = variacaoSubcontaPercentual > 0 ? 'positiva' : 'negativa';
+              avaliacaoSubconta = variacaoPercentual > 0 ? 'positiva' : 'negativa';
             }
             
             // Marcar como atenção se a variação for muito alta
@@ -550,7 +544,25 @@ export default function AnaliseDrePage() {
               avaliacaoSubconta = 'atencao';
             }
           }
+
+          // Se ultrapassar o percentual mínimo, adicionar à lista de variações significativas
+          if (Math.abs(variacaoSubcontaPercentual) >= percentualMinimo) {
+            const variacaoSubconta = {
+              nome: contaAtual.descricao,
+              valor_atual: valorSubcontaAtual,
+              valor_comparacao: valorSubcontaComp,
+              variacao_valor: variacaoSubcontaValor,
+              variacao_percentual: variacaoSubcontaPercentual,
+              tipo_conta: grupoAtual.tipo,
+              grupo_pai: grupoAtual.tipo,
+              avaliacao: avaliacaoSubconta,
+              nivel: 'subconta' as 'subconta' | 'principal'
+            };
+            
+            subcontasVariacao.push(variacaoSubconta);
+          }
           
+          // Adicionar subconta ao grupo mesmo se não tiver variação significativa
           subcontas.push({
             nome: contaAtual.descricao,
             valor_atual: valorSubcontaAtual,
@@ -578,7 +590,9 @@ export default function AnaliseDrePage() {
       });
     });
     
-    return analise;
+    // Se estamos no modo de mostrar todas as contas, retornar a análise completa
+    // Caso contrário, retornar apenas as subcontas com variação significativa
+    return mostrarTodasContas ? analise : subcontasVariacao;
   }
   
   // Função para formatar moeda
@@ -645,12 +659,14 @@ export default function AnaliseDrePage() {
   
   // Filtrar dados por avaliação para tabs
   const getAnaliseFiltrada = (tipo: string) => {
+    if (!dadosAnalise || dadosAnalise.length === 0) return [];
+    
     if (tipo === 'todos') return dadosAnalise;
     if (tipo === 'positivas') return dadosAnalise.filter(item => item.avaliacao === 'positiva');
     if (tipo === 'negativas') return dadosAnalise.filter(item => item.avaliacao === 'negativa');
     if (tipo === 'atencao') return dadosAnalise.filter(item => 
       item.avaliacao === 'atencao' || 
-      item.subcontas?.some(s => s.avaliacao === 'atencao')
+      (item.subcontas && item.subcontas.some(s => s.avaliacao === 'atencao'))
     );
     return dadosAnalise;
   };
@@ -661,6 +677,23 @@ export default function AnaliseDrePage() {
       ...prev,
       [campo]: valor
     }));
+  };
+
+  // Função para agrupar subcontas por grupo pai
+  const agruparPorGrupo = (dados: AnaliseVariacao[]) => {
+    if (!dados || dados.length === 0) return {};
+    
+    const grupos: {[key: string]: AnaliseVariacao[]} = {};
+    
+    dados.forEach(subconta => {
+      const grupoPai = subconta.grupo_pai || subconta.tipo_conta;
+      if (!grupos[grupoPai]) {
+        grupos[grupoPai] = [];
+      }
+      grupos[grupoPai].push(subconta);
+    });
+    
+    return grupos;
   };
 
   return (
@@ -674,7 +707,7 @@ export default function AnaliseDrePage() {
         </CardHeader>
         <CardContent>
           {/* Filtros */}
-          <div className="grid gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4 items-end">
+          <div className="grid gap-4 mb-6 md:grid-cols-2 lg:grid-cols-5 items-end">
             <div className="space-y-1">
               <label className="text-sm font-medium">Tipo de Comparação</label>
               <Select
@@ -737,6 +770,21 @@ export default function AnaliseDrePage() {
                 <span className="text-sm">%</span>
               </div>
             </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Visualização</label>
+              <Select
+                value={mostrarTodasContas ? "todas" : "significativas"}
+                onValueChange={(val) => setMostrarTodasContas(val === "todas")}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="significativas">Apenas Variações Significativas</SelectItem>
+                  <SelectItem value="todas">Todas as Contas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Estado de carregamento */}
@@ -771,7 +819,7 @@ export default function AnaliseDrePage() {
               {/* Tabs de filtro */}
               <Tabs defaultValue="todos" value={tabAtiva} onValueChange={setTabAtiva}>
                 <TabsList className="mb-4">
-                  <TabsTrigger value="todos">Todas as Contas</TabsTrigger>
+                  <TabsTrigger value="todos">Todas as Variações</TabsTrigger>
                   <TabsTrigger value="positivas">Variações Positivas</TabsTrigger>
                   <TabsTrigger value="negativas">Variações Negativas</TabsTrigger>
                   <TabsTrigger value="atencao">Atenção</TabsTrigger>
@@ -779,81 +827,130 @@ export default function AnaliseDrePage() {
                 
                 <TabsContent value={tabAtiva}>
                   {getAnaliseFiltrada(tabAtiva).length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[40%]">Conta</TableHead>
-                          <TableHead className="text-right">Valor Atual (Média)</TableHead>
-                          <TableHead className="text-right">Valor Anterior (Média)</TableHead>
-                          <TableHead className="text-right">Variação</TableHead>
-                          <TableHead className="text-right w-[10%]">%</TableHead>
-                          <TableHead className="text-right">Avaliação</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {getAnaliseFiltrada(tabAtiva).map((conta, index) => {
-                          const { icon, cor } = getAvaliacaoIcone(conta.avaliacao);
-                          const estaExpandida = contasExpandidas[conta.nome] || false;
-                          const temSubcontas = conta.subcontas && conta.subcontas.length > 0;
+                    mostrarTodasContas ? (
+                      // Visualização original por grupos principais
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[40%]">Conta</TableHead>
+                            <TableHead className="text-right">Valor Atual (Média)</TableHead>
+                            <TableHead className="text-right">Valor Anterior (Média)</TableHead>
+                            <TableHead className="text-right">Variação</TableHead>
+                            <TableHead className="text-right w-[10%]">%</TableHead>
+                            <TableHead className="text-right">Avaliação</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {getAnaliseFiltrada(tabAtiva).map((conta, index) => {
+                            const { icon, cor } = getAvaliacaoIcone(conta.avaliacao);
+                            const estaExpandida = contasExpandidas[conta.nome] || false;
+                            const temSubcontas = conta.subcontas && conta.subcontas.length > 0;
 
-                          return (
-                            <React.Fragment key={`${conta.nome}-${index}`}>
-                              {/* Linha da conta principal */}
-                              <TableRow 
-                                className={`hover:bg-gray-50 ${estaExpandida ? "bg-gray-50" : ""}`}
-                                onClick={() => temSubcontas && toggleContaExpansao(conta.nome)}
-                              >
-                                <TableCell className="font-medium">
-                                  <div className="flex items-center">
-                                    {temSubcontas && (
-                                      <ChevronDown 
-                                        className={`h-5 w-5 mr-2 shrink-0 transition-transform duration-200 ${estaExpandida ? 'rotate-180' : ''} text-gray-500`} 
-                                      />
-                                    )}
-                                    {conta.nome}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right">{formatCurrency(conta.valor_atual)}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(conta.valor_comparacao)}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(conta.variacao_valor)}</TableCell>
-                                <TableCell className={`text-right ${cor}`}>
-                                  {formatPercentual(conta.variacao_percentual)}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex items-center justify-end gap-1">
-                                    {icon}
-                                    <span className={cor}>{conta.avaliacao.charAt(0).toUpperCase() + conta.avaliacao.slice(1)}</span>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                              
-                              {/* Linhas das subcontas, quando expandidas */}
-                              {estaExpandida && conta.subcontas && conta.subcontas.map((subconta, subIndex) => {
-                                const { icon: subIcon, cor: subCor } = getAvaliacaoIcone(subconta.avaliacao);
+                            return (
+                              <React.Fragment key={`${conta.nome}-${index}`}>
+                                {/* Linha da conta principal */}
+                                <TableRow 
+                                  className={`hover:bg-gray-50 ${estaExpandida ? "bg-gray-50" : ""}`}
+                                  onClick={() => temSubcontas && toggleContaExpansao(conta.nome)}
+                                >
+                                  <TableCell className="font-medium">
+                                    <div className="flex items-center">
+                                      {temSubcontas && (
+                                        <ChevronDown 
+                                          className={`h-5 w-5 mr-2 shrink-0 transition-transform duration-200 ${estaExpandida ? 'rotate-180' : ''} text-gray-500`} 
+                                        />
+                                      )}
+                                      {conta.nome}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">{formatCurrency(conta.valor_atual)}</TableCell>
+                                  <TableCell className="text-right">{formatCurrency(conta.valor_comparacao)}</TableCell>
+                                  <TableCell className="text-right">{formatCurrency(conta.variacao_valor)}</TableCell>
+                                  <TableCell className={`text-right ${cor}`}>
+                                    {formatPercentual(conta.variacao_percentual)}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                      {icon}
+                                      <span className={cor}>{conta.avaliacao.charAt(0).toUpperCase() + conta.avaliacao.slice(1)}</span>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
                                 
-                                return (
-                                  <TableRow key={`${conta.nome}-sub-${subIndex}`} className="bg-gray-50/50">
-                                    <TableCell className="pl-10">
-                                      {subconta.nome}
-                                    </TableCell>
-                                    <TableCell className="text-right">{formatCurrency(subconta.valor_atual)}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(subconta.valor_comparacao)}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(subconta.variacao_valor)}</TableCell>
-                                    <TableCell className={`text-right ${subCor}`}>{formatPercentual(subconta.variacao_percentual)}</TableCell>
-                                    <TableCell className="text-right">
-                                      <div className="flex items-center justify-end gap-1">
-                                        {subIcon}
-                                        <span className={subCor}>{subconta.avaliacao.charAt(0).toUpperCase() + subconta.avaliacao.slice(1)}</span>
-                                      </div>
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
-                            </React.Fragment>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                                {/* Linhas das subcontas, quando expandidas */}
+                                {estaExpandida && conta.subcontas && conta.subcontas.map((subconta, subIndex) => {
+                                  const { icon: subIcon, cor: subCor } = getAvaliacaoIcone(subconta.avaliacao);
+                                  
+                                  return (
+                                    <TableRow key={`${conta.nome}-sub-${subIndex}`} className="bg-gray-50/50">
+                                      <TableCell className="pl-10">
+                                        {subconta.nome}
+                                      </TableCell>
+                                      <TableCell className="text-right">{formatCurrency(subconta.valor_atual)}</TableCell>
+                                      <TableCell className="text-right">{formatCurrency(subconta.valor_comparacao)}</TableCell>
+                                      <TableCell className="text-right">{formatCurrency(subconta.variacao_valor)}</TableCell>
+                                      <TableCell className={`text-right ${subCor}`}>{formatPercentual(subconta.variacao_percentual)}</TableCell>
+                                      <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                          {subIcon}
+                                          <span className={subCor}>{subconta.avaliacao.charAt(0).toUpperCase() + subconta.avaliacao.slice(1)}</span>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </React.Fragment>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      // Nova visualização focada em subcontas com variações significativas, agrupadas por tipo
+                      <div className="space-y-6">
+                        {Object.entries(agruparPorGrupo(getAnaliseFiltrada(tabAtiva))).map(([grupoPai, subcontas], groupIndex) => (
+                          <Card key={`grupo-${groupIndex}`} className="overflow-hidden">
+                            <CardHeader className="py-2 px-4 bg-muted">
+                              <CardTitle className="text-sm font-medium">{grupoPai}</CardTitle>
+                            </CardHeader>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-[40%]">Subconta</TableHead>
+                                  <TableHead className="text-right">Valor Atual (Média)</TableHead>
+                                  <TableHead className="text-right">Valor Anterior (Média)</TableHead>
+                                  <TableHead className="text-right">Variação</TableHead>
+                                  <TableHead className="text-right w-[10%]">%</TableHead>
+                                  <TableHead className="text-right">Avaliação</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {subcontas.map((subconta, index) => {
+                                  const { icon: subIcon, cor: subCor } = getAvaliacaoIcone(subconta.avaliacao);
+                                  
+                                  return (
+                                    <TableRow key={`${subconta.nome}-${index}`}>
+                                      <TableCell>
+                                        {subconta.nome}
+                                      </TableCell>
+                                      <TableCell className="text-right">{formatCurrency(subconta.valor_atual)}</TableCell>
+                                      <TableCell className="text-right">{formatCurrency(subconta.valor_comparacao)}</TableCell>
+                                      <TableCell className="text-right">{formatCurrency(subconta.variacao_valor)}</TableCell>
+                                      <TableCell className={`text-right ${subCor}`}>{formatPercentual(subconta.variacao_percentual)}</TableCell>
+                                      <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                          {subIcon}
+                                          <span className={subCor}>{subconta.avaliacao.charAt(0).toUpperCase() + subconta.avaliacao.slice(1)}</span>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </Card>
+                        ))}
+                      </div>
+                    )
                   ) : (
                     <Alert>
                       <AlertCircle className="h-4 w-4" />
@@ -880,6 +977,7 @@ export default function AnaliseDrePage() {
                       mes: new Date().getMonth() + 1,
                       percentual_minimo: 10
                     });
+                    setMostrarTodasContas(false);
                   }}>
                     Resetar Filtros
                   </Button>
