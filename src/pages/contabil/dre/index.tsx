@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,9 +8,10 @@ import { useCompany } from "@/contexts/company-context";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import "../../../styles/collapsible.css";
 
 // Arrays de meses e anos
 const meses = [
@@ -113,7 +113,7 @@ export default function DrePage() {
                 tipo_operacao,
                 considerar_dre
               ),
-              plano_contas:movimentacoes(plano_contas(tipo, descricao, classificacao_dre))
+              plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
             `)
             .eq('empresa_id', currentCompany.id)
             .gte('data_movimentacao', startDate)
@@ -137,7 +137,7 @@ export default function DrePage() {
                 tipo_operacao,
                 considerar_dre
               ),
-              plano_contas:movimentacoes(plano_contas(tipo, descricao, classificacao_dre))
+              plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
             `)
             .eq('empresa_id', currentCompany.id)
             .gte('data_movimentacao', startDate)
@@ -179,7 +179,7 @@ export default function DrePage() {
                   tipo_operacao,
                   considerar_dre
                 ),
-                plano_contas:movimentacoes(plano_contas(tipo, descricao, classificacao_dre))
+                plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
               `)
               .eq('empresa_id', currentCompany.id)
               .gte('data_movimentacao', startDate)
@@ -192,7 +192,7 @@ export default function DrePage() {
 
           return dadosPorAno;
         } else {
-          // Acumulado - mantém o código existente
+          // Acumulado
           const startDate = format(new Date(parseInt(ano), 0, 1), 'yyyy-MM-dd');
           const endDate = format(new Date(parseInt(ano), 11, 31), 'yyyy-MM-dd');
 
@@ -205,7 +205,7 @@ export default function DrePage() {
                 tipo_operacao,
                 considerar_dre
               ),
-              plano_contas:movimentacoes(plano_contas(tipo, descricao, classificacao_dre))
+              plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
             `)
             .eq('empresa_id', currentCompany.id)
             .gte('data_movimentacao', startDate)
