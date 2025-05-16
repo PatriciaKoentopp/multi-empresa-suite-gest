@@ -38,6 +38,7 @@ export const VariationDisplay = ({ value, tooltip, tipoConta }: VariationDisplay
 
   // Definir cor baseada na avaliação
   const color = isPositiveEvaluation ? "text-green-600" : "text-red-500";
+  // Definir ícone baseado na direção da variação (não na avaliação)
   const Icon = value > 0 ? ArrowUp : ArrowDown;
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)

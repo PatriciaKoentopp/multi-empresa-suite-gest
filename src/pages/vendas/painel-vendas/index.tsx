@@ -1,11 +1,11 @@
 
+import { useState, useEffect } from "react";
 import { SalesLoadingState } from "@/components/vendas/SalesLoadingState";
 import { SalesDashboardHeader } from "@/components/vendas/SalesDashboardHeader";
 import { SalesDashboardCards } from "@/components/vendas/SalesDashboardCards";
 import { SalesPerformanceTabs } from "@/components/vendas/SalesPerformanceTabs";
 import { SalesComparisonTable } from "@/components/vendas/SalesComparisonTable";
 import { useVendasDashboard } from "@/hooks/useVendasDashboard";
-import { useEffect } from "react";
 
 const PainelVendasPage = () => {
   const {
