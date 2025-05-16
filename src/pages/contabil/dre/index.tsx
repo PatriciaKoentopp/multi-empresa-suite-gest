@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import "../../../styles/collapsible.css";
 
 // Arrays de meses e anos
@@ -38,6 +39,23 @@ const mesesComTodos = [
 const anos: string[] = [];
 const anoAtual = new Date().getFullYear();
 for (let a = anoAtual; a >= 2021; a--) anos.push(a.toString());
+
+// Lista de contas padrão do DRE para garantir consistência nas visualizações
+const contasDRE = [
+  "Receita Bruta",
+  "(-) Deduções",
+  "Receita Líquida",
+  "(-) Custos",
+  "Lucro Bruto",
+  "(-) Despesas Operacionais",
+  "(+) Receitas Financeiras",
+  "(-) Despesas Financeiras",
+  "Resultado Antes IR",
+  "(-) IRPJ/CSLL",
+  "Lucro Líquido do Exercício",
+  "(-) Distribuição de Lucros",
+  "Resultado do Exercício"
+];
 
 // Interface para detalhes de movimentação
 interface MovimentacaoDetalhe {
@@ -72,22 +90,23 @@ interface ResultadoMensal {
   contasPorTipo?: Record<string, ContaContabilAgrupamento[]>;
 }
 
-// Lista de contas padrão do DRE para garantir consistência nas visualizações
-const contasDRE = [
-  "Receita Bruta",
-  "(-) Deduções",
-  "Receita Líquida",
-  "(-) Custos",
-  "Lucro Bruto",
-  "(-) Despesas Operacionais",
-  "(+) Receitas Financeiras",
-  "(-) Despesas Financeiras",
-  "Resultado Antes IR",
-  "(-) IRPJ/CSLL",
-  "Lucro Líquido do Exercício",
-  "(-) Distribuição de Lucros",
-  "Resultado do Exercício"
-];
+// Mapeamento do tipo de conta para melhor interpretação da variação
+const mapTipoConta: Record<string, string> = {
+  "Receita Bruta": "receita",
+  "(-) Deduções": "deducoes",
+  "Receita Líquida": "receita",
+  "(-) Custos": "custos",
+  "Lucro Bruto": "receita",
+  "(-) Despesas Operacionais": "despesa",
+  "Resultado Operacional": "receita",
+  "(+) Receitas Financeiras": "receita",
+  "(-) Despesas Financeiras": "despesa",
+  "Resultado Antes IR": "receita",
+  "(-) IRPJ/CSLL": "impostos",
+  "Lucro Líquido do Exercício": "receita",
+  "(-) Distribuição de Lucros": "distribuicao_lucros",
+  "Resultado do Exercício": "receita"
+};
 
 export default function DrePage() {
   const [visualizacao, setVisualizacao] = useState<"acumulado" | "comparar_anos" | "mensal">("acumulado");
@@ -95,15 +114,15 @@ export default function DrePage() {
   const [anosComparar, setAnosComparar] = useState<string[]>([new Date().getFullYear().toString(), (new Date().getFullYear()-1).toString()]);
   const [mes, setMes] = useState("01");
   const [anoMensal, setAnoMensal] = useState(new Date().getFullYear().toString());
-  const { currentCompany } = useCompany();
   const [contaExpandida, setContaExpandida] = useState<string | null>(null);
   const [contasExpandidasTodosMeses, setContasExpandidasTodosMeses] = useState<Record<string, boolean>>({});
-  // Novo estado para controlar expansão de contas na comparação entre anos
   const [contasExpandidasComparacao, setContasExpandidasComparacao] = useState<Record<string, boolean>>({});
+  const [contasSelecionadas, setContasSelecionadas] = useState<string[]>([...contasDRE]);
+  const { currentCompany } = useCompany();
 
   // Query para buscar dados do DRE
   const { data: dadosDRE = [], isLoading } = useQuery({
-    queryKey: ["dre-data", currentCompany?.id, ano, mes, visualizacao, anoMensal, anosComparar],
+    queryKey: ["dre-data", currentCompany?.id, ano, mes, visualizacao, anoMensal, anosComparar, contasSelecionadas],
     queryFn: async () => {
       if (!currentCompany?.id) return [];
 
@@ -475,9 +494,9 @@ export default function DrePage() {
       return contas.sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor));
     };
 
-    // Os sinais dos valores são preservados conforme registrados no banco, não usamos mais Math.abs()
-    // Na apresentação, mantemos o nome da conta com o sinal negativo para indicar visualmente que se trata de redução
-    return [
+    // Os sinais dos valores são preservados conforme registrados no banco
+    // Filtramos para retornar apenas as contas selecionadas pelo filtro
+    const dadosProcessados = [
       { tipo: "Receita Bruta", valor: receitaBruta, detalhes: grupos["Receita Bruta"], contas: converterAgrupamentoContas("Receita Bruta") },
       { tipo: "(-) Deduções", valor: deducoes, detalhes: grupos["Deduções"], contas: converterAgrupamentoContas("Deduções") },
       { tipo: "Receita Líquida", valor: receitaLiquida, detalhes: [] },
@@ -493,6 +512,9 @@ export default function DrePage() {
       { tipo: "(-) Distribuição de Lucros", valor: distribuicaoLucros, detalhes: grupos["Distribuição de Lucros"], contas: converterAgrupamentoContas("Distribuição de Lucros") },
       { tipo: "Resultado do Exercício", valor: resultadoExercicio, detalhes: [] }
     ];
+
+    // Filtrar apenas as contas selecionadas
+    return dadosProcessados.filter(dado => contasSelecionadas.includes(dado.tipo));
   }
 
   // Função para verificar se o grupo tem detalhes
@@ -526,6 +548,14 @@ export default function DrePage() {
     }
     if (result.length === 0) result = [anoAlterado];
     setAnosComparar(result);
+  }
+
+  function handleContaSelecionadaChange(conta: string) {
+    if (contasSelecionadas.includes(conta)) {
+      setContasSelecionadas(prevState => prevState.filter(c => c !== conta));
+    } else {
+      setContasSelecionadas(prevState => [...prevState, conta]);
+    }
   }
 
   function formatCurrency(value: number) {
@@ -654,6 +684,29 @@ export default function DrePage() {
                 </div>
               </>
             )}
+            {/* Seleção de contas para mostrar */}
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">Contas a exibir</label>
+              <Select>
+                <SelectTrigger className="min-w-[180px] bg-white">
+                  <SelectValue placeholder="Selecionar contas" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {contasDRE.map(conta => (
+                    <div key={conta} className="flex items-center space-x-2 p-2">
+                      <Checkbox 
+                        id={`conta-${conta}`}
+                        checked={contasSelecionadas.includes(conta)}
+                        onCheckedChange={() => handleContaSelecionadaChange(conta)}
+                      />
+                      <label htmlFor={`conta-${conta}`} className="text-sm cursor-pointer">
+                        {conta}
+                      </label>
+                    </div>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </form>
 
           {/* Estado de carregamento */}
@@ -766,7 +819,7 @@ export default function DrePage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {contasDRE.map(conta => {
+                      {contasSelecionadas.map(conta => {
                         // Verifica se conta atual pode ter subcontas
                         const contemSubcontas = temSubcontasNaComparacao(conta);
                         
@@ -947,7 +1000,7 @@ export default function DrePage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {contasDRE.map(conta => {
+                        {contasSelecionadas.map(conta => {
                           // Verifica se conta atual pode ter subcontas
                           const contemSubcontas = ["Receita Bruta", "(-) Deduções", "(-) Custos", "(-) Despesas Operacionais", 
                             "(+) Receitas Financeiras", "(-) Despesas Financeiras", "(-) IRPJ/CSLL", "(-) Distribuição de Lucros"].includes(conta);
