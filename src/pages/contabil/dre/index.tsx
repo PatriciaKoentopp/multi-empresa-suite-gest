@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // Arrays de meses e anos
 const meses = [
@@ -43,6 +43,16 @@ interface MovimentacaoDetalhe {
   descricao: string;
   valor: number;
   categoria?: string;
+  conta_id?: string;
+  conta_descricao?: string;
+}
+
+// Interface para agrupamento de movimentações por conta contábil
+interface ContaContabilAgrupamento {
+  conta_id: string;
+  descricao: string;
+  valor: number;
+  detalhes: MovimentacaoDetalhe[];
 }
 
 // Interface para grupo de movimentações
@@ -50,6 +60,7 @@ interface GrupoMovimentacao {
   tipo: string;
   valor: number;
   detalhes: MovimentacaoDetalhe[];
+  contas?: ContaContabilAgrupamento[]; // Nova propriedade para agrupamento por contas
 }
 
 // Lista de contas padrão do DRE para garantir consistência nas visualizações
@@ -225,6 +236,18 @@ export default function DrePage() {
       "Distribuição de Lucros": [],
       "IRPJ/CSLL": []
     };
+    
+    // Estrutura para agrupar por conta contábil
+    const contasAgrupamento: { [key: string]: { [contaId: string]: MovimentacaoDetalhe[] } } = {
+      "Receita Bruta": {},
+      "Deduções": {},
+      "Custos": {},
+      "Despesas Operacionais": {},
+      "Receitas Financeiras": {},
+      "Despesas Financeiras": {},
+      "Distribuição de Lucros": {},
+      "IRPJ/CSLL": {}
+    };
 
     let receitaBruta = 0;
     let deducoes = 0;
@@ -244,6 +267,7 @@ export default function DrePage() {
       const tipoOperacao = mov.movimentacoes?.tipo_operacao;
       const planoContas = mov.plano_contas?.plano_contas;
       const descricaoCategoria = planoContas?.descricao || 'Sem categoria';
+      const contaId = planoContas?.id || 'sem_conta';
 
       // Formata a data exatamente como está no banco, sem ajustar timezone
       const dataFormatada = mov.data_movimentacao ? 
@@ -255,51 +279,60 @@ export default function DrePage() {
         data_movimentacao: dataFormatada,
         descricao: mov.descricao || descricaoCategoria,
         valor: valor,
-        categoria: descricaoCategoria
+        categoria: descricaoCategoria,
+        conta_id: contaId,
+        conta_descricao: descricaoCategoria
       };
 
       // Usa classificação DRE se disponível, senão faz inferência pelo tipo e descrição
       if (planoContas && planoContas.classificacao_dre && planoContas.classificacao_dre !== 'nao_classificado') {
         // Classificação direta pelo campo classificacao_dre
+        let grupoDestino = "";
+        
         switch (planoContas.classificacao_dre) {
           case 'receita_bruta':
             receitaBruta += valor;
-            grupos["Receita Bruta"].push(detalhe);
+            grupoDestino = "Receita Bruta";
             break;
           case 'deducoes':
-            // Removida conversão para valor absoluto
             deducoes += valor;
-            grupos["Deduções"].push(detalhe);
+            grupoDestino = "Deduções";
             break;
           case 'custos':
-            // Removida conversão para valor absoluto
             custos += valor;
-            grupos["Custos"].push(detalhe);
+            grupoDestino = "Custos";
             break;
           case 'despesas_operacionais':
-            // Removida conversão para valor absoluto
             despesasOperacionais += valor;
-            grupos["Despesas Operacionais"].push(detalhe);
+            grupoDestino = "Despesas Operacionais";
             break;
           case 'receitas_financeiras':
             receitasFinanceiras += valor;
-            grupos["Receitas Financeiras"].push(detalhe);
+            grupoDestino = "Receitas Financeiras";
             break;
           case 'despesas_financeiras':
-            // Removida conversão para valor absoluto
             despesasFinanceiras += valor;
-            grupos["Despesas Financeiras"].push(detalhe);
+            grupoDestino = "Despesas Financeiras";
             break;
           case 'distribuicao_lucros':
-            // Removida conversão para valor absoluto
             distribuicaoLucros += valor;
-            grupos["Distribuição de Lucros"].push(detalhe);
+            grupoDestino = "Distribuição de Lucros";
             break;
           case 'impostos_irpj_csll':
-            // Removida conversão para valor absoluto
             impostos += valor;
-            grupos["IRPJ/CSLL"].push(detalhe);
+            grupoDestino = "IRPJ/CSLL";
             break;
+        }
+        
+        if (grupoDestino) {
+          // Adiciona ao grupo geral
+          grupos[grupoDestino].push(detalhe);
+          
+          // Agrupamento por conta contábil
+          if (!contasAgrupamento[grupoDestino][contaId]) {
+            contasAgrupamento[grupoDestino][contaId] = [];
+          }
+          contasAgrupamento[grupoDestino][contaId].push(detalhe);
         }
       } else {
         // Lógica antiga para compatibilidade com dados antigos sem classificação
@@ -307,10 +340,16 @@ export default function DrePage() {
         if (tipoOperacao === 'receber' && (!mov.movimentacoes?.categoria_id || !planoContas)) {
           receitaBruta += valor;
           grupos["Receita Bruta"].push(detalhe);
+          
+          if (!contasAgrupamento["Receita Bruta"][contaId]) {
+            contasAgrupamento["Receita Bruta"][contaId] = [];
+          }
+          contasAgrupamento["Receita Bruta"][contaId].push(detalhe);
         } 
         // Para os demais, usa o plano de contas
         else if (planoContas) {
           const { tipo, descricao } = planoContas;
+          let grupoDestino = "";
           
           // Receitas
           if (tipo === 'receita') {
@@ -318,19 +357,18 @@ export default function DrePage() {
                 descricao.toLowerCase().includes('juros') || 
                 descricao.toLowerCase().includes('rendimento')) {
               receitasFinanceiras += valor;
-              grupos["Receitas Financeiras"].push(detalhe);
+              grupoDestino = "Receitas Financeiras";
             } else {
               receitaBruta += valor;
-              grupos["Receita Bruta"].push(detalhe);
+              grupoDestino = "Receita Bruta";
             }
           }
           // Despesas
           else if (tipo === 'despesa') {
             switch (descricao.toLowerCase()) {
               case 'das - simples nacional':
-                // Removida conversão para valor absoluto
                 deducoes += valor;
-                grupos["Deduções"].push(detalhe);
+                grupoDestino = "Deduções";
                 break;
               case 'pró-labore':
               case 'pro-labore':
@@ -339,30 +377,37 @@ export default function DrePage() {
               case 'inss':
               case 'honorários contábeis':
               case 'honorarios contabeis':
-                // Removida conversão para valor absoluto
                 despesasOperacionais += valor;
-                grupos["Despesas Operacionais"].push(detalhe);
+                grupoDestino = "Despesas Operacionais";
                 break;
               case 'distribuição de lucros':
               case 'distribuicao de lucros':
-                // Removida conversão para valor absoluto
                 distribuicaoLucros += valor;
-                grupos["Distribuição de Lucros"].push(detalhe);
+                grupoDestino = "Distribuição de Lucros";
                 break;
               default:
                 // Verifica se é despesa financeira
                 if (descricao.toLowerCase().includes('financeira') || 
                     descricao.toLowerCase().includes('juros') || 
                     descricao.toLowerCase().includes('tarifas')) {
-                  // Removida conversão para valor absoluto
                   despesasFinanceiras += valor;
-                  grupos["Despesas Financeiras"].push(detalhe);
+                  grupoDestino = "Despesas Financeiras";
                 } else {
-                  // Removida conversão para valor absoluto
                   custos += valor;
-                  grupos["Custos"].push(detalhe);
+                  grupoDestino = "Custos";
                 }
             }
+          }
+          
+          if (grupoDestino) {
+            // Adiciona ao grupo geral
+            grupos[grupoDestino].push(detalhe);
+            
+            // Agrupamento por conta contábil
+            if (!contasAgrupamento[grupoDestino][contaId]) {
+              contasAgrupamento[grupoDestino][contaId] = [];
+            }
+            contasAgrupamento[grupoDestino][contaId].push(detalhe);
           }
         }
       }
@@ -376,42 +421,57 @@ export default function DrePage() {
     const lucroLiquido = resultadoAntesIR + impostos; // Impostos já contêm o sinal negativo
     const resultadoExercicio = lucroLiquido + distribuicaoLucros; // Distribuição já contém o sinal negativo
 
-    // Ordena os detalhes de cada grupo por data antes de retornar
-    Object.keys(grupos).forEach(key => {
-      grupos[key].sort((a, b) => {
-        // Converte as datas do formato DD/MM/YYYY para objetos Date para comparação
-        const [diaA, mesA, anoA] = a.data_movimentacao.split('/');
-        const [diaB, mesB, anoB] = b.data_movimentacao.split('/');
+    // Converter o agrupamento de contas para o formato estruturado
+    const converterAgrupamentoContas = (grupoNome: string) => {
+      const contas: ContaContabilAgrupamento[] = [];
+      const contasObj = contasAgrupamento[grupoNome];
+      
+      Object.keys(contasObj).forEach(contaId => {
+        const detalhes = contasObj[contaId];
+        const valorTotal = detalhes.reduce((sum, d) => sum + d.valor, 0);
         
-        const dateA = new Date(parseInt(anoA), parseInt(mesA) - 1, parseInt(diaA));
-        const dateB = new Date(parseInt(anoB), parseInt(mesB) - 1, parseInt(diaB));
+        // Se a conta não tem detalhes ou é "sem_conta", ignoramos
+        if (detalhes.length === 0 || contaId === "sem_conta") return;
         
-        return dateA.getTime() - dateB.getTime();
+        contas.push({
+          conta_id: contaId,
+          descricao: detalhes[0].conta_descricao || "Conta sem descrição",
+          valor: valorTotal,
+          detalhes: detalhes
+        });
       });
-    });
+      
+      // Ordena as contas pelo valor (do maior para o menor em valor absoluto)
+      return contas.sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor));
+    };
 
     // Os sinais dos valores são preservados conforme registrados no banco, não usamos mais Math.abs()
     // Na apresentação, mantemos o nome da conta com o sinal negativo para indicar visualmente que se trata de redução
     return [
-      { tipo: "Receita Bruta", valor: receitaBruta, detalhes: grupos["Receita Bruta"] },
-      { tipo: "(-) Deduções", valor: deducoes, detalhes: grupos["Deduções"] },
+      { tipo: "Receita Bruta", valor: receitaBruta, detalhes: grupos["Receita Bruta"], contas: converterAgrupamentoContas("Receita Bruta") },
+      { tipo: "(-) Deduções", valor: deducoes, detalhes: grupos["Deduções"], contas: converterAgrupamentoContas("Deduções") },
       { tipo: "Receita Líquida", valor: receitaLiquida, detalhes: [] },
-      { tipo: "(-) Custos", valor: custos, detalhes: grupos["Custos"] },
+      { tipo: "(-) Custos", valor: custos, detalhes: grupos["Custos"], contas: converterAgrupamentoContas("Custos") },
       { tipo: "Lucro Bruto", valor: lucroBruto, detalhes: [] },
-      { tipo: "(-) Despesas Operacionais", valor: despesasOperacionais, detalhes: grupos["Despesas Operacionais"] },
+      { tipo: "(-) Despesas Operacionais", valor: despesasOperacionais, detalhes: grupos["Despesas Operacionais"], contas: converterAgrupamentoContas("Despesas Operacionais") },
       { tipo: "Resultado Operacional", valor: resultadoOperacional, detalhes: [] },
-      { tipo: "(+) Receitas Financeiras", valor: receitasFinanceiras, detalhes: grupos["Receitas Financeiras"] },
-      { tipo: "(-) Despesas Financeiras", valor: despesasFinanceiras, detalhes: grupos["Despesas Financeiras"] },
+      { tipo: "(+) Receitas Financeiras", valor: receitasFinanceiras, detalhes: grupos["Receitas Financeiras"], contas: converterAgrupamentoContas("Receitas Financeiras") },
+      { tipo: "(-) Despesas Financeiras", valor: despesasFinanceiras, detalhes: grupos["Despesas Financeiras"], contas: converterAgrupamentoContas("Despesas Financeiras") },
       { tipo: "Resultado Antes IR", valor: resultadoAntesIR, detalhes: [] },
-      { tipo: "(-) IRPJ/CSLL", valor: impostos, detalhes: grupos["IRPJ/CSLL"] },
+      { tipo: "(-) IRPJ/CSLL", valor: impostos, detalhes: grupos["IRPJ/CSLL"], contas: converterAgrupamentoContas("IRPJ/CSLL") },
       { tipo: "Lucro Líquido do Exercício", valor: lucroLiquido, detalhes: [] },
-      { tipo: "(-) Distribuição de Lucros", valor: distribuicaoLucros, detalhes: grupos["Distribuição de Lucros"] },
+      { tipo: "(-) Distribuição de Lucros", valor: distribuicaoLucros, detalhes: grupos["Distribuição de Lucros"], contas: converterAgrupamentoContas("Distribuição de Lucros") },
       { tipo: "Resultado do Exercício", valor: resultadoExercicio, detalhes: [] }
     ];
   }
 
   // Função para verificar se o grupo tem detalhes
-  const temDetalhes = (grupo: GrupoMovimentacao) => grupo.detalhes.length > 0;
+  const temDetalhes = (grupo: GrupoMovimentacao) => 
+    grupo.detalhes.length > 0 || (grupo.contas && grupo.contas.length > 0);
+
+  // Função para verificar se o grupo tem contas agrupadas
+  const temContas = (grupo: GrupoMovimentacao) => 
+    grupo.contas && grupo.contas.length > 0;
 
   function handleAnoCompararChange(anoAlterado: string) {
     let result: string[] = [];
@@ -543,14 +603,55 @@ export default function DrePage() {
                 <Accordion type="single" collapsible className="w-full">
                   {dadosDRE.map((grupo: GrupoMovimentacao, index: number) => (
                     <AccordionItem value={`item-${index}`} key={index}>
-                      <AccordionTrigger className={`${!temDetalhes(grupo) ? 'cursor-default hover:no-underline' : ''}`} disabled={!temDetalhes(grupo)}>
+                      <AccordionTrigger 
+                        className={`${!temDetalhes(grupo) ? 'cursor-default hover:no-underline' : ''}`} 
+                        disabled={!temDetalhes(grupo)}
+                      >
                         <div className="flex justify-between w-full pr-4">
                           <span>{grupo.tipo}</span>
                           <span>{formatCurrency(grupo.valor)}</span>
                         </div>
                       </AccordionTrigger>
-                      {temDetalhes(grupo) && (
+                      
+                      {temContas(grupo) ? (
                         <AccordionContent>
+                          {/* Nível 2: Contas contábeis */}
+                          {grupo.contas!.map((conta, contaIndex) => (
+                            <Collapsible key={contaIndex} className="px-4 py-2 border-t">
+                              <CollapsibleTrigger className="flex justify-between w-full hover:underline">
+                                <span className="font-medium">{conta.descricao}</span>
+                                <span>{formatCurrency(conta.valor)}</span>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <div className="pt-2 overflow-x-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Data</TableHead>
+                                        <TableHead>Descrição</TableHead>
+                                        <TableHead className="text-right">Valor</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {conta.detalhes.map((detalhe, idx) => (
+                                        <TableRow key={idx}>
+                                          <TableCell>{detalhe.data_movimentacao}</TableCell>
+                                          <TableCell>{detalhe.descricao}</TableCell>
+                                          <TableCell className="text-right">
+                                            {formatCurrency(detalhe.valor)}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          ))}
+                        </AccordionContent>
+                      ) : temDetalhes(grupo) ? (
+                        <AccordionContent>
+                          {/* Retrocompatibilidade: Movimentações sem contas */}
                           <div className="overflow-x-auto">
                             <Table>
                               <TableHeader>
@@ -565,14 +666,16 @@ export default function DrePage() {
                                   <TableRow key={idx}>
                                     <TableCell>{detalhe.data_movimentacao}</TableCell>
                                     <TableCell>{detalhe.descricao}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(detalhe.valor)}</TableCell>
+                                    <TableCell className="text-right">
+                                      {formatCurrency(detalhe.valor)}
+                                    </TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
                             </Table>
                           </div>
                         </AccordionContent>
-                      )}
+                      ) : null}
                     </AccordionItem>
                   ))}
                 </Accordion>
@@ -617,14 +720,55 @@ export default function DrePage() {
                 <Accordion type="single" collapsible className="w-full">
                   {dadosDRE.map((grupo: GrupoMovimentacao, index: number) => (
                     <AccordionItem value={`item-${index}`} key={index}>
-                      <AccordionTrigger className={`${!temDetalhes(grupo) ? 'cursor-default hover:no-underline' : ''}`} disabled={!temDetalhes(grupo)}>
+                      <AccordionTrigger 
+                        className={`${!temDetalhes(grupo) ? 'cursor-default hover:no-underline' : ''}`} 
+                        disabled={!temDetalhes(grupo)}
+                      >
                         <div className="flex justify-between w-full pr-4">
                           <span>{grupo.tipo}</span>
                           <span>{formatCurrency(grupo.valor)}</span>
                         </div>
                       </AccordionTrigger>
-                      {temDetalhes(grupo) && (
+                      
+                      {temContas(grupo) ? (
                         <AccordionContent>
+                          {/* Nível 2: Contas contábeis */}
+                          {grupo.contas!.map((conta, contaIndex) => (
+                            <Collapsible key={contaIndex} className="px-4 py-2 border-t">
+                              <CollapsibleTrigger className="flex justify-between w-full hover:underline">
+                                <span className="font-medium">{conta.descricao}</span>
+                                <span>{formatCurrency(conta.valor)}</span>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <div className="pt-2 overflow-x-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Data</TableHead>
+                                        <TableHead>Descrição</TableHead>
+                                        <TableHead className="text-right">Valor</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {conta.detalhes.map((detalhe, idx) => (
+                                        <TableRow key={idx}>
+                                          <TableCell>{detalhe.data_movimentacao}</TableCell>
+                                          <TableCell>{detalhe.descricao}</TableCell>
+                                          <TableCell className="text-right">
+                                            {formatCurrency(detalhe.valor)}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          ))}
+                        </AccordionContent>
+                      ) : temDetalhes(grupo) ? (
+                        <AccordionContent>
+                          {/* Retrocompatibilidade: Movimentações sem contas */}
                           <div className="overflow-x-auto">
                             <Table>
                               <TableHeader>
@@ -639,14 +783,16 @@ export default function DrePage() {
                                   <TableRow key={idx}>
                                     <TableCell>{detalhe.data_movimentacao}</TableCell>
                                     <TableCell>{detalhe.descricao}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(detalhe.valor)}</TableCell>
+                                    <TableCell className="text-right">
+                                      {formatCurrency(detalhe.valor)}
+                                    </TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
                             </Table>
                           </div>
                         </AccordionContent>
-                      )}
+                      ) : null}
                     </AccordionItem>
                   ))}
                 </Accordion>
