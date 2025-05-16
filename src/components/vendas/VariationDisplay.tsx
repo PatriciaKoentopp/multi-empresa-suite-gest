@@ -5,10 +5,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface VariationDisplayProps {
   value: number | null;
   tooltip?: string;
-  tipoConta?: string;
 }
 
-export const VariationDisplay = ({ value, tooltip, tipoConta }: VariationDisplayProps) => {
+export const VariationDisplay = ({ value, tooltip }: VariationDisplayProps) => {
   // Se o valor for null ou undefined, mostramos o traço
   if (value === null || value === undefined) {
     return <span className="text-gray-400 block text-right">-</span>;
@@ -17,32 +16,12 @@ export const VariationDisplay = ({ value, tooltip, tipoConta }: VariationDisplay
   // Se o valor for zero, mostramos zero em cinza
   if (value === 0) return <span className="text-gray-500 block text-right">0,00%</span>;
   
-  // Determinar se a variação é considerada positiva de acordo com o tipo de conta
-  // Para despesas, uma variação negativa (redução) é considerada positiva
-  // Para receitas, uma variação positiva (aumento) é considerada positiva
-  let isPositiveEvaluation = false;
-  
-  if (tipoConta === "despesa" || 
-      tipoConta === "custos" || 
-      tipoConta === "deducoes" || 
-      tipoConta === "distribuicao_lucros" || 
-      tipoConta === "impostos") {
-    // Para contas de despesa, custo, etc. (redutoras):
-    // Se a variação for negativa (valor < 0), é uma avaliação positiva (despesas diminuíram)
-    isPositiveEvaluation = value < 0;
-  } else {
-    // Para contas de receita:
-    // Se a variação for positiva (valor > 0), é uma avaliação positiva (receitas aumentaram)
-    isPositiveEvaluation = value > 0;
-  }
-
-  // Definir cor baseada na avaliação
-  const color = isPositiveEvaluation ? "text-green-600" : "text-red-500";
-  // Definir ícone baseado na direção da variação (não na avaliação)
-  const Icon = value > 0 ? ArrowUp : ArrowDown;
+  const isPositive = value > 0;
+  const color = isPositive ? "text-green-600" : "text-red-500";
+  const Icon = isPositive ? ArrowUp : ArrowDown;
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
-  // Garantimos que sempre temos duas casas decimais, para valores como 6,75% ou 8,01%
+  // Garantimos que sempre temos duas casas decimais, para valores como -6,75% ou 8,01%
   const formattedValue = Math.abs(value).toFixed(2).replace('.', ',');
   
   // Componente base de variação

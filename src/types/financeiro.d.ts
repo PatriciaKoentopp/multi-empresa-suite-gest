@@ -65,7 +65,6 @@ export interface FiltroAnaliseDre {
   ano: number;
   mes: number; 
   percentual_minimo: number;
-  contas_selecionadas: string[]; // Array com as contas selecionadas para análise
 }
 
 // Nova interface para detalhes mensais das contas
