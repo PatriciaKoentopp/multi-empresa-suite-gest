@@ -45,3 +45,23 @@ export interface FiltroFluxoCaixa {
   contaId: string | null;
   situacao?: string | null;
 }
+
+// Novas interfaces para a análise do DRE
+export interface AnaliseVariacao {
+  nome: string;
+  valor_atual: number;
+  valor_comparacao: number;
+  variacao_valor: number;
+  variacao_percentual: number;
+  tipo_conta: string;
+  subcontas?: AnaliseVariacao[];
+  avaliacao: 'positiva' | 'negativa' | 'estavel' | 'atencao';
+  nivel: 'principal' | 'subconta';
+}
+
+export interface FiltroAnaliseDre {
+  tipo_comparacao: 'mes_anterior' | 'ano_anterior' | 'media_12_meses';
+  ano: number;
+  mes: number; 
+  percentual_minimo: number;
+}
