@@ -45,3 +45,12 @@ export interface FiltroFluxoCaixa {
   contaId: string | null;
   situacao?: string | null;
 }
+
+/* Adiciona estilo CSS para o ícone de Collapsible */
+:where(.collapsible-icon) {
+  transition: transform 0.2s;
+}
+
+:where([data-state="open"] .collapsible-icon) {
+  transform: rotate(180deg);
+}

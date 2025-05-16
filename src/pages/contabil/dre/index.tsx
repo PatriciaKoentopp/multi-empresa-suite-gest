@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 // Arrays de meses e anos
 const meses = [
@@ -616,14 +618,17 @@ export default function DrePage() {
                       {temContas(grupo) ? (
                         <AccordionContent>
                           {/* Nível 2: Contas contábeis */}
-                          {grupo.contas!.map((conta, contaIndex) => (
+                          {grupo.contas && grupo.contas.length > 0 ? grupo.contas.map((conta, contaIndex) => (
                             <Collapsible key={contaIndex} className="px-4 py-2 border-t">
                               <CollapsibleTrigger className="flex justify-between w-full hover:underline">
-                                <span className="font-medium">{conta.descricao}</span>
+                                <div className="flex items-center gap-2">
+                                  <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 collapsible-icon" />
+                                  <span className="font-medium">{conta.descricao}</span>
+                                </div>
                                 <span>{formatCurrency(conta.valor)}</span>
                               </CollapsibleTrigger>
                               <CollapsibleContent>
-                                <div className="pt-2 overflow-x-auto">
+                                <div className="pt-2 overflow-x-auto pl-4">
                                   <Table>
                                     <TableHeader>
                                       <TableRow>
@@ -647,7 +652,11 @@ export default function DrePage() {
                                 </div>
                               </CollapsibleContent>
                             </Collapsible>
-                          ))}
+                          )) : (
+                            <div className="px-4 py-2 text-muted-foreground">
+                              Não há contas contábeis detalhadas para este grupo
+                            </div>
+                          )}
                         </AccordionContent>
                       ) : temDetalhes(grupo) ? (
                         <AccordionContent>
@@ -733,14 +742,17 @@ export default function DrePage() {
                       {temContas(grupo) ? (
                         <AccordionContent>
                           {/* Nível 2: Contas contábeis */}
-                          {grupo.contas!.map((conta, contaIndex) => (
+                          {grupo.contas && grupo.contas.length > 0 ? grupo.contas.map((conta, contaIndex) => (
                             <Collapsible key={contaIndex} className="px-4 py-2 border-t">
                               <CollapsibleTrigger className="flex justify-between w-full hover:underline">
-                                <span className="font-medium">{conta.descricao}</span>
+                                <div className="flex items-center gap-2">
+                                  <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 collapsible-icon" />
+                                  <span className="font-medium">{conta.descricao}</span>
+                                </div>
                                 <span>{formatCurrency(conta.valor)}</span>
                               </CollapsibleTrigger>
                               <CollapsibleContent>
-                                <div className="pt-2 overflow-x-auto">
+                                <div className="pt-2 overflow-x-auto pl-4">
                                   <Table>
                                     <TableHeader>
                                       <TableRow>
@@ -764,7 +776,11 @@ export default function DrePage() {
                                 </div>
                               </CollapsibleContent>
                             </Collapsible>
-                          ))}
+                          )) : (
+                            <div className="px-4 py-2 text-muted-foreground">
+                              Não há contas contábeis detalhadas para este grupo
+                            </div>
+                          )}
                         </AccordionContent>
                       ) : temDetalhes(grupo) ? (
                         <AccordionContent>
