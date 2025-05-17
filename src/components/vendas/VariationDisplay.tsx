@@ -31,10 +31,9 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   const Icon = value > 0 ? ArrowUp : ArrowDown;
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
-  // Garantimos que sempre temos duas casas decimais
-  // Precisamos garantir que o sinal seja exibido corretamente
-  const valueAbs = Math.abs(value);
-  const formattedValue = (value < 0 ? "-" : "") + valueAbs.toFixed(2).replace('.', ',');
+  // Para despesas, inverta o sinal para refletir o impacto no negócio
+  let displayValue = tipoConta === 'despesa' ? -value : value;
+  const formattedValue = displayValue.toFixed(2).replace('.', ',');
   
   // Componente base de variação
   const VariationComponent = (
