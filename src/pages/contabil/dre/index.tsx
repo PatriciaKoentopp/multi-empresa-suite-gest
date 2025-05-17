@@ -154,7 +154,9 @@ export default function DrePage() {
 
           if (error) throw error;
 
+          // Obter movimentações por mês sem considerar timezone nas datas
           const movimentacoesPorMes = (movimentacoes || []).reduce((acc: any, mov) => {
+            // Extrair apenas o mês utilizando substring para evitar problemas de timezone
             const mesMovimentacao = mov.data_movimentacao.substring(5, 7);
             if (!acc[mesMovimentacao]) {
               acc[mesMovimentacao] = [];
@@ -434,7 +436,8 @@ export default function DrePage() {
       
       Object.keys(contasObj).forEach(contaId => {
         const detalhes = contasObj[contaId];
-        const valorTotal = detalhes.reduce((sum, d) => sum + d.valor, 0);
+        // Certifique-se de que os valores são tratados como números antes de somar
+        const valorTotal = detalhes.reduce((sum, d) => sum + Number(d.valor), 0);
         
         if (detalhes.length === 0 || contaId === "sem_conta") return;
         
