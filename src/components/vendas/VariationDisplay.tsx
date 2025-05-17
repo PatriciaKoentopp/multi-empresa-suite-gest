@@ -5,9 +5,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface VariationDisplayProps {
   value: number | null;
   tooltip?: string;
+  tipoConta?: 'receita' | 'despesa';
 }
 
-export const VariationDisplay = ({ value, tooltip }: VariationDisplayProps) => {
+export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: VariationDisplayProps) => {
   // Se o valor for null ou undefined, mostramos o traço
   if (value === null || value === undefined) {
     return <span className="text-gray-400 block text-right">-</span>;
@@ -16,12 +17,18 @@ export const VariationDisplay = ({ value, tooltip }: VariationDisplayProps) => {
   // Se o valor for zero, mostramos zero em cinza
   if (value === 0) return <span className="text-gray-500 block text-right">0,00%</span>;
   
-  const isPositive = value > 0;
-  const color = isPositive ? "text-green-600" : "text-red-500";
-  const Icon = isPositive ? ArrowUp : ArrowDown;
+  // Determinar se a variação é positiva do ponto de vista de negócio
+  // Para receitas: aumento (valor positivo) é bom
+  // Para despesas: diminuição (valor negativo) é bom
+  const isPositiveForBusiness = tipoConta === 'receita' ? value > 0 : value < 0;
+  
+  // Cor e ícone baseados na avaliação de negócio, não apenas no sinal do número
+  const color = isPositiveForBusiness ? "text-green-600" : "text-red-500";
+  const Icon = value > 0 ? ArrowUp : ArrowDown; // Ícone baseado no valor real
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
   // Garantimos que sempre temos duas casas decimais, para valores como -6,75% ou 8,01%
+  // Não usamos valor absoluto para preservar o sinal correto
   const formattedValue = Math.abs(value).toFixed(2).replace('.', ',');
   
   // Componente base de variação

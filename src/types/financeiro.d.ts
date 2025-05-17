@@ -53,7 +53,7 @@ export interface AnaliseVariacao {
   valor_comparacao: number;
   variacao_valor: number;
   variacao_percentual: number;
-  tipo_conta: string;
+  tipo_conta: 'receita' | 'despesa';
   grupo_pai?: string;
   subcontas?: AnaliseVariacao[];
   avaliacao: 'positiva' | 'negativa' | 'estavel' | 'atencao';
