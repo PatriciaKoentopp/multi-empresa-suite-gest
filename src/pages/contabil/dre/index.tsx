@@ -111,7 +111,7 @@ export default function DrePage() {
 
       try {
         if (visualizacao === "mensal" && mes !== "todos") {
-          // Melhoria no cálculo: usando o primeiro dia do mês e o último dia do mês adequadamente
+          // Correção: usando o primeiro e último dia do mês escolhido
           const startDate = format(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1), 'yyyy-MM-dd');
           const endDate = format(endOfMonth(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1)), 'yyyy-MM-dd');
 
@@ -135,7 +135,7 @@ export default function DrePage() {
           dadosAgrupados = processarMovimentacoes(movimentacoes || []);
 
         } else if (visualizacao === "mensal" && mes === "todos") {
-          // Melhoria: usando o ano completo
+          // Correção: usando o ano completo corretamente
           const startDate = format(new Date(parseInt(anoMensal), 0, 1), 'yyyy-MM-dd');
           const endDate = format(new Date(parseInt(anoMensal), 11, 31), 'yyyy-MM-dd');
 
@@ -156,21 +156,24 @@ export default function DrePage() {
 
           if (error) throw error;
 
-          // Obter movimentações por mês sem considerar timezone nas datas
-          const movimentacoesPorMes = (movimentacoes || []).reduce((acc: any, mov) => {
-            // Extrair apenas o mês utilizando substring para evitar problemas de timezone
-            const mesMovimentacao = mov.data_movimentacao.substring(5, 7);
-            if (!acc[mesMovimentacao]) {
-              acc[mesMovimentacao] = [];
-            }
-            acc[mesMovimentacao].push(mov);
+          // Correção: obter movimentações por mês garantindo que todos os meses sejam representados
+          const movimentacoesPorMes = meses.reduce((acc: Record<string, any[]>, mes) => {
+            acc[mes.value] = [];
             return acc;
           }, {});
+          
+          // Agora preenchemos com as movimentações reais
+          (movimentacoes || []).forEach(mov => {
+            if (!mov.data_movimentacao) return;
+            const mesMovimentacao = mov.data_movimentacao.substring(5, 7);
+            movimentacoesPorMes[mesMovimentacao].push(mov);
+          });
 
           const resultadosMensais: ResultadoMensal[] = [];
 
+          // Garantindo que todos os meses sejam processados
           for (const [mesDado, movs] of Object.entries(movimentacoesPorMes)) {
-            const dados = processarMovimentacoes(movs as any[]);
+            const dados = processarMovimentacoes(movs);
             const contasPorTipo: Record<string, ContaContabilAgrupamento[]> = {};
             
             dados.forEach((grupo: GrupoMovimentacao) => {
@@ -192,7 +195,7 @@ export default function DrePage() {
           const dadosPorAno: Record<string, GrupoMovimentacao[]> = {};
 
           for (const anoSelecionado of anosComparar) {
-            // Melhoria: usando o ano completo para cada comparação
+            // Correção: usando o ano completo para cada comparação
             const startDate = format(new Date(parseInt(anoSelecionado), 0, 1), 'yyyy-MM-dd');
             const endDate = format(new Date(parseInt(anoSelecionado), 11, 31), 'yyyy-MM-dd');
 
@@ -218,7 +221,7 @@ export default function DrePage() {
 
           return dadosPorAno;
         } else {
-          // Acumulado - Melhoria: usando o ano completo
+          // Acumulado - Correção: usando o ano completo corretamente
           const startDate = format(new Date(parseInt(ano), 0, 1), 'yyyy-MM-dd');
           const endDate = format(new Date(parseInt(ano), 11, 31), 'yyyy-MM-dd');
 
@@ -295,7 +298,7 @@ export default function DrePage() {
       const descricaoCategoria = planoContas?.descricao || 'Sem categoria';
       const contaId = planoContas?.id || 'sem_conta';
 
-      // Melhoria no formato da data: usar formato DD/MM/YYYY 
+      // Formato da data: DD/MM/YYYY
       const dataFormatada = mov.data_movimentacao ? 
         mov.data_movimentacao.substring(8, 10) + "/" + 
         mov.data_movimentacao.substring(5, 7) + "/" + 
@@ -996,11 +999,11 @@ export default function DrePage() {
                                 </TableCell>
                                 
                                 {meses.map(m => {
-                                  const dadosMes = (dadosDRE as ResultadoMensal[]).find(x => x.mes === m.value);
-                                  const linhaMes = dadosMes?.dados?.find((i: GrupoMovimentacao) => i.tipo === conta);
+                                  const resultadoMensal = (dadosDRE as ResultadoMensal[]).find(x => x.mes === m.value);
+                                  const grupo = resultadoMensal?.dados?.find(g => g.tipo === conta);
                                   return (
                                     <TableCell key={m.value} className="text-right">
-                                      {formatCurrency(linhaMes?.valor || 0)}
+                                      {formatCurrency(grupo?.valor || 0)}
                                     </TableCell>
                                   );
                                 })}
