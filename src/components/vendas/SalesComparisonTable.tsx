@@ -133,14 +133,14 @@ export const SalesComparisonTable = ({
           {formatCurrency(month.faturado || 0)}
         </TableCell>
         <TableCell className="text-right text-sm">
-          <VariationDisplay value={month.variacao_percentual} tipoConta="receita" />
+          <VariationDisplay value={month.variacao_percentual} />
         </TableCell>
         {/* Não exibimos a coluna de média mensal para dados mensais, mas mantemos a célula para preservar o alinhamento */}
         <TableCell className="text-right text-sm">
           {/* Célula vazia para manter o alinhamento correto */}
         </TableCell>
         <TableCell className="text-right text-sm">
-          <VariationDisplay value={month.variacao_ano_anterior} tooltip={`Comparado a ${month.name}/${year-1}`} tipoConta="receita" />
+          <VariationDisplay value={month.variacao_ano_anterior} tooltip={`Comparado a ${month.name}/${year-1}`} />
         </TableCell>
       </TableRow>
     ));
@@ -195,13 +195,13 @@ export const SalesComparisonTable = ({
                       {formatCurrency(yearData.total || 0)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <VariationDisplay value={yearData.variacao_total} tipoConta="receita" />
+                      <VariationDisplay value={yearData.variacao_total} />
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrency(yearData.media_mensal || 0)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <VariationDisplay value={yearData.variacao_media} tipoConta="receita" />
+                      <VariationDisplay value={yearData.variacao_media} />
                     </TableCell>
                   </TableRow>
                   
