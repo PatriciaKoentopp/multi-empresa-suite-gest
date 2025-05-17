@@ -17,12 +17,19 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   // Se o valor for zero, mostramos zero em cinza
   if (value === 0) return <span className="text-gray-500 block text-right">0,00%</span>;
   
-  // Problema original: a variação percentual está sendo calculada incorretamente para despesas
-  // Para despesas, uma redução (ex: de -280 para -230, variação de +50) deve aparecer como positiva
-  // Para receitas, um aumento (ex: de 230 para 280, variação de +50) deve aparecer como positiva
+  // Para contas de despesa:
+  // A fórmula já calcula a variação percentual corretamente:
+  // (valorAtual - valorAnterior) / valorAnterior * 100
+  // Para despesas:
+  // - Se valorAtual (-230,45) e valorAnterior (-279,98)
+  // - A variação = (-230,45 - (-279,98)) / (-279,98) * 100
+  // - A variação = (+49,53) / (-279,98) * 100 = -17,69%
+  // 
+  // Como queremos que:
+  // - Uma redução na despesa apareça como positiva (verde)
+  // - Um aumento na despesa apareça como negativa (vermelho)
+  // Invertemos o sinal do valor para despesas para obter a interpretação semântica correta
   
-  // O valor que recebemos já é a variação percentual calculada
-  // Para despesas, invertemos o sinal para obter a interpretação semântica correta
   const displayValue = tipoConta === 'despesa' ? -value : value;
   
   // Determinar se a variação é positiva ou negativa após ajuste por tipo de conta
@@ -36,8 +43,6 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   let Icon = isPositive ? ArrowUp : ArrowDown;
   
   // Determinar o sinal a ser mostrado (original, sem inverter)
-  // Isso mostra o sinal correto na interface (+17,85% ou -17,85%)
-  // mas a cor e o ícone são determinados pelo valor semanticamente correto (isPositive)
   const displaySign = value > 0 ? '+' : '-';
   
   // Componente base de variação

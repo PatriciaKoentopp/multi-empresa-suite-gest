@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -735,9 +736,9 @@ export default function AnaliseDrePage() {
       const variacaoValor = valorAtualMedio - valorCompMedio;
       let variacaoPercentual = 0;
       
-      // Calcular variação percentual evitando divisão por zero
+      // CORREÇÃO: Calcular variação percentual sem usar Math.abs no denominador
       if (valorCompMedio !== 0) {
-        variacaoPercentual = (variacaoValor / Math.abs(valorCompMedio)) * 100;
+        variacaoPercentual = (variacaoValor / valorCompMedio) * 100;
       } else if (valorAtualMedio !== 0) {
         // Se o valor de comparação for zero, mas o atual não for
         variacaoPercentual = 100; // 100% de aumento
@@ -750,9 +751,10 @@ export default function AnaliseDrePage() {
         avaliacao = 'estavel';
       } else {
         if (ehContaDespesa) {
-          // Para despesas, a lógica é invertida
-          avaliacao = variacaoPercentual > 0 ? 'positiva' : 'negativa';
+          // Para despesas, redução é positiva (menor gasto)
+          avaliacao = variacaoPercentual < 0 ? 'positiva' : 'negativa';
         } else {
+          // Para receitas, aumento é positivo (maior entrada)
           avaliacao = variacaoPercentual > 0 ? 'positiva' : 'negativa';
         }
       }
@@ -779,9 +781,9 @@ export default function AnaliseDrePage() {
           const variacaoSubcontaValor = valorSubcontaAtual - valorSubcontaComp;
           let variacaoSubcontaPercentual = 0;
           
-          // Calcular variação percentual da subconta
+          // CORREÇÃO: Calcular variação percentual da subconta sem usar Math.abs no denominador
           if (valorSubcontaComp !== 0) {
-            variacaoSubcontaPercentual = (variacaoSubcontaValor / Math.abs(valorSubcontaComp)) * 100;
+            variacaoSubcontaPercentual = (variacaoSubcontaValor / valorSubcontaComp) * 100;
           } else if (valorSubcontaAtual !== 0) {
             variacaoSubcontaPercentual = 100;
           }
@@ -795,11 +797,11 @@ export default function AnaliseDrePage() {
           } else {
             // Aplicar a mesma lógica usada para o grupo principal
             if (ehContaDespesa) {
-              // Para subcontas de despesas, a lógica é invertida
-              avaliacaoSubconta = variacaoPercentual > 0 ? 'positiva' : 'negativa';
+              // Para subcontas de despesas, redução é positiva (valor negativo da variação)
+              avaliacaoSubconta = variacaoSubcontaPercentual < 0 ? 'positiva' : 'negativa';
             } else {
-              // Para subcontas de receitas
-              avaliacaoSubconta = variacaoPercentual > 0 ? 'positiva' : 'negativa';
+              // Para subcontas de receitas, aumento é positivo (valor positivo da variação)
+              avaliacaoSubconta = variacaoSubcontaPercentual > 0 ? 'positiva' : 'negativa';
             }
             
             // Marcar como atenção se a variação for muito alta
@@ -816,7 +818,7 @@ export default function AnaliseDrePage() {
               valor_comparacao: valorSubcontaComp,
               variacao_valor: variacaoSubcontaValor,
               variacao_percentual: variacaoSubcontaPercentual,
-              tipo_conta: grupoAtual.tipo,
+              tipo_conta: ehContaDespesa ? 'despesa' : 'receita', // Adicionado tipo_conta correto
               grupo_pai: grupoAtual.tipo,
               avaliacao: avaliacaoSubconta,
               nivel: 'subconta' as 'subconta' | 'principal'
@@ -832,7 +834,7 @@ export default function AnaliseDrePage() {
             valor_comparacao: valorSubcontaComp,
             variacao_valor: variacaoSubcontaValor,
             variacao_percentual: variacaoSubcontaPercentual,
-            tipo_conta: grupoAtual.tipo,
+            tipo_conta: ehContaDespesa ? 'despesa' : 'receita', // Adicionado tipo_conta correto
             avaliacao: avaliacaoSubconta,
             nivel: 'subconta'
           });
@@ -846,7 +848,7 @@ export default function AnaliseDrePage() {
         valor_comparacao: valorCompMedio,
         variacao_valor: variacaoValor,
         variacao_percentual: variacaoPercentual,
-        tipo_conta: grupoAtual.tipo,
+        tipo_conta: ehContaDespesa ? 'despesa' : 'receita', // Adicionado tipo_conta correto
         subcontas: subcontas,
         avaliacao,
         nivel: 'principal'
