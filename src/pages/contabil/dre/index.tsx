@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -285,6 +286,7 @@ export default function DrePage() {
       const considerarDre = mov.movimentacoes?.considerar_dre !== false;
       if (!considerarDre) return;
       
+      // Garantir que valor seja tratado como número
       const valor = Number(mov.valor);
       const tipoOperacao = mov.movimentacoes?.tipo_operacao;
       const planoContas = mov.plano_contas?.plano_contas;
