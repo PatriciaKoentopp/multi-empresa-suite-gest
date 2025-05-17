@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useAnaliseDetalheConta } from "@/hooks/useAnaliseDetalheConta";
 
 /**
@@ -46,13 +46,12 @@ export default function AnaliseCalculoPage() {
           <div className="mt-6 text-sm text-muted-foreground">
             <h4 className="font-medium">Conclusão:</h4>
             <p className="mt-2">
-              Após analisar várias formas de calcular a média, o valor de -119,36 mostrado pelo sistema 
-              parece estar próximo da média calculada ignorando os meses com valor zero. Essa abordagem é 
-              comum em análises financeiras para não "diluir" os custos reais incluindo períodos sem despesas.
+              Após analisar várias formas de calcular a média, concluímos que o sistema deve considerar todos os meses no cálculo, 
+              incluindo aqueles com valor zero. A função <code>calcularMedia</code> foi atualizada para incluir todos os valores no cálculo.
             </p>
             <p className="mt-2">
-              Na análise DRE, parece que o sistema está considerando apenas os meses onde a conta registrou
-              movimentação, ignorando períodos onde não houve despesa (valor zero).
+              Anteriormente, o sistema excluía os períodos com valores zero antes de calcular a média, o que alterava o resultado final.
+              Com a correção, a média será calculada considerando o número total de meses no período, resultando em um valor mais preciso.
             </p>
           </div>
         </CardContent>

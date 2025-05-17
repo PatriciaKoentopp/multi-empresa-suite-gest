@@ -9,16 +9,13 @@ export function useAnaliseDetalheConta() {
   const [resultado, setResultado] = useState<string>("");
 
   /**
-   * Calcula a média conforme a lógica atual do sistema
+   * Calcula a média considerando todos os valores, inclusive zeros
    */
   const calcularMedia = (valores: number[]) => {
-    // Filtra os valores zero antes de calcular a média
-    const valoresNaoZero = valores.filter(v => v !== 0);
+    if (valores.length === 0) return 0;
     
-    if (valoresNaoZero.length === 0) return 0;
-    
-    const soma = valoresNaoZero.reduce((acc, val) => acc + val, 0);
-    return soma / valoresNaoZero.length;
+    const soma = valores.reduce((acc, val) => acc + val, 0);
+    return soma / valores.length;
   };
 
   /**
@@ -44,14 +41,15 @@ export function useAnaliseDetalheConta() {
     // Cálculo considerando todos os meses (incluindo zeros)
     const mediaComZeros = valoresLuz.reduce((acc, val) => acc + val, 0) / valoresLuz.length;
     
-    // Cálculo ignorando meses com valor zero
-    const mediaSemZeros = calcularMedia(valoresLuz);
+    // Cálculo ignorando meses com valor zero (antes da correção)
+    const valoresNaoZero = valoresLuz.filter(v => v !== 0);
+    const mediaSemZeros = valoresNaoZero.reduce((acc, val) => acc + val, 0) / valoresNaoZero.length;
     
     // Média apenas dos últimos 10 meses (ignorando os mais antigos)
     const ultimos10Meses = valoresLuz.slice(2);
     const mediaUltimos10Meses = ultimos10Meses.reduce((acc, val) => acc + val, 0) / ultimos10Meses.length;
     
-    // Média apenas dos últimos 10 meses sem zeros
+    // Média apenas dos últimos 10 meses sem zeros (antes da correção)
     const ultimos10MesesSemZeros = ultimos10Meses.filter(v => v !== 0);
     const mediaUltimos10SemZeros = ultimos10MesesSemZeros.reduce((acc, val) => acc + val, 0) / ultimos10MesesSemZeros.length;
 
@@ -68,6 +66,7 @@ export function useAnaliseDetalheConta() {
       4. Média dos últimos 10 meses (sem zeros): ${arredondar(mediaUltimos10SemZeros)}
       
       O valor -119,36 mostrado no sistema parece estar mais próximo da média ignorando os meses com valor zero.
+      NOTA: A função calcularMedia agora considera TODOS os valores, incluindo zeros.
     `;
 
     setResultado(resultadoAnalise);
