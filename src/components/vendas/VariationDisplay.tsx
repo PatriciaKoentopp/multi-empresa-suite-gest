@@ -32,7 +32,7 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
     Icon = isPositive ? ArrowUp : ArrowDown;
   } else { // despesa
     // Para despesas: variação positiva (vermelha), variação negativa (verde)
-    color = isPositive ? "text-red-500" : "text-green-600";
+    color = isPositive ? "text-grenn-500" : "text-red-600";
     Icon = isPositive ? ArrowUp : ArrowDown;
   }
   
