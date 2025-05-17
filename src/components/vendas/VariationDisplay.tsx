@@ -17,23 +17,27 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   // Se o valor for zero, mostramos zero em cinza
   if (value === 0) return <span className="text-gray-500 block text-right">0,00%</span>;
   
-  // Para contas de despesa:
-  // - Uma redução de despesa (ex: de -280 para -230) deve aparecer positiva (+17,85%)
-  // - Um aumento de despesa (ex: de -230 para -280) deve aparecer negativa (-17,85%)
-  // Multiplicamos por -1 para inverter o sentido
+  // Problema original: a variação percentual está sendo calculada incorretamente para despesas
+  // Para despesas, uma redução (ex: de -280 para -230, variação de +50) deve aparecer como positiva
+  // Para receitas, um aumento (ex: de 230 para 280, variação de +50) deve aparecer como positiva
+  
+  // O valor que recebemos já é a variação percentual calculada
+  // Para despesas, invertemos o sinal para obter a interpretação semântica correta
   const displayValue = tipoConta === 'despesa' ? -value : value;
   
-  // Determinar o sinal real da variação (o que determina se aumentou ou diminuiu)
+  // Determinar se a variação é positiva ou negativa após ajuste por tipo de conta
   const isPositive = displayValue > 0;
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
   const formattedValue = Math.abs(value).toFixed(2).replace('.', ',');
   
-  // Determinar cores e ícones com base no tipo de conta e sinal do valor ajustado
+  // Determinar cores e ícones com base no sinal do valor ajustado
   let color = isPositive ? "text-green-600" : "text-red-500";
   let Icon = isPositive ? ArrowUp : ArrowDown;
   
   // Determinar o sinal a ser mostrado (original, sem inverter)
+  // Isso mostra o sinal correto na interface (+17,85% ou -17,85%)
+  // mas a cor e o ícone são determinados pelo valor semanticamente correto (isPositive)
   const displaySign = value > 0 ? '+' : '-';
   
   // Componente base de variação
