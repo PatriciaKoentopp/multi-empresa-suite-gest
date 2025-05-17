@@ -67,13 +67,11 @@ export interface FiltroAnaliseDre {
   percentual_minimo: number;
 }
 
-// Interface atualizada para detalhes mensais das contas
+// Nova interface para detalhes mensais das contas
 export interface DetalhesMensaisConta {
   nome_conta: string;
   valores_mensais: ValorMensal[];
   media: number;
-  total: number; // Total para o período inteiro
-  meses_com_valor: number; // Contador de meses com valores não zerados
 }
 
 export interface ValorMensal {
@@ -81,5 +79,4 @@ export interface ValorMensal {
   ano: number;
   mes_nome: string;
   valor: number;
-  data_completa: Date; // Data completa para facilitar ordenação
 }

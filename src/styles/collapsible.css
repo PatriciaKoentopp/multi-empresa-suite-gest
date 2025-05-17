@@ -1,9 +1,9 @@
 
-.collapsible-icon {
-  transform: rotate(0deg);
+/* Estilo CSS para o ícone de Collapsible */
+:where(.collapsible-icon) {
   transition: transform 0.2s;
 }
 
-[data-state="open"] .collapsible-icon {
+:where([data-state="open"] .collapsible-icon) {
   transform: rotate(180deg);
 }
