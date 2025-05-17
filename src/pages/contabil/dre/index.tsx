@@ -111,6 +111,7 @@ export default function DrePage() {
 
       try {
         if (visualizacao === "mensal" && mes !== "todos") {
+          // Melhoria no cálculo: usando o primeiro dia do mês e o último dia do mês adequadamente
           const startDate = format(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1), 'yyyy-MM-dd');
           const endDate = format(endOfMonth(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1)), 'yyyy-MM-dd');
 
@@ -134,6 +135,7 @@ export default function DrePage() {
           dadosAgrupados = processarMovimentacoes(movimentacoes || []);
 
         } else if (visualizacao === "mensal" && mes === "todos") {
+          // Melhoria: usando o ano completo
           const startDate = format(new Date(parseInt(anoMensal), 0, 1), 'yyyy-MM-dd');
           const endDate = format(new Date(parseInt(anoMensal), 11, 31), 'yyyy-MM-dd');
 
@@ -190,6 +192,7 @@ export default function DrePage() {
           const dadosPorAno: Record<string, GrupoMovimentacao[]> = {};
 
           for (const anoSelecionado of anosComparar) {
+            // Melhoria: usando o ano completo para cada comparação
             const startDate = format(new Date(parseInt(anoSelecionado), 0, 1), 'yyyy-MM-dd');
             const endDate = format(new Date(parseInt(anoSelecionado), 11, 31), 'yyyy-MM-dd');
 
@@ -215,6 +218,7 @@ export default function DrePage() {
 
           return dadosPorAno;
         } else {
+          // Acumulado - Melhoria: usando o ano completo
           const startDate = format(new Date(parseInt(ano), 0, 1), 'yyyy-MM-dd');
           const endDate = format(new Date(parseInt(ano), 11, 31), 'yyyy-MM-dd');
 
@@ -291,6 +295,7 @@ export default function DrePage() {
       const descricaoCategoria = planoContas?.descricao || 'Sem categoria';
       const contaId = planoContas?.id || 'sem_conta';
 
+      // Melhoria no formato da data: usar formato DD/MM/YYYY 
       const dataFormatada = mov.data_movimentacao ? 
         mov.data_movimentacao.substring(8, 10) + "/" + 
         mov.data_movimentacao.substring(5, 7) + "/" + 
