@@ -51,7 +51,7 @@ export default function AnaliseCalculoPage() {
             </p>
             <p className="mt-2">
               Anteriormente, o sistema excluía os períodos com valores zero antes de calcular a média, o que alterava o resultado final.
-              Com a correção, a média será calculada considerando o número total de meses no período, resultando em um valor mais preciso.
+              Com a correção, a média será calculada considerando o número total de meses no período, resultando em um valor mais preciso de -121,79.
             </p>
           </div>
         </CardContent>

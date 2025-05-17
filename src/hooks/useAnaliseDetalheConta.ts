@@ -39,7 +39,7 @@ export function useAnaliseDetalheConta() {
     ];
 
     // Cálculo considerando todos os meses (incluindo zeros)
-    const mediaComZeros = valoresLuz.reduce((acc, val) => acc + val, 0) / valoresLuz.length;
+    const mediaComZeros = calcularMedia(valoresLuz);
     
     // Cálculo ignorando meses com valor zero (antes da correção)
     const valoresNaoZero = valoresLuz.filter(v => v !== 0);
@@ -47,7 +47,7 @@ export function useAnaliseDetalheConta() {
     
     // Média apenas dos últimos 10 meses (ignorando os mais antigos)
     const ultimos10Meses = valoresLuz.slice(2);
-    const mediaUltimos10Meses = ultimos10Meses.reduce((acc, val) => acc + val, 0) / ultimos10Meses.length;
+    const mediaUltimos10Meses = calcularMedia(ultimos10Meses);
     
     // Média apenas dos últimos 10 meses sem zeros (antes da correção)
     const ultimos10MesesSemZeros = ultimos10Meses.filter(v => v !== 0);
@@ -65,7 +65,8 @@ export function useAnaliseDetalheConta() {
       3. Média dos últimos 10 meses (incluindo zeros): ${arredondar(mediaUltimos10Meses)}
       4. Média dos últimos 10 meses (sem zeros): ${arredondar(mediaUltimos10SemZeros)}
       
-      O valor -119,36 mostrado no sistema parece estar mais próximo da média ignorando os meses com valor zero.
+      O valor correto da média é -121,79 (considerando TODOS os meses, incluindo aqueles com valor zero).
+      O valor -119,36 mostrado anteriormente estava incorreto pois não considerava os meses com valor zero no cálculo.
       NOTA: A função calcularMedia agora considera TODOS os valores, incluindo zeros.
     `;
 
