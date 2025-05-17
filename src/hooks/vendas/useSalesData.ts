@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -69,8 +68,14 @@ export const useSalesData = () => {
         return acc + orcamentoTotal;
       }, 0) || 0;
 
-      // Calcular variação percentual
-      const variacaoPercentual = vendasMesAnterior === 0 ? 100 : ((vendasMesAtual - vendasMesAnterior) / vendasMesAnterior) * 100;
+      // Calcular variação percentual mantendo o sinal
+      // Se o mês anterior for zero, consideramos como 100% de aumento
+      let variacaoPercentual = 0;
+      if (vendasMesAnterior === 0) {
+        variacaoPercentual = vendasMesAtual > 0 ? 100 : 0;
+      } else {
+        variacaoPercentual = ((vendasMesAtual - vendasMesAnterior) / vendasMesAnterior) * 100;
+      }
 
       // Buscar total anual de vendas do ano atual
       const startOfYear = format(new Date(currentYear, 0, 1), 'yyyy-MM-dd');
