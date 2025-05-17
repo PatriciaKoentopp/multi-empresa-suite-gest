@@ -22,13 +22,14 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   // Para despesas: diminuição (valor negativo) é bom
   const isPositiveForBusiness = tipoConta === 'receita' ? value > 0 : value < 0;
   
-  // Cor e ícone baseados na avaliação de negócio, não apenas no sinal do número
+  // Cor e ícone baseados na avaliação de negócio
   const color = isPositiveForBusiness ? "text-green-600" : "text-red-500";
-  const Icon = value > 0 ? ArrowUp : ArrowDown; // Ícone baseado no valor real
+  
+  // Usar o valor real (sem abs) para determinar o ícone
+  const Icon = value > 0 ? ArrowUp : ArrowDown;
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
   // Garantimos que sempre temos duas casas decimais, para valores como -6,75% ou 8,01%
-  // Não usamos valor absoluto para preservar o sinal correto
   const formattedValue = Math.abs(value).toFixed(2).replace('.', ',');
   
   // Componente base de variação
