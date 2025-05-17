@@ -156,22 +156,24 @@ export default function DrePage() {
 
           if (error) throw error;
 
-          // Correção: obter movimentações por mês garantindo que todos os meses sejam representados
+          // Correção: inicializa estrutura para todos os meses ANTES de processar as movimentações
           const movimentacoesPorMes = meses.reduce((acc: Record<string, any[]>, mes) => {
             acc[mes.value] = [];
             return acc;
           }, {});
           
-          // Agora preenchemos com as movimentações reais
+          // Corrigido: agora preenchemos com as movimentações reais em seus respectivos meses
           (movimentacoes || []).forEach(mov => {
             if (!mov.data_movimentacao) return;
             const mesMovimentacao = mov.data_movimentacao.substring(5, 7);
-            movimentacoesPorMes[mesMovimentacao].push(mov);
+            if (movimentacoesPorMes[mesMovimentacao]) {
+              movimentacoesPorMes[mesMovimentacao].push(mov);
+            }
           });
 
           const resultadosMensais: ResultadoMensal[] = [];
 
-          // Garantindo que todos os meses sejam processados
+          // Garantindo que todos os meses sejam processados, mesmo sem movimentações
           for (const [mesDado, movs] of Object.entries(movimentacoesPorMes)) {
             const dados = processarMovimentacoes(movs);
             const contasPorTipo: Record<string, ContaContabilAgrupamento[]> = {};
