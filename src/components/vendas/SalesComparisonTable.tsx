@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import {
   Table,
@@ -24,6 +23,7 @@ export const SalesComparisonTable = ({
   yearlyComparisonData,
   getMonthlySalesData 
 }: SalesComparisonTableProps) => {
+  
   const [expandedYears, setExpandedYears] = useState<{[key: number]: boolean}>({});
   const [monthlyData, setMonthlyData] = useState<{[key: number]: {name: string; faturado: number; variacao_percentual: number | null; variacao_ano_anterior: number | null;}[]}>({});
   const [loadingYear, setLoadingYear] = useState<number | null>(null);
@@ -67,6 +67,7 @@ export const SalesComparisonTable = ({
 
   // Função para alternar a expansão de um ano
   const toggleYearExpansion = async (year: number) => {
+    
     // Se já estamos carregando, não faz nada
     if (loadingYear !== null) return;
 
