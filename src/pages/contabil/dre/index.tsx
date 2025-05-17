@@ -12,6 +12,7 @@ import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import "../../../styles/collapsible.css";
+import { VariationDisplay } from "@/components/vendas/VariationDisplay";
 
 // Arrays de meses e anos
 const meses = [
@@ -806,7 +807,11 @@ export default function DrePage() {
                                 const valorAtual = contaAtual?.valor || 0;
                                 const valorAnterior = contaAnterior?.valor || 0;
                                 
-                                const variacaoAbsoluta = valorAtual - valorAnterior;
+                                // Modificação: Para contas de despesa, calcular a variação invertendo o sinal
+                                let variacaoAbsoluta = valorAtual - valorAnterior;
+                                if (tipoConta === 'despesa') {
+                                  variacaoAbsoluta = -variacaoAbsoluta;
+                                }
                                 
                                 return (
                                   <>
