@@ -19,7 +19,7 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   
   // Determinar se a variação é positiva do ponto de vista de negócio
   // Para receitas: aumento (value > 0) é bom
-  // Para despesas: diminuição (value < 0) é bom
+  // Para despesas: aumento (value > 0) é ruim (pois significa que a despesa aumentou)
   const isPositiveForBusiness = tipoConta === 'receita' ? value > 0 : value < 0;
   
   // Cor baseada na avaliação de negócio
