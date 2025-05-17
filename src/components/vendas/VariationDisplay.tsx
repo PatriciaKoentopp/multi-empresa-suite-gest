@@ -33,8 +33,8 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
   // Garantimos que sempre temos duas casas decimais
-  // Mostramos o valor absoluto, pois o sinal já é indicado pelo ícone
-  const formattedValue = Math.abs(value).toFixed(2).replace('.', ',');
+  // Importante: Mantemos o sinal do valor para indicar a direção da variação
+  const formattedValue = value.toFixed(2).replace('.', ',');
   
   // Componente base de variação
   const VariationComponent = (
