@@ -17,32 +17,24 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   // Se o valor for zero, mostramos zero em cinza
   if (value === 0) return <span className="text-gray-500 block text-right">0,00%</span>;
   
+  // Para contas de despesa, invertemos o valor para a exibição correta da variação
+  // Isto garante que o significado semântico seja mantido: 
+  // - Para despesas, um aumento (valor negativo após inversão) é ruim (vermelho)
+  // - Para despesas, uma redução (valor positivo após inversão) é bom (verde)
+  const displayValue = tipoConta === 'despesa' ? -value : value;
+  
   // Determinar o sinal real da variação (o que determina se aumentou ou diminuiu)
-  const isPositive = value > 0;
+  const isPositive = displayValue > 0;
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
   const formattedValue = Math.abs(value).toFixed(2).replace('.', ',');
   
-  // Para contas de despesa, invertemos a interpretação do sinal
-  // Para receitas: variação positiva (verde/bom), variação negativa (vermelha/ruim)
-  // Para despesas: variação positiva (vermelha/ruim), variação negativa (verde/bom)
+  // Determinar cores e ícones com base no tipo de conta e sinal do valor ajustado
+  let color = isPositive ? "text-green-600" : "text-red-500";
+  let Icon = isPositive ? ArrowUp : ArrowDown;
   
-  // Para despesas, um valor matematicamente positivo significa que a despesa aumentou (ruim)
-  // Para despesas, um valor matematicamente negativo significa que a despesa diminuiu (bom)
-  let color, Icon, displaySign;
-  
-  if (tipoConta === 'receita') {
-    // Para receitas mantemos a lógica padrão
-    color = isPositive ? "text-green-600" : "text-red-500";
-    Icon = isPositive ? ArrowUp : ArrowDown;
-    displaySign = isPositive ? '+' : '-';
-  } else { // despesa
-    // Para despesas invertemos a interpretação (não o sinal do número)
-    color = isPositive ? "text-red-500" : "text-green-600";
-    Icon = isPositive ? ArrowUp : ArrowDown;
-    // Mantemos o sinal matemático real na exibição
-    displaySign = isPositive ? '+' : '-';
-  }
+  // Determinar o sinal a ser mostrado
+  const displaySign = value > 0 ? '+' : '-';
   
   // Componente base de variação
   const VariationComponent = (

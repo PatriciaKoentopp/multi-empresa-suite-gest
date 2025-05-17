@@ -98,7 +98,6 @@ export default function DrePage() {
   const { currentCompany } = useCompany();
   const [contaExpandida, setContaExpandida] = useState<string | null>(null);
   const [contasExpandidasTodosMeses, setContasExpandidasTodosMeses] = useState<Record<string, boolean>>({});
-  // Novo estado para controlar expansão de contas na comparação entre anos
   const [contasExpandidasComparacao, setContasExpandidasComparacao] = useState<Record<string, boolean>>({});
 
   // Query para buscar dados do DRE
@@ -111,7 +110,6 @@ export default function DrePage() {
 
       try {
         if (visualizacao === "mensal" && mes !== "todos") {
-          // Busca dados para um mês específico
           const startDate = format(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1), 'yyyy-MM-dd');
           const endDate = format(endOfMonth(new Date(parseInt(anoMensal), parseInt(mes) - 1, 1)), 'yyyy-MM-dd');
 
@@ -135,7 +133,6 @@ export default function DrePage() {
           dadosAgrupados = processarMovimentacoes(movimentacoes || []);
 
         } else if (visualizacao === "mensal" && mes === "todos") {
-          // Busca dados para todos os meses do ano
           const startDate = format(new Date(parseInt(anoMensal), 0, 1), 'yyyy-MM-dd');
           const endDate = format(new Date(parseInt(anoMensal), 11, 31), 'yyyy-MM-dd');
 
@@ -156,10 +153,8 @@ export default function DrePage() {
 
           if (error) throw error;
 
-          // Agrupa movimentações por mês
           const movimentacoesPorMes = (movimentacoes || []).reduce((acc: any, mov) => {
-            // Usando a data exatamente como está armazenada no banco, sem timezone
-            const mesMovimentacao = mov.data_movimentacao.substring(5, 7); // Formato: YYYY-MM-DD
+            const mesMovimentacao = mov.data_movimentacao.substring(5, 7);
             if (!acc[mesMovimentacao]) {
               acc[mesMovimentacao] = [];
             }
@@ -167,13 +162,10 @@ export default function DrePage() {
             return acc;
           }, {});
 
-          // Processa movimentações para cada mês
           const resultadosMensais: ResultadoMensal[] = [];
 
           for (const [mesDado, movs] of Object.entries(movimentacoesPorMes)) {
             const dados = processarMovimentacoes(movs as any[]);
-            
-            // Criar estrutura de contas por tipo para facilitar a visualização por subconta
             const contasPorTipo: Record<string, ContaContabilAgrupamento[]> = {};
             
             dados.forEach((grupo: GrupoMovimentacao) => {
@@ -192,7 +184,6 @@ export default function DrePage() {
           return resultadosMensais.sort((a, b) => a.mes.localeCompare(b.mes));
 
         } else if (visualizacao === "comparar_anos") {
-          // Busca dados para cada ano selecionado
           const dadosPorAno: Record<string, GrupoMovimentacao[]> = {};
 
           for (const anoSelecionado of anosComparar) {
@@ -221,7 +212,6 @@ export default function DrePage() {
 
           return dadosPorAno;
         } else {
-          // Acumulado
           const startDate = format(new Date(parseInt(ano), 0, 1), 'yyyy-MM-dd');
           const endDate = format(new Date(parseInt(ano), 11, 31), 'yyyy-MM-dd');
 
@@ -268,7 +258,6 @@ export default function DrePage() {
       "IRPJ/CSLL": []
     };
     
-    // Estrutura para agrupar por conta contábil
     const contasAgrupamento: { [key: string]: { [contaId: string]: MovimentacaoDetalhe[] } } = {
       "Receita Bruta": {},
       "Deduções": {},
@@ -290,7 +279,6 @@ export default function DrePage() {
     let impostos = 0;
 
     movimentacoes.forEach(mov => {
-      // Verifica se devemos considerar no DRE
       const considerarDre = mov.movimentacoes?.considerar_dre !== false;
       if (!considerarDre) return;
       
@@ -300,7 +288,6 @@ export default function DrePage() {
       const descricaoCategoria = planoContas?.descricao || 'Sem categoria';
       const contaId = planoContas?.id || 'sem_conta';
 
-      // Formata a data exatamente como está no banco, sem ajustar timezone
       const dataFormatada = mov.data_movimentacao ? 
         mov.data_movimentacao.substring(8, 10) + "/" + 
         mov.data_movimentacao.substring(5, 7) + "/" + 
@@ -315,9 +302,7 @@ export default function DrePage() {
         conta_descricao: descricaoCategoria
       };
 
-      // Usa classificação DRE se disponível, senão faz inferência pelo tipo e descrição
       if (planoContas && planoContas.classificacao_dre && planoContas.classificacao_dre !== 'nao_classificado') {
-        // Classificação direta pelo campo classificacao_dre
         let grupoDestino = "";
         
         switch (planoContas.classificacao_dre) {
@@ -356,17 +341,14 @@ export default function DrePage() {
         }
         
         if (grupoDestino) {
-          // Adiciona ao grupo geral
           grupos[grupoDestino].push(detalhe);
           
-          // Agrupamento por conta contábil
           if (!contasAgrupamento[grupoDestino][contaId]) {
             contasAgrupamento[grupoDestino][contaId] = [];
           }
           contasAgrupamento[grupoDestino][contaId].push(detalhe);
         }
       } else {
-        // Se for recebimento e não tiver categoria ou plano de contas, considera como receita bruta
         if (tipoOperacao === 'receber' && (!mov.movimentacoes?.categoria_id || !planoContas)) {
           receitaBruta += valor;
           grupos["Receita Bruta"].push(detalhe);
@@ -376,12 +358,10 @@ export default function DrePage() {
           }
           contasAgrupamento["Receita Bruta"][contaId].push(detalhe);
         } 
-        // Para os demais, usa o plano de contas
         else if (planoContas) {
           const { tipo, descricao } = planoContas;
           let grupoDestino = "";
           
-          // Receitas
           if (tipo === 'receita') {
             if (descricao.toLowerCase().includes('financeira') || 
                 descricao.toLowerCase().includes('juros') || 
@@ -393,7 +373,6 @@ export default function DrePage() {
               grupoDestino = "Receita Bruta";
             }
           }
-          // Despesas
           else if (tipo === 'despesa') {
             switch (descricao.toLowerCase()) {
               case 'das - simples nacional':
@@ -416,7 +395,6 @@ export default function DrePage() {
                 grupoDestino = "Distribuição de Lucros";
                 break;
               default:
-                // Verifica se é despesa financeira
                 if (descricao.toLowerCase().includes('financeira') || 
                     descricao.toLowerCase().includes('juros') || 
                     descricao.toLowerCase().includes('tarifas')) {
@@ -430,10 +408,8 @@ export default function DrePage() {
           }
           
           if (grupoDestino) {
-            // Adiciona ao grupo geral
             grupos[grupoDestino].push(detalhe);
             
-            // Agrupamento por conta contábil
             if (!contasAgrupamento[grupoDestino][contaId]) {
               contasAgrupamento[grupoDestino][contaId] = [];
             }
@@ -443,15 +419,14 @@ export default function DrePage() {
       }
     });
 
-    const receitaLiquida = receitaBruta + deducoes; // Deduções já contém o sinal negativo, então somamos
-    const lucroBruto = receitaLiquida + custos; // Custos já contém o sinal negativo, então somamos
-    const resultadoOperacional = lucroBruto + despesasOperacionais; // Despesas já contêm o sinal negativo
-    const resultadoFinanceiro = resultadoOperacional + receitasFinanceiras + despesasFinanceiras; // Despesas financeiras já contêm o sinal negativo
+    const receitaLiquida = receitaBruta + deducoes;
+    const lucroBruto = receitaLiquida + custos;
+    const resultadoOperacional = lucroBruto + despesasOperacionais;
+    const resultadoFinanceiro = resultadoOperacional + receitasFinanceiras + despesasFinanceiras;
     const resultadoAntesIR = resultadoFinanceiro;
-    const lucroLiquido = resultadoAntesIR + impostos; // Impostos já contêm o sinal negativo
-    const resultadoExercicio = lucroLiquido + distribuicaoLucros; // Distribuição já contém o sinal negativo
+    const lucroLiquido = resultadoAntesIR + impostos;
+    const resultadoExercicio = lucroLiquido + distribuicaoLucros;
 
-    // Converter o agrupamento de contas para o formato estruturado
     const converterAgrupamentoContas = (grupoNome: string) => {
       const contas: ContaContabilAgrupamento[] = [];
       const contasObj = contasAgrupamento[grupoNome];
@@ -460,7 +435,6 @@ export default function DrePage() {
         const detalhes = contasObj[contaId];
         const valorTotal = detalhes.reduce((sum, d) => sum + d.valor, 0);
         
-        // Se a conta não tem detalhes ou é "sem_conta", ignoramos
         if (detalhes.length === 0 || contaId === "sem_conta") return;
         
         contas.push({
@@ -471,12 +445,9 @@ export default function DrePage() {
         });
       });
       
-      // Ordena as contas pelo valor (do maior para o menor em valor absoluto)
       return contas.sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor));
     };
 
-    // Os sinais dos valores são preservados conforme registrados no banco, não usamos mais Math.abs()
-    // Na apresentação, mantemos o nome da conta com o sinal negativo para indicar visualmente que se trata de redução
     return [
       { tipo: "Receita Bruta", valor: receitaBruta, detalhes: grupos["Receita Bruta"], contas: converterAgrupamentoContas("Receita Bruta") },
       { tipo: "(-) Deduções", valor: deducoes, detalhes: grupos["Deduções"], contas: converterAgrupamentoContas("Deduções") },
@@ -509,7 +480,6 @@ export default function DrePage() {
     
     const dadosComparativos = dadosDRE as Record<string, GrupoMovimentacao[]>;
     
-    // Verifica se algum dos anos tem subcontas para esta conta
     return anosComparar.some(ano => {
       const grupo = dadosComparativos[ano]?.find(g => g.tipo === conta);
       return grupo?.contas && grupo.contas.length > 0;
@@ -558,6 +528,30 @@ export default function DrePage() {
     return meses.find(m => m.value === numeroMes)?.label || numeroMes;
   }
 
+  // Função para calcular e exibir variação com o componente VariationDisplay
+  function renderVariacao(valorAtual: number, valorAnterior: number, tipoConta: 'receita' | 'despesa' = 'receita') {
+    if (valorAnterior === 0) return <span>-</span>;
+    
+    const variacao = ((valorAtual - valorAnterior) / Math.abs(valorAnterior)) * 100;
+    const tooltip = `Variação de ${formatCurrency(valorAnterior)} para ${formatCurrency(valorAtual)}`;
+    
+    return <VariationDisplay value={variacao} tooltip={tooltip} tipoConta={tipoConta} />;
+  }
+
+  // Função para determinar o tipo de conta baseado no nome
+  function getTipoConta(nomeConta: string): 'receita' | 'despesa' {
+    if (
+      nomeConta.includes('Despesa') || 
+      nomeConta.includes('Custo') || 
+      nomeConta.includes('Deduções') || 
+      nomeConta.includes('IRPJ') || 
+      nomeConta.includes('Distribuição')
+    ) {
+      return 'despesa';
+    }
+    return 'receita';
+  }
+
   return (
     <div className="w-full">
       <Card className="w-full">
@@ -583,7 +577,6 @@ export default function DrePage() {
                 </SelectContent>
               </Select>
             </div>
-            {/* Ano para acumulado */}
             {visualizacao === "acumulado" && (
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">Ano</label>
@@ -599,7 +592,6 @@ export default function DrePage() {
                 </Select>
               </div>
             )}
-            {/* Seleção múltipla de anos para comparação */}
             {visualizacao === "comparar_anos" && (
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">Anos para comparar</label>
@@ -623,7 +615,6 @@ export default function DrePage() {
                 </span>
               </div>
             )}
-            {/* Ano + mês para visualização mensal */}
             {visualizacao === "mensal" && (
               <>
                 <div>
@@ -680,7 +671,6 @@ export default function DrePage() {
                       
                       {temContas(grupo) ? (
                         <AccordionContent>
-                          {/* Nível 2: Contas contábeis */}
                           {grupo.contas && grupo.contas.length > 0 ? grupo.contas.map((conta, contaIndex) => (
                             <Collapsible key={contaIndex} className="px-4 py-2 border-t">
                               <CollapsibleTrigger className="flex justify-between w-full hover:underline">
@@ -723,7 +713,6 @@ export default function DrePage() {
                         </AccordionContent>
                       ) : temDetalhes(grupo) ? (
                         <AccordionContent>
-                          {/* Retrocompatibilidade: Movimentações sem contas */}
                           <div className="overflow-x-auto">
                             <Table>
                               <TableHeader>
@@ -763,19 +752,22 @@ export default function DrePage() {
                         {anosComparar.map(a => (
                           <TableHead key={a} className="text-right">{a}</TableHead>
                         ))}
+                        {anosComparar.length === 2 && (
+                          <>
+                            <TableHead className="text-right">Variação</TableHead>
+                            <TableHead className="text-right">%</TableHead>
+                          </>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {contasDRE.map(conta => {
-                        // Verifica se conta atual pode ter subcontas
                         const contemSubcontas = temSubcontasNaComparacao(conta);
-                        
-                        // Verifica se a conta está expandida
                         const estaExpandida = contasExpandidasComparacao[conta] || false;
+                        const tipoConta = getTipoConta(conta);
                         
                         return (
                           <React.Fragment key={conta}>
-                            {/* Linha da Conta Principal */}
                             <TableRow 
                               className={contemSubcontas && estaExpandida ? "bg-muted/50" : ""}
                               onClick={() => contemSubcontas && toggleContaExpandidaComparacao(conta)}
@@ -791,10 +783,8 @@ export default function DrePage() {
                                 </div>
                               </TableCell>
                               
-                              {anosComparar.map(anoComp => {
-                                // Dados do DRE são um objeto com anos como chaves
+                              {anosComparar.map((anoComp, idx) => {
                                 const dadosAno = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoComp] || [];
-                                // Procurar a conta específica nos dados do ano
                                 const contaData = dadosAno.find(item => item.tipo === conta);
                                 return (
                                   <TableCell key={anoComp} className="text-right">
@@ -802,11 +792,36 @@ export default function DrePage() {
                                   </TableCell>
                                 );
                               })}
+
+                              {anosComparar.length === 2 && (() => {
+                                const anoAtual = anosComparar[0];
+                                const anoAnterior = anosComparar[1];
+                                
+                                const dadosAnoAtual = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoAtual] || [];
+                                const dadosAnoAnterior = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoAnterior] || [];
+                                
+                                const contaAtual = dadosAnoAtual.find(item => item.tipo === conta);
+                                const contaAnterior = dadosAnoAnterior.find(item => item.tipo === conta);
+                                
+                                const valorAtual = contaAtual?.valor || 0;
+                                const valorAnterior = contaAnterior?.valor || 0;
+                                
+                                const variacaoAbsoluta = valorAtual - valorAnterior;
+                                
+                                return (
+                                  <>
+                                    <TableCell className="text-right">
+                                      {formatCurrency(variacaoAbsoluta)}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {valorAnterior !== 0 ? renderVariacao(valorAtual, valorAnterior, tipoConta) : '-'}
+                                    </TableCell>
+                                  </>
+                                );
+                              })()}
                             </TableRow>
                             
-                            {/* Linhas das Subcontas (quando expandidas) */}
                             {contemSubcontas && estaExpandida && 
-                              // Montamos uma lista de todas as subcontas encontradas em todos os anos
                               Array.from(
                                 new Set(
                                   anosComparar.flatMap(anoComp => {
@@ -859,7 +874,6 @@ export default function DrePage() {
                       
                       {temContas(grupo) ? (
                         <AccordionContent>
-                          {/* Nível 2: Contas contábeis */}
                           {grupo.contas && grupo.contas.length > 0 ? grupo.contas.map((conta, contaIndex) => (
                             <Collapsible key={contaIndex} className="px-4 py-2 border-t">
                               <CollapsibleTrigger className="flex justify-between w-full hover:underline">
@@ -902,7 +916,6 @@ export default function DrePage() {
                         </AccordionContent>
                       ) : temDetalhes(grupo) ? (
                         <AccordionContent>
-                          {/* Retrocompatibilidade: Movimentações sem contas */}
                           <div className="overflow-x-auto">
                             <Table>
                               <TableHeader>
@@ -935,7 +948,6 @@ export default function DrePage() {
               {/* Mensal todos os meses em colunas com expansão para subcontas */}
               {visualizacao === "mensal" && mes === "todos" && (
                 <>
-                  {/* Tabela principal de contas por mês com expansão para subcontas */}
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
@@ -948,16 +960,13 @@ export default function DrePage() {
                       </TableHeader>
                       <TableBody>
                         {contasDRE.map(conta => {
-                          // Verifica se conta atual pode ter subcontas
                           const contemSubcontas = ["Receita Bruta", "(-) Deduções", "(-) Custos", "(-) Despesas Operacionais", 
                             "(+) Receitas Financeiras", "(-) Despesas Financeiras", "(-) IRPJ/CSLL", "(-) Distribuição de Lucros"].includes(conta);
                           
-                          // Verifica se a conta está expandida
                           const estaExpandida = contasExpandidasTodosMeses[conta] || false;
                           
                           return (
                             <React.Fragment key={conta}>
-                              {/* Linha da Conta Principal */}
                               <TableRow 
                                 className={contemSubcontas && estaExpandida ? "bg-muted/50" : ""}
                                 onClick={() => contemSubcontas && toggleContaExpandidaTodosMeses(conta)}
@@ -984,7 +993,6 @@ export default function DrePage() {
                                 })}
                               </TableRow>
                               
-                              {/* Linhas das Subcontas */}
                               {contemSubcontas && estaExpandida && Array.from(
                                 new Set((dadosDRE as ResultadoMensal[])
                                   .flatMap(resultadoMensal => {
