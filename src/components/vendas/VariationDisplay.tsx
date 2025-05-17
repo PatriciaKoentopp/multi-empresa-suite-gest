@@ -17,22 +17,21 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   // Se o valor for zero, mostramos zero em cinza
   if (value === 0) return <span className="text-gray-500 block text-right">0,00%</span>;
   
+  // Para despesas, invertemos o sinal para refletir o impacto no negócio
+  const displayValue = tipoConta === 'despesa' ? -value : value;
+  
   // Determinar se a variação é positiva do ponto de vista de negócio
-  // Para receitas: aumento (value > 0) é bom
-  // Para despesas: aumento (value > 0) é ruim (pois significa que a despesa aumentou)
-  const isPositiveForBusiness = tipoConta === 'receita' ? value > 0 : value < 0;
+  // Para receitas: aumento (displayValue > 0) é bom
+  // Para despesas: o displayValue já reflete o impacto no negócio após a inversão acima
+  const isPositiveForBusiness = displayValue > 0;
   
   // Cor baseada na avaliação de negócio
   const color = isPositiveForBusiness ? "text-green-600" : "text-red-500";
   
-  // Ícone baseado na direção da variação em relação ao valor de referência
-  // Seta para cima quando o valor AUMENTOU (variação positiva)
-  // Seta para baixo quando o valor DIMINUIU (variação negativa)
-  const Icon = value > 0 ? ArrowUp : ArrowDown;
+  // Ícone baseado na direção do displayValue (já com o sinal ajustado para o negócio)
+  const Icon = displayValue > 0 ? ArrowUp : ArrowDown;
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
-  // Para despesas, inverta o sinal para refletir o impacto no negócio
-  let displayValue = tipoConta === 'despesa' ? -value : value;
   const formattedValue = displayValue.toFixed(2).replace('.', ',');
   
   // Componente base de variação
