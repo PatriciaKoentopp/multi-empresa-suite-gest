@@ -5,9 +5,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface VariationDisplayProps {
   value: number | null;
   tooltip?: string;
+  tipoConta?: string;
 }
 
-export const VariationDisplay = ({ value, tooltip }: VariationDisplayProps) => {
+export const VariationDisplay = ({ value, tooltip, tipoConta }: VariationDisplayProps) => {
   // Se o valor for null ou undefined, mostramos o traço
   if (value === null || value === undefined) {
     return <span className="text-gray-400 block text-right">-</span>;
@@ -16,9 +17,25 @@ export const VariationDisplay = ({ value, tooltip }: VariationDisplayProps) => {
   // Se o valor for zero, mostramos zero em cinza
   if (value === 0) return <span className="text-gray-500 block text-right">0,00%</span>;
   
-  const isPositive = value > 0;
-  const color = isPositive ? "text-green-600" : "text-red-500";
-  const Icon = isPositive ? ArrowUp : ArrowDown;
+  // Determinar se a variação é positiva para o negócio (não apenas se é numericamente positiva)
+  let isPositiveForBusiness: boolean;
+  
+  // Lógica corrigida:
+  // - Para despesas (valores tipicamente negativos): variação negativa é boa para o negócio
+  // - Para receitas (valores tipicamente positivos): variação positiva é boa para o negócio
+  if (tipoConta === "despesa" || tipoConta === "custos" || tipoConta === "deducoes" || 
+      tipoConta === "despesas_financeiras" || tipoConta === "distribuicao_lucros" || 
+      tipoConta === "impostos_irpj_csll") {
+    // Para contas de despesa, uma variação negativa (redução da despesa) é positiva para o negócio
+    isPositiveForBusiness = value < 0;
+  } else {
+    // Para contas de receita e outras, uma variação positiva (aumento da receita) é positiva para o negócio
+    isPositiveForBusiness = value > 0;
+  }
+  
+  // Cores e ícones baseados no impacto nos negócios, não apenas no sinal do número
+  const color = isPositiveForBusiness ? "text-green-600" : "text-red-500";
+  const Icon = value > 0 ? ArrowUp : ArrowDown; // O ícone ainda se baseia no valor real (se subiu ou desceu)
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
   // Garantimos que sempre temos duas casas decimais, para valores como -6,75% ou 8,01%
