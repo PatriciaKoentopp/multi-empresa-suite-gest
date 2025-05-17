@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -453,56 +454,63 @@ export default function AnalisedrePage() {
     return dadosAgrupados;
   }
 
-  // Modificando apenas a função que calcula os detalhes das médias mensais
-function calcularDetalhesMensaisMedia(conta: string, detalhesConta: Record<string, number[]>): {
-  meses: string[];
-  valores: number[];
-  media: number;
-} {
-  const mesesDisponiveis = Object.keys(detalhesConta).sort();
-  const valores: number[] = [];
-  
-  for (const mes of mesesDisponiveis) {
-    // Garantir que estamos somando os valores corretamente como números
-    const valoresMes = detalhesConta[mes].reduce((sum, val) => sum + Number(val), 0);
-    valores.push(valoresMes);
-  }
-  
-  // Calcular a média da mesma forma que é feito na tabela principal
-  // Somente com os valores disponíveis, sem incluir meses sem valores
-  const soma = valores.reduce((sum, val) => sum + val, 0);
-  const media = valores.length > 0 ? soma / valores.length : 0;
-  
-  return {
-    meses: mesesDisponiveis,
-    valores: valores,
-    media: media
-  };
-}
-
-  // Modificando a função calcularValorMediaAnterior para garantir consistência
-function calcularValorMediaAnterior(conta: string, dadosAgrupados: Record<string, Record<string, number[]>>): number {
-  if (!dadosAgrupados[conta]) return 0;
-  
-  const mesesComValores = Object.keys(dadosAgrupados[conta]);
-  if (mesesComValores.length === 0) return 0;
-  
-  let somaTotal = 0;
-  let quantidadeMeses = 0;
-  
-  // Somar todos os valores como números para cada mês
-  for (const mes of mesesComValores) {
-    // Garantir que estamos somando os valores corretamente como números
-    const valoresMes = dadosAgrupados[conta][mes].reduce((sum, val) => sum + Number(val), 0);
-    if (valoresMes !== 0) {
-      somaTotal += valoresMes;
-      quantidadeMeses++;
+  // Função corrigida para calcular os detalhes das médias mensais
+  function calcularDetalhesMensaisMedia(conta: string, detalhesConta: Record<string, number[]>): {
+    meses: string[];
+    valores: number[];
+    media: number;
+  } {
+    const mesesDisponiveis = Object.keys(detalhesConta).sort();
+    const valores: number[] = [];
+    
+    let totalValores = 0;
+    let mesesComValor = 0;
+    
+    for (const mes of mesesDisponiveis) {
+      // Garantir que estamos somando os valores corretamente como números
+      const valoresMes = detalhesConta[mes].reduce((sum, val) => sum + Number(val), 0);
+      valores.push(valoresMes);
+      
+      // Só conta meses que têm valores diferentes de zero para a média
+      if (valoresMes !== 0) {
+        totalValores += valoresMes;
+        mesesComValor++;
+      }
     }
+    
+    // Calcular a média usando apenas os meses com valores não-zero
+    // para manter consistência com o cálculo na tabela principal
+    const media = mesesComValor > 0 ? totalValores / mesesComValor : 0;
+    
+    return {
+      meses: mesesDisponiveis,
+      valores: valores,
+      media: media
+    };
   }
-  
-  // Retornar a média apenas se houver meses com valores
-  return quantidadeMeses > 0 ? somaTotal / quantidadeMeses : 0;
-}
+
+  // Função corrigida para calcular a média anterior com a mesma lógica
+  function calcularValorMediaAnterior(conta: string, dadosAgrupados: Record<string, Record<string, number[]>>): number {
+    if (!dadosAgrupados[conta]) return 0;
+    
+    const mesesComValores = Object.keys(dadosAgrupados[conta]);
+    if (mesesComValores.length === 0) return 0;
+    
+    let somaTotal = 0;
+    let quantidadeMeses = 0;
+    
+    // Somar todos os valores como números para cada mês, ignorando meses com valor zero
+    for (const mes of mesesComValores) {
+      const valoresMes = dadosAgrupados[conta][mes].reduce((sum, val) => sum + Number(val), 0);
+      if (valoresMes !== 0) {
+        somaTotal += valoresMes;
+        quantidadeMeses++;
+      }
+    }
+    
+    // Retornar a média apenas dos meses com valores não-zero
+    return quantidadeMeses > 0 ? somaTotal / quantidadeMeses : 0;
+  }
 
   function formatCurrency(value: number) {
     return value.toLocaleString("pt-BR", {
@@ -665,7 +673,7 @@ function calcularValorMediaAnterior(conta: string, dadosAgrupados: Record<string
                           <TableRow key={mes}>
                             <TableCell>{mes}</TableCell>
                             <TableCell className="text-right">
-                              {formatCurrency(valores.reduce((acc, valor) => acc + valor, 0))}
+                              {formatCurrency(valores.reduce((acc, valor) => acc + Number(valor), 0))}
                             </TableCell>
                           </TableRow>
                         ))}
