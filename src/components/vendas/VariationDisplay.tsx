@@ -23,24 +23,32 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
   const formattedValue = Math.abs(value).toFixed(2).replace('.', ',');
   
-  // Determinar cores e ícones com base no tipo de conta e sinal do valor
-  let color, Icon;
+  // Para contas de despesa, invertemos a interpretação do sinal
+  // Para receitas: variação positiva (verde/bom), variação negativa (vermelha/ruim)
+  // Para despesas: variação positiva (vermelha/ruim), variação negativa (verde/bom)
+  
+  // Para despesas, um valor matematicamente positivo significa que a despesa aumentou (ruim)
+  // Para despesas, um valor matematicamente negativo significa que a despesa diminuiu (bom)
+  let color, Icon, displaySign;
   
   if (tipoConta === 'receita') {
-    // Para receitas: variação positiva (verde), variação negativa (vermelha)
+    // Para receitas mantemos a lógica padrão
     color = isPositive ? "text-green-600" : "text-red-500";
     Icon = isPositive ? ArrowUp : ArrowDown;
+    displaySign = isPositive ? '+' : '-';
   } else { // despesa
-    // Para despesas: variação positiva (vermelha), variação negativa (verde)
+    // Para despesas invertemos a interpretação (não o sinal do número)
     color = isPositive ? "text-red-500" : "text-green-600";
     Icon = isPositive ? ArrowUp : ArrowDown;
+    // Mantemos o sinal matemático real na exibição
+    displaySign = isPositive ? '+' : '-';
   }
   
-  // Componente base de variação - Agora exibimos explicitamente o sinal + ou - antes do valor
+  // Componente base de variação
   const VariationComponent = (
     <div className={`flex items-center justify-end gap-1 ${color} font-medium`}>
       <Icon className="h-4 w-4" />
-      <span>{isPositive ? '+' : '-'}{formattedValue}%</span>
+      <span>{displaySign}{formattedValue}%</span>
     </div>
   );
   
