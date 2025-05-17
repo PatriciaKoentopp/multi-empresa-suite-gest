@@ -17,10 +17,10 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   // Se o valor for zero, mostramos zero em cinza
   if (value === 0) return <span className="text-gray-500 block text-right">0,00%</span>;
   
-  // Para contas de despesa, invertemos o valor para a exibição correta da variação
-  // Isto garante que o significado semântico seja mantido: 
-  // - Para despesas, um aumento (valor negativo após inversão) é ruim (vermelho)
-  // - Para despesas, uma redução (valor positivo após inversão) é bom (verde)
+  // Para contas de despesa:
+  // - Uma redução de despesa (ex: de -280 para -230) deve aparecer positiva (+17,85%)
+  // - Um aumento de despesa (ex: de -230 para -280) deve aparecer negativa (-17,85%)
+  // Multiplicamos por -1 para inverter o sentido
   const displayValue = tipoConta === 'despesa' ? -value : value;
   
   // Determinar o sinal real da variação (o que determina se aumentou ou diminuiu)
@@ -33,7 +33,7 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   let color = isPositive ? "text-green-600" : "text-red-500";
   let Icon = isPositive ? ArrowUp : ArrowDown;
   
-  // Determinar o sinal a ser mostrado
+  // Determinar o sinal a ser mostrado (original, sem inverter)
   const displaySign = value > 0 ? '+' : '-';
   
   // Componente base de variação
