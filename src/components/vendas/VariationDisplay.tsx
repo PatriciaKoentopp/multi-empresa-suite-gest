@@ -17,11 +17,11 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   // Se o valor for zero, mostramos zero em cinza
   if (value === 0) return <span className="text-gray-500 block text-right">0,00%</span>;
   
-  // Preservamos o sinal original do valor para exibição
+  // Determinar o sinal real da variação (o que determina se aumentou ou diminuiu)
   const isPositive = value > 0;
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
-  const formattedValue = value.toFixed(2).replace('.', ',');
+  const formattedValue = Math.abs(value).toFixed(2).replace('.', ',');
   
   // Determinar cores e ícones com base no tipo de conta e sinal do valor
   let color, Icon;
@@ -36,11 +36,11 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
     Icon = isPositive ? ArrowUp : ArrowDown;
   }
   
-  // Componente base de variação
+  // Componente base de variação - Agora exibimos explicitamente o sinal + ou - antes do valor
   const VariationComponent = (
     <div className={`flex items-center justify-end gap-1 ${color} font-medium`}>
       <Icon className="h-4 w-4" />
-      <span>{formattedValue}%</span>
+      <span>{isPositive ? '+' : '-'}{formattedValue}%</span>
     </div>
   );
   
