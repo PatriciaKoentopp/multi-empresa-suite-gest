@@ -810,7 +810,7 @@ export default function DrePage() {
                                 // Modificação: Para contas de despesa, calcular a variação invertendo o sinal
                                 let variacaoAbsoluta = valorAtual - valorAnterior;
                                 if (tipoConta === 'despesa') {
-                                  variacaoAbsoluta = -variacaoAbsoluta;
+                                  variacaoAbsoluta = variacaoAbsoluta * (-1);
                                 }
                                 
                                 return (
