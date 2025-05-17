@@ -20,21 +20,21 @@ export const VariationDisplay = ({ value, tooltip, tipoConta = 'receita' }: Vari
   // Determinar se a variação é positiva do ponto de vista de negócio
   // Para receitas: aumento (value > 0) é bom
   // Para despesas: aumento (value > 0) é ruim (pois significa que a despesa aumentou)
-  // value > 0 significa que houve aumento, value < 0 significa que houve redução
   const isPositiveForBusiness = tipoConta === 'receita' ? value > 0 : value < 0;
   
   // Cor baseada na avaliação de negócio
   const color = isPositiveForBusiness ? "text-green-600" : "text-red-500";
   
-  // Ícone baseado no valor REAL da variação, não na avaliação de negócio
-  // Seta para cima quando o valor AUMENTOU (positivo)
-  // Seta para baixo quando o valor DIMINUIU (negativo)
+  // Ícone baseado na direção da variação em relação ao valor de referência
+  // Seta para cima quando o valor AUMENTOU (variação positiva)
+  // Seta para baixo quando o valor DIMINUIU (variação negativa)
   const Icon = value > 0 ? ArrowUp : ArrowDown;
   
   // Formatar o valor com vírgula em vez de ponto decimal (padrão brasileiro)
   // Garantimos que sempre temos duas casas decimais
-  // Importante: Mantemos o sinal do valor para indicar a direção da variação
-  const formattedValue = value.toFixed(2).replace('.', ',');
+  // Precisamos garantir que o sinal seja exibido corretamente
+  const valueAbs = Math.abs(value);
+  const formattedValue = (value < 0 ? "-" : "") + valueAbs.toFixed(2).replace('.', ',');
   
   // Componente base de variação
   const VariationComponent = (
