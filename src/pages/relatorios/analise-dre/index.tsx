@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -269,7 +268,7 @@ export default function AnaliseDrePage() {
     return contas;
   }
   
-  // IMPORTANTE: Nova função para calcular corretamente a média por conta, incluindo meses com valor zero
+  // IMPORTANTE: Função para calcular corretamente a média por conta, incluindo meses com valor zero
   function calcularMediaPorContaCorreta(movimentacoes: any[]) {
     const contas: Record<string, any> = {};
     
@@ -343,7 +342,7 @@ export default function AnaliseDrePage() {
         });
       });
       
-      // Usar a função calcularMedia do hook useAnaliseDetalheConta
+      // Usar a função calcularMedia do hook useAnaliseDetalheConta para consistência
       const media = calcularMedia(valoresMensais);
       
       contas[contaId].media = media;
