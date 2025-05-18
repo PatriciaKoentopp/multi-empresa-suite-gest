@@ -1,4 +1,3 @@
-
 export interface DadosFinanceiros {
   total_a_receber: number;
   total_a_pagar: number;
