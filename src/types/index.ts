@@ -1,16 +1,19 @@
-export interface Company {
+
+export interface Empresa {
   id: string;
-  razao_social: string;
   nome_fantasia: string;
+  razao_social: string;
   cnpj: string;
   inscricao_estadual?: string;
   inscricao_municipal?: string;
-  email?: string;
-  telefone?: string;
-  site?: string;
   cnae?: string;
-  regime_tributacao?: string;
+  email?: string;
   logo?: string;
+  updated_at: Date;
+  created_at: Date;
+  telefone?: string;
+  regime_tributacao?: string;
+  site?: string;
   cep: string;
   logradouro: string;
   numero: string;
@@ -19,109 +22,50 @@ export interface Company {
   cidade: string;
   estado: string;
   pais: string;
-  created_at: Date | null;
-  updated_at: Date | null;
-
-  // Aliases em camelCase para compatibilidade
-  razaoSocial: string;
-  nomeFantasia: string;
-  inscricaoEstadual?: string;
-  inscricaoMunicipal?: string;
-  regimeTributacao?: string;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-
-  // Objeto endereco para compatibilidade
-  endereco: {
-    cep: string;
-    logradouro: string;
-    numero: string;
-    complemento?: string;
-    bairro: string;
-    cidade: string;
-    estado: string;
-    pais: string;
-  };
 }
 
-export interface Usuario {
+export interface ContaCorrente {
   id: string;
   nome: string;
-  email: string;
-  tipo: "Administrador" | "Usuário";
+  banco: string;
+  agencia: string;
+  numero: string;
+  conta_contabil_id: string;
+  saldo_inicial: number;
+  data: Date;
   status: "ativo" | "inativo";
-  vendedor: "sim" | "nao";
-  empresa_id?: string | null;
-  created_at?: Date;
-  updated_at?: Date;
-}
-
-// Adicionar interfaces que estão faltando
-export interface Origem {
-  id: string;
-  nome: string;
+  created_at: Date;
+  updated_at: Date;
   empresa_id: string;
-  status: "ativo" | "inativo";
-  created_at?: Date;
-  updated_at?: Date;
-}
-
-export interface Funil {
-  id: string;
-  nome: string;
-  descricao?: string;
-  ativo: boolean;
-  empresa_id: string;
-  data_criacao: string;
-  etapas: EtapaFunil[];
-  created_at?: Date;
-  updated_at?: Date;
-}
-
-export interface EtapaFunil {
-  id: string;
-  nome: string;
-  cor: string;
-  ordem: number;
-  funil_id?: string;
-  created_at?: Date;
-  updated_at?: Date;
-}
-
-export interface MotivoPerda {
-  id: string;
-  nome: string;
-  empresa_id: string;
-  status: "ativo" | "inativo";
-  created_at?: Date;
-  updated_at?: Date;
+  considerar_saldo: boolean;
 }
 
 export interface GrupoFavorecido {
   id: string;
   nome: string;
-  empresa_id: string;
   status: "ativo" | "inativo";
-  created_at?: Date;
-  updated_at?: Date;
+  created_at: Date;
+  updated_at: Date;
+  empresa_id: string;
 }
 
 export interface Profissao {
   id: string;
   nome: string;
-  empresa_id: string;
   status: "ativo" | "inativo";
-  created_at?: Date;
-  updated_at?: Date;
+  created_at: Date;
+  updated_at: Date;
+  empresa_id: string;
 }
 
 export interface Favorecido {
   id: string;
-  nome: string;
-  tipo: string;
   empresa_id: string;
-  tipo_documento: string;
+  tipo: "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor";
+  tipo_documento: "cpf" | "cnpj";
   documento: string;
+  nome: string;
+  nome_fantasia?: string;
   email?: string;
   telefone?: string;
   cep?: string;
@@ -132,13 +76,39 @@ export interface Favorecido {
   cidade?: string;
   estado?: string;
   pais?: string;
-  status: "ativo" | "inativo";
-  nome_fantasia?: string;
   data_aniversario?: string;
-  profissao_id?: string;
   grupo_id?: string;
-  created_at?: Date;
-  updated_at?: Date;
+  profissao_id?: string;
+  status: "ativo" | "inativo";
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface MotivoPerda {
+  id: string;
+  nome: string;
+  status: "ativo" | "inativo";
+  empresa_id: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Origem {
+  id: string;
+  nome: string;
+  status: "ativo" | "inativo";
+  empresa_id: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ServicoPrestado {
+  id: string;
+  nome: string;
+  descricao?: string;
+  valor: number;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface Servico {
@@ -146,22 +116,21 @@ export interface Servico {
   nome: string;
   descricao?: string;
   status: "ativo" | "inativo";
-  empresa_id: string;
   conta_receita_id?: string;
-  created_at?: Date;
-  updated_at?: Date;
+  empresa_id: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface TabelaPreco {
   id: string;
   nome: string;
+  vigencia_inicial?: Date;
+  vigencia_final?: Date;
   status: "ativo" | "inativo";
   empresa_id: string;
-  vigencia_inicial?: string;
-  vigencia_final?: string;
-  created_at?: Date;
-  updated_at?: Date;
-  itens?: TabelaPrecoItem[];
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface TabelaPrecoItem {
@@ -169,52 +138,85 @@ export interface TabelaPrecoItem {
   tabela_id: string;
   servico_id: string;
   preco: number;
-  created_at?: Date;
-  updated_at?: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface Orcamento {
   id: string;
   codigo: string;
-  tipo: "orcamento" | "venda";
-  status: "ativo" | "inativo";
-  empresa_id: string;
   favorecido_id: string;
-  data: string;
-  data_venda?: string;
+  data: Date;
+  tipo: string;
   forma_pagamento: string;
   numero_parcelas: number;
-  codigo_projeto?: string;
+  status: string;
   observacoes?: string;
+  codigo_projeto?: string;
+  data_venda?: Date;
   numero_nota_fiscal?: string;
-  data_nota_fiscal?: string;
+  data_nota_fiscal?: Date;
   nota_fiscal_pdf?: string;
-  created_at?: Date;
-  updated_at?: Date;
+  empresa_id: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
-export interface YearlyComparison {
-  year: number;
+export interface OrcamentoItem {
+  id: string;
+  orcamento_id: string;
+  servico_id: string;
+  valor: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface OrcamentoParcela {
+  id: string;
+  orcamento_id: string;
+  numero_parcela: string;
+  valor: number;
+  data_vencimento: Date;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Lead {
+  id: string;
+  nome: string;
+  email?: string;
+  telefone?: string;
+  empresa?: string;
+  valor?: number;
+  produto?: string;
+  observacoes?: string;
+  status: string;
+  data_criacao: Date;
+  ultimo_contato?: Date;
+  empresa_id: string;
+  funil_id: string;
+  etapa_id: string;
+  origem_id?: string;
+  responsavel_id?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface SaleData {
+  id: string;
+  month: string;
   total: number;
-  variacao_total: number | null;
-  media_mensal: number;
-  variacao_media: number | null;
-  num_meses: number;
 }
 
-export interface ModuleNavItem {
-  title: string;
-  icon?: any;
-  href?: string;
-  items?: SubNavItem[];
-  disabled?: boolean;
-  // Aliás para compatibilidade
-  name?: string;
-  subItems?: SubNavItem[];
+export interface TipoTitulo {
+  id: string;
+  nome: string;
+  tipo: string;
+  conta_contabil_id: string;
+  status: "ativo" | "inativo";
+  empresa_id: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
-export interface SubNavItem {
-  title: string;
-  href: string;
-  disabled?: boolean;
-}
+// Adicione outros tipos conforme necessário

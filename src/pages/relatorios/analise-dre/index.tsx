@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -171,9 +172,6 @@ const AnaliseDrePage = () => {
     setDetalhesAbertos(nomeConta);
     await buscarDetalhesMensais(nomeConta);
   };
-
-  // Modificar todas as tabelas para condicionar a exibição da coluna "Detalhes Mensais"
-  // baseado no tipo de comparação atual
   
   return (
     <div className="container mx-auto py-6">
