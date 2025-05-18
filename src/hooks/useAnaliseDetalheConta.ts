@@ -76,5 +76,18 @@ export function useAnaliseDetalheConta() {
     return resultadoAnalise;
   };
 
-  return { calcularMedia, analisarContaLuz, resultado };
+  /**
+   * Calcula a média correta para uma conta com valores mensais
+   * @param detalhes Detalhes mensais da conta
+   * @returns A média correta considerando todos os meses
+   */
+  const calcularMediaCorretaConta = (detalhes: DetalhesMensaisConta) => {
+    if (!detalhes.valores_mensais || detalhes.valores_mensais.length === 0) return 0;
+    
+    // Garantir que temos exatamente 12 valores (um para cada mês)
+    const valores = detalhes.valores_mensais.map(v => v.valor);
+    return calcularMedia(valores);
+  };
+
+  return { calcularMedia, analisarContaLuz, calcularMediaCorretaConta, resultado };
 }
