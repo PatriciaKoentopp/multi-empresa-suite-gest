@@ -10,6 +10,8 @@ export function useAnaliseDetalheConta() {
 
   /**
    * Calcula a média considerando todos os valores, inclusive zeros
+   * @param valores Array de números para calcular a média
+   * @returns A média dos valores
    */
   const calcularMedia = (valores: number[]) => {
     if (valores.length === 0) return 0;

@@ -53,6 +53,31 @@ export default function AnaliseCalculoPage() {
               Anteriormente, o sistema excluía os períodos com valores zero antes de calcular a média, o que alterava o resultado final.
               Com a correção, a média será calculada considerando o número total de meses no período, resultando em um valor mais preciso de -121,79.
             </p>
+            
+            <h4 className="font-medium mt-4">Explicação do cálculo:</h4>
+            <p className="mt-2">
+              Na página analise-dre, o sistema busca os valores das contas nos últimos 12 meses e calcula a média desses valores.
+              O processo é o seguinte:
+            </p>
+            <ol className="list-decimal pl-6 space-y-1 mt-2">
+              <li>O sistema busca todas as movimentações na tabela fluxo_caixa dentro do período selecionado (12 meses)</li>
+              <li>As movimentações são agrupadas por conta contábil (por exemplo, "Luz")</li>
+              <li>Para cada conta, os valores mensais são somados e então divididos pelo número total de meses (12)</li>
+              <li>É importante incluir os meses com valor zero no cálculo para obter uma média correta</li>
+              <li>Fórmula: Média = Soma dos valores / Número total de meses (incluindo os meses sem movimentação)</li>
+            </ol>
+            
+            <div className="bg-blue-50 p-3 rounded-md mt-4 border border-blue-200">
+              <p className="text-blue-800 font-medium">
+                Exemplo para a conta Luz:
+              </p>
+              <p className="mt-1 text-blue-700">
+                Cálculo = (-148,45 + -82,83 + 0 + -210,75 + 0 + -193,90 + -84,64 + -84,14 + -93,47 + -84,76 + -198,53 + -279,98) ÷ 12
+              </p>
+              <p className="mt-1 text-blue-700">
+                = -1461,45 ÷ 12 = -121,79
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
