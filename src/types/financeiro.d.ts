@@ -61,7 +61,7 @@ export interface AnaliseVariacao {
 }
 
 export interface FiltroAnaliseDre {
-  tipo_comparacao: 'mes_anterior' | 'ano_anterior' | 'media_12_meses';
+  tipo_comparacao: 'mes_anterior' | 'ano_anterior' | 'media_13_meses';
   ano: number;
   mes: number; 
   percentual_minimo: number;
