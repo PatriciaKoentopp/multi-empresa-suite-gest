@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -126,8 +125,8 @@ export default function AnaliseDrePage() {
           dataCompFim = new Date(anoAtual - 1, mesAtual, 0);
         }
         else if (filtro.tipo_comparacao === "media_12_meses") {
-          // Últimos 12 meses (excluindo o mês atual)
-          dataCompInicio = new Date(anoAtual - 1, mesAtual, 1);
+          // Últimos 13 meses (excluindo o mês atual)
+          dataCompInicio = new Date(anoAtual - 1, mesAtual - 1, 1);
           dataCompFim = new Date(anoAtual, mesAtual - 1, 0);
         }
         
@@ -184,7 +183,7 @@ export default function AnaliseDrePage() {
         // Processar dados de comparação
         const dadosComparacao = processarMovimentacoesDRE(movComp || []);
         
-        // Para média dos últimos 12 meses, buscar também os dados mensais
+        // Para média dos últimos 13 meses, buscar também os dados mensais
         let dadosMensais = [];
         if (filtro.tipo_comparacao === "media_12_meses") {
           dadosMensais = await buscarDadosMensais(
@@ -224,7 +223,7 @@ export default function AnaliseDrePage() {
     const dataInicioStr = format(dataInicio, 'yyyy-MM-dd');
     const dataFimStr = format(dataFim, 'yyyy-MM-dd');
     
-    // Buscar todas as movimentações do período de 12 meses
+    // Buscar todas as movimentações do período de 13 meses
     const { data: movimentacoes, error } = await supabase
       .from('fluxo_caixa')
       .select(`
@@ -285,8 +284,8 @@ export default function AnaliseDrePage() {
       let somaTotal = 0;
       let contMeses = 0;
       
-      // Inicializar valores para todos os 12 meses
-      for (let m = 0; m < 12; m++) {
+      // Inicializar valores para todos os 13 meses
+      for (let m = 0; m < 13; m++) {
         // Calcular ano e mês corretos
         let anoMes = anoInicio;
         let mesMes = mesInicio + m;
@@ -330,9 +329,9 @@ export default function AnaliseDrePage() {
 
   // Função para obter os detalhes mensais de uma conta específica
   const obterDetalhesMensaisConta = (nomeConta: string) => {
-    // Verificar se estamos usando o modo de média dos últimos 12 meses
+    // Verificar se estamos usando o modo de média dos últimos 13 meses
     if (filtro.tipo_comparacao !== "media_12_meses") {
-      toast.warning("Os detalhes mensais só estão disponíveis no modo de comparação com a média dos 12 meses");
+      toast.warning("Os detalhes mensais só estão disponíveis no modo de comparação com a média dos 13 meses");
       return;
     }
     
@@ -356,7 +355,7 @@ export default function AnaliseDrePage() {
     if (!currentCompany?.id) return null;
 
     try {
-      // Determinar o período para busca (últimos 12 meses)
+      // Determinar o período para busca (últimos 13 meses)
       const mesAtual = filtro.mes;
       const anoAtual = filtro.ano;
       
@@ -411,8 +410,8 @@ export default function AnaliseDrePage() {
       let somaTotal = 0;
       let contMeses = 0;
       
-      // Inicializar valores para todos os 12 meses
-      for (let m = 0; m < 12; m++) {
+      // Inicializar valores para todos os 13 meses
+      for (let m = 0; m < 13; m++) {
         // Calcular ano e mês corretos
         let anoMes = anoAtual - 1;
         let mesMes = mesAtual + m;
@@ -705,7 +704,7 @@ export default function AnaliseDrePage() {
     let numMesesComparacao = 1;
     
     if (tipoComparacao === "media_12_meses") {
-      // Para últimos 12 meses, calcular número de meses exatos
+      // Para últimos 13 meses, calcular número de meses exatos
       const mesesDif = (dataCompFim.getFullYear() - dataCompInicio.getFullYear()) * 12 + 
                       (dataCompFim.getMonth() - dataCompInicio.getMonth()) + 1;
       numMesesComparacao = Math.max(1, mesesDif);
@@ -907,7 +906,7 @@ export default function AnaliseDrePage() {
         return `${mesNome}/${filtro.ano} vs ${mesNome}/${filtro.ano - 1}`;
         
       case 'media_12_meses':
-        return `${mesNome}/${filtro.ano} vs Média dos 12 meses anteriores`;
+        return `${mesNome}/${filtro.ano} vs Média dos 13 meses anteriores`;
         
       default:
         return "Comparação de períodos";
@@ -985,7 +984,7 @@ export default function AnaliseDrePage() {
                 <SelectContent>
                   <SelectItem value="mes_anterior">Mês Atual vs Mês Anterior</SelectItem>
                   <SelectItem value="ano_anterior">Mês Atual vs Mesmo Mês do Ano Anterior</SelectItem>
-                  <SelectItem value="media_12_meses">Mês Atual vs Média dos Últimos 12 Meses</SelectItem>
+                  <SelectItem value="media_12_meses">Mês Atual vs Média dos Últimos 13 Meses</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1198,7 +1197,7 @@ export default function AnaliseDrePage() {
                                                   Valores Mensais - {subconta.nome}
                                                 </DialogTitle>
                                                 <DialogDescription>
-                                                  Detalhamento mensal dos valores da conta para o período de 12 meses
+                                                  Detalhamento mensal dos valores da conta para o período de 13 meses
                                                 </DialogDescription>
                                               </DialogHeader>
                                               
@@ -1241,7 +1240,7 @@ export default function AnaliseDrePage() {
                                                       Período de análise
                                                     </AlertTitle>
                                                     <AlertDescription>
-                                                      Os valores apresentados correspondem aos 12 meses anteriores a {filtro.mes}/{filtro.ano}, 
+                                                      Os valores apresentados correspondem aos 13 meses anteriores a {filtro.mes}/{filtro.ano}, 
                                                       desde {meses.find(m => m.value === filtro.mes.toString().padStart(2, '0'))?.label}/{filtro.ano - 1} até {meses.find(m => {
                                                         const mesFim = filtro.mes - 1 === 0 ? 12 : filtro.mes - 1;
                                                         return m.value === mesFim.toString().padStart(2, '0');
@@ -1332,7 +1331,7 @@ export default function AnaliseDrePage() {
                                                   Valores Mensais - {subconta.nome}
                                                 </DialogTitle>
                                                 <DialogDescription>
-                                                  Detalhamento mensal dos valores da conta para o período de 12 meses
+                                                  Detalhamento mensal dos valores da conta para o período de 13 meses
                                                 </DialogDescription>
                                               </DialogHeader>
                                               
@@ -1375,7 +1374,7 @@ export default function AnaliseDrePage() {
                                                       Período de análise
                                                     </AlertTitle>
                                                     <AlertDescription>
-                                                      Os valores apresentados correspondem aos 12 meses anteriores a {filtro.mes}/{filtro.ano}, 
+                                                      Os valores apresentados correspondem aos 13 meses anteriores a {filtro.mes}/{filtro.ano}, 
                                                       desde {meses.find(m => m.value === filtro.mes.toString().padStart(2, '0'))?.label}/{filtro.ano - 1} até {meses.find(m => {
                                                         const mesFim = filtro.mes - 1 === 0 ? 12 : filtro.mes - 1;
                                                         return m.value === mesFim.toString().padStart(2, '0');
