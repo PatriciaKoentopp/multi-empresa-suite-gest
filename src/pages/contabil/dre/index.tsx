@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, endOfMonth } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, Filter } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import "../../../styles/collapsible.css";
 import { VariationDisplay } from "@/components/vendas/VariationDisplay";
 
@@ -63,7 +63,7 @@ interface GrupoMovimentacao {
   tipo: string;
   valor: number;
   detalhes: MovimentacaoDetalhe[];
-  contas?: ContaContabilAgrupamento[];
+  contas?: ContaContabilAgrupamento[]; // Nova propriedade para agrupamento por contas
 }
 
 // Interface para resultado mensal com contas agrupadas
@@ -100,51 +100,6 @@ export default function DrePage() {
   const [contaExpandida, setContaExpandida] = useState<string | null>(null);
   const [contasExpandidasTodosMeses, setContasExpandidasTodosMeses] = useState<Record<string, boolean>>({});
   const [contasExpandidasComparacao, setContasExpandidasComparacao] = useState<Record<string, boolean>>({});
-  
-  // Estados temporários para filtros que só serão aplicados quando o botão "Aplicar" for clicado
-  const [tempVisualizacao, setTempVisualizacao] = useState<"acumulado" | "comparar_anos" | "mensal">("acumulado");
-  const [tempAno, setTempAno] = useState(new Date().getFullYear().toString());
-  const [tempAnosComparar, setTempAnosComparar] = useState<string[]>([new Date().getFullYear().toString(), (new Date().getFullYear()-1).toString()]);
-  const [tempMes, setTempMes] = useState("01");
-  const [tempAnoMensal, setTempAnoMensal] = useState(new Date().getFullYear().toString());
-
-  // Inicializa os estados temporários com os valores atuais
-  React.useEffect(() => {
-    setTempVisualizacao(visualizacao);
-    setTempAno(ano);
-    setTempAnosComparar(anosComparar);
-    setTempMes(mes);
-    setTempAnoMensal(anoMensal);
-  }, [visualizacao, ano, anosComparar, mes, anoMensal]);
-
-  // Função para aplicar os filtros
-  const aplicarFiltros = () => {
-    setVisualizacao(tempVisualizacao);
-    setAno(tempAno);
-    setAnosComparar(tempAnosComparar);
-    setMes(tempMes);
-    setAnoMensal(tempAnoMensal);
-  };
-
-  // Função para resetar filtros
-  const resetarFiltros = () => {
-    const anoAtual = new Date().getFullYear().toString();
-    const anoAnterior = (new Date().getFullYear() - 1).toString();
-    
-    // Reset dos valores temporários
-    setTempVisualizacao("acumulado");
-    setTempAno(anoAtual);
-    setTempAnosComparar([anoAtual, anoAnterior]);
-    setTempMes("01");
-    setTempAnoMensal(anoAtual);
-    
-    // Reset dos valores reais
-    setVisualizacao("acumulado");
-    setAno(anoAtual);
-    setAnosComparar([anoAtual, anoAnterior]);
-    setMes("01");
-    setAnoMensal(anoAtual);
-  };
 
   // Query para buscar dados do DRE
   const { data: dadosDRE = [], isLoading } = useQuery({
@@ -537,14 +492,14 @@ export default function DrePage() {
 
   function handleAnoCompararChange(anoAlterado: string) {
     let result: string[] = [];
-    if (tempAnosComparar.includes(anoAlterado)) {
-      result = tempAnosComparar.filter(a => a !== anoAlterado);
+    if (anosComparar.includes(anoAlterado)) {
+      result = anosComparar.filter(a => a !== anoAlterado);
     } else {
-      if (tempAnosComparar.length < 5) result = [...tempAnosComparar, anoAlterado];
-      else result = tempAnosComparar;
+      if (anosComparar.length < 5) result = [...anosComparar, anoAlterado];
+      else result = anosComparar;
     }
     if (result.length === 0) result = [anoAlterado];
-    setTempAnosComparar(result);
+    setAnosComparar(result);
   }
 
   function formatCurrency(value: number) {
@@ -609,111 +564,91 @@ export default function DrePage() {
         </CardHeader>
         <CardContent>
           {/* Filtros */}
-          <form className="mb-6" onSubmit={(e) => { e.preventDefault(); aplicarFiltros(); }}>
-            <div className="flex flex-wrap gap-4 mb-4 items-end">
+          <form className="flex flex-wrap gap-4 mb-6 items-end">
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">Visualização</label>
+              <Select
+                value={visualizacao}
+                onValueChange={v => setVisualizacao(v as any)}
+              >
+                <SelectTrigger className="min-w-[180px] bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="acumulado">Resultado Acumulado</SelectItem>
+                  <SelectItem value="comparar_anos">Comparar Anos</SelectItem>
+                  <SelectItem value="mensal">Resultado por Mês</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {visualizacao === "acumulado" && (
               <div>
-                <label className="block text-xs text-muted-foreground mb-1">Visualização</label>
-                <Select
-                  value={tempVisualizacao}
-                  onValueChange={v => setTempVisualizacao(v as any)}
-                >
-                  <SelectTrigger className="min-w-[180px] bg-white">
+                <label className="block text-xs text-muted-foreground mb-1">Ano</label>
+                <Select value={ano} onValueChange={val => setAno(val)}>
+                  <SelectTrigger className="min-w-[90px] bg-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="acumulado">Resultado Acumulado</SelectItem>
-                    <SelectItem value="comparar_anos">Comparar Anos</SelectItem>
-                    <SelectItem value="mensal">Resultado por Mês</SelectItem>
+                    {anos.map(a => (
+                      <SelectItem value={a} key={a}>{a}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              {tempVisualizacao === "acumulado" && (
+            )}
+            {visualizacao === "comparar_anos" && (
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Anos para comparar</label>
+                <div className="flex flex-wrap gap-2">
+                  {anos.map(a => (
+                    <Button
+                      key={a}
+                      variant={anosComparar.includes(a) ? "blue" : "outline"}
+                      size="sm"
+                      type="button"
+                      className="px-3 py-1 rounded"
+                      onClick={() => handleAnoCompararChange(a)}
+                      aria-pressed={anosComparar.includes(a)}
+                    >
+                      {a}
+                    </Button>
+                  ))}
+                </div>
+                <span className="text-xs text-muted-foreground mt-1 block">
+                  Selecione até 5 anos
+                </span>
+              </div>
+            )}
+            {visualizacao === "mensal" && (
+              <>
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">Ano</label>
-                  <Select value={tempAno} onValueChange={val => setTempAno(val)}>
+                  <Select value={anoMensal} onValueChange={val => setAnoMensal(val)}>
                     <SelectTrigger className="min-w-[90px] bg-white">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {anos.map(a => (
-                        <SelectItem value={a} key={a}>{a}</SelectItem>
+                        <SelectItem value={a} key={"anoMensal-"+a}>{a}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-              {tempVisualizacao === "comparar_anos" && (
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Anos para comparar</label>
-                  <div className="flex flex-wrap gap-2">
-                    {anos.map(a => (
-                      <Button
-                        key={a}
-                        variant={tempAnosComparar.includes(a) ? "blue" : "outline"}
-                        size="sm"
-                        type="button"
-                        className="px-3 py-1 rounded"
-                        onClick={() => handleAnoCompararChange(a)}
-                        aria-pressed={tempAnosComparar.includes(a)}
-                      >
-                        {a}
-                      </Button>
-                    ))}
-                  </div>
-                  <span className="text-xs text-muted-foreground mt-1 block">
-                    Selecione até 5 anos
-                  </span>
+                  <label className="block text-xs text-muted-foreground mb-1">Mês</label>
+                  <Select value={mes} onValueChange={val => setMes(val)}>
+                    <SelectTrigger className="min-w-[140px] bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mesesComTodos.map(m => (
+                        <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
-              {tempVisualizacao === "mensal" && (
-                <>
-                  <div>
-                    <label className="block text-xs text-muted-foreground mb-1">Ano</label>
-                    <Select value={tempAnoMensal} onValueChange={val => setTempAnoMensal(val)}>
-                      <SelectTrigger className="min-w-[90px] bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {anos.map(a => (
-                          <SelectItem value={a} key={"anoMensal-"+a}>{a}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-muted-foreground mb-1">Mês</label>
-                    <Select value={tempMes} onValueChange={val => setTempMes(val)}>
-                      <SelectTrigger className="min-w-[140px] bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {mesesComTodos.map(m => (
-                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2 justify-end">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={resetarFiltros}
-              >
-                Resetar Filtros
-              </Button>
-              <Button 
-                type="submit" 
-                variant="blue"
-                className="gap-2"
-              >
-                <Filter size={16} />
-                Aplicar Filtros
-              </Button>
-            </div>
+              </>
+            )}
           </form>
 
           {/* Estado de carregamento */}
@@ -724,7 +659,7 @@ export default function DrePage() {
           ) : (
             <div className="overflow-x-auto">
               {/* Acumulado padrão */}
-              {tempVisualizacao === "acumulado" && (
+              {visualizacao === "acumulado" && (
                 <Accordion type="single" collapsible className="w-full">
                   {dadosDRE.map((grupo: GrupoMovimentacao, index: number) => (
                     <AccordionItem value={`item-${index}`} key={index}>
@@ -812,16 +747,16 @@ export default function DrePage() {
               )}
 
               {/* Comparação de anos */}
-              {tempVisualizacao === "comparar_anos" && dadosDRE && (
+              {visualizacao === "comparar_anos" && dadosDRE && (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Conta</TableHead>
-                        {tempAnosComparar.map(a => (
+                        {anosComparar.map(a => (
                           <TableHead key={a} className="text-right">{a}</TableHead>
                         ))}
-                        {tempAnosComparar.length === 2 && (
+                        {anosComparar.length === 2 && (
                           <>
                             <TableHead className="text-right">Variação</TableHead>
                             <TableHead className="text-right">%</TableHead>
@@ -852,7 +787,7 @@ export default function DrePage() {
                                 </div>
                               </TableCell>
                               
-                              {tempAnosComparar.map((anoComp, idx) => {
+                              {anosComparar.map((anoComp, idx) => {
                                 const dadosAno = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoComp] || [];
                                 const contaData = dadosAno.find(item => item.tipo === conta);
                                 return (
@@ -862,9 +797,9 @@ export default function DrePage() {
                                 );
                               })}
 
-                              {tempAnosComparar.length === 2 && (() => {
-                                const anoAtual = tempAnosComparar[0];
-                                const anoAnterior = tempAnosComparar[1];
+                              {anosComparar.length === 2 && (() => {
+                                const anoAtual = anosComparar[0];
+                                const anoAnterior = anosComparar[1];
                                 
                                 const dadosAnoAtual = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoAtual] || [];
                                 const dadosAnoAnterior = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoAnterior] || [];
@@ -897,7 +832,7 @@ export default function DrePage() {
                             {contemSubcontas && estaExpandida && 
                               Array.from(
                                 new Set(
-                                  tempAnosComparar.flatMap(anoComp => {
+                                  anosComparar.flatMap(anoComp => {
                                     const dadosAno = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoComp] || [];
                                     const grupo = dadosAno.find(g => g.tipo === conta);
                                     return grupo?.contas?.map(c => c.descricao) || [];
@@ -908,7 +843,7 @@ export default function DrePage() {
                                   <TableCell className="pl-10 text-sm font-normal">
                                     {descricaoConta}
                                   </TableCell>
-                                  {tempAnosComparar.map(anoComp => {
+                                  {anosComparar.map(anoComp => {
                                     const dadosAno = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoComp] || [];
                                     const grupo = dadosAno.find(g => g.tipo === conta);
                                     const subconta = grupo?.contas?.find(c => c.descricao === descricaoConta);
@@ -931,7 +866,7 @@ export default function DrePage() {
               )}
 
               {/* Mensal por mês único */}
-              {tempVisualizacao === "mensal" && mes !== "todos" && (
+              {visualizacao === "mensal" && mes !== "todos" && (
                 <Accordion type="single" collapsible className="w-full">
                   {dadosDRE.map((grupo: GrupoMovimentacao, index: number) => (
                     <AccordionItem value={`item-${index}`} key={index}>
@@ -1019,7 +954,7 @@ export default function DrePage() {
               )}
 
               {/* Mensal todos os meses em colunas com expansão para subcontas */}
-              {tempVisualizacao === "mensal" && mes === "todos" && (
+              {visualizacao === "mensal" && mes === "todos" && (
                 <>
                   <div className="overflow-x-auto">
                     <Table>
