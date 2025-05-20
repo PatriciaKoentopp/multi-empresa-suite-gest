@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Search, X } from "lucide-react";
+import { Calendar as CalendarIcon, RefreshCcw, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -125,8 +125,8 @@ export default function LancamentosPage() {
       // Filtrar por termo de busca
       const termoOk = searchTerm 
         ? l.historico.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          l.conta_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          l.conta_codigo?.toLowerCase().includes(searchTerm.toLowerCase())
+          (l.conta_nome?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (l.conta_codigo?.toLowerCase() || "").includes(searchTerm.toLowerCase())
         : true;
       
       // Converter a data do lançamento para um objeto Date
@@ -263,6 +263,15 @@ export default function LancamentosPage() {
                 </span>
                 <Input id="busca-lancamento" placeholder="Buscar" className="pl-10 bg-white border rounded-lg h-[52px] text-base font-normal border-gray-300 shadow-sm focus:bg-white min-w-[140px] w-full" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} autoComplete="off" />
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={carregarDados}
+                className="text-blue-500 hover:bg-blue-100 h-[52px] w-[52px]"
+                title="Atualizar dados"
+              >
+                <RefreshCcw className="h-5 w-5" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"

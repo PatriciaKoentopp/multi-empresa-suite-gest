@@ -48,21 +48,29 @@ export function useLancamentosContabeis() {
     
     // Gerar lançamentos baseados em movimentações
     movimentacoes.forEach(mov => {
+      // Verificar o tipo de operação (garantir que é um dos tipos válidos)
+      const tipoOperacao = mov.tipo_operacao as "pagar" | "receber" | "transferencia";
+      
       // Skip se não tem conta origem ou destino (no caso de transferências)
       // ou categoria_id (no caso de pagamentos e recebimentos)
-      if (mov.tipo_operacao === 'transferencia' && (!mov.conta_origem_id || !mov.conta_destino_id)) {
+      if (tipoOperacao === 'transferencia' && (!mov.conta_origem_id || !mov.conta_destino_id)) {
         return;
-      } else if ((mov.tipo_operacao === 'pagar' || mov.tipo_operacao === 'receber') && !mov.categoria_id) {
+      } else if ((tipoOperacao === 'pagar' || tipoOperacao === 'receber') && !mov.categoria_id) {
         return;
       }
       
       // Formatando data
-      const dataFormatada = new Date(mov.data_lancamento).toISOString().split('T')[0];
-      const historico = mov.descricao || (mov.tipo_operacao === 'transferencia' ? 'Transferência entre contas' : 
-        mov.tipo_operacao === 'pagar' ? 'Pagamento' : 'Recebimento');
+      const dataFormatada = typeof mov.data_lancamento === 'string' 
+        ? mov.data_lancamento.includes('/') 
+          ? mov.data_lancamento 
+          : new Date(mov.data_lancamento).toLocaleDateString('pt-BR')
+        : new Date(mov.data_lancamento).toLocaleDateString('pt-BR');
+      
+      const historico = mov.descricao || (tipoOperacao === 'transferencia' ? 'Transferência entre contas' : 
+        tipoOperacao === 'pagar' ? 'Pagamento' : 'Recebimento');
       
       // Lançamento para pagamentos
-      if (mov.tipo_operacao === 'pagar') {
+      if (tipoOperacao === 'pagar') {
         const contaDespesa = contasMap.get(mov.categoria_id);
         
         if (!contaDespesa) return; // Skip se não encontrar a conta
@@ -98,7 +106,7 @@ export function useLancamentosContabeis() {
         lancamentosGerados.push(lancamentoDespesa, lancamentoContrapartida);
       }
       // Lançamento para recebimentos
-      else if (mov.tipo_operacao === 'receber') {
+      else if (tipoOperacao === 'receber') {
         const contaReceita = contasMap.get(mov.categoria_id);
         
         if (!contaReceita) return; // Skip se não encontrar a conta
@@ -134,7 +142,7 @@ export function useLancamentosContabeis() {
         lancamentosGerados.push(lancamentoReceita, lancamentoContrapartida);
       }
       // Lançamento para transferências
-      else if (mov.tipo_operacao === 'transferencia') {
+      else if (tipoOperacao === 'transferencia') {
         const contaOrigem = contasMap.get(mov.conta_origem_id);
         const contaDestino = contasMap.get(mov.conta_destino_id);
         
@@ -170,10 +178,91 @@ export function useLancamentosContabeis() {
         
         lancamentosGerados.push(lancamentoDebito, lancamentoCredito);
       }
+      
+      // Processar parcelas para lançamentos mais detalhados se necessário
+      const parcelasDaMovimentacao = parcelas.filter(p => p.movimentacao_id === mov.id);
+      if (parcelasDaMovimentacao.length > 0 && (tipoOperacao === 'pagar' || tipoOperacao === 'receber')) {
+        parcelasDaMovimentacao.forEach(parcela => {
+          if (parcela.data_pagamento) {
+            const dataFormatadaParcela = typeof parcela.data_pagamento === 'string' 
+              ? parcela.data_pagamento.includes('/') 
+                ? parcela.data_pagamento 
+                : new Date(parcela.data_pagamento).toLocaleDateString('pt-BR')
+              : new Date(parcela.data_pagamento).toLocaleDateString('pt-BR');
+              
+            const historicoParcela = `${historico} - Parcela ${parcela.numero}`;
+            
+            // Lançamento para parcelas pagas
+            if (tipoOperacao === 'pagar') {
+              // Débito na conta bancária
+              const lancamentoBanco: LancamentoContabil = {
+                id: `${parcela.id}_banco_debito`,
+                data: dataFormatadaParcela,
+                historico: historicoParcela,
+                conta: parcela.conta_corrente_id || 'caixa',
+                conta_nome: 'Caixa/Banco',
+                conta_codigo: '1.01.01',
+                tipo: 'credito',
+                valor: parcela.valor,
+                saldo: 0,
+                parcela_id: parcela.id,
+                movimentacao_id: mov.id
+              };
+              
+              // Crédito em contas a pagar
+              const lancamentoAPagar: LancamentoContabil = {
+                id: `${parcela.id}_credito_ap`,
+                data: dataFormatadaParcela,
+                historico: historicoParcela,
+                conta: 'passivo',
+                conta_nome: 'Contas a Pagar',
+                conta_codigo: '2.01.01',
+                tipo: 'debito',
+                valor: parcela.valor,
+                saldo: 0,
+                parcela_id: parcela.id,
+                movimentacao_id: mov.id
+              };
+              
+              lancamentosGerados.push(lancamentoBanco, lancamentoAPagar);
+            }
+            else if (tipoOperacao === 'receber') {
+              // Débito na conta bancária
+              const lancamentoBanco: LancamentoContabil = {
+                id: `${parcela.id}_banco_credito`,
+                data: dataFormatadaParcela,
+                historico: historicoParcela,
+                conta: parcela.conta_corrente_id || 'caixa',
+                conta_nome: 'Caixa/Banco',
+                conta_codigo: '1.01.01',
+                tipo: 'debito',
+                valor: parcela.valor,
+                saldo: 0,
+                parcela_id: parcela.id,
+                movimentacao_id: mov.id
+              };
+              
+              // Crédito em contas a receber
+              const lancamentoAReceber: LancamentoContabil = {
+                id: `${parcela.id}_debito_ar`,
+                data: dataFormatadaParcela,
+                historico: historicoParcela,
+                conta: 'ativo',
+                conta_nome: 'Contas a Receber',
+                conta_codigo: '1.02.01',
+                tipo: 'credito',
+                valor: parcela.valor,
+                saldo: 0,
+                parcela_id: parcela.id,
+                movimentacao_id: mov.id
+              };
+              
+              lancamentosGerados.push(lancamentoBanco, lancamentoAReceber);
+            }
+          }
+        });
+      }
     });
-    
-    // Também poderíamos processar parcelas aqui para lançamentos mais detalhados
-    // mas por simplicidade, vamos manter apenas os lançamentos principais
     
     return lancamentosGerados;
   }
@@ -183,9 +272,17 @@ export function useLancamentosContabeis() {
     const saldosPorConta: {[contaId: string]: number} = {};
     
     // Ordenar por data para calcular saldo progressivamente
-    const lancamentosOrdenados = [...lancamentos].sort((a, b) => 
-      new Date(a.data).getTime() - new Date(b.data).getTime()
-    );
+    const lancamentosOrdenados = [...lancamentos].sort((a, b) => {
+      // Converter datas para formato comparável
+      const dataA = typeof a.data === 'string' 
+        ? a.data.split('/').reverse().join('-') 
+        : new Date(a.data).toISOString();
+      const dataB = typeof b.data === 'string'
+        ? b.data.split('/').reverse().join('-')
+        : new Date(b.data).toISOString();
+      
+      return dataA.localeCompare(dataB);
+    });
     
     return lancamentosOrdenados.map(lancamento => {
       if (!saldosPorConta[lancamento.conta]) {
@@ -194,9 +291,9 @@ export function useLancamentosContabeis() {
       
       // Atualizar saldo conforme tipo de lançamento
       if (lancamento.tipo === 'debito') {
-        saldosPorConta[lancamento.conta] -= lancamento.valor;
-      } else {
         saldosPorConta[lancamento.conta] += lancamento.valor;
+      } else {
+        saldosPorConta[lancamento.conta] -= lancamento.valor;
       }
       
       return {
@@ -224,20 +321,30 @@ export function useLancamentosContabeis() {
         
       if (movError) throw movError;
       
-      // 3. Carregar parcelas (opcional para versão inicial)
+      // 3. Carregar parcelas
       const { data: parcelas, error: parcError } = await supabase
         .from("movimentacoes_parcelas")
         .select("*")
-        .in("movimentacao_id", movimentacoes.map(m => m.id));
+        .in("movimentacao_id", movimentacoes?.map(m => m.id) || []);
         
       if (parcError) throw parcError;
       
+      // Converter dados para os tipos corretos
+      const movimentacoesTipadas = movimentacoes?.map(mov => ({
+        ...mov, 
+        tipo_operacao: mov.tipo_operacao as "pagar" | "receber" | "transferencia"
+      })) || [];
+      
       // 4. Processar dados para gerar lançamentos contábeis
       const lancamentosProcessados = processarMovimentacoesParaLancamentos(
-        movimentacoes || [], 
+        movimentacoesTipadas,
         parcelas || [],
         planosContas
       );
+      
+      console.log("Movimentações carregadas:", movimentacoesTipadas.length);
+      console.log("Parcelas carregadas:", parcelas?.length || 0);
+      console.log("Lançamentos gerados:", lancamentosProcessados.length);
       
       // 5. Calcular saldos para cada conta
       const lancamentosComSaldo = calcularSaldos(lancamentosProcessados);

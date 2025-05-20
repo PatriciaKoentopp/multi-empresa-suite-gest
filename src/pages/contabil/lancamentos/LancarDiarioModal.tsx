@@ -9,6 +9,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { CalendarPlus } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { ptBR } from "date-fns/locale";
 
 type Conta = {
   id: string;
@@ -125,7 +126,8 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
                   selected={data}
                   onSelect={d => d && setData(d)}
                   initialFocus
-                  className="pointer-events-auto p-3"
+                  locale={ptBR}
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
