@@ -48,3 +48,18 @@ declare module "@/components/contas-a-pagar/contas-a-pagar-table" {
     numeroTitulo?: string;
   }
 }
+
+// Definição para lançamentos contábeis
+export interface LancamentoContabil {
+  id: string;
+  data: string;
+  historico: string;
+  conta: string;
+  tipo: 'debito' | 'credito';
+  valor: number;
+  saldo: number;
+  conta_nome?: string;
+  conta_codigo?: string;
+  movimentacao_id?: string;
+  parcela_id?: string;
+}

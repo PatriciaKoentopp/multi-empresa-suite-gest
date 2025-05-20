@@ -8,8 +8,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { CalendarPlus } from "lucide-react";
 import { format } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
-import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 
 type Conta = {
@@ -17,16 +15,6 @@ type Conta = {
   codigo: string;
   descricao: string;
   tipo: string;
-};
-
-type Lancamento = {
-  id: string;
-  data: string;
-  historico: string;
-  conta: string;
-  tipo: "debito" | "credito";
-  valor: number;
-  saldo: number;
 };
 
 interface LancarDiarioModalProps {
@@ -43,59 +31,17 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
   const [historico, setHistorico] = useState("");
   const [contaDebitoId, setContaDebitoId] = useState(contaInicalId || "");
   const [contaCreditoId, setContaCreditoId] = useState("");
-  const { currentCompany } = useCompany();
   
-  // Estados para armazenar os dados reais do banco
-  const [favorecidos, setFavorecidos] = useState<{id: string; nome: string}[]>([]);
-  const [categorias, setCategorias] = useState<{id: string; descricao: string; codigo: string}[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  
-  // Buscar dados reais no carregamento do modal
+  // Resetar formulário quando o modal abre
   useEffect(() => {
-    if (open && currentCompany?.id) {
-      buscarDados();
+    if (open) {
+      setData(new Date());
+      setValor("");
+      setHistorico("");
+      setContaDebitoId(contaInicalId || (contas.length > 0 ? contas[0].id : ""));
+      setContaCreditoId(contas.length > 1 ? contas[1].id : (contas.length > 0 ? contas[0].id : ""));
     }
-  }, [open, currentCompany?.id]);
-  
-  // Função para carregar favorecidos e categorias do Supabase
-  async function buscarDados() {
-    setCarregando(true);
-    try {
-      // Buscar favorecidos
-      const { data: favorecidosData, error: errorFavorecidos } = await supabase
-        .from("favorecidos")
-        .select("id, nome")
-        .eq("empresa_id", currentCompany?.id)
-        .eq("status", "ativo");
-        
-      if (errorFavorecidos) throw errorFavorecidos;
-      
-      // Buscar categorias financeiras (plano de contas)
-      const { data: categoriasData, error: errorCategorias } = await supabase
-        .from("plano_contas")
-        .select("id, descricao, codigo")
-        .eq("empresa_id", currentCompany?.id)
-        .eq("status", "ativo");
-        
-      if (errorCategorias) throw errorCategorias;
-      
-      // Atualizar estados com os dados reais
-      setFavorecidos(favorecidosData || []);
-      setCategorias(categoriasData || []);
-      
-      // Se existirem contas, definir valores iniciais
-      if (contas.length > 0) {
-        setContaDebitoId(contaInicalId || contas[0]?.id || "");
-        setContaCreditoId(contas.length > 1 ? contas[1]?.id : contas[0]?.id || "");
-      }
-      
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error);
-      toast.error("Erro ao carregar dados");
-    } finally {
-      setCarregando(false);
-    }
-  }
+  }, [open, contaInicalId, contas]);
 
   function clearForm() {
     setData(new Date());
