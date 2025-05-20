@@ -14,6 +14,7 @@ export interface ContaBalanco {
   saldoFinal: number;
   tipo: "título" | "movimentação";
   filhas?: ContaBalanco[];
+  nivel?: number; // Adicionado para indentação na UI
 }
 
 export function useBalancoPatrimonial() {
@@ -113,85 +114,90 @@ export function useBalancoPatrimonial() {
     const todasContasAtivo = contasAtivoOrdenadas.map(calcularSaldoConta);
     const todasContasPassivo = contasPassivoOrdenadas.map(calcularSaldoConta);
     
-    // Função para verificar se uma conta é filha de outra
-    const isFilha = (possibleChild: string, possibleParent: string): boolean => {
-      // Ex: '01.1.1.01' é filha de '01.1.1'
-      return possibleChild !== possibleParent && 
-             possibleChild.startsWith(possibleParent) && 
-             possibleChild.charAt(possibleParent.length) === '.';
+    // Função para verificar se uma conta é filha direta de outra
+    const isFilhaDireta = (possibleChild: string, possibleParent: string): boolean => {
+      // Se os códigos são iguais, não é filha
+      if (possibleChild === possibleParent) return false;
+      
+      // Se a possível filha não começa com o código do pai + '.', não é filha
+      if (!possibleChild.startsWith(possibleParent + '.')) return false;
+      
+      // Verificar se é filha direta (não tem outro nível intermediário)
+      // Exemplo: '01.1' é filha direta de '01', mas '01.1.1' não é filha direta de '01'
+      const parentParts = possibleParent.split('.');
+      const childParts = possibleChild.split('.');
+      
+      // Se a diferença de níveis é 1, é filha direta
+      return childParts.length === parentParts.length + 1;
     };
     
-    // Função para montar a estrutura hierárquica de contas
-    const montarHierarquia = (contas: ContaBalanco[]): ContaBalanco[] => {
-      const result: ContaBalanco[] = [];
-      const contasMap: Record<string, ContaBalanco> = {};
+    // Função para encontrar todas as contas filhas diretas de um código
+    const encontrarFilhasDirectas = (codigo: string, contas: ContaBalanco[]): ContaBalanco[] => {
+      return contas.filter(c => isFilhaDireta(c.codigo, codigo));
+    };
+    
+    // Função para montar a árvore hierárquica completa
+    const montarArvoreHierarquica = (contas: ContaBalanco[]): ContaBalanco[] => {
+      // Map para armazenar todas as contas por código
+      const contasPorCodigo = new Map<string, ContaBalanco>();
       
-      // Primeiro, colocar todas as contas em um mapa para acesso rápido
+      // Primeiro, adicionar todas as contas ao map
       contas.forEach(conta => {
-        contasMap[conta.codigo] = { ...conta, filhas: [] };
+        contasPorCodigo.set(conta.codigo, { ...conta, filhas: [] });
       });
       
-      // Depois, montar a hierarquia
-      Object.keys(contasMap).forEach(codigo => {
-        const conta = contasMap[codigo];
+      // Contas raiz (serão retornadas no final)
+      const contasRaiz: ContaBalanco[] = [];
+      
+      // Para cada conta, encontrar as filhas diretas e adicionar
+      Array.from(contasPorCodigo.keys()).forEach(codigo => {
+        const conta = contasPorCodigo.get(codigo)!;
         
-        // Encontrar o pai direto desta conta
-        let codigoPai = '';
-        let depth = Number.MAX_VALUE;
+        // Encontrar todas as filhas diretas
+        const filhasDirectas = Array.from(contasPorCodigo.values())
+          .filter(c => isFilhaDireta(c.codigo, codigo));
         
-        Object.keys(contasMap).forEach(possibleParent => {
-          // Verificamos se possibleParent é um pai deste código
-          // E se é o pai mais próximo (com mais níveis)
-          if (isFilha(codigo, possibleParent)) {
-            const possibleDepth = possibleParent.split('.').length;
-            if (possibleDepth < depth) {
-              depth = possibleDepth;
-              codigoPai = possibleParent;
-            }
-          }
-        });
+        if (filhasDirectas.length > 0) {
+          conta.filhas = filhasDirectas;
+        }
         
-        if (codigoPai) {
-          // Se tem pai, adicionar como filha
-          contasMap[codigoPai].filhas = contasMap[codigoPai].filhas || [];
-          contasMap[codigoPai].filhas?.push(conta);
-        } else {
-          // Se não tem pai, é uma conta de nível raiz
-          result.push(conta);
+        // Se não é filha de ninguém, é uma conta raiz
+        const temPai = Array.from(contasPorCodigo.keys())
+          .some(codigoPai => isFilhaDireta(codigo, codigoPai));
+        
+        if (!temPai) {
+          contasRaiz.push(conta);
         }
       });
       
-      return result;
+      return contasRaiz;
     };
     
-    // Função para calcular os saldos acumulados nas contas de título
+    // Função recursiva para calcular saldos acumulados de cada nível
     const calcularSaldosAcumulados = (conta: ContaBalanco): ContaBalanco => {
-      // Se não tem filhas, retornar a própria conta
+      // Se a conta não tem filhas ou é do tipo 'movimentação', retorna a própria conta
       if (!conta.filhas || conta.filhas.length === 0) {
         return conta;
       }
       
-      // Processar recursivamente as filhas
+      // Processar recursivamente todas as filhas para garantir que seus valores estão atualizados
       const filhasProcessadas = conta.filhas.map(calcularSaldosAcumulados);
       
-      // Acumular os totais das filhas
-      let debitoTotal = conta.debito;
-      let creditoTotal = conta.credito;
+      // Recalcular os totais somando os valores das filhas
+      let debitoTotal = 0;
+      let creditoTotal = 0;
       
       filhasProcessadas.forEach(filha => {
         debitoTotal += filha.debito;
         creditoTotal += filha.credito;
       });
       
-      // Calcular saldo final baseado no tipo da conta
-      let saldoFinalAcumulado = 0;
-      if (conta.grupo === "Ativo") {
-        saldoFinalAcumulado = debitoTotal - creditoTotal;
-      } else {
-        saldoFinalAcumulado = creditoTotal - debitoTotal;
-      }
+      // Calcular o saldo final conforme o grupo (Ativo ou Passivo)
+      const saldoFinalAcumulado = conta.grupo === "Ativo" 
+        ? debitoTotal - creditoTotal
+        : creditoTotal - debitoTotal;
       
-      // Atualizar a conta com os valores acumulados
+      // Atualizar a conta com os valores acumulados das filhas
       return {
         ...conta,
         debito: debitoTotal,
@@ -201,46 +207,42 @@ export function useBalancoPatrimonial() {
       };
     };
     
-    // Montar a hierarquia e calcular saldos acumulados
-    const hierarquiaAtivo = montarHierarquia(todasContasAtivo);
-    const hierarquiaPassivo = montarHierarquia(todasContasPassivo);
+    // Montar as árvores hierárquicas
+    const arvoreAtivo = montarArvoreHierarquica(todasContasAtivo);
+    const arvorePassivo = montarArvoreHierarquica(todasContasPassivo);
     
-    const contasAtivoProcessadas = hierarquiaAtivo.map(calcularSaldosAcumulados);
-    const contasPassivoProcessadas = hierarquiaPassivo.map(calcularSaldosAcumulados);
+    // Calcular os saldos acumulados para as árvores
+    const arvoreAtivoProcessada = arvoreAtivo.map(calcularSaldosAcumulados);
+    const arvorePassivoProcessada = arvorePassivo.map(calcularSaldosAcumulados);
     
-    // Função para nivelar a hierarquia em uma lista plana
-    const nivelarContas = (contas: ContaBalanco[], nivel = 0): ContaBalanco[] => {
+    // Função para nivelar a árvore em uma lista plana para renderização
+    const nivelarArvore = (contas: ContaBalanco[], nivel = 0): ContaBalanco[] => {
       let resultado: ContaBalanco[] = [];
       
       contas.forEach(conta => {
-        // Adicionar a conta atual com seu nível de indentação
+        // Adicionar a conta atual com seu nível
         resultado.push({
           ...conta,
-          nivel: nivel, // Podemos usar isso para indentação na UI
+          nivel,
           filhas: undefined // Remover filhas para evitar duplicação
         });
         
-        // Se tem filhas, processar recursivamente
+        // Se tem filhas, adicionar recursivamente com nível incrementado
         if (conta.filhas && conta.filhas.length > 0) {
-          resultado = [...resultado, ...nivelarContas(conta.filhas, nivel + 1)];
+          resultado = [...resultado, ...nivelarArvore(conta.filhas, nivel + 1)];
         }
       });
       
       return resultado;
     };
     
-    // Nivelar a hierarquia para exibição linear na tabela
-    const contasAtivoNiveladas = nivelarContas(contasAtivoProcessadas);
-    const contasPassivoNiveladas = nivelarContas(contasPassivoProcessadas);
+    // Nivelar as árvores para renderização
+    const contasAtivoNiveladas = nivelarArvore(arvoreAtivoProcessada);
+    const contasPassivoNiveladas = nivelarArvore(arvorePassivoProcessada);
     
     // Calcular totais gerais
-    const totalAtivo = contasAtivoNiveladas
-      .filter(c => !c.codigo.includes('.')) // Apenas contas de primeiro nível
-      .reduce((sum, c) => sum + c.saldoFinal, 0);
-      
-    const totalPassivo = contasPassivoNiveladas
-      .filter(c => !c.codigo.includes('.')) // Apenas contas de primeiro nível
-      .reduce((sum, c) => sum + c.saldoFinal, 0);
+    const totalAtivo = arvoreAtivoProcessada.reduce((sum, conta) => sum + conta.saldoFinal, 0);
+    const totalPassivo = arvorePassivoProcessada.reduce((sum, conta) => sum + conta.saldoFinal, 0);
     
     console.log("Total Ativo:", totalAtivo);
     console.log("Total Passivo:", totalPassivo);

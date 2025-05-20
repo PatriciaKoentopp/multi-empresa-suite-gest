@@ -234,7 +234,7 @@ export default function BalancoPage() {
                   Ativo + Passivo: {(contasBalanco.totalAtivo + contasBalanco.totalPassivo).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </div>
                 <div className="text-sm text-gray-500">
-                  Diferença: {(contasBalanco.totalAtivo - contasBalanco.totalPassivo).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  Diferença: {Math.abs(contasBalanco.totalAtivo - contasBalanco.totalPassivo).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </div>
               </div>
             </div>
