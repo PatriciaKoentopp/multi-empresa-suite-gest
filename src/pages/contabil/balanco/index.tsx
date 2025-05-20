@@ -1,9 +1,11 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { RefreshCcw } from "lucide-react";
+import { useBalancoPatrimonial } from "@/hooks/useBalancoPatrimonial";
 
 // Mock dos meses e anos
 const meses = [
@@ -25,104 +27,44 @@ const mesesComTodos = [
   ...meses
 ];
 
-const anos: string[] = [];
-const anoAtual = new Date().getFullYear();
-for (let a = anoAtual; a >= 2021; a--) anos.push(a.toString());
-
-// Estrutura básica para contas contábeis - Ativo e Passivo
-type ContaBalanco = {
-  codigo: string;
-  descricao: string;
-  grupo: "Ativo" | "Passivo";
-  saldoInicial: number;
-  debito: number;
-  credito: number;
-  saldoFinal: number;
-};
-
-// Mock de contas (exemplo)
-const contasMock: ContaBalanco[] = [
-  {
-    codigo: "1.1.1",
-    descricao: "Caixa",
-    grupo: "Ativo",
-    saldoInicial: 12000,
-    debito: 38000,
-    credito: 28500,
-    saldoFinal: 21500
-  },
-  {
-    codigo: "1.1.2",
-    descricao: "Banco Conta Movimento",
-    grupo: "Ativo",
-    saldoInicial: 25000,
-    debito: 22900,
-    credito: 20000,
-    saldoFinal: 27900
-  },
-  {
-    codigo: "1.2.1",
-    descricao: "Clientes",
-    grupo: "Ativo",
-    saldoInicial: 31000,
-    debito: 1900,
-    credito: 6000,
-    saldoFinal: 25900
-  },
-  {
-    codigo: "2.1.1",
-    descricao: "Fornecedores",
-    grupo: "Passivo",
-    saldoInicial: 18000,
-    debito: 11000,
-    credito: 8000,
-    saldoFinal: 21000
-  },
-  {
-    codigo: "2.2.1",
-    descricao: "Empréstimos Bancários",
-    grupo: "Passivo",
-    saldoInicial: 12000,
-    debito: 7000,
-    credito: 4000,
-    saldoFinal: 15000
-  }
-];
-
-// Utilitários para mock mensal/acumulado
-const getDadosBalanço = (
-  tipoVisualizacao: "acumulado" | "mensal",
-  ano: string,
-  mes: string
-) => {
-  // Para mock: Se "mensal", apenas multiplicar por 0.12; senão, retorna mock normal
-  if (tipoVisualizacao === "mensal" && mes !== "todos") {
-    const fator = 0.11 + Number(mes) * 0.059;
-    return contasMock.map(c => ({
-      ...c,
-      saldoInicial: Math.round(c.saldoInicial * fator),
-      debito: Math.round(c.debito * fator),
-      credito: Math.round(c.credito * fator),
-      saldoFinal: Math.round(c.saldoFinal * fator)
-    }));
-  }
-  // Acumulado do ano
-  return contasMock;
+// Gerar array de anos (do ano atual até 2021)
+const obterAnos = (): string[] => {
+  const anos: string[] = [];
+  const anoAtual = new Date().getFullYear();
+  for (let a = anoAtual; a >= 2021; a--) anos.push(a.toString());
+  return anos;
 };
 
 export default function BalancoPage() {
-  const [visualizacao, setVisualizacao] = useState<"acumulado" | "mensal">("acumulado");
-  const [ano, setAno] = useState(anoAtual.toString());
-  const [mes, setMes] = useState("todos");
-
-  const dadosBalanco = getDadosBalanço(visualizacao, ano, mes);
-
-  // Separar contas por grupo para exibição
-  const contasAtivo = dadosBalanco.filter(c => c.grupo === "Ativo");
-  const contasPassivo = dadosBalanco.filter(c => c.grupo === "Passivo");
+  const { 
+    contasBalanco, 
+    isLoading, 
+    carregarDados, 
+    periodo, 
+    setPeriodo, 
+    ano, 
+    setAno, 
+    mes, 
+    setMes 
+  } = useBalancoPatrimonial();
+  
+  const anos = obterAnos();
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl font-bold">Balanço Patrimonial</h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={carregarDados}
+          className="text-blue-500 hover:bg-blue-100 h-[42px] w-[42px]"
+          title="Atualizar dados"
+        >
+          <RefreshCcw className="h-5 w-5" />
+        </Button>
+      </div>
+    
       <Card>
         <CardHeader>
           <CardTitle>Balanço Patrimonial</CardTitle>
@@ -132,8 +74,8 @@ export default function BalancoPage() {
             <div>
               <label className="block text-xs text-muted-foreground mb-1">Visualização</label>
               <Select
-                value={visualizacao}
-                onValueChange={(v) => setVisualizacao(v as "acumulado" | "mensal")}
+                value={periodo}
+                onValueChange={(v) => setPeriodo(v as "acumulado" | "mensal")}
               >
                 <SelectTrigger className="min-w-[150px] bg-white">
                   <SelectValue />
@@ -158,7 +100,7 @@ export default function BalancoPage() {
               </Select>
             </div>
             {/* Só exibe filtro de mês na visualização mensal */}
-            {visualizacao === "mensal" && (
+            {periodo === "mensal" && (
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">Mês</label>
                 <Select value={mes} onValueChange={setMes}>
@@ -175,59 +117,99 @@ export default function BalancoPage() {
             )}
           </form>
 
-          {/* Tabela Ativo */}
-          <h3 className="font-semibold mt-0 mb-1 text-[17px] text-blue-700 flex">Ativo</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead className="text-right">Saldo Inicial (R$)</TableHead>
-                <TableHead className="text-right">Débitos (R$)</TableHead>
-                <TableHead className="text-right">Créditos (R$)</TableHead>
-                <TableHead className="text-right">Saldo Final (R$)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {contasAtivo.map(c => (
-                <TableRow key={c.codigo}>
-                  <TableCell>{c.codigo}</TableCell>
-                  <TableCell>{c.descricao}</TableCell>
-                  <TableCell className="text-right">{c.saldoInicial.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
-                  <TableCell className="text-right">{c.debito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
-                  <TableCell className="text-right">{c.credito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
-                  <TableCell className="text-right">{c.saldoFinal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {isLoading ? (
+            <div className="flex justify-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : (
+            <div>
+              {/* Tabela Ativo */}
+              <h3 className="font-semibold mt-0 mb-1 text-[17px] text-blue-700 flex">
+                Ativo
+                <span className="ml-2 text-gray-500 font-normal">
+                  (Total: {contasBalanco.totalAtivo.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})
+                </span>
+              </h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead className="text-right">Saldo Inicial (R$)</TableHead>
+                    <TableHead className="text-right">Débitos (R$)</TableHead>
+                    <TableHead className="text-right">Créditos (R$)</TableHead>
+                    <TableHead className="text-right">Saldo Final (R$)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contasBalanco.contasAtivo.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                        Nenhuma conta de Ativo encontrada
+                      </TableCell>
+                    </TableRow>
+                  ) : contasBalanco.contasAtivo.map(c => (
+                    <TableRow key={c.codigo}>
+                      <TableCell>{c.codigo}</TableCell>
+                      <TableCell>{c.descricao}</TableCell>
+                      <TableCell className="text-right">{c.saldoInicial.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.debito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.credito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.saldoFinal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
 
-          {/* Tabela Passivo */}
-          <h3 className="font-semibold mt-6 mb-1 text-[17px] text-blue-700 flex">Passivo</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead className="text-right">Saldo Inicial (R$)</TableHead>
-                <TableHead className="text-right">Débitos (R$)</TableHead>
-                <TableHead className="text-right">Créditos (R$)</TableHead>
-                <TableHead className="text-right">Saldo Final (R$)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {contasPassivo.map(c => (
-                <TableRow key={c.codigo}>
-                  <TableCell>{c.codigo}</TableCell>
-                  <TableCell>{c.descricao}</TableCell>
-                  <TableCell className="text-right">{c.saldoInicial.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
-                  <TableCell className="text-right">{c.debito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
-                  <TableCell className="text-right">{c.credito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
-                  <TableCell className="text-right">{c.saldoFinal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              {/* Tabela Passivo */}
+              <h3 className="font-semibold mt-6 mb-1 text-[17px] text-blue-700 flex">
+                Passivo
+                <span className="ml-2 text-gray-500 font-normal">
+                  (Total: {contasBalanco.totalPassivo.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})
+                </span>
+              </h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead className="text-right">Saldo Inicial (R$)</TableHead>
+                    <TableHead className="text-right">Débitos (R$)</TableHead>
+                    <TableHead className="text-right">Créditos (R$)</TableHead>
+                    <TableHead className="text-right">Saldo Final (R$)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contasBalanco.contasPassivo.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                        Nenhuma conta de Passivo encontrada
+                      </TableCell>
+                    </TableRow>
+                  ) : contasBalanco.contasPassivo.map(c => (
+                    <TableRow key={c.codigo}>
+                      <TableCell>{c.codigo}</TableCell>
+                      <TableCell>{c.descricao}</TableCell>
+                      <TableCell className="text-right">{c.saldoInicial.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.debito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.credito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.saldoFinal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {/* Totais */}
+              <div className="mt-6 text-right">
+                <div className="text-lg font-semibold">
+                  Ativo + Passivo: {(contasBalanco.totalAtivo + contasBalanco.totalPassivo).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </div>
+                <div className="text-sm text-gray-500">
+                  Diferença: {(contasBalanco.totalAtivo - contasBalanco.totalPassivo).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
