@@ -11,6 +11,7 @@ export function useLancamentosContabeis() {
   const [planosContas, setPlanosContas] = useState<{id: string; codigo: string; descricao: string; tipo: string}[]>([]);
   const [tiposTitulos, setTiposTitulos] = useState<TipoTitulo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [contasCorrentes, setContasCorrentes] = useState<{id: string; nome: string; conta_contabil_id: string}[]>([]);
   const { currentCompany } = useCompany();
 
   // Função para carregar o plano de contas
@@ -34,6 +35,26 @@ export function useLancamentosContabeis() {
     }
   }
   
+  // Função para carregar contas correntes
+  async function carregarContasCorrentes() {
+    if (!currentCompany?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("contas_correntes")
+        .select("id, nome, conta_contabil_id")
+        .eq("empresa_id", currentCompany.id)
+        .eq("status", "ativo");
+        
+      if (error) throw error;
+      
+      setContasCorrentes(data || []);
+    } catch (error) {
+      console.error("Erro ao carregar contas correntes:", error);
+      toast.error("Erro ao carregar contas correntes");
+    }
+  }
+  
   // Função para carregar tipos de títulos
   async function carregarTiposTitulos() {
     if (!currentCompany?.id) return;
@@ -47,7 +68,13 @@ export function useLancamentosContabeis() {
         
       if (error) throw error;
       
-      setTiposTitulos(data || []);
+      // Conversão explícita do tipo de dado
+      const tiposTitulosFormatados: TipoTitulo[] = data?.map(tipo => ({
+        ...tipo,
+        tipo: tipo.tipo as "pagar" | "receber"
+      })) || [];
+      
+      setTiposTitulos(tiposTitulosFormatados);
     } catch (error) {
       console.error("Erro ao carregar tipos de títulos:", error);
       toast.error("Erro ao carregar tipos de títulos");
@@ -59,7 +86,8 @@ export function useLancamentosContabeis() {
     movimentacoes: Movimentacao[], 
     parcelas: MovimentacaoParcela[],
     contas: {id: string; codigo: string; descricao: string; tipo: string}[],
-    tiposTitulos: TipoTitulo[]
+    tiposTitulos: TipoTitulo[],
+    contasCorrentes: {id: string; nome: string; conta_contabil_id: string}[]
   ): LancamentoContabil[] {
     const lancamentosGerados: LancamentoContabil[] = [];
     
@@ -73,6 +101,12 @@ export function useLancamentosContabeis() {
     const tiposTitulosMap = new Map();
     tiposTitulos.forEach(tipo => {
       tiposTitulosMap.set(tipo.id, tipo);
+    });
+    
+    // Mapear contas correntes por id para fácil acesso
+    const contasCorrentesMap = new Map();
+    contasCorrentes.forEach(conta => {
+      contasCorrentesMap.set(conta.id, conta);
     });
     
     // Gerar lançamentos baseados em movimentações
@@ -105,7 +139,7 @@ export function useLancamentosContabeis() {
         
         if (!contaDespesa) return; // Skip se não encontrar a conta
         
-        // Obter a conta contábil do tipo de título (crédito na contrapartida)
+        // Obter a conta contábil do tipo de título para a contrapartida
         let contaContrapartida;
         let contaContrapartidaNome = 'Contas a Pagar';
         let contaContrapartidaCodigo = '2.01.01'; // Código padrão caso não encontre o tipo título
@@ -135,12 +169,12 @@ export function useLancamentosContabeis() {
           movimentacao_id: mov.id
         };
         
-        // Contrapartida (crédito na conta do tipo título)
+        // Contrapartida (crédito na conta definida pelo tipo título)
         const lancamentoContrapartida: LancamentoContabil = {
           id: `${mov.id}_contrapartida`,
           data: dataFormatada,
           historico: historico,
-          conta: mov.tipo_titulo_id ? tiposTitulosMap.get(mov.tipo_titulo_id)?.conta_contabil_id || 'passivo' : 'passivo',
+          conta: mov.tipo_titulo_id && tiposTitulosMap.get(mov.tipo_titulo_id)?.conta_contabil_id || 'passivo',
           conta_nome: contaContrapartidaNome,
           conta_codigo: contaContrapartidaCodigo,
           tipo: 'credito',
@@ -157,7 +191,7 @@ export function useLancamentosContabeis() {
         
         if (!contaReceita) return; // Skip se não encontrar a conta
         
-        // Obter a conta contábil do tipo de título (débito na contrapartida)
+        // Obter a conta contábil do tipo de título para a contrapartida
         let contaContrapartida;
         let contaContrapartidaNome = 'Contas a Receber';
         let contaContrapartidaCodigo = '1.02.01'; // Código padrão caso não encontre o tipo título
@@ -187,12 +221,12 @@ export function useLancamentosContabeis() {
           movimentacao_id: mov.id
         };
         
-        // Contrapartida (débito na conta do tipo título)
+        // Contrapartida (débito na conta definida pelo tipo título)
         const lancamentoContrapartida: LancamentoContabil = {
           id: `${mov.id}_contrapartida`,
           data: dataFormatada,
           historico: historico,
-          conta: mov.tipo_titulo_id ? tiposTitulosMap.get(mov.tipo_titulo_id)?.conta_contabil_id || 'ativo' : 'ativo',
+          conta: mov.tipo_titulo_id && tiposTitulosMap.get(mov.tipo_titulo_id)?.conta_contabil_id || 'ativo',
           conta_nome: contaContrapartidaNome,
           conta_codigo: contaContrapartidaCodigo,
           tipo: 'debito',
@@ -254,6 +288,11 @@ export function useLancamentosContabeis() {
               
             const historicoParcela = `${historico} - Parcela ${parcela.numero}`;
             
+            // Obter conta contábil da conta corrente usada no pagamento
+            const contaCorrenteInfo = parcela.conta_corrente_id ? contasCorrentesMap.get(parcela.conta_corrente_id) : null;
+            const contaContabilCorrenteId = contaCorrenteInfo?.conta_contabil_id || '';
+            const contaContabilCorrente = contaContabilCorrenteId ? contasMap.get(contaContabilCorrenteId) : null;
+            
             // Lançamento para parcelas pagas
             if (tipoOperacao === 'pagar') {
               // Obter a conta contábil do tipo do título
@@ -272,15 +311,12 @@ export function useLancamentosContabeis() {
                 }
               }
               
-              // Obter conta corrente
-              const contaCorrenteObj = contasMap.get(parcela.conta_corrente_id);
-              
               // Débito em contas a pagar (conta do tipo de título)
               const lancamentoAPagar: LancamentoContabil = {
                 id: `${parcela.id}_debito_ap`,
                 data: dataFormatadaParcela,
                 historico: historicoParcela,
-                conta: mov.tipo_titulo_id ? tiposTitulosMap.get(mov.tipo_titulo_id)?.conta_contabil_id || 'passivo' : 'passivo',
+                conta: mov.tipo_titulo_id && tiposTitulosMap.get(mov.tipo_titulo_id)?.conta_contabil_id || 'passivo',
                 conta_nome: contaContrapartidaNome,
                 conta_codigo: contaContrapartidaCodigo,
                 tipo: 'debito',
@@ -290,14 +326,14 @@ export function useLancamentosContabeis() {
                 movimentacao_id: mov.id
               };
               
-              // Crédito na conta bancária
+              // Crédito na conta contábil associada à conta corrente
               const lancamentoBanco: LancamentoContabil = {
                 id: `${parcela.id}_banco_credito`,
                 data: dataFormatadaParcela,
                 historico: historicoParcela,
-                conta: parcela.conta_corrente_id || 'caixa',
-                conta_nome: contaCorrenteObj?.descricao || 'Caixa/Banco',
-                conta_codigo: contaCorrenteObj?.codigo || '1.01.01',
+                conta: contaContabilCorrenteId || 'caixa',
+                conta_nome: contaContabilCorrente?.descricao || 'Caixa/Banco',
+                conta_codigo: contaContabilCorrente?.codigo || '1.01.01',
                 tipo: 'credito',
                 valor: parcela.valor,
                 saldo: 0,
@@ -324,17 +360,14 @@ export function useLancamentosContabeis() {
                 }
               }
               
-              // Obter conta corrente
-              const contaCorrenteObj = contasMap.get(parcela.conta_corrente_id);
-              
-              // Débito na conta bancária
+              // Débito na conta contábil associada à conta corrente
               const lancamentoBanco: LancamentoContabil = {
                 id: `${parcela.id}_banco_debito`,
                 data: dataFormatadaParcela,
                 historico: historicoParcela,
-                conta: parcela.conta_corrente_id || 'caixa',
-                conta_nome: contaCorrenteObj?.descricao || 'Caixa/Banco',
-                conta_codigo: contaCorrenteObj?.codigo || '1.01.01',
+                conta: contaContabilCorrenteId || 'caixa',
+                conta_nome: contaContabilCorrente?.descricao || 'Caixa/Banco',
+                conta_codigo: contaContabilCorrente?.codigo || '1.01.01',
                 tipo: 'debito',
                 valor: parcela.valor,
                 saldo: 0,
@@ -347,7 +380,7 @@ export function useLancamentosContabeis() {
                 id: `${parcela.id}_credito_ar`,
                 data: dataFormatadaParcela,
                 historico: historicoParcela,
-                conta: mov.tipo_titulo_id ? tiposTitulosMap.get(mov.tipo_titulo_id)?.conta_contabil_id || 'ativo' : 'ativo',
+                conta: mov.tipo_titulo_id && tiposTitulosMap.get(mov.tipo_titulo_id)?.conta_contabil_id || 'ativo',
                 conta_nome: contaContrapartidaNome,
                 conta_codigo: contaContrapartidaCodigo,
                 tipo: 'credito',
@@ -416,7 +449,10 @@ export function useLancamentosContabeis() {
       // 2. Carregar tipos de títulos
       await carregarTiposTitulos();
       
-      // 3. Carregar movimentações com join em tipos_titulos
+      // 3. Carregar contas correntes
+      await carregarContasCorrentes();
+      
+      // 4. Carregar movimentações com join em tipos_titulos
       const { data: movimentacoes, error: movError } = await supabase
         .from("movimentacoes")
         .select(`
@@ -427,7 +463,7 @@ export function useLancamentosContabeis() {
         
       if (movError) throw movError;
       
-      // 4. Carregar parcelas
+      // 5. Carregar parcelas
       const { data: parcelas, error: parcError } = await supabase
         .from("movimentacoes_parcelas")
         .select("*")
@@ -443,20 +479,22 @@ export function useLancamentosContabeis() {
       
       console.log("Tipos de títulos carregados:", tiposTitulos.length);
       console.log("Movimentações com dados de tipo de título:", movimentacoesTipadas);
+      console.log("Contas correntes carregadas:", contasCorrentes.length);
       
-      // 5. Processar dados para gerar lançamentos contábeis
+      // 6. Processar dados para gerar lançamentos contábeis
       const lancamentosProcessados = processarMovimentacoesParaLancamentos(
         movimentacoesTipadas,
         parcelas || [],
         planosContas,
-        tiposTitulos
+        tiposTitulos,
+        contasCorrentes
       );
       
       console.log("Movimentações carregadas:", movimentacoesTipadas.length);
       console.log("Parcelas carregadas:", parcelas?.length || 0);
       console.log("Lançamentos gerados:", lancamentosProcessados.length);
       
-      // 6. Calcular saldos para cada conta
+      // 7. Calcular saldos para cada conta
       const lancamentosComSaldo = calcularSaldos(lancamentosProcessados);
       
       setLancamentos(lancamentosComSaldo);

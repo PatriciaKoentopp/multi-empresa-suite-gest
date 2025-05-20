@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,8 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
           createdAt: new Date(conta.created_at),
           updatedAt: new Date(conta.updated_at),
           data: conta.data ? new Date(conta.data) : undefined,
-          saldoInicial: conta.saldo_inicial
+          saldoInicial: conta.saldo_inicial,
+          considerar_saldo: conta.considerar_saldo
         }));
 
         setContasCorrentes(contasCorrentesFormatadas);
