@@ -5,10 +5,12 @@ import { toast } from "sonner";
 import { useCompany } from "@/contexts/company-context";
 import { LancamentoContabil, Movimentacao, MovimentacaoParcela } from '@/types/movimentacoes';
 import { TipoTitulo } from '@/types/tipos-titulos';
+import { ContaCorrente } from '@/types/conta-corrente';
+import { PlanoConta } from '@/types/plano-contas';
 
 export function useLancamentosContabeis() {
   const [lancamentos, setLancamentos] = useState<LancamentoContabil[]>([]);
-  const [planosContas, setPlanosContas] = useState<{id: string; codigo: string; descricao: string; tipo: string}[]>([]);
+  const [planosContas, setPlanosContas] = useState<PlanoConta[]>([]);
   const [tiposTitulos, setTiposTitulos] = useState<TipoTitulo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [contasCorrentes, setContasCorrentes] = useState<{id: string; nome: string; conta_contabil_id: string}[]>([]);
@@ -21,7 +23,7 @@ export function useLancamentosContabeis() {
     try {
       const { data, error } = await supabase
         .from("plano_contas")
-        .select("id, codigo, descricao, tipo")
+        .select("id, codigo, descricao, tipo, categoria, considerar_dre, classificacao_dre, status")
         .eq("empresa_id", currentCompany.id)
         .eq("status", "ativo")
         .order("codigo", { ascending: true });
@@ -85,7 +87,7 @@ export function useLancamentosContabeis() {
   function processarMovimentacoesParaLancamentos(
     movimentacoes: Movimentacao[], 
     parcelas: MovimentacaoParcela[],
-    contas: {id: string; codigo: string; descricao: string; tipo: string}[],
+    contas: PlanoConta[],
     tiposTitulos: TipoTitulo[],
     contasCorrentes: {id: string; nome: string; conta_contabil_id: string}[]
   ): LancamentoContabil[] {
@@ -114,14 +116,6 @@ export function useLancamentosContabeis() {
       // Verificar o tipo de operação (garantir que é um dos tipos válidos)
       const tipoOperacao = mov.tipo_operacao as "pagar" | "receber" | "transferencia";
       
-      // Skip se não tem conta origem ou destino (no caso de transferências)
-      // ou categoria_id (no caso de pagamentos e recebimentos)
-      if (tipoOperacao === 'transferencia' && (!mov.conta_origem_id || !mov.conta_destino_id)) {
-        return;
-      } else if ((tipoOperacao === 'pagar' || tipoOperacao === 'receber') && !mov.categoria_id) {
-        return;
-      }
-      
       // Formatando data
       const dataFormatada = typeof mov.data_lancamento === 'string' 
         ? mov.data_lancamento.includes('/') 
@@ -134,20 +128,30 @@ export function useLancamentosContabeis() {
       
       // Lançamento para pagamentos
       if (tipoOperacao === 'pagar') {
+        // Skip se não tem categoria_id
+        if (!mov.categoria_id) {
+          console.log(`Movimentação ${mov.id} do tipo 'pagar' sem categoria_id, skipping.`);
+          return;
+        }
+        
         // Obter conta da despesa (débito)
         const contaDespesa = contasMap.get(mov.categoria_id);
         
-        if (!contaDespesa) return; // Skip se não encontrar a conta
+        if (!contaDespesa) {
+          console.log(`Conta de despesa não encontrada para categoria_id: ${mov.categoria_id}, skipping.`);
+          return;
+        }
         
         // Obter a conta contábil do tipo de título para a contrapartida
-        let contaContrapartida;
+        let contaContrapartidaId = '';
         let contaContrapartidaNome = 'Contas a Pagar';
         let contaContrapartidaCodigo = '2.01.01'; // Código padrão caso não encontre o tipo título
         
         if (mov.tipo_titulo_id) {
           const tipoTitulo = tiposTitulosMap.get(mov.tipo_titulo_id);
           if (tipoTitulo && tipoTitulo.conta_contabil_id) {
-            contaContrapartida = contasMap.get(tipoTitulo.conta_contabil_id);
+            contaContrapartidaId = tipoTitulo.conta_contabil_id;
+            const contaContrapartida = contasMap.get(tipoTitulo.conta_contabil_id);
             if (contaContrapartida) {
               contaContrapartidaNome = contaContrapartida.descricao;
               contaContrapartidaCodigo = contaContrapartida.codigo;
@@ -174,7 +178,7 @@ export function useLancamentosContabeis() {
           id: `${mov.id}_contrapartida`,
           data: dataFormatada,
           historico: historico,
-          conta: mov.tipo_titulo_id && tiposTitulosMap.get(mov.tipo_titulo_id)?.conta_contabil_id || 'passivo',
+          conta: contaContrapartidaId || 'passivo',
           conta_nome: contaContrapartidaNome,
           conta_codigo: contaContrapartidaCodigo,
           tipo: 'credito',
@@ -187,19 +191,29 @@ export function useLancamentosContabeis() {
       }
       // Lançamento para recebimentos
       else if (tipoOperacao === 'receber') {
+        // Skip se não tem categoria_id
+        if (!mov.categoria_id) {
+          console.log(`Movimentação ${mov.id} do tipo 'receber' sem categoria_id, skipping.`);
+          return;
+        }
+        
         const contaReceita = contasMap.get(mov.categoria_id);
         
-        if (!contaReceita) return; // Skip se não encontrar a conta
+        if (!contaReceita) {
+          console.log(`Conta de receita não encontrada para categoria_id: ${mov.categoria_id}, skipping.`);
+          return;
+        }
         
         // Obter a conta contábil do tipo de título para a contrapartida
-        let contaContrapartida;
+        let contaContrapartidaId = '';
         let contaContrapartidaNome = 'Contas a Receber';
         let contaContrapartidaCodigo = '1.02.01'; // Código padrão caso não encontre o tipo título
         
         if (mov.tipo_titulo_id) {
           const tipoTitulo = tiposTitulosMap.get(mov.tipo_titulo_id);
           if (tipoTitulo && tipoTitulo.conta_contabil_id) {
-            contaContrapartida = contasMap.get(tipoTitulo.conta_contabil_id);
+            contaContrapartidaId = tipoTitulo.conta_contabil_id;
+            const contaContrapartida = contasMap.get(tipoTitulo.conta_contabil_id);
             if (contaContrapartida) {
               contaContrapartidaNome = contaContrapartida.descricao;
               contaContrapartidaCodigo = contaContrapartida.codigo;
@@ -226,7 +240,7 @@ export function useLancamentosContabeis() {
           id: `${mov.id}_contrapartida`,
           data: dataFormatada,
           historico: historico,
-          conta: mov.tipo_titulo_id && tiposTitulosMap.get(mov.tipo_titulo_id)?.conta_contabil_id || 'ativo',
+          conta: contaContrapartidaId || 'ativo',
           conta_nome: contaContrapartidaNome,
           conta_codigo: contaContrapartidaCodigo,
           tipo: 'debito',
@@ -239,33 +253,57 @@ export function useLancamentosContabeis() {
       }
       // Lançamento para transferências
       else if (tipoOperacao === 'transferencia') {
-        const contaOrigem = contasMap.get(mov.conta_origem_id);
-        const contaDestino = contasMap.get(mov.conta_destino_id);
+        // Skip se não tem conta origem ou destino
+        if (!mov.conta_origem_id || !mov.conta_destino_id) {
+          console.log(`Movimentação ${mov.id} do tipo 'transferencia' sem conta_origem_id ou conta_destino_id, skipping.`);
+          return;
+        }
         
-        if (!contaOrigem || !contaDestino) return; // Skip se não encontrar alguma das contas
+        // Obter conta contábil da conta corrente origem
+        const contaCorrenteOrigem = contasCorrentesMap.get(mov.conta_origem_id);
+        if (!contaCorrenteOrigem || !contaCorrenteOrigem.conta_contabil_id) {
+          console.log(`Conta corrente origem ${mov.conta_origem_id} sem conta_contabil_id, skipping.`);
+          return;
+        }
         
-        // Débito na conta de destino
+        // Obter conta contábil da conta corrente destino
+        const contaCorrenteDestino = contasCorrentesMap.get(mov.conta_destino_id);
+        if (!contaCorrenteDestino || !contaCorrenteDestino.conta_contabil_id) {
+          console.log(`Conta corrente destino ${mov.conta_destino_id} sem conta_contabil_id, skipping.`);
+          return;
+        }
+        
+        // Obter detalhes das contas contábeis
+        const contaContabilOrigem = contasMap.get(contaCorrenteOrigem.conta_contabil_id);
+        const contaContabilDestino = contasMap.get(contaCorrenteDestino.conta_contabil_id);
+        
+        if (!contaContabilOrigem || !contaContabilDestino) {
+          console.log(`Conta contábil não encontrada para origem ${contaCorrenteOrigem.conta_contabil_id} ou destino ${contaCorrenteDestino.conta_contabil_id}, skipping.`);
+          return;
+        }
+        
+        // Débito na conta contábil associada à conta corrente destino
         const lancamentoDebito: LancamentoContabil = {
           id: `${mov.id}_debito`,
           data: dataFormatada,
           historico: historico,
-          conta: mov.conta_destino_id || '',
-          conta_nome: contaDestino?.descricao || '',
-          conta_codigo: contaDestino?.codigo || '',
+          conta: contaCorrenteDestino.conta_contabil_id,
+          conta_nome: contaContabilDestino.descricao,
+          conta_codigo: contaContabilDestino.codigo,
           tipo: 'debito',
           valor: mov.valor,
           saldo: 0, // Será calculado depois
           movimentacao_id: mov.id
         };
         
-        // Crédito na conta de origem
+        // Crédito na conta contábil associada à conta corrente origem
         const lancamentoCredito: LancamentoContabil = {
           id: `${mov.id}_credito`,
           data: dataFormatada,
           historico: historico,
-          conta: mov.conta_origem_id || '',
-          conta_nome: contaOrigem?.descricao || '',
-          conta_codigo: contaOrigem?.codigo || '',
+          conta: contaCorrenteOrigem.conta_contabil_id,
+          conta_nome: contaContabilOrigem.descricao,
+          conta_codigo: contaContabilOrigem.codigo,
           tipo: 'credito',
           valor: mov.valor,
           saldo: 0, // Será calculado depois
@@ -289,21 +327,34 @@ export function useLancamentosContabeis() {
             const historicoParcela = `${historico} - Parcela ${parcela.numero}`;
             
             // Obter conta contábil da conta corrente usada no pagamento
-            const contaCorrenteInfo = parcela.conta_corrente_id ? contasCorrentesMap.get(parcela.conta_corrente_id) : null;
-            const contaContabilCorrenteId = contaCorrenteInfo?.conta_contabil_id || '';
-            const contaContabilCorrente = contaContabilCorrenteId ? contasMap.get(contaContabilCorrenteId) : null;
+            let contaContabilCorrenteId = '';
+            let contaContabilCorrenteNome = 'Caixa/Banco';
+            let contaContabilCorrenteCodigo = '1.01.01';
+            
+            if (parcela.conta_corrente_id) {
+              const contaCorrenteInfo = contasCorrentesMap.get(parcela.conta_corrente_id);
+              if (contaCorrenteInfo && contaCorrenteInfo.conta_contabil_id) {
+                contaContabilCorrenteId = contaCorrenteInfo.conta_contabil_id;
+                const contaContabilCorrente = contasMap.get(contaContabilCorrenteId);
+                if (contaContabilCorrente) {
+                  contaContabilCorrenteNome = contaContabilCorrente.descricao;
+                  contaContabilCorrenteCodigo = contaContabilCorrente.codigo;
+                }
+              }
+            }
             
             // Lançamento para parcelas pagas
             if (tipoOperacao === 'pagar') {
               // Obter a conta contábil do tipo do título
-              let contaContrapartida;
+              let contaContrapartidaId = '';
               let contaContrapartidaNome = 'Contas a Pagar';
               let contaContrapartidaCodigo = '2.01.01'; // Código padrão caso não encontre o tipo título
               
               if (mov.tipo_titulo_id) {
                 const tipoTitulo = tiposTitulosMap.get(mov.tipo_titulo_id);
                 if (tipoTitulo && tipoTitulo.conta_contabil_id) {
-                  contaContrapartida = contasMap.get(tipoTitulo.conta_contabil_id);
+                  contaContrapartidaId = tipoTitulo.conta_contabil_id;
+                  const contaContrapartida = contasMap.get(tipoTitulo.conta_contabil_id);
                   if (contaContrapartida) {
                     contaContrapartidaNome = contaContrapartida.descricao;
                     contaContrapartidaCodigo = contaContrapartida.codigo;
@@ -316,7 +367,7 @@ export function useLancamentosContabeis() {
                 id: `${parcela.id}_debito_ap`,
                 data: dataFormatadaParcela,
                 historico: historicoParcela,
-                conta: mov.tipo_titulo_id && tiposTitulosMap.get(mov.tipo_titulo_id)?.conta_contabil_id || 'passivo',
+                conta: contaContrapartidaId || 'passivo',
                 conta_nome: contaContrapartidaNome,
                 conta_codigo: contaContrapartidaCodigo,
                 tipo: 'debito',
@@ -332,8 +383,8 @@ export function useLancamentosContabeis() {
                 data: dataFormatadaParcela,
                 historico: historicoParcela,
                 conta: contaContabilCorrenteId || 'caixa',
-                conta_nome: contaContabilCorrente?.descricao || 'Caixa/Banco',
-                conta_codigo: contaContabilCorrente?.codigo || '1.01.01',
+                conta_nome: contaContabilCorrenteNome,
+                conta_codigo: contaContabilCorrenteCodigo,
                 tipo: 'credito',
                 valor: parcela.valor,
                 saldo: 0,
@@ -345,14 +396,15 @@ export function useLancamentosContabeis() {
             }
             else if (tipoOperacao === 'receber') {
               // Obter a conta contábil do tipo do título
-              let contaContrapartida;
+              let contaContrapartidaId = '';
               let contaContrapartidaNome = 'Contas a Receber';
               let contaContrapartidaCodigo = '1.02.01'; // Código padrão caso não encontre o tipo título
               
               if (mov.tipo_titulo_id) {
                 const tipoTitulo = tiposTitulosMap.get(mov.tipo_titulo_id);
                 if (tipoTitulo && tipoTitulo.conta_contabil_id) {
-                  contaContrapartida = contasMap.get(tipoTitulo.conta_contabil_id);
+                  contaContrapartidaId = tipoTitulo.conta_contabil_id;
+                  const contaContrapartida = contasMap.get(tipoTitulo.conta_contabil_id);
                   if (contaContrapartida) {
                     contaContrapartidaNome = contaContrapartida.descricao;
                     contaContrapartidaCodigo = contaContrapartida.codigo;
@@ -366,8 +418,8 @@ export function useLancamentosContabeis() {
                 data: dataFormatadaParcela,
                 historico: historicoParcela,
                 conta: contaContabilCorrenteId || 'caixa',
-                conta_nome: contaContabilCorrente?.descricao || 'Caixa/Banco',
-                conta_codigo: contaContabilCorrente?.codigo || '1.01.01',
+                conta_nome: contaContabilCorrenteNome,
+                conta_codigo: contaContabilCorrenteCodigo,
                 tipo: 'debito',
                 valor: parcela.valor,
                 saldo: 0,
@@ -380,7 +432,7 @@ export function useLancamentosContabeis() {
                 id: `${parcela.id}_credito_ar`,
                 data: dataFormatadaParcela,
                 historico: historicoParcela,
-                conta: mov.tipo_titulo_id && tiposTitulosMap.get(mov.tipo_titulo_id)?.conta_contabil_id || 'ativo',
+                conta: contaContrapartidaId || 'ativo',
                 conta_nome: contaContrapartidaNome,
                 conta_codigo: contaContrapartidaCodigo,
                 tipo: 'credito',
@@ -478,7 +530,6 @@ export function useLancamentosContabeis() {
       })) || [];
       
       console.log("Tipos de títulos carregados:", tiposTitulos.length);
-      console.log("Movimentações com dados de tipo de título:", movimentacoesTipadas);
       console.log("Contas correntes carregadas:", contasCorrentes.length);
       
       // 6. Processar dados para gerar lançamentos contábeis
