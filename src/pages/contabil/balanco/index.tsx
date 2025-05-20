@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
 import { useBalancoPatrimonial } from "@/hooks/useBalancoPatrimonial";
+import { cn } from "@/lib/utils";
 
 // Mock dos meses e anos
 const meses = [
@@ -148,10 +149,24 @@ export default function BalancoPage() {
                         Nenhuma conta de Ativo encontrada
                       </TableCell>
                     </TableRow>
-                  ) : contasBalanco.contasAtivo.map(c => (
-                    <TableRow key={c.codigo}>
-                      <TableCell>{c.codigo}</TableCell>
-                      <TableCell>{c.descricao}</TableCell>
+                  ) : contasBalanco.contasAtivo.map((c, index) => (
+                    <TableRow 
+                      key={`${c.codigo}-${index}`}
+                      className={cn(
+                        c.tipo === "título" ? "font-semibold bg-gray-50" : "",
+                        c.nivel && c.nivel > 0 ? "text-sm" : ""
+                      )}
+                    >
+                      <TableCell>
+                        <div style={{ paddingLeft: `${c.nivel ? c.nivel * 12 : 0}px` }}>
+                          {c.codigo}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div style={{ paddingLeft: `${c.nivel ? c.nivel * 12 : 0}px` }}>
+                          {c.descricao}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">{c.saldoInicial.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
                       <TableCell className="text-right">{c.debito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
                       <TableCell className="text-right">{c.credito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
@@ -186,10 +201,24 @@ export default function BalancoPage() {
                         Nenhuma conta de Passivo encontrada
                       </TableCell>
                     </TableRow>
-                  ) : contasBalanco.contasPassivo.map(c => (
-                    <TableRow key={c.codigo}>
-                      <TableCell>{c.codigo}</TableCell>
-                      <TableCell>{c.descricao}</TableCell>
+                  ) : contasBalanco.contasPassivo.map((c, index) => (
+                    <TableRow 
+                      key={`${c.codigo}-${index}`}
+                      className={cn(
+                        c.tipo === "título" ? "font-semibold bg-gray-50" : "",
+                        c.nivel && c.nivel > 0 ? "text-sm" : ""
+                      )}
+                    >
+                      <TableCell>
+                        <div style={{ paddingLeft: `${c.nivel ? c.nivel * 12 : 0}px` }}>
+                          {c.codigo}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div style={{ paddingLeft: `${c.nivel ? c.nivel * 12 : 0}px` }}>
+                          {c.descricao}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">{c.saldoInicial.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
                       <TableCell className="text-right">{c.debito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
                       <TableCell className="text-right">{c.credito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>

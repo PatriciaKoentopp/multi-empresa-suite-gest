@@ -12,6 +12,8 @@ export interface ContaBalanco {
   debito: number;
   credito: number;
   saldoFinal: number;
+  tipo: "título" | "movimentação";
+  filhas?: ContaBalanco[];
 }
 
 export function useBalancoPatrimonial() {
@@ -98,24 +100,154 @@ export function useBalancoPatrimonial() {
         saldoInicial: 0, // Não temos saldo inicial nos dados, começamos de zero
         debito: totalDebitos,
         credito: totalCreditos,
-        saldoFinal: saldoFinal
+        saldoFinal: saldoFinal,
+        tipo: conta.categoria
       };
     };
 
-    // Mapear contas para formato de balanço
-    const contasBalancoAtivo = contasAtivo.map(calcularSaldoConta);
-    const contasBalancoPassivo = contasPassivo.map(calcularSaldoConta);
+    // Ordenar contas por código para facilitar a estrutura hierárquica
+    const contasAtivoOrdenadas = [...contasAtivo].sort((a, b) => a.codigo.localeCompare(b.codigo));
+    const contasPassivoOrdenadas = [...contasPassivo].sort((a, b) => a.codigo.localeCompare(b.codigo));
     
-    // Calcular totais
-    const totalAtivo = contasBalancoAtivo.reduce((sum, c) => sum + c.saldoFinal, 0);
-    const totalPassivo = contasBalancoPassivo.reduce((sum, c) => sum + c.saldoFinal, 0);
+    // Calcular o balanço para todas as contas
+    const todasContasAtivo = contasAtivoOrdenadas.map(calcularSaldoConta);
+    const todasContasPassivo = contasPassivoOrdenadas.map(calcularSaldoConta);
+    
+    // Função para verificar se uma conta é filha de outra
+    const isFilha = (possibleChild: string, possibleParent: string): boolean => {
+      // Ex: '01.1.1.01' é filha de '01.1.1'
+      return possibleChild !== possibleParent && 
+             possibleChild.startsWith(possibleParent) && 
+             possibleChild.charAt(possibleParent.length) === '.';
+    };
+    
+    // Função para montar a estrutura hierárquica de contas
+    const montarHierarquia = (contas: ContaBalanco[]): ContaBalanco[] => {
+      const result: ContaBalanco[] = [];
+      const contasMap: Record<string, ContaBalanco> = {};
+      
+      // Primeiro, colocar todas as contas em um mapa para acesso rápido
+      contas.forEach(conta => {
+        contasMap[conta.codigo] = { ...conta, filhas: [] };
+      });
+      
+      // Depois, montar a hierarquia
+      Object.keys(contasMap).forEach(codigo => {
+        const conta = contasMap[codigo];
+        
+        // Encontrar o pai direto desta conta
+        let codigoPai = '';
+        let depth = Number.MAX_VALUE;
+        
+        Object.keys(contasMap).forEach(possibleParent => {
+          // Verificamos se possibleParent é um pai deste código
+          // E se é o pai mais próximo (com mais níveis)
+          if (isFilha(codigo, possibleParent)) {
+            const possibleDepth = possibleParent.split('.').length;
+            if (possibleDepth < depth) {
+              depth = possibleDepth;
+              codigoPai = possibleParent;
+            }
+          }
+        });
+        
+        if (codigoPai) {
+          // Se tem pai, adicionar como filha
+          contasMap[codigoPai].filhas = contasMap[codigoPai].filhas || [];
+          contasMap[codigoPai].filhas?.push(conta);
+        } else {
+          // Se não tem pai, é uma conta de nível raiz
+          result.push(conta);
+        }
+      });
+      
+      return result;
+    };
+    
+    // Função para calcular os saldos acumulados nas contas de título
+    const calcularSaldosAcumulados = (conta: ContaBalanco): ContaBalanco => {
+      // Se não tem filhas, retornar a própria conta
+      if (!conta.filhas || conta.filhas.length === 0) {
+        return conta;
+      }
+      
+      // Processar recursivamente as filhas
+      const filhasProcessadas = conta.filhas.map(calcularSaldosAcumulados);
+      
+      // Acumular os totais das filhas
+      let debitoTotal = conta.debito;
+      let creditoTotal = conta.credito;
+      
+      filhasProcessadas.forEach(filha => {
+        debitoTotal += filha.debito;
+        creditoTotal += filha.credito;
+      });
+      
+      // Calcular saldo final baseado no tipo da conta
+      let saldoFinalAcumulado = 0;
+      if (conta.grupo === "Ativo") {
+        saldoFinalAcumulado = debitoTotal - creditoTotal;
+      } else {
+        saldoFinalAcumulado = creditoTotal - debitoTotal;
+      }
+      
+      // Atualizar a conta com os valores acumulados
+      return {
+        ...conta,
+        debito: debitoTotal,
+        credito: creditoTotal,
+        saldoFinal: saldoFinalAcumulado,
+        filhas: filhasProcessadas
+      };
+    };
+    
+    // Montar a hierarquia e calcular saldos acumulados
+    const hierarquiaAtivo = montarHierarquia(todasContasAtivo);
+    const hierarquiaPassivo = montarHierarquia(todasContasPassivo);
+    
+    const contasAtivoProcessadas = hierarquiaAtivo.map(calcularSaldosAcumulados);
+    const contasPassivoProcessadas = hierarquiaPassivo.map(calcularSaldosAcumulados);
+    
+    // Função para nivelar a hierarquia em uma lista plana
+    const nivelarContas = (contas: ContaBalanco[], nivel = 0): ContaBalanco[] => {
+      let resultado: ContaBalanco[] = [];
+      
+      contas.forEach(conta => {
+        // Adicionar a conta atual com seu nível de indentação
+        resultado.push({
+          ...conta,
+          nivel: nivel, // Podemos usar isso para indentação na UI
+          filhas: undefined // Remover filhas para evitar duplicação
+        });
+        
+        // Se tem filhas, processar recursivamente
+        if (conta.filhas && conta.filhas.length > 0) {
+          resultado = [...resultado, ...nivelarContas(conta.filhas, nivel + 1)];
+        }
+      });
+      
+      return resultado;
+    };
+    
+    // Nivelar a hierarquia para exibição linear na tabela
+    const contasAtivoNiveladas = nivelarContas(contasAtivoProcessadas);
+    const contasPassivoNiveladas = nivelarContas(contasPassivoProcessadas);
+    
+    // Calcular totais gerais
+    const totalAtivo = contasAtivoNiveladas
+      .filter(c => !c.codigo.includes('.')) // Apenas contas de primeiro nível
+      .reduce((sum, c) => sum + c.saldoFinal, 0);
+      
+    const totalPassivo = contasPassivoNiveladas
+      .filter(c => !c.codigo.includes('.')) // Apenas contas de primeiro nível
+      .reduce((sum, c) => sum + c.saldoFinal, 0);
     
     console.log("Total Ativo:", totalAtivo);
     console.log("Total Passivo:", totalPassivo);
 
     return {
-      contasAtivo: contasBalancoAtivo,
-      contasPassivo: contasBalancoPassivo,
+      contasAtivo: contasAtivoNiveladas,
+      contasPassivo: contasPassivoNiveladas,
       totalAtivo,
       totalPassivo
     };
