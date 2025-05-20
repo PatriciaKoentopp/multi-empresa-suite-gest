@@ -1,5 +1,4 @@
 
-
 export interface Movimentacao {
   id: string;
   empresa_id: string;
@@ -22,6 +21,9 @@ export interface Movimentacao {
   updated_at: string;
   mes_referencia?: string;
   documento_pdf?: string;
+  
+  // Campos relacionados (não estão na tabela, mas são úteis)
+  tipo_titulo?: TipoTitulo; // Relação com tipo de título
 }
 
 export interface MovimentacaoParcela {
