@@ -235,6 +235,7 @@ const AnaliseDrePage = () => {
                 {anos?.map(ano => (
                   <SelectItem key={ano} value={ano}>{ano}</SelectItem>
                 ))}
+                {/* Corrigindo aqui: removendo o SelectItem com value vazio */}
               </SelectContent>
             </Select>
           </CardContent>
@@ -255,7 +256,7 @@ const AnaliseDrePage = () => {
               <SelectContent position="popper">
                 <SelectItem value="receita">Receita</SelectItem>
                 <SelectItem value="despesa">Despesa</SelectItem>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="todos">Todos</SelectItem>
               </SelectContent>
             </Select>
           </CardContent>
@@ -276,7 +277,7 @@ const AnaliseDrePage = () => {
               <SelectContent position="popper">
                 <SelectItem value="sim">Sim</SelectItem>
                 <SelectItem value="nao">Não</SelectItem>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="todos">Todos</SelectItem>
               </SelectContent>
             </Select>
           </CardContent>
