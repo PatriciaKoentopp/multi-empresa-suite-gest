@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -300,7 +301,7 @@ const AnaliseDrePage = () => {
                 className="flex-shrink-0"
               >
                 <RefreshCw className="h-4 w-4 mr-1" />
-                Aplicar
+                Atualizar
               </Button>
             </div>
           </CardContent>
