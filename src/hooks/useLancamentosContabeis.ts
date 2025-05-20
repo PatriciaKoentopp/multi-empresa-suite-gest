@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -116,12 +115,10 @@ export function useLancamentosContabeis() {
       // Verificar o tipo de operação (garantir que é um dos tipos válidos)
       const tipoOperacao = mov.tipo_operacao as "pagar" | "receber" | "transferencia";
       
-      // Formatando data
+      // Formatando data no formato PT-BR (DD/MM/YYYY)
       const dataFormatada = typeof mov.data_lancamento === 'string' 
-        ? mov.data_lancamento.includes('/') 
-          ? mov.data_lancamento 
-          : new Date(mov.data_lancamento).toLocaleDateString('pt-BR')
-        : new Date(mov.data_lancamento).toLocaleDateString('pt-BR');
+        ? formatarDataPtBr(mov.data_lancamento)
+        : formatarDataPtBr(new Date(mov.data_lancamento).toISOString().split('T')[0]);
       
       const historico = mov.descricao || (tipoOperacao === 'transferencia' ? 'Transferência entre contas' : 
         tipoOperacao === 'pagar' ? 'Pagamento' : 'Recebimento');
@@ -318,11 +315,10 @@ export function useLancamentosContabeis() {
       if (parcelasDaMovimentacao.length > 0 && (tipoOperacao === 'pagar' || tipoOperacao === 'receber')) {
         parcelasDaMovimentacao.forEach(parcela => {
           if (parcela.data_pagamento) {
-            const dataFormatadaParcela = typeof parcela.data_pagamento === 'string' 
-              ? parcela.data_pagamento.includes('/') 
-                ? parcela.data_pagamento 
-                : new Date(parcela.data_pagamento).toLocaleDateString('pt-BR')
-              : new Date(parcela.data_pagamento).toLocaleDateString('pt-BR');
+            // Formatando data no formato PT-BR (DD/MM/YYYY)
+            const dataFormatadaParcela = typeof parcela.data_pagamento === 'string'
+              ? formatarDataPtBr(parcela.data_pagamento)
+              : formatarDataPtBr(new Date(parcela.data_pagamento).toISOString().split('T')[0]);
               
             const historicoParcela = `${historico} - Parcela ${parcela.numero}`;
             
@@ -450,6 +446,27 @@ export function useLancamentosContabeis() {
     });
     
     return lancamentosGerados;
+  }
+  
+  // Função para formatar datas no padrão PT-BR (DD/MM/YYYY)
+  function formatarDataPtBr(dataStr: string): string {
+    // Se já estiver no formato DD/MM/YYYY, retornar como está
+    if (dataStr.includes('/')) {
+      return dataStr;
+    }
+    
+    // Se estiver no formato ISO (YYYY-MM-DD ou YYYY-MM-DDTHH:MM:SS.mmmZ)
+    try {
+      const dataParts = dataStr.split('T')[0].split('-');
+      if (dataParts.length === 3) {
+        const [ano, mes, dia] = dataParts;
+        return `${dia}/${mes}/${ano}`;
+      }
+      return dataStr; // Retorna original se não conseguir converter
+    } catch (error) {
+      console.error("Erro ao formatar data:", error);
+      return dataStr;
+    }
   }
   
   // Calcular saldos para cada conta

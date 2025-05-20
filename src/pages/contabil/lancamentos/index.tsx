@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import LancarDiarioModal from "./LancarDiarioModal";
 import { useLancamentosContabeis } from "@/hooks/useLancamentosContabeis";
+import { formatDate } from "@/lib/utils";
 
 // Utilidades de data
 function dateToBR(date?: Date) {
@@ -129,22 +130,23 @@ export default function LancamentosPage() {
           (l.conta_codigo?.toLowerCase() || "").includes(searchTerm.toLowerCase())
         : true;
       
-      // Converter a data do lançamento para um objeto Date
-      let dataLanc: Date;
+      // Converter a data do lançamento para um objeto Date para filtro
+      let dataLanc: Date | undefined;
       if (typeof l.data === "string") {
         if (l.data.includes("/")) {
           const [dd, mm, yyyy] = l.data.split("/");
           dataLanc = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
         } else {
+          // Se for uma data ISO, converter para Date
           dataLanc = new Date(l.data);
         }
-      } else {
-        dataLanc = new Date(l.data);
+      } else if (l.data instanceof Date) {
+        dataLanc = l.data;
       }
       
       // Filtrar por data
-      const dataInicioOk = !dataInicial || dataLanc >= dataInicial;
-      const dataFimOk = !dataFinal || dataLanc <= dataFinal;
+      const dataInicioOk = !dataInicial || (dataLanc && dataLanc >= dataInicial);
+      const dataFimOk = !dataFinal || (dataLanc && dataLanc <= dataFinal);
       
       return isConta && termoOk && dataInicioOk && dataFimOk;
     });
@@ -310,17 +312,24 @@ export default function LancamentosPage() {
                           Nenhum lançamento encontrado
                         </TableCell>
                       </TableRow> : filteredLancamentos.map(lanc => {
-                        // Converter a data para exibição
+                        // Exibir a data exatamente como está no formato DD/MM/YYYY sem alterar timezone
                         let dataExibicao = "";
                         if (typeof lanc.data === "string") {
                           if (lanc.data.includes("/")) {
+                            // Já está no formato DD/MM/YYYY, usar diretamente
                             dataExibicao = lanc.data;
                           } else {
-                            const data = new Date(lanc.data);
-                            dataExibicao = dateToBR(data);
+                            // Converter formato ISO para DD/MM/YYYY sem ajuste de timezone
+                            const [anoMesDia] = lanc.data.split('T');
+                            const [ano, mes, dia] = anoMesDia.split('-');
+                            dataExibicao = `${dia}/${mes}/${ano}`;
                           }
-                        } else {
-                          dataExibicao = dateToBR(new Date(lanc.data));
+                        } else if (lanc.data instanceof Date) {
+                          // Convertendo Date para formato brasileiro sem ajuste de timezone
+                          const dia = String(lanc.data.getDate()).padStart(2, '0');
+                          const mes = String(lanc.data.getMonth() + 1).padStart(2, '0');
+                          const ano = lanc.data.getFullYear();
+                          dataExibicao = `${dia}/${mes}/${ano}`;
                         }
                         
                         return (
