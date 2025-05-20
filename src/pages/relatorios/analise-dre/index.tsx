@@ -82,13 +82,17 @@ export default function AnaliseDrePage() {
     mes: new Date().getMonth() + 1,
     percentual_minimo: 10
   });
+  
+  // Novo estado temporário para os filtros
+  const [filtroTemp, setFiltroTemp] = useState<FiltroAnaliseDre>(filtro);
+  
   const [contasExpandidas, setContasExpandidas] = useState<Record<string, boolean>>({});
   const [tabAtiva, setTabAtiva] = useState<string>("todos");
   const [mostrarTodasContas, setMostrarTodasContas] = useState<boolean>(false);
   const [contaSelecionadaDetalhes, setContaSelecionadaDetalhes] = useState<DetalhesMensaisConta | null>(null);
 
   // Query para buscar dados do DRE para análise
-  const { data: dadosAnalise = [], isLoading } = useQuery({
+  const { data: dadosAnalise = [], isLoading, refetch } = useQuery({
     queryKey: ["dre-analise", currentCompany?.id, filtro],
     queryFn: async () => {
       if (!currentCompany?.id) return [];
@@ -935,9 +939,16 @@ export default function AnaliseDrePage() {
     return dadosAnalise;
   };
   
-  // Função para atualizar valor do filtro
-  const updateFiltro = (campo: keyof FiltroAnaliseDre, valor: any) => {
-    setFiltro(prev => ({
+  // Função para aplicar os filtros
+  const aplicarFiltros = () => {
+    // Aplicar os filtros temporários aos filtros reais
+    setFiltro(filtroTemp);
+    toast.success("Filtros aplicados com sucesso");
+  };
+
+  // Função para atualizar valor do filtro temporário
+  const updateFiltroTemp = (campo: keyof FiltroAnaliseDre, valor: any) => {
+    setFiltroTemp(prev => ({
       ...prev,
       [campo]: valor
     }));
@@ -975,8 +986,8 @@ export default function AnaliseDrePage() {
             <div className="space-y-1">
               <label className="text-sm font-medium">Tipo de Comparação</label>
               <Select
-                value={filtro.tipo_comparacao}
-                onValueChange={(val) => updateFiltro('tipo_comparacao', val)}
+                value={filtroTemp.tipo_comparacao}
+                onValueChange={(val) => updateFiltroTemp('tipo_comparacao', val)}
               >
                 <SelectTrigger className="bg-white">
                   <SelectValue />
@@ -991,8 +1002,8 @@ export default function AnaliseDrePage() {
             <div className="space-y-1">
               <label className="text-sm font-medium">Ano</label>
               <Select
-                value={filtro.ano.toString()}
-                onValueChange={(val) => updateFiltro('ano', parseInt(val))}
+                value={filtroTemp.ano.toString()}
+                onValueChange={(val) => updateFiltroTemp('ano', parseInt(val))}
               >
                 <SelectTrigger className="bg-white">
                   <SelectValue />
@@ -1007,8 +1018,8 @@ export default function AnaliseDrePage() {
             <div className="space-y-1">
               <label className="text-sm font-medium">Mês</label>
               <Select
-                value={filtro.mes.toString().padStart(2, '0')}
-                onValueChange={(val) => updateFiltro('mes', parseInt(val))}
+                value={filtroTemp.mes.toString().padStart(2, '0')}
+                onValueChange={(val) => updateFiltroTemp('mes', parseInt(val))}
               >
                 <SelectTrigger className="bg-white">
                   <SelectValue />
@@ -1025,11 +1036,11 @@ export default function AnaliseDrePage() {
               <div className="flex items-center gap-2">
                 <Input 
                   type="number" 
-                  value={filtro.percentual_minimo} 
+                  value={filtroTemp.percentual_minimo} 
                   min={1}
                   max={100}
                   className="bg-white"
-                  onChange={(e) => updateFiltro('percentual_minimo', Number(e.target.value))}
+                  onChange={(e) => updateFiltroTemp('percentual_minimo', Number(e.target.value))}
                 />
                 <span className="text-sm">%</span>
               </div>
@@ -1049,6 +1060,33 @@ export default function AnaliseDrePage() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Botões de ação */}
+          <div className="flex justify-end gap-3 mb-4">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                // Resetar filtros
+                const novosFiltros = {
+                  tipo_comparacao: "mes_anterior",
+                  ano: new Date().getFullYear(),
+                  mes: new Date().getMonth() + 1,
+                  percentual_minimo: 10
+                };
+                setFiltroTemp(novosFiltros);
+                setFiltro(novosFiltros);
+                setMostrarTodasContas(false);
+              }}
+            >
+              Resetar Filtros
+            </Button>
+            <Button 
+              variant="blue"
+              onClick={aplicarFiltros}
+            >
+              Aplicar Filtros
+            </Button>
           </div>
 
           {/* Estado de carregamento */}
@@ -1426,12 +1464,14 @@ export default function AnaliseDrePage() {
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => {
                     // Resetar filtros
-                    setFiltro({
+                    const novosFiltros = {
                       tipo_comparacao: "mes_anterior",
                       ano: new Date().getFullYear(),
                       mes: new Date().getMonth() + 1,
                       percentual_minimo: 10
-                    });
+                    };
+                    setFiltroTemp(novosFiltros);
+                    setFiltro(novosFiltros);
                     setMostrarTodasContas(false);
                   }}>
                     Resetar Filtros
