@@ -1,17 +1,14 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, RefreshCcw, Search, X, Plus } from "lucide-react";
+import { Calendar as CalendarIcon, RefreshCcw, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import LancarDiarioModal from "./LancarDiarioModal";
 import { useLancamentosContabeis } from "@/hooks/useLancamentosContabeis";
 import { formatDate } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import ContabilizarParcelaModal from "./ContabilizarParcelaModal";
 
 // Utilidades de data
 function dateToBR(date?: Date) {
@@ -21,7 +18,6 @@ function dateToBR(date?: Date) {
   const y = date.getFullYear();
   return `${d}/${m}/${y}`;
 }
-
 function brToDate(value: string): Date | undefined {
   const [dd, mm, yyyy] = value.split("/");
   if (!dd || !mm || !yyyy) return undefined;
@@ -33,7 +29,6 @@ function brToDate(value: string): Date | undefined {
   if (dt.getDate() !== d || dt.getMonth() !== m || dt.getFullYear() !== y) return undefined;
   return dt;
 }
-
 function maskDateInput(value: string): string {
   value = value.replace(/\D/g, "");
   if (value.length > 8) value = value.slice(0, 8);
@@ -41,7 +36,6 @@ function maskDateInput(value: string): string {
   if (value.length > 2) return value.replace(/^(\d{2})(\d{0,2})/, "$1/$2");
   return value;
 }
-
 function formatCurrency(val: number) {
   return val.toLocaleString("pt-BR", {
     style: "currency",
@@ -57,8 +51,7 @@ export default function LancamentosPage() {
     isLoading, 
     carregarDados,
     adicionarLancamento,
-    excluirLancamento,
-    contabilizarParcelasExtras
+    excluirLancamento
   } = useLancamentosContabeis();
   
   const [contaId, setContaId] = useState<string>("todos");
@@ -69,7 +62,6 @@ export default function LancamentosPage() {
   const [dataFinalStr, setDataFinalStr] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [novoModalOpen, setNovoModalOpen] = useState(false);
-  const [contabilizarParcelaModalOpen, setContabilizarParcelaModalOpen] = useState(false);
   
   // Definir datas iniciais conforme o período selecionado
   useEffect(() => {
@@ -158,6 +150,11 @@ export default function LancamentosPage() {
     });
   }, [contaId, searchTerm, dataInicial, dataFinal, lancamentos]);
 
+  // Função para editar um lançamento
+  function handleEdit(id: string) {
+    toast.info("Ação de editar lançamento: " + id);
+  }
+
   // Função para excluir um lançamento
   function handleDelete(id: string) {
     excluirLancamento(id);
@@ -168,16 +165,6 @@ export default function LancamentosPage() {
     adicionarLancamento(novo).then(success => {
       if (success) {
         setNovoModalOpen(false);
-      }
-    });
-  }
-
-  // Função para contabilizar nova parcela com juros/multa/desconto
-  function handleContabilizarParcela(parcela: any) {
-    contabilizarParcelasExtras(parcela).then(success => {
-      if (success) {
-        setContabilizarParcelaModalOpen(false);
-        toast.success("Valores adicionais contabilizados com sucesso");
       }
     });
   }
@@ -196,16 +183,6 @@ export default function LancamentosPage() {
     setDataFinalStr(dateToBR(fim));
   }
 
-  // Função para obter a cor do badge pelo tipo de lançamento
-  function getBadgeVariant(tipo?: string) {
-    switch (tipo) {
-      case 'juros': return 'blue';
-      case 'multa': return 'red';
-      case 'desconto': return 'green';
-      default: return 'secondary';
-    }
-  }
-
   return (
     <div className="space-y-4">
       <LancarDiarioModal
@@ -216,32 +193,15 @@ export default function LancamentosPage() {
         contaInicalId={contaId !== "todos" ? contaId : ""}
       />
       
-      <ContabilizarParcelaModal 
-        open={contabilizarParcelaModalOpen}
-        onClose={() => setContabilizarParcelaModalOpen(false)}
-        onSave={handleContabilizarParcela}
-        contas={planosContas}
-      />
-      
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Diário Contábil</h1>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="rounded-md px-4 py-2 text-base font-medium"
-            onClick={() => setContabilizarParcelaModalOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Contabilizar Extras
-          </Button>
-          <Button
-            variant="blue"
-            className="rounded-md px-6 py-2 text-base font-semibold"
-            onClick={() => setNovoModalOpen(true)}
-          >
-            Novo Lançamento
-          </Button>
-        </div>
+        <Button
+          variant="blue"
+          className="rounded-md px-6 py-2 text-base font-semibold"
+          onClick={() => setNovoModalOpen(true)}
+        >
+          Novo Lançamento
+        </Button>
       </div>
       <Card>
         <CardContent className="pt-6 pb-6">
@@ -377,7 +337,6 @@ export default function LancamentosPage() {
                       <TableHead>Data</TableHead>
                       <TableHead>Código</TableHead>
                       <TableHead>Histórico</TableHead>
-                      <TableHead>Tipo</TableHead>
                       <TableHead>Débito</TableHead>
                       <TableHead>Crédito</TableHead>
                       <TableHead>Saldo</TableHead>
@@ -387,7 +346,7 @@ export default function LancamentosPage() {
                   <TableBody>
                     {filteredLancamentos.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                           Nenhum lançamento encontrado
                         </TableCell>
                       </TableRow>
@@ -423,15 +382,6 @@ export default function LancamentosPage() {
                             <div className="text-xs text-gray-500">
                               {lanc.conta_nome || ''}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            {lanc.tipo_lancamento && lanc.tipo_lancamento !== 'principal' ? (
-                              <Badge variant={getBadgeVariant(lanc.tipo_lancamento)}>
-                                {lanc.tipo_lancamento === 'juros' ? 'Juros' : 
-                                 lanc.tipo_lancamento === 'multa' ? 'Multa' : 
-                                 lanc.tipo_lancamento === 'desconto' ? 'Desconto' : ''}
-                              </Badge>
-                            ) : null}
                           </TableCell>
                           <TableCell>
                             {lanc.tipo === "debito" ? formatCurrency(lanc.valor) : "-"}

@@ -14,5 +14,4 @@ export interface LancamentoContabil {
   saldo?: number;
   movimentacao_id?: string;
   parcela_id?: string;
-  tipo_lancamento?: 'principal' | 'juros' | 'multa' | 'desconto';
 }
