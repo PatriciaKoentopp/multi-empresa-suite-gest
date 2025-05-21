@@ -331,7 +331,7 @@ export const useOrcamentoFlexivelForm = (orcamentoId?: string | null, isVisualiz
         tipo: "orcamento",
         data_nota_fiscal: dataNotaFiscal || null,
         numero_nota_fiscal: numeroNotaFiscal || null,
-        nota_fiscal_url: notaFiscalPdfUrl || null
+        nota_fiscal_pdf: notaFiscalPdfUrl || null  // Corrigido: nota_fiscal_url -> nota_fiscal_pdf
       };
       
       let orcamentoId_final = orcamentoId;

@@ -154,7 +154,7 @@ export default function Orcamento2Page() {
               <div className="flex flex-col gap-2">
                 <ParcelasForm 
                   parcelas={parcelas.map(p => ({
-                    numero: parseInt(p.numeroParcela.split('/')[1]),
+                    numero: parseInt(p.numeroParcela.split('/')[0].replace('Parcela ', '')),
                     valor: p.valor,
                     dataVencimento: parseDateString(p.dataVencimento) || new Date()
                   }))}
