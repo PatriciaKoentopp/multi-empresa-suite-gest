@@ -33,6 +33,9 @@ const formSchema = z.object({
   conta_contabil_id: z.string({
     required_error: "Você deve selecionar uma conta contábil.",
   }),
+  conta_juros_id: z.string().optional(),
+  conta_multa_id: z.string().optional(),
+  conta_desconto_id: z.string().optional(),
   status: z.enum(["ativo", "inativo"], {
     required_error: "Você deve selecionar um status.",
   }),
@@ -59,6 +62,9 @@ export function TiposTitulosForm({
       nome: tipoTitulo?.nome || "",
       tipo: tipoTitulo?.tipo || "receber",
       conta_contabil_id: tipoTitulo?.conta_contabil_id || "",
+      conta_juros_id: tipoTitulo?.conta_juros_id || "",
+      conta_multa_id: tipoTitulo?.conta_multa_id || "",
+      conta_desconto_id: tipoTitulo?.conta_desconto_id || "",
       status: (tipoTitulo?.status as "ativo" | "inativo") || "ativo",
     },
   });
@@ -123,7 +129,7 @@ export function TiposTitulosForm({
           name="conta_contabil_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Conta Contábil</FormLabel>
+              <FormLabel>Conta Contábil Principal</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
@@ -131,6 +137,84 @@ export function TiposTitulosForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  {contasFiltradas.map((conta) => (
+                    <SelectItem key={conta.id} value={conta.id}>
+                      {conta.codigo} - {conta.descricao}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="conta_juros_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Conta Contábil para Juros</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma conta para juros (opcional)" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="">Nenhuma (opcional)</SelectItem>
+                  {contasFiltradas.map((conta) => (
+                    <SelectItem key={conta.id} value={conta.id}>
+                      {conta.codigo} - {conta.descricao}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="conta_multa_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Conta Contábil para Multa</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma conta para multa (opcional)" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="">Nenhuma (opcional)</SelectItem>
+                  {contasFiltradas.map((conta) => (
+                    <SelectItem key={conta.id} value={conta.id}>
+                      {conta.codigo} - {conta.descricao}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="conta_desconto_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Conta Contábil para Desconto</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma conta para desconto (opcional)" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="">Nenhuma (opcional)</SelectItem>
                   {contasFiltradas.map((conta) => (
                     <SelectItem key={conta.id} value={conta.id}>
                       {conta.codigo} - {conta.descricao}

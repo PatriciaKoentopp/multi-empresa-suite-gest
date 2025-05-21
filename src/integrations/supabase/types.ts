@@ -1301,6 +1301,9 @@ export type Database = {
       tipos_titulos: {
         Row: {
           conta_contabil_id: string
+          conta_desconto_id: string | null
+          conta_juros_id: string | null
+          conta_multa_id: string | null
           created_at: string
           empresa_id: string
           id: string
@@ -1311,6 +1314,9 @@ export type Database = {
         }
         Insert: {
           conta_contabil_id: string
+          conta_desconto_id?: string | null
+          conta_juros_id?: string | null
+          conta_multa_id?: string | null
           created_at?: string
           empresa_id: string
           id?: string
@@ -1321,6 +1327,9 @@ export type Database = {
         }
         Update: {
           conta_contabil_id?: string
+          conta_desconto_id?: string | null
+          conta_juros_id?: string | null
+          conta_multa_id?: string | null
           created_at?: string
           empresa_id?: string
           id?: string
@@ -1333,6 +1342,27 @@ export type Database = {
           {
             foreignKeyName: "tipos_titulos_conta_contabil_id_fkey"
             columns: ["conta_contabil_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tipos_titulos_conta_desconto_id_fkey"
+            columns: ["conta_desconto_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tipos_titulos_conta_juros_id_fkey"
+            columns: ["conta_juros_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tipos_titulos_conta_multa_id_fkey"
+            columns: ["conta_multa_id"]
             isOneToOne: false
             referencedRelation: "plano_contas"
             referencedColumns: ["id"]
