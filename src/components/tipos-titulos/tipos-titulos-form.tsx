@@ -69,9 +69,16 @@ export function TiposTitulosForm({
     },
   });
 
-  // Filtrar apenas contas de ativo e passivo da categoria movimentação e com status ativo
-  const contasFiltradas = contasContabeis.filter(conta => 
+  // Filtrar apenas contas de ativo e passivo da categoria movimentação e com status ativo para conta principal
+  const contasMovimentacaoFiltradasPrincipal = contasContabeis.filter(conta => 
     (conta.tipo === "ativo" || conta.tipo === "passivo") &&
+    conta.categoria === "movimentação" &&
+    conta.status === "ativo"
+  );
+  
+  // Filtrar contas de receita e despesa da categoria movimentação e com status ativo para juros, multa e desconto
+  const contasJurosMultaDescontoFiltradas = contasContabeis.filter(conta => 
+    (conta.tipo === "receita" || conta.tipo === "despesa") &&
     conta.categoria === "movimentação" &&
     conta.status === "ativo"
   );
@@ -137,7 +144,7 @@ export function TiposTitulosForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {contasFiltradas.map((conta) => (
+                  {contasMovimentacaoFiltradasPrincipal.map((conta) => (
                     <SelectItem key={conta.id} value={conta.id}>
                       {conta.codigo} - {conta.descricao}
                     </SelectItem>
@@ -167,7 +174,7 @@ export function TiposTitulosForm({
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="sem_conta">Nenhuma (opcional)</SelectItem>
-                  {contasFiltradas.map((conta) => (
+                  {contasJurosMultaDescontoFiltradas.map((conta) => (
                     <SelectItem key={conta.id} value={conta.id}>
                       {conta.codigo} - {conta.descricao}
                     </SelectItem>
@@ -197,7 +204,7 @@ export function TiposTitulosForm({
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="sem_conta">Nenhuma (opcional)</SelectItem>
-                  {contasFiltradas.map((conta) => (
+                  {contasJurosMultaDescontoFiltradas.map((conta) => (
                     <SelectItem key={conta.id} value={conta.id}>
                       {conta.codigo} - {conta.descricao}
                     </SelectItem>
@@ -227,7 +234,7 @@ export function TiposTitulosForm({
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="sem_conta">Nenhuma (opcional)</SelectItem>
-                  {contasFiltradas.map((conta) => (
+                  {contasJurosMultaDescontoFiltradas.map((conta) => (
                     <SelectItem key={conta.id} value={conta.id}>
                       {conta.codigo} - {conta.descricao}
                     </SelectItem>
