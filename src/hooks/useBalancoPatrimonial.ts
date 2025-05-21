@@ -23,42 +23,74 @@ export function useBalancoPatrimonial() {
   const [ano, setAno] = useState<string>(new Date().getFullYear().toString());
   const [mes, setMes] = useState<string>("todos");
 
-  // Filtrar lançamentos conforme período selecionado
-  const lancamentosFiltrados = useMemo(() => {
-    return lancamentos.filter(l => {
-      // Converter a data do lançamento para um objeto Date para filtro
-      if (!l.data) return false;
+  // Separar lançamentos em anteriores ao período e dentro do período selecionado
+  const { lancamentosAnteriores, lancamentosDoPeriodo } = useMemo(() => {
+    // Determinamos a data limite para o período atual
+    let dataLimite: Date;
+    
+    if (periodo === "mensal" && mes !== "todos") {
+      // Se for mensal, a data limite é o primeiro dia do mês selecionado
+      dataLimite = new Date(Number(ano), Number(mes) - 1, 1);
+    } else {
+      // Se for acumulado ou todos os meses, a data limite é o primeiro dia do ano
+      dataLimite = new Date(Number(ano), 0, 1);
+    }
+    
+    console.log(`Data limite para saldo inicial: ${dataLimite.toLocaleDateString('pt-BR')}`);
+    
+    // Função para converter string de data para objeto Date
+    const converterData = (dataStr: string): Date => {
+      if (dataStr.includes('/')) {
+        const [dd, mm, yyyy] = dataStr.split('/');
+        return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+      }
+      return new Date(dataStr);
+    };
+
+    // Separar lançamentos anteriores e do período atual
+    const anteriores: LancamentoContabil[] = [];
+    const doPeriodo: LancamentoContabil[] = [];
+
+    lancamentos.forEach(lancamento => {
+      if (!lancamento.data) return;
       
-      let dataLanc: Date | null = null;
-      if (typeof l.data === "string") {
-        if (l.data.includes("/")) {
-          const [dd, mm, yyyy] = l.data.split("/");
-          dataLanc = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
-        } else {
-          // Se for uma data ISO, converter para Date
-          dataLanc = new Date(l.data);
+      const dataLanc = converterData(lancamento.data);
+      
+      // Filtrar por data limite
+      if (dataLanc < dataLimite) {
+        anteriores.push(lancamento);
+      } else {
+        // Para o período atual, ainda precisamos filtrar por ano e mês
+        const anoLancamento = dataLanc.getFullYear().toString();
+        
+        if (anoLancamento === ano) {
+          // Se for mensal, verificamos o mês selecionado
+          if (periodo === "mensal" && mes !== "todos") {
+            const mesLancamento = (dataLanc.getMonth() + 1).toString().padStart(2, "0");
+            if (mesLancamento === mes) {
+              doPeriodo.push(lancamento);
+            }
+          } else {
+            // Se for acumulado ou todos os meses, incluímos todos os lançamentos do ano
+            doPeriodo.push(lancamento);
+          }
         }
       }
-
-      if (!dataLanc) return false;
-      
-      // Filtrar por ano
-      const anoLancamento = dataLanc.getFullYear().toString();
-      if (anoLancamento !== ano) return false;
-      
-      // Filtrar por mês se necessário
-      if (mes !== "todos" && periodo === "mensal") {
-        const mesLancamento = (dataLanc.getMonth() + 1).toString().padStart(2, "0");
-        if (mesLancamento !== mes) return false;
-      }
-      
-      return true;
     });
+    
+    console.log(`Lançamentos anteriores ao período: ${anteriores.length}`);
+    console.log(`Lançamentos do período: ${doPeriodo.length}`);
+    
+    return {
+      lancamentosAnteriores: anteriores,
+      lancamentosDoPeriodo: doPeriodo
+    };
   }, [lancamentos, ano, mes, periodo]);
 
   // Processar contas do balanço
   const contasBalanco = useMemo(() => {
-    console.log("Total de lançamentos filtrados:", lancamentosFiltrados.length);
+    console.log("Total de lançamentos do período:", lancamentosDoPeriodo.length);
+    console.log("Total de lançamentos anteriores:", lancamentosAnteriores.length);
     
     // Agrupar plano de contas por tipo (Ativo/Passivo)
     const contasAtivo = planosContas.filter(c => c.tipo === "ativo");
@@ -67,14 +99,44 @@ export function useBalancoPatrimonial() {
     console.log("Contas Ativo:", contasAtivo.length);
     console.log("Contas Passivo:", contasPassivo.length);
 
-    // Função auxiliar para calcular valores das contas
-    const calcularSaldoConta = (conta: PlanoConta): ContaBalanco => {
-      // Filtrar lançamentos desta conta
-      const lancamentosConta = lancamentosFiltrados.filter(l => l.conta === conta.id);
-      
-      console.log(`Conta ${conta.codigo} (${conta.descricao}): ${lancamentosConta.length} lançamentos`);
+    // Função auxiliar para calcular saldo inicial da conta baseado em lançamentos anteriores
+    const calcularSaldoInicial = (conta: PlanoConta): number => {
+      const lancamentosConta = lancamentosAnteriores.filter(l => l.conta === conta.id);
       
       // Calcular débitos e créditos
+      const totalDebitosAnteriores = lancamentosConta
+        .filter(l => l.tipo === "debito")
+        .reduce((sum, l) => sum + l.valor, 0);
+        
+      const totalCreditosAnteriores = lancamentosConta
+        .filter(l => l.tipo === "credito")
+        .reduce((sum, l) => sum + l.valor, 0);
+      
+      // Calcular saldo inicial baseado no tipo de conta
+      let saldoInicial = 0;
+      
+      // Para contas do ativo: Saldo = Débitos - Créditos
+      // Para contas do passivo: Saldo = Créditos - Débitos
+      if (conta.tipo === "ativo") {
+        saldoInicial = totalDebitosAnteriores - totalCreditosAnteriores;
+      } else {
+        saldoInicial = totalCreditosAnteriores - totalDebitosAnteriores;
+      }
+      
+      return saldoInicial;
+    };
+    
+    // Função auxiliar para calcular valores das contas no período selecionado
+    const calcularSaldoConta = (conta: PlanoConta): ContaBalanco => {
+      // Filtrar lançamentos desta conta no período selecionado
+      const lancamentosConta = lancamentosDoPeriodo.filter(l => l.conta === conta.id);
+      
+      console.log(`Conta ${conta.codigo} (${conta.descricao}): ${lancamentosConta.length} lançamentos no período`);
+      
+      // Calcular saldo inicial baseado em lançamentos anteriores
+      const saldoInicial = calcularSaldoInicial(conta);
+      
+      // Calcular débitos e créditos do período
       const totalDebitos = lancamentosConta
         .filter(l => l.tipo === "debito")
         .reduce((sum, l) => sum + l.valor, 0);
@@ -84,21 +146,22 @@ export function useBalancoPatrimonial() {
         .reduce((sum, l) => sum + l.valor, 0);
       
       // Calcular saldo final baseado no tipo de conta
+      // Saldo final = Saldo inicial + movimentações do período
       let saldoFinal = 0;
       
-      // Para contas do ativo: Saldo = Débitos - Créditos
-      // Para contas do passivo: Saldo = Créditos - Débitos
+      // Para contas do ativo: Saldo = Saldo Inicial + (Débitos - Créditos)
+      // Para contas do passivo: Saldo = Saldo Inicial + (Créditos - Débitos)
       if (conta.tipo === "ativo") {
-        saldoFinal = totalDebitos - totalCreditos;
+        saldoFinal = saldoInicial + (totalDebitos - totalCreditos);
       } else {
-        saldoFinal = totalCreditos - totalDebitos;
+        saldoFinal = saldoInicial + (totalCreditos - totalDebitos);
       }
       
       return {
         codigo: conta.codigo,
         descricao: conta.descricao,
         grupo: conta.tipo === "ativo" ? "Ativo" : "Passivo",
-        saldoInicial: 0, // Não temos saldo inicial nos dados, começamos de zero
+        saldoInicial: saldoInicial,
         debito: totalDebitos,
         credito: totalCreditos,
         saldoFinal: saldoFinal,
@@ -184,22 +247,25 @@ export function useBalancoPatrimonial() {
       const filhasProcessadas = conta.filhas.map(calcularSaldosAcumulados);
       
       // Recalcular os totais somando os valores das filhas
+      let saldoInicialTotal = 0;
       let debitoTotal = 0;
       let creditoTotal = 0;
       
       filhasProcessadas.forEach(filha => {
+        saldoInicialTotal += filha.saldoInicial;
         debitoTotal += filha.debito;
         creditoTotal += filha.credito;
       });
       
-      // Calcular o saldo final conforme o grupo (Ativo ou Passivo)
-      const saldoFinalAcumulado = conta.grupo === "Ativo" 
+      // Calcular o saldo final acumulado
+      const saldoFinalAcumulado = saldoInicialTotal + (conta.grupo === "Ativo" 
         ? debitoTotal - creditoTotal
-        : creditoTotal - debitoTotal;
+        : creditoTotal - debitoTotal);
       
       // Atualizar a conta com os valores acumulados das filhas
       return {
         ...conta,
+        saldoInicial: saldoInicialTotal,
         debito: debitoTotal,
         credito: creditoTotal,
         saldoFinal: saldoFinalAcumulado,
@@ -253,7 +319,7 @@ export function useBalancoPatrimonial() {
       totalAtivo,
       totalPassivo
     };
-  }, [planosContas, lancamentosFiltrados]);
+  }, [planosContas, lancamentosDoPeriodo, lancamentosAnteriores]);
 
   return {
     contasBalanco,
