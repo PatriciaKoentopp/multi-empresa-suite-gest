@@ -62,9 +62,9 @@ export function TiposTitulosForm({
       nome: tipoTitulo?.nome || "",
       tipo: tipoTitulo?.tipo || "receber",
       conta_contabil_id: tipoTitulo?.conta_contabil_id || "",
-      conta_juros_id: tipoTitulo?.conta_juros_id || "",
-      conta_multa_id: tipoTitulo?.conta_multa_id || "",
-      conta_desconto_id: tipoTitulo?.conta_desconto_id || "",
+      conta_juros_id: tipoTitulo?.conta_juros_id || undefined,
+      conta_multa_id: tipoTitulo?.conta_multa_id || undefined,
+      conta_desconto_id: tipoTitulo?.conta_desconto_id || undefined,
       status: (tipoTitulo?.status as "ativo" | "inativo") || "ativo",
     },
   });
@@ -155,14 +155,18 @@ export function TiposTitulosForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Conta Contábil para Juros</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+                value={field.value || undefined}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma conta para juros (opcional)" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma (opcional)</SelectItem>
+                  <SelectItem value="sem_conta">Nenhuma (opcional)</SelectItem>
                   {contasFiltradas.map((conta) => (
                     <SelectItem key={conta.id} value={conta.id}>
                       {conta.codigo} - {conta.descricao}
@@ -181,14 +185,18 @@ export function TiposTitulosForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Conta Contábil para Multa</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+                value={field.value || undefined}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma conta para multa (opcional)" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma (opcional)</SelectItem>
+                  <SelectItem value="sem_conta">Nenhuma (opcional)</SelectItem>
                   {contasFiltradas.map((conta) => (
                     <SelectItem key={conta.id} value={conta.id}>
                       {conta.codigo} - {conta.descricao}
@@ -207,14 +215,18 @@ export function TiposTitulosForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Conta Contábil para Desconto</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+                value={field.value || undefined}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma conta para desconto (opcional)" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma (opcional)</SelectItem>
+                  <SelectItem value="sem_conta">Nenhuma (opcional)</SelectItem>
                   {contasFiltradas.map((conta) => (
                     <SelectItem key={conta.id} value={conta.id}>
                       {conta.codigo} - {conta.descricao}
