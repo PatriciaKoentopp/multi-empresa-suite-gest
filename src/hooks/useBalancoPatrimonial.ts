@@ -7,7 +7,7 @@ import { LancamentoContabil } from '@/types/movimentacoes';
 export interface ContaBalanco {
   codigo: string;
   descricao: string;
-  grupo: "Ativo" | "Passivo";
+  grupo: "Ativo" | "Passivo" | "Patrimônio";
   saldoInicial: number;
   debito: number;
   credito: number;
@@ -92,12 +92,14 @@ export function useBalancoPatrimonial() {
     console.log("Total de lançamentos do período:", lancamentosDoPeriodo.length);
     console.log("Total de lançamentos anteriores:", lancamentosAnteriores.length);
     
-    // Agrupar plano de contas por tipo (Ativo/Passivo)
+    // Agrupar plano de contas por tipo
     const contasAtivo = planosContas.filter(c => c.tipo === "ativo");
     const contasPassivo = planosContas.filter(c => c.tipo === "passivo");
+    const contasPatrimonio = planosContas.filter(c => c.tipo === "patrimonio");
     
     console.log("Contas Ativo:", contasAtivo.length);
     console.log("Contas Passivo:", contasPassivo.length);
+    console.log("Contas Patrimônio:", contasPatrimonio.length);
 
     // Função auxiliar para calcular saldo inicial da conta baseado em lançamentos anteriores
     const calcularSaldoInicial = (conta: PlanoConta): number => {
@@ -116,7 +118,7 @@ export function useBalancoPatrimonial() {
       let saldoInicial = 0;
       
       // Para contas do ativo: Saldo = Débitos - Créditos
-      // Para contas do passivo: Saldo = Créditos - Débitos
+      // Para contas do passivo e patrimônio: Saldo = Créditos - Débitos
       if (conta.tipo === "ativo") {
         saldoInicial = totalDebitosAnteriores - totalCreditosAnteriores;
       } else {
@@ -149,18 +151,24 @@ export function useBalancoPatrimonial() {
       // Saldo final = Saldo inicial + movimentações do período
       let saldoFinal = 0;
       
-      // Para contas do ativo: Saldo = Saldo Inicial + (Débitos - Créditos)
-      // Para contas do passivo: Saldo = Saldo Inicial + (Créditos - Débitos)
+      // Determinar o grupo da conta
+      let grupo: "Ativo" | "Passivo" | "Patrimônio";
+      
       if (conta.tipo === "ativo") {
+        grupo = "Ativo";
         saldoFinal = saldoInicial + (totalDebitos - totalCreditos);
+      } else if (conta.tipo === "passivo") {
+        grupo = "Passivo";
+        saldoFinal = saldoInicial + (totalCreditos - totalDebitos);
       } else {
+        grupo = "Patrimônio";
         saldoFinal = saldoInicial + (totalCreditos - totalDebitos);
       }
       
       return {
         codigo: conta.codigo,
         descricao: conta.descricao,
-        grupo: conta.tipo === "ativo" ? "Ativo" : "Passivo",
+        grupo: grupo,
         saldoInicial: saldoInicial,
         debito: totalDebitos,
         credito: totalCreditos,
@@ -172,10 +180,12 @@ export function useBalancoPatrimonial() {
     // Ordenar contas por código para facilitar a estrutura hierárquica
     const contasAtivoOrdenadas = [...contasAtivo].sort((a, b) => a.codigo.localeCompare(b.codigo));
     const contasPassivoOrdenadas = [...contasPassivo].sort((a, b) => a.codigo.localeCompare(b.codigo));
+    const contasPatrimonioOrdenadas = [...contasPatrimonio].sort((a, b) => a.codigo.localeCompare(b.codigo));
     
     // Calcular o balanço para todas as contas
     const todasContasAtivo = contasAtivoOrdenadas.map(calcularSaldoConta);
     const todasContasPassivo = contasPassivoOrdenadas.map(calcularSaldoConta);
+    const todasContasPatrimonio = contasPatrimonioOrdenadas.map(calcularSaldoConta);
     
     // Função para verificar se uma conta é filha direta de outra
     const isFilhaDireta = (possibleChild: string, possibleParent: string): boolean => {
@@ -257,10 +267,12 @@ export function useBalancoPatrimonial() {
         creditoTotal += filha.credito;
       });
       
-      // Calcular o saldo final acumulado
-      const saldoFinalAcumulado = saldoInicialTotal + (conta.grupo === "Ativo" 
+      // Calcular o saldo final acumulado baseado no grupo da conta
+      const saldoFinalAcumulado = saldoInicialTotal + (
+        conta.grupo === "Ativo" 
         ? debitoTotal - creditoTotal
-        : creditoTotal - debitoTotal);
+        : creditoTotal - debitoTotal
+      );
       
       // Atualizar a conta com os valores acumulados das filhas
       return {
@@ -276,10 +288,12 @@ export function useBalancoPatrimonial() {
     // Montar as árvores hierárquicas
     const arvoreAtivo = montarArvoreHierarquica(todasContasAtivo);
     const arvorePassivo = montarArvoreHierarquica(todasContasPassivo);
+    const arvorePatrimonio = montarArvoreHierarquica(todasContasPatrimonio);
     
     // Calcular os saldos acumulados para as árvores
     const arvoreAtivoProcessada = arvoreAtivo.map(calcularSaldosAcumulados);
     const arvorePassivoProcessada = arvorePassivo.map(calcularSaldosAcumulados);
+    const arvorePatrimonioProcessada = arvorePatrimonio.map(calcularSaldosAcumulados);
     
     // Função para nivelar a árvore em uma lista plana para renderização
     const nivelarArvore = (contas: ContaBalanco[], nivel = 0): ContaBalanco[] => {
@@ -305,19 +319,29 @@ export function useBalancoPatrimonial() {
     // Nivelar as árvores para renderização
     const contasAtivoNiveladas = nivelarArvore(arvoreAtivoProcessada);
     const contasPassivoNiveladas = nivelarArvore(arvorePassivoProcessada);
+    const contasPatrimonioNiveladas = nivelarArvore(arvorePatrimonioProcessada);
     
     // Calcular totais gerais
     const totalAtivo = arvoreAtivoProcessada.reduce((sum, conta) => sum + conta.saldoFinal, 0);
     const totalPassivo = arvorePassivoProcessada.reduce((sum, conta) => sum + conta.saldoFinal, 0);
+    const totalPatrimonio = arvorePatrimonioProcessada.reduce((sum, conta) => sum + conta.saldoFinal, 0);
+    
+    // Total passivo + patrimônio juntos
+    const totalPassivoPatrimonio = totalPassivo + totalPatrimonio;
     
     console.log("Total Ativo:", totalAtivo);
     console.log("Total Passivo:", totalPassivo);
+    console.log("Total Patrimônio:", totalPatrimonio);
+    console.log("Total Passivo + Patrimônio:", totalPassivoPatrimonio);
 
     return {
       contasAtivo: contasAtivoNiveladas,
       contasPassivo: contasPassivoNiveladas,
+      contasPatrimonio: contasPatrimonioNiveladas,
       totalAtivo,
-      totalPassivo
+      totalPassivo,
+      totalPatrimonio,
+      totalPassivoPatrimonio
     };
   }, [planosContas, lancamentosDoPeriodo, lancamentosAnteriores]);
 

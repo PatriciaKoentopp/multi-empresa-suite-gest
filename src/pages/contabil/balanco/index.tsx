@@ -227,14 +227,69 @@ export default function BalancoPage() {
                   ))}
                 </TableBody>
               </Table>
+
+              {/* Tabela Patrimônio */}
+              <h3 className="font-semibold mt-6 mb-1 text-[17px] text-blue-700 flex">
+                Patrimônio
+                <span className="ml-2 text-gray-500 font-normal">
+                  (Total: {contasBalanco.totalPatrimonio.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})
+                </span>
+              </h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead className="text-right">Saldo Inicial (R$)</TableHead>
+                    <TableHead className="text-right">Débitos (R$)</TableHead>
+                    <TableHead className="text-right">Créditos (R$)</TableHead>
+                    <TableHead className="text-right">Saldo Final (R$)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contasBalanco.contasPatrimonio.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                        Nenhuma conta de Patrimônio encontrada
+                      </TableCell>
+                    </TableRow>
+                  ) : contasBalanco.contasPatrimonio.map((c, index) => (
+                    <TableRow 
+                      key={`${c.codigo}-${index}`}
+                      className={cn(
+                        c.tipo === "título" ? "font-semibold bg-gray-50" : "",
+                        c.nivel && c.nivel > 0 ? "text-sm" : ""
+                      )}
+                    >
+                      <TableCell>
+                        <div style={{ paddingLeft: `${c.nivel ? c.nivel * 12 : 0}px` }}>
+                          {c.codigo}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div style={{ paddingLeft: `${c.nivel ? c.nivel * 12 : 0}px` }}>
+                          {c.descricao}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">{c.saldoInicial.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.debito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.credito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.saldoFinal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
               
               {/* Totais */}
-              <div className="mt-6 text-right">
+              <div className="mt-6 text-right space-y-1">
                 <div className="text-lg font-semibold">
-                  Ativo + Passivo: {(contasBalanco.totalAtivo + contasBalanco.totalPassivo).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  Passivo + Patrimônio: {contasBalanco.totalPassivoPatrimonio.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </div>
+                <div className="text-lg font-semibold">
+                  Ativo: {contasBalanco.totalAtivo.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </div>
                 <div className="text-sm text-gray-500">
-                  Diferença: {Math.abs(contasBalanco.totalAtivo - contasBalanco.totalPassivo).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  Diferença: {Math.abs(contasBalanco.totalAtivo - contasBalanco.totalPassivoPatrimonio).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </div>
               </div>
             </div>
