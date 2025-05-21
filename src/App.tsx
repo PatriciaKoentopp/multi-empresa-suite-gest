@@ -23,6 +23,7 @@ import Profissoes from "./pages/cadastros/profissoes";
 import MotivosPerdas from "./pages/cadastros/motivos-perda";
 import ContaCorrente from "./pages/cadastros/conta-corrente";
 import TiposTitulos from "./pages/cadastros/tipos-titulos";
+import GrupoProdutos from "./pages/cadastros/grupo-produtos";
 
 // Financeiro
 import FluxoCaixa from "./pages/financeiro/fluxo-caixa";
@@ -119,6 +120,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <GrupoFavorecidos />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/cadastros/grupo-produtos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <GrupoProdutos />
                   </MainLayout>
                 </PrivateRoute>
               }
