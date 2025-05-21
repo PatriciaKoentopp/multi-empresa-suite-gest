@@ -30,6 +30,7 @@ export default function TabelaPrecosPage() {
   const [modoModal, setModoModal] = useState<"visualizar" | "editar" | "novo">("visualizar");
   const [tabelaSelecionada, setTabelaSelecionada] = useState<TabelaPreco | null>(null);
   const [servicos, setServicos] = useState<Servico[]>([]);
+  const [produtos, setProdutos] = useState<Produto[]>([]);
 
   const inputBuscaRef = useRef<HTMLInputElement>(null);
 
@@ -37,6 +38,7 @@ export default function TabelaPrecosPage() {
     if (currentCompany?.id) {
       carregarTabelas();
       carregarServicos();
+      carregarProdutos();
     }
   }, [currentCompany]);
 
@@ -112,6 +114,28 @@ export default function TabelaPrecosPage() {
       toast({
         title: "Erro ao carregar serviços",
         description: "Ocorreu um erro ao carregar a lista de serviços.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function carregarProdutos() {
+    try {
+      const { data, error } = await supabase
+        .from('produtos')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .eq('status', 'ativo')
+        .order('nome');
+
+      if (error) throw error;
+      
+      setProdutos(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+      toast({
+        title: "Erro ao carregar produtos",
+        description: "Ocorreu um erro ao carregar a lista de produtos.",
         variant: "destructive",
       });
     }
@@ -364,6 +388,7 @@ export default function TabelaPrecosPage() {
         modo={modoModal}
         onSalvar={handleSalvarTabela}
         servicosACadastrar={servicos}
+        produtosACadastrar={produtos}
       />
 
       {/* Diálogo de confirmação de exclusão */}

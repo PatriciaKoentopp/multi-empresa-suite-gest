@@ -1349,7 +1349,8 @@ export type Database = {
           created_at: string
           id: string
           preco: number
-          servico_id: string
+          produto_id: string | null
+          servico_id: string | null
           tabela_id: string
           updated_at: string
         }
@@ -1357,7 +1358,8 @@ export type Database = {
           created_at?: string
           id?: string
           preco: number
-          servico_id: string
+          produto_id?: string | null
+          servico_id?: string | null
           tabela_id: string
           updated_at?: string
         }
@@ -1365,11 +1367,19 @@ export type Database = {
           created_at?: string
           id?: string
           preco?: number
-          servico_id?: string
+          produto_id?: string | null
+          servico_id?: string | null
           tabela_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tabelas_precos_itens_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tabelas_precos_itens_servico_id_fkey"
             columns: ["servico_id"]

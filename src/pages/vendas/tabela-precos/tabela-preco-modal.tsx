@@ -33,6 +33,7 @@ interface TabelaPrecoModalProps {
   onClose: () => void;
   tabela?: TabelaPreco | null;
   servicosACadastrar: Servico[];
+  produtosACadastrar: Produto[];
   modo: "visualizar" | "editar" | "novo";
   onSalvar: (tabela: TabelaPreco) => void;
 }
@@ -42,6 +43,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
   onClose,
   tabela,
   servicosACadastrar,
+  produtosACadastrar,
   modo,
   onSalvar,
 }) => {
@@ -60,35 +62,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
   const [novoProdutoId, setNovoProdutoId] = useState<string>("");
   const [novoPreco, setNovoPreco] = useState<string>("");
   const [tabelaId, setTabelaId] = useState<string>("");
-  const [produtos, setProdutos] = useState<Produto[]>([]);
   
-  useEffect(() => {
-    if (currentCompany?.id) {
-      carregarProdutos();
-    }
-  }, [currentCompany?.id]);
-
-  async function carregarProdutos() {
-    try {
-      const { data, error } = await supabase
-        .from('produtos')
-        .select('*')
-        .eq('empresa_id', currentCompany?.id)
-        .eq('status', 'ativo')
-        .order('nome');
-
-      if (error) throw error;
-      setProdutos(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-      toast({
-        title: "Erro ao carregar produtos",
-        description: "Ocorreu um erro ao carregar a lista de produtos.",
-        variant: "destructive",
-      });
-    }
-  }
-
   useEffect(() => {
     if (open && tabela) {
       setNome(tabela.nome);
@@ -275,7 +249,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
       return;
     }
 
-    const produtoSelecionado = produtos.find(p => p.id === novoProdutoId);
+    const produtoSelecionado = produtosACadastrar.find(p => p.id === novoProdutoId);
     
     try {
       // Se estiver editando uma tabela existente
@@ -645,7 +619,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
                       onChange={(e) => setNovoProdutoId(e.target.value)}
                     >
                       <option value="">Selecione um produto...</option>
-                      {produtos
+                      {produtosACadastrar
                         .filter(p => !produtosTabela.some(pt => pt.produto_id === p.id))
                         .map(p => (
                           <option key={p.id} value={p.id}>{p.nome}</option>
