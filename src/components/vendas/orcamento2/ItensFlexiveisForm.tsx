@@ -86,7 +86,7 @@ export function ItensFlexiveisForm({
           <div key={idx} className="flex gap-2 items-end">
             <div className="w-1/6">
               <Select
-                value={item.tipoItem || "servico"}
+                value={item.tipoItem}
                 onValueChange={(v) => handleTipoItemChange(idx, v as "servico" | "produto")}
                 disabled={disabled}
               >
@@ -100,7 +100,7 @@ export function ItensFlexiveisForm({
               </Select>
             </div>
             <div className="w-full">
-              {(item.tipoItem === "produto" || (!item.tipoItem && item.produtoId)) ? (
+              {item.tipoItem === "produto" ? (
                 <Select
                   value={item.produtoId || ""}
                   onValueChange={v => onItemChange(idx, "produtoId", v)}
