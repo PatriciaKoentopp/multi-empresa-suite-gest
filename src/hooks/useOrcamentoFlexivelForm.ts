@@ -40,6 +40,12 @@ export const useOrcamentoFlexivelForm = (orcamentoId?: string | null, isVisualiz
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Calcular o total do orçamento - movido para antes do useEffect
+  const total = itens.reduce((acc, item) => acc + Number(item.valor || 0), 0);
+  
+  // Calcular a soma das parcelas - movido para antes do useEffect
+  const somaParcelas = parcelas.reduce((acc, parcela) => acc + Number(parcela.valor || 0), 0);
+
   // Carregar dados iniciais
   useEffect(() => {
     if (currentCompany?.id) {
@@ -56,12 +62,6 @@ export const useOrcamentoFlexivelForm = (orcamentoId?: string | null, isVisualiz
   useEffect(() => {
     gerarParcelas();
   }, [numeroParcelas, total]);
-
-  // Calcular o total do orçamento
-  const total = itens.reduce((acc, item) => acc + Number(item.valor || 0), 0);
-  
-  // Calcular a soma das parcelas
-  const somaParcelas = parcelas.reduce((acc, parcela) => acc + Number(parcela.valor || 0), 0);
 
   // Funções auxiliares para carregar dados
   async function carregarFavorecidos() {
