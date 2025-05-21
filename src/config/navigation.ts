@@ -125,6 +125,10 @@ export const navigationConfig: ModuleNavItem[] = [
         href: "/vendas/painel-vendas",
       },
       {
+        title: "Produtos",
+        href: "/vendas/produtos",
+      },
+      {
         title: "Serviços",
         href: "/vendas/servicos",
       },
