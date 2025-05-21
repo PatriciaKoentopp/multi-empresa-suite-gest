@@ -437,6 +437,64 @@ export type Database = {
           },
         ]
       }
+      lancamentos_contabeis: {
+        Row: {
+          conta_credito_id: string
+          conta_debito_id: string
+          created_at: string
+          data: string
+          empresa_id: string
+          historico: string
+          id: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          conta_credito_id: string
+          conta_debito_id: string
+          created_at?: string
+          data: string
+          empresa_id: string
+          historico: string
+          id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          conta_credito_id?: string
+          conta_debito_id?: string
+          created_at?: string
+          data?: string
+          empresa_id?: string
+          historico?: string
+          id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lancamentos_contabeis_conta_credito_id_fkey"
+            columns: ["conta_credito_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_contabeis_conta_debito_id_fkey"
+            columns: ["conta_debito_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_contabeis_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           created_at: string

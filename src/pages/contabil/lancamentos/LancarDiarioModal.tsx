@@ -10,19 +10,13 @@ import { CalendarPlus } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ptBR } from "date-fns/locale";
-
-type Conta = {
-  id: string;
-  codigo: string;
-  descricao: string;
-  tipo: string;
-};
+import { PlanoConta } from "@/types/plano-contas";
 
 interface LancarDiarioModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (novo: { data: string; historico: string; debito: string; credito: string; valor: number }) => void;
-  contas: Conta[];
+  contas: PlanoConta[];
   contaInicalId: string;
 }
 
@@ -71,7 +65,6 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
         credito: contaCreditoId,
         valor: Number(valor),
       });
-      clearForm();
     } catch (error) {
       console.error("Erro ao salvar lançamento:", error);
       toast.error("Erro ao salvar lançamento");

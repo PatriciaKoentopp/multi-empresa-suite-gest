@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCompany } from "@/contexts/company-context";
-import { LancamentoContabil, Movimentacao, MovimentacaoParcela } from '@/types/movimentacoes';
+import { LancamentoContabil } from '@/types/lancamentos-contabeis';
+import { Movimentacao, MovimentacaoParcela } from '@/types/movimentacoes';
 import { TipoTitulo } from '@/types/tipos-titulos';
-import { ContaCorrente } from '@/types/conta-corrente';
 import { PlanoConta } from '@/types/plano-contas';
 
 export function useLancamentosContabeis() {
@@ -29,7 +29,15 @@ export function useLancamentosContabeis() {
         
       if (error) throw error;
       
-      setPlanosContas(data || []);
+      // Convertendo para o tipo PlanoConta
+      const contas: PlanoConta[] = data?.map(conta => ({
+        ...conta,
+        empresa_id: currentCompany.id,
+        created_at: conta.created_at || new Date().toISOString(),
+        updated_at: conta.updated_at || new Date().toISOString()
+      })) || [];
+      
+      setPlanosContas(contas);
     } catch (error) {
       console.error("Erro ao carregar planos de contas:", error);
       toast.error("Erro ao carregar planos de contas");
@@ -82,7 +90,69 @@ export function useLancamentosContabeis() {
     }
   }
   
-  // Função para processar movimentações e gerar lançamentos contábeis
+  // Função para carregar lançamentos do Supabase
+  async function carregarLancamentosContabeis() {
+    if (!currentCompany?.id) return [];
+    
+    try {
+      // Carregar lançamentos da tabela lancamentos_contabeis
+      const { data, error } = await supabase
+        .from("lancamentos_contabeis")
+        .select("*")
+        .eq("empresa_id", currentCompany.id)
+        .order("data", { ascending: true });
+        
+      if (error) throw error;
+      
+      // Converter para o formato usado na interface
+      const lancamentosProcessados: LancamentoContabil[] = [];
+      
+      for (const lanc of data || []) {
+        const contaDebito = planosContas.find(c => c.id === lanc.conta_debito_id);
+        const contaCredito = planosContas.find(c => c.id === lanc.conta_credito_id);
+        
+        if (contaDebito) {
+          // Lançamento de débito
+          const lancamentoDebito: LancamentoContabil = {
+            id: `${lanc.id}_debito`,
+            data: lanc.data,
+            historico: lanc.historico,
+            conta: lanc.conta_debito_id,
+            conta_nome: contaDebito.descricao,
+            conta_codigo: contaDebito.codigo,
+            tipo: 'debito',
+            valor: lanc.valor,
+            saldo: 0 // Será calculado depois
+          };
+          lancamentosProcessados.push(lancamentoDebito);
+        }
+        
+        if (contaCredito) {
+          // Lançamento de crédito
+          const lancamentoCredito: LancamentoContabil = {
+            id: `${lanc.id}_credito`,
+            data: lanc.data,
+            historico: lanc.historico,
+            conta: lanc.conta_credito_id,
+            conta_nome: contaCredito.descricao,
+            conta_codigo: contaCredito.codigo,
+            tipo: 'credito',
+            valor: lanc.valor,
+            saldo: 0 // Será calculado depois
+          };
+          lancamentosProcessados.push(lancamentoCredito);
+        }
+      }
+      
+      return lancamentosProcessados;
+    } catch (error) {
+      console.error("Erro ao carregar lançamentos contábeis:", error);
+      toast.error("Erro ao carregar lançamentos contábeis");
+      return [];
+    }
+  }
+  
+  // Processar movimentações e gerar lançamentos contábeis
   function processarMovimentacoesParaLancamentos(
     movimentacoes: Movimentacao[], 
     parcelas: MovimentacaoParcela[],
@@ -478,15 +548,17 @@ export function useLancamentosContabeis() {
       // Converter datas para formato comparável
       const dataA = typeof a.data === 'string' 
         ? a.data.split('/').reverse().join('-') 
-        : new Date(a.data).toISOString();
+        : a.data instanceof Date ? a.data.toISOString() : '';
       const dataB = typeof b.data === 'string'
         ? b.data.split('/').reverse().join('-')
-        : new Date(b.data).toISOString();
+        : b.data instanceof Date ? b.data.toISOString() : '';
       
       return dataA.localeCompare(dataB);
     });
     
     return lancamentosOrdenados.map(lancamento => {
+      if (!lancamento.conta) return lancamento;
+      
       if (!saldosPorConta[lancamento.conta]) {
         saldosPorConta[lancamento.conta] = 0;
       }
@@ -546,10 +618,10 @@ export function useLancamentosContabeis() {
         tipo_operacao: mov.tipo_operacao as "pagar" | "receber" | "transferencia"
       })) || [];
       
-      console.log("Tipos de títulos carregados:", tiposTitulos.length);
-      console.log("Contas correntes carregadas:", contasCorrentes.length);
+      // 6. Carregar lançamentos da tabela lancamentos_contabeis
+      const lancamentosContabeis = await carregarLancamentosContabeis();
       
-      // 6. Processar dados para gerar lançamentos contábeis
+      // 7. Processar movimentações para gerar lançamentos
       const lancamentosProcessados = processarMovimentacoesParaLancamentos(
         movimentacoesTipadas,
         parcelas || [],
@@ -558,12 +630,11 @@ export function useLancamentosContabeis() {
         contasCorrentes
       );
       
-      console.log("Movimentações carregadas:", movimentacoesTipadas.length);
-      console.log("Parcelas carregadas:", parcelas?.length || 0);
-      console.log("Lançamentos gerados:", lancamentosProcessados.length);
+      // 8. Combinar os lançamentos da tabela com os processados das movimentações
+      const todosLancamentos = [...lancamentosContabeis, ...lancamentosProcessados];
       
-      // 7. Calcular saldos para cada conta
-      const lancamentosComSaldo = calcularSaldos(lancamentosProcessados);
+      // 9. Calcular saldos para todos os lançamentos
+      const lancamentosComSaldo = calcularSaldos(todosLancamentos);
       
       setLancamentos(lancamentosComSaldo);
     } catch (error) {
@@ -583,21 +654,40 @@ export function useLancamentosContabeis() {
 
   // Função para adicionar um novo lançamento
   async function adicionarLancamento(dados: { data: string; historico: string; debito: string; credito: string; valor: number }) {
-    if (!currentCompany?.id) return;
+    if (!currentCompany?.id) return false;
 
     try {
-      // 1. Obter contas do débito e crédito
+      // 1. Verificar contas do débito e crédito
       const contaDebito = planosContas.find(c => c.id === dados.debito);
       const contaCredito = planosContas.find(c => c.id === dados.credito);
       
       if (!contaDebito || !contaCredito) {
         toast.error("Contas contábeis não encontradas");
-        return;
+        return false;
       }
       
-      // 2. Criar dois lançamentos: Débito e Crédito
+      // 2. Inserir na tabela lancamentos_contabeis
+      const { data: lancamentoInserido, error } = await supabase
+        .from('lancamentos_contabeis')
+        .insert({
+          empresa_id: currentCompany.id,
+          data: formatarDataParaBackend(dados.data),
+          historico: dados.historico,
+          conta_debito_id: dados.debito,
+          conta_credito_id: dados.credito,
+          valor: dados.valor
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Erro ao inserir lançamento:", error);
+        throw error;
+      }
+      
+      // 3. Criar lançamentos para exibição na interface
       const novoLancamentoDebito: LancamentoContabil = {
-        id: `novo_${Date.now()}_d`,
+        id: `${lancamentoInserido.id}_d`,
         data: dados.data,
         historico: dados.historico,
         conta: dados.debito,
@@ -609,7 +699,7 @@ export function useLancamentosContabeis() {
       };
       
       const novoLancamentoCredito: LancamentoContabil = {
-        id: `novo_${Date.now()}_c`,
+        id: `${lancamentoInserido.id}_c`,
         data: dados.data,
         historico: dados.historico,
         conta: dados.credito,
@@ -620,7 +710,7 @@ export function useLancamentosContabeis() {
         saldo: 0 // Será recalculado
       };
       
-      // 3. Adicionar aos lançamentos existentes e recalcular saldos
+      // 4. Adicionar aos lançamentos existentes e recalcular saldos
       const novosLancamentos = [...lancamentos, novoLancamentoDebito, novoLancamentoCredito];
       const lancamentosComSaldo = calcularSaldos(novosLancamentos);
       
@@ -635,11 +725,46 @@ export function useLancamentosContabeis() {
     }
   }
 
+  // Função para formatar a data para o formato do backend (YYYY-MM-DD)
+  function formatarDataParaBackend(dataStr: string): string {
+    if (!dataStr) return '';
+    
+    // Se já estiver no formato ISO (YYYY-MM-DD), retornar como está
+    if (dataStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return dataStr;
+    }
+    
+    // Se estiver no formato DD/MM/YYYY, converter para YYYY-MM-DD
+    if (dataStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      const [dia, mes, ano] = dataStr.split('/');
+      return `${ano}-${mes}-${dia}`;
+    }
+    
+    // Tentativa de converter Date para ISO
+    try {
+      const data = new Date(dataStr);
+      return data.toISOString().split('T')[0];
+    } catch (e) {
+      console.error("Erro ao formatar data:", e);
+      return dataStr;
+    }
+  }
+
   // Função para excluir um lançamento
   async function excluirLancamento(id: string) {
     try {
-      // Remover o par de lançamentos (débito e crédito)
-      const idBase = id.split('_').slice(0, -1).join('_');
+      // Extrair o ID real do lançamento (removendo o sufixo)
+      const idBase = id.split('_')[0];
+      
+      // Excluir o lançamento do banco de dados
+      const { error } = await supabase
+        .from('lancamentos_contabeis')
+        .delete()
+        .eq('id', idBase);
+        
+      if (error) throw error;
+      
+      // Atualizar lançamentos na interface
       const lancamentosFiltrados = lancamentos.filter(l => !l.id.startsWith(idBase));
       
       // Recalcular saldos
@@ -647,9 +772,11 @@ export function useLancamentosContabeis() {
       
       setLancamentos(lancamentosComSaldo);
       toast.success("Lançamento excluído com sucesso");
+      return true;
     } catch (error) {
       console.error("Erro ao excluir lançamento:", error);
       toast.error("Erro ao excluir lançamento");
+      return false;
     }
   }
 
