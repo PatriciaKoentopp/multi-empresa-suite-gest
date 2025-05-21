@@ -9,7 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { TabelaPrecoModal } from "./tabela-preco-modal";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
-import { TabelaPreco, Servico } from "@/types";
+import { TabelaPreco, Servico, Produto } from "@/types";
 import { formatDate } from "@/lib/utils";
 import {
   AlertDialog,
