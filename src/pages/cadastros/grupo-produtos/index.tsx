@@ -1,0 +1,211 @@
+
+import { useState } from "react";
+import { GrupoProduto } from "@/types/grupo-produtos";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PlusCircle, Search } from "lucide-react";
+import { GrupoProdutosForm } from "@/components/grupo-produtos/grupo-produtos-form";
+import { GrupoProdutosTable } from "@/components/grupo-produtos/grupo-produtos-table";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { useCompany } from "@/contexts/company-context";
+
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+
+export default function GrupoProdutosPage() {
+  const [grupos, setGrupos] = useState<GrupoProduto[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingGrupo, setEditingGrupo] = useState<GrupoProduto | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = useState("");
+  const { currentCompany } = useCompany();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingGrupoId, setDeletingGrupoId] = useState<string | null>(null);
+
+  const handleOpenDialog = (grupo?: GrupoProduto) => {
+    setEditingGrupo(grupo);
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setEditingGrupo(undefined);
+    setIsDialogOpen(false);
+  };
+
+  const handleSubmit = async (data: { nome: string; status: "ativo" | "inativo" }) => {
+    if (!currentCompany) {
+      toast.error("Nenhuma empresa selecionada");
+      return;
+    }
+
+    try {
+      if (editingGrupo) {
+        // Simular a atualização (por enquanto, até termos uma tabela no Supabase)
+        const updatedGrupo: GrupoProduto = {
+          ...editingGrupo,
+          nome: data.nome,
+          status: data.status,
+          updatedAt: new Date()
+        };
+
+        setGrupos(prev =>
+          prev.map(g =>
+            g.id === editingGrupo.id ? updatedGrupo : g
+          )
+        );
+        toast.success("Grupo de produtos atualizado com sucesso!");
+      } else {
+        // Simular a criação (por enquanto, até termos uma tabela no Supabase)
+        const newId = `temp-${Date.now()}`;
+        const newGrupo: GrupoProduto = {
+          id: newId,
+          nome: data.nome,
+          status: data.status,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        setGrupos(prev => [...prev, newGrupo]);
+        toast.success("Grupo de produtos criado com sucesso!");
+      }
+      handleCloseDialog();
+    } catch (error) {
+      console.error("Erro na operação:", error);
+      toast.error("Ocorreu um erro ao processar a solicitação");
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    setDeletingGrupoId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingGrupoId || !currentCompany) return;
+
+    try {
+      // Simular a exclusão (por enquanto, até termos uma tabela no Supabase)
+      setGrupos(prev => prev.filter(grupo => grupo.id !== deletingGrupoId));
+      toast.success("Grupo de produtos excluído com sucesso!");
+      setIsDeleteDialogOpen(false);
+      setDeletingGrupoId(null);
+    } catch (error) {
+      console.error("Erro na exclusão:", error);
+      toast.error("Ocorreu um erro ao excluir o grupo");
+    }
+  };
+
+  // Filtrar grupos com base no termo de busca
+  const filteredGrupos = grupos.filter((grupo) =>
+    grupo.nome.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Grupos de Produtos/Serviços</h1>
+        <Button onClick={() => handleOpenDialog()} variant="blue">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Novo Grupo
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="mb-6 flex gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <GrupoProdutosTable
+            grupos={filteredGrupos}
+            onEdit={handleOpenDialog}
+            onDelete={handleDelete}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Dialog para criação/edição de grupo */}
+      <Dialog 
+        open={isDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDialog();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingGrupo
+                ? "Editar Grupo de Produtos/Serviços"
+                : "Novo Grupo de Produtos/Serviços"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingGrupo 
+                ? "Edite as informações do grupo de produtos/serviços."
+                : "Preencha as informações para criar um novo grupo de produtos/serviços."}
+            </DialogDescription>
+          </DialogHeader>
+          <GrupoProdutosForm
+            grupo={editingGrupo}
+            onSubmit={handleSubmit}
+            onCancel={handleCloseDialog}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog 
+        open={isDeleteDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsDeleteDialogOpen(false);
+            setDeletingGrupoId(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este grupo? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 text-white hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

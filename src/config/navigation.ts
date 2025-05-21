@@ -39,6 +39,10 @@ export const navigationConfig: ModuleNavItem[] = [
         href: "/cadastros/grupo-favorecidos",
       },
       {
+        title: "Grupos de Produtos/Serviços",
+        href: "/cadastros/grupo-produtos",
+      },
+      {
         title: "Favorecidos",
         href: "/cadastros/favorecidos",
       },

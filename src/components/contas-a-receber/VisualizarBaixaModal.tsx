@@ -5,8 +5,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ContaReceber } from "./contas-a-receber-table";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
+// Expandir a interface ContaReceber para incluir as propriedades necessárias
 interface VisualizarBaixaModalProps {
-  conta?: ContaReceber | null;
+  conta?: (ContaReceber & {
+    dataRecebimento?: Date;
+    formaPagamento?: string;
+    multa?: number;
+    juros?: number;
+    desconto?: number;
+  }) | null;
   open: boolean;
   onClose: () => void;
   contaCorrenteNome?: string;
@@ -64,7 +71,7 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Data de Recebimento</p>
-              <p className="text-base">{formatDate(conta.dataRecebimento)}</p>
+              <p className="text-base">{conta.dataRecebimento ? formatDate(conta.dataRecebimento) : "-"}</p>
             </div>
           </div>
           
