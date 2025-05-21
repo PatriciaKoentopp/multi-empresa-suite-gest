@@ -30,7 +30,7 @@ export function ProdutosForm({ initialData, onSubmit, onCancel }: ProdutosFormPr
   const [form, setForm] = useState({
     nome: "",
     descricao: "",
-    grupo_id: "",
+    grupo_id: "nenhum",
     unidade: "UN",
     status: "ativo",
     conta_receita_id: "",
@@ -124,7 +124,7 @@ export function ProdutosForm({ initialData, onSubmit, onCancel }: ProdutosFormPr
         <div className="grid gap-2">
           <Label htmlFor="grupo_id">Grupo de Produtos</Label>
           <Select
-            value={form.grupo_id}
+            value={form.grupo_id || "nenhum"}
             onValueChange={(value) => handleChange("grupo_id", value)}
           >
             <SelectTrigger className="bg-white">
@@ -146,7 +146,7 @@ export function ProdutosForm({ initialData, onSubmit, onCancel }: ProdutosFormPr
           <Textarea
             id="descricao"
             placeholder="Digite a descrição do produto"
-            value={form.descricao}
+            value={form.descricao || ""}
             onChange={(e) => handleChange("descricao", e.target.value)}
           />
         </div>
@@ -174,7 +174,7 @@ export function ProdutosForm({ initialData, onSubmit, onCancel }: ProdutosFormPr
         <div className="grid gap-2">
           <Label htmlFor="conta_receita">Conta de Receita *</Label>
           <Select
-            value={form.conta_receita_id}
+            value={form.conta_receita_id || "sem_contas"}
             onValueChange={(value) => handleChange("conta_receita_id", value)}
             required
           >

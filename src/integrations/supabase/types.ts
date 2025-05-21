@@ -1159,6 +1159,67 @@ export type Database = {
           },
         ]
       }
+      produtos: {
+        Row: {
+          conta_receita_id: string | null
+          created_at: string
+          descricao: string | null
+          empresa_id: string
+          grupo_id: string | null
+          id: string
+          nome: string
+          status: string
+          unidade: string
+          updated_at: string
+        }
+        Insert: {
+          conta_receita_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id: string
+          grupo_id?: string | null
+          id?: string
+          nome: string
+          status?: string
+          unidade: string
+          updated_at?: string
+        }
+        Update: {
+          conta_receita_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id?: string
+          grupo_id?: string | null
+          id?: string
+          nome?: string
+          status?: string
+          unidade?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produtos_conta_receita_id_fkey"
+            columns: ["conta_receita_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupo_produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profissoes: {
         Row: {
           created_at: string

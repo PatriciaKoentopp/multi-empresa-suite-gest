@@ -38,18 +38,35 @@ export default function ProdutosPage() {
   const [deletingProdutoId, setDeletingProdutoId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Simular carregamento de produtos
+  // Carregar produtos da empresa atual
   useEffect(() => {
     if (currentCompany?.id) {
-      // Esta função será substituída quando criarmos a tabela no Supabase
-      setIsLoading(true);
-      // Simulando dados
-      setTimeout(() => {
-        setProdutos([]);
-        setIsLoading(false);
-      }, 500);
+      carregarProdutos();
     }
   }, [currentCompany]);
+
+  async function carregarProdutos() {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('produtos')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .order('nome');
+
+      if (error) {
+        toast.error("Erro ao carregar produtos: " + error.message);
+        return;
+      }
+
+      setProdutos(data || []);
+    } catch (e) {
+      console.error("Erro ao carregar produtos:", e);
+      toast.error("Erro ao carregar produtos");
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   // Aplica filtro na listagem
   const produtosFiltrados = useMemo(() => {
@@ -65,10 +82,63 @@ export default function ProdutosPage() {
   }, [produtos, searchTerm, statusFilter]);
 
   async function handleSubmitProduto(formData: any) {
-    // Função temporária até criarmos a tabela no Supabase
-    toast("Funcionalidade será implementada após a criação da tabela");
-    setShowForm(false);
-    setEditingProduto(null);
+    if (!currentCompany?.id) return;
+
+    try {
+      if (formData.grupo_id === "nenhum") {
+        formData.grupo_id = null;
+      }
+
+      if (editingProduto) {
+        // Atualização de produto existente
+        const { error } = await supabase
+          .from('produtos')
+          .update({
+            nome: formData.nome,
+            descricao: formData.descricao,
+            grupo_id: formData.grupo_id,
+            unidade: formData.unidade,
+            conta_receita_id: formData.conta_receita_id,
+            status: formData.status
+          })
+          .eq('id', editingProduto.id);
+
+        if (error) {
+          toast.error("Erro ao atualizar produto: " + error.message);
+          return;
+        }
+
+        toast.success("Produto atualizado com sucesso!");
+      } else {
+        // Inclusão de novo produto
+        const { error } = await supabase
+          .from('produtos')
+          .insert({
+            empresa_id: currentCompany.id,
+            nome: formData.nome,
+            descricao: formData.descricao,
+            grupo_id: formData.grupo_id,
+            unidade: formData.unidade,
+            conta_receita_id: formData.conta_receita_id === "sem_contas" ? null : formData.conta_receita_id,
+            status: formData.status
+          });
+
+        if (error) {
+          toast.error("Erro ao cadastrar produto: " + error.message);
+          return;
+        }
+
+        toast.success("Produto cadastrado com sucesso!");
+      }
+      
+      // Recarregar a lista e fechar o formulário
+      carregarProdutos();
+      setShowForm(false);
+      setEditingProduto(null);
+    } catch (e) {
+      console.error("Erro ao salvar produto:", e);
+      toast.error("Erro ao salvar produto");
+    }
   }
 
   function handleEditar(produto: Produto) {
@@ -77,10 +147,28 @@ export default function ProdutosPage() {
   }
   
   async function handleConfirmDelete() {
-    // Função temporária até criarmos a tabela no Supabase
-    toast("Funcionalidade será implementada após a criação da tabela");
-    setIsDeleteDialogOpen(false);
-    setDeletingProdutoId(null);
+    if (!deletingProdutoId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('produtos')
+        .delete()
+        .eq('id', deletingProdutoId);
+
+      if (error) {
+        toast.error("Erro ao excluir produto: " + error.message);
+        return;
+      }
+
+      toast.success("Produto excluído com sucesso!");
+      carregarProdutos();
+    } catch (e) {
+      console.error("Erro ao excluir produto:", e);
+      toast.error("Erro ao excluir produto");
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setDeletingProdutoId(null);
+    }
   }
 
   function handleExcluirClick(id: string, e?: React.MouseEvent) {
