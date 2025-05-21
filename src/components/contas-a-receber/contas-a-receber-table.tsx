@@ -3,7 +3,7 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import { MoreHorizontal, Eye, Edit, Download, Trash2, RotateCcw, FileEdit } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Download, Trash2, RotateCcw, FileEdit, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -22,6 +22,11 @@ export interface ContaReceber {
   numeroParcela: string;
   origem?: string;
   movimentacao_id?: string;
+  multa?: number;
+  juros?: number;
+  desconto?: number;
+  contaCorrenteId?: string;
+  formaPagamento?: string;
 }
 
 interface ContasAReceberTableProps {
@@ -31,6 +36,7 @@ interface ContasAReceberTableProps {
   onDelete: (id: string) => void;
   onVisualizar: (conta: ContaReceber) => void;
   onRenegociarParcela: (conta: ContaReceber) => void;
+  onVisualizarBaixa?: (conta: ContaReceber) => void;
 }
 
 export function ContasAReceberTable({ 
@@ -40,7 +46,8 @@ export function ContasAReceberTable({
   onDelete,
   onVisualizar,
   onDesfazerBaixa,
-  onRenegociarParcela
+  onRenegociarParcela,
+  onVisualizarBaixa
 }: ContasAReceberTableProps & {
   onDesfazerBaixa: (conta: ContaReceber) => void;
 }) {
@@ -174,6 +181,15 @@ export function ContasAReceberTable({
                         <Download className="h-4 w-4" />
                         Baixar
                       </DropdownMenuItem>
+                      {(conta.status === "recebido" || conta.status === "recebido_em_atraso") && (
+                        <DropdownMenuItem
+                          onClick={() => onVisualizarBaixa ? onVisualizarBaixa(conta) : null}
+                          className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        >
+                          <FileText className="h-4 w-4" />
+                          Visualizar Baixa
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         onClick={() => onDesfazerBaixa(conta)}
                         className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"

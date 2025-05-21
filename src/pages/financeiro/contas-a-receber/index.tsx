@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { BaixarContaReceberModal } from "@/components/contas-a-receber/BaixarContaReceberModal";
 import { RenegociarParcelasModal } from "@/components/contas-a-receber/RenegociarParcelasModal";
+import { VisualizarBaixaModal } from "@/components/contas-a-receber/VisualizarBaixaModal";
 import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -57,6 +58,11 @@ export default function ContasAReceberPage() {
   // Estado para controlar o dialog de confirmação
   const [contaParaExcluir, setContaParaExcluir] = useState<string | null>(null);
 
+  // Estado para o modal Visualizar Baixa
+  const [contaParaVisualizarBaixa, setContaParaVisualizarBaixa] = useState<ContaReceber | null>(null);
+  const [modalVisualizarBaixaAberto, setModalVisualizarBaixaAberto] = useState(false);
+  const [contaCorrenteNome, setContaCorrenteNome] = useState<string>("");
+
   useEffect(() => {
     if (currentCompany?.id) {
       carregarContasReceber();
@@ -91,6 +97,8 @@ export default function ContasAReceberPage() {
           juros,
           desconto,
           movimentacao_id,
+          conta_corrente_id,
+          forma_pagamento,
           movimentacao:movimentacoes (
             id,
             descricao,
@@ -125,7 +133,12 @@ export default function ContasAReceberPage() {
             valor: Number(parcela.valor),
             numeroParcela: `${parcela.movimentacao.numero_documento || '-'}/${parcela.numero}`,
             origem: 'movimentacao',
-            movimentacao_id: parcela.movimentacao_id
+            movimentacao_id: parcela.movimentacao_id,
+            multa: parcela.multa,
+            juros: parcela.juros,
+            desconto: parcela.desconto,
+            contaCorrenteId: parcela.conta_corrente_id,
+            formaPagamento: parcela.forma_pagamento
           };
         });
 
@@ -348,6 +361,11 @@ export default function ContasAReceberPage() {
                     `${conta.dataVencimento.getFullYear()}-${String(conta.dataVencimento.getMonth() + 1).padStart(2, '0')}-${String(conta.dataVencimento.getDate()).padStart(2, '0')}`,
                     dataFormated
                   ),
+                  multa,
+                  juros,
+                  desconto,
+                  contaCorrenteId,
+                  formaPagamento
                 }
               : conta
           )
@@ -409,7 +427,7 @@ export default function ContasAReceberPage() {
       // 4. Atualizar a lista local
       setContas(prev => prev.map(c => 
         c.id === conta.id
-          ? { ...c, dataRecebimento: undefined, status: "em_aberto" as const }
+          ? { ...c, dataRecebimento: undefined, status: "em_aberto" as const, formaPagamento: null, multa: null, juros: null, desconto: null, contaCorrenteId: null }
           : c
       ));
 
@@ -474,6 +492,31 @@ export default function ContasAReceberPage() {
   function handleLupaClick() {
     inputBuscaRef.current?.focus();
   }
+
+  const handleVisualizarBaixa = async (conta: ContaReceber) => {
+    try {
+      setContaParaVisualizarBaixa(conta);
+      
+      // Buscar informações da conta corrente
+      if (conta.contaCorrenteId) {
+        const { data: contaCorrente, error } = await supabase
+          .from('contas_correntes')
+          .select('nome')
+          .eq('id', conta.contaCorrenteId)
+          .single();
+        
+        if (!error && contaCorrente) {
+          setContaCorrenteNome(contaCorrente.nome);
+        }
+      } else {
+        setContaCorrenteNome("");
+      }
+      
+      setModalVisualizarBaixaAberto(true);
+    } catch (error) {
+      console.error("Erro ao buscar dados da conta corrente:", error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -650,6 +693,7 @@ export default function ContasAReceberPage() {
                 onVisualizar={handleVisualizar}
                 onDesfazerBaixa={handleDesfazerBaixa}
                 onRenegociarParcela={handleRenegociarParcela}
+                onVisualizarBaixa={handleVisualizarBaixa}
               />
             </div>
           </div>
@@ -668,6 +712,13 @@ export default function ContasAReceberPage() {
         open={modalRenegociarAberto}
         onClose={() => setModalRenegociarAberto(false)}
         onConfirmar={carregarContasReceber}
+      />
+
+      <VisualizarBaixaModal
+        conta={contaParaVisualizarBaixa}
+        open={modalVisualizarBaixaAberto}
+        onClose={() => setModalVisualizarBaixaAberto(false)}
+        contaCorrenteNome={contaCorrenteNome}
       />
     </div>
   );
