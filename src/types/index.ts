@@ -23,6 +23,22 @@ export interface Favorecido {
   status: 'ativo' | 'inativo';
   created_at: Date;
   updated_at: Date;
+  
+  // Campos adicionais que estavam faltando
+  tipo: 'fisica' | 'juridica' | 'publico' | 'funcionario';
+  tipo_documento: 'cpf' | 'cnpj';
+  grupo_id?: string | null;
+  profissao_id?: string | null;
+  nome_fantasia?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
+  data_aniversario?: Date;
 }
 
 export interface TabelaPreco {
@@ -81,6 +97,14 @@ export interface Company {
   cnpj: string;
   email?: string;
   status: string;
+  
+  // Campos adicionais que estão sendo usados no contexto
+  razao_social?: string;
+  nome_fantasia?: string;
+  inscricao_estadual?: string;
+  inscricao_municipal?: string;
+  telefone?: string;
+  site?: string;
 }
 
 export interface Usuario {
@@ -93,6 +117,10 @@ export interface Usuario {
   empresa_id: string;
   created_at: string;
   updated_at: string;
+  
+  // Campos adicionais que estavam faltando
+  tipo?: string;
+  vendedor?: string;
 }
 
 export interface GrupoFavorecido {
@@ -159,4 +187,5 @@ export interface Orcamento {
   nota_fiscal_url?: string | null;
   created_at: string;
   updated_at: string;
+  favorecido?: string; // Adicionado para EfetivarVendaModal
 }

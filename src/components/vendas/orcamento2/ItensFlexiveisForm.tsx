@@ -48,7 +48,13 @@ export function ItensFlexiveisForm({
 
       if (error) throw error;
       
-      setProdutos(data || []);
+      // Garantir que os produtos estejam no formato correto
+      const produtosFormatados: Produto[] = data?.map(item => ({
+        ...item,
+        status: item.status === 'ativo' ? 'ativo' : 'inativo' // Garante que status seja "ativo" ou "inativo"
+      })) || [];
+      
+      setProdutos(produtosFormatados);
     } catch (error) {
       console.error('Erro ao carregar produtos:', error);
     } finally {
@@ -136,7 +142,7 @@ export function ItensFlexiveisForm({
               step="0.01"
               className="w-[120px]"
               value={item.valor}
-              onChange={e => onItemChange(idx, "valor", e.target.value)}
+              onChange={e => onItemChange(idx, "valor", parseFloat(e.target.value) || 0)}
               placeholder="Valor"
               disabled={disabled}
             />
