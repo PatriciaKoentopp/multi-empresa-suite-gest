@@ -8,6 +8,7 @@ import { Servico, Produto } from '@/types';
 import { OrcamentoItem } from '@/types/orcamento';
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
+import { toast } from "@/components/ui/use-toast";
 
 interface ItensFlexiveisFormProps {
   itens: OrcamentoItem[];
@@ -29,10 +30,12 @@ export function ItensFlexiveisForm({
   const { currentCompany } = useCompany();
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [tabelaPreco, setTabelaPreco] = useState<{ id: string, items: any[] } | null>(null);
 
   useEffect(() => {
     if (currentCompany?.id) {
       carregarProdutos();
+      carregarTabelaPrecoAtiva();
     }
   }, [currentCompany]);
 
@@ -62,18 +65,115 @@ export function ItensFlexiveisForm({
     }
   }
 
+  async function carregarTabelaPrecoAtiva() {
+    try {
+      // Buscar tabela de preço ativa com data de vigência atual
+      const dataAtual = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('tabelas_precos')
+        .select('id, nome')
+        .eq('empresa_id', currentCompany?.id)
+        .eq('status', 'ativo')
+        .lte('vigencia_inicial', dataAtual)
+        .or(`vigencia_final.gte.${dataAtual},vigencia_final.is.null`)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // Se encontrou uma tabela de preço ativa, buscar seus itens
+        const tabelaId = data[0].id;
+        
+        const { data: itensTabela, error: itensError } = await supabase
+          .from('tabelas_precos_itens')
+          .select(`
+            id, 
+            preco, 
+            servico_id, 
+            produto_id
+          `)
+          .eq('tabela_id', tabelaId);
+
+        if (itensError) throw itensError;
+
+        setTabelaPreco({
+          id: tabelaId,
+          items: itensTabela || []
+        });
+        
+        console.log('Tabela de preço carregada:', data[0].nome);
+        console.log('Itens da tabela:', itensTabela?.length || 0);
+      } else {
+        console.log('Nenhuma tabela de preço ativa encontrada');
+        setTabelaPreco(null);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar tabela de preço:', error);
+    }
+  }
+
   const handleTipoItemChange = (idx: number, tipo: "servico" | "produto") => {
     onItemChange(idx, "tipoItem", tipo);
+    
     // Limpar os IDs quando o tipo muda
     if (tipo === "servico") {
       onItemChange(idx, "produtoId", "");
       if (servicosDisponiveis.length > 0) {
-        onItemChange(idx, "servicoId", servicosDisponiveis[0].id);
+        const servicoId = servicosDisponiveis[0].id;
+        onItemChange(idx, "servicoId", servicoId);
+        
+        // Buscar preço na tabela
+        if (tabelaPreco) {
+          const itemTabela = tabelaPreco.items.find(item => item.servico_id === servicoId);
+          if (itemTabela) {
+            onItemChange(idx, "valor", itemTabela.preco);
+          }
+        }
       }
     } else {
       onItemChange(idx, "servicoId", "");
       if (produtos.length > 0) {
-        onItemChange(idx, "produtoId", produtos[0].id);
+        const produtoId = produtos[0].id;
+        onItemChange(idx, "produtoId", produtoId);
+        
+        // Buscar preço na tabela
+        if (tabelaPreco) {
+          const itemTabela = tabelaPreco.items.find(item => item.produto_id === produtoId);
+          if (itemTabela) {
+            onItemChange(idx, "valor", itemTabela.preco);
+          }
+        }
+      }
+    }
+  };
+
+  const handleServicoOrProdutoChange = (idx: number, field: string, value: string) => {
+    onItemChange(idx, field, value);
+    
+    // Buscar preço na tabela de preços
+    if (tabelaPreco) {
+      const itensTabelaPreco = tabelaPreco.items;
+      const tipoItem = itens[idx].tipoItem;
+      
+      if (tipoItem === "servico" && field === "servicoId") {
+        const itemTabela = itensTabelaPreco.find(item => item.servico_id === value);
+        if (itemTabela) {
+          onItemChange(idx, "valor", itemTabela.preco);
+          toast({
+            title: "Preço atualizado",
+            description: `Preço obtido da tabela de preços ativa.`
+          });
+        }
+      } else if (tipoItem === "produto" && field === "produtoId") {
+        const itemTabela = itensTabelaPreco.find(item => item.produto_id === value);
+        if (itemTabela) {
+          onItemChange(idx, "valor", itemTabela.preco);
+          toast({
+            title: "Preço atualizado",
+            description: `Preço obtido da tabela de preços ativa.`
+          });
+        }
       }
     }
   };
@@ -103,7 +203,7 @@ export function ItensFlexiveisForm({
               {item.tipoItem === "produto" ? (
                 <Select
                   value={item.produtoId || ""}
-                  onValueChange={v => onItemChange(idx, "produtoId", v)}
+                  onValueChange={v => handleServicoOrProdutoChange(idx, "produtoId", v)}
                   disabled={disabled || isLoading}
                 >
                   <SelectTrigger>
@@ -120,7 +220,7 @@ export function ItensFlexiveisForm({
               ) : (
                 <Select
                   value={item.servicoId || ""}
-                  onValueChange={v => onItemChange(idx, "servicoId", v)}
+                  onValueChange={v => handleServicoOrProdutoChange(idx, "servicoId", v)}
                   disabled={disabled}
                 >
                   <SelectTrigger>

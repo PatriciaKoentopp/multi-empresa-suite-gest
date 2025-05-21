@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "react-router-dom";
 import { ParcelasForm } from "@/components/movimentacao/ParcelasForm";
-import { useOrcamentoForm, formasPagamento } from "@/hooks/useOrcamentoForm";
+import { useOrcamentoFlexivelForm, formasPagamento } from "@/hooks/useOrcamentoFlexivelForm";
 import { CabecalhoForm } from "@/components/vendas/orcamento/CabecalhoForm";
 import { DetalhesProjetoForm } from "@/components/vendas/orcamento/DetalhesProjetoForm";
 import { TotalVendaDisplay } from "@/components/vendas/orcamento/TotalVendaDisplay";
@@ -70,7 +69,7 @@ export default function Orcamento2Page() {
     isLoading,
     isUploading,
     isVisualizacao: isVizualizacaoProp
-  } = useOrcamentoForm(orcamentoId, isVisualizacao);
+  } = useOrcamentoFlexivelForm(orcamentoId, isVisualizacao);
 
   // Função personalizada para lidar com o envio do formulário
   const handleFormSubmit = (e: React.FormEvent) => {

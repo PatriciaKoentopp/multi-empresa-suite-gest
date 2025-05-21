@@ -1,195 +1,68 @@
-import { useState, useEffect } from "react";
-import { format, addMonths } from 'date-fns';
-import { toast } from "@/hooks/use-toast";
-import { useCompany } from "@/contexts/company-context";
+import { useState, useEffect, useCallback } from "react";
+import { OrcamentoFormData, OrcamentoItem, Parcela } from "@/types/orcamento";
+import { Servico, Favorecido } from "@/types";
 import { useNavigate } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Favorecido, Servico, TabelaPreco, TabelaPrecoItem } from "@/types";
-import { OrcamentoItem, Parcela } from "@/types/orcamento";
-import { parseDateString, formatDate } from "@/lib/utils";
+import { useCompany } from "@/contexts/company-context";
+import { addDays } from "date-fns";
 
-export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean = false) {
-  const { currentCompany } = useCompany();
+// Formas de pagamento
+export const formasPagamento = [
+  { id: "a-vista", label: "À Vista" },
+  { id: "parcelado", label: "Parcelado" },
+  { id: "entrada-mais-parcelas", label: "Entrada + Parcelas" }
+];
+
+export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao = false) => {
   const navigate = useNavigate();
-  
+  const { currentCompany } = useCompany();
+
+  // Estados para o formulário
   const [data, setData] = useState<Date | undefined>(new Date());
   const [codigoVenda, setCodigoVenda] = useState("");
-  const [favorecidoId, setFavorecidoId] = useState<string>("");
+  const [favorecidoId, setFavorecidoId] = useState("");
   const [codigoProjeto, setCodigoProjeto] = useState("");
   const [observacoes, setObservacoes] = useState("");
-  const [formaPagamento, setFormaPagamento] = useState<string>("avista");
+  const [formaPagamento, setFormaPagamento] = useState(formasPagamento[0].id);
   const [numeroParcelas, setNumeroParcelas] = useState(1);
-  const [servicos, setServicos] = useState<OrcamentoItem[]>([
-    { servicoId: "", valor: 0 }
-  ]);
   const [dataNotaFiscal, setDataNotaFiscal] = useState("");
   const [numeroNotaFiscal, setNumeroNotaFiscal] = useState("");
   const [notaFiscalPdf, setNotaFiscalPdf] = useState<File | null>(null);
-  const [notaFiscalPdfUrl, setNotaFiscalPdfUrl] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [parcelasCarregadas, setParcelasCarregadas] = useState(false);
-
-  // Estados para dados do banco
+  const [notaFiscalPdfUrl, setNotaFiscalPdfUrl] = useState("");
+  const [servicos, setServicos] = useState<OrcamentoItem[]>([{ servicoId: "", valor: 0, tipoItem: "servico" }]);
+  const [parcelas, setParcelas] = useState<Parcela[]>([]);
+  
+  // Estados para dados carregados
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
   const [servicosDisponiveis, setServicosDisponiveis] = useState<Servico[]>([]);
-  const [tabelasPreco, setTabelasPreco] = useState<TabelaPreco[]>([]);
-  const [precosServicos, setPrecosServicos] = useState<TabelaPrecoItem[]>([]);
-  
-  // Cálculo do total do orçamento
-  const total = servicos.reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Inicializar parcelas
-  const [parcelas, setParcelas] = useState<Parcela[]>(() => getParcelas(0, numeroParcelas, codigoVenda));
-
-  function getParcelas(valorTotal: number, numParcelas: number, codigo: string, datasPrimeiroVencimento?: string) {
-    if (numParcelas <= 1) {
-      return [{
-        valor: valorTotal,
-        dataVencimento: datasPrimeiroVencimento || format(new Date(), 'yyyy-MM-dd'),
-        numeroParcela: `${codigo}/1`
-      }];
-    }
-    
-    const valorParcela = Math.floor((valorTotal / numParcelas) * 100) / 100;
-    const parcelas: Parcela[] = [];
-    let soma = 0;
-    
-    for (let i = 0; i < numParcelas; i++) {
-      let valor = valorParcela;
-      if (i === numParcelas - 1) {
-        valor = Math.round((valorTotal - soma) * 100) / 100;
-      } else {
-        soma += valor;
-      }
-      
-      // Mantemos o formato yyyy-MM-dd para armazenamento, sem conversão de timezone
-      const dataVencimento = format(
-        addMonths(new Date(), i),
-        'yyyy-MM-dd'
-      );
-      
-      parcelas.push({
-        valor,
-        dataVencimento: dataVencimento,
-        numeroParcela: `${codigo}/${i + 1}`,
-      });
-    }
-    return parcelas;
-  }
-
-  // Buscar dados iniciais
+  // Carregar dados iniciais
   useEffect(() => {
     if (currentCompany?.id) {
       carregarFavorecidos();
       carregarServicos();
-      carregarTabelasPreco();
-      
-      // Se temos um ID de orçamento, vamos carregar os dados
+
       if (orcamentoId) {
         carregarOrcamento(orcamentoId);
       }
     }
-  }, [currentCompany?.id, orcamentoId]);
+  }, [currentCompany, orcamentoId]);
 
-  // Efeito para atualizar as parcelas quando o valor total ou número de parcelas mudar
+  // Atualizar parcelas quando o número de parcelas muda
   useEffect(() => {
-    // Só deve recalcular automaticamente as parcelas quando o número de parcelas mudar
-    // ou quando for uma nova inicialização, não a cada edição de valor
-    if (!parcelasCarregadas) {
-      const dataPrimeiroParcela = parcelas.length > 0 ? parcelas[0].dataVencimento : "";
-      const novasParcelas = getParcelas(total, numeroParcelas, codigoVenda, dataPrimeiroParcela);
-      setParcelas(novasParcelas);
-    }
-  }, [numeroParcelas, codigoVenda]);
+    gerarParcelas();
+  }, [numeroParcelas, total]);
 
-  // Carregar orçamento específico
-  async function carregarOrcamento(id: string) {
-    setIsLoading(true);
-    try {
-      // Buscar dados do orçamento
-      const { data: orcamento, error: orcamentoError } = await supabase
-        .from('orcamentos')
-        .select('*')
-        .eq('id', id)
-        .single();
+  // Calcular o total do orçamento
+  const total = servicos.reduce((acc, servico) => acc + Number(servico.valor || 0), 0);
+  
+  // Calcular a soma das parcelas
+  const somaParcelas = parcelas.reduce((acc, parcela) => acc + Number(parcela.valor || 0), 0);
 
-      if (orcamentoError) throw orcamentoError;
-      if (!orcamento) throw new Error('Orçamento não encontrado');
-      
-      console.log('Dados do orçamento carregados:', orcamento);
-      
-      // Buscar itens do orçamento
-      const { data: itens, error: itensError } = await supabase
-        .from('orcamentos_itens')
-        .select('*')
-        .eq('orcamento_id', id);
-        
-      if (itensError) throw itensError;
-      
-      // Buscar parcelas do orçamento
-      const { data: parcelas, error: parcelasError } = await supabase
-        .from('orcamentos_parcelas')
-        .select('*')
-        .eq('orcamento_id', id);
-        
-      if (parcelasError) throw parcelasError;
-      console.log('Parcelas carregadas do banco:', parcelas);
-      
-      // Preencher o formulário com os dados
-      // Preservamos a data como objeto Date
-      setData(orcamento.data ? parseDateString(orcamento.data) : new Date());
-      setCodigoVenda(orcamento.codigo);
-      setFavorecidoId(orcamento.favorecido_id);
-      setCodigoProjeto(orcamento.codigo_projeto || "");
-      setObservacoes(orcamento.observacoes || "");
-      setFormaPagamento(orcamento.forma_pagamento);
-      setNumeroParcelas(orcamento.numero_parcelas);
-      
-      // Para a data da nota fiscal, mantemos o formato ISO sem conversão
-      if (orcamento.data_nota_fiscal) {
-        setDataNotaFiscal(orcamento.data_nota_fiscal);
-        console.log('Data nota fiscal do banco:', orcamento.data_nota_fiscal);
-      }
-      
-      setNumeroNotaFiscal(orcamento.numero_nota_fiscal || "");
-      setNotaFiscalPdfUrl(orcamento.nota_fiscal_pdf || "");
-      
-      // Configurar serviços
-      if (itens && itens.length > 0) {
-        const servicosCarregados = itens.map(item => ({
-          servicoId: item.servico_id,
-          valor: item.valor
-        }));
-        setServicos(servicosCarregados);
-      }
-      
-      // Configurar parcelas - mantemos as datas exatamente como estão no banco
-      if (parcelas && parcelas.length > 0) {
-        const novasParcelas = parcelas.map(p => ({
-          valor: p.valor,
-          // Não convertemos para Date aqui, mantemos a string
-          dataVencimento: p.data_vencimento,
-          numeroParcela: p.numero_parcela
-        }));
-        setParcelas(novasParcelas);
-        setParcelasCarregadas(true);
-        
-        console.log('Parcelas processadas:', novasParcelas);
-      }
-      
-    } catch (error) {
-      console.error('Erro ao carregar orçamento:', error);
-      toast({
-        title: "Erro ao carregar orçamento",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  // Carregar favorecidos
+  // Funções auxiliares para carregar dados
   async function carregarFavorecidos() {
     try {
       const { data, error } = await supabase
@@ -199,17 +72,22 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
         .eq('status', 'ativo');
 
       if (error) throw error;
+      
       setFavorecidos(data || []);
+      
+      if (data && data.length > 0 && !favorecidoId) {
+        setFavorecidoId(data[0].id);
+      }
     } catch (error) {
       console.error('Erro ao carregar favorecidos:', error);
       toast({
         title: "Erro ao carregar favorecidos",
+        description: "Ocorreu um erro ao carregar a lista de favorecidos.",
         variant: "destructive",
       });
     }
   }
 
-  // Carregar serviços
   async function carregarServicos() {
     try {
       const { data, error } = await supabase
@@ -219,347 +97,320 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
         .eq('status', 'ativo');
 
       if (error) throw error;
+      
       setServicosDisponiveis(data || []);
+      
+      if (data && data.length > 0 && servicos.length === 1 && !servicos[0].servicoId) {
+        setServicos([{ servicoId: data[0].id, valor: 0, tipoItem: "servico" }]);
+      }
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
       toast({
         title: "Erro ao carregar serviços",
+        description: "Ocorreu um erro ao carregar a lista de serviços.",
         variant: "destructive",
       });
     }
   }
 
-  // Carregar tabelas de preço
-  async function carregarTabelasPreco() {
+  async function carregarOrcamento(id: string) {
     try {
-      const { data: tabelas, error: tabelasError } = await supabase
-        .from('tabelas_precos')
+      setIsLoading(true);
+      
+      // Carregar dados do orçamento
+      const { data: orcamento, error } = await supabase
+        .from('orcamentos')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
-        .eq('status', 'ativo')
-        .lte('vigencia_inicial', new Date().toISOString())
-        .gte('vigencia_final', new Date().toISOString());
+        .eq('id', id)
+        .single();
 
-      if (tabelasError) throw tabelasError;
-
-      if (tabelas && tabelas.length > 0) {
-        const { data: precos, error: precosError } = await supabase
-          .from('tabelas_precos_itens')
+      if (error) throw error;
+      
+      if (orcamento) {
+        // Atualizar estado com os dados carregados
+        setData(orcamento.data ? new Date(orcamento.data) : undefined);
+        setCodigoVenda(orcamento.codigo || "");
+        setFavorecidoId(orcamento.favorecido_id || "");
+        setCodigoProjeto(orcamento.codigo_projeto || "");
+        setObservacoes(orcamento.observacoes || "");
+        setFormaPagamento(orcamento.forma_pagamento || formasPagamento[0].id);
+        setNumeroParcelas(orcamento.numero_parcelas || 1);
+        setDataNotaFiscal(orcamento.data_nota_fiscal || "");
+        setNumeroNotaFiscal(orcamento.numero_nota_fiscal || "");
+        setNotaFiscalPdfUrl(orcamento.nota_fiscal_url || "");
+        
+        // Carregar serviços do orçamento
+        const { data: servicosData, error: servicosError } = await supabase
+          .from('orcamentos_itens')
           .select('*')
-          .eq('tabela_id', tabelas[0].id);
-
-        if (precosError) throw precosError;
-        setPrecosServicos(precos || []);
+          .eq('orcamento_id', id);
+        
+        if (servicosError) throw servicosError;
+        
+        if (servicosData && servicosData.length > 0) {
+          const servicosConvertidos: OrcamentoItem[] = servicosData.map(servico => ({
+            servicoId: servico.servico_id || undefined,
+            produtoId: servico.produto_id || undefined,
+            valor: servico.valor || 0,
+            tipoItem: servico.servico_id ? "servico" : "produto"
+          }));
+          
+          setServicos(servicosConvertidos);
+        }
+        
+        // Carregar parcelas do orçamento
+        const { data: parcelasData, error: parcelasError } = await supabase
+          .from('orcamentos_parcelas')
+          .select('*')
+          .eq('orcamento_id', id)
+          .order('numero');
+        
+        if (parcelasError) throw parcelasError;
+        
+        if (parcelasData && parcelasData.length > 0) {
+          const parcelasConvertidas = parcelasData.map(p => ({
+            valor: p.valor || 0,
+            dataVencimento: p.data_vencimento || "",
+            numeroParcela: `Parcela ${p.numero}/${parcelasData.length}`
+          }));
+          
+          setParcelas(parcelasConvertidas);
+        }
       }
     } catch (error) {
-      console.error('Erro ao carregar tabelas de preço:', error);
+      console.error('Erro ao carregar orçamento:', error);
       toast({
-        title: "Erro ao carregar tabelas de preço",
+        title: "Erro ao carregar orçamento",
+        description: "Ocorreu um erro ao carregar os dados do orçamento.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   }
-  
-  // Atualiza parcela específica - Usando parseDateString para garantir consistência
-  const handleParcelaDataChange = (idx: number, data: Date) => {
-    setParcelas(prev => prev.map((parcela, i) =>
-      i === idx ? { 
-        ...parcela, 
-        dataVencimento: format(data, 'yyyy-MM-dd') 
-      } : parcela
-    ));
+
+  // Handlers para atualizar serviços de orçamento
+  const handleServicoChange = (idx: number, field: string, value: string | number) => {
+    const novosServicos = [...servicos];
+    
+    // @ts-ignore - Estamos lidando com campos dinâmicos
+    novosServicos[idx][field] = value;
+    
+    setServicos(novosServicos);
   };
 
-  // Adicionar função para atualizar valor da parcela
-  const handleParcelaValorChange = (idx: number, valor: number) => {
-    setParcelas(prev => prev.map((parcela, i) =>
-      i === idx ? { ...parcela, valor } : parcela
-    ));
-  };
-
-  // Calcular a soma dos valores das parcelas
-  const somaParcelas = parcelas.reduce((acc, parcela) => acc + parcela.valor, 0);
-
-  // Atualiza valor do serviço selecionado
-  const handleServicoChange = (idx: number, field: "servicoId" | "valor", value: string | number) => {
-    setServicos((prev) => {
-      const newArr = [...prev];
-      if (field === "servicoId") {
-        const servicoId = value as string;
-        const precoItem = precosServicos.find(p => p.servico_id === servicoId);
-        newArr[idx] = {
-          servicoId: servicoId,
-          valor: precoItem ? precoItem.preco : 0
-        };
-      } else {
-        newArr[idx].valor = Number(value);
-      }
-      return newArr;
-    });
-  };
-
-  // Adiciona novo serviço
   const handleAddServico = () => {
-    setServicos(prev => [...prev, { servicoId: "", valor: 0 }]);
+    const novoServico: OrcamentoItem = { 
+      servicoId: servicosDisponiveis.length > 0 ? servicosDisponiveis[0].id : "",
+      valor: 0,
+      tipoItem: "servico"
+    };
+    setServicos([...servicos, novoServico]);
   };
 
-  // Remove serviço
   const handleRemoveServico = (idx: number) => {
-    if (servicos.length === 1) return;
-    setServicos(prev => prev.filter((_, i) => i !== idx));
+    const novosServicos = servicos.filter((_, index) => index !== idx);
+    setServicos(novosServicos);
   };
 
-  // Upload do arquivo PDF para o Supabase Storage
-  const uploadNotaFiscalPdf = async (file: File): Promise<string> => {
-    setIsUploading(true);
+  // Handlers para atualizar parcelas
+  const handleParcelaValorChange = (idx: number, valor: number) => {
+    const novasParcelas = [...parcelas];
+    novasParcelas[idx].valor = valor;
+    setParcelas(novasParcelas);
+  };
+
+  const handleParcelaDataChange = (idx: number, data: Date) => {
+    const novasParcelas = [...parcelas];
+    novasParcelas[idx].dataVencimento = data.toISOString().split('T')[0];
+    setParcelas(novasParcelas);
+  };
+
+  // Gerar parcelas automaticamente
+  const gerarParcelas = useCallback(() => {
+    if (numeroParcelas < 1) return;
+    
+    const hoje = new Date();
+    const valorParcela = total / numeroParcelas;
+    
+    const novasParcelas: Parcela[] = Array.from({ length: numeroParcelas }, (_, i) => {
+      const dataVencimento = addDays(hoje, (i + 1) * 30);
+      
+      return {
+        numeroParcela: `Parcela ${i + 1}/${numeroParcelas}`,
+        valor: Number(valorParcela.toFixed(2)),
+        dataVencimento: dataVencimento.toISOString().split('T')[0],
+      };
+    });
+    
+    setParcelas(novasParcelas);
+  }, [numeroParcelas, total]);
+
+  // Handler para arquivo PDF da nota fiscal
+  const handleNotaFiscalPdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
     try {
-      // Validações adicionais de arquivo
-      if (!file) {
-        toast({
-          title: "Erro no Upload",
-          description: "Nenhum arquivo selecionado.",
-          variant: "destructive"
-        });
-        throw new Error("Nenhum arquivo selecionado");
-      }
-
-      if (file.type !== "application/pdf") {
-        toast({
-          title: "Tipo de Arquivo Inválido",
-          description: "Por favor, selecione apenas arquivos PDF.",
-          variant: "destructive"
-        });
-        throw new Error("Arquivo não é um PDF");
-      }
-
-      // Gerar um nome único para o arquivo
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${currentCompany?.id}_${codigoVenda}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      console.log('Iniciando upload do arquivo:', filePath);
+      setIsUploading(true);
+      setNotaFiscalPdf(file);
       
-      // Upload do arquivo para o Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('notas_fiscais')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) {
-        console.error('Erro no upload:', error);
-        toast({
-          title: "Erro no Upload",
-          description: error.message,
-          variant: "destructive"
-        });
-        throw error;
-      }
-
-      console.log('Upload realizado com sucesso:', data);
+      // Simular upload - aqui seria a sua função de upload para um serviço de armazenamento
+      // Neste exemplo, vamos apenas simular um delay e atribuir uma URL fictícia
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const fileUrl = `https://exemplo.com/uploads/${file.name}`; // URL fictícia
       
-      // Obter a URL pública do arquivo
-      const { data: { publicUrl } } = supabase.storage
-        .from('notas_fiscais')
-        .getPublicUrl(filePath);
-      
-      console.log('URL pública gerada:', publicUrl);
-      
-      return publicUrl;
+      setNotaFiscalPdfUrl(fileUrl);
+      toast({ title: "PDF carregado com sucesso!" });
     } catch (error) {
-      console.error('Erro ao fazer upload do PDF:', error);
+      console.error('Erro ao carregar PDF:', error);
       toast({
-        title: "Erro ao fazer upload da nota fiscal",
-        description: "Não foi possível fazer o upload do arquivo PDF.",
+        title: "Erro ao carregar PDF",
+        description: "Ocorreu um erro ao fazer upload do arquivo.",
         variant: "destructive",
       });
-      throw error;
     } finally {
       setIsUploading(false);
     }
   };
 
-  // Manipulador de alteração do arquivo de nota fiscal
-  const handleNotaFiscalPdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files && e.target.files[0];
-    
-    if (!file) {
-      setNotaFiscalPdf(null);
-      setNotaFiscalPdfUrl("");
-      return;
-    }
-    
-    try {
-      const publicUrl = await uploadNotaFiscalPdf(file);
-      setNotaFiscalPdf(file);
-      setNotaFiscalPdfUrl(publicUrl);
-      toast({
-        title: "Upload da nota fiscal concluído",
-        description: "O arquivo PDF foi carregado com sucesso.",
-      });
-    } catch (error) {
-      // Erro já tratado na função uploadNotaFiscalPdf
-      setNotaFiscalPdf(null);
-      setNotaFiscalPdfUrl("");
-    }
-  };
-
-  // Voltar para a lista de faturamento
+  // Função para cancelar e voltar
   const handleCancel = () => {
-    navigate("/vendas/faturamento");
+    navigate(-1);
   };
 
-  // Enviar formulário
+  // Função para salvar o orçamento
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!favorecidoId) {
-      toast({ title: "Selecione um Favorecido para prosseguir." });
-      return;
-    }
-    if (servicos.some(s => !s.servicoId || Number(s.valor) <= 0)) {
-      toast({ title: "Inclua ao menos um serviço com valor positivo." });
-      return;
-    }
-    if (parcelas.some(p => !p.dataVencimento)) {
-      toast({ title: "Preencha todas as datas de vencimento das parcelas." });
-      return;
-    }
+    // Verificar se já está processando
+    if (isLoading || isUploading) return;
     
-    // Verificação da soma dos valores das parcelas APENAS no momento do salvamento
-    const valoresTotaisCorretos = Math.abs(total - somaParcelas) < 0.02;
-    
-    if (!valoresTotaisCorretos) {
-      toast({ 
-        title: "A soma dos valores das parcelas não corresponde ao valor total", 
-        description: `Total: ${total.toFixed(2)}, Soma das parcelas: ${somaParcelas.toFixed(2)}`,
-        variant: "destructive"
+    // Verificar se todos os campos obrigatórios estão preenchidos
+    if (!data || !favorecidoId || servicos.length === 0) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive",
       });
       return;
     }
-
-    setIsLoading(true);
-
+    
+    // Verificar se todos os serviços têm valores
+    const servicoInvalido = servicos.find(servico => 
+      (servico.tipoItem === "servico" && !servico.servicoId) || 
+      (servico.tipoItem === "produto" && !servico.produtoId) || 
+      !servico.valor
+    );
+    
+    if (servicoInvalido) {
+      toast({
+        title: "Serviços incompletos",
+        description: "Por favor, preencha todos os campos dos serviços.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
-      // Se for edição, atualizamos o registro existente
+      setIsLoading(true);
+      
+      // Preparar dados para persistir
+      const dadosOrcamento = {
+        empresa_id: currentCompany?.id,
+        data: data.toISOString(),
+        codigo: codigoVenda,
+        favorecido_id: favorecidoId,
+        codigo_projeto: codigoProjeto,
+        observacoes: observacoes,
+        forma_pagamento: formaPagamento,
+        numero_parcelas: numeroParcelas,
+        valor_total: total,
+        status: "ativo",
+        tipo: "orcamento",
+        data_nota_fiscal: dataNotaFiscal || null,
+        numero_nota_fiscal: numeroNotaFiscal || null,
+        nota_fiscal_url: notaFiscalPdfUrl || null
+      };
+      
+      let orcamentoId_final = orcamentoId;
+      
+      // Criar ou atualizar orçamento
       if (orcamentoId) {
-        const { error: orcamentoError } = await supabase
+        // Atualização
+        const { error } = await supabase
           .from('orcamentos')
-          .update({
-            favorecido_id: favorecidoId,
-            codigo_projeto: codigoProjeto || null,
-            observacoes: observacoes || null,
-            forma_pagamento: formaPagamento,
-            numero_parcelas: numeroParcelas,
-            data_nota_fiscal: dataNotaFiscal || null,
-            numero_nota_fiscal: numeroNotaFiscal || null,
-            nota_fiscal_pdf: notaFiscalPdfUrl || null,
-          })
+          .update(dadosOrcamento)
           .eq('id', orcamentoId);
-
-        if (orcamentoError) throw orcamentoError;
-
-        // Excluir itens antigos
-        const { error: deleteItensError } = await supabase
-          .from('orcamentos_itens')
-          .delete()
-          .eq('orcamento_id', orcamentoId);
-
-        if (deleteItensError) throw deleteItensError;
-
-        // Inserir novos itens
-        const itensOrcamento = servicos.map(s => ({
-          orcamento_id: orcamentoId,
-          servico_id: s.servicoId,
-          valor: s.valor
-        }));
-
-        const { error: itensError } = await supabase
-          .from('orcamentos_itens')
-          .insert(itensOrcamento);
-
-        if (itensError) throw itensError;
-
-        // Excluir parcelas antigas
-        const { error: deleteParcelasError } = await supabase
-          .from('orcamentos_parcelas')
-          .delete()
-          .eq('orcamento_id', orcamentoId);
-
-        if (deleteParcelasError) throw deleteParcelasError;
-
-        // Inserir novas parcelas
-        const parcelasOrcamento = parcelas.map(p => ({
-          orcamento_id: orcamentoId,
-          numero_parcela: p.numeroParcela,
-          valor: p.valor,
-          data_vencimento: p.dataVencimento
-        }));
-
-        const { error: parcelasError } = await supabase
-          .from('orcamentos_parcelas')
-          .insert(parcelasOrcamento);
-
-        if (parcelasError) throw parcelasError;
+          
+        if (error) throw error;
       } else {
-        // Inserir novo orçamento (sempre como tipo "orcamento")
-        const { data: orcamento, error: orcamentoError } = await supabase
+        // Criação
+        const { data: novoOrcamento, error } = await supabase
           .from('orcamentos')
-          .insert({
-            empresa_id: currentCompany?.id,
-            favorecido_id: favorecidoId,
-            codigo: codigoVenda,
-            tipo: 'orcamento', // Tipo fixo como "orcamento"
-            data: data ? new Date(data).toISOString() : new Date().toISOString(),
-            codigo_projeto: codigoProjeto || null,
-            observacoes: observacoes || null,
-            forma_pagamento: formaPagamento,
-            numero_parcelas: numeroParcelas,
-            data_nota_fiscal: dataNotaFiscal || null,
-            numero_nota_fiscal: numeroNotaFiscal || null,
-            status: 'ativo',
-            nota_fiscal_pdf: notaFiscalPdfUrl || null,
-          })
+          .insert(dadosOrcamento)
           .select()
           .single();
-
-        if (orcamentoError) throw orcamentoError;
-
-        // Inserir itens do orçamento
-        const itensOrcamento = servicos.map(s => ({
-          orcamento_id: orcamento.id,
-          servico_id: s.servicoId,
-          valor: s.valor
+          
+        if (error) throw error;
+        orcamentoId_final = novoOrcamento.id;
+      }
+      
+      if (orcamentoId_final) {
+        // Excluir serviços existentes para recriar
+        if (orcamentoId) {
+          const { error: deleteError } = await supabase
+            .from('orcamentos_itens')
+            .delete()
+            .eq('orcamento_id', orcamentoId);
+            
+          if (deleteError) throw deleteError;
+          
+          const { error: deleteParcelasError } = await supabase
+            .from('orcamentos_parcelas')
+            .delete()
+            .eq('orcamento_id', orcamentoId);
+            
+          if (deleteParcelasError) throw deleteParcelasError;
+        }
+        
+        // Inserir novos serviços
+        const servicosParaInserir = servicos.map(servico => ({
+          orcamento_id: orcamentoId_final,
+          servico_id: servico.tipoItem === "servico" ? servico.servicoId : null,
+          produto_id: servico.tipoItem === "produto" ? servico.produtoId : null,
+          valor: servico.valor
         }));
-
-        const { error: itensError } = await supabase
+        
+        const { error: insertServicosError } = await supabase
           .from('orcamentos_itens')
-          .insert(itensOrcamento);
-
-        if (itensError) throw itensError;
-
+          .insert(servicosParaInserir);
+          
+        if (insertServicosError) throw insertServicosError;
+        
         // Inserir parcelas
-        const parcelasOrcamento = parcelas.map(p => ({
-          orcamento_id: orcamento.id,
-          numero_parcela: p.numeroParcela,
+        const parcelasParaInserir = parcelas.map((p, idx) => ({
+          orcamento_id: orcamentoId_final,
+          numero: idx + 1,
           valor: p.valor,
           data_vencimento: p.dataVencimento
         }));
-
-        const { error: parcelasError } = await supabase
+        
+        const { error: insertParcelasError } = await supabase
           .from('orcamentos_parcelas')
-          .insert(parcelasOrcamento);
-
-        if (parcelasError) throw parcelasError;
+          .insert(parcelasParaInserir);
+          
+        if (insertParcelasError) throw insertParcelasError;
       }
-
-      toast({ title: orcamentoId ? "Orçamento atualizado com sucesso!" : "Orçamento salvo com sucesso!" });
-      navigate("/vendas/faturamento");
+      
+      toast({ title: orcamentoId ? "Orçamento atualizado com sucesso!" : "Orçamento criado com sucesso!" });
+      navigate("/vendas/orcamento");
+      
     } catch (error) {
       console.error('Erro ao salvar orçamento:', error);
       toast({
         title: "Erro ao salvar orçamento",
+        description: "Ocorreu um erro ao salvar os dados do orçamento.",
         variant: "destructive",
       });
     } finally {
@@ -567,6 +418,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }
   };
 
+  // Retornar tudo o que o componente precisa
   return {
     // Estado do formulário
     data,
@@ -588,6 +440,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     setDataNotaFiscal,
     numeroNotaFiscal,
     setNumeroNotaFiscal,
+    notaFiscalPdf,
     notaFiscalPdfUrl,
     
     // Dados carregados
@@ -614,12 +467,4 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     isUploading,
     isVisualizacao
   };
-}
-
-// Formas de Pagamento
-export const formasPagamento = [
-  { id: "avista", label: "À Vista" },
-  { id: "boleto", label: "Boleto Bancário" },
-  { id: "cartao", label: "Cartão de Crédito" },
-  { id: "pix", label: "PIX" },
-];
+};

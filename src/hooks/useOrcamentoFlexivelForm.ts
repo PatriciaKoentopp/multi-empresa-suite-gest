@@ -138,7 +138,7 @@ export const useOrcamentoFlexivelForm = (orcamentoId?: string | null, isVisualiz
         setNumeroParcelas(orcamento.numero_parcelas || 1);
         setDataNotaFiscal(orcamento.data_nota_fiscal || "");
         setNumeroNotaFiscal(orcamento.numero_nota_fiscal || "");
-        setNotaFiscalPdfUrl(orcamento.nota_fiscal_url || "");
+        setNotaFiscalPdfUrl(orcamento.nota_fiscal_pdf || "");
         
         // Carregar itens do orçamento
         const { data: itensData, error: itensError } = await supabase
@@ -195,7 +195,7 @@ export const useOrcamentoFlexivelForm = (orcamentoId?: string | null, isVisualiz
     const novosItens = [...itens];
     
     // @ts-ignore - Estamos lidando com campos dinâmicos
-    novosItens[idx][field] = field === "valor" ? Number(value) : value;
+    novosItens[idx][field] = value;
     
     setItens(novosItens);
   };
