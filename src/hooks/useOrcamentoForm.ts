@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { OrcamentoFormData, OrcamentoItem, Parcela } from "@/types/orcamento";
 import { Servico, Favorecido } from "@/types";
@@ -30,7 +31,7 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao = f
   const [numeroNotaFiscal, setNumeroNotaFiscal] = useState("");
   const [notaFiscalPdf, setNotaFiscalPdf] = useState<File | null>(null);
   const [notaFiscalPdfUrl, setNotaFiscalPdfUrl] = useState("");
-  const [servicos, setServicos] = useState<OrcamentoItem[]>([{ servicoId: "", valor: 0, tipoItem: "servico" }]);
+  const [servicos, setServicos] = useState<OrcamentoItem[]>([{ servicoId: "", quantidade: 1, valor: 0 }]);
   const [parcelas, setParcelas] = useState<Parcela[]>([]);
   
   // Estados para dados carregados
@@ -38,6 +39,12 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao = f
   const [servicosDisponiveis, setServicosDisponiveis] = useState<Servico[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Calcular o total do orçamento - movido para antes do useEffect
+  const total = servicos.reduce((acc, servico) => acc + Number(servico.valor || 0) * Number(servico.quantidade || 1), 0);
+  
+  // Calcular a soma das parcelas - movido para antes do useEffect
+  const somaParcelas = parcelas.reduce((acc, parcela) => acc + Number(parcela.valor || 0), 0);
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -55,12 +62,6 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao = f
   useEffect(() => {
     gerarParcelas();
   }, [numeroParcelas, total]);
-
-  // Calcular o total do orçamento
-  const total = servicos.reduce((acc, servico) => acc + Number(servico.valor || 0), 0);
-  
-  // Calcular a soma das parcelas
-  const somaParcelas = parcelas.reduce((acc, parcela) => acc + Number(parcela.valor || 0), 0);
 
   // Funções auxiliares para carregar dados
   async function carregarFavorecidos() {
@@ -101,7 +102,7 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao = f
       setServicosDisponiveis(data || []);
       
       if (data && data.length > 0 && servicos.length === 1 && !servicos[0].servicoId) {
-        setServicos([{ servicoId: data[0].id, valor: 0, tipoItem: "servico" }]);
+        setServicos([{ servicoId: data[0].id, quantidade: 1, valor: 0 }]);
       }
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
@@ -137,22 +138,21 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao = f
         setNumeroParcelas(orcamento.numero_parcelas || 1);
         setDataNotaFiscal(orcamento.data_nota_fiscal || "");
         setNumeroNotaFiscal(orcamento.numero_nota_fiscal || "");
-        setNotaFiscalPdfUrl(orcamento.nota_fiscal_url || "");
+        setNotaFiscalPdfUrl(orcamento.nota_fiscal_pdf || "");
         
         // Carregar serviços do orçamento
         const { data: servicosData, error: servicosError } = await supabase
-          .from('orcamentos_itens')
+          .from('orcamentos_servicos')
           .select('*')
           .eq('orcamento_id', id);
         
         if (servicosError) throw servicosError;
         
         if (servicosData && servicosData.length > 0) {
-          const servicosConvertidos: OrcamentoItem[] = servicosData.map(servico => ({
-            servicoId: servico.servico_id || undefined,
-            produtoId: servico.produto_id || undefined,
-            valor: servico.valor || 0,
-            tipoItem: servico.servico_id ? "servico" : "produto"
+          const servicosConvertidos = servicosData.map(servico => ({
+            servicoId: servico.servico_id,
+            quantidade: servico.quantidade || 1,
+            valor: servico.valor || 0
           }));
           
           setServicos(servicosConvertidos);
@@ -189,7 +189,7 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao = f
     }
   }
 
-  // Handlers para atualizar serviços de orçamento
+  // Handlers para atualizar serviços
   const handleServicoChange = (idx: number, field: string, value: string | number) => {
     const novosServicos = [...servicos];
     
@@ -200,10 +200,10 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao = f
   };
 
   const handleAddServico = () => {
-    const novoServico: OrcamentoItem = { 
+    const novoServico = { 
       servicoId: servicosDisponiveis.length > 0 ? servicosDisponiveis[0].id : "",
-      valor: 0,
-      tipoItem: "servico"
+      quantidade: 1,
+      valor: 0
     };
     setServicos([...servicos, novoServico]);
   };
@@ -256,7 +256,6 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao = f
       setNotaFiscalPdf(file);
       
       // Simular upload - aqui seria a sua função de upload para um serviço de armazenamento
-      // Neste exemplo, vamos apenas simular um delay e atribuir uma URL fictícia
       await new Promise(resolve => setTimeout(resolve, 1000));
       const fileUrl = `https://exemplo.com/uploads/${file.name}`; // URL fictícia
       
@@ -298,8 +297,8 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao = f
     
     // Verificar se todos os serviços têm valores
     const servicoInvalido = servicos.find(servico => 
-      (servico.tipoItem === "servico" && !servico.servicoId) || 
-      (servico.tipoItem === "produto" && !servico.produtoId) || 
+      !servico.servicoId || 
+      !servico.quantidade || 
       !servico.valor
     );
     
@@ -360,7 +359,7 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao = f
         // Excluir serviços existentes para recriar
         if (orcamentoId) {
           const { error: deleteError } = await supabase
-            .from('orcamentos_itens')
+            .from('orcamentos_servicos')
             .delete()
             .eq('orcamento_id', orcamentoId);
             
@@ -377,13 +376,13 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao = f
         // Inserir novos serviços
         const servicosParaInserir = servicos.map(servico => ({
           orcamento_id: orcamentoId_final,
-          servico_id: servico.tipoItem === "servico" ? servico.servicoId : null,
-          produto_id: servico.tipoItem === "produto" ? servico.produtoId : null,
+          servico_id: servico.servicoId,
+          quantidade: servico.quantidade,
           valor: servico.valor
         }));
         
         const { error: insertServicosError } = await supabase
-          .from('orcamentos_itens')
+          .from('orcamentos_servicos')
           .insert(servicosParaInserir);
           
         if (insertServicosError) throw insertServicosError;
