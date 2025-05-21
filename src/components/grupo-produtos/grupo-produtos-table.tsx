@@ -11,18 +11,40 @@ import {
 } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { format } from "date-fns";
 
 interface GrupoProdutosTableProps {
   grupos: GrupoProduto[];
   onEdit: (grupo: GrupoProduto) => void;
   onDelete: (id: string) => void;
+  isLoading?: boolean;
 }
 
 export function GrupoProdutosTable({
   grupos,
   onEdit,
   onDelete,
+  isLoading = false,
 }: GrupoProdutosTableProps) {
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd/MM/yyyy");
+    } catch (error) {
+      return "-";
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
+          <p className="text-gray-500">Carregando grupos de produtos...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="border rounded-md">
       <Table>
@@ -30,13 +52,14 @@ export function GrupoProdutosTable({
           <TableRow>
             <TableHead>Nome</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Data de Cadastro</TableHead>
             <TableHead className="w-[100px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {grupos.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
                 Nenhum resultado encontrado
               </TableCell>
             </TableRow>
@@ -55,6 +78,7 @@ export function GrupoProdutosTable({
                     {grupo.status === "ativo" ? "Ativo" : "Inativo"}
                   </span>
                 </TableCell>
+                <TableCell>{formatDate(grupo.created_at)}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

@@ -1,15 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GrupoProduto } from "@/types/grupo-produtos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Search } from "lucide-react";
 import { GrupoProdutosForm } from "@/components/grupo-produtos/grupo-produtos-form";
 import { GrupoProdutosTable } from "@/components/grupo-produtos/grupo-produtos-table";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useCompany } from "@/contexts/company-context";
+import { supabase } from "@/integrations/supabase/client";
 
 import {
   AlertDialog,
@@ -41,6 +39,34 @@ export default function GrupoProdutosPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingGrupoId, setDeletingGrupoId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (currentCompany) {
+      loadGrupos();
+    }
+  }, [currentCompany]);
+
+  const loadGrupos = async () => {
+    if (!currentCompany) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("grupo_produtos")
+        .select("*")
+        .eq("empresa_id", currentCompany.id)
+        .order("nome");
+
+      if (error) throw error;
+      
+      setGrupos(data || []);
+    } catch (error) {
+      console.error("Erro ao carregar grupos:", error);
+      toast.error("Não foi possível carregar os grupos de produtos");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleOpenDialog = (grupo?: GrupoProduto) => {
     setEditingGrupo(grupo);
     setIsDialogOpen(true);
@@ -59,33 +85,31 @@ export default function GrupoProdutosPage() {
 
     try {
       if (editingGrupo) {
-        // Simular a atualização (por enquanto, até termos uma tabela no Supabase)
-        const updatedGrupo: GrupoProduto = {
-          ...editingGrupo,
-          nome: data.nome,
-          status: data.status,
-          updatedAt: new Date()
-        };
+        // Atualizar grupo existente
+        const { error } = await supabase
+          .from("grupo_produtos")
+          .update({
+            nome: data.nome,
+            status: data.status,
+          })
+          .eq("id", editingGrupo.id);
 
-        setGrupos(prev =>
-          prev.map(g =>
-            g.id === editingGrupo.id ? updatedGrupo : g
-          )
-        );
+        if (error) throw error;
         toast.success("Grupo de produtos atualizado com sucesso!");
+        loadGrupos();
       } else {
-        // Simular a criação (por enquanto, até termos uma tabela no Supabase)
-        const newId = `temp-${Date.now()}`;
-        const newGrupo: GrupoProduto = {
-          id: newId,
-          nome: data.nome,
-          status: data.status,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
+        // Criar novo grupo
+        const { error } = await supabase
+          .from("grupo_produtos")
+          .insert({
+            nome: data.nome,
+            status: data.status,
+            empresa_id: currentCompany.id,
+          });
 
-        setGrupos(prev => [...prev, newGrupo]);
+        if (error) throw error;
         toast.success("Grupo de produtos criado com sucesso!");
+        loadGrupos();
       }
       handleCloseDialog();
     } catch (error) {
@@ -103,11 +127,16 @@ export default function GrupoProdutosPage() {
     if (!deletingGrupoId || !currentCompany) return;
 
     try {
-      // Simular a exclusão (por enquanto, até termos uma tabela no Supabase)
-      setGrupos(prev => prev.filter(grupo => grupo.id !== deletingGrupoId));
+      const { error } = await supabase
+        .from("grupo_produtos")
+        .delete()
+        .eq("id", deletingGrupoId);
+
+      if (error) throw error;
       toast.success("Grupo de produtos excluído com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingGrupoId(null);
+      loadGrupos();
     } catch (error) {
       console.error("Erro na exclusão:", error);
       toast.error("Ocorreu um erro ao excluir o grupo");
@@ -147,6 +176,7 @@ export default function GrupoProdutosPage() {
             grupos={filteredGrupos}
             onEdit={handleOpenDialog}
             onDelete={handleDelete}
+            isLoading={isLoading}
           />
         </CardContent>
       </Card>
