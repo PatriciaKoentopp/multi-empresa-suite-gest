@@ -131,7 +131,7 @@ export function ProdutosForm({ initialData, onSubmit, onCancel }: ProdutosFormPr
               <SelectValue placeholder="Selecione um grupo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Nenhum</SelectItem>
+              <SelectItem value="nenhum">Nenhum</SelectItem>
               {grupoProdutos.map((grupo) => (
                 <SelectItem key={grupo.id} value={grupo.id}>
                   {grupo.nome}
@@ -182,11 +182,15 @@ export function ProdutosForm({ initialData, onSubmit, onCancel }: ProdutosFormPr
               <SelectValue placeholder="Selecione a conta de receita" />
             </SelectTrigger>
             <SelectContent>
-              {contasReceita.map((conta) => (
-                <SelectItem key={conta.id} value={conta.id}>
-                  {conta.codigo} - {conta.descricao}
-                </SelectItem>
-              ))}
+              {contasReceita.length > 0 ? (
+                contasReceita.map((conta) => (
+                  <SelectItem key={conta.id} value={conta.id}>
+                    {conta.codigo} - {conta.descricao}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="sem_contas">Nenhuma conta disponível</SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
