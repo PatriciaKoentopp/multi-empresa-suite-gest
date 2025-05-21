@@ -26,11 +26,13 @@ import {
 } from "@/components/ui/select";
 import { BaixarContaPagarModal } from "@/components/contas-a-pagar/BaixarContaPagarModal";
 import { RenegociarParcelasModal } from "@/components/contas-a-pagar/RenegociarParcelasModal";
+import { VisualizarBaixaModal } from "@/components/contas-a-pagar/VisualizarBaixaModal";
 import { supabase } from "@/integrations/supabase/client";
 import { Movimentacao, MovimentacaoParcela } from "@/types/movimentacoes";
 import { useCompany } from "@/contexts/company-context";
 import { formatDate } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ContaCorrente } from "@/types/conta-corrente";
 
 export default function ContasAPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>([]);
@@ -57,19 +59,80 @@ export default function ContasAPagarPage() {
   const [contaParaRenegociar, setContaParaRenegociar] = useState<ContaPagar | null>(null);
   const [modalRenegociarAberto, setModalRenegociarAberto] = useState(false);
 
+  // Novo estado para o modal de visualizar baixa
+  const [contaParaVisualizarBaixa, setContaParaVisualizarBaixa] = useState<ContaPagar | null>(null);
+  const [modalVisualizarBaixaAberto, setModalVisualizarBaixaAberto] = useState(false);
+  const [contasCorrente, setContasCorrente] = useState<ContaCorrente[]>([]);
+  const [contaCorrenteNome, setContaCorrenteNome] = useState<string>("");
+
   const { currentCompany } = useCompany();
+
+  // Buscar contas correntes
+  useEffect(() => {
+    if (currentCompany) {
+      const fetchContasCorrentes = async () => {
+        const { data, error } = await supabase
+          .from('contas_correntes')
+          .select('*')
+          .eq('empresa_id', currentCompany.id)
+          .eq('status', 'ativo');
+
+        if (error) {
+          console.error('Erro ao buscar contas correntes:', error);
+          return;
+        }
+
+        // Mapear para o tipo ContaCorrente
+        const contasCorrentesFormatadas: ContaCorrente[] = (data || []).map(conta => ({
+          id: conta.id,
+          nome: conta.nome,
+          banco: conta.banco,
+          agencia: conta.agencia,
+          numero: conta.numero,
+          contaContabilId: conta.conta_contabil_id,
+          status: conta.status as "ativo" | "inativo",
+          createdAt: new Date(conta.created_at),
+          updatedAt: new Date(conta.updated_at),
+          data: conta.data ? new Date(conta.data) : undefined,
+          saldoInicial: conta.saldo_inicial,
+          considerar_saldo: conta.considerar_saldo
+        }));
+
+        setContasCorrente(contasCorrentesFormatadas);
+      };
+
+      fetchContasCorrentes();
+    }
+  }, [currentCompany]);
 
   const handleBaixar = (conta: ContaPagar) => {
     setContaParaBaixar(conta);
     setModalBaixarAberto(true);
   };
 
-  function realizarBaixa({ dataPagamento, contaCorrenteId, multa, juros, desconto }: {
+  const handleVisualizarBaixa = (conta: ContaPagar) => {
+    setContaParaVisualizarBaixa(conta);
+    
+    // Se temos contaCorrenteId, buscar o nome da conta
+    if (conta.contaCorrenteId) {
+      const contaCorrenteSelecionada = contasCorrente.find(c => c.id === conta.contaCorrenteId);
+      setContaCorrenteNome(contaCorrenteSelecionada ? 
+        `${contaCorrenteSelecionada.nome} - ${contaCorrenteSelecionada.banco} - ${contaCorrenteSelecionada.agencia}/${contaCorrenteSelecionada.numero}` : 
+        "");
+    } else {
+      setContaCorrenteNome("");
+    }
+    
+    setModalVisualizarBaixaAberto(true);
+  };
+
+  function realizarBaixa({ dataPagamento, contaCorrenteId, multa, juros, desconto, formaPagamento }: {
     dataPagamento: Date;
     contaCorrenteId: string;
     multa: number;
     juros: number;
     desconto: number;
+    formaPagamento: string;
   }) {
     if (!contaParaBaixar || !currentCompany) return;
 
@@ -84,6 +147,7 @@ export default function ContasAPagarPage() {
             juros,
             desconto,
             conta_corrente_id: contaCorrenteId,
+            forma_pagamento: formaPagamento
           })
           .eq('id', contaParaBaixar.id);
 
@@ -360,7 +424,8 @@ export default function ContasAPagarPage() {
             multa,
             juros,
             desconto,
-            conta_corrente_id
+            conta_corrente_id,
+            forma_pagamento
           )
         `)
         .eq('tipo_operacao', 'pagar')
@@ -386,7 +451,9 @@ export default function ContasAPagarPage() {
             juros: Number(parcela.juros || 0),
             desconto: Number(parcela.desconto || 0),
             numeroParcela: parcela.numero,
-            numeroTitulo: mov.numero_documento
+            numeroTitulo: mov.numero_documento,
+            contaCorrenteId: parcela.conta_corrente_id,
+            formaPagamento: parcela.forma_pagamento
           }));
         });
 
@@ -615,6 +682,7 @@ export default function ContasAPagarPage() {
                 onVisualizar={handleVisualizar}
                 onDesfazerBaixa={handleDesfazerBaixa}
                 onRenegociar={handleRenegociar}
+                onVisualizarBaixa={handleVisualizarBaixa}
               />
             </div>
           </div>
@@ -633,6 +701,13 @@ export default function ContasAPagarPage() {
         open={modalRenegociarAberto}
         onClose={() => setModalRenegociarAberto(false)}
         onRenegociar={realizarRenegociacao}
+      />
+
+      <VisualizarBaixaModal
+        conta={contaParaVisualizarBaixa}
+        open={modalVisualizarBaixaAberto}
+        onClose={() => setModalVisualizarBaixaAberto(false)}
+        contaCorrenteNome={contaCorrenteNome}
       />
 
       {/* Modal de confirmação de exclusão */}

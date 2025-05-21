@@ -9,7 +9,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { Edit, Download, Trash2, MoreHorizontal, Eye, Undo, RefreshCw } from "lucide-react";
+import { Edit, Download, Trash2, MoreHorizontal, Eye, Undo, RefreshCw, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -29,6 +29,11 @@ export interface ContaPagar {
   valor: number;
   numeroParcela: number;
   numeroTitulo?: string;
+  multa?: number;
+  juros?: number;
+  desconto?: number;
+  contaCorrenteId?: string;
+  formaPagamento?: string;
 }
 
 interface ContasAPagarTableProps {
@@ -39,6 +44,7 @@ interface ContasAPagarTableProps {
   onVisualizar: (conta: ContaPagar) => void;
   onDesfazerBaixa: (conta: ContaPagar) => void;
   onRenegociar: (conta: ContaPagar) => void;
+  onVisualizarBaixa?: (conta: ContaPagar) => void;
 }
 
 function getStatusBadge(status: ContaPagar["status"]) {
@@ -73,7 +79,8 @@ export function ContasAPagarTable({
   onDelete,
   onVisualizar,
   onDesfazerBaixa,
-  onRenegociar 
+  onRenegociar,
+  onVisualizarBaixa
 }: ContasAPagarTableProps) {
   const totalValor = contas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
 
@@ -168,13 +175,22 @@ export function ContasAPagarTable({
                       )}
 
                       {(conta.status === 'pago' || conta.status === 'pago_em_atraso') && conta.dataPagamento && (
-                        <DropdownMenuItem
-                          onClick={() => onDesfazerBaixa(conta)}
-                          className="flex items-center gap-2 text-orange-500 focus:bg-orange-100 focus:text-orange-700"
-                        >
-                          <Undo className="h-4 w-4" />
-                          Desfazer Baixa
-                        </DropdownMenuItem>
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => onVisualizarBaixa ? onVisualizarBaixa(conta) : null}
+                            className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                          >
+                            <FileText className="h-4 w-4" />
+                            Visualizar Baixa
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onDesfazerBaixa(conta)}
+                            className="flex items-center gap-2 text-orange-500 focus:bg-orange-100 focus:text-orange-700"
+                          >
+                            <Undo className="h-4 w-4" />
+                            Desfazer Baixa
+                          </DropdownMenuItem>
+                        </>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
