@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import LancarDiarioModal from "./LancarDiarioModal";
 import { useLancamentosContabeis } from "@/hooks/useLancamentosContabeis";
 import { formatDate } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 // Utilidades de data
 function dateToBR(date?: Date) {
@@ -62,6 +64,7 @@ export default function LancamentosPage() {
   const [dataFinalStr, setDataFinalStr] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [novoModalOpen, setNovoModalOpen] = useState(false);
+  const [tipoLancamentoFiltro, setTipoLancamentoFiltro] = useState<string>("todos");
   
   // Definir datas iniciais conforme o período selecionado
   useEffect(() => {
@@ -121,6 +124,9 @@ export default function LancamentosPage() {
       // Filtrar por conta
       const isConta = contaId === "todos" || l.conta === contaId;
       
+      // Filtrar por tipo de lançamento
+      const tipoLancamentoOk = tipoLancamentoFiltro === "todos" || l.tipo_lancamento === tipoLancamentoFiltro;
+      
       // Filtrar por termo de busca
       const termoOk = searchTerm 
         ? l.historico.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -146,9 +152,24 @@ export default function LancamentosPage() {
       const dataInicioOk = !dataInicial || (dataLanc && dataLanc >= dataInicial);
       const dataFimOk = !dataFinal || (dataLanc && dataLanc <= dataFinal);
       
-      return isConta && termoOk && dataInicioOk && dataFimOk;
+      return isConta && termoOk && dataInicioOk && dataFimOk && tipoLancamentoOk;
     });
-  }, [contaId, searchTerm, dataInicial, dataFinal, lancamentos]);
+  }, [contaId, searchTerm, dataInicial, dataFinal, lancamentos, tipoLancamentoFiltro]);
+
+  // Obter cor da badge com base no tipo de lançamento
+  function getBadgeVariant(tipoLancamento?: string) {
+    switch (tipoLancamento) {
+      case 'juros':
+        return "destructive";
+      case 'multa':
+        return "destructive";
+      case 'desconto':
+        return "success";
+      case 'principal':
+      default:
+        return "outline";
+    }
+  }
 
   // Função para editar um lançamento
   function handleEdit(id: string) {
@@ -174,6 +195,7 @@ export default function LancamentosPage() {
     setContaId("todos");
     setPeriodo("mes_atual");
     setSearchTerm("");
+    setTipoLancamentoFiltro("todos");
     const hoje = new Date();
     const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
     const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
@@ -181,6 +203,21 @@ export default function LancamentosPage() {
     setDataInicialStr(dateToBR(inicio));
     setDataFinal(fim);
     setDataFinalStr(dateToBR(fim));
+  }
+
+  // Traduzir o tipo de lançamento para português e formatar para exibição
+  function getTipoLancamentoTexto(tipoLancamento?: string) {
+    switch (tipoLancamento) {
+      case 'juros':
+        return "Juros";
+      case 'multa':
+        return "Multa";
+      case 'desconto':
+        return "Desconto";
+      case 'principal':
+      default:
+        return "Principal";
+    }
   }
 
   return (
@@ -205,7 +242,7 @@ export default function LancamentosPage() {
       </div>
       <Card>
         <CardContent className="pt-6 pb-6">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
             {/* Conta contábil */}
             <div className="col-span-1">
               <Select value={contaId} onValueChange={setContaId}>
@@ -219,6 +256,21 @@ export default function LancamentosPage() {
                       {cc.codigo} - {cc.descricao}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Tipo de lançamento */}
+            <div className="col-span-1">
+              <Select value={tipoLancamentoFiltro} onValueChange={setTipoLancamentoFiltro}>
+                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                  <SelectValue placeholder="Tipo de Lançamento" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border">
+                  <SelectItem value="todos">Todos os tipos</SelectItem>
+                  <SelectItem value="principal">Principal</SelectItem>
+                  <SelectItem value="juros">Juros</SelectItem>
+                  <SelectItem value="multa">Multa</SelectItem>
+                  <SelectItem value="desconto">Desconto</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -337,6 +389,7 @@ export default function LancamentosPage() {
                       <TableHead>Data</TableHead>
                       <TableHead>Código</TableHead>
                       <TableHead>Histórico</TableHead>
+                      <TableHead>Tipo</TableHead>
                       <TableHead>Débito</TableHead>
                       <TableHead>Crédito</TableHead>
                       <TableHead>Saldo</TableHead>
@@ -346,7 +399,7 @@ export default function LancamentosPage() {
                   <TableBody>
                     {filteredLancamentos.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                           Nenhum lançamento encontrado
                         </TableCell>
                       </TableRow>
@@ -382,6 +435,11 @@ export default function LancamentosPage() {
                             <div className="text-xs text-gray-500">
                               {lanc.conta_nome || ''}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getBadgeVariant(lanc.tipo_lancamento)}>
+                              {getTipoLancamentoTexto(lanc.tipo_lancamento)}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             {lanc.tipo === "debito" ? formatCurrency(lanc.valor) : "-"}

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,7 +35,10 @@ export function useLancamentosContabeis() {
         ...conta,
         empresa_id: currentCompany.id,
         created_at: conta.created_at || new Date().toISOString(),
-        updated_at: conta.updated_at || new Date().toISOString()
+        updated_at: conta.updated_at || new Date().toISOString(),
+        categoria: conta.categoria as "título" | "movimentação",
+        status: conta.status as "ativo" | "inativo",
+        classificacao_dre: conta.classificacao_dre || undefined
       })) || [];
       
       setPlanosContas(contas);
@@ -122,7 +126,10 @@ export function useLancamentosContabeis() {
             conta_codigo: contaDebito.codigo,
             tipo: 'debito',
             valor: lanc.valor,
-            saldo: 0 // Será calculado depois
+            saldo: 0, // Será calculado depois
+            movimentacao_id: lanc.movimentacao_id,
+            parcela_id: lanc.parcela_id,
+            tipo_lancamento: lanc.tipo_lancamento || 'principal'
           };
           lancamentosProcessados.push(lancamentoDebito);
         }
@@ -138,7 +145,10 @@ export function useLancamentosContabeis() {
             conta_codigo: contaCredito.codigo,
             tipo: 'credito',
             valor: lanc.valor,
-            saldo: 0 // Será calculado depois
+            saldo: 0, // Será calculado depois
+            movimentacao_id: lanc.movimentacao_id,
+            parcela_id: lanc.parcela_id,
+            tipo_lancamento: lanc.tipo_lancamento || 'principal'
           };
           lancamentosProcessados.push(lancamentoCredito);
         }
@@ -237,7 +247,8 @@ export function useLancamentosContabeis() {
           tipo: 'debito',
           valor: mov.valor,
           saldo: 0, // Será calculado depois
-          movimentacao_id: mov.id
+          movimentacao_id: mov.id,
+          tipo_lancamento: 'principal'
         };
         
         // Contrapartida (crédito na conta definida pelo tipo título)
@@ -251,7 +262,8 @@ export function useLancamentosContabeis() {
           tipo: 'credito',
           valor: mov.valor,
           saldo: 0, // Será calculado depois
-          movimentacao_id: mov.id
+          movimentacao_id: mov.id,
+          tipo_lancamento: 'principal'
         };
         
         lancamentosGerados.push(lancamentoDespesa, lancamentoContrapartida);
@@ -299,7 +311,8 @@ export function useLancamentosContabeis() {
           tipo: 'credito',
           valor: mov.valor,
           saldo: 0, // Será calculado depois
-          movimentacao_id: mov.id
+          movimentacao_id: mov.id,
+          tipo_lancamento: 'principal'
         };
         
         // Contrapartida (débito na conta definida pelo tipo título)
@@ -313,7 +326,8 @@ export function useLancamentosContabeis() {
           tipo: 'debito',
           valor: mov.valor,
           saldo: 0, // Será calculado depois
-          movimentacao_id: mov.id
+          movimentacao_id: mov.id,
+          tipo_lancamento: 'principal'
         };
         
         lancamentosGerados.push(lancamentoReceita, lancamentoContrapartida);
@@ -360,7 +374,8 @@ export function useLancamentosContabeis() {
           tipo: 'debito',
           valor: mov.valor,
           saldo: 0, // Será calculado depois
-          movimentacao_id: mov.id
+          movimentacao_id: mov.id,
+          tipo_lancamento: 'principal'
         };
         
         // Crédito na conta contábil associada à conta corrente origem
@@ -374,7 +389,8 @@ export function useLancamentosContabeis() {
           tipo: 'credito',
           valor: mov.valor,
           saldo: 0, // Será calculado depois
-          movimentacao_id: mov.id
+          movimentacao_id: mov.id,
+          tipo_lancamento: 'principal'
         };
         
         lancamentosGerados.push(lancamentoDebito, lancamentoCredito);
@@ -409,6 +425,12 @@ export function useLancamentosContabeis() {
               }
             }
             
+            // Obter a conta contábil do tipo do título e as contas de juros, multa e desconto
+            let tipoTitulo = null;
+            if (mov.tipo_titulo_id) {
+              tipoTitulo = tiposTitulosMap.get(mov.tipo_titulo_id);
+            }
+            
             // Lançamento para parcelas pagas
             if (tipoOperacao === 'pagar') {
               // Obter a conta contábil do tipo do título
@@ -416,15 +438,12 @@ export function useLancamentosContabeis() {
               let contaContrapartidaNome = 'Contas a Pagar';
               let contaContrapartidaCodigo = '2.01.01'; // Código padrão caso não encontre o tipo título
               
-              if (mov.tipo_titulo_id) {
-                const tipoTitulo = tiposTitulosMap.get(mov.tipo_titulo_id);
-                if (tipoTitulo && tipoTitulo.conta_contabil_id) {
-                  contaContrapartidaId = tipoTitulo.conta_contabil_id;
-                  const contaContrapartida = contasMap.get(tipoTitulo.conta_contabil_id);
-                  if (contaContrapartida) {
-                    contaContrapartidaNome = contaContrapartida.descricao;
-                    contaContrapartidaCodigo = contaContrapartida.codigo;
-                  }
+              if (tipoTitulo && tipoTitulo.conta_contabil_id) {
+                contaContrapartidaId = tipoTitulo.conta_contabil_id;
+                const contaContrapartida = contasMap.get(tipoTitulo.conta_contabil_id);
+                if (contaContrapartida) {
+                  contaContrapartidaNome = contaContrapartida.descricao;
+                  contaContrapartidaCodigo = contaContrapartida.codigo;
                 }
               }
               
@@ -440,7 +459,8 @@ export function useLancamentosContabeis() {
                 valor: parcela.valor,
                 saldo: 0,
                 parcela_id: parcela.id,
-                movimentacao_id: mov.id
+                movimentacao_id: mov.id,
+                tipo_lancamento: 'principal'
               };
               
               // Crédito na conta contábil associada à conta corrente
@@ -455,10 +475,131 @@ export function useLancamentosContabeis() {
                 valor: parcela.valor,
                 saldo: 0,
                 parcela_id: parcela.id,
-                movimentacao_id: mov.id
+                movimentacao_id: mov.id,
+                tipo_lancamento: 'principal'
               };
               
               lancamentosGerados.push(lancamentoAPagar, lancamentoBanco);
+              
+              // Processar juros se houver
+              if (parcela.juros && parcela.juros > 0 && tipoTitulo && tipoTitulo.conta_juros_id) {
+                const contaJuros = contasMap.get(tipoTitulo.conta_juros_id);
+                if (contaJuros) {
+                  // Débito na conta de juros
+                  const lancamentoJurosDebito: LancamentoContabil = {
+                    id: `${parcela.id}_juros_debito`,
+                    data: dataFormatadaParcela,
+                    historico: `${historicoParcela} - Juros`,
+                    conta: tipoTitulo.conta_juros_id,
+                    conta_nome: contaJuros.descricao,
+                    conta_codigo: contaJuros.codigo,
+                    tipo: 'debito',
+                    valor: parcela.juros,
+                    saldo: 0,
+                    parcela_id: parcela.id,
+                    movimentacao_id: mov.id,
+                    tipo_lancamento: 'juros'
+                  };
+                  
+                  // Crédito na conta contábil associada à conta corrente
+                  const lancamentoJurosCredito: LancamentoContabil = {
+                    id: `${parcela.id}_juros_credito`,
+                    data: dataFormatadaParcela,
+                    historico: `${historicoParcela} - Juros`,
+                    conta: contaContabilCorrenteId || 'caixa',
+                    conta_nome: contaContabilCorrenteNome,
+                    conta_codigo: contaContabilCorrenteCodigo,
+                    tipo: 'credito',
+                    valor: parcela.juros,
+                    saldo: 0,
+                    parcela_id: parcela.id,
+                    movimentacao_id: mov.id,
+                    tipo_lancamento: 'juros'
+                  };
+                  
+                  lancamentosGerados.push(lancamentoJurosDebito, lancamentoJurosCredito);
+                }
+              }
+              
+              // Processar multa se houver
+              if (parcela.multa && parcela.multa > 0 && tipoTitulo && tipoTitulo.conta_multa_id) {
+                const contaMulta = contasMap.get(tipoTitulo.conta_multa_id);
+                if (contaMulta) {
+                  // Débito na conta de multa
+                  const lancamentoMultaDebito: LancamentoContabil = {
+                    id: `${parcela.id}_multa_debito`,
+                    data: dataFormatadaParcela,
+                    historico: `${historicoParcela} - Multa`,
+                    conta: tipoTitulo.conta_multa_id,
+                    conta_nome: contaMulta.descricao,
+                    conta_codigo: contaMulta.codigo,
+                    tipo: 'debito',
+                    valor: parcela.multa,
+                    saldo: 0,
+                    parcela_id: parcela.id,
+                    movimentacao_id: mov.id,
+                    tipo_lancamento: 'multa'
+                  };
+                  
+                  // Crédito na conta contábil associada à conta corrente
+                  const lancamentoMultaCredito: LancamentoContabil = {
+                    id: `${parcela.id}_multa_credito`,
+                    data: dataFormatadaParcela,
+                    historico: `${historicoParcela} - Multa`,
+                    conta: contaContabilCorrenteId || 'caixa',
+                    conta_nome: contaContabilCorrenteNome,
+                    conta_codigo: contaContabilCorrenteCodigo,
+                    tipo: 'credito',
+                    valor: parcela.multa,
+                    saldo: 0,
+                    parcela_id: parcela.id,
+                    movimentacao_id: mov.id,
+                    tipo_lancamento: 'multa'
+                  };
+                  
+                  lancamentosGerados.push(lancamentoMultaDebito, lancamentoMultaCredito);
+                }
+              }
+              
+              // Processar desconto se houver
+              if (parcela.desconto && parcela.desconto > 0 && tipoTitulo && tipoTitulo.conta_desconto_id) {
+                const contaDesconto = contasMap.get(tipoTitulo.conta_desconto_id);
+                if (contaDesconto) {
+                  // Crédito na conta de desconto
+                  const lancamentoDescontoCredito: LancamentoContabil = {
+                    id: `${parcela.id}_desconto_credito`,
+                    data: dataFormatadaParcela,
+                    historico: `${historicoParcela} - Desconto`,
+                    conta: tipoTitulo.conta_desconto_id,
+                    conta_nome: contaDesconto.descricao,
+                    conta_codigo: contaDesconto.codigo,
+                    tipo: 'credito',
+                    valor: parcela.desconto,
+                    saldo: 0,
+                    parcela_id: parcela.id,
+                    movimentacao_id: mov.id,
+                    tipo_lancamento: 'desconto'
+                  };
+                  
+                  // Débito na conta do tipo de título
+                  const lancamentoDescontoDebito: LancamentoContabil = {
+                    id: `${parcela.id}_desconto_debito`,
+                    data: dataFormatadaParcela,
+                    historico: `${historicoParcela} - Desconto`,
+                    conta: contaContrapartidaId || 'passivo',
+                    conta_nome: contaContrapartidaNome,
+                    conta_codigo: contaContrapartidaCodigo,
+                    tipo: 'debito',
+                    valor: parcela.desconto,
+                    saldo: 0,
+                    parcela_id: parcela.id,
+                    movimentacao_id: mov.id,
+                    tipo_lancamento: 'desconto'
+                  };
+                  
+                  lancamentosGerados.push(lancamentoDescontoCredito, lancamentoDescontoDebito);
+                }
+              }
             }
             else if (tipoOperacao === 'receber') {
               // Obter a conta contábil do tipo do título
@@ -466,15 +607,12 @@ export function useLancamentosContabeis() {
               let contaContrapartidaNome = 'Contas a Receber';
               let contaContrapartidaCodigo = '1.02.01'; // Código padrão caso não encontre o tipo título
               
-              if (mov.tipo_titulo_id) {
-                const tipoTitulo = tiposTitulosMap.get(mov.tipo_titulo_id);
-                if (tipoTitulo && tipoTitulo.conta_contabil_id) {
-                  contaContrapartidaId = tipoTitulo.conta_contabil_id;
-                  const contaContrapartida = contasMap.get(tipoTitulo.conta_contabil_id);
-                  if (contaContrapartida) {
-                    contaContrapartidaNome = contaContrapartida.descricao;
-                    contaContrapartidaCodigo = contaContrapartida.codigo;
-                  }
+              if (tipoTitulo && tipoTitulo.conta_contabil_id) {
+                contaContrapartidaId = tipoTitulo.conta_contabil_id;
+                const contaContrapartida = contasMap.get(tipoTitulo.conta_contabil_id);
+                if (contaContrapartida) {
+                  contaContrapartidaNome = contaContrapartida.descricao;
+                  contaContrapartidaCodigo = contaContrapartida.codigo;
                 }
               }
               
@@ -490,7 +628,8 @@ export function useLancamentosContabeis() {
                 valor: parcela.valor,
                 saldo: 0,
                 parcela_id: parcela.id,
-                movimentacao_id: mov.id
+                movimentacao_id: mov.id,
+                tipo_lancamento: 'principal'
               };
               
               // Crédito em contas a receber (conta do tipo de título)
@@ -505,10 +644,131 @@ export function useLancamentosContabeis() {
                 valor: parcela.valor,
                 saldo: 0,
                 parcela_id: parcela.id,
-                movimentacao_id: mov.id
+                movimentacao_id: mov.id,
+                tipo_lancamento: 'principal'
               };
               
               lancamentosGerados.push(lancamentoBanco, lancamentoAReceber);
+              
+              // Processar juros se houver
+              if (parcela.juros && parcela.juros > 0 && tipoTitulo && tipoTitulo.conta_juros_id) {
+                const contaJuros = contasMap.get(tipoTitulo.conta_juros_id);
+                if (contaJuros) {
+                  // Débito na conta contábil associada à conta corrente
+                  const lancamentoJurosDebito: LancamentoContabil = {
+                    id: `${parcela.id}_juros_banco_debito`,
+                    data: dataFormatadaParcela,
+                    historico: `${historicoParcela} - Juros`,
+                    conta: contaContabilCorrenteId || 'caixa',
+                    conta_nome: contaContabilCorrenteNome,
+                    conta_codigo: contaContabilCorrenteCodigo,
+                    tipo: 'debito',
+                    valor: parcela.juros,
+                    saldo: 0,
+                    parcela_id: parcela.id,
+                    movimentacao_id: mov.id,
+                    tipo_lancamento: 'juros'
+                  };
+                  
+                  // Crédito na conta de juros
+                  const lancamentoJurosCredito: LancamentoContabil = {
+                    id: `${parcela.id}_juros_credito`,
+                    data: dataFormatadaParcela,
+                    historico: `${historicoParcela} - Juros`,
+                    conta: tipoTitulo.conta_juros_id,
+                    conta_nome: contaJuros.descricao,
+                    conta_codigo: contaJuros.codigo,
+                    tipo: 'credito',
+                    valor: parcela.juros,
+                    saldo: 0,
+                    parcela_id: parcela.id,
+                    movimentacao_id: mov.id,
+                    tipo_lancamento: 'juros'
+                  };
+                  
+                  lancamentosGerados.push(lancamentoJurosDebito, lancamentoJurosCredito);
+                }
+              }
+              
+              // Processar multa se houver
+              if (parcela.multa && parcela.multa > 0 && tipoTitulo && tipoTitulo.conta_multa_id) {
+                const contaMulta = contasMap.get(tipoTitulo.conta_multa_id);
+                if (contaMulta) {
+                  // Débito na conta contábil associada à conta corrente
+                  const lancamentoMultaDebito: LancamentoContabil = {
+                    id: `${parcela.id}_multa_banco_debito`,
+                    data: dataFormatadaParcela,
+                    historico: `${historicoParcela} - Multa`,
+                    conta: contaContabilCorrenteId || 'caixa',
+                    conta_nome: contaContabilCorrenteNome,
+                    conta_codigo: contaContabilCorrenteCodigo,
+                    tipo: 'debito',
+                    valor: parcela.multa,
+                    saldo: 0,
+                    parcela_id: parcela.id,
+                    movimentacao_id: mov.id,
+                    tipo_lancamento: 'multa'
+                  };
+                  
+                  // Crédito na conta de multa
+                  const lancamentoMultaCredito: LancamentoContabil = {
+                    id: `${parcela.id}_multa_credito`,
+                    data: dataFormatadaParcela,
+                    historico: `${historicoParcela} - Multa`,
+                    conta: tipoTitulo.conta_multa_id,
+                    conta_nome: contaMulta.descricao,
+                    conta_codigo: contaMulta.codigo,
+                    tipo: 'credito',
+                    valor: parcela.multa,
+                    saldo: 0,
+                    parcela_id: parcela.id,
+                    movimentacao_id: mov.id,
+                    tipo_lancamento: 'multa'
+                  };
+                  
+                  lancamentosGerados.push(lancamentoMultaDebito, lancamentoMultaCredito);
+                }
+              }
+              
+              // Processar desconto se houver
+              if (parcela.desconto && parcela.desconto > 0 && tipoTitulo && tipoTitulo.conta_desconto_id) {
+                const contaDesconto = contasMap.get(tipoTitulo.conta_desconto_id);
+                if (contaDesconto) {
+                  // Débito na conta de desconto
+                  const lancamentoDescontoDebito: LancamentoContabil = {
+                    id: `${parcela.id}_desconto_debito`,
+                    data: dataFormatadaParcela,
+                    historico: `${historicoParcela} - Desconto`,
+                    conta: tipoTitulo.conta_desconto_id,
+                    conta_nome: contaDesconto.descricao,
+                    conta_codigo: contaDesconto.codigo,
+                    tipo: 'debito',
+                    valor: parcela.desconto,
+                    saldo: 0,
+                    parcela_id: parcela.id,
+                    movimentacao_id: mov.id,
+                    tipo_lancamento: 'desconto'
+                  };
+                  
+                  // Crédito na conta do tipo de título
+                  const lancamentoDescontoCredito: LancamentoContabil = {
+                    id: `${parcela.id}_desconto_credito`,
+                    data: dataFormatadaParcela,
+                    historico: `${historicoParcela} - Desconto`,
+                    conta: contaContrapartidaId || 'ativo',
+                    conta_nome: contaContrapartidaNome,
+                    conta_codigo: contaContrapartidaCodigo,
+                    tipo: 'credito',
+                    valor: parcela.desconto,
+                    saldo: 0,
+                    parcela_id: parcela.id,
+                    movimentacao_id: mov.id,
+                    tipo_lancamento: 'desconto'
+                  };
+                  
+                  lancamentosGerados.push(lancamentoDescontoDebito, lancamentoDescontoCredito);
+                }
+              }
             }
           }
         });
@@ -675,7 +935,8 @@ export function useLancamentosContabeis() {
           historico: dados.historico,
           conta_debito_id: dados.debito,
           conta_credito_id: dados.credito,
-          valor: dados.valor
+          valor: dados.valor,
+          tipo_lancamento: 'principal'
         })
         .select()
         .single();
@@ -695,7 +956,8 @@ export function useLancamentosContabeis() {
         conta_codigo: contaDebito.codigo,
         tipo: 'debito',
         valor: dados.valor,
-        saldo: 0 // Será recalculado
+        saldo: 0, // Será recalculado
+        tipo_lancamento: 'principal'
       };
       
       const novoLancamentoCredito: LancamentoContabil = {
@@ -707,7 +969,8 @@ export function useLancamentosContabeis() {
         conta_codigo: contaCredito.codigo,
         tipo: 'credito',
         valor: dados.valor,
-        saldo: 0 // Será recalculado
+        saldo: 0, // Será recalculado
+        tipo_lancamento: 'principal'
       };
       
       // 4. Adicionar aos lançamentos existentes e recalcular saldos
