@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
@@ -41,10 +42,9 @@ import Balanco from "./pages/contabil/balanco";
 // Vendas
 import PainelVendas from "./pages/vendas/painel-vendas";
 import Servicos from "./pages/vendas/servicos";
-import Produtos from "./pages/vendas/produtos";
+import Produtos from "./pages/vendas/produtos"; // Importando a página de produtos
 import TabelaPrecos from "./pages/vendas/tabela-precos";
 import Orcamento from "./pages/vendas/orcamento";
-import Orcamento2 from "./pages/vendas/orcamento2";
 import Faturamento from "./pages/vendas/faturamento";
 
 // CRM
@@ -81,7 +81,6 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<Index />} />
-            
             <Route
               path="/dashboard"
               element={
@@ -349,16 +348,6 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <Orcamento />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/vendas/orcamento2"
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <Orcamento2 />
                   </MainLayout>
                 </PrivateRoute>
               }

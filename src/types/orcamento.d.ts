@@ -6,10 +6,8 @@ export interface Parcela {
 }
 
 export interface OrcamentoItem {
-  servicoId?: string;
-  produtoId?: string;
+  servicoId: string;
   valor: number;
-  tipoItem: "servico" | "produto";
 }
 
 export interface OrcamentoFormData {

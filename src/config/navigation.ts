@@ -1,23 +1,50 @@
 
 import { ModuleNavItem } from "@/types";
 
-export const getNavigation = (): ModuleNavItem[] => [
+// Esta configuração define os itens de navegação do sistema
+export const navigationConfig: ModuleNavItem[] = [
   {
     title: "Dashboard",
     href: "/dashboard",
     icon: "Grid",
   },
   {
+    title: "Administrativo",
+    icon: "Settings",
+    subItems: [
+      {
+        title: "Empresas",
+        href: "/admin/empresas",
+      },
+      {
+        title: "Usuários",
+        href: "/admin/usuarios",
+      },
+      {
+        title: "Permissões",
+        href: "/admin/permissoes",
+      },
+      {
+        title: "Parâmetros",
+        href: "/admin/parametros",
+      },
+    ],
+  },
+  {
     title: "Cadastros",
     icon: "List",
     subItems: [
       {
-        title: "Favorecidos",
-        href: "/cadastros/favorecidos",
-      },
-      {
         title: "Grupo de Favorecidos",
         href: "/cadastros/grupo-favorecidos",
+      },
+      {
+        title: "Grupos de Produtos/Serviços",
+        href: "/cadastros/grupo-produtos",
+      },
+      {
+        title: "Favorecidos",
+        href: "/cadastros/favorecidos",
       },
       {
         title: "Profissões",
@@ -32,16 +59,12 @@ export const getNavigation = (): ModuleNavItem[] => [
         href: "/cadastros/motivos-perda",
       },
       {
-        title: "Contas Correntes",
+        title: "Conta Corrente",
         href: "/cadastros/conta-corrente",
       },
       {
         title: "Tipos de Títulos",
         href: "/cadastros/tipos-titulos",
-      },
-      {
-        title: "Grupo de Produtos",
-        href: "/cadastros/grupo-produtos",
       },
     ],
   },
@@ -58,16 +81,16 @@ export const getNavigation = (): ModuleNavItem[] => [
         href: "/financeiro/fluxo-caixa",
       },
       {
+        title: "Movimentação",
+        href: "/financeiro/movimentacao",
+      },
+      {
         title: "Contas a Pagar",
         href: "/financeiro/contas-a-pagar",
       },
       {
         title: "Contas a Receber",
         href: "/financeiro/contas-receber",
-      },
-      {
-        title: "Movimentação",
-        href: "/financeiro/movimentacao",
       },
     ],
   },
@@ -80,7 +103,7 @@ export const getNavigation = (): ModuleNavItem[] => [
         href: "/contabil/plano-contas",
       },
       {
-        title: "Lançamentos Contábeis",
+        title: "Lançamentos",
         href: "/contabil/lancamentos",
       },
       {
@@ -88,7 +111,7 @@ export const getNavigation = (): ModuleNavItem[] => [
         href: "/contabil/dre",
       },
       {
-        title: "Balanço Patrimonial",
+        title: "Balanço",
         href: "/contabil/balanco",
       },
     ],
@@ -102,24 +125,20 @@ export const getNavigation = (): ModuleNavItem[] => [
         href: "/vendas/painel-vendas",
       },
       {
-        title: "Serviços",
-        href: "/vendas/servicos",
-      },
-      {
         title: "Produtos",
         href: "/vendas/produtos",
+      },
+      {
+        title: "Serviços",
+        href: "/vendas/servicos",
       },
       {
         title: "Tabela de Preços",
         href: "/vendas/tabela-precos",
       },
       {
-        title: "Orçamento",
+        title: "Orçamentos",
         href: "/vendas/orcamento",
-      },
-      {
-        title: "Orçamento 2.0",
-        href: "/vendas/orcamento2",
       },
       {
         title: "Faturamento",
@@ -132,32 +151,44 @@ export const getNavigation = (): ModuleNavItem[] => [
     icon: "Users",
     subItems: [
       {
-        title: "Painel CRM",
+        title: "Painel do CRM",
         href: "/crm/painel",
-      },
-      {
-        title: "Funil de Vendas",
-        href: "/crm/funil-configuracao",
       },
       {
         title: "Leads",
         href: "/crm/leads",
       },
+      {
+        title: "Conf. do Funil",
+        href: "/crm/funil-configuracao",
+      },
+      {
+        title: "Marketing",
+        href: "/crm/marketing",
+      },
     ],
   },
   {
     title: "Relatórios",
-    href: "/relatorios",
     icon: "BarChart",
+    href: "/relatorios",
   },
+];
+
+export const userNavigation: ModuleNavItem[] = [
   {
-    title: "Usuários",
-    href: "/admin/usuarios",
+    title: "Perfil",
+    href: "/perfil",
     icon: "User",
   },
   {
-    title: "Empresas",
-    href: "/admin/empresas",
+    title: "Configurações",
+    href: "/configuracoes",
     icon: "Settings",
   },
+  {
+    title: "Ajuda",
+    href: "/ajuda",
+    icon: "HelpCircle",
+  }
 ];
