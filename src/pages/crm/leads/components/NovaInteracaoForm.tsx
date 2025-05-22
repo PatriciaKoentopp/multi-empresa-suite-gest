@@ -20,6 +20,7 @@ interface NovaInteracaoFormProps {
   handleInteracaoDataChange: (date: Date) => void;
   adicionarInteracao: () => void;
   vendedoresAtivos: Usuario[];
+  leadTelefone?: string; // Adicionamos o telefone do lead como prop opcional
 }
 
 export function NovaInteracaoForm({
@@ -28,8 +29,15 @@ export function NovaInteracaoForm({
   handleInteracaoSelectChange,
   handleInteracaoDataChange,
   adicionarInteracao,
-  vendedoresAtivos
+  vendedoresAtivos,
+  leadTelefone
 }: NovaInteracaoFormProps) {
+  // Função para lidar com o registro da interação
+  const handleRegistrarInteracao = () => {
+    // Chama a função de adicionar interação passada como prop
+    adicionarInteracao();
+  };
+
   return (
     <div className="border-b pb-6">
       <h3 className="text-lg font-medium mb-4">Nova Interação</h3>
@@ -101,7 +109,7 @@ export function NovaInteracaoForm({
 
         <Button
           type="button"
-          onClick={adicionarInteracao}
+          onClick={handleRegistrarInteracao}
           variant="blue"
           className="w-full sm:w-auto"
           disabled={novaInteracao.descricao.trim() === "" || !novaInteracao.responsavelId}

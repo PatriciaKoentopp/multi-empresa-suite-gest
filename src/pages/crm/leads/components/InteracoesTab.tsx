@@ -106,6 +106,7 @@ export function InteracoesTab({
             handleInteracaoDataChange={handleInteracaoDataChange}
             adicionarInteracao={adicionarInteracao}
             vendedoresAtivos={vendedoresAtivos}
+            leadTelefone={lead.telefone} // Passamos o telefone do lead
           />
         )}
       </div>
