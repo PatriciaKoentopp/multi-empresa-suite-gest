@@ -379,13 +379,20 @@ export function LeadFormModal({
   if (!interacaoEditada) return;
   
   try {
-    // Não converter a data, usar como string diretamente
+    // Verificar o tipo de dado da data
+    let dataFormatada = interacaoEditada.data;
+    
+    // Se for um objeto Date, formatar para string (formato ISO) antes de enviar para o banco
+    if (interacaoEditada.data instanceof Date) {
+      dataFormatada = format(interacaoEditada.data, "yyyy-MM-dd");
+    }
+    
     const { error } = await supabase
       .from('leads_interacoes')
       .update({
         tipo: interacaoEditada.tipo,
         descricao: interacaoEditada.descricao,
-        data: interacaoEditada.data,
+        data: dataFormatada,
         responsavel_id: interacaoEditada.responsavelId,
         status: interacaoEditada.status || 'Aberto'
       })

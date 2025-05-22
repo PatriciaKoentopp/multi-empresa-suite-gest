@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Send } from "lucide-react";
-import { LeadInteracaoDataField } from "../LeadInteracaoDataField";
+import { DateInput } from "@/components/movimentacao/DateInput";
 import { Usuario } from "@/types";
 
 interface NovaInteracaoFormProps {
@@ -80,9 +80,9 @@ export function NovaInteracaoForm({
         {/* Campo data interação */}
         <div className="space-y-2">
           <Label>Data da Interação</Label>
-          <LeadInteracaoDataField
-            date={novaInteracao.data}
-            onDateChange={handleInteracaoDataChange}
+          <DateInput
+            value={novaInteracao.data}
+            onChange={(date) => date && handleInteracaoDataChange(date)}
           />
         </div>
 

@@ -3,11 +3,11 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LeadInteracao } from "../types";
 import { Usuario } from "@/types";
+import { DateInput } from "@/components/movimentacao/DateInput";
 
 interface InteracaoEditDialogProps {
   open: boolean;
@@ -15,6 +15,7 @@ interface InteracaoEditDialogProps {
   interacao: LeadInteracao | null;
   onInteracaoChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onInteracaoSelectChange: (name: string, value: string) => void;
+  onInteracaoDateChange?: (date: Date) => void;
   onSave: () => void;
   vendedoresAtivos: Usuario[];
 }
@@ -25,10 +26,18 @@ export function InteracaoEditDialog({
   interacao,
   onInteracaoChange,
   onInteracaoSelectChange,
+  onInteracaoDateChange,
   onSave,
   vendedoresAtivos
 }: InteracaoEditDialogProps) {
   if (!interacao) return null;
+
+  // Converter a data da string para objeto Date se necessário
+  const handleDateChange = (date?: Date | null) => {
+    if (date && onInteracaoDateChange) {
+      onInteracaoDateChange(date);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,12 +96,9 @@ export function InteracaoEditDialog({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="editData">Data</Label>
-              <Input
-                id="editData"
-                name="data"
-                value={interacao.data}
-                onChange={onInteracaoChange}
-                className="bg-white"
+              <DateInput
+                value={typeof interacao.data === 'string' ? new Date(interacao.data) : interacao.data}
+                onChange={handleDateChange}
               />
             </div>
             <div className="space-y-2">
