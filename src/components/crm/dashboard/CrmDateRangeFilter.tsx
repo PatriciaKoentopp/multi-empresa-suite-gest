@@ -1,13 +1,10 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { DateInput } from "@/components/movimentacao/DateInput";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, subDays, startOfMonth, endOfMonth, startOfYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CrmDateRangeFilterProps {
   startDate: Date;
@@ -44,6 +41,18 @@ export function CrmDateRangeFilter({ startDate, endDate, onDateChange }: CrmDate
     }
   };
 
+  const handleStartDateChange = (date?: Date | null) => {
+    if (date) {
+      onDateChange(date, endDate);
+    }
+  };
+
+  const handleEndDateChange = (date?: Date | null) => {
+    if (date) {
+      onDateChange(startDate, date);
+    }
+  };
+
   return (
     <div className="flex flex-wrap gap-2">
       <Select onValueChange={handlePresetChange}>
@@ -61,51 +70,20 @@ export function CrmDateRangeFilter({ startDate, endDate, onDateChange }: CrmDate
       </Select>
 
       <div className="flex gap-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "justify-start text-left font-normal w-[140px]",
-                !startDate && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {startDate ? format(startDate, "dd/MM/yyyy") : "Data inicial"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={startDate}
-              onSelect={(date) => date && onDateChange(date, endDate)}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "justify-start text-left font-normal w-[140px]",
-                !endDate && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {endDate ? format(endDate, "dd/MM/yyyy") : "Data final"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={endDate}
-              onSelect={(date) => date && onDateChange(startDate, date)}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+        <div className="w-[140px]">
+          <DateInput 
+            label="Data inicial" 
+            value={startDate} 
+            onChange={handleStartDateChange} 
+          />
+        </div>
+        <div className="w-[140px]">
+          <DateInput 
+            label="Data final" 
+            value={endDate} 
+            onChange={handleEndDateChange} 
+          />
+        </div>
       </div>
     </div>
   );

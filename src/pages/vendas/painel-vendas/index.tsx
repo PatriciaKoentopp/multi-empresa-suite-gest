@@ -5,9 +5,15 @@ import { SalesDashboardCards } from "@/components/vendas/SalesDashboardCards";
 import { SalesPerformanceTabs } from "@/components/vendas/SalesPerformanceTabs";
 import { SalesComparisonTable } from "@/components/vendas/SalesComparisonTable";
 import { useVendasDashboard } from "@/hooks/useVendasDashboard";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { DateInput } from "@/components/movimentacao/DateInput";
+import { Button } from "@/components/ui/button";
+import { format, subDays, startOfMonth } from "date-fns";
 
 const PainelVendasPage = () => {
+  const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 30));
+  const [endDate, setEndDate] = useState<Date>(new Date());
+
   const {
     isLoading,
     salesData,
@@ -17,7 +23,8 @@ const PainelVendasPage = () => {
     yearlyComparisonData,
     monthlyComparisonData,
     ticketMedioPorProjetoData,
-    fetchMonthlySalesData
+    fetchMonthlySalesData,
+    fetchSalesData
   } = useVendasDashboard();
 
   useEffect(() => {
@@ -37,6 +44,10 @@ const PainelVendasPage = () => {
     });
   }, [isLoading, salesData, barChartData, quarterlyChartData, yearlyChartData, yearlyComparisonData, monthlyComparisonData, ticketMedioPorProjetoData]);
 
+  const handleDateChange = () => {
+    fetchSalesData(format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd"));
+  };
+
   if (isLoading) {
     return <SalesLoadingState />;
   }
@@ -51,7 +62,31 @@ const PainelVendasPage = () => {
 
   return (
     <div className="space-y-6">
-      <SalesDashboardHeader />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <SalesDashboardHeader />
+        <div className="flex flex-wrap gap-4">
+          <div className="flex gap-2">
+            <div className="w-[140px]">
+              <DateInput
+                label="Data inicial"
+                value={startDate}
+                onChange={(date) => date && setStartDate(date)}
+              />
+            </div>
+            <div className="w-[140px]">
+              <DateInput
+                label="Data final"
+                value={endDate}
+                onChange={(date) => date && setEndDate(date)}
+              />
+            </div>
+            <Button onClick={handleDateChange} className="mt-6 h-9">
+              Filtrar
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <SalesDashboardCards salesData={salesData} />
       <SalesPerformanceTabs
         barChartData={safeBarChartData}
