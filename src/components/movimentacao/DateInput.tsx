@@ -113,12 +113,13 @@ export function DateInput({ label, value, onChange, disabled = false, placeholde
                   disabled && "opacity-50 cursor-not-allowed"
                 )}
                 disabled={disabled}
+                type="button"
               >
                 <CalendarIcon className="h-3 w-3" />
               </Button>
             </PopoverTrigger>
           </div>
-          <PopoverContent className="w-auto p-0" align="end">
+          <PopoverContent className="w-auto p-0 z-50" align="end">
             <Calendar
               mode="single"
               selected={value ? new Date(value) : undefined}
@@ -126,7 +127,6 @@ export function DateInput({ label, value, onChange, disabled = false, placeholde
               initialFocus
               disabled={disabled}
               locale={ptBR}
-              className={cn("p-3 pointer-events-auto")}
             />
           </PopoverContent>
         </Popover>

@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -78,6 +77,13 @@ export function LeadFechamentoTab({
       setFechamento(null);
     }
   }, [status, motivoPerdaId, descricao, date, setFechamento, fechamento]);
+
+  // Função para lidar com mudanças na data
+  const handleDateChange = (newDate?: Date | null) => {
+    if (newDate) {
+      setDate(newDate);
+    }
+  };
 
   // Função para salvar diretamente o fechamento
   const salvarFechamento = async () => {
@@ -230,7 +236,7 @@ export function LeadFechamentoTab({
             <Label className="text-base font-medium">Data do Fechamento</Label>
             <DateInput
               value={date}
-              onChange={setDate}
+              onChange={handleDateChange}
             />
           </div>
 
