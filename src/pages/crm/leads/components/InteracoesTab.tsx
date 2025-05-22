@@ -7,6 +7,9 @@ import { InteracaoViewDialog } from "./InteracaoViewDialog";
 import { InteracaoDeleteDialog } from "./InteracaoDeleteDialog";
 import { LeadInteracao } from "../types";
 import { Usuario } from "@/types";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 interface InteracoesTabProps {
   lead: any;
@@ -95,6 +98,42 @@ export function InteracoesTab({
     }
   };
 
+  // Função para alternar o status da interação
+  const handleToggleStatus = async (interacao: LeadInteracao) => {
+    try {
+      const novoStatus = interacao.status === "Realizado" ? "Aberto" : "Realizado";
+      
+      // Atualizar no banco de dados
+      const { error } = await supabase
+        .from('leads_interacoes')
+        .update({
+          status: novoStatus
+        })
+        .eq('id', interacao.id);
+      
+      if (error) throw error;
+      
+      // Atualizar localmente
+      const interacoesAtualizadas = interacoes.map(item => 
+        item.id === interacao.id 
+          ? { ...item, status: novoStatus } 
+          : item
+      );
+      
+      // Como não temos acesso direto para atualizar o estado original,
+      // vamos atualizar os componentes visuais e notificar o usuário
+      toast.success(`Interação ${novoStatus === "Realizado" ? "concluída" : "reaberta"}`);
+      
+      // Forçar reload (apenas em caso de emergência)
+      window.location.reload();
+    } catch (error) {
+      console.error('Erro ao atualizar status da interação:', error);
+      toast.error("Erro ao atualizar status", {
+        description: "Ocorreu um erro ao atualizar o status da interação."
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="p-6">
@@ -118,6 +157,8 @@ export function InteracoesTab({
           onVerInteracao={handleVerInteracao}
           onEditarInteracao={handleEditarInteracao}
           onExcluirInteracao={handleExcluirInteracao}
+          onToggleStatus={handleToggleStatus}
+          getNomeResponsavel={getNomeResponsavel}
         />
       </div>
       
@@ -126,6 +167,12 @@ export function InteracoesTab({
         open={openVisualizarDialog}
         onOpenChange={setOpenVisualizarDialog}
         interacao={interacaoParaVisualizar}
+        onEdit={() => {
+          if (interacaoParaVisualizar) {
+            handleEditarInteracao(interacaoParaVisualizar);
+          }
+        }}
+        getNomeResponsavel={getNomeResponsavel}
       />
       
       <InteracaoEditDialog
@@ -142,8 +189,7 @@ export function InteracoesTab({
       <InteracaoDeleteDialog
         open={openExcluirDialog}
         onOpenChange={setOpenExcluirDialog}
-        interacao={interacaoParaExcluir}
-        onConfirm={handleConfirmarExclusao}
+        onDelete={handleConfirmarExclusao}
       />
     </div>
   );

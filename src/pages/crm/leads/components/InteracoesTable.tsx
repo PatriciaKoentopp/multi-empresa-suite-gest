@@ -8,20 +8,22 @@ import { getIconForInteraction } from "../utils/leadUtils";
 
 interface InteracoesTableProps {
   interacoes: LeadInteracao[];
-  onView: (interacao: LeadInteracao) => void;
-  onEdit: (interacao: LeadInteracao) => void;
-  onDelete: (interacao: LeadInteracao) => void;
-  onToggleStatus: (interacao: LeadInteracao) => void;
-  getNomeResponsavel: (id: string) => string;
+  carregandoInteracoes?: boolean;
+  onVerInteracao: (interacao: LeadInteracao) => void;
+  onEditarInteracao: (interacao: LeadInteracao) => void;
+  onExcluirInteracao: (interacao: LeadInteracao) => void;
+  onToggleStatus?: (interacao: LeadInteracao) => void;
+  getNomeResponsavel?: (id: string) => string;
 }
 
 export function InteracoesTable({ 
   interacoes, 
-  onView, 
-  onEdit, 
-  onDelete,
+  carregandoInteracoes = false,
+  onVerInteracao, 
+  onEditarInteracao, 
+  onExcluirInteracao,
   onToggleStatus,
-  getNomeResponsavel
+  getNomeResponsavel = () => "Não atribuído"
 }: InteracoesTableProps) {
   // Função para formatar a data no padrão brasileiro DD/MM/YYYY
   const formatarDataBR = (dataStr: string): string => {
@@ -47,6 +49,22 @@ export function InteracoesTable({
       return dataStr; // Retornar o valor original se falhar
     }
   };
+
+  if (carregandoInteracoes) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <p>Carregando interações...</p>
+      </div>
+    );
+  }
+
+  if (!interacoes || interacoes.length === 0) {
+    return (
+      <div className="border rounded-md p-8 text-center">
+        <p className="text-muted-foreground">Nenhuma interação registrada.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="border rounded-md overflow-hidden">
@@ -98,34 +116,36 @@ export function InteracoesTable({
                     <Button 
                       variant="ghost" 
                       size="sm"
-                      onClick={() => onView(interacao)}
+                      onClick={() => onVerInteracao(interacao)}
                     >
                       <Eye className="h-4 w-4 text-gray-500" />
                     </Button>
                     <Button 
                       variant="ghost" 
                       size="sm"
-                      onClick={() => onEdit(interacao)}
+                      onClick={() => onEditarInteracao(interacao)}
                     >
                       <Edit className="h-4 w-4 text-blue-500" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => onToggleStatus(interacao)}
-                      title={interacao.status === "Realizado" ? "Marcar como Aberto" : "Marcar como Realizado"}
-                    >
-                      {interacao.status === "Realizado" ? (
-                        <Circle className="h-4 w-4 text-blue-500" />
-                      ) : (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                      )}
-                    </Button>
+                    {onToggleStatus && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => onToggleStatus(interacao)}
+                        title={interacao.status === "Realizado" ? "Marcar como Aberto" : "Marcar como Realizado"}
+                      >
+                        {interacao.status === "Realizado" ? (
+                          <Circle className="h-4 w-4 text-blue-500" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        )}
+                      </Button>
+                    )}
                     {interacao.status === "Aberto" && (
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => onDelete(interacao)}
+                        onClick={() => onExcluirInteracao(interacao)}
                         title="Excluir interação"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
