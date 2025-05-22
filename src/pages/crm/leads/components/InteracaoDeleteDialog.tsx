@@ -15,14 +15,6 @@ export function InteracaoDeleteDialog({ open, onOpenChange, interacao, onDelete 
   // Verificar se a interação pode ser excluída (apenas status Aberto)
   const podeExcluir = interacao && interacao.status === "Aberto";
   
-  // Função para lidar com o clique no botão de excluir
-  const handleDelete = () => {
-    // Só permite excluir se o status for "Aberto"
-    if (podeExcluir) {
-      onDelete();
-    }
-  };
-  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -42,7 +34,7 @@ export function InteracaoDeleteDialog({ open, onOpenChange, interacao, onDelete 
           <Button 
             type="button"
             variant="destructive"
-            onClick={handleDelete}
+            onClick={onDelete}
             disabled={!podeExcluir}
           >
             Excluir

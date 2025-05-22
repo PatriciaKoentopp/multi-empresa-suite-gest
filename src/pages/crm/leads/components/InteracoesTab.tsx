@@ -9,7 +9,6 @@ import { LeadInteracao } from "../types";
 import { Usuario } from "@/types";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
 
 interface InteracoesTabProps {
   lead: any;
@@ -98,8 +97,8 @@ export function InteracoesTab({
     }
   };
 
-  const handleConfirmarExclusao = () => {
-    if (interacaoParaExcluir && excluirInteracao && interacaoParaExcluir.id) {
+  const handleConfirmarExclusao = async () => {
+    if (interacaoParaExcluir && interacaoParaExcluir.id) {
       // Verificar se a interação tem status "Aberto" antes de excluir
       if (interacaoParaExcluir.status !== "Aberto") {
         toast.error("Não é possível excluir", {
@@ -109,14 +108,30 @@ export function InteracoesTab({
         return;
       }
       
-      excluirInteracao(interacaoParaExcluir.id);
-      
-      // Atualizar o estado local removendo a interação excluída
-      setInteracoesLocais(atual => atual.filter(item => item.id !== interacaoParaExcluir.id));
+      try {
+        // Fazer a exclusão no banco de dados
+        const { error } = await supabase
+          .from('leads_interacoes')
+          .delete()
+          .eq('id', interacaoParaExcluir.id);
+        
+        if (error) throw error;
+        
+        // Atualizar o estado local removendo a interação excluída
+        setInteracoesLocais(atual => atual.filter(item => item.id !== interacaoParaExcluir.id));
+        
+        // Se tiver a função de excluir do prop, chamar também
+        if (excluirInteracao) {
+          excluirInteracao(interacaoParaExcluir.id);
+        }
+        
+        toast.success("Interação excluída com sucesso");
+      } catch (error) {
+        console.error('Erro ao excluir interação:', error);
+        toast.error("Erro ao excluir interação");
+      }
       
       setOpenExcluirDialog(false);
-      
-      toast.success("Interação excluída com sucesso");
     }
   };
 
