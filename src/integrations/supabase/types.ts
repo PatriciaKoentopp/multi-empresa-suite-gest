@@ -530,6 +530,7 @@ export type Database = {
           empresa: string | null
           empresa_id: string
           etapa_id: string
+          favorecido_id: string | null
           funil_id: string
           id: string
           nome: string
@@ -552,6 +553,7 @@ export type Database = {
           empresa?: string | null
           empresa_id: string
           etapa_id: string
+          favorecido_id?: string | null
           funil_id: string
           id?: string
           nome: string
@@ -574,6 +576,7 @@ export type Database = {
           empresa?: string | null
           empresa_id?: string
           etapa_id?: string
+          favorecido_id?: string | null
           funil_id?: string
           id?: string
           nome?: string
@@ -602,6 +605,13 @@ export type Database = {
             columns: ["etapa_id"]
             isOneToOne: false
             referencedRelation: "funil_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_favorecido_id_fkey"
+            columns: ["favorecido_id"]
+            isOneToOne: false
+            referencedRelation: "favorecidos"
             referencedColumns: ["id"]
           },
           {

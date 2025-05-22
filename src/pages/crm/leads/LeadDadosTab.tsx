@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useProdutosServicos } from "@/hooks/useProdutosServicos";
+import { useFavorecidos } from "@/hooks/useFavorecidos";
 import { Loader2 } from "lucide-react";
 
 interface LeadDadosTabProps {
@@ -24,11 +25,12 @@ export function LeadDadosTab({
   origensAtivas,
   vendedoresAtivos
 }: LeadDadosTabProps) {
-  const { items: produtosServicos, isLoading } = useProdutosServicos();
+  const { items: produtosServicos, isLoading: isLoadingProdutos } = useProdutosServicos();
+  const { favorecidos, isLoading: isLoadingFavorecidos } = useFavorecidos();
 
   // Função para lidar com a seleção de produto ou serviço
   const handleItemSelect = (value: string) => {
-    if (!value) {
+    if (!value || value === "_none_") {
       // Se o valor for vazio, limpar todos os campos relacionados
       handleSelectChange("produto_id", "");
       handleSelectChange("servico_id", "");
@@ -58,15 +60,35 @@ export function LeadDadosTab({
     }
   };
 
-  // Determinar o valor atual para o Select
-  const getCurrentSelectValue = () => {
+  // Função para lidar com a seleção de favorecido
+  const handleFavorecidoSelect = (value: string) => {
+    if (!value || value === "_none_") {
+      // Se o valor for vazio, limpar o campo
+      handleSelectChange("favorecido_id", "");
+      handleSelectChange("empresa", "");
+      return;
+    }
+
+    // Encontrar o favorecido selecionado para obter o nome
+    const favorecidoSelecionado = favorecidos.find(item => item.id === value);
+    
+    handleSelectChange("favorecido_id", value);
+    
+    // Atualizar o campo legado "empresa" com o nome do favorecido selecionado
+    if (favorecidoSelecionado) {
+      handleSelectChange("empresa", favorecidoSelecionado.nome);
+    }
+  };
+
+  // Determinar o valor atual para o Select de produtos
+  const getCurrentProductSelectValue = () => {
     if (formData.produto_id) {
       return `produto:${formData.produto_id}`;
     }
     if (formData.servico_id) {
       return `servico:${formData.servico_id}`;
     }
-    return "";
+    return "_none_";
   };
 
   return (
@@ -78,20 +100,47 @@ export function LeadDadosTab({
         </div>
         <div className="space-y-2">
           <Label>Empresa</Label>
-          <Input name="empresa" value={formData.empresa} onChange={handleChange} />
+          <Select
+            value={formData.favorecido_id || "_none_"}
+            onValueChange={handleFavorecidoSelect}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione um favorecido" />
+            </SelectTrigger>
+            <SelectContent className="bg-white z-50">
+              {isLoadingFavorecidos ? (
+                <div className="flex items-center justify-center py-2">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span>Carregando...</span>
+                </div>
+              ) : (
+                <>
+                  <SelectItem value="_none_">Nenhum</SelectItem>
+                  {favorecidos.map((item) => (
+                    <SelectItem 
+                      key={item.id} 
+                      value={item.id}
+                    >
+                      {item.nome}
+                    </SelectItem>
+                  ))}
+                </>
+              )}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <div className="space-y-2">
         <Label>Produto/Serviço</Label>
         <Select
-          value={getCurrentSelectValue()}
+          value={getCurrentProductSelectValue()}
           onValueChange={handleItemSelect}
         >
           <SelectTrigger className="bg-white">
             <SelectValue placeholder="Selecione um produto ou serviço" />
           </SelectTrigger>
           <SelectContent className="bg-white z-50">
-            {isLoading ? (
+            {isLoadingProdutos ? (
               <div className="flex items-center justify-center py-2">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 <span>Carregando...</span>

@@ -49,6 +49,7 @@ export function LeadFormModal({
   const [formData, setFormData] = useState({
     nome: "",
     empresa: "",
+    favorecido_id: "",
     produto: "",
     produto_id: "",
     servico_id: "",
@@ -201,6 +202,7 @@ export function LeadFormModal({
       setFormData({
         nome: lead.nome || "",
         empresa: lead.empresa || "",
+        favorecido_id: lead.favorecido_id || "",
         produto: lead.produto || "",
         produto_id: lead.produto_id || "",
         servico_id: lead.servico_id || "",
@@ -229,6 +231,7 @@ export function LeadFormModal({
       setFormData({
         nome: "",
         empresa: "",
+        favorecido_id: "",
         produto: "",
         produto_id: "",
         servico_id: "",
