@@ -38,7 +38,7 @@ export default function CrmPainelPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <CrmDashboardHeader title="Painel do CRM" />
-        <div className="flex flex-col md:flex-row gap-3">
+        <div className="flex flex-col md:flex-row items-center gap-3">
           <Select value={selectedFunnelId} onValueChange={handleFunnelChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Todos os funis" />

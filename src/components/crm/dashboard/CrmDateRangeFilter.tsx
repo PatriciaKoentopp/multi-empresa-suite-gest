@@ -54,7 +54,7 @@ export function CrmDateRangeFilter({ startDate, endDate, onDateChange }: CrmDate
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Select onValueChange={handlePresetChange}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Período" />
@@ -69,7 +69,7 @@ export function CrmDateRangeFilter({ startDate, endDate, onDateChange }: CrmDate
         </SelectContent>
       </Select>
 
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <div className="w-[140px]">
           <DateInput 
             label="Data inicial" 

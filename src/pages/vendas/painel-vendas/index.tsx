@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { Button } from "@/components/ui/button";
 import { format, subDays, startOfMonth } from "date-fns";
+import { CrmDateRangeFilter } from "@/components/crm/dashboard/CrmDateRangeFilter";
 
 const PainelVendasPage = () => {
   const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 30));
@@ -44,8 +45,10 @@ const PainelVendasPage = () => {
     });
   }, [isLoading, salesData, barChartData, quarterlyChartData, yearlyChartData, yearlyComparisonData, monthlyComparisonData, ticketMedioPorProjetoData]);
 
-  const handleDateChange = () => {
-    fetchSalesData(format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd"));
+  const handleDateChange = (start: Date, end: Date) => {
+    setStartDate(start);
+    setEndDate(end);
+    fetchSalesData(format(start, "yyyy-MM-dd"), format(end, "yyyy-MM-dd"));
   };
 
   if (isLoading) {
@@ -64,26 +67,12 @@ const PainelVendasPage = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <SalesDashboardHeader />
-        <div className="flex flex-wrap gap-4">
-          <div className="flex gap-2">
-            <div className="w-[140px]">
-              <DateInput
-                label="Data inicial"
-                value={startDate}
-                onChange={(date) => date && setStartDate(date)}
-              />
-            </div>
-            <div className="w-[140px]">
-              <DateInput
-                label="Data final"
-                value={endDate}
-                onChange={(date) => date && setEndDate(date)}
-              />
-            </div>
-            <Button onClick={handleDateChange} className="mt-6 h-9">
-              Filtrar
-            </Button>
-          </div>
+        <div className="flex items-center">
+          <CrmDateRangeFilter
+            startDate={startDate}
+            endDate={endDate}
+            onDateChange={handleDateChange}
+          />
         </div>
       </div>
 
@@ -101,6 +90,6 @@ const PainelVendasPage = () => {
       />
     </div>
   );
-};
+}
 
 export default PainelVendasPage;
