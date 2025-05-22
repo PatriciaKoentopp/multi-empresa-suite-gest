@@ -82,7 +82,7 @@ export function InteracoesTable({
           </TableHeader>
           <TableBody>
             {interacoes.map((interacao) => (
-              <TableRow key={interacao.id}>
+              <TableRow key={interacao.id} data-interacao-id={interacao.id}>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     {getIconForInteraction(interacao.tipo)}
@@ -100,7 +100,7 @@ export function InteracoesTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  <span className={`status-cell inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                     interacao.status === "Realizado" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
                   }`}>
                     {interacao.status === "Realizado" ? (

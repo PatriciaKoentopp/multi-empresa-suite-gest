@@ -48,10 +48,17 @@ export function InteracoesTab({
   const [interacaoParaVisualizar, setInteracaoParaVisualizar] = useState<LeadInteracao | null>(null);
   const [interacaoParaEditar, setInteracaoParaEditar] = useState<LeadInteracao | null>(null);
   const [interacaoParaExcluir, setInteracaoParaExcluir] = useState<LeadInteracao | null>(null);
+  // Adicionar um estado para gerenciar as interações localmente
+  const [interacoesLocais, setInteracoesLocais] = useState<LeadInteracao[]>(interacoes);
 
   const [openVisualizarDialog, setOpenVisualizarDialog] = useState(false);
   const [openEditarDialog, setOpenEditarDialog] = useState(false);
   const [openExcluirDialog, setOpenExcluirDialog] = useState(false);
+
+  // Atualizar o estado local quando as interações mudarem
+  React.useEffect(() => {
+    setInteracoesLocais(interacoes);
+  }, [interacoes]);
 
   const handleVerInteracao = (interacao: LeadInteracao) => {
     setInteracaoParaVisualizar(interacao);
@@ -103,7 +110,13 @@ export function InteracoesTab({
       }
       
       excluirInteracao(interacaoParaExcluir.id);
+      
+      // Atualizar o estado local removendo a interação excluída
+      setInteracoesLocais(atual => atual.filter(item => item.id !== interacaoParaExcluir.id));
+      
       setOpenExcluirDialog(false);
+      
+      toast.success("Interação excluída com sucesso");
     }
   };
 
@@ -122,39 +135,17 @@ export function InteracoesTab({
       
       if (error) throw error;
       
-      // Atualizar localmente na lista de interações
-      const interacoesAtualizadas = interacoes.map(item => 
-        item.id === interacao.id 
-          ? { ...item, status: novoStatus } 
-          : item
+      // Atualizar o estado local das interações
+      setInteracoesLocais(atual => 
+        atual.map(item => 
+          item.id === interacao.id 
+            ? { ...item, status: novoStatus } 
+            : item
+        )
       );
       
       // Notificar o usuário do sucesso
       toast.success(`Interação ${novoStatus === "Realizado" ? "concluída" : "reaberta"}`);
-      
-      // Atualizar estado local sem recarregar a página
-      const index = interacoes.findIndex(i => i.id === interacao.id);
-      if (index !== -1) {
-        const novasInteracoes = [...interacoes];
-        novasInteracoes[index] = { ...novasInteracoes[index], status: novoStatus };
-        
-        // Como não podemos modificar diretamente o estado interacoes (está sendo passado como prop),
-        // vamos tentar atualizar o componente visualmente
-        const elementoRow = document.querySelector(`tr[data-interacao-id="${interacao.id}"]`);
-        if (elementoRow) {
-          const statusCell = elementoRow.querySelector('.status-cell');
-          if (statusCell) {
-            if (novoStatus === "Realizado") {
-              statusCell.classList.remove("bg-blue-100", "text-blue-800");
-              statusCell.classList.add("bg-green-100", "text-green-800");
-            } else {
-              statusCell.classList.remove("bg-green-100", "text-green-800");
-              statusCell.classList.add("bg-blue-100", "text-blue-800");
-            }
-          }
-        }
-      }
-      
     } catch (error) {
       console.error('Erro ao atualizar status da interação:', error);
       toast.error("Erro ao atualizar status", {
@@ -181,7 +172,7 @@ export function InteracoesTab({
       
       <div className="flex-1 overflow-y-auto p-6 pt-0">
         <InteracoesTable
-          interacoes={interacoes}
+          interacoes={interacoesLocais} // Usar o estado local em vez do prop
           carregandoInteracoes={carregandoInteracoes}
           onVerInteracao={handleVerInteracao}
           onEditarInteracao={handleEditarInteracao}
