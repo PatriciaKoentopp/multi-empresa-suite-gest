@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useCrmDashboard } from "@/hooks/useCrmDashboard";
 import { CrmDashboardHeader } from "@/components/crm/dashboard/CrmDashboardHeader";
@@ -36,11 +35,12 @@ export default function CrmPainelPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col md:flex-row justify-between gap-4">
         <CrmDashboardHeader title="Painel do CRM" />
-        <div className="flex flex-col md:flex-row items-center gap-3">
+        
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={selectedFunnelId} onValueChange={handleFunnelChange}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="h-9 w-[140px]">
               <SelectValue placeholder="Todos os funis" />
             </SelectTrigger>
             <SelectContent>
@@ -52,6 +52,7 @@ export default function CrmPainelPage() {
               ))}
             </SelectContent>
           </Select>
+          
           <CrmDateRangeFilter 
             startDate={startDate}
             endDate={endDate}

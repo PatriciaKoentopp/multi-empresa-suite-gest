@@ -6,9 +6,7 @@ import { SalesPerformanceTabs } from "@/components/vendas/SalesPerformanceTabs";
 import { SalesComparisonTable } from "@/components/vendas/SalesComparisonTable";
 import { useVendasDashboard } from "@/hooks/useVendasDashboard";
 import { useEffect, useState } from "react";
-import { DateInput } from "@/components/movimentacao/DateInput";
-import { Button } from "@/components/ui/button";
-import { format, subDays, startOfMonth } from "date-fns";
+import { format, subDays } from "date-fns";
 import { CrmDateRangeFilter } from "@/components/crm/dashboard/CrmDateRangeFilter";
 
 const PainelVendasPage = () => {
@@ -65,8 +63,9 @@ const PainelVendasPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
         <SalesDashboardHeader />
+        
         <div className="flex items-center">
           <CrmDateRangeFilter
             startDate={startDate}
