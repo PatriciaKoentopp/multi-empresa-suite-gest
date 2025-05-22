@@ -63,7 +63,7 @@ const PainelVendasPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+      <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center mb-4">
         <SalesDashboardHeader />
         
         <div className="flex items-center">

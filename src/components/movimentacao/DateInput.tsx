@@ -14,9 +14,10 @@ type DateInputProps = {
   value?: Date | null;
   onChange: (date?: Date | null) => void;
   disabled?: boolean;
+  placeholder?: string;
 };
 
-export function DateInput({ label, value, onChange, disabled = false }: DateInputProps) {
+export function DateInput({ label, value, onChange, disabled = false, placeholder = "DD/MM/AAAA" }: DateInputProps) {
   const [inputValue, setInputValue] = useState('');
   const [open, setOpen] = useState(false);
   
@@ -99,7 +100,7 @@ export function DateInput({ label, value, onChange, disabled = false }: DateInpu
               value={inputValue}
               onChange={handleChange}
               onBlur={handleBlur}
-              placeholder="DD/MM/AAAA"
+              placeholder={placeholder}
               className="bg-white h-9 pr-8 text-sm"
               disabled={disabled}
               maxLength={10}

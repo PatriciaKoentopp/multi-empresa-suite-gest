@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useCrmDashboard } from "@/hooks/useCrmDashboard";
 import { CrmDashboardHeader } from "@/components/crm/dashboard/CrmDashboardHeader";
@@ -35,7 +36,7 @@ export default function CrmPainelPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between gap-4">
+      <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center">
         <CrmDashboardHeader title="Painel do CRM" />
         
         <div className="flex flex-wrap items-center gap-2">
@@ -43,7 +44,7 @@ export default function CrmPainelPage() {
             <SelectTrigger className="h-9 w-[140px]">
               <SelectValue placeholder="Todos os funis" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               <SelectItem value="todos">Todos os funis</SelectItem>
               {funisList.map((funil) => (
                 <SelectItem key={funil.id} value={funil.id}>

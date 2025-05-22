@@ -71,15 +71,15 @@ export function CrmDateRangeFilter({ startDate, endDate, onDateChange }: CrmDate
 
       <div className="flex items-center space-x-2">
         <DateInput 
-          label="Data inicial" 
           value={startDate} 
           onChange={handleStartDateChange} 
+          placeholder="Data inicial"
         />
         
         <DateInput 
-          label="Data final" 
           value={endDate} 
           onChange={handleEndDateChange} 
+          placeholder="Data final"
         />
       </div>
     </div>
