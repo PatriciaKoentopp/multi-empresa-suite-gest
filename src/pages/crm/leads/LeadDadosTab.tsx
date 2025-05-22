@@ -98,7 +98,7 @@ export function LeadDadosTab({
               </div>
             ) : (
               <>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="_none_">Nenhum</SelectItem>
                 {produtosServicos.map((item) => (
                   <SelectItem 
                     key={`${item.tipo}-${item.id}`} 
@@ -126,7 +126,7 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label>Etapa</Label>
           <Select
-            value={formData.etapaId?.toString()}
+            value={formData.etapaId?.toString() || ""}
             onValueChange={(value) => handleSelectChange("etapaId", value)}
           >
             <SelectTrigger className="bg-white">
@@ -144,7 +144,7 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label>Origem</Label>
           <Select
-            value={formData.origemId}
+            value={formData.origemId || ""}
             onValueChange={(value) => handleSelectChange("origemId", value)}
           >
             <SelectTrigger className="bg-white">
@@ -164,7 +164,7 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label>Responsável</Label>
           <Select
-            value={formData.responsavelId}
+            value={formData.responsavelId || ""}
             onValueChange={(value) => handleSelectChange("responsavelId", value)}
           >
             <SelectTrigger className="bg-white">

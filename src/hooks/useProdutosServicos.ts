@@ -55,9 +55,9 @@ export function useProdutosServicos() {
         })) || [];
         
         // Ordenar por nome
-        const todosItens = [...produtosFormatados, ...servicosFormatados].sort((a, b) => 
-          a.nome.localeCompare(b.nome)
-        );
+        const todosItens = [...produtosFormatados, ...servicosFormatados]
+          .filter(item => item.id && item.nome) // Garantir que não há itens sem id ou nome
+          .sort((a, b) => a.nome.localeCompare(b.nome));
         
         setItems(todosItens);
       } catch (error) {
