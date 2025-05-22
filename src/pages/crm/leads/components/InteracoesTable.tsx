@@ -141,16 +141,16 @@ export function InteracoesTable({
                         )}
                       </Button>
                     )}
-                    {interacao.status === "Aberto" && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => onExcluirInteracao(interacao)}
-                        title="Excluir interação"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    )}
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => onExcluirInteracao(interacao)}
+                      title="Excluir interação"
+                      disabled={interacao.status !== "Aberto"}
+                      className={interacao.status !== "Aberto" ? "opacity-50 cursor-not-allowed" : ""}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>

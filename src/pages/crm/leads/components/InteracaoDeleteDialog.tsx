@@ -12,13 +12,18 @@ interface InteracaoDeleteDialogProps {
 }
 
 export function InteracaoDeleteDialog({ open, onOpenChange, interacao, onDelete }: InteracaoDeleteDialogProps) {
+  // Verificar se a interação pode ser excluída (apenas status Aberto)
+  const podeExcluir = interacao && interacao.status === "Aberto";
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Confirmar Exclusão</DialogTitle>
           <DialogDescription>
-            Tem certeza de que deseja excluir esta interação? Esta ação não pode ser desfeita.
+            {podeExcluir 
+              ? "Tem certeza de que deseja excluir esta interação? Esta ação não pode ser desfeita."
+              : "Não é possível excluir esta interação. Apenas interações com status 'Aberto' podem ser excluídas."}
           </DialogDescription>
         </DialogHeader>
         
@@ -30,6 +35,7 @@ export function InteracaoDeleteDialog({ open, onOpenChange, interacao, onDelete 
             type="button"
             variant="destructive"
             onClick={onDelete}
+            disabled={!podeExcluir}
           >
             Excluir
           </Button>

@@ -93,6 +93,15 @@ export function InteracoesTab({
 
   const handleConfirmarExclusao = () => {
     if (interacaoParaExcluir && excluirInteracao && interacaoParaExcluir.id) {
+      // Verificar se a interação tem status "Aberto" antes de excluir
+      if (interacaoParaExcluir.status !== "Aberto") {
+        toast.error("Não é possível excluir", {
+          description: "Somente interações com status Aberto podem ser excluídas."
+        });
+        setOpenExcluirDialog(false);
+        return;
+      }
+      
       excluirInteracao(interacaoParaExcluir.id);
       setOpenExcluirDialog(false);
     }
@@ -113,19 +122,39 @@ export function InteracoesTab({
       
       if (error) throw error;
       
-      // Atualizar localmente
+      // Atualizar localmente na lista de interações
       const interacoesAtualizadas = interacoes.map(item => 
         item.id === interacao.id 
           ? { ...item, status: novoStatus } 
           : item
       );
       
-      // Como não temos acesso direto para atualizar o estado original,
-      // vamos atualizar os componentes visuais e notificar o usuário
+      // Notificar o usuário do sucesso
       toast.success(`Interação ${novoStatus === "Realizado" ? "concluída" : "reaberta"}`);
       
-      // Forçar reload (apenas em caso de emergência)
-      window.location.reload();
+      // Atualizar estado local sem recarregar a página
+      const index = interacoes.findIndex(i => i.id === interacao.id);
+      if (index !== -1) {
+        const novasInteracoes = [...interacoes];
+        novasInteracoes[index] = { ...novasInteracoes[index], status: novoStatus };
+        
+        // Como não podemos modificar diretamente o estado interacoes (está sendo passado como prop),
+        // vamos tentar atualizar o componente visualmente
+        const elementoRow = document.querySelector(`tr[data-interacao-id="${interacao.id}"]`);
+        if (elementoRow) {
+          const statusCell = elementoRow.querySelector('.status-cell');
+          if (statusCell) {
+            if (novoStatus === "Realizado") {
+              statusCell.classList.remove("bg-blue-100", "text-blue-800");
+              statusCell.classList.add("bg-green-100", "text-green-800");
+            } else {
+              statusCell.classList.remove("bg-green-100", "text-green-800");
+              statusCell.classList.add("bg-blue-100", "text-blue-800");
+            }
+          }
+        }
+      }
+      
     } catch (error) {
       console.error('Erro ao atualizar status da interação:', error);
       toast.error("Erro ao atualizar status", {
@@ -170,6 +199,7 @@ export function InteracoesTab({
         onEdit={() => {
           if (interacaoParaVisualizar) {
             handleEditarInteracao(interacaoParaVisualizar);
+            setOpenVisualizarDialog(false);
           }
         }}
         getNomeResponsavel={getNomeResponsavel}
@@ -189,6 +219,7 @@ export function InteracoesTab({
       <InteracaoDeleteDialog
         open={openExcluirDialog}
         onOpenChange={setOpenExcluirDialog}
+        interacao={interacaoParaExcluir}
         onDelete={handleConfirmarExclusao}
       />
     </div>
