@@ -3,6 +3,8 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { useProdutosServicos } from "@/hooks/useProdutosServicos";
+import { Loader2 } from "lucide-react";
 
 interface LeadDadosTabProps {
   formData: any;
@@ -20,9 +22,53 @@ export function LeadDadosTab({
   handleSelectChange,
   etapas,
   origensAtivas,
-  vendedoresAtivos,
-  handleProdutoChange
+  vendedoresAtivos
 }: LeadDadosTabProps) {
+  const { items: produtosServicos, isLoading } = useProdutosServicos();
+
+  // Função para lidar com a seleção de produto ou serviço
+  const handleItemSelect = (value: string) => {
+    if (!value) {
+      // Se o valor for vazio, limpar todos os campos relacionados
+      handleSelectChange("produto_id", "");
+      handleSelectChange("servico_id", "");
+      handleSelectChange("produto", "");
+      return;
+    }
+
+    // O formato esperado é "tipo:id", exemplo: "produto:1234-5678"
+    const [tipo, id] = value.split(":");
+    
+    // Encontrar o item selecionado para obter o nome
+    const itemSelecionado = produtosServicos.find(item => 
+      item.tipo === tipo && item.id === id
+    );
+    
+    if (tipo === "produto") {
+      handleSelectChange("produto_id", id);
+      handleSelectChange("servico_id", ""); // Limpar o outro campo
+    } else if (tipo === "servico") {
+      handleSelectChange("servico_id", id);
+      handleSelectChange("produto_id", ""); // Limpar o outro campo
+    }
+    
+    // Atualizar o campo legado "produto" com o nome do item selecionado
+    if (itemSelecionado) {
+      handleSelectChange("produto", itemSelecionado.nome);
+    }
+  };
+
+  // Determinar o valor atual para o Select
+  const getCurrentSelectValue = () => {
+    if (formData.produto_id) {
+      return `produto:${formData.produto_id}`;
+    }
+    if (formData.servico_id) {
+      return `servico:${formData.servico_id}`;
+    }
+    return "";
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -36,8 +82,35 @@ export function LeadDadosTab({
         </div>
       </div>
       <div className="space-y-2">
-        <Label>Produto</Label>
-        <Input name="produto" value={formData.produto} onChange={handleProdutoChange ?? handleChange} />
+        <Label>Produto/Serviço</Label>
+        <Select
+          value={getCurrentSelectValue()}
+          onValueChange={handleItemSelect}
+        >
+          <SelectTrigger className="bg-white">
+            <SelectValue placeholder="Selecione um produto ou serviço" />
+          </SelectTrigger>
+          <SelectContent className="bg-white z-50">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span>Carregando...</span>
+              </div>
+            ) : (
+              <>
+                <SelectItem value="">Nenhum</SelectItem>
+                {produtosServicos.map((item) => (
+                  <SelectItem 
+                    key={`${item.tipo}-${item.id}`} 
+                    value={`${item.tipo}:${item.id}`}
+                  >
+                    {item.nome} ({item.tipo === "produto" ? "Produto" : "Serviço"})
+                  </SelectItem>
+                ))}
+              </>
+            )}
+          </SelectContent>
+        </Select>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">

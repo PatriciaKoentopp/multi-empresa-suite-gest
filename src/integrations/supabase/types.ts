@@ -536,7 +536,9 @@ export type Database = {
           observacoes: string | null
           origem_id: string | null
           produto: string | null
+          produto_id: string | null
           responsavel_id: string | null
+          servico_id: string | null
           status: string
           telefone: string | null
           ultimo_contato: string | null
@@ -556,7 +558,9 @@ export type Database = {
           observacoes?: string | null
           origem_id?: string | null
           produto?: string | null
+          produto_id?: string | null
           responsavel_id?: string | null
+          servico_id?: string | null
           status?: string
           telefone?: string | null
           ultimo_contato?: string | null
@@ -576,7 +580,9 @@ export type Database = {
           observacoes?: string | null
           origem_id?: string | null
           produto?: string | null
+          produto_id?: string | null
           responsavel_id?: string | null
+          servico_id?: string | null
           status?: string
           telefone?: string | null
           ultimo_contato?: string | null
@@ -610,6 +616,20 @@ export type Database = {
             columns: ["origem_id"]
             isOneToOne: false
             referencedRelation: "origens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "servicos"
             referencedColumns: ["id"]
           },
         ]

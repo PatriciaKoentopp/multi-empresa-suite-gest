@@ -50,6 +50,8 @@ export function LeadFormModal({
     nome: "",
     empresa: "",
     produto: "",
+    produto_id: "",
+    servico_id: "",
     email: "",
     telefone: "",
     etapaId: "",
@@ -200,6 +202,8 @@ export function LeadFormModal({
         nome: lead.nome || "",
         empresa: lead.empresa || "",
         produto: lead.produto || "",
+        produto_id: lead.produto_id || "",
+        servico_id: lead.servico_id || "",
         email: lead.email || "",
         telefone: lead.telefone || "",
         etapaId: lead.etapaId || (etapas.length > 0 ? etapas[0].id : ""),
@@ -226,6 +230,8 @@ export function LeadFormModal({
         nome: "",
         empresa: "",
         produto: "",
+        produto_id: "",
+        servico_id: "",
         email: "",
         telefone: "",
         etapaId: primeiraEtapa,
@@ -528,7 +534,6 @@ export function LeadFormModal({
                       etapas={etapas}
                       origensAtivas={origensAtivas}
                       vendedoresAtivos={vendedoresAtivos}
-                      handleProdutoChange={handleProdutoChange}
                     />
                   </form>
                 </TabsContent>
