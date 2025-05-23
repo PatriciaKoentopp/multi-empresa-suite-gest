@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format, addMonths } from 'date-fns';
 import { toast } from "@/hooks/use-toast";
@@ -29,6 +30,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [parcelasCarregadas, setParcelasCarregadas] = useState(false);
+  const [ultimoTotal, setUltimoTotal] = useState(0);
 
   // Estados para dados do banco
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
@@ -102,6 +104,18 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
       setParcelas(novasParcelas);
     }
   }, [numeroParcelas, codigoVenda]);
+
+  // Novo efeito para reagir às mudanças no total quando os serviços são alterados
+  useEffect(() => {
+    // Se o total mudou e não estamos com parcelas carregadas do banco de dados
+    // ou se o orçamento é novo, recalcular as parcelas
+    if (total !== ultimoTotal && (!parcelasCarregadas || !orcamentoId)) {
+      const dataPrimeiroParcela = parcelas.length > 0 ? parcelas[0].dataVencimento : "";
+      const novasParcelas = getParcelas(total, numeroParcelas, codigoVenda, dataPrimeiroParcela);
+      setParcelas(novasParcelas);
+      setUltimoTotal(total);
+    }
+  }, [total]);
 
   // Carregar orçamento específico
   async function carregarOrcamento(id: string) {
