@@ -127,6 +127,7 @@ export function DateInput({ label, value, onChange, disabled = false, placeholde
               initialFocus
               disabled={disabled}
               locale={ptBR}
+              className="p-3 pointer-events-auto"
             />
           </PopoverContent>
         </Popover>

@@ -154,7 +154,7 @@ export default function OrcamentoPage() {
                   parcelas={parcelas.map(p => ({
                     numero: parseInt(p.numeroParcela.split('/')[1]),
                     valor: p.valor,
-                    dataVencimento: parseDateString(p.dataVencimento) || new Date()
+                    dataVencimento: p.dataVencimento ? new Date(p.dataVencimento) : new Date()
                   }))}
                   onValorChange={handleParcelaValorChange}
                   onDataChange={handleParcelaDataChange}
@@ -205,5 +205,4 @@ export default function OrcamentoPage() {
   );
 }
 
-// Importar a função parseDateString de utils.ts
-import { parseDateString } from '@/lib/utils';
+// Removido import não utilizado de parseDateString, já que estamos usando o objeto Date diretamente

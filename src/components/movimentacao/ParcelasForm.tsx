@@ -1,10 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
-import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import React from 'react';
 import { Input } from "@/components/ui/input";
 import { DateInput } from "@/components/movimentacao/DateInput";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 
 interface Parcela {
   numero: number;
@@ -14,133 +12,71 @@ interface Parcela {
 
 interface ParcelasFormProps {
   parcelas: Parcela[];
-  onValorChange?: (index: number, valor: number) => void;
-  onDataChange?: (index: number, data: Date) => void;
-  readOnly?: boolean;
-  mostrarAlertaDiferenca?: boolean;
+  onValorChange: (index: number, valor: number) => void;
+  onDataChange: (index: number, data: Date) => void;
   valorTotal?: number;
   somaParcelas?: number;
+  readOnly?: boolean;
+  mostrarAlertaDiferenca?: boolean;
 }
 
-export function ParcelasForm({ 
-  parcelas, 
-  onValorChange, 
-  onDataChange, 
-  readOnly = false,
-  mostrarAlertaDiferenca = false,
+export function ParcelasForm({
+  parcelas,
+  onValorChange,
+  onDataChange,
   valorTotal = 0,
-  somaParcelas = 0
+  somaParcelas = 0,
+  readOnly = false,
+  mostrarAlertaDiferenca = true
 }: ParcelasFormProps) {
-  if (parcelas.length === 0) return null;
-  
-  // Estado local para rastrear os valores em edição
-  const [valoresEmEdicao, setValoresEmEdicao] = useState<Record<number, string>>({});
-
-  const handleValorChange = (index: number, valorString: string) => {
-    if (!onValorChange) return;
-    
-    // Atualizar o estado local com o valor que está sendo digitado
-    setValoresEmEdicao(prev => ({
-      ...prev,
-      [index]: valorString
-    }));
-    
-    // Limpar o valor para processamento (remover símbolos de moeda, pontos, etc)
-    const valorLimpo = valorString.replace(/[^\d,]/g, '');
-    
-    // Se o valor for válido para conversão, atualizar o valor real
-    if (valorLimpo && valorLimpo !== ',') {
-      const valorNumerico = parseFloat(valorLimpo.replace(',', '.')) || 0;
-      onValorChange(index, valorNumerico);
-    }
-  };
-
-  // Esta função é chamada quando a data é alterada pelo componente DateInput
-  const handleDataChange = (index: number, data: Date) => {
-    if (onDataChange && data) {
-      onDataChange(index, data);
-    }
-  };
-
-  const formatarValor = (valor: number): string => {
-    return valor.toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-  };
-
-  // Calcular diferença para mostrar alerta
-  const diferenca = valorTotal - somaParcelas;
-  const temDiferenca = mostrarAlertaDiferenca && Math.abs(diferenca) > 0.01;
-
-  // Efeito para garantir que as datas das parcelas estejam corretas (como objetos Date)
-  useEffect(() => {
-    parcelas.forEach(parcela => {
-      if (!(parcela.dataVencimento instanceof Date)) {
-        console.warn('dataVencimento não é um objeto Date:', parcela.dataVencimento);
-      }
-    });
-  }, [parcelas]);
+  // Verificar se há diferença entre o valor total e a soma das parcelas
+  const temDiferenca = mostrarAlertaDiferenca && 
+    Math.abs((valorTotal || 0) - (somaParcelas || 0)) > 0.01;
 
   return (
     <div className="space-y-2">
-      <Label>Parcelas</Label>
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nº</TableHead>
-              <TableHead>Vencimento</TableHead>
-              <TableHead className="text-right w-[120px]">Valor</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {parcelas.map((parcela, index) => (
-              <TableRow key={parcela.numero}>
-                <TableCell>{parcela.numero}</TableCell>
-                <TableCell>
-                  <DateInput
-                    value={parcela.dataVencimento}
-                    onChange={(date) => date && handleDataChange(index, date)}
-                    disabled={readOnly}
-                  />
-                </TableCell>
-                <TableCell className="text-right">
-                  <Input
-                    type="text"
-                    value={
-                      // Se o campo estiver em edição ativa, mostrar o valor sendo digitado
-                      // Caso contrário, mostrar o valor formatado
-                      valoresEmEdicao[index] !== undefined ? 
-                        valoresEmEdicao[index] : 
-                        formatarValor(parcela.valor)
-                    }
-                    onChange={(e) => handleValorChange(index, e.target.value)}
-                    // Quando o campo perde o foco, resetar o estado de edição
-                    onBlur={() => {
-                      setValoresEmEdicao(prev => {
-                        const newState = {...prev};
-                        delete newState[index];
-                        return newState;
-                      });
-                    }}
-                    className="text-right w-32 ml-auto"
-                    disabled={readOnly}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {parcelas.map((parcela, index) => (
+        <div key={index} className="flex flex-col md:flex-row gap-2 pb-2 border-b">
+          <div className="w-full md:w-16">
+            <label className="block text-xs mb-1">Parcela</label>
+            <Input
+              value={parcela.numero}
+              disabled
+              className="bg-gray-100"
+            />
+          </div>
+          
+          <div className="w-full md:w-1/3">
+            <label className="block text-xs mb-1">Valor</label>
+            <Input
+              type="number"
+              value={parcela.valor}
+              onChange={(e) => onValorChange(index, parseFloat(e.target.value) || 0)}
+              className={readOnly ? "bg-gray-100" : ""}
+              disabled={readOnly}
+              min={0}
+              step={0.01}
+            />
+          </div>
+          
+          <div className="w-full md:w-1/3">
+            <label className="block text-xs mb-1">Vencimento</label>
+            <DateInput
+              value={parcela.dataVencimento}
+              onChange={(date) => date && onDataChange(index, date)}
+              disabled={readOnly}
+            />
+          </div>
+        </div>
+      ))}
       
       {temDiferenca && (
-        <div className={`mt-2 p-2 rounded-md text-sm ${diferenca > 0 ? 'bg-red-50 text-red-700' : 'bg-red-50 text-red-700'}`}>
-          <span className="font-medium">
-            {diferenca > 0 
-              ? `Faltam ${formatCurrency(diferenca)} para atingir o valor total`
-              : `O valor total é excedido em ${formatCurrency(Math.abs(diferenca))}`}
-          </span>
+        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+          <p>
+            Atenção: O valor das parcelas ({formatCurrency(somaParcelas)}) não corresponde ao valor total ({formatCurrency(valorTotal)}).
+            <br />
+            Diferença: {formatCurrency(Math.abs(valorTotal - somaParcelas))}
+          </p>
         </div>
       )}
     </div>
