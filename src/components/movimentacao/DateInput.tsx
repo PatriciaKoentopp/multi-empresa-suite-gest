@@ -71,17 +71,17 @@ export function DateInput({ label, value, onChange, disabled = false, placeholde
     }
   };
 
-  // Função para lidar com a seleção do calendário
+  // Função para lidar com a seleção do calendário - sem conversão de timezone
   const handleCalendarSelect = (date?: Date) => {
     if (!date) {
       onChange(null);
       return;
     }
     
-    // Criamos uma nova data preservando dia/mês/ano sem alterar timezone
-    const day = date.getDate();
-    const month = date.getMonth();
+    // Criamos uma nova data com hora fixa (meio-dia) para evitar problemas com timezone
     const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
     const newDate = new Date(year, month, day, 12, 0, 0);
     
     onChange(newDate);

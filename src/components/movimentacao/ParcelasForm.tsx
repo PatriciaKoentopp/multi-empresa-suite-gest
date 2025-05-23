@@ -65,7 +65,6 @@ export function ParcelasForm({
               value={parcela.dataVencimento}
               onChange={(date) => {
                 if (date) {
-                  // Garantir que não ocorra nenhuma conversão de timezone
                   onDataChange(index, date);
                 }
               }}

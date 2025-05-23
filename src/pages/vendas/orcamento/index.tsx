@@ -154,7 +154,7 @@ export default function OrcamentoPage() {
                   parcelas={parcelas.map(p => ({
                     numero: parseInt(p.numeroParcela.split('/')[1]),
                     valor: p.valor,
-                    dataVencimento: p.dataVencimento ? new Date(p.dataVencimento) : new Date()
+                    dataVencimento: new Date(p.dataVencimento + 'T12:00:00')
                   }))}
                   onValorChange={handleParcelaValorChange}
                   onDataChange={handleParcelaDataChange}

@@ -272,6 +272,9 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
         // Formatação fixa YYYY-MM-DD sem ajuste de timezone
         const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         
+        console.log('Data recebida:', data);
+        console.log('Data formatada para salvar:', formattedDate);
+        
         return { 
           ...parcela, 
           dataVencimento: formattedDate
