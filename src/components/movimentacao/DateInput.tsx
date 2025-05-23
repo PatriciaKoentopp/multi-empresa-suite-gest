@@ -78,14 +78,13 @@ export function DateInput({ label, value, onChange, disabled = false, placeholde
       return;
     }
     
-    // Cria uma data no formato UTC para evitar problemas de timezone
-    const utcDate = new Date(Date.UTC(
-      date.getFullYear(), 
-      date.getMonth(), 
-      date.getDate()
-    ));
+    // Criamos uma nova data preservando dia/mês/ano sem alterar timezone
+    const day = date.getDate();
+    const month = date.getMonth();
+    const year = date.getFullYear();
+    const newDate = new Date(year, month, day, 12, 0, 0);
     
-    onChange(utcDate);
+    onChange(newDate);
     setOpen(false);
   };
 

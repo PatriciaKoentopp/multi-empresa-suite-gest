@@ -63,7 +63,12 @@ export function ParcelasForm({
             <label className="block text-xs mb-1">Vencimento</label>
             <DateInput
               value={parcela.dataVencimento}
-              onChange={(date) => date && onDataChange(index, date)}
+              onChange={(date) => {
+                if (date) {
+                  // Garantir que não ocorra nenhuma conversão de timezone
+                  onDataChange(index, date);
+                }
+              }}
               disabled={readOnly}
             />
           </div>

@@ -35,18 +35,17 @@ export function formatDate(date: Date | undefined | string | null, formatString 
   try {
     // Para objetos Date, extrair componentes e formatar manualmente sem depender do timezone
     if (date instanceof Date) {
-      // Usando UTC para evitar problemas com timezone
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const year = date.getUTCFullYear();
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
       return `${day}/${month}/${year}`;
     }
     
     // Último recurso: tentar criar um Date e formatar manualmente
     const dateObj = new Date(date as any);
-    const day = String(dateObj.getUTCDate()).padStart(2, '0');
-    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-    const year = dateObj.getUTCFullYear();
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const year = dateObj.getFullYear();
     return `${day}/${month}/${year}`;
   } catch (error) {
     console.error("Erro ao formatar data:", error);
@@ -65,8 +64,8 @@ export function parseDateString(dateString: string | Date): Date | undefined {
   if (typeof dateString === 'string') {
     if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
       const [year, month, day] = dateString.split('-').map(Number);
-      // Cria uma data no formato UTC para evitar problemas de timezone
-      return new Date(Date.UTC(year, month - 1, day));
+      // Cria uma data preservando dia/mês/ano sem ajuste de timezone
+      return new Date(year, month - 1, day, 12, 0, 0);
     }
     
     // Se estiver no formato DD/MM/YYYY
@@ -75,8 +74,9 @@ export function parseDateString(dateString: string | Date): Date | undefined {
       
       if (isNaN(day) || isNaN(month) || isNaN(year)) return undefined;
       
-      // Cria uma data no formato UTC para evitar problemas de timezone
-      return new Date(Date.UTC(year, month - 1, day));
+      // Cria uma data preservando dia/mês/ano sem ajuste de timezone
+      // Definir hora para meio-dia para evitar problemas de DST
+      return new Date(year, month - 1, day, 12, 0, 0);
     }
   }
   
@@ -85,12 +85,12 @@ export function parseDateString(dateString: string | Date): Date | undefined {
     const dateObj = new Date(dateString);
     if (isNaN(dateObj.getTime())) return undefined;
     
-    // Extrai os componentes e cria uma nova data UTC
+    // Extrai os componentes e cria uma nova data sem depender de timezone
     const year = dateObj.getFullYear();
     const month = dateObj.getMonth();
     const day = dateObj.getDate();
     
-    return new Date(Date.UTC(year, month, day));
+    return new Date(year, month, day, 12, 0, 0);
   } catch (error) {
     console.error("Erro ao converter data:", error);
     return undefined;
@@ -101,9 +101,9 @@ export function parseDateString(dateString: string | Date): Date | undefined {
 export function dateToISOString(date: Date | undefined | null): string | null {
   if (!date) return null;
   
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   
   return `${year}-${month}-${day}`;
 }

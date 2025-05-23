@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,6 +75,12 @@ export default function OrcamentoPage() {
     e.preventDefault();
     setValidandoParcelas(true); // Ativar validação apenas ao tentar salvar
     handleSubmit(e);
+  };
+
+  // Manipulador de alteração da data das parcelas que preserva a data sem conversão
+  const handleParcelaDataChange = (index: number, data: Date) => {
+    // Não fazemos nenhuma conversão adicional, apenas passamos a data diretamente
+    handleParcelaDataChange(index, data);
   };
 
   if (isLoading) {

@@ -260,14 +260,25 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }
   }
   
-  // Atualiza parcela específica - Usando parseDateString para garantir consistência
+  // Atualiza parcela específica - Sem qualquer conversão de timezone
   const handleParcelaDataChange = (idx: number, data: Date) => {
-    setParcelas(prev => prev.map((parcela, i) =>
-      i === idx ? { 
-        ...parcela, 
-        dataVencimento: format(data, 'yyyy-MM-dd') 
-      } : parcela
-    ));
+    setParcelas(prev => prev.map((parcela, i) => {
+      if (i === idx) {
+        // Preservar o dia, mês e ano exatos que foram informados
+        const year = data.getFullYear();
+        const month = data.getMonth() + 1;
+        const day = data.getDate();
+        
+        // Formatação fixa YYYY-MM-DD sem ajuste de timezone
+        const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        return { 
+          ...parcela, 
+          dataVencimento: formattedDate
+        };
+      }
+      return parcela;
+    }));
   };
 
   // Adicionar função para atualizar valor da parcela
