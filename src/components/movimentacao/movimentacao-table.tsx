@@ -94,7 +94,10 @@ export function MovimentacaoTable({
           ) : (
             sortedMovimentacoes.map((movimentacao) => (
               <TableRow key={movimentacao.id}>
-                <TableCell>{formatDate(movimentacao.dataPagamento || movimentacao.dataVencimento)}</TableCell>
+                <TableCell>
+                  {/* Utilizando formatDate diretamente na data de lançamento, sem conversão de timezone */}
+                  {formatDate(movimentacao.dataLancamento)}
+                </TableCell>
                 <TableCell>
                   {(movimentacao.numeroTitulo || movimentacao.numeroParcela) ? (
                     <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">

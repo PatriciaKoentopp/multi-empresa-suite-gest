@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -142,15 +141,14 @@ export default function MovimentacaoPage() {
             id: mov.id,
             favorecido: mov.favorecido?.nome || 'Não informado',
             descricao: mov.descricao || '',
-            // Usar a função auxiliar para criar o objeto Date com a data correta - sem ajuste de timezone
-            dataVencimento: mov.primeiro_vencimento ? new Date(mov.primeiro_vencimento + "T12:00:00Z") : undefined,
+            // Usar a string direta da data, sem criar um objeto Date para evitar problemas de timezone
+            dataVencimento: mov.primeiro_vencimento || undefined,
             dataPagamento: undefined,
             status: 'em_aberto',
             valor: Number(mov.valor),
             numeroParcela: mov.numero_documento,
             tipo_operacao: mov.tipo_operacao,
-            tipo_titulo_id: mov.tipo_titulo_id,
-            dataLancamento: mov.data_lancamento ? new Date(mov.data_lancamento + "T12:00:00Z") : undefined,
+            dataLancamento: mov.data_lancamento || undefined,
             mes_referencia: mov.mes_referencia,
             documento_pdf: mov.documento_pdf
           }));
