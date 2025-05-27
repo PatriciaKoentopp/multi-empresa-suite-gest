@@ -208,6 +208,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
       console.log("Antecipação inserida:", antecipacaoInserida);
 
       // Preparar dados para inserção no fluxo de caixa com valores corretos
+      // MUDANÇA: situacao agora é "nao_conciliado" para permitir conciliação manual
       const fluxoCaixaData = {
         empresa_id: currentCompany.id,
         data_movimentacao: dataLancamento.toISOString().split('T')[0],
@@ -219,8 +220,8 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
         conta_corrente_id: contaCorrente,
         movimentacao_id: null,
         movimentacao_parcela_id: null,
-        antecipacao_id: antecipacaoInserida.id, // Agora incluímos o ID da antecipação
-        situacao: "conciliado",
+        antecipacao_id: antecipacaoInserida.id,
+        situacao: "nao_conciliado", // ALTERADO: agora registra como não conciliado
         forma_pagamento: formasPagamento.find(f => f.id === formaPagamento)?.nome || "Dinheiro"
       };
 
