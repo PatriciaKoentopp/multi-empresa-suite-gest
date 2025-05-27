@@ -20,11 +20,18 @@ import {
 import { ContaPagar } from "../contas-a-pagar/contas-a-pagar-table";
 import { formatDate, formatCurrency } from "@/lib/utils";
 
+// Estender o tipo ContaPagar para incluir a propriedade dataLancamento
+interface MovimentacaoItem extends ContaPagar {
+  dataLancamento?: string;
+  mes_referencia?: string;
+  documento_pdf?: string;
+}
+
 interface MovimentacaoTableProps {
-  movimentacoes: ContaPagar[];
-  onEdit: (movimentacao: ContaPagar) => void;
+  movimentacoes: MovimentacaoItem[];
+  onEdit: (movimentacao: MovimentacaoItem) => void;
   onDelete: (id: string) => void;
-  onVisualizar: (movimentacao: ContaPagar) => void;
+  onVisualizar: (movimentacao: MovimentacaoItem) => void;
 }
 
 function getTipoOperacao(tipo?: string) {
@@ -109,7 +116,7 @@ export function MovimentacaoTable({
                 </TableCell>
                 <TableCell>{movimentacao.favorecido}</TableCell>
                 <TableCell>{movimentacao.descricao}</TableCell>
-                <TableCell>{(movimentacao as any).mes_referencia || "-"}</TableCell>
+                <TableCell>{movimentacao.mes_referencia || "-"}</TableCell>
                 <TableCell>{getTipoOperacao(movimentacao.tipo_operacao)}</TableCell>
                 <TableCell>{formatCurrency(movimentacao.valor)}</TableCell>
                 <TableCell className="text-center">
@@ -133,10 +140,10 @@ export function MovimentacaoTable({
                         Visualizar
                       </DropdownMenuItem>
                       
-                      {(movimentacao as any).documento_pdf && (
+                      {movimentacao.documento_pdf && (
                         <>
                           <DropdownMenuItem
-                            onClick={() => window.open((movimentacao as any).documento_pdf, '_blank')}
+                            onClick={() => window.open(movimentacao.documento_pdf, '_blank')}
                             className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
                           >
                             <FileText className="h-4 w-4" />

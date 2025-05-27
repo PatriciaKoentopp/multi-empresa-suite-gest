@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -223,40 +224,74 @@ export default function MovimentacaoPage() {
     try {
       setIsLoading(true);
       
-      // Verificar se a movimentação já foi baixada antes de tentar excluir
-      const { data: movimentacaoParcelas, error: parcelasError } = await supabase
-        .from("movimentacoes_parcelas")
-        .select("id, data_pagamento")
-        .eq("movimentacao_id", movimentacaoParaExcluir);
+      // Buscar o tipo de operação da movimentação
+      const { data: movimentacao, error: movError } = await supabase
+        .from("movimentacoes")
+        .select("tipo_operacao")
+        .eq("id", movimentacaoParaExcluir)
+        .single();
       
-      if (parcelasError) {
-        throw parcelasError;
-      }
+      if (movError) throw movError;
+      
+      // Verificar se pode excluir baseado no tipo de operação
+      if (movimentacao.tipo_operacao === "transferencia") {
+        // Para transferências, verificar se os lançamentos no fluxo de caixa estão conciliados
+        const { data: fluxoCaixaLancamentos, error: fluxoError } = await supabase
+          .from("fluxo_caixa")
+          .select("id, situacao")
+          .eq("movimentacao_id", movimentacaoParaExcluir);
+        
+        if (fluxoError) throw fluxoError;
+        
+        // Verificar se algum lançamento está conciliado
+        const temLancamentoConciliado = fluxoCaixaLancamentos.some(
+          lancamento => lancamento.situacao !== "nao_conciliado"
+        );
+        
+        if (temLancamentoConciliado) {
+          toast.error("Esta transferência não pode ser excluída pois já foi conciliada.");
+          return;
+        }
+        
+        // Excluir os lançamentos do fluxo de caixa
+        const { error: errorFluxo } = await supabase
+          .from("fluxo_caixa")
+          .delete()
+          .eq("movimentacao_id", movimentacaoParaExcluir);
 
-      // Verificar se alguma parcela já foi paga
-      const parcelasBaixadas = movimentacaoParcelas.some(parcela => parcela.data_pagamento !== null);
-      
-      if (parcelasBaixadas) {
-        toast.error("Esta movimentação não pode ser excluída pois já foi baixada.");
-        return;
-      }
-      
-      // Excluir as parcelas associadas à movimentação
-      const { error: errorParcelas } = await supabase
-        .from("movimentacoes_parcelas")
-        .delete()
-        .eq("movimentacao_id", movimentacaoParaExcluir);
+        if (errorFluxo) throw errorFluxo;
+      } else {
+        // Para outras operações, verificar se alguma parcela já foi paga
+        const { data: movimentacaoParcelas, error: parcelasError } = await supabase
+          .from("movimentacoes_parcelas")
+          .select("id, data_pagamento")
+          .eq("movimentacao_id", movimentacaoParaExcluir);
+        
+        if (parcelasError) throw parcelasError;
 
-      if (errorParcelas) {
-        // Verifica se o erro é devido à movimentação já estar baixada
-        if (errorParcelas.code === "23503" && errorParcelas.message.includes("fluxo_caixa")) {
+        const parcelasBaixadas = movimentacaoParcelas.some(parcela => parcela.data_pagamento !== null);
+        
+        if (parcelasBaixadas) {
           toast.error("Esta movimentação não pode ser excluída pois já foi baixada.");
           return;
         }
-        throw errorParcelas;
+        
+        // Excluir as parcelas associadas à movimentação
+        const { error: errorParcelas } = await supabase
+          .from("movimentacoes_parcelas")
+          .delete()
+          .eq("movimentacao_id", movimentacaoParaExcluir);
+
+        if (errorParcelas) {
+          if (errorParcelas.code === "23503" && errorParcelas.message.includes("fluxo_caixa")) {
+            toast.error("Esta movimentação não pode ser excluída pois já foi baixada.");
+            return;
+          }
+          throw errorParcelas;
+        }
       }
       
-      // Depois de excluir as parcelas, excluir a movimentação principal
+      // Depois de excluir as parcelas ou fluxo de caixa, excluir a movimentação principal
       const { error } = await supabase
         .from("movimentacoes")
         .delete()
@@ -270,7 +305,6 @@ export default function MovimentacaoPage() {
       toast.success("Movimentação excluída com sucesso!");
     } catch (error: any) {
       console.error("Erro ao excluir movimentação:", error);
-      // Verifica se o erro é devido à movimentação já estar baixada
       if (error.code === "23503" && error.message.includes("fluxo_caixa")) {
         toast.error("Esta movimentação não pode ser excluída pois já foi baixada.");
       } else {
