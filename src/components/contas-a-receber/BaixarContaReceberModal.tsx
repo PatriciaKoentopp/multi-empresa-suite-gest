@@ -7,6 +7,8 @@ import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { ContaReceber } from "./contas-a-receber-table";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
@@ -35,6 +37,14 @@ const formasPagamento = [
   { id: "4", nome: "Transferência" }
 ];
 
+interface Antecipacao {
+  id: string;
+  descricao: string;
+  valor_total: number;
+  valor_utilizado: number;
+  valor_disponivel: number;
+}
+
 export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: BaixarContaReceberModalProps) {
   const { currentCompany } = useCompany();
   const [dataRecebimento, setDataRecebimento] = useState<Date | undefined>(conta?.dataVencimento);
@@ -43,6 +53,14 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
   const [multa, setMulta] = useState<number>(0);
   const [juros, setJuros] = useState<number>(0);
   const [desconto, setDesconto] = useState<number>(0);
+  
+  // Novos estados para antecipação
+  const [usarAntecipacao, setUsarAntecipacao] = useState<boolean>(false);
+  const [antecipacaoSelecionada, setAntecipacaoSelecionada] = useState<string>("");
+  const [valorAntecipacao, setValorAntecipacao] = useState<number>(0);
+
+  // Buscar favorecido_id da conta
+  const [favorecidoId, setFavorecidoId] = useState<string | null>(null);
 
   // Buscar contas correntes
   const { data: contasCorrente = [] } = useQuery({
@@ -64,6 +82,56 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     enabled: !!currentCompany?.id,
   });
 
+  // Buscar antecipações disponíveis do favorecido
+  const { data: antecipacoesDisponiveis = [] } = useQuery({
+    queryKey: ["antecipacoes-favorecido", favorecidoId, currentCompany?.id],
+    queryFn: async () => {
+      if (!favorecidoId) return [];
+
+      const { data, error } = await supabase
+        .from("antecipacoes")
+        .select("id, descricao, valor_total, valor_utilizado")
+        .eq("empresa_id", currentCompany?.id)
+        .eq("favorecido_id", favorecidoId)
+        .eq("tipo_operacao", "receber")
+        .eq("status", "ativa")
+        .gt("valor_total", 0);
+
+      if (error) {
+        console.error("Erro ao buscar antecipações:", error);
+        return [];
+      }
+
+      // Calcular valor disponível e filtrar apenas as que têm saldo
+      return data
+        .map(ant => ({
+          ...ant,
+          valor_disponivel: ant.valor_total - ant.valor_utilizado
+        }))
+        .filter(ant => ant.valor_disponivel > 0);
+    },
+    enabled: !!favorecidoId && !!currentCompany?.id,
+  });
+
+  // Buscar favorecido_id quando a conta mudar
+  useEffect(() => {
+    if (conta?.movimentacao_id) {
+      const buscarFavorecido = async () => {
+        const { data, error } = await supabase
+          .from("movimentacoes")
+          .select("favorecido_id")
+          .eq("id", conta.movimentacao_id)
+          .single();
+
+        if (!error && data) {
+          setFavorecidoId(data.favorecido_id);
+        }
+      };
+
+      buscarFavorecido();
+    }
+  }, [conta]);
+
   useEffect(() => {
     if (open) {
       setDataRecebimento(conta?.dataVencimento);
@@ -72,18 +140,42 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
       setMulta(0);
       setJuros(0);
       setDesconto(0);
+      setUsarAntecipacao(false);
+      setAntecipacaoSelecionada("");
+      setValorAntecipacao(0);
     }
   }, [conta, open]);
 
+  // Calcular valores
+  const valorConta = conta?.valor || 0;
+  const valorAcrescimos = multa + juros;
+  const valorTotalConta = valorConta + valorAcrescimos - desconto;
+  const valorAReceber = Math.max(0, valorTotalConta - valorAntecipacao);
+
+  // Obter antecipação selecionada
+  const antecipacaoAtual = antecipacoesDisponiveis.find(ant => ant.id === antecipacaoSelecionada);
+  const maxValorAntecipacao = Math.min(
+    antecipacaoAtual?.valor_disponivel || 0,
+    valorTotalConta
+  );
+
   async function handleConfirmar() {
-    if (!dataRecebimento || !contaCorrenteId || !formaPagamento) {
+    if (!dataRecebimento || (!contaCorrenteId && valorAReceber > 0) || !formaPagamento) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
 
-    try {
-      const valorTotal = (conta?.valor || 0) + multa + juros - desconto;
+    if (usarAntecipacao && (!antecipacaoSelecionada || valorAntecipacao <= 0)) {
+      toast.error("Selecione uma antecipação e informe o valor a ser usado.");
+      return;
+    }
 
+    if (valorAntecipacao > maxValorAntecipacao) {
+      toast.error("Valor da antecipação não pode exceder o disponível ou o valor da conta.");
+      return;
+    }
+
+    try {
       // Buscar dados completos da movimentação para obter descrição
       let descricao: string | null = null;
       
@@ -99,40 +191,66 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
         }
       }
 
-      // 1. Atualiza a parcela com os dados do recebimento
+      // 1. Atualizar a parcela com os dados do recebimento
+      const updateData: any = {
+        data_pagamento: format(dataRecebimento, "yyyy-MM-dd"),
+        multa,
+        juros,
+        desconto,
+        forma_pagamento: formaPagamento
+      };
+
+      // Incluir dados da antecipação se estiver sendo usada
+      if (usarAntecipacao && antecipacaoSelecionada && valorAntecipacao > 0) {
+        updateData.antecipacao_id = antecipacaoSelecionada;
+        updateData.valor_antecipacao_utilizado = valorAntecipacao;
+      }
+
+      // Incluir conta corrente apenas se houver valor a receber
+      if (valorAReceber > 0 && contaCorrenteId) {
+        updateData.conta_corrente_id = contaCorrenteId;
+      }
+
       const { error: updateError } = await supabase
         .from("movimentacoes_parcelas")
-        .update({
-          data_pagamento: format(dataRecebimento, "yyyy-MM-dd"),
-          conta_corrente_id: contaCorrenteId,
-          multa,
-          juros,
-          desconto,
-          forma_pagamento: formaPagamento
-        })
+        .update(updateData)
         .eq("id", conta?.id);
 
       if (updateError) throw updateError;
 
-      // 2. Insere o registro no fluxo de caixa sem o campo favorecido_id que não existe
-      const { error: fluxoError } = await supabase
-        .from("fluxo_caixa")
-        .insert({
-          empresa_id: currentCompany?.id,
-          conta_corrente_id: contaCorrenteId,
-          data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
-          valor: valorTotal,
-          saldo: valorTotal,
-          tipo_operacao: "receber",
-          origem: "movimentacao",
-          movimentacao_parcela_id: conta?.id,
-          movimentacao_id: conta?.movimentacao_id,
-          situacao: "nao_conciliado",
-          descricao: descricao || conta?.descricao || `Recebimento ${conta?.cliente}`,
-          forma_pagamento: formaPagamento
-        });
+      // 2. Atualizar valor utilizado na antecipação
+      if (usarAntecipacao && antecipacaoSelecionada && valorAntecipacao > 0) {
+        const { error: antecipacaoError } = await supabase
+          .from("antecipacoes")
+          .update({
+            valor_utilizado: (antecipacaoAtual?.valor_total || 0) - (antecipacaoAtual?.valor_disponivel || 0) + valorAntecipacao
+          })
+          .eq("id", antecipacaoSelecionada);
 
-      if (fluxoError) throw fluxoError;
+        if (antecipacaoError) throw antecipacaoError;
+      }
+
+      // 3. Inserir no fluxo de caixa apenas se houver valor efetivamente recebido
+      if (valorAReceber > 0 && contaCorrenteId) {
+        const { error: fluxoError } = await supabase
+          .from("fluxo_caixa")
+          .insert({
+            empresa_id: currentCompany?.id,
+            conta_corrente_id: contaCorrenteId,
+            data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
+            valor: valorAReceber,
+            saldo: valorAReceber,
+            tipo_operacao: "receber",
+            origem: "movimentacao",
+            movimentacao_parcela_id: conta?.id,
+            movimentacao_id: conta?.movimentacao_id,
+            situacao: "nao_conciliado",
+            descricao: descricao || conta?.descricao || `Recebimento ${conta?.cliente}`,
+            forma_pagamento: formaPagamento
+          });
+
+        if (fluxoError) throw fluxoError;
+      }
 
       onBaixar({ 
         dataRecebimento, 
@@ -143,7 +261,12 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
         desconto 
       });
       onClose();
-      toast.success("Recebimento registrado com sucesso!");
+      
+      if (usarAntecipacao && valorAntecipacao > 0) {
+        toast.success(`Recebimento registrado! Valor da antecipação usado: ${formatCurrency(valorAntecipacao)}`);
+      } else {
+        toast.success("Recebimento registrado com sucesso!");
+      }
 
     } catch (error) {
       console.error("Erro ao registrar recebimento:", error);
@@ -151,14 +274,9 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     }
   }
 
-  const valorTotal = useMemo(() => {
-    const valorTitulo = conta?.valor || 0;
-    return valorTitulo + (multa || 0) + (juros || 0) - (desconto || 0);
-  }, [conta, multa, juros, desconto]);
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md w-full">
+      <DialogContent className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Baixar Recebimento</DialogTitle>
         </DialogHeader>
@@ -175,19 +293,77 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
               <Calendar className="text-blue-500" />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Conta Corrente *</label>
-            <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
-              <SelectTrigger className="w-full bg-white">
-                <SelectValue placeholder="Selecione a conta" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                {contasCorrente.map((opt) => (
-                  <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+
+          {/* Seção de Antecipação */}
+          {antecipacoesDisponiveis.length > 0 && (
+            <div className="border rounded-lg p-3 bg-blue-50">
+              <div className="flex items-center space-x-2 mb-3">
+                <Switch
+                  id="usar-antecipacao"
+                  checked={usarAntecipacao}
+                  onCheckedChange={setUsarAntecipacao}
+                />
+                <Label htmlFor="usar-antecipacao" className="text-sm font-medium">
+                  Usar antecipação deste cliente
+                </Label>
+              </div>
+
+              {usarAntecipacao && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Antecipação</label>
+                    <Select value={antecipacaoSelecionada} onValueChange={setAntecipacaoSelecionada}>
+                      <SelectTrigger className="w-full bg-white">
+                        <SelectValue placeholder="Selecione a antecipação" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white">
+                        {antecipacoesDisponiveis.map((ant) => (
+                          <SelectItem key={ant.id} value={ant.id}>
+                            {ant.descricao} - Disponível: {formatCurrency(ant.valor_disponivel)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {antecipacaoSelecionada && (
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Valor a usar (máx: {formatCurrency(maxValorAntecipacao)})
+                      </label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={maxValorAntecipacao}
+                        step="0.01"
+                        value={valorAntecipacao}
+                        onChange={e => setValorAntecipacao(Number(e.target.value))}
+                        placeholder="0.00"
+                        className="bg-white"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {valorAReceber > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Conta Corrente *</label>
+              <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
+                <SelectTrigger className="w-full bg-white">
+                  <SelectValue placeholder="Selecione a conta" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {contasCorrente.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium mb-1">Forma de Pagamento *</label>
             <Select value={formaPagamento} onValueChange={setFormaPagamento}>
@@ -201,6 +377,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
               </SelectContent>
             </Select>
           </div>
+
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="block text-sm font-medium mb-1">Multa</label>
@@ -236,15 +413,32 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
               />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Valor Total</label>
-            <Input
-              type="text"
-              value={formatCurrency(valorTotal)}
-              readOnly
-              className="bg-gray-100 font-semibold"
-              tabIndex={-1}
-            />
+
+          {/* Resumo dos valores */}
+          <div className="border rounded-lg p-3 bg-gray-50 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Valor da conta:</span>
+              <span>{formatCurrency(valorConta)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Multa + Juros:</span>
+              <span>{formatCurrency(valorAcrescimos)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Desconto:</span>
+              <span>-{formatCurrency(desconto)}</span>
+            </div>
+            {usarAntecipacao && valorAntecipacao > 0 && (
+              <div className="flex justify-between text-sm text-blue-600">
+                <span>Antecipação usada:</span>
+                <span>-{formatCurrency(valorAntecipacao)}</span>
+              </div>
+            )}
+            <hr />
+            <div className="flex justify-between font-semibold">
+              <span>Valor a receber:</span>
+              <span>{formatCurrency(valorAReceber)}</span>
+            </div>
           </div>
         </div>
         <DialogFooter>
@@ -257,7 +451,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
             type="button"
             variant="blue"
             onClick={handleConfirmar}
-            disabled={!dataRecebimento || !contaCorrenteId || !formaPagamento}
+            disabled={!dataRecebimento || !formaPagamento || (valorAReceber > 0 && !contaCorrenteId)}
           >
             Baixar
           </Button>

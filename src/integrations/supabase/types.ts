@@ -969,6 +969,7 @@ export type Database = {
       }
       movimentacoes_parcelas: {
         Row: {
+          antecipacao_id: string | null
           conta_corrente_id: string | null
           created_at: string
           data_pagamento: string | null
@@ -982,8 +983,10 @@ export type Database = {
           numero: number
           updated_at: string
           valor: number
+          valor_antecipacao_utilizado: number | null
         }
         Insert: {
+          antecipacao_id?: string | null
           conta_corrente_id?: string | null
           created_at?: string
           data_pagamento?: string | null
@@ -997,8 +1000,10 @@ export type Database = {
           numero: number
           updated_at?: string
           valor: number
+          valor_antecipacao_utilizado?: number | null
         }
         Update: {
+          antecipacao_id?: string | null
           conta_corrente_id?: string | null
           created_at?: string
           data_pagamento?: string | null
@@ -1012,8 +1017,16 @@ export type Database = {
           numero?: number
           updated_at?: string
           valor?: number
+          valor_antecipacao_utilizado?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "movimentacoes_parcelas_antecipacao_id_fkey"
+            columns: ["antecipacao_id"]
+            isOneToOne: false
+            referencedRelation: "antecipacoes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "movimentacoes_parcelas_conta_corrente_id_fkey"
             columns: ["conta_corrente_id"]
