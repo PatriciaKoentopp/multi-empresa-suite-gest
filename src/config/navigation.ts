@@ -92,6 +92,10 @@ export const navigationConfig: ModuleNavItem[] = [
         title: "Contas a Receber",
         href: "/financeiro/contas-receber",
       },
+      {
+        title: "Antecipações",
+        href: "/financeiro/antecipacoes",
+      },
     ],
   },
   {
