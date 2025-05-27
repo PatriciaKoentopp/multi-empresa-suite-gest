@@ -208,17 +208,19 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
 
       console.log("Antecipação inserida:", antecipacaoInserida);
 
-      // Preparar dados para inserção no fluxo de caixa
+      // Preparar dados para inserção no fluxo de caixa seguindo o formato do exemplo
       const fluxoCaixaData = {
         empresa_id: currentCompany.id,
         data_movimentacao: dataLancamento.toISOString().split('T')[0],
-        descricao: `Antecipação: ${descricao || `${operacao === "receber" ? "Recebimento" : "Pagamento"} - ${antecipacaoInserida.id}`}`,
         tipo_operacao: operacao === "receber" ? "entrada" : "saida",
-        valor: valorNumerico,
+        valor: operacao === "receber" ? valorNumerico : -valorNumerico, // Valor positivo para entrada, negativo para saída
         saldo: novoSaldo,
-        origem: "movimentacao",
-        situacao: "conciliado",
+        descricao: `Antecipação: ${descricao || `${operacao === "receber" ? "Recebimento" : "Pagamento"} - ${antecipacaoInserida.id}`}`,
+        origem: "antecipacao", // Usando "antecipacao" para identificar a origem
         conta_corrente_id: contaCorrente,
+        movimentacao_id: null, // Antecipação não tem movimentacao_id
+        movimentacao_parcela_id: null, // Antecipação não tem parcela_id
+        situacao: "conciliado",
         forma_pagamento: formasPagamento.find(f => f.id === formaPagamento)?.nome || "Dinheiro"
       };
 
