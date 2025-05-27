@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       antecipacoes: {
         Row: {
+          conta_corrente_id: string | null
           created_at: string
           data_emissao: string
           data_lancamento: string
@@ -30,6 +31,7 @@ export type Database = {
           valor_utilizado: number
         }
         Insert: {
+          conta_corrente_id?: string | null
           created_at?: string
           data_emissao: string
           data_lancamento: string
@@ -49,6 +51,7 @@ export type Database = {
           valor_utilizado?: number
         }
         Update: {
+          conta_corrente_id?: string | null
           created_at?: string
           data_emissao?: string
           data_lancamento?: string
@@ -67,7 +70,15 @@ export type Database = {
           valor_total?: number
           valor_utilizado?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "antecipacoes_conta_corrente_id_fkey"
+            columns: ["conta_corrente_id"]
+            isOneToOne: false
+            referencedRelation: "contas_correntes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contas_correntes: {
         Row: {

@@ -39,9 +39,11 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
   const [tipoTitulo, setTipoTitulo] = useState("");
   const [favorecido, setFavorecido] = useState("");
   const [formaPagamento, setFormaPagamento] = useState("1");
+  const [contaCorrente, setContaCorrente] = useState("");
   const [valor, setValor] = useState("0");
   const [descricao, setDescricao] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [contasCorrentes, setContasCorrentes] = useState<any[]>([]);
 
   // Filtrar tipos de títulos baseado na operação
   const tiposTitulosFiltrados = tiposTitulos.filter(tipo => {
@@ -49,6 +51,32 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
     if (operacao === "pagar") return tipo.tipo === "pagar";
     return false;
   });
+
+  // Carregar contas correntes
+  useEffect(() => {
+    if (currentCompany?.id) {
+      carregarContasCorrentes();
+    }
+  }, [currentCompany]);
+
+  const carregarContasCorrentes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("contas_correntes")
+        .select("id, nome, banco")
+        .eq("empresa_id", currentCompany?.id)
+        .eq("status", "ativo");
+
+      if (error) {
+        console.error("Erro ao carregar contas correntes:", error);
+        return;
+      }
+
+      setContasCorrentes(data || []);
+    } catch (error) {
+      console.error("Erro ao carregar contas correntes:", error);
+    }
+  };
 
   // Função para formatar o mês de referência
   const handleMesReferenciaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,6 +127,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
     setTipoTitulo("");
     setFavorecido("");
     setFormaPagamento("1");
+    setContaCorrente("");
     setValor("0");
     setDescricao("");
   };
@@ -110,7 +139,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
     }
 
     // Validações básicas
-    if (!tipoTitulo || !favorecido || !valor || Number(valor.replace(/\./g, '').replace(',', '.')) <= 0) {
+    if (!tipoTitulo || !favorecido || !contaCorrente || !valor || Number(valor.replace(/\./g, '').replace(',', '.')) <= 0) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
@@ -132,6 +161,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
         tipo_titulo_id: tipoTitulo || null,
         favorecido_id: favorecido,
         forma_pagamento: formasPagamento.find(f => f.id === formaPagamento)?.nome || "Dinheiro",
+        conta_corrente_id: contaCorrente,
         valor_total: valorNumerico,
         valor_utilizado: 0,
         descricao: descricao || null
@@ -265,7 +295,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
             </div>
           </div>
 
-          {/* Quarta linha - Forma Pagamento, Valor */}
+          {/* Quarta linha - Forma Pagamento, Conta Corrente */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
               <Label>Forma de Pagamento</Label>
@@ -284,6 +314,25 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
             </div>
 
             <div className="flex flex-col gap-1">
+              <Label>Conta Corrente</Label>
+              <Select value={contaCorrente} onValueChange={setContaCorrente}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Selecione a conta" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  {contasCorrentes.map(conta => (
+                    <SelectItem key={conta.id} value={conta.id}>
+                      {conta.nome} - {conta.banco}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Quinta linha - Valor */}
+          <div className="grid grid-cols-1 gap-4">
+            <div className="flex flex-col gap-1">
               <Label>Valor</Label>
               <Input
                 value={valor}
@@ -294,7 +343,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
             </div>
           </div>
 
-          {/* Quinta linha - Descrição */}
+          {/* Sexta linha - Descrição */}
           <div className="flex flex-col gap-1">
             <Label>Descrição</Label>
             <Textarea

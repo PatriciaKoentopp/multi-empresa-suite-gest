@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -128,6 +127,28 @@ export default function AntecipacoesPage() {
         }
       }
 
+      // Buscar contas correntes
+      const contasCorrentesIds = antecipacoesData
+        ?.filter(item => item.conta_corrente_id)
+        .map(item => item.conta_corrente_id) || [];
+
+      let contasCorrentesMap: Record<string, string> = {};
+      
+      if (contasCorrentesIds.length > 0) {
+        const { data: contasCorrentesData, error: contasCorrentesError } = await supabase
+          .from("contas_correntes")
+          .select("id, nome, banco")
+          .in("id", contasCorrentesIds);
+
+        if (contasCorrentesError) {
+          console.error("Erro ao carregar contas correntes:", contasCorrentesError);
+        } else {
+          contasCorrentesMap = Object.fromEntries(
+            contasCorrentesData?.map(conta => [conta.id, `${conta.nome} - ${conta.banco}`]) || []
+          );
+        }
+      }
+
       // Transformar dados para o formato esperado pela tabela
       const antecipacoesMapeadas: Antecipacao[] = (antecipacoesData || []).map(item => ({
         id: item.id,
@@ -138,7 +159,8 @@ export default function AntecipacoesPage() {
         valorUtilizado: Number(item.valor_utilizado),
         valorDisponivel: Number(item.valor_total) - Number(item.valor_utilizado),
         descricao: item.descricao || "",
-        status: item.status as "ativa" | "utilizada" | "cancelada"
+        status: item.status as "ativa" | "utilizada" | "cancelada",
+        contaCorrente: contasCorrentesMap[item.conta_corrente_id] || "N/A"
       }));
 
       console.log("Antecipações mapeadas:", antecipacoesMapeadas);
