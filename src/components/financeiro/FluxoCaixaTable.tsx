@@ -1,3 +1,4 @@
+
 import React from "react";
 import { formatCurrency } from "@/lib/utils";
 import { FluxoCaixaItem } from "@/types/financeiro";
@@ -20,7 +21,6 @@ export const FluxoCaixaTable = ({ fluxoCaixa, saldoInicial }: FluxoCaixaTablePro
   function formatDate(data?: Date) {
     if (!data) return "-";
     
-    // Formatar a data no padrão DD/MM/YYYY sem considerar timezone
     const dia = String(data.getDate()).padStart(2, '0');
     const mes = String(data.getMonth() + 1).padStart(2, '0');
     const ano = data.getFullYear();
@@ -28,7 +28,6 @@ export const FluxoCaixaTable = ({ fluxoCaixa, saldoInicial }: FluxoCaixaTablePro
     return `${dia}/${mes}/${ano}`;
   }
   
-  // Calcular saldo acumulado
   let saldoAcumulado = saldoInicial;
   const fluxoComSaldo = fluxoCaixa.map(item => {
     saldoAcumulado += item.valor;
@@ -61,7 +60,6 @@ export const FluxoCaixaTable = ({ fluxoCaixa, saldoInicial }: FluxoCaixaTablePro
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* Linha do saldo inicial se houver dados */}
             {fluxoComSaldo.length > 0 && (
               <TableRow className="bg-muted/20">
                 <TableCell colSpan={5} className="font-medium">Saldo Inicial</TableCell>

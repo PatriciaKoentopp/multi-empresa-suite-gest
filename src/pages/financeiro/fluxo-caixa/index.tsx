@@ -21,9 +21,6 @@ import {
   TableRow,
   TableFooter,
 } from "@/components/ui/table";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Check } from "lucide-react";
 import { useCompany } from "@/contexts/company-context";
@@ -60,7 +57,6 @@ function brToDate(value: string): Date | undefined {
   const d = Number(dd), m = Number(mm) - 1, y = Number(yyyy);
   if (isNaN(d) || isNaN(m) || isNaN(y) || d < 1 || d > 31 || m < 0 || m > 11 || y < 1000 || y > 3000) return undefined;
   const dt = new Date(y, m, d);
-  // Checa se realmente bate com o digitado (para casos como 31/02 etc)
   if (dt.getDate() !== d || dt.getMonth() !== m || dt.getFullYear() !== y) return undefined;
   return dt;
 }
@@ -99,7 +95,6 @@ function formatCurrencyWithColor(value: number, addColor: boolean = false) {
     return formattedValue;
   }
   
-  // Define cores com base no valor
   const color = value < 0 ? "text-red-600" : "text-blue-600";
   
   return <span className={color}>{formattedValue}</span>;
@@ -154,7 +149,6 @@ export default function FluxoCaixaPage() {
   }, [contaCorrenteId, contasCorrentes]);
 
   // Buscar TODAS as movimentações do fluxo de caixa para a conta selecionada
-  // Isso permite calcular o saldo correto considerando movimentações fora do período
   const { data: todasMovimentacoes = [], isLoading: isLoadingTodasMovimentacoes } = useQuery({
     queryKey: ["fluxo-caixa-todas", currentCompany?.id, contaCorrenteId],
     queryFn: async () => {
@@ -172,6 +166,10 @@ export default function FluxoCaixaPage() {
           ),
           movimentacoes_parcelas (
             numero
+          ),
+          antecipacoes (
+            favorecido_id,
+            numero_documento
           )
         `)
         .eq("empresa_id", currentCompany?.id)
@@ -212,6 +210,11 @@ export default function FluxoCaixaPage() {
             id,
             numero,
             movimentacao_id
+          ),
+          antecipacoes (
+            id,
+            favorecido_id,
+            numero_documento
           )
         `)
         .eq("empresa_id", currentCompany?.id)
@@ -233,10 +236,16 @@ export default function FluxoCaixaPage() {
         return [];
       }
 
-      // Coletar todos os IDs de favorecidos relacionados às movimentações
-      const favorecidosIds = data
-        .filter(item => item.movimentacoes?.favorecido_id)
-        .map(item => item.movimentacoes.favorecido_id);
+      // Coletar todos os IDs de favorecidos - incluindo das antecipações
+      const favorecidosIds = [];
+      
+      // IDs das movimentações normais
+      data.filter(item => item.movimentacoes?.favorecido_id)
+        .forEach(item => favorecidosIds.push(item.movimentacoes.favorecido_id));
+      
+      // IDs das antecipações
+      data.filter(item => item.antecipacoes?.favorecido_id)
+        .forEach(item => favorecidosIds.push(item.antecipacoes.favorecido_id));
 
       // Buscar os dados dos favorecidos se existirem IDs
       if (favorecidosIds.length > 0) {
@@ -255,15 +264,12 @@ export default function FluxoCaixaPage() {
         }
       }
       
-      // Buscar informações sobre movimentações e parcelas
       const movimentacoesIds = new Set<string>();
       
-      // Adicionar IDs de movimentações relacionadas diretamente
       data.filter(item => item.movimentacao_id).forEach(item => {
         movimentacoesIds.add(item.movimentacao_id);
       });
       
-      // Adicionar IDs de movimentações relacionadas às parcelas
       const parcelasIds = data
         .filter(item => item.movimentacao_parcela_id)
         .map(item => item.movimentacao_parcela_id);
@@ -275,7 +281,6 @@ export default function FluxoCaixaPage() {
           .in("id", parcelasIds);
           
         if (parcelasData) {
-          // Armazena as informações das parcelas e adiciona movimentacoes_id ao conjunto
           const parcelasMap: Record<string, any> = {...parcelasCache};
           parcelasData.forEach(parcela => {
             parcelasMap[parcela.id] = parcela;
@@ -287,7 +292,6 @@ export default function FluxoCaixaPage() {
         }
       }
       
-      // Buscar informações das movimentações para obter número de documento
       if (movimentacoesIds.size > 0) {
         const { data: movsData } = await supabase
           .from("movimentacoes")
@@ -310,21 +314,14 @@ export default function FluxoCaixaPage() {
 
   // Calcular saldo acumulado até a data inicial da consulta
   const saldoInicial = useMemo(() => {
-    // Se não temos conta selecionada ou dados, não calcular
     if (!contaCorrenteSelecionada || !todasMovimentacoes.length || !dataInicial) return 0;
 
-    // Obtemos o saldo inicial cadastrado na conta corrente
     let saldo = contaCorrenteSelecionada.saldo_inicial ? Number(contaCorrenteSelecionada.saldo_inicial) : 0;
     
-    // Data inicial em formato ISO para comparação
     const dataInicialISO = dataInicial.toISOString().split('T')[0];
     
-    // Calcular saldo considerando todas as movimentações ANTERIORES à data inicial
     for (const mov of todasMovimentacoes) {
-      // Só consideramos movimentações anteriores à data inicial
       if (mov.data_movimentacao >= dataInicialISO) continue;
-      
-      // O valor já vem com o sinal correto, então basta somar ao saldo
       saldo += Number(mov.valor);
     }
     
@@ -333,21 +330,17 @@ export default function FluxoCaixaPage() {
 
   // Calcular saldo acumulado para cada movimentação do período
   const movimentacoesComSaldo = useMemo(() => {
-    // Verificar se temos uma conta corrente selecionada
     if (!movimentacoesPeriodo || movimentacoesPeriodo.length === 0) return [];
 
-    // Ordenar movimentações por data, do mais antigo para o mais recente
     const movimentacoesOrdenadas = [...movimentacoesPeriodo].sort((a, b) => {
       const dataA = new Date(a.data_movimentacao).getTime();
       const dataB = new Date(b.data_movimentacao).getTime();
       return dataA - dataB;
     });
 
-    // Calcular saldo acumulado, partindo do saldo inicial calculado anteriormente
     let saldoAcumulado = saldoInicial;
     
     return movimentacoesOrdenadas.map(movimentacao => {
-      // O valor já vem com o sinal correto do banco, apenas somar ao saldo
       saldoAcumulado += Number(movimentacao.valor);
       
       return {
@@ -377,7 +370,6 @@ export default function FluxoCaixaPage() {
       setDataFinalStr(dateToBR(fim));
     }
     else if (periodo === "personalizado") {
-      // Limpa as datas para campos vazios
       setDataInicial(undefined);
       setDataInicialStr("");
       setDataFinal(undefined);
@@ -385,7 +377,6 @@ export default function FluxoCaixaPage() {
     }
   }, [periodo]);
 
-  // Atualiza o estado da data inicial ao digitar (com máscara e parse)
   function onChangeDataInicialStr(e: React.ChangeEvent<HTMLInputElement>) {
     const val = maskDateInput(e.target.value);
     setDataInicialStr(val);
@@ -412,13 +403,11 @@ export default function FluxoCaixaPage() {
     }
   }
 
-  // Função para limpar todos os filtros
   const limparFiltros = () => {
     setSearchTerm("");
     setSituacao("todos");
     setContaCorrenteId("");
     setPeriodo("mes_atual");
-    // A alteração de período vai acionar o useEffect e limpar/atualizar as datas
   };
 
   // Filtro das movimentações
@@ -426,9 +415,14 @@ export default function FluxoCaixaPage() {
     return movimentacoesComSaldo.filter((linha) => {
       const descricao = linha.descricao || linha.movimentacoes?.descricao || "";
       
-      // Buscar o favorecido a partir do cache
+      // Buscar o favorecido correto baseado na origem
       let favorecidoNome = "";
-      if (linha.movimentacoes?.favorecido_id) {
+      if (linha.origem === "antecipacao" && linha.antecipacoes?.favorecido_id) {
+        // Para antecipações, buscar da tabela antecipacoes
+        const favorecido = favorecidosCache[linha.antecipacoes.favorecido_id];
+        favorecidoNome = favorecido?.nome || "";
+      } else if (linha.movimentacoes?.favorecido_id) {
+        // Para movimentações normais
         const favorecido = favorecidosCache[linha.movimentacoes.favorecido_id];
         favorecidoNome = favorecido?.nome || "";
       }
@@ -463,7 +457,6 @@ export default function FluxoCaixaPage() {
     }
   }
 
-  // Nova função para desfazer conciliação
   async function handleDesfazerConciliacao(id: string) {
     try {
       const { error } = await supabase
@@ -484,14 +477,16 @@ export default function FluxoCaixaPage() {
 
   // Função para obter o nome do favorecido
   function getFavorecidoNome(linha: any) {
-    if (linha.movimentacoes?.favorecido_id) {
+    if (linha.origem === "antecipacao" && linha.antecipacoes?.favorecido_id) {
+      const favorecido = favorecidosCache[linha.antecipacoes.favorecido_id];
+      return favorecido?.nome || "-";
+    } else if (linha.movimentacoes?.favorecido_id) {
       const favorecido = favorecidosCache[linha.movimentacoes.favorecido_id];
       return favorecido?.nome || "-";
     }
     return "-";
   }
 
-  // Função para obter a descrição
   function getDescricao(linha: any) {
     if (linha.descricao) {
       return linha.descricao;
@@ -502,9 +497,13 @@ export default function FluxoCaixaPage() {
     return "-";
   }
   
-  // Função para obter número de documento/parcela formatado
   function getTituloParcela(linha: any) {
-    // Caso 1: Temos uma movimentação de parcela
+    // Caso 1: Antecipação
+    if (linha.origem === "antecipacao" && linha.antecipacoes?.numero_documento) {
+      return `${linha.antecipacoes.numero_documento}/1`;
+    }
+    
+    // Caso 2: Temos uma movimentação de parcela
     if (linha.movimentacao_parcela_id) {
       const parcela = parcelasCache[linha.movimentacao_parcela_id];
       if (parcela && parcela.movimentacao_id) {
@@ -516,7 +515,7 @@ export default function FluxoCaixaPage() {
       }
     }
     
-    // Caso 2: Temos uma movimentação principal
+    // Caso 3: Temos uma movimentação principal
     if (linha.movimentacao_id) {
       const movimento = documentosCache[linha.movimentacao_id];
       if (movimento) {
@@ -629,7 +628,12 @@ export default function FluxoCaixaPage() {
                   onFocus={e => {
                     if (!dataFinalStr) setDataFinalStr("");
                   }}
-                  onBlur={onBlurDataFinal}
+                  onBlurDataFinal(e => {
+                    if (e.target.value && !brToDate(e.target.value)) {
+                      setDataFinal(undefined);
+                      setDataFinalStr("");
+                    }
+                  }}
                   style={{ minHeight: 52 }}
                   autoComplete="off"
                 />
@@ -659,7 +663,6 @@ export default function FluxoCaixaPage() {
               />
             </div>
             
-            {/* Botão para limpar filtros */}
             <Button 
               variant="ghost" 
               size="icon"
@@ -670,126 +673,117 @@ export default function FluxoCaixaPage() {
               <X className="h-4 w-4" />
             </Button>
           </div>
-          {/* Separador */}
-          <div className="mb-4" />
 
-          {/* Informações da Conta Corrente */}
-          {contaCorrenteSelecionada && (
-            <div className="mt-4 mb-4">
-              <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
-                <div className="flex flex-wrap gap-6">
-                  <div>
-                    <span className="text-xs text-gray-600 block">Banco:</span>
-                    <span className="font-medium">{contaCorrenteSelecionada.banco} - {contaCorrenteSelecionada.nome}</span>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-600 block">Agência/Conta:</span>
-                    <span className="font-medium">{contaCorrenteSelecionada.agencia}/{contaCorrenteSelecionada.numero}</span>
-                  </div>
-                  {dataInicial && (
-                    <div>
-                      <span className="text-xs text-gray-600 block">Saldo inicial do período:</span>
-                      <span className="font-medium text-blue-700">{formatCurrency(saldoInicial)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Estado de carregamento */}
-          {isLoadingTodasMovimentacoes && (
-            <div className="text-center py-4">
-              <div className="animate-pulse">Calculando saldos...</div>
-            </div>
-          )}
-
-          {/* Tabela */}
+          {/* Tabela principal */}
           <div className="mt-6">
-            <div className="border rounded-md">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Título/Parcela</TableHead>
-                    <TableHead>Favorecido</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Situação</TableHead>
-                    <TableHead className="text-right w-[120px]">Valor</TableHead>
-                    <TableHead className="text-right w-[120px]">Saldo</TableHead>
-                    <TableHead className="text-center w-[60px]">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMovimentacoes.length === 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                        Nenhum resultado encontrado
-                      </TableCell>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Título/Parcela</TableHead>
+                      <TableHead>Favorecido</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead className="text-right">Saldo</TableHead>
+                      <TableHead>Situação</TableHead>
+                      <TableHead className="text-center w-[60px]">Ações</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredMovimentacoes.map((linha) => (
-                      <TableRow key={linha.id}>
-                        <TableCell>{formatDateBR(linha.data_movimentacao)}</TableCell>
-                        <TableCell>
-                          <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
-                            {getTituloParcela(linha)}
-                          </span>
-                        </TableCell>
-                        <TableCell>{getFavorecidoNome(linha)}</TableCell>
-                        <TableCell>{getDescricao(linha)}</TableCell>
-                        <TableCell>
-                          {getStatusBadge(
-                            linha.situacao === "conciliado"
-                              ? "conciliado"
-                              : "nao_conciliado"
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">{formatCurrencyWithColor(linha.valor, true)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(linha.saldo_calculado)}</TableCell>
-                        <TableCell className="text-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-blue-500 hover:bg-blue-100"
-                                aria-label="Ações"
-                              >
-                                <MoreVertical size={20} />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-white z-50 min-w-[160px]">
-                              {linha.situacao === "nao_conciliado" ? (
-                                <DropdownMenuItem
-                                  onClick={() => handleConciliar(linha.id)}
-                                  className="cursor-pointer"
-                                >
-                                  <span className="text-green-600 mr-2"><Check className="inline" size={16} /></span>
-                                  Conciliar movimento
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem
-                                  onClick={() => handleDesfazerConciliacao(linha.id)}
-                                  className="cursor-pointer"
-                                >
-                                  <span className="text-blue-500 mr-2">
-                                    <svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                                    </svg>
-                                  </span>
-                                  Desfazer conciliação
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                  </TableHeader>
+                  <TableBody>
+                    {!contaCorrenteId ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                          Selecione uma conta corrente para visualizar o fluxo de caixa
                         </TableCell>
                       </TableRow>
-                    ))
+                    ) : filteredMovimentacoes.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                          Nenhuma movimentação encontrada no período
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredMovimentacoes.map((linha) => (
+                        <TableRow key={linha.id}>
+                          <TableCell>
+                            {formatDateBR(linha.data_movimentacao)}
+                          </TableCell>
+                          <TableCell>
+                            {getTituloParcela(linha)}
+                          </TableCell>
+                          <TableCell>
+                            {getFavorecidoNome(linha)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-xs">
+                              {getDescricao(linha)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrencyWithColor(linha.valor, true)}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(linha.saldo_calculado)}
+                          </TableCell>
+                          <TableCell>
+                            {getStatusBadge(linha.situacao)}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-white">
+                                {linha.situacao === "nao_conciliado" ? (
+                                  <DropdownMenuItem
+                                    onClick={() => handleConciliar(linha.id)}
+                                    className="text-green-600 hover:text-green-700"
+                                  >
+                                    <Check className="mr-2 h-4 w-4" />
+                                    Conciliar
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem
+                                    onClick={() => handleDesfazerConciliacao(linha.id)}
+                                    className="text-blue-600 hover:text-blue-700"
+                                  >
+                                    Desfazer Conciliação
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                  {filteredMovimentacoes.length > 0 && (
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={4} className="font-medium">
+                          Saldo Final
+                        </TableCell>
+                        <TableCell className="text-right font-bold">
+                          {filteredMovimentacoes.length > 0 ? 
+                            formatCurrency(filteredMovimentacoes[filteredMovimentacoes.length - 1]?.saldo_calculado || 0) 
+                            : formatCurrency(0)
+                          }
+                        </TableCell>
+                        <TableCell colSpan={3}></TableCell>
+                      </TableRow>
+                    </TableFooter>
                   )}
-                </TableBody>
-              </Table>
-            </div>
+                </Table>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

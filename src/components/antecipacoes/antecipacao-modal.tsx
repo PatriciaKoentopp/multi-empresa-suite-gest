@@ -11,7 +11,6 @@ import { useMovimentacaoDados } from "@/hooks/useMovimentacaoDados";
 import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/utils";
 
 interface AntecipacaoModalProps {
   open: boolean;
@@ -212,14 +211,15 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
       const fluxoCaixaData = {
         empresa_id: currentCompany.id,
         data_movimentacao: dataLancamento.toISOString().split('T')[0],
-        tipo_operacao: operacao, // "receber" ou "pagar" como no exemplo
-        valor: operacao === "receber" ? valorNumerico : -valorNumerico, // Valor positivo para receber, negativo para pagar
+        tipo_operacao: operacao,
+        valor: operacao === "receber" ? valorNumerico : -valorNumerico,
         saldo: novoSaldo,
         descricao: `Antecipação: ${descricao || `${operacao === "receber" ? "Recebimento" : "Pagamento"} - ${antecipacaoInserida.id}`}`,
-        origem: "antecipacao", // Agora aceito na constraint
+        origem: "antecipacao",
         conta_corrente_id: contaCorrente,
-        movimentacao_id: null, // Antecipação não tem movimentacao_id
-        movimentacao_parcela_id: null, // Antecipação não tem parcela_id
+        movimentacao_id: null,
+        movimentacao_parcela_id: null,
+        antecipacao_id: antecipacaoInserida.id, // Agora incluímos o ID da antecipação
         situacao: "conciliado",
         forma_pagamento: formasPagamento.find(f => f.id === formaPagamento)?.nome || "Dinheiro"
       };

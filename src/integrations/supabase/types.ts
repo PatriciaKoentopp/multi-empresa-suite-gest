@@ -313,6 +313,7 @@ export type Database = {
       }
       fluxo_caixa: {
         Row: {
+          antecipacao_id: string | null
           conta_corrente_id: string | null
           created_at: string
           data_movimentacao: string
@@ -330,6 +331,7 @@ export type Database = {
           valor: number
         }
         Insert: {
+          antecipacao_id?: string | null
           conta_corrente_id?: string | null
           created_at?: string
           data_movimentacao: string
@@ -347,6 +349,7 @@ export type Database = {
           valor: number
         }
         Update: {
+          antecipacao_id?: string | null
           conta_corrente_id?: string | null
           created_at?: string
           data_movimentacao?: string
@@ -364,6 +367,13 @@ export type Database = {
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "fluxo_caixa_antecipacao_id_fkey"
+            columns: ["antecipacao_id"]
+            isOneToOne: false
+            referencedRelation: "antecipacoes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fluxo_caixa_conta_corrente_id_fkey"
             columns: ["conta_corrente_id"]
