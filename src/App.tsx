@@ -32,6 +32,7 @@ import ContasAReceber from "./pages/financeiro/contas-a-receber";
 import Movimentacao from "./pages/financeiro/movimentacao";
 import IncluirMovimentacao from "./pages/financeiro/incluir-movimentacao";
 import PainelFinanceiroPage from "./pages/financeiro/painel-financeiro";
+import AntecipacoesPage from "./pages/financeiro/antecipacoes";
 
 // Contábil
 import PlanoContas from "./pages/contabil/plano-contas";
@@ -253,6 +254,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <ContasAReceber />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/financeiro/antecipacoes"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <AntecipacoesPage />
                   </MainLayout>
                 </PrivateRoute>
               }
