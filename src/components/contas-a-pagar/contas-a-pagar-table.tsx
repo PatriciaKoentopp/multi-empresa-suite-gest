@@ -47,7 +47,12 @@ interface ContasAPagarTableProps {
   onVisualizarBaixa?: (conta: ContaPagar) => void;
 }
 
-function getStatusBadge(status: ContaPagar["status"]) {
+function getStatusBadge(status: ContaPagar["status"], dataVencimento: Date) {
+  // Verificar se está vencido (data de vencimento menor que a data atual)
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0); // Resetar horas para comparação apenas de data
+  const estaVencido = dataVencimento < hoje;
+
   switch (status) {
     case "pago":
       return (
@@ -62,11 +67,19 @@ function getStatusBadge(status: ContaPagar["status"]) {
         </span>
       );
     case "em_aberto":
-      return (
-        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
-          Em Aberto
-        </span>
-      );
+      if (estaVencido) {
+        return (
+          <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
+            Em Aberto
+          </span>
+        );
+      } else {
+        return (
+          <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+            Em Aberto
+          </span>
+        );
+      }
     default:
       return status;
   }
@@ -118,7 +131,7 @@ export function ContasAPagarTable({
                 </TableCell>
                 <TableCell>{conta.favorecido}</TableCell>
                 <TableCell>{conta.descricao}</TableCell>
-                <TableCell>{getStatusBadge(conta.status)}</TableCell>
+                <TableCell>{getStatusBadge(conta.status, conta.dataVencimento)}</TableCell>
                 <TableCell>{formatCurrency(conta.valor)}</TableCell>
                 <TableCell className="text-center">
                   <DropdownMenu>
