@@ -150,7 +150,32 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
       // Converter valor para número
       const valorNumerico = Number(valor.replace(/\./g, '').replace(',', '.'));
 
-      // Preparar dados para inserção
+      console.log("Iniciando transação de antecipação...");
+
+      // Buscar saldo atual da conta corrente
+      const { data: contaData, error: contaError } = await supabase
+        .from("contas_correntes")
+        .select("saldo_inicial")
+        .eq("id", contaCorrente)
+        .single();
+
+      if (contaError) {
+        console.error("Erro ao buscar dados da conta corrente:", contaError);
+        throw contaError;
+      }
+
+      const saldoAtual = Number(contaData?.saldo_inicial || 0);
+
+      // Calcular novo saldo baseado no tipo de operação
+      // Para antecipação de recebimento, o valor entra na conta (crédito)
+      // Para antecipação de pagamento, o valor sai da conta (débito)
+      const novoSaldo = operacao === "receber" 
+        ? saldoAtual + valorNumerico 
+        : saldoAtual - valorNumerico;
+
+      console.log("Saldo atual:", saldoAtual, "Valor:", valorNumerico, "Novo saldo:", novoSaldo);
+
+      // Preparar dados para inserção na antecipação
       const antecipacaoData = {
         empresa_id: currentCompany.id,
         tipo_operacao: operacao,
@@ -169,15 +194,60 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
 
       console.log("Dados da antecipação:", antecipacaoData);
 
-      // Inserir no banco
-      const { error } = await supabase
+      // Inserir na tabela antecipacoes
+      const { data: antecipacaoInserida, error: antecipacaoError } = await supabase
         .from("antecipacoes")
-        .insert(antecipacaoData);
+        .insert(antecipacaoData)
+        .select()
+        .single();
 
-      if (error) {
-        console.error("Erro ao inserir antecipação:", error);
-        throw error;
+      if (antecipacaoError) {
+        console.error("Erro ao inserir antecipação:", antecipacaoError);
+        throw antecipacaoError;
       }
+
+      console.log("Antecipação inserida:", antecipacaoInserida);
+
+      // Preparar dados para inserção no fluxo de caixa
+      const fluxoCaixaData = {
+        empresa_id: currentCompany.id,
+        data_movimentacao: dataLancamento.toISOString().split('T')[0],
+        descricao: `Antecipação: ${descricao || `${operacao === "receber" ? "Recebimento" : "Pagamento"} - ${antecipacaoInserida.id}`}`,
+        tipo_operacao: operacao === "receber" ? "entrada" : "saida",
+        valor: valorNumerico,
+        saldo: novoSaldo,
+        origem: "antecipacao",
+        situacao: "conciliado",
+        conta_corrente_id: contaCorrente,
+        forma_pagamento: formasPagamento.find(f => f.id === formaPagamento)?.nome || "Dinheiro"
+      };
+
+      console.log("Dados do fluxo de caixa:", fluxoCaixaData);
+
+      // Inserir no fluxo de caixa
+      const { error: fluxoError } = await supabase
+        .from("fluxo_caixa")
+        .insert(fluxoCaixaData);
+
+      if (fluxoError) {
+        console.error("Erro ao inserir no fluxo de caixa:", fluxoError);
+        throw fluxoError;
+      }
+
+      console.log("Fluxo de caixa inserido com sucesso");
+
+      // Atualizar saldo da conta corrente
+      const { error: saldoError } = await supabase
+        .from("contas_correntes")
+        .update({ saldo_inicial: novoSaldo })
+        .eq("id", contaCorrente);
+
+      if (saldoError) {
+        console.error("Erro ao atualizar saldo da conta corrente:", saldoError);
+        throw saldoError;
+      }
+
+      console.log("Saldo da conta corrente atualizado");
 
       toast.success("Antecipação registrada com sucesso!");
       resetForm();
