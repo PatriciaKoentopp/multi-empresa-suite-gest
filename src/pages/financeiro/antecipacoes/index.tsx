@@ -24,8 +24,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { formatDate } from "@/lib/utils";
 import { AntecipacaoTable, Antecipacao } from "@/components/antecipacoes/antecipacao-table";
 import { AntecipacaoModal } from "@/components/antecipacoes/antecipacao-modal";
 
@@ -149,9 +147,32 @@ export default function AntecipacoesPage() {
     toast.info("Funcionalidade de visualização será implementada");
   };
 
-  const handleCancelar = (antecipacao: Antecipacao) => {
-    // TODO: Implementar cancelamento
-    toast.info("Funcionalidade de cancelamento será implementada");
+  const handleCancelar = async (antecipacao: Antecipacao) => {
+    try {
+      const { error } = await supabase
+        .from("antecipacoes")
+        .update({ status: "cancelada" })
+        .eq("id", antecipacao.id);
+
+      if (error) {
+        console.error("Erro ao cancelar antecipação:", error);
+        throw error;
+      }
+
+      // Atualizar na lista local
+      setAntecipacoes(prev => 
+        prev.map(a => 
+          a.id === antecipacao.id 
+            ? { ...a, status: "cancelada" as const }
+            : a
+        )
+      );
+      
+      toast.success("Antecipação cancelada com sucesso");
+    } catch (error) {
+      console.error('Erro ao cancelar antecipação:', error);
+      toast.error("Erro ao cancelar antecipação");
+    }
   };
 
   const handleNovaAntecipacao = () => {
