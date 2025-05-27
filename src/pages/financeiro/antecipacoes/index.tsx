@@ -70,27 +70,68 @@ export default function AntecipacoesPage() {
 
       console.log("Carregando antecipações para empresa:", currentCompany.id);
 
-      const { data, error } = await supabase
+      // Buscar antecipações
+      const { data: antecipacoesData, error: antecipacoesError } = await supabase
         .from("antecipacoes")
-        .select(`
-          *,
-          favorecido:favorecidos(nome),
-          tipo_titulo:tipos_titulos(nome)
-        `)
+        .select("*")
         .eq("empresa_id", currentCompany.id)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Erro ao carregar antecipações:", error);
-        throw error;
+      if (antecipacoesError) {
+        console.error("Erro ao carregar antecipações:", antecipacoesError);
+        throw antecipacoesError;
       }
 
-      console.log("Dados carregados:", data);
+      console.log("Dados de antecipações carregados:", antecipacoesData);
+
+      // Buscar favorecidos
+      const favorecidosIds = antecipacoesData
+        ?.filter(item => item.favorecido_id)
+        .map(item => item.favorecido_id) || [];
+
+      let favorecidosMap: Record<string, string> = {};
+      
+      if (favorecidosIds.length > 0) {
+        const { data: favorecidosData, error: favorecidosError } = await supabase
+          .from("favorecidos")
+          .select("id, nome")
+          .in("id", favorecidosIds);
+
+        if (favorecidosError) {
+          console.error("Erro ao carregar favorecidos:", favorecidosError);
+        } else {
+          favorecidosMap = Object.fromEntries(
+            favorecidosData?.map(fav => [fav.id, fav.nome]) || []
+          );
+        }
+      }
+
+      // Buscar tipos de títulos
+      const tiposTitulosIds = antecipacoesData
+        ?.filter(item => item.tipo_titulo_id)
+        .map(item => item.tipo_titulo_id) || [];
+
+      let tiposTitulosMap: Record<string, string> = {};
+      
+      if (tiposTitulosIds.length > 0) {
+        const { data: tiposTitulosData, error: tiposTitulosError } = await supabase
+          .from("tipos_titulos")
+          .select("id, nome")
+          .in("id", tiposTitulosIds);
+
+        if (tiposTitulosError) {
+          console.error("Erro ao carregar tipos de títulos:", tiposTitulosError);
+        } else {
+          tiposTitulosMap = Object.fromEntries(
+            tiposTitulosData?.map(tipo => [tipo.id, tipo.nome]) || []
+          );
+        }
+      }
 
       // Transformar dados para o formato esperado pela tabela
-      const antecipacoesMapeadas: Antecipacao[] = (data || []).map(item => ({
+      const antecipacoesMapeadas: Antecipacao[] = (antecipacoesData || []).map(item => ({
         id: item.id,
-        favorecido: item.favorecido?.nome || "N/A",
+        favorecido: favorecidosMap[item.favorecido_id] || "N/A",
         tipoOperacao: item.tipo_operacao as "receber" | "pagar",
         dataAntecipacao: new Date(item.data_lancamento + 'T12:00:00'),
         valorTotal: Number(item.valor_total),
@@ -100,6 +141,7 @@ export default function AntecipacoesPage() {
         status: item.status as "ativa" | "utilizada" | "cancelada"
       }));
 
+      console.log("Antecipações mapeadas:", antecipacoesMapeadas);
       setAntecipacoes(antecipacoesMapeadas);
     } catch (error) {
       console.error('Erro ao carregar antecipações:', error);
