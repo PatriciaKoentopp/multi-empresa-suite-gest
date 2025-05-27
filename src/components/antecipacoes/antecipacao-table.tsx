@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -151,15 +150,14 @@ export function AntecipacaoTable({
                         Visualizar
                       </DropdownMenuItem>
                       
-                      {antecipacao.status === 'ativa' && (
-                        <DropdownMenuItem
-                          onClick={() => onEdit(antecipacao)}
-                          className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
-                        >
-                          <Edit className="h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                      )}
+                      <DropdownMenuItem
+                        onClick={() => onEdit(antecipacao)}
+                        className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        disabled={antecipacao.conciliada === true}
+                      >
+                        <Edit className="h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
 
                       <DropdownMenuItem
                         onClick={() => onDelete(antecipacao.id)}
