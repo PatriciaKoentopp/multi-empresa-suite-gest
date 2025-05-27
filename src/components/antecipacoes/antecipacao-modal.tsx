@@ -216,7 +216,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
         tipo_operacao: operacao === "receber" ? "entrada" : "saida",
         valor: valorNumerico,
         saldo: novoSaldo,
-        origem: "movimentacao", // Usando "movimentacao" em vez de "antecipacao"
+        origem: "movimentacao",
         situacao: "conciliado",
         conta_corrente_id: contaCorrente,
         forma_pagamento: formasPagamento.find(f => f.id === formaPagamento)?.nome || "Dinheiro"
@@ -225,16 +225,19 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
       console.log("Dados do fluxo de caixa:", fluxoCaixaData);
 
       // Inserir no fluxo de caixa
-      const { error: fluxoError } = await supabase
+      const { data: fluxoInserido, error: fluxoError } = await supabase
         .from("fluxo_caixa")
-        .insert(fluxoCaixaData);
+        .insert(fluxoCaixaData)
+        .select()
+        .single();
 
       if (fluxoError) {
         console.error("Erro ao inserir no fluxo de caixa:", fluxoError);
+        console.error("Dados que causaram erro:", fluxoCaixaData);
         throw fluxoError;
       }
 
-      console.log("Fluxo de caixa inserido com sucesso");
+      console.log("Fluxo de caixa inserido com sucesso:", fluxoInserido);
 
       // Atualizar saldo da conta corrente
       const { error: saldoError } = await supabase
