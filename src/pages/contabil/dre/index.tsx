@@ -133,7 +133,7 @@ export default function DrePage() {
                 tipo_operacao,
                 considerar_dre
               ),
-              plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
+              plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre, considerar_dre))
             `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate);
           if (error) throw error;
           dadosAgrupados = processarMovimentacoes(movimentacoes || []);
@@ -150,7 +150,7 @@ export default function DrePage() {
                 tipo_operacao,
                 considerar_dre
               ),
-              plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
+              plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre, considerar_dre))
             `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate);
           if (error) throw error;
 
@@ -195,7 +195,7 @@ export default function DrePage() {
                   tipo_operacao,
                   considerar_dre
                 ),
-                plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
+                plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre, considerar_dre))
               `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate);
             if (error) throw error;
             dadosPorAno[anoSelecionado] = processarMovimentacoes(movimentacoes || []);
@@ -214,7 +214,7 @@ export default function DrePage() {
                 tipo_operacao,
                 considerar_dre
               ),
-              plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
+              plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre, considerar_dre))
             `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate);
           if (error) throw error;
           dadosAgrupados = processarMovimentacoes(movimentacoes || []);
@@ -265,11 +265,17 @@ export default function DrePage() {
     let distribuicaoLucros = 0;
     let impostos = 0;
     movimentacoes.forEach(mov => {
-      const considerarDre = mov.movimentacoes?.considerar_dre !== false;
-      if (!considerarDre) return;
+      const considerarDreMovimentacao = mov.movimentacoes?.considerar_dre !== false;
+      if (!considerarDreMovimentacao) return;
+
+      const planoContas = mov.plano_contas?.plano_contas;
+      
+      // Novo filtro: verificar se a conta deve ser considerada no DRE
+      const considerarDreConta = planoContas?.considerar_dre !== false;
+      if (!considerarDreConta) return;
+
       const valor = Number(mov.valor);
       const tipoOperacao = mov.movimentacoes?.tipo_operacao;
-      const planoContas = mov.plano_contas?.plano_contas;
       const descricaoCategoria = planoContas?.descricao || 'Sem categoria';
       const contaId = planoContas?.id || 'sem_conta';
       const dataFormatada = mov.data_movimentacao ? mov.data_movimentacao.substring(8, 10) + "/" + mov.data_movimentacao.substring(5, 7) + "/" + mov.data_movimentacao.substring(0, 4) : '';
