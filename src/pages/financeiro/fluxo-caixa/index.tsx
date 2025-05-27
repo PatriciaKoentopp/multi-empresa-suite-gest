@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -383,6 +384,7 @@ export default function FluxoCaixaPage() {
     const dt = brToDate(val);
     setDataInicial(dt);
   }
+
   function onBlurDataInicial(e: React.FocusEvent<HTMLInputElement>) {
     if (e.target.value && !brToDate(e.target.value)) {
       setDataInicial(undefined);
@@ -396,6 +398,7 @@ export default function FluxoCaixaPage() {
     const dt = brToDate(val);
     setDataFinal(dt);
   }
+
   function onBlurDataFinal(e: React.FocusEvent<HTMLInputElement>) {
     if (e.target.value && !brToDate(e.target.value)) {
       setDataFinal(undefined);
@@ -575,6 +578,7 @@ export default function FluxoCaixaPage() {
                 </SelectContent>
               </Select>
             </div>
+            
             {/* Período */}
             <div className="col-span-1">
               <Select value={periodo} onValueChange={(v) => setPeriodo(v as any)}>
@@ -589,6 +593,7 @@ export default function FluxoCaixaPage() {
                 </SelectContent>
               </Select>
             </div>
+            
             {/* Data Inicial */}
             <div className="col-span-1 flex flex-col">
               <label className="text-xs font-medium mb-1 ml-1">Data Inicial</label>
@@ -612,6 +617,7 @@ export default function FluxoCaixaPage() {
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none" />
               </div>
             </div>
+            
             {/* Data Final */}
             <div className="col-span-1 flex flex-col">
               <label className="text-xs font-medium mb-1 ml-1">Data Final</label>
@@ -628,12 +634,7 @@ export default function FluxoCaixaPage() {
                   onFocus={e => {
                     if (!dataFinalStr) setDataFinalStr("");
                   }}
-                  onBlurDataFinal(e => {
-                    if (e.target.value && !brToDate(e.target.value)) {
-                      setDataFinal(undefined);
-                      setDataFinalStr("");
-                    }
-                  }}
+                  onBlur={onBlurDataFinal}
                   style={{ minHeight: 52 }}
                   autoComplete="off"
                 />
