@@ -18,7 +18,11 @@ interface ContaReceber {
   dataVencimento: Date;
   dataRecebimento?: Date;
   valor: number;
+  valorEfetivo: number; // Valor com multa, juros e desconto aplicados
   status: "recebido" | "recebido_em_atraso" | "em_aberto";
+  multa?: number;
+  juros?: number;
+  desconto?: number;
 }
 
 export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasReceberTabProps) {
@@ -60,7 +64,7 @@ export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasRec
         // Obter os IDs das movimentações
         const movimentacoesIds = movimentacoes.map(m => m.id);
 
-        // Buscar as parcelas associadas a essas movimentações
+        // Buscar as parcelas associadas a essas movimentações incluindo multa, juros e desconto
         const { data: parcelas, error: parcError } = await supabase
           .from("movimentacoes_parcelas")
           .select("*")
@@ -79,6 +83,13 @@ export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasRec
           const dataVencimento = new Date(parcela.data_vencimento);
           const dataRecebimento = parcela.data_pagamento ? new Date(parcela.data_pagamento) : undefined;
           
+          // Calcular o valor efetivo considerando multa, juros e desconto
+          const valorOriginal = parcela.valor;
+          const multa = parcela.multa || 0;
+          const juros = parcela.juros || 0;
+          const desconto = parcela.desconto || 0;
+          const valorEfetivo = valorOriginal + multa + juros - desconto;
+          
           let status: ContaReceber["status"] = "em_aberto";
           
           if (dataRecebimento) {
@@ -93,8 +104,12 @@ export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasRec
             numeroTitulo: numerosPorMovimentacao[parcela.movimentacao_id],
             dataVencimento,
             dataRecebimento,
-            valor: parcela.valor,
-            status
+            valor: valorOriginal,
+            valorEfetivo,
+            status,
+            multa,
+            juros,
+            desconto
           };
         });
 
@@ -109,13 +124,14 @@ export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasRec
     fetchContasReceber();
   }, [currentCompany, favorecidoId]);
 
+  // Usar valorEfetivo para os cálculos dos totais
   const totalRecebido = contasReceber
     .filter(conta => conta.status === "recebido" || conta.status === "recebido_em_atraso")
-    .reduce((total, conta) => total + conta.valor, 0);
+    .reduce((total, conta) => total + conta.valorEfetivo, 0);
   
   const totalAReceber = contasReceber
     .filter(conta => conta.status === "em_aberto")
-    .reduce((total, conta) => total + conta.valor, 0);
+    .reduce((total, conta) => total + conta.valorEfetivo, 0);
   
   const totalEmAtraso = contasReceber
     .filter(conta => {
@@ -123,7 +139,7 @@ export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasRec
       hoje.setHours(0, 0, 0, 0);
       return conta.status === "em_aberto" && conta.dataVencimento < hoje;
     })
-    .reduce((total, conta) => total + conta.valor, 0);
+    .reduce((total, conta) => total + conta.valorEfetivo, 0);
 
   function getStatusBadge(status: ContaReceber["status"], dataVencimento: Date) {
     const hoje = new Date();
@@ -187,20 +203,21 @@ export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasRec
               <TableHead>Parcela</TableHead>
               <TableHead>Data Vencimento</TableHead>
               <TableHead>Data Recebimento</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>Descrição</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-right">Valor Efetivo</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-6">
+                <TableCell colSpan={6} className="text-center py-6">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : contasReceber.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                   Nenhuma conta a receber encontrada para este favorecido
                 </TableCell>
               </TableRow>
@@ -218,8 +235,21 @@ export function FavorecidoContasReceberTab({ favorecidoId }: FavorecidoContasRec
                   </TableCell>
                   <TableCell>{formatDate(conta.dataVencimento)}</TableCell>
                   <TableCell>{conta.dataRecebimento ? formatDate(conta.dataRecebimento) : "-"}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(conta.valor)}</TableCell>
+                  <TableCell>
+                    <div>
+                      <div>-</div>
+                      {(conta.multa || conta.juros || conta.desconto) && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Valor original: {formatCurrency(conta.valor)}
+                          {conta.multa ? ` | Multa: ${formatCurrency(conta.multa)}` : ''}
+                          {conta.juros ? ` | Juros: ${formatCurrency(conta.juros)}` : ''}
+                          {conta.desconto ? ` | Desconto: ${formatCurrency(conta.desconto)}` : ''}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{getStatusBadge(conta.status, conta.dataVencimento)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(conta.valorEfetivo)}</TableCell>
                 </TableRow>
               ))
             )}
