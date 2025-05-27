@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,7 @@ export interface Antecipacao {
   valorDisponivel: number;
   descricao?: string;
   status: "ativa" | "utilizada" | "cancelada";
+  contaCorrente: string;
 }
 
 interface AntecipacaoTableProps {
@@ -102,6 +102,7 @@ export function AntecipacaoTable({
             <TableHead className="w-[120px]">Data</TableHead>
             <TableHead>Favorecido</TableHead>
             <TableHead className="w-[120px]">Tipo</TableHead>
+            <TableHead>Conta Corrente</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead className="text-right w-[120px]">Valor Total</TableHead>
             <TableHead className="text-right w-[120px]">Valor Utilizado</TableHead>
@@ -113,7 +114,7 @@ export function AntecipacaoTable({
         <TableBody>
           {antecipacoes.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={10} className="text-center py-6 text-muted-foreground">
                 Nenhuma antecipação encontrada
               </TableCell>
             </TableRow>
@@ -123,6 +124,7 @@ export function AntecipacaoTable({
                 <TableCell className="text-center">{formatData(antecipacao.dataAntecipacao)}</TableCell>
                 <TableCell className="font-medium">{antecipacao.favorecido}</TableCell>
                 <TableCell>{getTipoBadge(antecipacao.tipoOperacao)}</TableCell>
+                <TableCell>{antecipacao.contaCorrente}</TableCell>
                 <TableCell>{antecipacao.descricao || "-"}</TableCell>
                 <TableCell className="text-right">{formatCurrency(antecipacao.valorTotal)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(antecipacao.valorUtilizado)}</TableCell>
@@ -185,7 +187,7 @@ export function AntecipacaoTable({
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={4} className="font-bold text-right">Total</TableCell>
+            <TableCell colSpan={5} className="font-bold text-right">Total</TableCell>
             <TableCell className="font-bold text-right">{formatCurrency(totalValorTotal)}</TableCell>
             <TableCell className="font-bold text-right">{formatCurrency(totalValorUtilizado)}</TableCell>
             <TableCell className="font-bold text-right">{formatCurrency(totalValorDisponivel)}</TableCell>

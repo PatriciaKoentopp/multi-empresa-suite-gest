@@ -25,12 +25,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AntecipacaoTable, Antecipacao } from "@/components/antecipacoes/antecipacao-table";
 import { AntecipacaoModal } from "@/components/antecipacoes/antecipacao-modal";
+import { VisualizarAntecipacaoModal } from "@/components/antecipacoes/visualizar-antecipacao-modal";
+import { EditarAntecipacaoModal } from "@/components/antecipacoes/editar-antecipacao-modal";
 
 export default function AntecipacoesPage() {
   const { currentCompany } = useCompany();
   const [antecipacoes, setAntecipacoes] = useState<Antecipacao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isVisualizarModalOpen, setIsVisualizarModalOpen] = useState(false);
+  const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
+  const [antecipacaoSelecionada, setAntecipacaoSelecionada] = useState<Antecipacao | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todas" | "ativa" | "utilizada" | "cancelada">("ativa");
@@ -174,8 +179,8 @@ export default function AntecipacoesPage() {
   }
 
   const handleEdit = (antecipacao: Antecipacao) => {
-    // TODO: Implementar edição
-    toast.info("Funcionalidade de edição será implementada");
+    setAntecipacaoSelecionada(antecipacao);
+    setIsEditarModalOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -207,8 +212,8 @@ export default function AntecipacoesPage() {
   };
 
   const handleVisualizar = (antecipacao: Antecipacao) => {
-    // TODO: Implementar visualização
-    toast.info("Funcionalidade de visualização será implementada");
+    setAntecipacaoSelecionada(antecipacao);
+    setIsVisualizarModalOpen(true);
   };
 
   const handleCancelar = async (antecipacao: Antecipacao) => {
@@ -460,6 +465,25 @@ export default function AntecipacoesPage() {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSalvarAntecipacao}
+      />
+
+      <VisualizarAntecipacaoModal
+        open={isVisualizarModalOpen}
+        onClose={() => {
+          setIsVisualizarModalOpen(false);
+          setAntecipacaoSelecionada(null);
+        }}
+        antecipacao={antecipacaoSelecionada}
+      />
+
+      <EditarAntecipacaoModal
+        open={isEditarModalOpen}
+        onClose={() => {
+          setIsEditarModalOpen(false);
+          setAntecipacaoSelecionada(null);
+        }}
+        onSave={handleSalvarAntecipacao}
+        antecipacao={antecipacaoSelecionada}
       />
     </div>
   );
