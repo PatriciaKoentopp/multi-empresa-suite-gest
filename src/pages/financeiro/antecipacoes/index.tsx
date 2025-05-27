@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,11 +26,13 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { formatDate } from "@/lib/utils";
 import { AntecipacaoTable, Antecipacao } from "@/components/antecipacoes/antecipacao-table";
+import { AntecipacaoModal } from "@/components/antecipacoes/antecipacao-modal";
 
 export default function AntecipacoesPage() {
   const { currentCompany } = useCompany();
   const [antecipacoes, setAntecipacoes] = useState<Antecipacao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todas" | "ativa" | "utilizada" | "cancelada">("ativa");
@@ -132,6 +133,15 @@ export default function AntecipacoesPage() {
     toast.info("Funcionalidade de cancelamento será implementada");
   };
 
+  const handleNovaAntecipacao = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleSalvarAntecipacao = () => {
+    // Recarregar dados após salvar
+    carregarAntecipacoes();
+  };
+
   const limparFiltros = () => {
     setSearchTerm("");
     setStatusFilter("ativa");
@@ -200,7 +210,7 @@ export default function AntecipacoesPage() {
         <h1 className="text-2xl font-bold">Antecipações</h1>
         <Button
           variant="blue"
-          onClick={() => toast.info("Modal de nova antecipação será implementado")}
+          onClick={handleNovaAntecipacao}
         >
           Nova Antecipação
         </Button>
@@ -209,6 +219,7 @@ export default function AntecipacoesPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
+            
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative col-span-1 min-w-[240px]">
                 <button
@@ -338,6 +349,12 @@ export default function AntecipacoesPage() {
           </div>
         </CardContent>
       </Card>
+
+      <AntecipacaoModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSalvarAntecipacao}
+      />
     </div>
   );
 }
