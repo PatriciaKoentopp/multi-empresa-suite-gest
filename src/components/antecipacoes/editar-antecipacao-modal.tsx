@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -165,7 +164,8 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
     try {
       setIsLoading(true);
 
-      const { error } = await supabase
+      // Atualizar a antecipação
+      const { error: antecipacaoError } = await supabase
         .from("antecipacoes")
         .update({
           data_emissao: dataEmissao.toISOString().split('T')[0],
@@ -182,9 +182,29 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
         })
         .eq("id", antecipacao.id);
 
-      if (error) {
-        console.error("Erro ao atualizar antecipação:", error);
-        throw error;
+      if (antecipacaoError) {
+        console.error("Erro ao atualizar antecipação:", antecipacaoError);
+        throw antecipacaoError;
+      }
+
+      // Atualizar também no fluxo de caixa
+      const valorOperacao = antecipacao.tipoOperacao === "receber" ? novoValor : -novoValor;
+      
+      const { error: fluxoCaixaError } = await supabase
+        .from("fluxo_caixa")
+        .update({
+          data_movimentacao: dataLancamento.toISOString().split('T')[0],
+          valor: valorOperacao,
+          conta_corrente_id: contaCorrente,
+          forma_pagamento: formasPagamento.find(f => f.id === formaPagamento)?.nome || "Dinheiro",
+          descricao: descricao || `Antecipação - ${antecipacao.tipoOperacao === "receber" ? "Recebimento" : "Pagamento"}`,
+          updated_at: new Date().toISOString()
+        })
+        .eq("antecipacao_id", antecipacao.id);
+
+      if (fluxoCaixaError) {
+        console.error("Erro ao atualizar fluxo de caixa:", fluxoCaixaError);
+        throw fluxoCaixaError;
       }
 
       toast.success("Antecipação atualizada com sucesso!");
