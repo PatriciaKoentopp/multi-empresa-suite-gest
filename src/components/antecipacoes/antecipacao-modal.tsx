@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { useMovimentacaoDados } from "@/hooks/useMovimentacaoDados";
 import { useCompany } from "@/contexts/company-context";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 
@@ -30,7 +31,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
   const { currentCompany } = useCompany();
   const { favorecidos, tiposTitulos } = useMovimentacaoDados();
 
-  const [operacao, setOperacao] = useState<"cliente" | "fornecedor">("cliente");
+  const [operacao, setOperacao] = useState<"receber" | "pagar">("receber");
   const [dataEmissao, setDataEmissao] = useState<Date>(new Date());
   const [dataLancamento, setDataLancamento] = useState<Date>(new Date());
   const [mesReferencia, setMesReferencia] = useState("");
@@ -44,8 +45,8 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
 
   // Filtrar tipos de títulos baseado na operação
   const tiposTitulosFiltrados = tiposTitulos.filter(tipo => {
-    if (operacao === "cliente") return tipo.tipo === "receber";
-    if (operacao === "fornecedor") return tipo.tipo === "pagar";
+    if (operacao === "receber") return tipo.tipo === "receber";
+    if (operacao === "pagar") return tipo.tipo === "pagar";
     return false;
   });
 
@@ -90,7 +91,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
   }, [operacao]);
 
   const resetForm = () => {
-    setOperacao("cliente");
+    setOperacao("receber");
     setDataEmissao(new Date());
     setDataLancamento(new Date());
     setMesReferencia("");
@@ -117,9 +118,36 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
     try {
       setIsLoading(true);
 
-      // TODO: Implementar salvamento da antecipação
-      // Por enquanto, apenas simular o salvamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Converter valor para número
+      const valorNumerico = Number(valor.replace(/\./g, '').replace(',', '.'));
+
+      // Preparar dados para inserção
+      const antecipacaoData = {
+        empresa_id: currentCompany.id,
+        tipo_operacao: operacao,
+        data_emissao: dataEmissao.toISOString().split('T')[0],
+        data_lancamento: dataLancamento.toISOString().split('T')[0],
+        mes_referencia: mesReferencia,
+        numero_documento: numDoc || null,
+        tipo_titulo_id: tipoTitulo || null,
+        favorecido_id: favorecido,
+        forma_pagamento: formasPagamento.find(f => f.id === formaPagamento)?.nome || "Dinheiro",
+        valor_total: valorNumerico,
+        valor_utilizado: 0,
+        descricao: descricao || null
+      };
+
+      console.log("Dados da antecipação:", antecipacaoData);
+
+      // Inserir no banco
+      const { error } = await supabase
+        .from("antecipacoes")
+        .insert(antecipacaoData);
+
+      if (error) {
+        console.error("Erro ao inserir antecipação:", error);
+        throw error;
+      }
 
       toast.success("Antecipação registrada com sucesso!");
       resetForm();
@@ -155,8 +183,8 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent className="bg-white z-50">
-                  <SelectItem value="cliente">Antecipação de Cliente</SelectItem>
-                  <SelectItem value="fornecedor">Antecipação de Fornecedor</SelectItem>
+                  <SelectItem value="receber">Antecipação de Cliente</SelectItem>
+                  <SelectItem value="pagar">Antecipação de Fornecedor</SelectItem>
                 </SelectContent>
               </Select>
             </div>

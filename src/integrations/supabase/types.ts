@@ -9,6 +9,66 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      antecipacoes: {
+        Row: {
+          created_at: string
+          data_emissao: string
+          data_lancamento: string
+          descricao: string | null
+          empresa_id: string
+          favorecido_id: string | null
+          forma_pagamento: string
+          id: string
+          mes_referencia: string | null
+          numero_documento: string | null
+          status: string
+          tipo_operacao: string
+          tipo_titulo_id: string | null
+          updated_at: string
+          valor_disponivel: number | null
+          valor_total: number
+          valor_utilizado: number
+        }
+        Insert: {
+          created_at?: string
+          data_emissao: string
+          data_lancamento: string
+          descricao?: string | null
+          empresa_id: string
+          favorecido_id?: string | null
+          forma_pagamento: string
+          id?: string
+          mes_referencia?: string | null
+          numero_documento?: string | null
+          status?: string
+          tipo_operacao: string
+          tipo_titulo_id?: string | null
+          updated_at?: string
+          valor_disponivel?: number | null
+          valor_total?: number
+          valor_utilizado?: number
+        }
+        Update: {
+          created_at?: string
+          data_emissao?: string
+          data_lancamento?: string
+          descricao?: string | null
+          empresa_id?: string
+          favorecido_id?: string | null
+          forma_pagamento?: string
+          id?: string
+          mes_referencia?: string | null
+          numero_documento?: string | null
+          status?: string
+          tipo_operacao?: string
+          tipo_titulo_id?: string | null
+          updated_at?: string
+          valor_disponivel?: number | null
+          valor_total?: number
+          valor_utilizado?: number
+        }
+        Relationships: []
+      }
       contas_correntes: {
         Row: {
           agencia: string

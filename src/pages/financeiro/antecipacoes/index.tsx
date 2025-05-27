@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -64,33 +65,44 @@ export default function AntecipacoesPage() {
     try {
       setIsLoading(true);
       
-      // Por enquanto, criar dados mock - será substituído pela integração com Supabase
-      const dadosMock: Antecipacao[] = [
-        {
-          id: "1",
-          favorecido: "João Silva",
-          tipoOperacao: "receber",
-          dataAntecipacao: new Date(2025, 0, 15),
-          valorTotal: 1000,
-          valorUtilizado: 300,
-          valorDisponivel: 700,
-          descricao: "Antecipação recebida do cliente",
-          status: "ativa"
-        },
-        {
-          id: "2", 
-          favorecido: "Maria Santos",
-          tipoOperacao: "pagar",
-          dataAntecipacao: new Date(2025, 0, 10),
-          valorTotal: 500,
-          valorUtilizado: 500,
-          valorDisponivel: 0,
-          descricao: "Pagamento antecipado ao fornecedor",
-          status: "utilizada"
-        }
-      ];
+      if (!currentCompany?.id) {
+        console.log("Empresa não selecionada");
+        return;
+      }
 
-      setAntecipacoes(dadosMock);
+      console.log("Carregando antecipações para empresa:", currentCompany.id);
+
+      const { data, error } = await supabase
+        .from("antecipacoes")
+        .select(`
+          *,
+          favorecido:favorecidos(nome),
+          tipo_titulo:tipos_titulos(nome)
+        `)
+        .eq("empresa_id", currentCompany.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Erro ao carregar antecipações:", error);
+        throw error;
+      }
+
+      console.log("Dados carregados:", data);
+
+      // Transformar dados para o formato esperado pela tabela
+      const antecipacoesMapeadas: Antecipacao[] = (data || []).map(item => ({
+        id: item.id,
+        favorecido: item.favorecido?.nome || "N/A",
+        tipoOperacao: item.tipo_operacao as "receber" | "pagar",
+        dataAntecipacao: new Date(item.data_lancamento + 'T12:00:00'),
+        valorTotal: Number(item.valor_total),
+        valorUtilizado: Number(item.valor_utilizado),
+        valorDisponivel: Number(item.valor_total) - Number(item.valor_utilizado),
+        descricao: item.descricao || "",
+        status: item.status as "ativa" | "utilizada" | "cancelada"
+      }));
+
+      setAntecipacoes(antecipacoesMapeadas);
     } catch (error) {
       console.error('Erro ao carregar antecipações:', error);
       toast.error('Erro ao carregar as antecipações');
@@ -112,7 +124,16 @@ export default function AntecipacoesPage() {
     if (!antecipacaoParaExcluir) return;
 
     try {
-      // TODO: Implementar exclusão no banco
+      const { error } = await supabase
+        .from("antecipacoes")
+        .delete()
+        .eq("id", antecipacaoParaExcluir);
+
+      if (error) {
+        console.error("Erro ao excluir antecipação:", error);
+        throw error;
+      }
+
       setAntecipacoes(prev => prev.filter(a => a.id !== antecipacaoParaExcluir));
       toast.success("Antecipação excluída com sucesso");
       setAntecipacaoParaExcluir(null);
