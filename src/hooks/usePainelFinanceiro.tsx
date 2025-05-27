@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -147,7 +146,7 @@ export const usePainelFinanceiro = () => {
       const saldoInicial = await calcularSaldoInicialPeriodo(filtro);
       setSaldoInicialPeriodo(saldoInicial);
       
-      // Criar a query base
+      // Criar a query base incluindo dados das antecipações
       let query = supabase
         .from('fluxo_caixa')
         .select(`
@@ -158,10 +157,17 @@ export const usePainelFinanceiro = () => {
           tipo_operacao,
           conta_corrente_id,
           situacao,
+          origem,
+          movimentacao_id,
           contas_correntes:conta_corrente_id (
             id,
             nome,
             considerar_saldo
+          ),
+          movimentacoes:movimentacao_id (
+            favorecidos:favorecido_id (
+              nome
+            )
           )
         `)
         .gte('data_movimentacao', dataInicioStr)
@@ -182,19 +188,67 @@ export const usePainelFinanceiro = () => {
       
       if (error) throw error;
       
+      // Buscar favorecidos das antecipações separadamente
+      const antecipacaoIds = (fluxoCaixaData || [])
+        .filter(item => item.origem === 'antecipacao')
+        .map(item => item.id);
+      
+      let antecipacoesFavorecidos: any = {};
+      
+      if (antecipacaoIds.length > 0) {
+        // Buscar as antecipações que correspondem aos registros do fluxo de caixa
+        // Usamos a descrição para extrair o ID da antecipação ou fazemos uma busca por data e valor
+        const { data: antecipacoes, error: antecipacaoError } = await supabase
+          .from('antecipacoes')
+          .select(`
+            id,
+            data_lancamento,
+            valor_total,
+            conta_corrente_id,
+            favorecidos:favorecido_id (
+              nome
+            )
+          `)
+          .gte('data_lancamento', dataInicioStr)
+          .lte('data_lancamento', dataFimStr);
+        
+        if (!antecipacaoError && antecipacoes) {
+          // Criar um mapa das antecipações por data, valor e conta para fazer o match
+          antecipacoes.forEach(antecipacao => {
+            const chave = `${antecipacao.data_lancamento}_${antecipacao.valor_total}_${antecipacao.conta_corrente_id}`;
+            antecipacoesFavorecidos[chave] = antecipacao.favorecidos?.nome || '';
+          });
+        }
+      }
+      
       // Transformar os dados para o formato correto
       // Quando não tem filtro de conta específica, filtrar para considerar apenas contas com considerar_saldo = true
       const fluxoCaixa: FluxoCaixaItem[] = (fluxoCaixaData || [])
         .filter(item => filtro.contaId || item.contas_correntes?.considerar_saldo)
-        .map(item => ({
-          id: item.id,
-          data: extrairDataSemTimeZone(item.data_movimentacao),
-          descricao: item.descricao || '',
-          conta_nome: item.contas_correntes?.nome || '',
-          conta_id: item.conta_corrente_id,
-          valor: Number(item.valor) || 0,
-          tipo: item.tipo_operacao === 'receber' ? 'entrada' : 'saida',
-        }));
+        .map(item => {
+          let favorecidoNome = '';
+          
+          if (item.origem === 'antecipacao') {
+            // Para antecipações, buscar o favorecido no mapa criado
+            const chave = `${item.data_movimentacao}_${Math.abs(Number(item.valor))}_${item.conta_corrente_id}`;
+            favorecidoNome = antecipacoesFavorecidos[chave] || '';
+          } else {
+            // Para outras origens, usar a relação normal
+            favorecidoNome = item.movimentacoes?.favorecidos?.nome || '';
+          }
+          
+          return {
+            id: item.id,
+            data: extrairDataSemTimeZone(item.data_movimentacao),
+            descricao: item.descricao || '',
+            conta_nome: item.contas_correntes?.nome || '',
+            conta_id: item.conta_corrente_id,
+            valor: Number(item.valor) || 0,
+            tipo: item.tipo_operacao === 'receber' ? 'entrada' : 'saida',
+            favorecido: favorecidoNome,
+            origem: item.origem || '',
+          };
+        });
       
       return fluxoCaixa;
     } catch (error) {
