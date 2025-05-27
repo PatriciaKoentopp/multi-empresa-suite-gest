@@ -216,7 +216,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
         tipo_operacao: operacao === "receber" ? "entrada" : "saida",
         valor: valorNumerico,
         saldo: novoSaldo,
-        origem: "antecipacao",
+        origem: "movimentacao", // Usando "movimentacao" em vez de "antecipacao"
         situacao: "conciliado",
         conta_corrente_id: contaCorrente,
         forma_pagamento: formasPagamento.find(f => f.id === formaPagamento)?.nome || "Dinheiro"
