@@ -154,6 +154,23 @@ export default function AntecipacoesPage() {
         }
       }
 
+      // Buscar status de conciliação no fluxo de caixa
+      const antecipacoesIds = antecipacoesData?.map(item => item.id) || [];
+      let conciliacaoMap: Record<string, boolean> = {};
+
+      if (antecipacoesIds.length > 0) {
+        const { data: fluxoCaixaData, error: fluxoCaixaError } = await supabase
+          .from("fluxo_caixa")
+          .select("antecipacao_id, situacao")
+          .in("antecipacao_id", antecipacoesIds);
+
+        if (!fluxoCaixaError && fluxoCaixaData) {
+          conciliacaoMap = Object.fromEntries(
+            fluxoCaixaData.map(item => [item.antecipacao_id, item.situacao === 'conciliado'])
+          );
+        }
+      }
+
       // Transformar dados para o formato esperado pela tabela
       const antecipacoesMapeadas: Antecipacao[] = (antecipacoesData || []).map(item => ({
         id: item.id,
@@ -165,7 +182,8 @@ export default function AntecipacoesPage() {
         valorDisponivel: Number(item.valor_total) - Number(item.valor_utilizado),
         descricao: item.descricao || "",
         status: item.status as "ativa" | "utilizada" | "cancelada",
-        contaCorrente: contasCorrentesMap[item.conta_corrente_id] || "N/A"
+        contaCorrente: contasCorrentesMap[item.conta_corrente_id] || "N/A",
+        conciliada: conciliacaoMap[item.id] || false
       }));
 
       console.log("Antecipações mapeadas:", antecipacoesMapeadas);
@@ -191,16 +209,35 @@ export default function AntecipacoesPage() {
     if (!antecipacaoParaExcluir) return;
 
     try {
-      const { error } = await supabase
+      console.log("Iniciando exclusão da antecipação:", antecipacaoParaExcluir);
+
+      // Primeiro, excluir do fluxo de caixa
+      const { error: fluxoCaixaError } = await supabase
+        .from("fluxo_caixa")
+        .delete()
+        .eq("antecipacao_id", antecipacaoParaExcluir);
+
+      if (fluxoCaixaError) {
+        console.error("Erro ao excluir do fluxo de caixa:", fluxoCaixaError);
+        throw fluxoCaixaError;
+      }
+
+      console.log("Registro do fluxo de caixa excluído com sucesso");
+
+      // Depois, excluir a antecipação
+      const { error: antecipacaoError } = await supabase
         .from("antecipacoes")
         .delete()
         .eq("id", antecipacaoParaExcluir);
 
-      if (error) {
-        console.error("Erro ao excluir antecipação:", error);
-        throw error;
+      if (antecipacaoError) {
+        console.error("Erro ao excluir antecipação:", antecipacaoError);
+        throw antecipacaoError;
       }
 
+      console.log("Antecipação excluída com sucesso");
+
+      // Atualizar a lista local
       setAntecipacoes(prev => prev.filter(a => a.id !== antecipacaoParaExcluir));
       toast.success("Antecipação excluída com sucesso");
       setAntecipacaoParaExcluir(null);
@@ -214,34 +251,6 @@ export default function AntecipacoesPage() {
   const handleVisualizar = (antecipacao: Antecipacao) => {
     setAntecipacaoSelecionada(antecipacao);
     setIsVisualizarModalOpen(true);
-  };
-
-  const handleCancelar = async (antecipacao: Antecipacao) => {
-    try {
-      const { error } = await supabase
-        .from("antecipacoes")
-        .update({ status: "cancelada" })
-        .eq("id", antecipacao.id);
-
-      if (error) {
-        console.error("Erro ao cancelar antecipação:", error);
-        throw error;
-      }
-
-      // Atualizar na lista local
-      setAntecipacoes(prev => 
-        prev.map(a => 
-          a.id === antecipacao.id 
-            ? { ...a, status: "cancelada" as const }
-            : a
-        )
-      );
-      
-      toast.success("Antecipação cancelada com sucesso");
-    } catch (error) {
-      console.error('Erro ao cancelar antecipação:', error);
-      toast.error("Erro ao cancelar antecipação");
-    }
   };
 
   const handleNovaAntecipacao = () => {
@@ -305,7 +314,7 @@ export default function AntecipacoesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir esta antecipação? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir esta antecipação? Esta ação também removerá o registro do fluxo de caixa e não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -454,7 +463,6 @@ export default function AntecipacoesPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onVisualizar={handleVisualizar}
-                onCancelar={handleCancelar}
               />
             </div>
           </div>

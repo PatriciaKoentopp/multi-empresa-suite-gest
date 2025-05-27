@@ -1,8 +1,9 @@
+
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import { MoreHorizontal, Eye, Edit, Trash2, Ban } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -21,6 +22,7 @@ export interface Antecipacao {
   descricao?: string;
   status: "ativa" | "utilizada" | "cancelada";
   contaCorrente: string;
+  conciliada?: boolean; // Nova propriedade para indicar se está conciliada
 }
 
 interface AntecipacaoTableProps {
@@ -28,15 +30,13 @@ interface AntecipacaoTableProps {
   onEdit: (antecipacao: Antecipacao) => void;
   onDelete: (id: string) => void;
   onVisualizar: (antecipacao: Antecipacao) => void;
-  onCancelar: (antecipacao: Antecipacao) => void;
 }
 
 export function AntecipacaoTable({ 
   antecipacoes, 
   onEdit, 
   onDelete,
-  onVisualizar,
-  onCancelar
+  onVisualizar
 }: AntecipacaoTableProps) {
   function formatData(data: Date) {
     const dia = String(data.getDate()).padStart(2, '0');
@@ -152,28 +152,19 @@ export function AntecipacaoTable({
                       </DropdownMenuItem>
                       
                       {antecipacao.status === 'ativa' && (
-                        <>
-                          <DropdownMenuItem
-                            onClick={() => onEdit(antecipacao)}
-                            className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
-                          >
-                            <Edit className="h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onCancelar(antecipacao)}
-                            className="flex items-center gap-2 text-orange-500 focus:bg-orange-100 focus:text-orange-700"
-                          >
-                            <Ban className="h-4 w-4" />
-                            Cancelar
-                          </DropdownMenuItem>
-                        </>
+                        <DropdownMenuItem
+                          onClick={() => onEdit(antecipacao)}
+                          className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
                       )}
 
                       <DropdownMenuItem
                         onClick={() => onDelete(antecipacao.id)}
                         className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
-                        disabled={antecipacao.valorUtilizado > 0}
+                        disabled={antecipacao.conciliada === true}
                       >
                         <Trash2 className="h-4 w-4" />
                         Excluir
