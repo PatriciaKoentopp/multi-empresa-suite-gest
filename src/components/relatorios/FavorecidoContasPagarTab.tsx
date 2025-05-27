@@ -19,7 +19,11 @@ interface ContaPagar {
   dataVencimento: Date;
   dataPagamento?: Date;
   valor: number;
+  valorEfetivo: number; // Valor com multa, juros e desconto aplicados
   status: "pago" | "pago_em_atraso" | "em_aberto";
+  multa?: number;
+  juros?: number;
+  desconto?: number;
 }
 
 export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagarTabProps) {
@@ -64,7 +68,7 @@ export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagar
         // Obter os IDs das movimentações
         const movimentacoesIds = movimentacoes.map(m => m.id);
 
-        // Buscar as parcelas associadas a essas movimentações
+        // Buscar as parcelas associadas a essas movimentações incluindo multa, juros e desconto
         const { data: parcelas, error: parcError } = await supabase
           .from("movimentacoes_parcelas")
           .select("*")
@@ -83,6 +87,13 @@ export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagar
           const dataVencimento = new Date(parcela.data_vencimento);
           const dataPagamento = parcela.data_pagamento ? new Date(parcela.data_pagamento) : undefined;
           
+          // Calcular o valor efetivo considerando multa, juros e desconto
+          const valorOriginal = parcela.valor;
+          const multa = parcela.multa || 0;
+          const juros = parcela.juros || 0;
+          const desconto = parcela.desconto || 0;
+          const valorEfetivo = valorOriginal + multa + juros - desconto;
+          
           let status: ContaPagar["status"] = "em_aberto";
           
           if (dataPagamento) {
@@ -100,8 +111,12 @@ export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagar
             descricao: dadosMovimentacao.descricao,
             dataVencimento,
             dataPagamento,
-            valor: parcela.valor,
-            status
+            valor: valorOriginal,
+            valorEfetivo,
+            status,
+            multa,
+            juros,
+            desconto
           };
         });
 
@@ -116,13 +131,14 @@ export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagar
     fetchContasPagar();
   }, [currentCompany, favorecidoId]);
 
+  // Usar valorEfetivo para os cálculos dos totais
   const totalPago = contasPagar
     .filter(conta => conta.status === "pago" || conta.status === "pago_em_atraso")
-    .reduce((total, conta) => total + conta.valor, 0);
+    .reduce((total, conta) => total + conta.valorEfetivo, 0);
   
   const totalAPagar = contasPagar
     .filter(conta => conta.status === "em_aberto")
-    .reduce((total, conta) => total + conta.valor, 0);
+    .reduce((total, conta) => total + conta.valorEfetivo, 0);
   
   const totalEmAtraso = contasPagar
     .filter(conta => {
@@ -130,7 +146,7 @@ export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagar
       hoje.setHours(0, 0, 0, 0);
       return conta.status === "em_aberto" && conta.dataVencimento < hoje;
     })
-    .reduce((total, conta) => total + conta.valor, 0);
+    .reduce((total, conta) => total + conta.valorEfetivo, 0);
 
   function getStatusBadge(status: ContaPagar["status"], dataVencimento: Date) {
     const hoje = new Date();
@@ -196,7 +212,7 @@ export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagar
               <TableHead>Data Pagamento</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="text-right">Valor Efetivo</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -226,9 +242,21 @@ export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagar
                   </TableCell>
                   <TableCell>{formatDate(conta.dataVencimento)}</TableCell>
                   <TableCell>{conta.dataPagamento ? formatDate(conta.dataPagamento) : "-"}</TableCell>
-                  <TableCell>{conta.descricao || "-"}</TableCell>
+                  <TableCell>
+                    <div>
+                      <div>{conta.descricao || "-"}</div>
+                      {(conta.multa || conta.juros || conta.desconto) && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Valor original: {formatCurrency(conta.valor)}
+                          {conta.multa ? ` | Multa: ${formatCurrency(conta.multa)}` : ''}
+                          {conta.juros ? ` | Juros: ${formatCurrency(conta.juros)}` : ''}
+                          {conta.desconto ? ` | Desconto: ${formatCurrency(conta.desconto)}` : ''}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{getStatusBadge(conta.status, conta.dataVencimento)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(conta.valor)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(conta.valorEfetivo)}</TableCell>
                 </TableRow>
               ))
             )}
