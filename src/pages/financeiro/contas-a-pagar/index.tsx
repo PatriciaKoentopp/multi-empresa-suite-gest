@@ -33,6 +33,7 @@ import { useCompany } from "@/contexts/company-context";
 import { formatDate } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ContaCorrente } from "@/types/conta-corrente";
+import { AntecipacaoSelecionada } from "@/types/financeiro";
 
 export default function ContasAPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>([]);
@@ -126,32 +127,93 @@ export default function ContasAPagarPage() {
     setModalVisualizarBaixaAberto(true);
   };
 
-  function realizarBaixa({ dataPagamento, contaCorrenteId, multa, juros, desconto, formaPagamento }: {
+  function realizarBaixa({ dataPagamento, contaCorrenteId, multa, juros, desconto, formaPagamento, antecipacoesSelecionadas }: {
     dataPagamento: Date;
     contaCorrenteId: string;
     multa: number;
     juros: number;
     desconto: number;
     formaPagamento: string;
+    antecipacoesSelecionadas?: AntecipacaoSelecionada[];
   }) {
     if (!contaParaBaixar || !currentCompany) return;
 
     const atualizarMovimentacao = async () => {
       try {
+        // Formatar data para YYYY-MM-DD (sem timezone)
+        const dia = String(dataPagamento.getDate()).padStart(2, '0');
+        const mes = String(dataPagamento.getMonth() + 1).padStart(2, '0');
+        const ano = dataPagamento.getFullYear();
+        const dataFormated = `${ano}-${mes}-${dia}`;
+
         // Atualiza a parcela com os dados do pagamento
         const { error: errorParcela } = await supabase
           .from('movimentacoes_parcelas')
           .update({
-            data_pagamento: format(dataPagamento, 'yyyy-MM-dd'),
+            data_pagamento: dataFormated,
             multa,
             juros,
             desconto,
-            conta_corrente_id: contaCorrenteId,
+            conta_corrente_id: contaCorrenteId || null,
             forma_pagamento: formaPagamento
           })
           .eq('id', contaParaBaixar.id);
 
         if (errorParcela) throw errorParcela;
+
+        // Se utilizar antecipações, processar cada uma
+        if (antecipacoesSelecionadas && antecipacoesSelecionadas.length > 0) {
+          for (const antecipacao of antecipacoesSelecionadas) {
+            if (antecipacao.valor > 0) {
+              // Atualizar o valor utilizado da antecipação
+              const { data: antecipacaoAtual, error: antecipacaoError } = await supabase
+                .from('antecipacoes')
+                .select('valor_utilizado')
+                .eq('id', antecipacao.id)
+                .single();
+
+              if (antecipacaoError) throw antecipacaoError;
+
+              const novoValorUtilizado = Number(antecipacaoAtual.valor_utilizado) + antecipacao.valor;
+
+              const { error: updateAntecipacaoError } = await supabase
+                .from('antecipacoes')
+                .update({ valor_utilizado: novoValorUtilizado })
+                .eq('id', antecipacao.id);
+
+              if (updateAntecipacaoError) throw updateAntecipacaoError;
+
+              // Criar registro na tabela de relacionamento
+              const { error: relacionamentoError } = await supabase
+                .from('movimentacoes_parcelas_antecipacoes')
+                .insert({
+                  movimentacao_parcela_id: contaParaBaixar.id,
+                  antecipacao_id: antecipacao.id,
+                  valor_utilizado: antecipacao.valor
+                });
+
+              if (relacionamentoError) throw relacionamentoError;
+
+              // Criar entrada no fluxo de caixa para a antecipação
+              const { error: fluxoAntecipacaoError } = await supabase
+                .from('fluxo_caixa')
+                .insert({
+                  empresa_id: currentCompany.id,
+                  data_movimentacao: dataFormated,
+                  valor: -antecipacao.valor,
+                  origem: 'antecipacao',
+                  tipo_operacao: 'pagar',
+                  movimentacao_parcela_id: contaParaBaixar.id,
+                  antecipacao_id: antecipacao.id,
+                  situacao: 'nao_conciliado',
+                  descricao: `Antecipação utilizada: ${contaParaBaixar.descricao}`,
+                  saldo: 0
+                });
+
+              if (fluxoAntecipacaoError) throw fluxoAntecipacaoError;
+            }
+          }
+        }
 
         // Recarregar as contas após a baixa
         await carregarContasAPagar();
@@ -336,12 +398,11 @@ export default function ContasAPagarPage() {
         return;
       }
 
-      // 1. Verificar se o registro está conciliado no fluxo de caixa
-      const { data: fluxoCaixa, error: fluxoError } = await supabase
+      // 1. Verificar se algum registro do fluxo de caixa está conciliado
+      const { data: fluxoCaixaRegistros, error: fluxoError } = await supabase
         .from('fluxo_caixa')
         .select('situacao')
-        .eq('movimentacao_parcela_id', conta.id)
-        .single();
+        .eq('movimentacao_parcela_id', conta.id);
 
       if (fluxoError) {
         console.error('Erro ao verificar situação:', fluxoError);
@@ -353,7 +414,10 @@ export default function ContasAPagarPage() {
         return;
       }
 
-      if (fluxoCaixa?.situacao === 'conciliado') {
+      // Verificar se há algum registro conciliado
+      const temRegistroConciliado = fluxoCaixaRegistros?.some(registro => registro.situacao === 'conciliado');
+
+      if (temRegistroConciliado) {
         toast({
           variant: "destructive",
           title: "Erro",
@@ -362,7 +426,53 @@ export default function ContasAPagarPage() {
         return;
       }
 
-      // 2. Se não estiver conciliado, prosseguir com a operação de desfazer baixa
+      // 2. Buscar as antecipações utilizadas na nova tabela de relacionamento
+      const { data: relacionamentos, error: relError } = await supabase
+        .from("movimentacoes_parcelas_antecipacoes")
+        .select("antecipacao_id, valor_utilizado")
+        .eq("movimentacao_parcela_id", conta.id);
+
+      if (relError) {
+        console.error("Erro ao buscar relacionamentos de antecipação:", relError);
+      }
+
+      // 3. Reverter valores das antecipações utilizadas
+      if (relacionamentos && relacionamentos.length > 0) {
+        for (const rel of relacionamentos) {
+          // Buscar valor atual utilizado da antecipação
+          const { data: antecipacao, error: antError } = await supabase
+            .from("antecipacoes")
+            .select("valor_utilizado")
+            .eq("id", rel.antecipacao_id)
+            .single();
+
+          if (!antError && antecipacao) {
+            // Subtrair o valor que estava sendo utilizado
+            const novoValorUtilizado = antecipacao.valor_utilizado - rel.valor_utilizado;
+            
+            const { error: updateAntError } = await supabase
+              .from("antecipacoes")
+              .update({ valor_utilizado: Math.max(0, novoValorUtilizado) })
+              .eq("id", rel.antecipacao_id);
+
+            if (updateAntError) {
+              console.error("Erro ao reverter antecipação:", updateAntError);
+            }
+          }
+        }
+
+        // 4. Excluir os relacionamentos da nova tabela
+        const { error: deleteRelError } = await supabase
+          .from("movimentacoes_parcelas_antecipacoes")
+          .delete()
+          .eq("movimentacao_parcela_id", conta.id);
+
+        if (deleteRelError) {
+          console.error("Erro ao excluir relacionamentos:", deleteRelError);
+        }
+      }
+
+      // 5. Limpar campos de pagamento na parcela
       const { error: updateError } = await supabase
         .from('movimentacoes_parcelas')
         .update({
@@ -377,7 +487,7 @@ export default function ContasAPagarPage() {
 
       if (updateError) throw updateError;
 
-      // 3. Excluir o registro do fluxo de caixa
+      // 6. Excluir todos os registros do fluxo de caixa relacionados a esta parcela
       const { error: deleteError } = await supabase
         .from('fluxo_caixa')
         .delete()
@@ -385,10 +495,10 @@ export default function ContasAPagarPage() {
 
       if (deleteError) throw deleteError;
 
-      // 4. Atualizar a lista local
+      // 7. Atualizar a lista local
       setContas(prev => prev.map(c => 
         c.id === conta.id
-          ? { ...c, dataPagamento: undefined, status: "em_aberto" as const }
+          ? { ...c, dataPagamento: undefined, status: "em_aberto" as const, formaPagamento: null, multa: null, juros: null, desconto: null, contaCorrenteId: null }
           : c
       ));
 

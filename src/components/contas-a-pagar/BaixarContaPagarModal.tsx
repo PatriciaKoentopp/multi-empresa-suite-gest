@@ -11,6 +11,9 @@ import { toast } from "@/components/ui/use-toast";
 import { ContaCorrente } from "@/types/conta-corrente";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Antecipacao, AntecipacaoSelecionada } from "@/types/financeiro";
 
 interface BaixarContaPagarModalProps {
   conta?: ContaPagar | null;
@@ -23,6 +26,7 @@ interface BaixarContaPagarModalProps {
     juros: number;
     desconto: number;
     formaPagamento: string;
+    antecipacoesSelecionadas?: AntecipacaoSelecionada[];
   }) => void;
 }
 
@@ -35,6 +39,9 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
   const [contasCorrentes, setContasCorrentes] = useState<ContaCorrente[]>([]);
   const [saldoConta, setSaldoConta] = useState<number>(0);
   const [formaPagamento, setFormaPagamento] = useState<string>("");
+  const [usarAntecipacao, setUsarAntecipacao] = useState<boolean>(false);
+  const [antecipacoes, setAntecipacoes] = useState<Antecipacao[]>([]);
+  const [antecipacoesSelecionadas, setAntecipacoesSelecionadas] = useState<AntecipacaoSelecionada[]>([]);
 
   const { currentCompany } = useCompany();
 
@@ -57,7 +64,6 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
           return;
         }
 
-        // Mapear para o tipo ContaCorrente antes de setar o estado
         const contasCorrentesFormatadas: ContaCorrente[] = (data || []).map(conta => ({
           id: conta.id,
           nome: conta.nome,
@@ -76,7 +82,32 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
         setContasCorrentes(contasCorrentesFormatadas);
       };
 
+      const fetchAntecipacoes = async () => {
+        const { data, error } = await supabase
+          .from('antecipacoes')
+          .select('*')
+          .eq('empresa_id', currentCompany.id)
+          .eq('status', 'ativa')
+          .eq('tipo_operacao', 'pagar');
+
+        if (error) {
+          console.error('Erro ao buscar antecipações:', error);
+          return;
+        }
+
+        const antecipacoesFormatadas: Antecipacao[] = (data || []).map(ant => ({
+          id: ant.id,
+          descricao: ant.descricao || '',
+          valor_total: Number(ant.valor_total),
+          valor_utilizado: Number(ant.valor_utilizado),
+          valor_disponivel: Number(ant.valor_total) - Number(ant.valor_utilizado)
+        }));
+
+        setAntecipacoes(antecipacoesFormatadas);
+      };
+
       fetchContasCorrentes();
+      fetchAntecipacoes();
     }
   }, [open, currentCompany]);
 
@@ -87,9 +118,10 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
     setJuros(0);
     setDesconto(0);
     setFormaPagamento("");
+    setUsarAntecipacao(false);
+    setAntecipacoesSelecionadas([]);
   }, [conta, open]);
 
-  // Efeito para buscar o último saldo do fluxo de caixa quando a conta corrente for selecionada
   useEffect(() => {
     if (contaCorrenteId) {
       const buscarUltimoSaldo = async () => {
@@ -105,11 +137,9 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
           return;
         }
 
-        // Se encontrou registro, usa o saldo dele, senão busca o saldo inicial da conta
         if (data && data.length > 0) {
           setSaldoConta(Number(data[0].saldo));
         } else {
-          // Busca o saldo inicial da conta corrente
           const contaSelecionada = contasCorrentes.find(c => c.id === contaCorrenteId);
           setSaldoConta(Number(contaSelecionada?.saldoInicial || 0));
         }
@@ -119,8 +149,23 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
     }
   }, [contaCorrenteId, contasCorrentes]);
 
+  function handleAntecipacaoChange(antecipacaoId: string, checked: boolean) {
+    if (checked) {
+      setAntecipacoesSelecionadas(prev => [...prev, { id: antecipacaoId, valor: 0 }]);
+    } else {
+      setAntecipacoesSelecionadas(prev => prev.filter(a => a.id !== antecipacaoId));
+    }
+  }
+
+  function handleValorAntecipacaoChange(antecipacaoId: string, valor: number) {
+    setAntecipacoesSelecionadas(prev => 
+      prev.map(a => a.id === antecipacaoId ? { ...a, valor } : a)
+    );
+  }
+
   function handleConfirmar() {
-    if (!dataPagamento || !contaCorrenteId || !formaPagamento) return;
+    if (!dataPagamento || !formaPagamento) return;
+    if (!usarAntecipacao && !contaCorrenteId) return;
     
     const valorTotal = (conta?.valor || 0) + (multa || 0) + (juros || 0) - (desconto || 0);
     const novoSaldo = saldoConta - valorTotal;
@@ -132,14 +177,14 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
           empresa_id: currentCompany?.id,
           data_movimentacao: dataPagamento.toISOString().split('T')[0],
           valor: -(conta?.valor || 0) - (multa || 0) - (juros || 0) + (desconto || 0),
-          origem: 'contas_pagar',
+          origem: 'movimentacao',
           tipo_operacao: 'pagar',
           movimentacao_id: conta?.movimentacao_id,
           movimentacao_parcela_id: conta?.id,
-          conta_corrente_id: contaCorrenteId,
+          conta_corrente_id: usarAntecipacao ? null : contaCorrenteId,
           situacao: 'nao_conciliado',
           descricao: conta?.descricao || '',
-          saldo: novoSaldo,
+          saldo: usarAntecipacao ? 0 : novoSaldo,
           forma_pagamento: formaPagamento
         });
 
@@ -153,7 +198,15 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
         return;
       }
 
-      onBaixar({ dataPagamento, contaCorrenteId, multa, juros, desconto, formaPagamento });
+      onBaixar({ 
+        dataPagamento, 
+        contaCorrenteId: usarAntecipacao ? "" : contaCorrenteId, 
+        multa, 
+        juros, 
+        desconto, 
+        formaPagamento,
+        antecipacoesSelecionadas: usarAntecipacao ? antecipacoesSelecionadas : undefined
+      });
       onClose();
     };
 
@@ -169,11 +222,18 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
     });
   }
 
-  // Calcular valor total
   const valorTotal = useMemo(() => {
     const valorTitulo = conta?.valor || 0;
     return valorTitulo + (multa || 0) + (juros || 0) - (desconto || 0);
   }, [conta, multa, juros, desconto]);
+
+  const totalAntecipacoes = useMemo(() => {
+    return antecipacoesSelecionadas.reduce((total, ant) => total + ant.valor, 0);
+  }, [antecipacoesSelecionadas]);
+
+  const antecipacoesDisponiveis = useMemo(() => {
+    return antecipacoes.filter(ant => ant.valor_disponivel > 0);
+  }, [antecipacoes]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -216,21 +276,76 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
             </Select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Conta Corrente *</label>
-            <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
-              <SelectTrigger className="w-full bg-white">
-                <SelectValue placeholder="Selecione a conta" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                {contasCorrentes.map((conta) => (
-                  <SelectItem key={conta.id} value={conta.id}>
-                    {conta.nome} - {conta.banco} - {conta.agencia}/{conta.numero}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="usar-antecipacao" 
+              checked={usarAntecipacao} 
+              onCheckedChange={setUsarAntecipacao}
+            />
+            <label htmlFor="usar-antecipacao" className="text-sm font-medium">
+              Utilizar Antecipação
+            </label>
           </div>
+
+          {!usarAntecipacao && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Conta Corrente *</label>
+              <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
+                <SelectTrigger className="w-full bg-white">
+                  <SelectValue placeholder="Selecione a conta" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {contasCorrentes.map((conta) => (
+                    <SelectItem key={conta.id} value={conta.id}>
+                      {conta.nome} - {conta.banco} - {conta.agencia}/{conta.numero}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {usarAntecipacao && (
+            <div className="space-y-3">
+              <label className="block text-sm font-medium">Antecipações Disponíveis</label>
+              {antecipacoesDisponiveis.length === 0 ? (
+                <p className="text-sm text-gray-500">Nenhuma antecipação disponível</p>
+              ) : (
+                <div className="max-h-40 overflow-y-auto space-y-2">
+                  {antecipacoesDisponiveis.map((antecipacao) => (
+                    <Card key={antecipacao.id} className="p-3">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Checkbox
+                          id={`ant-${antecipacao.id}`}
+                          checked={antecipacoesSelecionadas.some(a => a.id === antecipacao.id)}
+                          onCheckedChange={(checked) => handleAntecipacaoChange(antecipacao.id, checked as boolean)}
+                        />
+                        <label htmlFor={`ant-${antecipacao.id}`} className="text-sm font-medium flex-1">
+                          {antecipacao.descricao}
+                        </label>
+                      </div>
+                      <div className="text-xs text-gray-500 mb-2">
+                        Disponível: {formatCurrencyBR(antecipacao.valor_disponivel)}
+                      </div>
+                      {antecipacoesSelecionadas.some(a => a.id === antecipacao.id) && (
+                        <Input
+                          type="number"
+                          placeholder="Valor a utilizar"
+                          min={0}
+                          max={antecipacao.valor_disponivel}
+                          step="0.01"
+                          value={antecipacoesSelecionadas.find(a => a.id === antecipacao.id)?.valor || 0}
+                          onChange={(e) => handleValorAntecipacaoChange(antecipacao.id, Number(e.target.value))}
+                          className="mt-2"
+                        />
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="block text-sm font-medium mb-1">Multa</label>
@@ -266,6 +381,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
               />
             </div>
           </div>
+          
           <div>
             <label className="block text-sm font-medium mb-1">Valor Total</label>
             <Input
@@ -276,6 +392,19 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
               tabIndex={-1}
             />
           </div>
+
+          {usarAntecipacao && totalAntecipacoes > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Total das Antecipações</label>
+              <Input
+                type="text"
+                value={formatCurrencyBR(totalAntecipacoes)}
+                readOnly
+                className="bg-blue-50 font-semibold"
+                tabIndex={-1}
+              />
+            </div>
+          )}
         </div>
         <DialogFooter>
           <DialogClose asChild>
@@ -287,7 +416,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
             type="button"
             variant="blue"
             onClick={handleConfirmar}
-            disabled={!dataPagamento || !contaCorrenteId || !formaPagamento}
+            disabled={!dataPagamento || !formaPagamento || (!usarAntecipacao && !contaCorrenteId)}
           >
             Baixar
           </Button>
