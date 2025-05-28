@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import { FavorecidoCadastroTab } from "@/components/relatorios/FavorecidoCadastr
 import { FavorecidoVendasTab } from "@/components/relatorios/FavorecidoVendasTab";
 import { FavorecidoContasReceberTab } from "@/components/relatorios/FavorecidoContasReceberTab";
 import { FavorecidoContasPagarTab } from "@/components/relatorios/FavorecidoContasPagarTab";
+import { FavorecidoAntecipacoesTab } from "@/components/relatorios/FavorecidoAntecipacoesTab";
 import { Favorecido } from "@/types";
 
 export default function RelatorioFavorecido() {
@@ -141,6 +143,7 @@ export default function RelatorioFavorecido() {
                 <TabsTrigger value="vendas">Vendas</TabsTrigger>
                 <TabsTrigger value="contas-receber">Contas a Receber</TabsTrigger>
                 <TabsTrigger value="contas-pagar">Contas a Pagar</TabsTrigger>
+                <TabsTrigger value="antecipacoes">Antecipações</TabsTrigger>
               </TabsList>
               
               <TabsContent value="cadastro" className="mt-4">
@@ -157,6 +160,10 @@ export default function RelatorioFavorecido() {
               
               <TabsContent value="contas-pagar" className="mt-4">
                 <FavorecidoContasPagarTab favorecidoId={selectedFavorecido.id} />
+              </TabsContent>
+              
+              <TabsContent value="antecipacoes" className="mt-4">
+                <FavorecidoAntecipacoesTab favorecidoId={selectedFavorecido.id} />
               </TabsContent>
             </Tabs>
           ) : (
