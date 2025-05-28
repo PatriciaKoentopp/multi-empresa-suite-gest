@@ -1,49 +1,63 @@
 
-export interface DadosFinanceiros {
-  total_a_receber: number;
-  total_a_pagar: number;
-  saldo_contas: number;
-  previsao_saldo: number;
-  contas_vencidas_receber: number;
-  contas_vencidas_pagar: number;
-  contas_a_vencer_receber: number;
-  contas_a_vencer_pagar: number;
-  fluxo_por_mes: FluxoMensal[];
-  fluxo_caixa: FluxoCaixaItem[];
-  contas_correntes: ContaCorrente[];
-}
-
-export interface FluxoMensal {
-  mes: string;
-  mes_numero: number;
-  ano: number;
-  total_recebido: number;
-  total_pago: number;
-  saldo: number;
-}
-
-export interface FluxoCaixaItem {
-  id: string;
-  data: Date;
-  descricao: string;
-  conta_nome: string;
-  conta_id: string;
-  valor: number;
-  tipo: 'entrada' | 'saida';
-  favorecido?: string;
-  origem?: string;
-}
-
 export interface ContaCorrente {
   id: string;
+  empresa_id: string;
   nome: string;
-  saldo: number;
+  banco: string;
+  agencia: string;
+  numero: string;
+  saldo_inicial: number;
   considerar_saldo: boolean;
+  status: 'ativo' | 'inativo';
+  conta_contabil_id: string;
+  data?: Date;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface FiltroFluxoCaixa {
-  dataInicio: Date;
-  dataFim: Date;
-  contaId: string | null;
-  situacao: string | null;
+export interface ContaCorrenteItem {
+  id: string;
+  nome: string;
+  banco: string;
+  saldo_inicial: number;
+}
+
+export interface FluxoCaixa {
+  id: string;
+  empresa_id: string;
+  conta_corrente_id?: string;
+  data_movimentacao: Date;
+  valor: number;
+  saldo: number;
+  tipo_operacao: 'receber' | 'pagar' | 'transferencia';
+  origem: 'movimentacao' | 'antecipacao' | 'transferencia';
+  movimentacao_parcela_id?: string;
+  movimentacao_id?: string;
+  antecipacao_id?: string;
+  situacao: 'conciliado' | 'nao_conciliado';
+  descricao?: string;
+  forma_pagamento?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PainelFinanceiroData {
+  contasAPagar: {
+    total: number;
+    vencidas: number;
+    vencendoHoje: number;
+    proximos7Dias: number;
+  };
+  contasAReceber: {
+    total: number;
+    vencidas: number;
+    vencendoHoje: number;
+    proximos7Dias: number;
+  };
+  fluxoCaixa: {
+    saldoAtual: number;
+    receitasPrevistas: number;
+    despesasPrevistas: number;
+    saldoProjetado: number;
+  };
 }
