@@ -1,7 +1,6 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,11 +10,17 @@ import { ContratosForm } from "@/components/contratos/contratos-form";
 import { ContratosTable } from "@/components/contratos/contratos-table";
 import { Contrato, ContratoFormData } from "@/types/contratos";
 import { format } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Contratos() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingContrato, setEditingContrato] = useState<Contrato | null>(null);
   const [deletingContrato, setDeletingContrato] = useState<Contrato | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("todos");
+  const [tipoFilter, setTipoFilter] = useState("todos");
   const queryClient = useQueryClient();
 
   // Buscar contratos
@@ -37,6 +42,30 @@ export default function Contratos() {
       return data as Contrato[];
     },
   });
+
+  // Filtrar contratos
+  const contratosFiltrados = contratos.filter((contrato) => {
+    const matchesSearch = 
+      contrato.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contrato.favorecido?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contrato.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "todos" || contrato.status === statusFilter;
+    const matchesTipo = tipoFilter === "todos" || contrato.tipo === tipoFilter;
+    
+    return matchesSearch && matchesStatus && matchesTipo;
+  });
+
+  // Estatísticas
+  const stats = {
+    total: contratos.length,
+    ativos: contratos.filter(c => c.status === 'ativo').length,
+    suspensos: contratos.filter(c => c.status === 'suspenso').length,
+    encerrados: contratos.filter(c => c.status === 'encerrado').length,
+    valorTotal: contratos
+      .filter(c => c.status === 'ativo')
+      .reduce((acc, c) => acc + c.valor_mensal, 0)
+  };
 
   // Mutação para criar/editar contrato
   const createContratoMutation = useMutation({
@@ -201,7 +230,6 @@ export default function Contratos() {
   };
 
   const handleView = (contrato: Contrato) => {
-    // Implementar modal de visualização se necessário
     toast.info("Visualização em desenvolvimento");
   };
 
@@ -214,22 +242,136 @@ export default function Contratos() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Contratos</h1>
           <p className="text-muted-foreground">
             Gerencie contratos de serviços e aluguéis
           </p>
         </div>
-        <Button onClick={handleOpenForm} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={handleOpenForm} variant="blue">
           <Plus className="mr-2 h-4 w-4" />
           Novo Contrato
         </Button>
       </div>
 
+      {/* Cards de Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total de Contratos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Contratos Ativos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{stats.ativos}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Suspensos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">{stats.suspensos}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Encerrados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{stats.encerrados}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Receita Mensal Ativa
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {new Intl.NumberFormat("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              }).format(stats.valorTotal)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Buscar por código, favorecido ou descrição..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <div className="w-full md:w-48">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Status</SelectItem>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="suspenso">Suspenso</SelectItem>
+                  <SelectItem value="encerrado">Encerrado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="w-full md:w-48">
+              <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Tipos</SelectItem>
+                  <SelectItem value="servico">Serviço</SelectItem>
+                  <SelectItem value="aluguel">Aluguel</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabela */}
       <ContratosTable
-        contratos={contratos}
+        contratos={contratosFiltrados}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onView={handleView}

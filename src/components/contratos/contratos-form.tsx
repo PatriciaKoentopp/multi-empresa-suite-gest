@@ -8,14 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 import { useFavorecidos } from "@/hooks/useFavorecidos";
 import { Switch } from "@/components/ui/switch";
+import { DateInput } from "@/components/movimentacao/DateInput";
 
 const formSchema = z.object({
   codigo: z.string().min(1, "Código é obrigatório"),
@@ -42,7 +37,7 @@ interface ContratosFormProps {
 }
 
 export function ContratosForm({ onSubmit, onCancel, initialData, isLoading = false }: ContratosFormProps) {
-  const { data: favorecidos = [] } = useFavorecidos();
+  const { data: favorecidos = [], isLoading: loadingFavorecidos } = useFavorecidos();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -81,9 +76,10 @@ export function ContratosForm({ onSubmit, onCancel, initialData, isLoading = fal
           <Select 
             value={form.watch("favorecido_id")} 
             onValueChange={(value) => form.setValue("favorecido_id", value)}
+            disabled={loadingFavorecidos}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Selecione um favorecido" />
+              <SelectValue placeholder={loadingFavorecidos ? "Carregando..." : "Selecione um favorecido"} />
             </SelectTrigger>
             <SelectContent>
               {favorecidos.map((favorecido) => (
@@ -129,65 +125,27 @@ export function ContratosForm({ onSubmit, onCancel, initialData, isLoading = fal
         </div>
 
         <div className="space-y-2">
-          <Label>Data de Início *</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !form.watch("data_inicio") && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {form.watch("data_inicio") ? (
-                  format(form.watch("data_inicio"), "dd/MM/yyyy", { locale: ptBR })
-                ) : (
-                  "Selecione uma data"
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={form.watch("data_inicio")}
-                onSelect={(date) => form.setValue("data_inicio", date as Date)}
-                initialFocus
-                locale={ptBR}
-              />
-            </PopoverContent>
-          </Popover>
+          <DateInput
+            label="Data de Início *"
+            value={form.watch("data_inicio")}
+            onChange={(date) => form.setValue("data_inicio", date as Date)}
+            placeholder="DD/MM/AAAA"
+          />
+          {form.formState.errors.data_inicio && (
+            <p className="text-sm text-red-500">{form.formState.errors.data_inicio.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">
-          <Label>Data de Fim *</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !form.watch("data_fim") && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {form.watch("data_fim") ? (
-                  format(form.watch("data_fim"), "dd/MM/yyyy", { locale: ptBR })
-                ) : (
-                  "Selecione uma data"
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={form.watch("data_fim")}
-                onSelect={(date) => form.setValue("data_fim", date as Date)}
-                initialFocus
-                locale={ptBR}
-              />
-            </PopoverContent>
-          </Popover>
+          <DateInput
+            label="Data de Fim *"
+            value={form.watch("data_fim")}
+            onChange={(date) => form.setValue("data_fim", date as Date)}
+            placeholder="DD/MM/AAAA"
+          />
+          {form.formState.errors.data_fim && (
+            <p className="text-sm text-red-500">{form.formState.errors.data_fim.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -269,7 +227,7 @@ export function ContratosForm({ onSubmit, onCancel, initialData, isLoading = fal
       </div>
 
       <div className="flex gap-2 pt-4">
-        <Button type="submit" disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
+        <Button type="submit" disabled={isLoading} variant="blue">
           {isLoading ? "Salvando..." : "Salvar"}
         </Button>
         <Button type="button" variant="outline" onClick={onCancel}>

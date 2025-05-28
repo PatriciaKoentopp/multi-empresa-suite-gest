@@ -1,50 +1,40 @@
 
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
-import { toast } from "sonner";
-import { Favorecido } from "@/types";
+
+export interface Favorecido {
+  id: string;
+  nome: string;
+  documento: string;
+  tipo: string;
+  email?: string;
+  telefone?: string;
+  status: string;
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export function useFavorecidos() {
   const { currentCompany } = useCompany();
-  const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function carregarFavorecidos() {
-      if (!currentCompany?.id) return;
+  return useQuery({
+    queryKey: ["favorecidos", currentCompany?.id],
+    queryFn: async () => {
+      if (!currentCompany?.id) return [];
       
-      setIsLoading(true);
-      try {
-        // Buscar favorecidos ativos
-        const { data, error } = await supabase
-          .from("favorecidos")
-          .select("*")
-          .eq("empresa_id", currentCompany.id)
-          .eq("status", "ativo")
-          .order("nome");
-        
-        if (error) throw error;
-        
-        // Filtrar para garantir que não há itens sem id ou nome
-        const favorecidosFiltrados = (data || [])
-          .filter(item => item.id && item.nome)
-          .sort((a, b) => a.nome.localeCompare(b.nome));
-        
-        setFavorecidos(favorecidosFiltrados);
-      } catch (error) {
-        console.error("Erro ao carregar favorecidos:", error);
-        toast.error("Erro ao carregar favorecidos");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
-    carregarFavorecidos();
-  }, [currentCompany?.id]);
-  
-  return {
-    favorecidos,
-    isLoading
-  };
+      const { data, error } = await supabase
+        .from("favorecidos")
+        .select("*")
+        .eq("empresa_id", currentCompany.id)
+        .eq("status", "ativo")
+        .order("nome");
+      
+      if (error) throw error;
+      
+      return (data || []).filter(item => item.id && item.nome) as Favorecido[];
+    },
+    enabled: !!currentCompany?.id,
+  });
 }
