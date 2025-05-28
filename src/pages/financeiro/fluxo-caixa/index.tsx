@@ -27,19 +27,12 @@ import { MoreVertical, Check } from "lucide-react";
 import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { formatCurrency } from "@/lib/utils";
 
 // Função para formatar datas (DD/MM/YYYY)
 function formatDateBR(dateStr: string) {
   const [yyyy, mm, dd] = dateStr.split("-");
   return `${dd}/${mm}/${yyyy}`;
-}
-
-function formatCurrency(value: number) {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  });
 }
 
 // Função utilitária para formatar Date para string DD/MM/YYYY
@@ -192,7 +185,7 @@ export default function FluxoCaixaPage() {
 
   // Buscar movimentações do fluxo de caixa para o período selecionado
   const { data: movimentacoesPeriodo = [], isLoading } = useQuery({
-    queryKey: ["fluxo-caixa-periodo", currentCompany?.id, contaCorrenteId, dataInicial, dataFinal],
+    queryKey: ["fluxo-caixa-periodo", currentCompany?.id, contaCorrenteId, dataInicial, dataFinal, situacao],
     queryFn: async () => {
       if (!contaCorrenteId) return [];
 
@@ -227,6 +220,10 @@ export default function FluxoCaixaPage() {
 
       if (dataFinal) {
         query = query.lte("data_movimentacao", dataFinal.toISOString().split("T")[0]);
+      }
+
+      if (situacao !== "todos") {
+        query = query.eq("situacao", situacao);
       }
 
       const { data, error } = await query.order("data_movimentacao", { ascending: false });
@@ -313,21 +310,24 @@ export default function FluxoCaixaPage() {
     enabled: !!currentCompany?.id && !!contaCorrenteId,
   });
 
-  // Calcular saldo acumulado até a data inicial da consulta
+  // Calcular saldo inicial do período baseado no saldo inicial da conta + movimentações anteriores
   const saldoInicial = useMemo(() => {
-    if (!contaCorrenteSelecionada || !todasMovimentacoes.length || !dataInicial) return 0;
+    if (!contaCorrenteSelecionada || !dataInicial) return 0;
 
+    // Começar com o saldo inicial da conta
     let saldo = contaCorrenteSelecionada.saldo_inicial ? Number(contaCorrenteSelecionada.saldo_inicial) : 0;
     
+    // Somar todas as movimentações anteriores ao período
     const dataInicialISO = dataInicial.toISOString().split('T')[0];
     
     for (const mov of todasMovimentacoes) {
-      if (mov.data_movimentacao >= dataInicialISO) continue;
-      saldo += Number(mov.valor);
+      if (mov.data_movimentacao < dataInicialISO) {
+        saldo += Number(mov.valor || 0);
+      }
     }
     
     return saldo;
-  }, [contaCorrenteSelecionada, todasMovimentacoes, dataInicial, contaCorrenteId]);
+  }, [contaCorrenteSelecionada, todasMovimentacoes, dataInicial]);
 
   // Calcular saldo acumulado para cada movimentação do período
   const movimentacoesComSaldo = useMemo(() => {
@@ -342,7 +342,7 @@ export default function FluxoCaixaPage() {
     let saldoAcumulado = saldoInicial;
     
     return movimentacoesOrdenadas.map(movimentacao => {
-      saldoAcumulado += Number(movimentacao.valor);
+      saldoAcumulado += Number(movimentacao.valor || 0);
       
       return {
         ...movimentacao,
@@ -435,11 +435,9 @@ export default function FluxoCaixaPage() {
         descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
         favorecidoNome.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const sitOk = situacao === "todos" || linha.situacao === situacao;
-      
-      return buscaOk && sitOk;
+      return buscaOk;
     });
-  }, [movimentacoesComSaldo, searchTerm, situacao, favorecidosCache]);
+  }, [movimentacoesComSaldo, searchTerm, favorecidosCache]);
 
   // Função para conciliar movimento
   async function handleConciliar(id: string) {
@@ -529,6 +527,12 @@ export default function FluxoCaixaPage() {
     return "-";
   }
 
+  // Calcular saldo final
+  const saldoFinal = useMemo(() => {
+    if (filteredMovimentacoes.length === 0) return saldoInicial;
+    return filteredMovimentacoes[filteredMovimentacoes.length - 1]?.saldo_calculado || saldoInicial;
+  }, [filteredMovimentacoes, saldoInicial]);
+
   return (
     <div className="space-y-4">
       {/* Título e botão de nova movimentação */}
@@ -542,6 +546,37 @@ export default function FluxoCaixaPage() {
           Nova Movimentação
         </Button>
       </div>
+
+      {/* Card com informações de saldo */}
+      {contaCorrenteSelecionada && dataInicial && dataFinal && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Saldo Inicial</p>
+                <p className="text-xl font-semibold">{formatCurrency(saldoInicial)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {contaCorrenteSelecionada.nome} - {dateToBR(dataInicial)}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Movimentações do Período</p>
+                <p className="text-lg font-medium">{filteredMovimentacoes.length} lançamentos</p>
+                <p className="text-xs text-muted-foreground">
+                  {dateToBR(dataInicial)} a {dateToBR(dataFinal)}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Saldo Final</p>
+                <p className="text-xl font-semibold">{formatCurrency(saldoFinal)}</p>
+                <p className="text-xs text-muted-foreground">
+                  Até {dateToBR(dataFinal)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
       <Card>
         <CardContent className="pt-6 pb-6">
@@ -773,10 +808,7 @@ export default function FluxoCaixaPage() {
                           Saldo Final
                         </TableCell>
                         <TableCell className="text-right font-bold">
-                          {filteredMovimentacoes.length > 0 ? 
-                            formatCurrency(filteredMovimentacoes[filteredMovimentacoes.length - 1]?.saldo_calculado || 0) 
-                            : formatCurrency(0)
-                          }
+                          {formatCurrency(saldoFinal)}
                         </TableCell>
                         <TableCell colSpan={3}></TableCell>
                       </TableRow>
