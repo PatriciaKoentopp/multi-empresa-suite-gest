@@ -43,9 +43,10 @@ import Balanco from "./pages/contabil/balanco";
 // Vendas
 import PainelVendas from "./pages/vendas/painel-vendas";
 import Servicos from "./pages/vendas/servicos";
-import Produtos from "./pages/vendas/produtos"; // Importando a página de produtos
+import Produtos from "./pages/vendas/produtos";
 import TabelaPrecos from "./pages/vendas/tabela-precos";
 import Orcamento from "./pages/vendas/orcamento";
+import Contratos from "./pages/vendas/contratos";
 import Faturamento from "./pages/vendas/faturamento";
 
 // CRM
@@ -322,7 +323,6 @@ function App() {
                 </PrivateRoute>
               }
             />
-            {/* Nova rota para produtos */}
             <Route
               path="/vendas/produtos"
               element={
@@ -359,6 +359,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <Orcamento />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/vendas/contratos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Contratos />
                   </MainLayout>
                 </PrivateRoute>
               }

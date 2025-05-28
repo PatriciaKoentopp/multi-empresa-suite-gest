@@ -145,6 +145,10 @@ export const navigationConfig: ModuleNavItem[] = [
         href: "/vendas/orcamento",
       },
       {
+        title: "Contratos",
+        href: "/vendas/contratos",
+      },
+      {
         title: "Faturamento",
         href: "/vendas/faturamento",
       },

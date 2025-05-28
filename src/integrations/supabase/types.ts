@@ -136,6 +136,138 @@ export type Database = {
           },
         ]
       }
+      contratos: {
+        Row: {
+          codigo: string
+          created_at: string
+          data_fim: string
+          data_inicio: string
+          descricao: string | null
+          dia_vencimento: number
+          empresa_id: string
+          favorecido_id: string
+          forma_pagamento: string
+          gerar_automatico: boolean
+          id: string
+          observacoes: string | null
+          periodicidade: string
+          status: string
+          tipo: string
+          updated_at: string
+          valor_mensal: number
+          valor_total: number
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          data_fim: string
+          data_inicio: string
+          descricao?: string | null
+          dia_vencimento?: number
+          empresa_id: string
+          favorecido_id: string
+          forma_pagamento?: string
+          gerar_automatico?: boolean
+          id?: string
+          observacoes?: string | null
+          periodicidade?: string
+          status?: string
+          tipo?: string
+          updated_at?: string
+          valor_mensal?: number
+          valor_total?: number
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          data_fim?: string
+          data_inicio?: string
+          descricao?: string | null
+          dia_vencimento?: number
+          empresa_id?: string
+          favorecido_id?: string
+          forma_pagamento?: string
+          gerar_automatico?: boolean
+          id?: string
+          observacoes?: string | null
+          periodicidade?: string
+          status?: string
+          tipo?: string
+          updated_at?: string
+          valor_mensal?: number
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_contratos_empresa"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_contratos_favorecido"
+            columns: ["favorecido_id"]
+            isOneToOne: false
+            referencedRelation: "favorecidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contratos_parcelas: {
+        Row: {
+          contrato_id: string
+          created_at: string
+          data_geracao_conta: string | null
+          data_vencimento: string
+          id: string
+          movimentacao_id: string | null
+          numero_parcela: string
+          status: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          contrato_id: string
+          created_at?: string
+          data_geracao_conta?: string | null
+          data_vencimento: string
+          id?: string
+          movimentacao_id?: string | null
+          numero_parcela: string
+          status?: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          contrato_id?: string
+          created_at?: string
+          data_geracao_conta?: string | null
+          data_vencimento?: string
+          id?: string
+          movimentacao_id?: string | null
+          numero_parcela?: string
+          status?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_contratos_parcelas_contrato"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_contratos_parcelas_movimentacao"
+            columns: ["movimentacao_id"]
+            isOneToOne: false
+            referencedRelation: "movimentacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empresas: {
         Row: {
           bairro: string
@@ -1689,6 +1821,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gerar_parcelas_contrato: {
+        Args: { contrato_id_param: string }
+        Returns: undefined
+      }
       get_monthly_sales_chart_data: {
         Args: { year_param: number }
         Returns: {
