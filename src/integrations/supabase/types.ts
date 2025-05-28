@@ -142,8 +142,8 @@ export type Database = {
           created_at: string
           data_fim: string
           data_inicio: string
+          data_primeiro_vencimento: string
           descricao: string | null
-          dia_vencimento: number
           empresa_id: string
           favorecido_id: string
           forma_pagamento: string
@@ -162,8 +162,8 @@ export type Database = {
           created_at?: string
           data_fim: string
           data_inicio: string
+          data_primeiro_vencimento?: string
           descricao?: string | null
-          dia_vencimento?: number
           empresa_id: string
           favorecido_id: string
           forma_pagamento?: string
@@ -182,8 +182,8 @@ export type Database = {
           created_at?: string
           data_fim?: string
           data_inicio?: string
+          data_primeiro_vencimento?: string
           descricao?: string | null
-          dia_vencimento?: number
           empresa_id?: string
           favorecido_id?: string
           forma_pagamento?: string

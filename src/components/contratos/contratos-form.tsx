@@ -23,7 +23,7 @@ const formSchema = z.object({
   valor_mensal: z.number().min(0, "Valor deve ser maior que 0"),
   data_inicio: z.date({ required_error: "Data de início é obrigatória" }),
   data_fim: z.date({ required_error: "Data de fim é obrigatória" }),
-  dia_vencimento: z.number().min(1).max(31),
+  data_primeiro_vencimento: z.date({ required_error: "Data do primeiro vencimento é obrigatória" }),
   periodicidade: z.enum(["mensal", "trimestral", "semestral", "anual"]),
   forma_pagamento: z.string().min(1, "Forma de pagamento é obrigatória"),
   observacoes: z.string().optional(),
@@ -70,7 +70,6 @@ export function ContratosForm({ onSubmit, onCancel, initialData, isLoading = fal
       servico_id: "",
       descricao: "",
       valor_mensal: 0,
-      dia_vencimento: 5,
       periodicidade: "mensal",
       forma_pagamento: "boleto",
       observacoes: "",
@@ -179,14 +178,15 @@ export function ContratosForm({ onSubmit, onCancel, initialData, isLoading = fal
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="dia_vencimento">Dia do Vencimento *</Label>
-          <Input
-            id="dia_vencimento"
-            type="number"
-            min="1"
-            max="31"
-            {...form.register("dia_vencimento", { valueAsNumber: true })}
+          <DateInput
+            label="Data do Primeiro Vencimento *"
+            value={form.watch("data_primeiro_vencimento")}
+            onChange={(date) => form.setValue("data_primeiro_vencimento", date as Date)}
+            placeholder="DD/MM/AAAA"
           />
+          {form.formState.errors.data_primeiro_vencimento && (
+            <p className="text-sm text-red-500">{form.formState.errors.data_primeiro_vencimento.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">

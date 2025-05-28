@@ -10,7 +10,7 @@ export interface Contrato {
   valor_total: number;
   data_inicio: string;
   data_fim: string;
-  dia_vencimento: number;
+  data_primeiro_vencimento: string;
   periodicidade: 'mensal' | 'trimestral' | 'semestral' | 'anual';
   forma_pagamento: string;
   observacoes?: string;
@@ -50,7 +50,7 @@ export interface ContratoFormData {
   valor_mensal: number;
   data_inicio: Date | undefined;
   data_fim: Date | undefined;
-  dia_vencimento: number;
+  data_primeiro_vencimento: Date | undefined;
   periodicidade: 'mensal' | 'trimestral' | 'semestral' | 'anual';
   forma_pagamento: string;
   observacoes: string;

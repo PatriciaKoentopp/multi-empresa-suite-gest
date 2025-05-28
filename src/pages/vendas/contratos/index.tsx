@@ -103,7 +103,7 @@ export default function ContratosPage() {
       valor_mensal: contrato.valor_mensal,
       data_inicio: new Date(contrato.data_inicio),
       data_fim: new Date(contrato.data_fim),
-      dia_vencimento: contrato.dia_vencimento,
+      data_primeiro_vencimento: new Date(contrato.data_primeiro_vencimento),
       periodicidade: contrato.periodicidade,
       forma_pagamento: contrato.forma_pagamento,
       observacoes: contrato.observacoes || '',

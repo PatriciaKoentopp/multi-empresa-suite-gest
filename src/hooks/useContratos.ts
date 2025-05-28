@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,7 +66,7 @@ export const useContratos = () => {
         valor_total: valorTotal,
         data_inicio: formData.data_inicio!.toISOString().split('T')[0],
         data_fim: formData.data_fim!.toISOString().split('T')[0],
-        dia_vencimento: formData.dia_vencimento,
+        data_primeiro_vencimento: formData.data_primeiro_vencimento!.toISOString().split('T')[0],
         periodicidade: formData.periodicidade,
         forma_pagamento: formData.forma_pagamento,
         observacoes: formData.observacoes || null,
@@ -110,7 +109,7 @@ export const useContratos = () => {
         valor_mensal: formData.valor_mensal,
         data_inicio: formData.data_inicio!.toISOString().split('T')[0],
         data_fim: formData.data_fim!.toISOString().split('T')[0],
-        dia_vencimento: formData.dia_vencimento,
+        data_primeiro_vencimento: formData.data_primeiro_vencimento!.toISOString().split('T')[0],
         periodicidade: formData.periodicidade,
         forma_pagamento: formData.forma_pagamento,
         observacoes: formData.observacoes || null,
@@ -267,11 +266,12 @@ export const useContratos = () => {
 
       if (contratoError) throw contratoError;
 
-      // Calcular número de meses de vigência
+      // Calcular número de parcelas baseado na periodicidade e vigência
       const dataInicio = new Date(contrato.data_inicio);
       const dataFim = new Date(contrato.data_fim);
+      const dataPrimeiroVencimento = new Date(contrato.data_primeiro_vencimento);
       
-      // Calcular meses de vigência considerando ano e mês
+      // Calcular meses de vigência
       const mesesVigencia = (dataFim.getFullYear() - dataInicio.getFullYear()) * 12 + 
                            (dataFim.getMonth() - dataInicio.getMonth()) + 1;
 
@@ -289,9 +289,6 @@ export const useContratos = () => {
           break;
       }
 
-      // Calcular primeiro vencimento - verificar se é no mês de início ou próximo mês
-      const primeiroVencimento = calcularPrimeiroVencimento(dataInicio, contrato.dia_vencimento);
-
       // Criar a movimentação principal
       const { data: movimentacao, error: movError } = await supabase
         .from("movimentacoes")
@@ -304,7 +301,7 @@ export const useContratos = () => {
           descricao: `Contrato ${contrato.codigo} - ${contrato.favorecido?.nome || 'Cliente'}`,
           valor: contrato.valor_total,
           numero_parcelas: numeroParcelas,
-          primeiro_vencimento: primeiroVencimento,
+          primeiro_vencimento: contrato.data_primeiro_vencimento,
           forma_pagamento: contrato.forma_pagamento,
           considerar_dre: true
         })
@@ -315,7 +312,7 @@ export const useContratos = () => {
 
       // Criar as parcelas
       const parcelas = [];
-      let dataVencimento = new Date(primeiroVencimento);
+      let dataVencimento = new Date(dataPrimeiroVencimento);
       
       // Calcular valor da parcela baseado na periodicidade
       let valorParcela = contrato.valor_mensal;
@@ -366,20 +363,6 @@ export const useContratos = () => {
       console.error("Erro ao gerar movimentações:", error);
       throw error;
     }
-  };
-
-  // Função auxiliar para calcular o primeiro vencimento
-  const calcularPrimeiroVencimento = (dataInicio: Date, diaVencimento: number): string => {
-    const mesInicio = new Date(dataInicio.getFullYear(), dataInicio.getMonth(), diaVencimento);
-    
-    // Se o dia de vencimento já passou no mês de início, usar o próximo mês
-    if (mesInicio < dataInicio) {
-      const proximoMes = new Date(dataInicio.getFullYear(), dataInicio.getMonth() + 1, diaVencimento);
-      return proximoMes.toISOString().split('T')[0];
-    }
-    
-    // Caso contrário, usar o mês de início
-    return mesInicio.toISOString().split('T')[0];
   };
 
   return {

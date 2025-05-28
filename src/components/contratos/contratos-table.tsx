@@ -130,7 +130,7 @@ export function ContratosTable({
                     {format(new Date(contrato.data_fim), "dd/MM/yyyy", { locale: ptBR })}
                   </div>
                   <div className="text-muted-foreground">
-                    Venc. dia {contrato.dia_vencimento}
+                    1º Venc.: {format(new Date(contrato.data_primeiro_vencimento), "dd/MM/yyyy", { locale: ptBR })}
                   </div>
                 </div>
               </TableCell>
