@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,40 +34,25 @@ export const useContratos = () => {
     mutationFn: async (formData: ContratoFormData) => {
       if (!currentCompany?.id) throw new Error("Empresa não selecionada");
 
-      // Calcular meses de vigência
+      // Calcular meses de vigência - forma simples
       const dataInicio = new Date(formData.data_inicio!);
       const dataFim = new Date(formData.data_fim!);
       
-      // Calcular diferença em meses de forma mais precisa
+      // Calcular diferença em meses
       const anosDiferenca = dataFim.getFullYear() - dataInicio.getFullYear();
       const mesesDiferenca = dataFim.getMonth() - dataInicio.getMonth();
-      const mesesVigencia = anosDiferenca * 12 + mesesDiferenca + 1; // +1 para incluir o mês de início
+      const mesesVigencia = anosDiferenca * 12 + mesesDiferenca + 1;
+
+      // Número de parcelas = número de meses de vigência (simples!)
+      const numeroParcelas = mesesVigencia;
 
       console.log("Vigência:", {
         dataInicio: dataInicio.toISOString().split('T')[0],
         dataFim: dataFim.toISOString().split('T')[0],
         mesesVigencia,
+        numeroParcelas,
         periodicidade: formData.periodicidade
       });
-
-      // Calcular número de parcelas baseado na periodicidade
-      let numeroParcelas = 1; // Valor padrão
-      switch (formData.periodicidade) {
-        case 'mensal':
-          numeroParcelas = mesesVigencia;
-          break;
-        case 'trimestral':
-          numeroParcelas = Math.ceil(mesesVigencia / 3);
-          break;
-        case 'semestral':
-          numeroParcelas = Math.ceil(mesesVigencia / 6);
-          break;
-        case 'anual':
-          numeroParcelas = Math.ceil(mesesVigencia / 12);
-          break;
-      }
-
-      console.log("Número de parcelas calculado:", numeroParcelas);
 
       // Calcular valor da parcela baseado na periodicidade
       let valorParcela = formData.valor_mensal;
@@ -296,41 +280,26 @@ export const useContratos = () => {
 
       if (contratoError) throw contratoError;
 
-      // Calcular meses de vigência
+      // Calcular meses de vigência - forma simples
       const dataInicio = new Date(contrato.data_inicio);
       const dataFim = new Date(contrato.data_fim);
       const dataPrimeiroVencimento = new Date(contrato.data_primeiro_vencimento);
       
-      // Calcular diferença em meses de forma mais precisa
+      // Calcular diferença em meses
       const anosDiferenca = dataFim.getFullYear() - dataInicio.getFullYear();
       const mesesDiferenca = dataFim.getMonth() - dataInicio.getMonth();
-      const mesesVigencia = anosDiferenca * 12 + mesesDiferenca + 1; // +1 para incluir o mês de início
+      const mesesVigencia = anosDiferenca * 12 + mesesDiferenca + 1;
+
+      // Número de parcelas = número de meses de vigência (simples!)
+      const numeroParcelas = mesesVigencia;
 
       console.log("Gerando movimentações - Vigência:", {
         dataInicio: contrato.data_inicio,
         dataFim: contrato.data_fim,
         mesesVigencia,
+        numeroParcelas,
         periodicidade: contrato.periodicidade
       });
-
-      // Calcular número de parcelas baseado na periodicidade
-      let numeroParcelas = 1; // Valor padrão
-      switch (contrato.periodicidade) {
-        case 'mensal':
-          numeroParcelas = mesesVigencia;
-          break;
-        case 'trimestral':
-          numeroParcelas = Math.ceil(mesesVigencia / 3);
-          break;
-        case 'semestral':
-          numeroParcelas = Math.ceil(mesesVigencia / 6);
-          break;
-        case 'anual':
-          numeroParcelas = Math.ceil(mesesVigencia / 12);
-          break;
-      }
-
-      console.log("Número de parcelas a gerar:", numeroParcelas);
 
       // Calcular valor da parcela baseado na periodicidade
       let valorParcela = contrato.valor_mensal;
@@ -369,7 +338,7 @@ export const useContratos = () => {
 
       if (movError) throw movError;
 
-      // Criar as parcelas
+      // Criar as parcelas - uma por mês de vigência
       const parcelas = [];
       let dataVencimento = new Date(dataPrimeiroVencimento);
       
@@ -381,22 +350,9 @@ export const useContratos = () => {
           data_vencimento: dataVencimento.toISOString().split('T')[0]
         });
 
-        // Calcular próxima data baseado na periodicidade (só se não for a última parcela)
+        // Próxima parcela sempre no mês seguinte (independente da periodicidade)
         if (i < numeroParcelas) {
-          switch (contrato.periodicidade) {
-            case 'mensal':
-              dataVencimento.setMonth(dataVencimento.getMonth() + 1);
-              break;
-            case 'trimestral':
-              dataVencimento.setMonth(dataVencimento.getMonth() + 3);
-              break;
-            case 'semestral':
-              dataVencimento.setMonth(dataVencimento.getMonth() + 6);
-              break;
-            case 'anual':
-              dataVencimento.setFullYear(dataVencimento.getFullYear() + 1);
-              break;
-          }
+          dataVencimento.setMonth(dataVencimento.getMonth() + 1);
         }
       }
 
