@@ -24,6 +24,8 @@ interface VisualizarBaixaModalProps {
 interface AntecipacaoUtilizada {
   id: string;
   descricao: string;
+  data_lancamento: string;
+  numero_documento: string;
   valor_utilizado: number;
 }
 
@@ -61,14 +63,16 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
       if (parcela?.antecipacao_id && parcela?.valor_antecipacao_utilizado > 0) {
         const { data: antecipacao, error: antError } = await supabase
           .from("antecipacoes")
-          .select("id, descricao")
+          .select("id, descricao, data_lancamento, numero_documento")
           .eq("id", parcela.antecipacao_id)
           .single();
 
         if (!antError && antecipacao) {
           antecipacoes.push({
             id: antecipacao.id,
-            descricao: antecipacao.descricao,
+            descricao: antecipacao.descricao || "Antecipação",
+            data_lancamento: antecipacao.data_lancamento,
+            numero_documento: antecipacao.numero_documento || "-",
             valor_utilizado: parcela.valor_antecipacao_utilizado
           });
         }
@@ -158,14 +162,29 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
           {antecipacoesUtilizadas.length > 0 && (
             <div>
               <p className="text-sm font-medium text-gray-500 mb-2">Antecipações Utilizadas</p>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {antecipacoesUtilizadas.map((antecipacao) => (
-                  <div key={antecipacao.id} className="border rounded-md p-2 bg-blue-50">
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm text-gray-700">{antecipacao.descricao}</p>
-                      <p className="text-sm font-medium text-blue-600">
-                        {formatCurrency(antecipacao.valor_utilizado)}
-                      </p>
+                  <div key={antecipacao.id} className="border rounded-md p-3 bg-blue-50">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-start">
+                        <p className="text-sm font-medium text-gray-700">{antecipacao.descricao}</p>
+                        <p className="text-sm font-bold text-blue-600">
+                          {formatCurrency(antecipacao.valor_utilizado)}
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                        <div>
+                          <span className="font-medium">Data Lançamento:</span>
+                          <br />
+                          {formatDate(new Date(antecipacao.data_lancamento))}
+                        </div>
+                        <div>
+                          <span className="font-medium">Nº Documento:</span>
+                          <br />
+                          {antecipacao.numero_documento}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
