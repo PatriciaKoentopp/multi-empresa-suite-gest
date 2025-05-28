@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,8 +33,8 @@ export default function ContratosPage() {
   const [filtros, setFiltros] = useState({
     codigo: "",
     favorecido: "",
-    status: "",
-    periodicidade: "",
+    status: "todos",
+    periodicidade: "todas",
   });
 
   const {
@@ -53,8 +52,8 @@ export default function ContratosPage() {
        contrato.codigo.toLowerCase().includes(filtros.codigo.toLowerCase())) &&
       (filtros.favorecido === "" || 
        contrato.favorecido?.nome.toLowerCase().includes(filtros.favorecido.toLowerCase())) &&
-      (filtros.status === "" || contrato.status === filtros.status) &&
-      (filtros.periodicidade === "" || contrato.periodicidade === filtros.periodicidade)
+      (filtros.status === "todos" || contrato.status === filtros.status) &&
+      (filtros.periodicidade === "todas" || contrato.periodicidade === filtros.periodicidade)
     );
   });
 

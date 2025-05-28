@@ -56,7 +56,7 @@ export function ContratosFilters({ filtros, onFiltrosChange }: ContratosFiltersP
             <SelectValue placeholder="Todos os status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos</SelectItem>
+            <SelectItem value="todos">Todos</SelectItem>
             <SelectItem value="ativo">Ativo</SelectItem>
             <SelectItem value="suspenso">Suspenso</SelectItem>
             <SelectItem value="encerrado">Encerrado</SelectItem>
@@ -71,7 +71,7 @@ export function ContratosFilters({ filtros, onFiltrosChange }: ContratosFiltersP
             <SelectValue placeholder="Todas as periodicidades" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas</SelectItem>
+            <SelectItem value="todas">Todas</SelectItem>
             <SelectItem value="mensal">Mensal</SelectItem>
             <SelectItem value="trimestral">Trimestral</SelectItem>
             <SelectItem value="semestral">Semestral</SelectItem>
