@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,12 +7,14 @@ import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { ContaPagar } from "./contas-a-pagar-table";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { toast } from "@/components/ui/use-toast";
-import { ContaCorrente } from "@/types/conta-corrente";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { formatCurrency } from "@/lib/utils";
 import { Antecipacao, AntecipacaoSelecionada } from "@/types/financeiro";
 
 interface BaixarContaPagarModalProps {
@@ -22,224 +24,340 @@ interface BaixarContaPagarModalProps {
   onBaixar: (dados: {
     dataPagamento: Date;
     contaCorrenteId: string;
+    formaPagamento: string;
     multa: number;
     juros: number;
     desconto: number;
-    formaPagamento: string;
     antecipacoesSelecionadas?: AntecipacaoSelecionada[];
   }) => void;
 }
 
+// Formas de pagamento fixas
+const formasPagamento = [
+  { id: "dinheiro", nome: "Dinheiro" },
+  { id: "pix", nome: "PIX" },
+  { id: "boleto", nome: "Boleto" },
+  { id: "transferencia", nome: "Transferência" },
+  { id: "cartao_debito", nome: "Cartão de Débito" },
+  { id: "cartao_credito", nome: "Cartão de Crédito" },
+  { id: "cheque", nome: "Cheque" }
+];
+
 export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: BaixarContaPagarModalProps) {
+  const { currentCompany } = useCompany();
   const [dataPagamento, setDataPagamento] = useState<Date | undefined>(conta?.dataVencimento);
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("");
+  const [formaPagamento, setFormaPagamento] = useState<string>("");
   const [multa, setMulta] = useState<number>(0);
   const [juros, setJuros] = useState<number>(0);
   const [desconto, setDesconto] = useState<number>(0);
-  const [contasCorrentes, setContasCorrentes] = useState<ContaCorrente[]>([]);
-  const [saldoConta, setSaldoConta] = useState<number>(0);
-  const [formaPagamento, setFormaPagamento] = useState<string>("");
+  
+  // Estados para múltiplas antecipações
   const [usarAntecipacao, setUsarAntecipacao] = useState<boolean>(false);
-  const [antecipacoes, setAntecipacoes] = useState<Antecipacao[]>([]);
   const [antecipacoesSelecionadas, setAntecipacoesSelecionadas] = useState<AntecipacaoSelecionada[]>([]);
 
-  const { currentCompany } = useCompany();
+  // Buscar favorecido_id da conta
+  const [favorecidoId, setFavorecidoId] = useState<string | null>(null);
 
+  // Buscar contas correntes
+  const { data: contasCorrente = [] } = useQuery({
+    queryKey: ["contas-correntes", currentCompany?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contas_correntes")
+        .select("*")
+        .eq("empresa_id", currentCompany?.id)
+        .eq("status", "ativo");
+
+      if (error) {
+        console.error("Erro ao buscar contas correntes:", error);
+        return [];
+      }
+
+      return data;
+    },
+    enabled: !!currentCompany?.id,
+  });
+
+  // Buscar antecipações disponíveis do favorecido
+  const { data: antecipacoesDisponiveis = [] } = useQuery({
+    queryKey: ["antecipacoes-favorecido", favorecidoId, currentCompany?.id],
+    queryFn: async () => {
+      if (!favorecidoId) return [];
+
+      const { data, error } = await supabase
+        .from("antecipacoes")
+        .select("id, descricao, valor_total, valor_utilizado")
+        .eq("empresa_id", currentCompany?.id)
+        .eq("favorecido_id", favorecidoId)
+        .eq("tipo_operacao", "pagar")
+        .eq("status", "ativa")
+        .gt("valor_total", 0);
+
+      if (error) {
+        console.error("Erro ao buscar antecipações:", error);
+        return [];
+      }
+
+      // Calcular valor disponível e filtrar apenas as que têm saldo
+      return data
+        .map(ant => ({
+          ...ant,
+          valor_disponivel: ant.valor_total - ant.valor_utilizado
+        }))
+        .filter(ant => ant.valor_disponivel > 0);
+    },
+    enabled: !!favorecidoId && !!currentCompany?.id,
+  });
+
+  // Buscar favorecido_id quando a conta mudar
   useEffect(() => {
-    if (open && currentCompany) {
-      const fetchContasCorrentes = async () => {
+    if (conta?.movimentacao_id) {
+      const buscarFavorecido = async () => {
         const { data, error } = await supabase
-          .from('contas_correntes')
-          .select('*')
-          .eq('empresa_id', currentCompany.id)
-          .eq('status', 'ativo');
+          .from("movimentacoes")
+          .select("favorecido_id")
+          .eq("id", conta.movimentacao_id)
+          .single();
 
-        if (error) {
-          console.error('Erro ao buscar contas correntes:', error);
-          toast({
-            variant: "destructive",
-            title: "Erro",
-            description: "Não foi possível carregar as contas correntes"
-          });
-          return;
+        if (!error && data) {
+          setFavorecidoId(data.favorecido_id);
         }
-
-        const contasCorrentesFormatadas: ContaCorrente[] = (data || []).map(conta => ({
-          id: conta.id,
-          nome: conta.nome,
-          banco: conta.banco,
-          agencia: conta.agencia,
-          numero: conta.numero,
-          contaContabilId: conta.conta_contabil_id,
-          status: conta.status as "ativo" | "inativo",
-          createdAt: new Date(conta.created_at),
-          updatedAt: new Date(conta.updated_at),
-          data: conta.data ? new Date(conta.data) : undefined,
-          saldoInicial: conta.saldo_inicial,
-          considerar_saldo: conta.considerar_saldo
-        }));
-
-        setContasCorrentes(contasCorrentesFormatadas);
       };
 
-      const fetchAntecipacoes = async () => {
-        const { data, error } = await supabase
-          .from('antecipacoes')
-          .select('*')
-          .eq('empresa_id', currentCompany.id)
-          .eq('status', 'ativa')
-          .eq('tipo_operacao', 'pagar');
-
-        if (error) {
-          console.error('Erro ao buscar antecipações:', error);
-          return;
-        }
-
-        const antecipacoesFormatadas: Antecipacao[] = (data || []).map(ant => ({
-          id: ant.id,
-          descricao: ant.descricao || '',
-          valor_total: Number(ant.valor_total),
-          valor_utilizado: Number(ant.valor_utilizado),
-          valor_disponivel: Number(ant.valor_total) - Number(ant.valor_utilizado)
-        }));
-
-        setAntecipacoes(antecipacoesFormatadas);
-      };
-
-      fetchContasCorrentes();
-      fetchAntecipacoes();
+      buscarFavorecido();
     }
-  }, [open, currentCompany]);
+  }, [conta]);
 
   useEffect(() => {
-    setDataPagamento(conta?.dataVencimento);
-    setContaCorrenteId("");
-    setMulta(0);
-    setJuros(0);
-    setDesconto(0);
-    setFormaPagamento("");
-    setUsarAntecipacao(false);
-    setAntecipacoesSelecionadas([]);
+    if (open) {
+      setDataPagamento(conta?.dataVencimento);
+      setContaCorrenteId("");
+      setFormaPagamento("");
+      setMulta(0);
+      setJuros(0);
+      setDesconto(0);
+      setUsarAntecipacao(false);
+      setAntecipacoesSelecionadas([]);
+    }
   }, [conta, open]);
 
-  useEffect(() => {
-    if (contaCorrenteId) {
-      const buscarUltimoSaldo = async () => {
-        const { data, error } = await supabase
-          .from('fluxo_caixa')
-          .select('saldo')
-          .eq('conta_corrente_id', contaCorrenteId)
-          .order('created_at', { ascending: false })
-          .limit(1);
+  // Calcular valores
+  const valorConta = conta?.valor || 0;
+  const valorAcrescimos = multa + juros;
+  const valorTotalAntecipacoes = antecipacoesSelecionadas.reduce((total, ant) => total + ant.valor, 0);
+  const valorTotalConta = valorConta + valorAcrescimos - desconto;
+  const valorAPagar = Math.max(0, valorTotalConta - valorTotalAntecipacoes);
 
-        if (error) {
-          console.error('Erro ao buscar saldo:', error);
-          return;
-        }
+  // Funções para gerenciar antecipações selecionadas
+  const handleAntecipacaoChange = (antecipacaoId: string, checked: boolean) => {
+    if (checked) {
+      const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antecipacaoId);
+      if (antecipacao) {
+        // Preencher automaticamente com o valor disponível da antecipação
+        const valorDisponivel = antecipacao.valor_disponivel;
+        setAntecipacoesSelecionadas(prev => [
+          ...prev,
+          { id: antecipacaoId, valor: valorDisponivel }
+        ]);
+      }
+    } else {
+      setAntecipacoesSelecionadas(prev => prev.filter(ant => ant.id !== antecipacaoId));
+    }
+  };
 
-        if (data && data.length > 0) {
-          setSaldoConta(Number(data[0].saldo));
-        } else {
-          const contaSelecionada = contasCorrentes.find(c => c.id === contaCorrenteId);
-          setSaldoConta(Number(contaSelecionada?.saldoInicial || 0));
+  const handleValorAntecipacaoChange = (antecipacaoId: string, valor: number) => {
+    setAntecipacoesSelecionadas(prev =>
+      prev.map(ant =>
+        ant.id === antecipacaoId ? { ...ant, valor } : ant
+      )
+    );
+  };
+
+  const getMaxValorAntecipacao = (antecipacaoId: string) => {
+    const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antecipacaoId);
+    const valorJaUsado = antecipacoesSelecionadas
+      .filter(ant => ant.id !== antecipacaoId)
+      .reduce((total, ant) => total + ant.valor, 0);
+    const valorRestante = Math.max(0, valorTotalConta - valorJaUsado);
+    
+    return Math.min(
+      antecipacao?.valor_disponivel || 0,
+      valorRestante
+    );
+  };
+
+  async function handleConfirmar() {
+    if (!dataPagamento || (!contaCorrenteId && valorAPagar > 0) || !formaPagamento) {
+      toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    if (usarAntecipacao && antecipacoesSelecionadas.length === 0) {
+      toast.error("Selecione pelo menos uma antecipação.");
+      return;
+    }
+
+    // Validar valores das antecipações
+    for (const antSel of antecipacoesSelecionadas) {
+      const maxValor = getMaxValorAntecipacao(antSel.id);
+      if (antSel.valor <= 0) {
+        toast.error("Informe valores válidos para as antecipações selecionadas.");
+        return;
+      }
+      if (antSel.valor > maxValor) {
+        toast.error("Valor da antecipação não pode exceder o disponível ou o valor da conta.");
+        return;
+      }
+    }
+
+    try {
+      // Buscar dados completos da movimentação para obter descrição
+      let descricao: string | null = null;
+      
+      if (conta?.movimentacao_id) {
+        const { data: movimentacao, error: movError } = await supabase
+          .from("movimentacoes")
+          .select("descricao")
+          .eq("id", conta.movimentacao_id)
+          .single();
+          
+        if (!movError && movimentacao) {
+          descricao = movimentacao.descricao;
         }
+      }
+
+      // 1. Atualizar a parcela com os dados do pagamento
+      const updateData: any = {
+        data_pagamento: format(dataPagamento, "yyyy-MM-dd"),
+        multa,
+        juros,
+        desconto,
+        forma_pagamento: formaPagamento
       };
 
-      buscarUltimoSaldo();
-    }
-  }, [contaCorrenteId, contasCorrentes]);
+      // Incluir conta corrente apenas se houver valor a pagar
+      if (valorAPagar > 0 && contaCorrenteId) {
+        updateData.conta_corrente_id = contaCorrenteId;
+      }
 
-  function handleAntecipacaoChange(antecipacaoId: string, checked: boolean) {
-    if (checked) {
-      setAntecipacoesSelecionadas(prev => [...prev, { id: antecipacaoId, valor: 0 }]);
-    } else {
-      setAntecipacoesSelecionadas(prev => prev.filter(a => a.id !== antecipacaoId));
-    }
-  }
+      const { error: updateError } = await supabase
+        .from("movimentacoes_parcelas")
+        .update(updateData)
+        .eq("id", conta?.id);
 
-  function handleValorAntecipacaoChange(antecipacaoId: string, valor: number) {
-    setAntecipacoesSelecionadas(prev => 
-      prev.map(a => a.id === antecipacaoId ? { ...a, valor } : a)
-    );
-  }
+      if (updateError) throw updateError;
 
-  function handleConfirmar() {
-    if (!dataPagamento || !formaPagamento) return;
-    if (!usarAntecipacao && !contaCorrenteId) return;
-    
-    const valorTotal = (conta?.valor || 0) + (multa || 0) + (juros || 0) - (desconto || 0);
-    const novoSaldo = saldoConta - valorTotal;
+      // 2. Inserir registros na nova tabela de relacionamento para cada antecipação
+      if (usarAntecipacao && antecipacoesSelecionadas.length > 0) {
+        for (const antSel of antecipacoesSelecionadas) {
+          if (antSel.valor > 0) {
+            const { error: relationError } = await supabase
+              .from("movimentacoes_parcelas_antecipacoes")
+              .insert({
+                movimentacao_parcela_id: conta?.id,
+                antecipacao_id: antSel.id,
+                valor_utilizado: antSel.valor
+              });
 
-    const inserirFluxoCaixa = async () => {
-      const { error: errorFluxo } = await supabase
-        .from('fluxo_caixa')
-        .insert({
-          empresa_id: currentCompany?.id,
-          data_movimentacao: dataPagamento.toISOString().split('T')[0],
-          valor: -(conta?.valor || 0) - (multa || 0) - (juros || 0) + (desconto || 0),
-          origem: 'movimentacao',
-          tipo_operacao: 'pagar',
-          movimentacao_id: conta?.movimentacao_id,
-          movimentacao_parcela_id: conta?.id,
-          conta_corrente_id: usarAntecipacao ? null : contaCorrenteId,
-          situacao: 'nao_conciliado',
-          descricao: conta?.descricao || '',
-          saldo: usarAntecipacao ? 0 : novoSaldo,
-          forma_pagamento: formaPagamento
-        });
+            if (relationError) throw relationError;
+          }
+        }
 
-      if (errorFluxo) {
-        console.error('Erro ao inserir no fluxo de caixa:', errorFluxo);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Não foi possível registrar o movimento no fluxo de caixa"
-        });
-        return;
+        // 3. Atualizar valor utilizado nas antecipações
+        for (const antSel of antecipacoesSelecionadas) {
+          const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
+          if (antecipacao && antSel.valor > 0) {
+            const novoValorUtilizado = antecipacao.valor_utilizado + antSel.valor;
+            
+            const { error: antecipacaoError } = await supabase
+              .from("antecipacoes")
+              .update({
+                valor_utilizado: novoValorUtilizado
+              })
+              .eq("id", antSel.id);
+
+            if (antecipacaoError) throw antecipacaoError;
+          }
+        }
+
+        // 4. Inserir registros no fluxo de caixa para cada antecipação utilizada
+        for (const antSel of antecipacoesSelecionadas) {
+          if (antSel.valor > 0) {
+            const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
+            
+            const { error: fluxoAntecipacaoError } = await supabase
+              .from("fluxo_caixa")
+              .insert({
+                empresa_id: currentCompany?.id,
+                data_movimentacao: format(dataPagamento, "yyyy-MM-dd"),
+                valor: -antSel.valor, // Negativo pois é utilização de antecipação
+                saldo: -antSel.valor,
+                tipo_operacao: "pagar",
+                origem: "antecipacao",
+                movimentacao_parcela_id: conta?.id,
+                movimentacao_id: conta?.movimentacao_id,
+                antecipacao_id: antSel.id,
+                situacao: "nao_conciliado",
+                descricao: `Utilização ${antecipacao?.descricao || 'Antecipação'} - ${conta?.favorecido}`,
+                forma_pagamento: formaPagamento
+              });
+
+            if (fluxoAntecipacaoError) throw fluxoAntecipacaoError;
+          }
+        }
+      }
+
+      // 5. Inserir no fluxo de caixa apenas se houver valor efetivamente pago
+      if (valorAPagar > 0 && contaCorrenteId) {
+        const { error: fluxoError } = await supabase
+          .from("fluxo_caixa")
+          .insert({
+            empresa_id: currentCompany?.id,
+            conta_corrente_id: contaCorrenteId,
+            data_movimentacao: format(dataPagamento, "yyyy-MM-dd"),
+            valor: -valorAPagar, // Negativo para pagamento
+            saldo: -valorAPagar,
+            tipo_operacao: "pagar",
+            origem: "movimentacao",
+            movimentacao_parcela_id: conta?.id,
+            movimentacao_id: conta?.movimentacao_id,
+            situacao: "nao_conciliado",
+            descricao: descricao || conta?.descricao || `Pagamento ${conta?.favorecido}`,
+            forma_pagamento: formaPagamento
+          });
+
+        if (fluxoError) throw fluxoError;
       }
 
       onBaixar({ 
         dataPagamento, 
-        contaCorrenteId: usarAntecipacao ? "" : contaCorrenteId, 
+        contaCorrenteId, 
+        formaPagamento, 
         multa, 
         juros, 
-        desconto, 
-        formaPagamento,
+        desconto,
         antecipacoesSelecionadas: usarAntecipacao ? antecipacoesSelecionadas : undefined
       });
       onClose();
-    };
+      
+      if (usarAntecipacao && valorTotalAntecipacoes > 0) {
+        toast.success(`Pagamento registrado! Valor das antecipações usado: ${formatCurrency(valorTotalAntecipacoes)}`);
+      } else {
+        toast.success("Pagamento registrado com sucesso!");
+      }
 
-    inserirFluxoCaixa();
+    } catch (error) {
+      console.error("Erro ao registrar pagamento:", error);
+      toast.error("Erro ao registrar pagamento");
+    }
   }
-
-  function formatCurrencyBR(valor?: number) {
-    if (valor === undefined) return "-";
-    return valor.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-      minimumFractionDigits: 2,
-    });
-  }
-
-  const valorTotal = useMemo(() => {
-    const valorTitulo = conta?.valor || 0;
-    return valorTitulo + (multa || 0) + (juros || 0) - (desconto || 0);
-  }, [conta, multa, juros, desconto]);
-
-  const totalAntecipacoes = useMemo(() => {
-    return antecipacoesSelecionadas.reduce((total, ant) => total + ant.valor, 0);
-  }, [antecipacoesSelecionadas]);
-
-  const antecipacoesDisponiveis = useMemo(() => {
-    return antecipacoes.filter(ant => ant.valor_disponivel > 0);
-  }, [antecipacoes]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md w-full">
+      <DialogContent className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Baixar Título</DialogTitle>
+          <DialogTitle>Baixar Pagamento</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-1">
           <div>
@@ -249,45 +367,73 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
                 type="date"
                 className="w-full"
                 value={dataPagamento ? format(dataPagamento, "yyyy-MM-dd") : ""}
-                onChange={e => {
-                  const selectedDate = new Date(e.target.value + "T00:00:00");
-                  setDataPagamento(selectedDate);
-                }}
+                onChange={e => setDataPagamento(new Date(e.target.value + "T00:00:00"))}
               />
               <Calendar className="text-blue-500" />
             </div>
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Forma de Pagamento *</label>
-            <Select value={formaPagamento} onValueChange={setFormaPagamento}>
-              <SelectTrigger className="w-full bg-white">
-                <SelectValue placeholder="Selecione a forma de pagamento" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                <SelectItem value="pix">PIX</SelectItem>
-                <SelectItem value="boleto">Boleto</SelectItem>
-                <SelectItem value="transferencia">Transferência</SelectItem>
-                <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
-                <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                <SelectItem value="cheque">Cheque</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="usar-antecipacao" 
-              checked={usarAntecipacao} 
-              onCheckedChange={setUsarAntecipacao}
-            />
-            <label htmlFor="usar-antecipacao" className="text-sm font-medium">
-              Utilizar Antecipação
-            </label>
-          </div>
+          {/* Seção de Antecipações */}
+          {antecipacoesDisponiveis.length > 0 && (
+            <div className="border rounded-lg p-3 bg-blue-50">
+              <div className="flex items-center space-x-2 mb-3">
+                <Switch
+                  id="usar-antecipacao"
+                  checked={usarAntecipacao}
+                  onCheckedChange={setUsarAntecipacao}
+                />
+                <Label htmlFor="usar-antecipacao" className="text-sm font-medium">
+                  Usar antecipações deste fornecedor
+                </Label>
+              </div>
 
-          {!usarAntecipacao && (
+              {usarAntecipacao && (
+                <div className="space-y-3">
+                  <div className="text-sm font-medium mb-2">Selecione as antecipações:</div>
+                  {antecipacoesDisponiveis.map((antecipacao) => {
+                    const isSelected = antecipacoesSelecionadas.some(ant => ant.id === antecipacao.id);
+                    const valorSelecionado = antecipacoesSelecionadas.find(ant => ant.id === antecipacao.id)?.valor || 0;
+                    const maxValor = getMaxValorAntecipacao(antecipacao.id);
+                    
+                    return (
+                      <div key={antecipacao.id} className="border rounded-md p-3 bg-white">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Checkbox
+                            id={`ant-${antecipacao.id}`}
+                            checked={isSelected}
+                            onCheckedChange={(checked) => handleAntecipacaoChange(antecipacao.id, checked as boolean)}
+                          />
+                          <Label htmlFor={`ant-${antecipacao.id}`} className="text-sm">
+                            {antecipacao.descricao} - Disponível: {formatCurrency(antecipacao.valor_disponivel)}
+                          </Label>
+                        </div>
+                        
+                        {isSelected && (
+                          <div className="ml-6">
+                            <label className="block text-xs text-gray-600 mb-1">
+                              Valor a usar (máx: {formatCurrency(maxValor)})
+                            </label>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={maxValor}
+                              step="0.01"
+                              value={valorSelecionado}
+                              onChange={e => handleValorAntecipacaoChange(antecipacao.id, Number(e.target.value))}
+                              placeholder="0.00"
+                              className="w-full"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {valorAPagar > 0 && (
             <div>
               <label className="block text-sm font-medium mb-1">Conta Corrente *</label>
               <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
@@ -295,56 +441,27 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
                   <SelectValue placeholder="Selecione a conta" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
-                  {contasCorrentes.map((conta) => (
-                    <SelectItem key={conta.id} value={conta.id}>
-                      {conta.nome} - {conta.banco} - {conta.agencia}/{conta.numero}
-                    </SelectItem>
+                  {contasCorrente.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           )}
 
-          {usarAntecipacao && (
-            <div className="space-y-3">
-              <label className="block text-sm font-medium">Antecipações Disponíveis</label>
-              {antecipacoesDisponiveis.length === 0 ? (
-                <p className="text-sm text-gray-500">Nenhuma antecipação disponível</p>
-              ) : (
-                <div className="max-h-40 overflow-y-auto space-y-2">
-                  {antecipacoesDisponiveis.map((antecipacao) => (
-                    <Card key={antecipacao.id} className="p-3">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Checkbox
-                          id={`ant-${antecipacao.id}`}
-                          checked={antecipacoesSelecionadas.some(a => a.id === antecipacao.id)}
-                          onCheckedChange={(checked) => handleAntecipacaoChange(antecipacao.id, checked as boolean)}
-                        />
-                        <label htmlFor={`ant-${antecipacao.id}`} className="text-sm font-medium flex-1">
-                          {antecipacao.descricao}
-                        </label>
-                      </div>
-                      <div className="text-xs text-gray-500 mb-2">
-                        Disponível: {formatCurrencyBR(antecipacao.valor_disponivel)}
-                      </div>
-                      {antecipacoesSelecionadas.some(a => a.id === antecipacao.id) && (
-                        <Input
-                          type="number"
-                          placeholder="Valor a utilizar"
-                          min={0}
-                          max={antecipacao.valor_disponivel}
-                          step="0.01"
-                          value={antecipacoesSelecionadas.find(a => a.id === antecipacao.id)?.valor || 0}
-                          onChange={(e) => handleValorAntecipacaoChange(antecipacao.id, Number(e.target.value))}
-                          className="mt-2"
-                        />
-                      )}
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium mb-1">Forma de Pagamento *</label>
+            <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+              <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder="Selecione a forma de pagamento" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                {formasPagamento.map((opt) => (
+                  <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="flex gap-2">
             <div className="flex-1">
@@ -381,30 +498,33 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
               />
             </div>
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Valor Total</label>
-            <Input
-              type="text"
-              value={formatCurrencyBR(valorTotal)}
-              readOnly
-              className="bg-gray-100 font-semibold"
-              tabIndex={-1}
-            />
-          </div>
 
-          {usarAntecipacao && totalAntecipacoes > 0 && (
-            <div>
-              <label className="block text-sm font-medium mb-1">Total das Antecipações</label>
-              <Input
-                type="text"
-                value={formatCurrencyBR(totalAntecipacoes)}
-                readOnly
-                className="bg-blue-50 font-semibold"
-                tabIndex={-1}
-              />
+          {/* Resumo dos valores */}
+          <div className="border rounded-lg p-3 bg-gray-50 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Valor da conta:</span>
+              <span>{formatCurrency(valorConta)}</span>
             </div>
-          )}
+            <div className="flex justify-between text-sm">
+              <span>Multa + Juros:</span>
+              <span>{formatCurrency(valorAcrescimos)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Desconto:</span>
+              <span>-{formatCurrency(desconto)}</span>
+            </div>
+            {usarAntecipacao && valorTotalAntecipacoes > 0 && (
+              <div className="flex justify-between text-sm text-blue-600">
+                <span>Total antecipações usadas:</span>
+                <span>-{formatCurrency(valorTotalAntecipacoes)}</span>
+              </div>
+            )}
+            <hr />
+            <div className="flex justify-between font-semibold">
+              <span>Valor a pagar:</span>
+              <span>{formatCurrency(valorAPagar)}</span>
+            </div>
+          </div>
         </div>
         <DialogFooter>
           <DialogClose asChild>
@@ -416,7 +536,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
             type="button"
             variant="blue"
             onClick={handleConfirmar}
-            disabled={!dataPagamento || !formaPagamento || (!usarAntecipacao && !contaCorrenteId)}
+            disabled={!dataPagamento || !formaPagamento || (valorAPagar > 0 && !contaCorrenteId)}
           >
             Baixar
           </Button>
