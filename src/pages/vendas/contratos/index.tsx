@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCompany } from "@/contexts/company-context";
 
 export default function Contratos() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -22,11 +23,14 @@ export default function Contratos() {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [tipoFilter, setTipoFilter] = useState("todos");
   const queryClient = useQueryClient();
+  const { currentCompany } = useCompany();
 
   // Buscar contratos
   const { data: contratos = [], isLoading } = useQuery({
-    queryKey: ["contratos"],
+    queryKey: ["contratos", currentCompany?.id],
     queryFn: async () => {
+      if (!currentCompany?.id) return [];
+      
       const { data, error } = await supabase
         .from("contratos")
         .select(`
@@ -36,11 +40,13 @@ export default function Contratos() {
             documento
           )
         `)
+        .eq("empresa_id", currentCompany.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data as Contrato[];
     },
+    enabled: !!currentCompany?.id,
   });
 
   // Filtrar contratos
@@ -70,8 +76,13 @@ export default function Contratos() {
   // Mutação para criar/editar contrato
   const createContratoMutation = useMutation({
     mutationFn: async (data: ContratoFormData) => {
+      if (!currentCompany?.id) {
+        throw new Error("Empresa não identificada");
+      }
+
       const contratoData = {
         ...data,
+        empresa_id: currentCompany.id,
         data_inicio: format(data.data_inicio!, "yyyy-MM-dd"),
         data_fim: format(data.data_fim!, "yyyy-MM-dd"),
         valor_total: data.valor_mensal * 12, // Cálculo básico, pode ser ajustado
@@ -164,6 +175,7 @@ export default function Contratos() {
         const { data: movimentacao, error: movError } = await supabase
           .from("movimentacoes")
           .insert({
+            empresa_id: currentCompany?.id,
             tipo_operacao: "receber",
             data_lancamento: parcela.data_vencimento,
             descricao: `Contrato ${contrato.codigo} - ${parcela.numero_parcela}`,

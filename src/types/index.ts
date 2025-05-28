@@ -22,6 +22,50 @@ export interface TipoTitulo {
   updated_at: string;
 }
 
+export interface Favorecido {
+  id: string;
+  nome: string;
+  documento: string;
+  tipo: string;
+  email?: string;
+  telefone?: string;
+  status: string;
+  empresa_id: string;
+  grupo_id?: string;
+  profissao_id?: string;
+  nome_fantasia?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
+  cep?: string;
+  tipo_documento: string;
+  data_aniversario?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GrupoFavorecido {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Profissao {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Interfaces para fluxo de caixa
 export interface FluxoCaixaItem {
   id: string;
