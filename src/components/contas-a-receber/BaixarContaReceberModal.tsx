@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
+import { Antecipacao, AntecipacaoSelecionada } from "@/types/financeiro";
 
 interface BaixarContaReceberModalProps {
   conta?: ContaReceber | null;
@@ -37,19 +38,6 @@ const formasPagamento = [
   { id: "3", nome: "Boleto" },
   { id: "4", nome: "Transferência" }
 ];
-
-interface Antecipacao {
-  id: string;
-  descricao: string;
-  valor_total: number;
-  valor_utilizado: number;
-  valor_disponivel: number;
-}
-
-interface AntecipacaoSelecionada {
-  id: string;
-  valor: number;
-}
 
 export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: BaixarContaReceberModalProps) {
   const { currentCompany } = useCompany();

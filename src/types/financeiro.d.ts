@@ -41,6 +41,49 @@ export interface FluxoCaixa {
   updated_at: string;
 }
 
+export interface FluxoCaixaItem {
+  id: string;
+  data: string;
+  descricao: string;
+  entradas: number;
+  saidas: number;
+  saldo: number;
+}
+
+export interface FluxoMensal {
+  mes: string;
+  entradas: number;
+  saidas: number;
+  saldo: number;
+}
+
+export interface FiltroFluxoCaixa {
+  dataInicio: Date;
+  dataFim: Date;
+  contaCorrenteId?: string;
+}
+
+export interface DadosFinanceiros {
+  contasAPagar: {
+    total: number;
+    vencidas: number;
+    vencendoHoje: number;
+    proximos7Dias: number;
+  };
+  contasAReceber: {
+    total: number;
+    vencidas: number;
+    vencendoHoje: number;
+    proximos7Dias: number;
+  };
+  fluxoCaixa: {
+    saldoAtual: number;
+    receitasPrevistas: number;
+    despesasPrevistas: number;
+    saldoProjetado: number;
+  };
+}
+
 export interface PainelFinanceiroData {
   contasAPagar: {
     total: number;
@@ -60,4 +103,17 @@ export interface PainelFinanceiroData {
     despesasPrevistas: number;
     saldoProjetado: number;
   };
+}
+
+export interface Antecipacao {
+  id: string;
+  descricao: string;
+  valor_total: number;
+  valor_utilizado: number;
+  valor_disponivel: number;
+}
+
+export interface AntecipacaoSelecionada {
+  id: string;
+  valor: number;
 }
