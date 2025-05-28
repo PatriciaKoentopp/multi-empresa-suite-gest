@@ -138,21 +138,70 @@ export const useContratos = () => {
   });
 
   const deleteContrato = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
+    mutationFn: async (contratoId: string) => {
+      // Buscar movimentações relacionadas ao contrato
+      const { data: movimentacoes, error: movError } = await supabase
+        .from("movimentacoes")
+        .select(`
+          id,
+          numero_documento,
+          movimentacoes_parcelas(
+            id,
+            data_pagamento
+          )
+        `)
+        .eq("numero_documento", contratoId)
+        .eq("tipo_operacao", "receber");
+
+      if (movError) throw movError;
+
+      // Verificar se existem parcelas baixadas (com data_pagamento preenchida)
+      const temParcelasBaixadas = movimentacoes?.some(mov => 
+        mov.movimentacoes_parcelas?.some(parcela => parcela.data_pagamento !== null)
+      );
+
+      if (temParcelasBaixadas) {
+        throw new Error("Não é possível excluir o contrato pois existem parcelas já baixadas no contas a receber.");
+      }
+
+      // Se chegou até aqui, pode excluir
+      // Primeiro, excluir as parcelas das movimentações
+      if (movimentacoes && movimentacoes.length > 0) {
+        for (const movimentacao of movimentacoes) {
+          // Excluir parcelas da movimentação
+          const { error: parcelasError } = await supabase
+            .from("movimentacoes_parcelas")
+            .delete()
+            .eq("movimentacao_id", movimentacao.id);
+
+          if (parcelasError) throw parcelasError;
+
+          // Excluir a movimentação
+          const { error: movimentacaoError } = await supabase
+            .from("movimentacoes")
+            .delete()
+            .eq("id", movimentacao.id);
+
+          if (movimentacaoError) throw movimentacaoError;
+        }
+      }
+
+      // Por último, excluir o contrato
+      const { error: contratoError } = await supabase
         .from("contratos")
         .delete()
-        .eq("id", id);
+        .eq("id", contratoId);
 
-      if (error) throw error;
+      if (contratoError) throw contratoError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contratos"] });
-      toast.success("Contrato excluído com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["movimentacoes"] });
+      toast.success("Contrato e suas movimentações excluídas com sucesso!");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Erro ao excluir contrato:", error);
-      toast.error("Erro ao excluir contrato");
+      toast.error(error.message || "Erro ao excluir contrato");
     },
   });
 
