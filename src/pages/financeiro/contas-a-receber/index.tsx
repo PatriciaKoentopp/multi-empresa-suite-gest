@@ -383,12 +383,11 @@ export default function ContasAReceberPage() {
         return;
       }
 
-      // 1. Verificar se o registro está conciliado no fluxo de caixa
-      const { data: fluxoCaixa, error: fluxoError } = await supabase
+      // 1. Verificar se algum registro do fluxo de caixa está conciliado
+      const { data: fluxoCaixaRegistros, error: fluxoError } = await supabase
         .from('fluxo_caixa')
         .select('situacao')
-        .eq('movimentacao_parcela_id', conta.id)
-        .single();
+        .eq('movimentacao_parcela_id', conta.id);
 
       if (fluxoError) {
         console.error('Erro ao verificar situação:', fluxoError);
@@ -396,7 +395,10 @@ export default function ContasAReceberPage() {
         return;
       }
 
-      if (fluxoCaixa?.situacao === 'conciliado') {
+      // Verificar se há algum registro conciliado
+      const temRegistroConciliado = fluxoCaixaRegistros?.some(registro => registro.situacao === 'conciliado');
+
+      if (temRegistroConciliado) {
         toast.error("Não é possível desfazer a baixa de um título conciliado");
         return;
       }
