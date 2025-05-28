@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -148,6 +149,12 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
       return;
     }
 
+    // Verificar se tem valor utilizado
+    if (antecipacao.valorUtilizado > 0) {
+      toast.error("Não é possível editar uma antecipação que possui valor utilizado");
+      return;
+    }
+
     // Validações básicas
     if (!tipoTitulo || !favorecido || !contaCorrente || !valor || Number(valor.replace(/\./g, '').replace(',', '.')) <= 0) {
       toast.error("Preencha todos os campos obrigatórios");
@@ -224,8 +231,8 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
 
   if (!antecipacao) return null;
 
-  // Verificar se está conciliada para desabilitar campos
-  const isReadOnly = antecipacao.conciliada;
+  // Verificar se está conciliada ou tem valor utilizado para desabilitar campos
+  const isReadOnly = antecipacao.conciliada || antecipacao.valorUtilizado > 0;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -234,10 +241,18 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
           <DialogTitle>Editar Antecipação</DialogTitle>
         </DialogHeader>
 
-        {isReadOnly && (
+        {antecipacao.conciliada && (
           <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
             <p className="text-yellow-800 text-sm">
               Esta antecipação está conciliada e não pode ser editada.
+            </p>
+          </div>
+        )}
+
+        {!antecipacao.conciliada && antecipacao.valorUtilizado > 0 && (
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
+            <p className="text-yellow-800 text-sm">
+              Esta antecipação possui valor utilizado e não pode ser editada.
             </p>
           </div>
         )}
