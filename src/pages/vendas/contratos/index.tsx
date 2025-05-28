@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ContratosTable } from "@/components/contratos/contratos-table";
 import { ContratosForm } from "@/components/contratos/contratos-form";
+import { ContratosFilters } from "@/components/contratos/contratos-filters";
 import { useContratos } from "@/hooks/useContratos";
 import { Contrato, ContratoFormData } from "@/types/contratos";
 import {
@@ -23,12 +24,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Plus } from "lucide-react";
 
 export default function ContratosPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingContrato, setEditingContrato] = useState<Contrato | null>(null);
   const [viewingContrato, setViewingContrato] = useState<Contrato | null>(null);
   const [deletingContrato, setDeletingContrato] = useState<Contrato | null>(null);
+  const [filtros, setFiltros] = useState({
+    codigo: "",
+    favorecido: "",
+    status: "",
+    periodicidade: "",
+  });
 
   const {
     contratos,
@@ -38,6 +46,17 @@ export default function ContratosPage() {
     deleteContrato,
     generateInvoices,
   } = useContratos();
+
+  const contratosFiltrados = contratos.filter((contrato) => {
+    return (
+      (filtros.codigo === "" || 
+       contrato.codigo.toLowerCase().includes(filtros.codigo.toLowerCase())) &&
+      (filtros.favorecido === "" || 
+       contrato.favorecido?.nome.toLowerCase().includes(filtros.favorecido.toLowerCase())) &&
+      (filtros.status === "" || contrato.status === filtros.status) &&
+      (filtros.periodicidade === "" || contrato.periodicidade === filtros.periodicidade)
+    );
+  });
 
   const handleSubmit = async (formData: ContratoFormData) => {
     if (editingContrato) {
@@ -96,14 +115,33 @@ export default function ContratosPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Contratos</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Contratos</h1>
+          <p className="text-muted-foreground">
+            Gerencie os contratos de prestação de serviços
+          </p>
+        </div>
         <Button 
           onClick={() => setIsFormOpen(true)}
           variant="blue"
+          className="gap-2"
         >
+          <Plus className="h-4 w-4" />
           Novo Contrato
         </Button>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ContratosFilters 
+            filtros={filtros}
+            onFiltrosChange={setFiltros}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -111,7 +149,7 @@ export default function ContratosPage() {
         </CardHeader>
         <CardContent>
           <ContratosTable
-            contratos={contratos}
+            contratos={contratosFiltrados}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onView={handleView}
