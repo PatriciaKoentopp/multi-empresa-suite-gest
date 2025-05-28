@@ -139,7 +139,23 @@ export const useContratos = () => {
 
   const deleteContrato = useMutation({
     mutationFn: async (contratoId: string) => {
-      // Buscar movimentações relacionadas ao contrato
+      console.log("Tentando excluir contrato:", contratoId);
+      
+      // Primeiro, buscar o código do contrato
+      const { data: contrato, error: contratoError } = await supabase
+        .from("contratos")
+        .select("codigo")
+        .eq("id", contratoId)
+        .single();
+
+      if (contratoError) {
+        console.error("Erro ao buscar contrato:", contratoError);
+        throw contratoError;
+      }
+
+      console.log("Código do contrato:", contrato.codigo);
+
+      // Buscar movimentações relacionadas ao contrato usando o código
       const { data: movimentacoes, error: movError } = await supabase
         .from("movimentacoes")
         .select(`
@@ -150,15 +166,22 @@ export const useContratos = () => {
             data_pagamento
           )
         `)
-        .eq("numero_documento", contratoId)
+        .eq("numero_documento", contrato.codigo)
         .eq("tipo_operacao", "receber");
 
-      if (movError) throw movError;
+      if (movError) {
+        console.error("Erro ao buscar movimentações:", movError);
+        throw movError;
+      }
+
+      console.log("Movimentações encontradas:", movimentacoes);
 
       // Verificar se existem parcelas baixadas (com data_pagamento preenchida)
       const temParcelasBaixadas = movimentacoes?.some(mov => 
         mov.movimentacoes_parcelas?.some(parcela => parcela.data_pagamento !== null)
       );
+
+      console.log("Tem parcelas baixadas:", temParcelasBaixadas);
 
       if (temParcelasBaixadas) {
         throw new Error("Não é possível excluir o contrato pois existem parcelas já baixadas no contas a receber.");
@@ -167,6 +190,8 @@ export const useContratos = () => {
       // Se chegou até aqui, pode excluir
       // Primeiro, excluir as parcelas das movimentações
       if (movimentacoes && movimentacoes.length > 0) {
+        console.log("Excluindo movimentações relacionadas...");
+        
         for (const movimentacao of movimentacoes) {
           // Excluir parcelas da movimentação
           const { error: parcelasError } = await supabase
@@ -174,7 +199,10 @@ export const useContratos = () => {
             .delete()
             .eq("movimentacao_id", movimentacao.id);
 
-          if (parcelasError) throw parcelasError;
+          if (parcelasError) {
+            console.error("Erro ao excluir parcelas:", parcelasError);
+            throw parcelasError;
+          }
 
           // Excluir a movimentação
           const { error: movimentacaoError } = await supabase
@@ -182,17 +210,25 @@ export const useContratos = () => {
             .delete()
             .eq("id", movimentacao.id);
 
-          if (movimentacaoError) throw movimentacaoError;
+          if (movimentacaoError) {
+            console.error("Erro ao excluir movimentação:", movimentacaoError);
+            throw movimentacaoError;
+          }
         }
       }
 
       // Por último, excluir o contrato
-      const { error: contratoError } = await supabase
+      const { error: contratoDeleteError } = await supabase
         .from("contratos")
         .delete()
         .eq("id", contratoId);
 
-      if (contratoError) throw contratoError;
+      if (contratoDeleteError) {
+        console.error("Erro ao excluir contrato:", contratoDeleteError);
+        throw contratoDeleteError;
+      }
+
+      console.log("Contrato excluído com sucesso");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contratos"] });
