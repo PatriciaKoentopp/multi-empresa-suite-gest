@@ -1,119 +1,47 @@
 
-export interface ContaCorrente {
-  id: string;
-  empresa_id: string;
-  nome: string;
-  banco: string;
-  agencia: string;
-  numero: string;
-  saldo_inicial: number;
-  considerar_saldo: boolean;
-  status: 'ativo' | 'inativo';
-  conta_contabil_id: string;
-  data?: Date;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ContaCorrenteItem {
-  id: string;
-  nome: string;
-  banco: string;
-  saldo_inicial: number;
-}
-
-export interface FluxoCaixa {
-  id: string;
-  empresa_id: string;
-  conta_corrente_id?: string;
-  data_movimentacao: Date;
-  valor: number;
-  saldo: number;
-  tipo_operacao: 'receber' | 'pagar' | 'transferencia';
-  origem: 'movimentacao' | 'antecipacao' | 'transferencia';
-  movimentacao_parcela_id?: string;
-  movimentacao_id?: string;
-  antecipacao_id?: string;
-  situacao: 'conciliado' | 'nao_conciliado';
-  descricao?: string;
-  forma_pagamento?: string;
-  created_at: string;
-  updated_at: string;
-}
-
+// Interfaces para fluxo de caixa
 export interface FluxoCaixaItem {
   id: string;
-  data: string;
+  data: Date;
   descricao: string;
-  entradas: number;
-  saidas: number;
-  saldo: number;
+  tipo: 'entrada' | 'saida';
+  valor: number;
+  origem: string;
+  situacao: string;
+  conta_corrente_id?: string;
+  favorecido?: string;
+  conta_nome?: string;
+  conta_id?: string;
+}
+
+export interface FiltroFluxoCaixa {
+  dataInicio: Date | undefined;
+  dataFim: Date | undefined;
+  conta_corrente_id: string;
+  situacao: string;
+  contaId: string;
+}
+
+// Interfaces para dados financeiros
+export interface DadosFinanceiros {
+  total_a_receber: number;
+  total_a_pagar: number;
+  saldo_contas: number;
+  previsao_saldo: number;
+  contas_vencidas_receber: number;
+  contas_a_vencer_receber: number;
+  contas_vencidas_pagar: number;
+  contas_a_vencer_pagar: number;
+  fluxo_por_mes?: FluxoMensal[];
+  fluxo_caixa?: FluxoCaixaItem[];
+  contas_correntes?: any[];
 }
 
 export interface FluxoMensal {
   mes: string;
-  entradas: number;
-  saidas: number;
+  mes_numero: number;
+  ano: number;
+  total_recebido: number;
+  total_pago: number;
   saldo: number;
-}
-
-export interface FiltroFluxoCaixa {
-  dataInicio: Date;
-  dataFim: Date;
-  contaCorrenteId?: string;
-}
-
-export interface DadosFinanceiros {
-  contasAPagar: {
-    total: number;
-    vencidas: number;
-    vencendoHoje: number;
-    proximos7Dias: number;
-  };
-  contasAReceber: {
-    total: number;
-    vencidas: number;
-    vencendoHoje: number;
-    proximos7Dias: number;
-  };
-  fluxoCaixa: {
-    saldoAtual: number;
-    receitasPrevistas: number;
-    despesasPrevistas: number;
-    saldoProjetado: number;
-  };
-}
-
-export interface PainelFinanceiroData {
-  contasAPagar: {
-    total: number;
-    vencidas: number;
-    vencendoHoje: number;
-    proximos7Dias: number;
-  };
-  contasAReceber: {
-    total: number;
-    vencidas: number;
-    vencendoHoje: number;
-    proximos7Dias: number;
-  };
-  fluxoCaixa: {
-    saldoAtual: number;
-    receitasPrevistas: number;
-    despesasPrevistas: number;
-    saldoProjetado: number;
-  };
-}
-
-export interface Antecipacao {
-  id: string;
-  descricao: string;
-  valor_total: number;
-  valor_utilizado: number;
-  valor_disponivel: number;
-}
-
-export interface AntecipacaoSelecionada {
-  id: string;
-  valor: number;
 }
