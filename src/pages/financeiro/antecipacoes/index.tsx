@@ -38,7 +38,7 @@ export default function AntecipacoesPage() {
   const [antecipacaoSelecionada, setAntecipacaoSelecionada] = useState<Antecipacao | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"todas" | "ativa" | "utilizada" | "cancelada">("ativa");
+  const [statusFilter, setStatusFilter] = useState<"todas" | "ativa" | "utilizada">("ativa");
   const [tipoFilter, setTipoFilter] = useState<"todas" | "receber" | "pagar">("todas");
   const [dataInicio, setDataInicio] = useState<string>("");
   const [dataFim, setDataFim] = useState<string>("");
@@ -54,6 +54,51 @@ export default function AntecipacoesPage() {
       carregarAntecipacoes();
     }
   }, [currentCompany]);
+
+  // Função para atualizar o status de antecipações automaticamente
+  async function atualizarStatusAntecipacoes() {
+    try {
+      if (!currentCompany?.id) return;
+
+      console.log("Verificando antecipações para atualizar status...");
+
+      // Buscar antecipações ativas com valor disponível zero
+      const { data: antecipacoesParaAtualizar, error } = await supabase
+        .from("antecipacoes")
+        .select("id, valor_total, valor_utilizado")
+        .eq("empresa_id", currentCompany.id)
+        .eq("status", "ativa");
+
+      if (error) {
+        console.error("Erro ao buscar antecipações para atualizar:", error);
+        return;
+      }
+
+      const idsParaAtualizar = antecipacoesParaAtualizar
+        ?.filter(ant => {
+          const valorDisponivel = Number(ant.valor_total) - Number(ant.valor_utilizado);
+          return valorDisponivel <= 0;
+        })
+        .map(ant => ant.id) || [];
+
+      if (idsParaAtualizar.length > 0) {
+        console.log(`Atualizando ${idsParaAtualizar.length} antecipações para status 'utilizada'`);
+
+        const { error: updateError } = await supabase
+          .from("antecipacoes")
+          .update({ status: "utilizada" })
+          .in("id", idsParaAtualizar);
+
+        if (updateError) {
+          console.error("Erro ao atualizar status das antecipações:", updateError);
+        } else {
+          console.log("Status das antecipações atualizado com sucesso");
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar status das antecipações:", error);
+    }
+  }
 
   // Função para criar uma data a partir de uma string YYYY-MM-DD sem conversão de timezone
   function criarDataSemTimezone(dataStr?: string): Date | undefined {
@@ -73,6 +118,9 @@ export default function AntecipacoesPage() {
       }
 
       console.log("Carregando antecipações para empresa:", currentCompany.id);
+
+      // Primeiro, atualizar status das antecipações
+      await atualizarStatusAntecipacoes();
 
       // Buscar antecipações
       const { data: antecipacoesData, error: antecipacoesError } = await supabase
@@ -172,19 +220,31 @@ export default function AntecipacoesPage() {
       }
 
       // Transformar dados para o formato esperado pela tabela
-      const antecipacoesMapeadas: Antecipacao[] = (antecipacoesData || []).map(item => ({
-        id: item.id,
-        favorecido: favorecidosMap[item.favorecido_id] || "N/A",
-        tipoOperacao: item.tipo_operacao as "receber" | "pagar",
-        dataAntecipacao: new Date(item.data_lancamento + 'T12:00:00'),
-        valorTotal: Number(item.valor_total),
-        valorUtilizado: Number(item.valor_utilizado),
-        valorDisponivel: Number(item.valor_total) - Number(item.valor_utilizado),
-        descricao: item.descricao || "",
-        status: item.status as "ativa" | "utilizada" | "cancelada",
-        numeroDocumento: item.numero_documento || "", // Mapear o número do documento
-        conciliada: conciliacaoMap[item.id] || false
-      }));
+      const antecipacoesMapeadas: Antecipacao[] = (antecipacoesData || []).map(item => {
+        const valorTotal = Number(item.valor_total);
+        const valorUtilizado = Number(item.valor_utilizado);
+        const valorDisponivel = valorTotal - valorUtilizado;
+        
+        // Determinar o status correto baseado no valor disponível
+        let status = item.status;
+        if (valorDisponivel <= 0 && status === 'ativa') {
+          status = 'utilizada';
+        }
+
+        return {
+          id: item.id,
+          favorecido: favorecidosMap[item.favorecido_id] || "N/A",
+          tipoOperacao: item.tipo_operacao as "receber" | "pagar",
+          dataAntecipacao: new Date(item.data_lancamento + 'T12:00:00'),
+          valorTotal,
+          valorUtilizado,
+          valorDisponivel,
+          descricao: item.descricao || "",
+          status: status as "ativa" | "utilizada",
+          numeroDocumento: item.numero_documento || "",
+          conciliada: conciliacaoMap[item.id] || false
+        };
+      });
 
       console.log("Antecipações mapeadas:", antecipacoesMapeadas);
       setAntecipacoes(antecipacoesMapeadas);
@@ -401,7 +461,6 @@ export default function AntecipacoesPage() {
                     <SelectItem value="todas">Todos Status</SelectItem>
                     <SelectItem value="ativa" className="text-blue-600">Ativa</SelectItem>
                     <SelectItem value="utilizada" className="text-green-600">Utilizada</SelectItem>
-                    <SelectItem value="cancelada" className="text-red-600">Cancelada</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

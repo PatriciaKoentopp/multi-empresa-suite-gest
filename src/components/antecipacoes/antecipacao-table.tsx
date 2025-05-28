@@ -20,9 +20,9 @@ export interface Antecipacao {
   valorUtilizado: number;
   valorDisponivel: number;
   descricao?: string;
-  status: "ativa" | "utilizada" | "cancelada";
-  numeroDocumento?: string; // Nova propriedade para número do documento
-  conciliada?: boolean; // Nova propriedade para indicar se está conciliada
+  status: "ativa" | "utilizada";
+  numeroDocumento?: string;
+  conciliada?: boolean;
 }
 
 interface AntecipacaoTableProps {
@@ -62,12 +62,6 @@ export function AntecipacaoTable({
         return (
           <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
             Utilizada
-          </span>
-        );
-      case "cancelada":
-        return (
-          <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
-            Cancelada
           </span>
         );
       default:
@@ -154,7 +148,7 @@ export function AntecipacaoTable({
                       <DropdownMenuItem
                         onClick={() => onEdit(antecipacao)}
                         className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
-                        disabled={antecipacao.conciliada === true}
+                        disabled={antecipacao.conciliada === true || antecipacao.status === 'utilizada'}
                       >
                         <Edit className="h-4 w-4" />
                         Editar
@@ -163,7 +157,7 @@ export function AntecipacaoTable({
                       <DropdownMenuItem
                         onClick={() => onDelete(antecipacao.id)}
                         className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
-                        disabled={antecipacao.conciliada === true}
+                        disabled={antecipacao.conciliada === true || antecipacao.status === 'utilizada'}
                       >
                         <Trash2 className="h-4 w-4" />
                         Excluir

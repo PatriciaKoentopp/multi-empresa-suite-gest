@@ -95,12 +95,6 @@ export function FavorecidoAntecipacoesTab({ favorecidoId }: FavorecidoAntecipaco
             Utilizada
           </span>
         );
-      case "cancelada":
-        return (
-          <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20">
-            Cancelada
-          </span>
-        );
       default:
         return status;
     }
