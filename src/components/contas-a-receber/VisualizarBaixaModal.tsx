@@ -45,42 +45,81 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
 
     setIsLoading(true);
     try {
-      // Primeiro, verificar se existe antecipacao_id na parcela (formato antigo)
-      const { data: parcela, error: parcelaError } = await supabase
-        .from("movimentacoes_parcelas")
-        .select("antecipacao_id, valor_antecipacao_utilizado")
-        .eq("id", conta.id)
-        .single();
+      console.log("Buscando antecipações para parcela:", conta.id);
 
-      if (parcelaError) {
-        console.error("Erro ao buscar parcela:", parcelaError);
-        return;
+      // Primeiro, buscar todas as movimentações de fluxo de caixa relacionadas a esta parcela que são antecipações
+      const { data: fluxosAntecipacao, error: fluxoError } = await supabase
+        .from("fluxo_caixa")
+        .select("antecipacao_id, valor")
+        .eq("movimentacao_parcela_id", conta.id)
+        .eq("origem", "antecipacao")
+        .not("antecipacao_id", "is", null);
+
+      if (fluxoError) {
+        console.error("Erro ao buscar fluxos de antecipação:", fluxoError);
       }
+
+      console.log("Fluxos de antecipação encontrados:", fluxosAntecipacao);
 
       const antecipacoes: AntecipacaoUtilizada[] = [];
 
-      // Se tem antecipacao_id (formato antigo - uma única antecipação)
-      if (parcela?.antecipacao_id && parcela?.valor_antecipacao_utilizado > 0) {
-        const { data: antecipacao, error: antError } = await supabase
-          .from("antecipacoes")
-          .select("id, descricao, data_lancamento, numero_documento")
-          .eq("id", parcela.antecipacao_id)
+      // Se encontrou fluxos de antecipação (formato novo), buscar detalhes de cada antecipação
+      if (fluxosAntecipacao && fluxosAntecipacao.length > 0) {
+        for (const fluxo of fluxosAntecipacao) {
+          if (fluxo.antecipacao_id) {
+            const { data: antecipacao, error: antError } = await supabase
+              .from("antecipacoes")
+              .select("id, descricao, data_lancamento, numero_documento")
+              .eq("id", fluxo.antecipacao_id)
+              .single();
+
+            if (!antError && antecipacao) {
+              antecipacoes.push({
+                id: antecipacao.id,
+                descricao: antecipacao.descricao || "Antecipação",
+                data_lancamento: antecipacao.data_lancamento,
+                numero_documento: antecipacao.numero_documento || "-",
+                valor_utilizado: Math.abs(fluxo.valor) // Usar valor absoluto pois antecipações são negativas no fluxo
+              });
+            }
+          }
+        }
+      } else {
+        // Fallback: verificar se existe antecipacao_id na parcela (formato antigo)
+        const { data: parcela, error: parcelaError } = await supabase
+          .from("movimentacoes_parcelas")
+          .select("antecipacao_id, valor_antecipacao_utilizado")
+          .eq("id", conta.id)
           .single();
 
-        if (!antError && antecipacao) {
-          antecipacoes.push({
-            id: antecipacao.id,
-            descricao: antecipacao.descricao || "Antecipação",
-            data_lancamento: antecipacao.data_lancamento,
-            numero_documento: antecipacao.numero_documento || "-",
-            valor_utilizado: parcela.valor_antecipacao_utilizado
-          });
+        if (parcelaError) {
+          console.error("Erro ao buscar parcela:", parcelaError);
+          return;
+        }
+
+        console.log("Dados da parcela (formato antigo):", parcela);
+
+        // Se tem antecipacao_id (formato antigo - uma única antecipação)
+        if (parcela?.antecipacao_id && parcela?.valor_antecipacao_utilizado > 0) {
+          const { data: antecipacao, error: antError } = await supabase
+            .from("antecipacoes")
+            .select("id, descricao, data_lancamento, numero_documento")
+            .eq("id", parcela.antecipacao_id)
+            .single();
+
+          if (!antError && antecipacao) {
+            antecipacoes.push({
+              id: antecipacao.id,
+              descricao: antecipacao.descricao || "Antecipação",
+              data_lancamento: antecipacao.data_lancamento,
+              numero_documento: antecipacao.numero_documento || "-",
+              valor_utilizado: parcela.valor_antecipacao_utilizado
+            });
+          }
         }
       }
 
-      // TODO: Buscar registros de múltiplas antecipações quando implementarmos a tabela de relacionamento
-      // Por enquanto, vamos mostrar apenas a antecipação do formato atual
-
+      console.log("Antecipações processadas:", antecipacoes);
       setAntecipacoesUtilizadas(antecipacoes);
     } catch (error) {
       console.error("Erro ao buscar antecipações utilizadas:", error);
