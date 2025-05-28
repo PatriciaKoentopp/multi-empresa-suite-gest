@@ -66,6 +66,24 @@ export interface Profissao {
   updated_at: string;
 }
 
+export interface MotivoPerda {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Origem {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Interfaces para fluxo de caixa
 export interface FluxoCaixaItem {
   id: string;
@@ -78,6 +96,7 @@ export interface FluxoCaixaItem {
   conta_corrente_id?: string;
   favorecido?: string;
   conta_nome?: string;
+  tipo: string;
 }
 
 export interface FiltroFluxoCaixa {
@@ -85,6 +104,7 @@ export interface FiltroFluxoCaixa {
   dataFim: Date | undefined;
   conta_corrente_id: string;
   situacao: string;
+  contaId: string;
 }
 
 // Interfaces para dados financeiros

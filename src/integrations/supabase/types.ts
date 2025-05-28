@@ -151,8 +151,8 @@ export type Database = {
           id: string
           observacoes: string | null
           periodicidade: string
+          servico_id: string | null
           status: string
-          tipo: string
           updated_at: string
           valor_mensal: number
           valor_total: number
@@ -171,8 +171,8 @@ export type Database = {
           id?: string
           observacoes?: string | null
           periodicidade?: string
+          servico_id?: string | null
           status?: string
-          tipo?: string
           updated_at?: string
           valor_mensal?: number
           valor_total?: number
@@ -191,8 +191,8 @@ export type Database = {
           id?: string
           observacoes?: string | null
           periodicidade?: string
+          servico_id?: string | null
           status?: string
-          tipo?: string
           updated_at?: string
           valor_mensal?: number
           valor_total?: number
@@ -210,6 +210,13 @@ export type Database = {
             columns: ["favorecido_id"]
             isOneToOne: false
             referencedRelation: "favorecidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_contratos_servico"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "servicos"
             referencedColumns: ["id"]
           },
         ]
