@@ -182,7 +182,7 @@ export default function AntecipacoesPage() {
         valorDisponivel: Number(item.valor_total) - Number(item.valor_utilizado),
         descricao: item.descricao || "",
         status: item.status as "ativa" | "utilizada" | "cancelada",
-        contaCorrente: contasCorrentesMap[item.conta_corrente_id] || "N/A",
+        numeroDocumento: item.numero_documento || "", // Mapear o número do documento
         conciliada: conciliacaoMap[item.id] || false
       }));
 

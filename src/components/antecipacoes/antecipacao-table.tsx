@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ export interface Antecipacao {
   valorDisponivel: number;
   descricao?: string;
   status: "ativa" | "utilizada" | "cancelada";
-  contaCorrente: string;
+  numeroDocumento?: string; // Nova propriedade para número do documento
   conciliada?: boolean; // Nova propriedade para indicar se está conciliada
 }
 
@@ -101,7 +102,7 @@ export function AntecipacaoTable({
             <TableHead className="w-[120px]">Data</TableHead>
             <TableHead>Favorecido</TableHead>
             <TableHead className="w-[120px]">Tipo</TableHead>
-            <TableHead>Conta Corrente</TableHead>
+            <TableHead>Número do Documento</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead className="text-right w-[120px]">Valor Total</TableHead>
             <TableHead className="text-right w-[120px]">Valor Utilizado</TableHead>
@@ -123,7 +124,7 @@ export function AntecipacaoTable({
                 <TableCell className="text-center">{formatData(antecipacao.dataAntecipacao)}</TableCell>
                 <TableCell className="font-medium">{antecipacao.favorecido}</TableCell>
                 <TableCell>{getTipoBadge(antecipacao.tipoOperacao)}</TableCell>
-                <TableCell>{antecipacao.contaCorrente}</TableCell>
+                <TableCell>{antecipacao.numeroDocumento || "-"}</TableCell>
                 <TableCell>{antecipacao.descricao || "-"}</TableCell>
                 <TableCell className="text-right">{formatCurrency(antecipacao.valorTotal)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(antecipacao.valorUtilizado)}</TableCell>
