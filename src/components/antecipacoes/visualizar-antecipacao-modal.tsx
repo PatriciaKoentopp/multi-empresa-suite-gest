@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -38,6 +37,7 @@ interface MovimentacaoUtilizada {
   favorecido_nome: string;
   descricao: string | null;
   data_vencimento: string;
+  numero_documento: string | null;
 }
 
 export function VisualizarAntecipacaoModal({ open, onClose, antecipacao }: VisualizarAntecipacaoModalProps) {
@@ -118,6 +118,7 @@ export function VisualizarAntecipacaoModal({ open, onClose, antecipacao }: Visua
             movimentacoes!inner(
               favorecido_id,
               descricao,
+              numero_documento,
               favorecidos!inner(nome)
             )
           )
@@ -133,7 +134,8 @@ export function VisualizarAntecipacaoModal({ open, onClose, antecipacao }: Visua
           valor_utilizado: Number(item.valor_utilizado),
           favorecido_nome: item.movimentacoes_parcelas.movimentacoes.favorecidos.nome,
           descricao: item.movimentacoes_parcelas.movimentacoes.descricao,
-          data_vencimento: item.movimentacoes_parcelas.data_vencimento
+          data_vencimento: item.movimentacoes_parcelas.data_vencimento,
+          numero_documento: item.movimentacoes_parcelas.movimentacoes.numero_documento
         }));
 
         setMovimentacoesUtilizadas(movimentacoes);
@@ -343,10 +345,14 @@ export function VisualizarAntecipacaoModal({ open, onClose, antecipacao }: Visua
                 <div className="space-y-3">
                   {movimentacoesUtilizadas.map((mov, index) => (
                     <div key={mov.id} className="border rounded-lg p-4 bg-blue-50">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                         <div>
                           <Label className="text-xs font-medium text-gray-600">Favorecido</Label>
                           <div className="font-medium">{mov.favorecido_nome}</div>
+                        </div>
+                        <div>
+                          <Label className="text-xs font-medium text-gray-600">Nº Documento</Label>
+                          <div className="font-medium">{mov.numero_documento || "-"}</div>
                         </div>
                         <div>
                           <Label className="text-xs font-medium text-gray-600">Parcela</Label>
