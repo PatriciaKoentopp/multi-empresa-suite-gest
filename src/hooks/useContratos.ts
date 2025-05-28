@@ -185,6 +185,8 @@ export const useContratos = () => {
       // Calcular número de meses de vigência
       const dataInicio = new Date(contrato.data_inicio);
       const dataFim = new Date(contrato.data_fim);
+      
+      // Calcular meses de vigência considerando ano e mês
       const mesesVigencia = (dataFim.getFullYear() - dataInicio.getFullYear()) * 12 + 
                            (dataFim.getMonth() - dataInicio.getMonth()) + 1;
 
@@ -202,6 +204,9 @@ export const useContratos = () => {
           break;
       }
 
+      // Calcular primeiro vencimento - verificar se é no mês de início ou próximo mês
+      const primeiroVencimento = calcularPrimeiroVencimento(dataInicio, contrato.dia_vencimento);
+
       // Criar a movimentação principal
       const { data: movimentacao, error: movError } = await supabase
         .from("movimentacoes")
@@ -214,7 +219,7 @@ export const useContratos = () => {
           descricao: `Contrato ${contrato.codigo} - ${contrato.favorecido?.nome || 'Cliente'}`,
           valor: contrato.valor_total,
           numero_parcelas: numeroParcelas,
-          primeiro_vencimento: calcularPrimeiroVencimento(dataInicio, contrato.dia_vencimento),
+          primeiro_vencimento: primeiroVencimento,
           forma_pagamento: contrato.forma_pagamento,
           considerar_dre: true
         })
@@ -225,7 +230,7 @@ export const useContratos = () => {
 
       // Criar as parcelas
       const parcelas = [];
-      let dataVencimento = new Date(calcularPrimeiroVencimento(dataInicio, contrato.dia_vencimento));
+      let dataVencimento = new Date(primeiroVencimento);
       
       // Calcular valor da parcela baseado na periodicidade
       let valorParcela = contrato.valor_mensal;
@@ -280,10 +285,16 @@ export const useContratos = () => {
 
   // Função auxiliar para calcular o primeiro vencimento
   const calcularPrimeiroVencimento = (dataInicio: Date, diaVencimento: number): string => {
-    const proximoMes = new Date(dataInicio);
-    proximoMes.setMonth(proximoMes.getMonth() + 1);
-    proximoMes.setDate(diaVencimento);
-    return proximoMes.toISOString().split('T')[0];
+    const mesInicio = new Date(dataInicio.getFullYear(), dataInicio.getMonth(), diaVencimento);
+    
+    // Se o dia de vencimento já passou no mês de início, usar o próximo mês
+    if (mesInicio < dataInicio) {
+      const proximoMes = new Date(dataInicio.getFullYear(), dataInicio.getMonth() + 1, diaVencimento);
+      return proximoMes.toISOString().split('T')[0];
+    }
+    
+    // Caso contrário, usar o mês de início
+    return mesInicio.toISOString().split('T')[0];
   };
 
   return {
