@@ -62,37 +62,62 @@ export default function AntecipacoesPage() {
 
       console.log("Verificando antecipações para atualizar status...");
 
-      // Buscar antecipações ativas com valor disponível zero
-      const { data: antecipacoesParaAtualizar, error } = await supabase
+      // Buscar todas as antecipações para verificar status
+      const { data: antecipacoesParaVerificar, error } = await supabase
         .from("antecipacoes")
-        .select("id, valor_total, valor_utilizado")
-        .eq("empresa_id", currentCompany.id)
-        .eq("status", "ativa");
+        .select("id, valor_total, valor_utilizado, status")
+        .eq("empresa_id", currentCompany.id);
 
       if (error) {
         console.error("Erro ao buscar antecipações para atualizar:", error);
         return;
       }
 
-      const idsParaAtualizar = antecipacoesParaAtualizar
+      // Separar antecipações que precisam ser atualizadas para 'utilizada'
+      const idsParaUtilizada = antecipacoesParaVerificar
         ?.filter(ant => {
           const valorDisponivel = Number(ant.valor_total) - Number(ant.valor_utilizado);
-          return valorDisponivel <= 0;
+          return valorDisponivel <= 0 && ant.status === 'ativa';
         })
         .map(ant => ant.id) || [];
 
-      if (idsParaAtualizar.length > 0) {
-        console.log(`Atualizando ${idsParaAtualizar.length} antecipações para status 'utilizada'`);
+      // Separar antecipações que precisam ser atualizadas para 'ativa'
+      const idsParaAtiva = antecipacoesParaVerificar
+        ?.filter(ant => {
+          const valorDisponivel = Number(ant.valor_total) - Number(ant.valor_utilizado);
+          return valorDisponivel > 0 && ant.status === 'utilizada';
+        })
+        .map(ant => ant.id) || [];
 
-        const { error: updateError } = await supabase
+      // Atualizar para 'utilizada'
+      if (idsParaUtilizada.length > 0) {
+        console.log(`Atualizando ${idsParaUtilizada.length} antecipações para status 'utilizada'`);
+
+        const { error: updateUtilizadaError } = await supabase
           .from("antecipacoes")
           .update({ status: "utilizada" })
-          .in("id", idsParaAtualizar);
+          .in("id", idsParaUtilizada);
 
-        if (updateError) {
-          console.error("Erro ao atualizar status das antecipações:", updateError);
+        if (updateUtilizadaError) {
+          console.error("Erro ao atualizar status para 'utilizada':", updateUtilizadaError);
         } else {
-          console.log("Status das antecipações atualizado com sucesso");
+          console.log("Status das antecipações atualizado para 'utilizada' com sucesso");
+        }
+      }
+
+      // Atualizar para 'ativa'
+      if (idsParaAtiva.length > 0) {
+        console.log(`Atualizando ${idsParaAtiva.length} antecipações para status 'ativa'`);
+
+        const { error: updateAtivaError } = await supabase
+          .from("antecipacoes")
+          .update({ status: "ativa" })
+          .in("id", idsParaAtiva);
+
+        if (updateAtivaError) {
+          console.error("Erro ao atualizar status para 'ativa':", updateAtivaError);
+        } else {
+          console.log("Status das antecipações atualizado para 'ativa' com sucesso");
         }
       }
     } catch (error) {
@@ -225,11 +250,8 @@ export default function AntecipacoesPage() {
         const valorUtilizado = Number(item.valor_utilizado);
         const valorDisponivel = valorTotal - valorUtilizado;
         
-        // Determinar o status correto baseado no valor disponível
-        let status = item.status;
-        if (valorDisponivel <= 0 && status === 'ativa') {
-          status = 'utilizada';
-        }
+        // Usar o status atualizado do banco de dados após a verificação automática
+        const status = item.status as "ativa" | "utilizada";
 
         return {
           id: item.id,
@@ -240,7 +262,7 @@ export default function AntecipacoesPage() {
           valorUtilizado,
           valorDisponivel,
           descricao: item.descricao || "",
-          status: status as "ativa" | "utilizada",
+          status,
           numeroDocumento: item.numero_documento || "",
           conciliada: conciliacaoMap[item.id] || false
         };
