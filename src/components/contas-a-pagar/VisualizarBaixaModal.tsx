@@ -23,7 +23,7 @@ interface AntecipacaoUtilizada {
 export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }: VisualizarBaixaModalProps) {
   if (!conta) return null;
 
-  // Buscar antecipações utilizadas
+  // Buscar antecipações utilizadas usando a nova tabela de relacionamento
   const { data: antecipacoesUtilizadas = [] } = useQuery({
     queryKey: ["antecipacoes-utilizadas", conta.id],
     queryFn: async () => {
