@@ -83,15 +83,9 @@ export const useContratos = () => {
 
       if (error) throw error;
 
-      // Se gerar_automatico for true, chamar a função para gerar parcelas
+      // Se gerar_automatico for true, gerar as movimentações
       if (formData.gerar_automatico) {
-        const { error: functionError } = await supabase
-          .rpc('gerar_parcelas_contrato', { contrato_id_param: data.id });
-
-        if (functionError) {
-          console.error('Erro ao gerar parcelas:', functionError);
-          // Não falha a criação do contrato, apenas loga o erro
-        }
+        await gerarMovimentacoesContrato(data.id);
       }
 
       return data;
@@ -164,12 +158,10 @@ export const useContratos = () => {
 
   const generateInvoices = useMutation({
     mutationFn: async (contratoId: string) => {
-      const { error } = await supabase
-        .rpc('gerar_parcelas_contrato', { contrato_id_param: contratoId });
-
-      if (error) throw error;
+      await gerarMovimentacoesContrato(contratoId);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contratos"] });
       toast.success("Contas a receber geradas com sucesso!");
     },
     onError: (error) => {
@@ -177,6 +169,122 @@ export const useContratos = () => {
       toast.error("Erro ao gerar contas a receber");
     },
   });
+
+  // Função para gerar movimentações a partir do contrato
+  const gerarMovimentacoesContrato = async (contratoId: string) => {
+    try {
+      // Buscar dados do contrato
+      const { data: contrato, error: contratoError } = await supabase
+        .from("contratos")
+        .select("*, favorecido:favorecidos(nome)")
+        .eq("id", contratoId)
+        .single();
+
+      if (contratoError) throw contratoError;
+
+      // Calcular número de meses de vigência
+      const dataInicio = new Date(contrato.data_inicio);
+      const dataFim = new Date(contrato.data_fim);
+      const mesesVigencia = (dataFim.getFullYear() - dataInicio.getFullYear()) * 12 + 
+                           (dataFim.getMonth() - dataInicio.getMonth()) + 1;
+
+      // Calcular número de parcelas baseado na periodicidade
+      let numeroParcelas = mesesVigencia;
+      switch (contrato.periodicidade) {
+        case 'trimestral':
+          numeroParcelas = Math.ceil(mesesVigencia / 3);
+          break;
+        case 'semestral':
+          numeroParcelas = Math.ceil(mesesVigencia / 6);
+          break;
+        case 'anual':
+          numeroParcelas = Math.ceil(mesesVigencia / 12);
+          break;
+      }
+
+      // Criar a movimentação principal
+      const { data: movimentacao, error: movError } = await supabase
+        .from("movimentacoes")
+        .insert({
+          empresa_id: contrato.empresa_id,
+          tipo_operacao: 'receber',
+          data_lancamento: contrato.data_inicio,
+          numero_documento: contrato.codigo,
+          favorecido_id: contrato.favorecido_id,
+          descricao: `Contrato ${contrato.codigo} - ${contrato.favorecido?.nome || 'Cliente'}`,
+          valor: contrato.valor_total,
+          numero_parcelas: numeroParcelas,
+          primeiro_vencimento: calcularPrimeiroVencimento(dataInicio, contrato.dia_vencimento),
+          forma_pagamento: contrato.forma_pagamento,
+          considerar_dre: true
+        })
+        .select()
+        .single();
+
+      if (movError) throw movError;
+
+      // Criar as parcelas
+      const parcelas = [];
+      let dataVencimento = new Date(calcularPrimeiroVencimento(dataInicio, contrato.dia_vencimento));
+      
+      // Calcular valor da parcela baseado na periodicidade
+      let valorParcela = contrato.valor_mensal;
+      switch (contrato.periodicidade) {
+        case 'trimestral':
+          valorParcela = contrato.valor_mensal * 3;
+          break;
+        case 'semestral':
+          valorParcela = contrato.valor_mensal * 6;
+          break;
+        case 'anual':
+          valorParcela = contrato.valor_mensal * 12;
+          break;
+      }
+
+      for (let i = 1; i <= numeroParcelas; i++) {
+        parcelas.push({
+          movimentacao_id: movimentacao.id,
+          numero: i,
+          valor: valorParcela,
+          data_vencimento: dataVencimento.toISOString().split('T')[0]
+        });
+
+        // Calcular próxima data baseado na periodicidade
+        switch (contrato.periodicidade) {
+          case 'mensal':
+            dataVencimento.setMonth(dataVencimento.getMonth() + 1);
+            break;
+          case 'trimestral':
+            dataVencimento.setMonth(dataVencimento.getMonth() + 3);
+            break;
+          case 'semestral':
+            dataVencimento.setMonth(dataVencimento.getMonth() + 6);
+            break;
+          case 'anual':
+            dataVencimento.setFullYear(dataVencimento.getFullYear() + 1);
+            break;
+        }
+      }
+
+      const { error: parcelasError } = await supabase
+        .from("movimentacoes_parcelas")
+        .insert(parcelas);
+
+      if (parcelasError) throw parcelasError;
+
+    } catch (error) {
+      console.error("Erro ao gerar movimentações:", error);
+      throw error;
+    }
+  };
+
+  // Função auxiliar para calcular o primeiro vencimento
+  const calcularPrimeiroVencimento = (dataInicio: Date, diaVencimento: number): string => {
+    const proximoMes = new Date(dataInicio);
+    proximoMes.setMonth(proximoMes.getMonth() + 1);
+    proximoMes.setDate(diaVencimento);
+    return proximoMes.toISOString().split('T')[0];
+  };
 
   return {
     contratos,

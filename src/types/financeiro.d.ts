@@ -45,3 +45,31 @@ export interface FluxoMensal {
   total_pago: number;
   saldo: number;
 }
+
+// Interfaces para antecipações
+export interface Antecipacao {
+  id: string;
+  descricao: string;
+  valor_total: number;
+  valor_utilizado: number;
+  valor_disponivel: number;
+  data_lancamento: string;
+  status: 'ativa' | 'utilizada' | 'cancelada';
+  favorecido?: {
+    nome: string;
+  };
+}
+
+export interface AntecipacaoSelecionada {
+  id: string;
+  valor_utilizado: number;
+}
+
+// Interface para conta corrente
+export interface ContaCorrenteItem {
+  id: string;
+  nome: string;
+  banco: string;
+  agencia: string;
+  numero: string;
+}
