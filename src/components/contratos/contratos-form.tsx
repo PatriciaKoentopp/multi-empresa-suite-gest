@@ -11,11 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useFavorecidos } from "@/hooks/useFavorecidos";
 import { Switch } from "@/components/ui/switch";
 import { DateInput } from "@/components/movimentacao/DateInput";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
 
 const formSchema = z.object({
   codigo: z.string().min(1, "Código é obrigatório"),
   favorecido_id: z.string().min(1, "Favorecido é obrigatório"),
-  tipo: z.enum(["servico", "aluguel"]),
+  servico_id: z.string().min(1, "Serviço é obrigatório"),
   descricao: z.string().optional(),
   valor_mensal: z.number().min(0, "Valor deve ser maior que 0"),
   data_inicio: z.date({ required_error: "Data de início é obrigatória" }),
@@ -37,14 +40,34 @@ interface ContratosFormProps {
 }
 
 export function ContratosForm({ onSubmit, onCancel, initialData, isLoading = false }: ContratosFormProps) {
+  const { currentCompany } = useCompany();
   const { data: favorecidos = [], isLoading: loadingFavorecidos } = useFavorecidos();
+
+  // Buscar serviços ativos
+  const { data: servicos = [], isLoading: loadingServicos } = useQuery({
+    queryKey: ["servicos", currentCompany?.id],
+    queryFn: async () => {
+      if (!currentCompany?.id) return [];
+      
+      const { data, error } = await supabase
+        .from("servicos")
+        .select("id, nome")
+        .eq("empresa_id", currentCompany.id)
+        .eq("status", "ativo")
+        .order("nome");
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!currentCompany?.id,
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       codigo: "",
       favorecido_id: "",
-      tipo: "servico",
+      servico_id: "",
       descricao: "",
       valor_mensal: 0,
       dia_vencimento: 5,
@@ -95,19 +118,26 @@ export function ContratosForm({ onSubmit, onCancel, initialData, isLoading = fal
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="tipo">Tipo de Contrato *</Label>
+          <Label htmlFor="servico_id">Serviço *</Label>
           <Select 
-            value={form.watch("tipo")} 
-            onValueChange={(value) => form.setValue("tipo", value as "servico" | "aluguel")}
+            value={form.watch("servico_id")} 
+            onValueChange={(value) => form.setValue("servico_id", value)}
+            disabled={loadingServicos}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder={loadingServicos ? "Carregando..." : "Selecione um serviço"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="servico">Serviço</SelectItem>
-              <SelectItem value="aluguel">Aluguel</SelectItem>
+              {servicos.map((servico) => (
+                <SelectItem key={servico.id} value={servico.id}>
+                  {servico.nome}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+          {form.formState.errors.servico_id && (
+            <p className="text-sm text-red-500">{form.formState.errors.servico_id.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">

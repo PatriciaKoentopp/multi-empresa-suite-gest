@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Search } from "lucide-react";
@@ -21,7 +22,7 @@ export default function Contratos() {
   const [deletingContrato, setDeletingContrato] = useState<Contrato | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
-  const [tipoFilter, setTipoFilter] = useState("todos");
+  const [servicoFilter, setServicoFilter] = useState("todos");
   const queryClient = useQueryClient();
   const { currentCompany } = useCompany();
 
@@ -38,6 +39,9 @@ export default function Contratos() {
           favorecido:favorecidos(
             nome,
             documento
+          ),
+          servico:servicos(
+            nome
           )
         `)
         .eq("empresa_id", currentCompany.id)
@@ -49,17 +53,37 @@ export default function Contratos() {
     enabled: !!currentCompany?.id,
   });
 
+  // Buscar serviços para o filtro
+  const { data: servicos = [] } = useQuery({
+    queryKey: ["servicos-filter", currentCompany?.id],
+    queryFn: async () => {
+      if (!currentCompany?.id) return [];
+      
+      const { data, error } = await supabase
+        .from("servicos")
+        .select("id, nome")
+        .eq("empresa_id", currentCompany.id)
+        .eq("status", "ativo")
+        .order("nome");
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!currentCompany?.id,
+  });
+
   // Filtrar contratos
   const contratosFiltrados = contratos.filter((contrato) => {
     const matchesSearch = 
       contrato.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contrato.favorecido?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contrato.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
+      contrato.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contrato.servico?.nome?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "todos" || contrato.status === statusFilter;
-    const matchesTipo = tipoFilter === "todos" || contrato.tipo === tipoFilter;
+    const matchesServico = servicoFilter === "todos" || contrato.servico_id === servicoFilter;
     
-    return matchesSearch && matchesStatus && matchesTipo;
+    return matchesSearch && matchesStatus && matchesServico;
   });
 
   // Estatísticas
@@ -260,7 +284,7 @@ export default function Contratos() {
         <div>
           <h1 className="text-2xl font-bold">Contratos</h1>
           <p className="text-muted-foreground">
-            Gerencie contratos de serviços e aluguéis
+            Gerencie contratos de serviços
           </p>
         </div>
         <Button onClick={handleOpenForm} variant="blue">
@@ -343,7 +367,7 @@ export default function Contratos() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Buscar por código, favorecido ou descrição..."
+                  placeholder="Buscar por código, favorecido, serviço ou descrição..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -366,14 +390,17 @@ export default function Contratos() {
             </div>
 
             <div className="w-full md:w-48">
-              <Select value={tipoFilter} onValueChange={setTipoFilter}>
+              <Select value={servicoFilter} onValueChange={setServicoFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Tipo" />
+                  <SelectValue placeholder="Serviço" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todos">Todos os Tipos</SelectItem>
-                  <SelectItem value="servico">Serviço</SelectItem>
-                  <SelectItem value="aluguel">Aluguel</SelectItem>
+                  <SelectItem value="todos">Todos os Serviços</SelectItem>
+                  {servicos.map((servico) => (
+                    <SelectItem key={servico.id} value={servico.id}>
+                      {servico.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -405,7 +432,7 @@ export default function Contratos() {
             initialData={editingContrato ? {
               codigo: editingContrato.codigo,
               favorecido_id: editingContrato.favorecido_id,
-              tipo: editingContrato.tipo,
+              servico_id: editingContrato.servico_id,
               descricao: editingContrato.descricao || "",
               valor_mensal: editingContrato.valor_mensal,
               data_inicio: new Date(editingContrato.data_inicio),

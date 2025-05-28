@@ -4,7 +4,7 @@ export interface Contrato {
   empresa_id: string;
   favorecido_id: string;
   codigo: string;
-  tipo: 'servico' | 'aluguel';
+  servico_id: string;
   descricao?: string;
   valor_mensal: number;
   valor_total: number;
@@ -24,6 +24,9 @@ export interface Contrato {
     nome: string;
     documento: string;
   };
+  servico?: {
+    nome: string;
+  };
 }
 
 export interface ContratoParcela {
@@ -42,7 +45,7 @@ export interface ContratoParcela {
 export interface ContratoFormData {
   codigo: string;
   favorecido_id: string;
-  tipo: 'servico' | 'aluguel';
+  servico_id: string;
   descricao: string;
   valor_mensal: number;
   data_inicio: Date | undefined;

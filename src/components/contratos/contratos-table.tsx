@@ -43,17 +43,6 @@ const getStatusLabel = (status: string) => {
   }
 };
 
-const getTipoLabel = (tipo: string) => {
-  switch (tipo) {
-    case "servico":
-      return "Serviço";
-    case "aluguel":
-      return "Aluguel";
-    default:
-      return tipo;
-  }
-};
-
 const getPeriodicidadeLabel = (periodicidade: string) => {
   switch (periodicidade) {
     case "mensal":
@@ -100,7 +89,7 @@ export function ContratosTable({
           <TableRow>
             <TableHead>Código</TableHead>
             <TableHead>Favorecido</TableHead>
-            <TableHead>Tipo</TableHead>
+            <TableHead>Serviço</TableHead>
             <TableHead>Valor Mensal</TableHead>
             <TableHead>Periodicidade</TableHead>
             <TableHead>Vigência</TableHead>
@@ -120,7 +109,7 @@ export function ContratosTable({
                   </div>
                 </div>
               </TableCell>
-              <TableCell>{getTipoLabel(contrato.tipo)}</TableCell>
+              <TableCell>{contrato.servico?.nome}</TableCell>
               <TableCell>
                 {new Intl.NumberFormat("pt-BR", {
                   style: "currency",
