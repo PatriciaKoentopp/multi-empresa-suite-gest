@@ -202,6 +202,27 @@ export default function AntecipacoesPage() {
   };
 
   const handleDelete = (id: string) => {
+    // Encontrar a antecipação para verificar as regras de exclusão
+    const antecipacao = antecipacoes.find(a => a.id === id);
+    
+    if (!antecipacao) {
+      toast.error("Antecipação não encontrada");
+      return;
+    }
+
+    // Verificar se está conciliada
+    if (antecipacao.conciliada) {
+      toast.error("Não é possível excluir uma antecipação que está conciliada no fluxo de caixa");
+      return;
+    }
+
+    // Verificar se tem valor utilizado
+    if (antecipacao.valorUtilizado > 0) {
+      toast.error("Não é possível excluir uma antecipação que possui valor utilizado");
+      return;
+    }
+
+    // Se passou por todas as validações, pode prosseguir com a exclusão
     setAntecipacaoParaExcluir(id);
   };
 
