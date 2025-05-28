@@ -162,9 +162,11 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     if (checked) {
       const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antecipacaoId);
       if (antecipacao) {
+        // Preencher automaticamente com o valor disponível da antecipação
+        const valorDisponivel = antecipacao.valor_disponivel;
         setAntecipacoesSelecionadas(prev => [
           ...prev,
-          { id: antecipacaoId, valor: 0 }
+          { id: antecipacaoId, valor: valorDisponivel }
         ]);
       }
     } else {
