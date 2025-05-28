@@ -142,30 +142,37 @@ export function ContratosTable({
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button variant="ghost" className="h-8 w-8 p-0 text-neutral-500 hover:bg-gray-100">
                       <span className="sr-only">Abrir menu</span>
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onView(contrato)}>
+                  <DropdownMenuContent align="end" className="w-48 z-30 bg-white border">
+                    <DropdownMenuItem 
+                      onClick={() => onView(contrato)}
+                      className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                    >
                       <Eye className="mr-2 h-4 w-4" />
                       Visualizar
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onEdit(contrato)}>
+                    <DropdownMenuItem 
+                      onClick={() => onEdit(contrato)}
+                      className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                    >
                       <Edit className="mr-2 h-4 w-4" />
                       Editar
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => onGenerateInvoices(contrato)}
                       disabled={contrato.status !== "ativo"}
+                      className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
                     >
                       <FileText className="mr-2 h-4 w-4" />
                       Gerar Contas a Receber
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => onDelete(contrato)}
-                      className="text-red-600"
+                      className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Excluir
