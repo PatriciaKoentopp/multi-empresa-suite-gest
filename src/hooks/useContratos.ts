@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,27 +35,56 @@ export const useContratos = () => {
     mutationFn: async (formData: ContratoFormData) => {
       if (!currentCompany?.id) throw new Error("Empresa não selecionada");
 
-      // Calcular valor total baseado na periodicidade
-      const mesesVigencia = Math.ceil(
-        (formData.data_fim!.getTime() - formData.data_inicio!.getTime()) / 
-        (1000 * 60 * 60 * 24 * 30)
-      );
+      // Calcular meses de vigência
+      const dataInicio = new Date(formData.data_inicio!);
+      const dataFim = new Date(formData.data_fim!);
       
-      let valorTotal = 0;
+      // Calcular diferença em meses de forma mais precisa
+      const anosDiferenca = dataFim.getFullYear() - dataInicio.getFullYear();
+      const mesesDiferenca = dataFim.getMonth() - dataInicio.getMonth();
+      const mesesVigencia = anosDiferenca * 12 + mesesDiferenca + 1; // +1 para incluir o mês de início
+
+      console.log("Vigência:", {
+        dataInicio: dataInicio.toISOString().split('T')[0],
+        dataFim: dataFim.toISOString().split('T')[0],
+        mesesVigencia,
+        periodicidade: formData.periodicidade
+      });
+
+      // Calcular número de parcelas baseado na periodicidade
+      let numeroParcelas = 1; // Valor padrão
       switch (formData.periodicidade) {
         case 'mensal':
-          valorTotal = formData.valor_mensal * mesesVigencia;
+          numeroParcelas = mesesVigencia;
           break;
         case 'trimestral':
-          valorTotal = (formData.valor_mensal * 3) * Math.ceil(mesesVigencia / 3);
+          numeroParcelas = Math.ceil(mesesVigencia / 3);
           break;
         case 'semestral':
-          valorTotal = (formData.valor_mensal * 6) * Math.ceil(mesesVigencia / 6);
+          numeroParcelas = Math.ceil(mesesVigencia / 6);
           break;
         case 'anual':
-          valorTotal = (formData.valor_mensal * 12) * Math.ceil(mesesVigencia / 12);
+          numeroParcelas = Math.ceil(mesesVigencia / 12);
           break;
       }
+
+      console.log("Número de parcelas calculado:", numeroParcelas);
+
+      // Calcular valor da parcela baseado na periodicidade
+      let valorParcela = formData.valor_mensal;
+      switch (formData.periodicidade) {
+        case 'trimestral':
+          valorParcela = formData.valor_mensal * 3;
+          break;
+        case 'semestral':
+          valorParcela = formData.valor_mensal * 6;
+          break;
+        case 'anual':
+          valorParcela = formData.valor_mensal * 12;
+          break;
+      }
+
+      const valorTotal = valorParcela * numeroParcelas;
 
       const contratoData = {
         codigo: formData.codigo,
@@ -266,18 +296,29 @@ export const useContratos = () => {
 
       if (contratoError) throw contratoError;
 
-      // Calcular número de parcelas baseado na periodicidade e vigência
+      // Calcular meses de vigência
       const dataInicio = new Date(contrato.data_inicio);
       const dataFim = new Date(contrato.data_fim);
       const dataPrimeiroVencimento = new Date(contrato.data_primeiro_vencimento);
       
-      // Calcular meses de vigência
-      const mesesVigencia = (dataFim.getFullYear() - dataInicio.getFullYear()) * 12 + 
-                           (dataFim.getMonth() - dataInicio.getMonth()) + 1;
+      // Calcular diferença em meses de forma mais precisa
+      const anosDiferenca = dataFim.getFullYear() - dataInicio.getFullYear();
+      const mesesDiferenca = dataFim.getMonth() - dataInicio.getMonth();
+      const mesesVigencia = anosDiferenca * 12 + mesesDiferenca + 1; // +1 para incluir o mês de início
+
+      console.log("Gerando movimentações - Vigência:", {
+        dataInicio: contrato.data_inicio,
+        dataFim: contrato.data_fim,
+        mesesVigencia,
+        periodicidade: contrato.periodicidade
+      });
 
       // Calcular número de parcelas baseado na periodicidade
-      let numeroParcelas = mesesVigencia;
+      let numeroParcelas = 1; // Valor padrão
       switch (contrato.periodicidade) {
+        case 'mensal':
+          numeroParcelas = mesesVigencia;
+          break;
         case 'trimestral':
           numeroParcelas = Math.ceil(mesesVigencia / 3);
           break;
@@ -289,31 +330,8 @@ export const useContratos = () => {
           break;
       }
 
-      // Criar a movimentação principal
-      const { data: movimentacao, error: movError } = await supabase
-        .from("movimentacoes")
-        .insert({
-          empresa_id: contrato.empresa_id,
-          tipo_operacao: 'receber',
-          data_lancamento: contrato.data_inicio,
-          numero_documento: contrato.codigo,
-          favorecido_id: contrato.favorecido_id,
-          descricao: `Contrato ${contrato.codigo} - ${contrato.favorecido?.nome || 'Cliente'}`,
-          valor: contrato.valor_total,
-          numero_parcelas: numeroParcelas,
-          primeiro_vencimento: contrato.data_primeiro_vencimento,
-          forma_pagamento: contrato.forma_pagamento,
-          considerar_dre: true
-        })
-        .select()
-        .single();
+      console.log("Número de parcelas a gerar:", numeroParcelas);
 
-      if (movError) throw movError;
-
-      // Criar as parcelas
-      const parcelas = [];
-      let dataVencimento = new Date(dataPrimeiroVencimento);
-      
       // Calcular valor da parcela baseado na periodicidade
       let valorParcela = contrato.valor_mensal;
       switch (contrato.periodicidade) {
@@ -328,6 +346,33 @@ export const useContratos = () => {
           break;
       }
 
+      const valorTotal = valorParcela * numeroParcelas;
+
+      // Criar a movimentação principal
+      const { data: movimentacao, error: movError } = await supabase
+        .from("movimentacoes")
+        .insert({
+          empresa_id: contrato.empresa_id,
+          tipo_operacao: 'receber',
+          data_lancamento: contrato.data_inicio,
+          numero_documento: contrato.codigo,
+          favorecido_id: contrato.favorecido_id,
+          descricao: `Contrato ${contrato.codigo} - ${contrato.favorecido?.nome || 'Cliente'}`,
+          valor: valorTotal,
+          numero_parcelas: numeroParcelas,
+          primeiro_vencimento: contrato.data_primeiro_vencimento,
+          forma_pagamento: contrato.forma_pagamento,
+          considerar_dre: true
+        })
+        .select()
+        .single();
+
+      if (movError) throw movError;
+
+      // Criar as parcelas
+      const parcelas = [];
+      let dataVencimento = new Date(dataPrimeiroVencimento);
+      
       for (let i = 1; i <= numeroParcelas; i++) {
         parcelas.push({
           movimentacao_id: movimentacao.id,
@@ -336,22 +381,26 @@ export const useContratos = () => {
           data_vencimento: dataVencimento.toISOString().split('T')[0]
         });
 
-        // Calcular próxima data baseado na periodicidade
-        switch (contrato.periodicidade) {
-          case 'mensal':
-            dataVencimento.setMonth(dataVencimento.getMonth() + 1);
-            break;
-          case 'trimestral':
-            dataVencimento.setMonth(dataVencimento.getMonth() + 3);
-            break;
-          case 'semestral':
-            dataVencimento.setMonth(dataVencimento.getMonth() + 6);
-            break;
-          case 'anual':
-            dataVencimento.setFullYear(dataVencimento.getFullYear() + 1);
-            break;
+        // Calcular próxima data baseado na periodicidade (só se não for a última parcela)
+        if (i < numeroParcelas) {
+          switch (contrato.periodicidade) {
+            case 'mensal':
+              dataVencimento.setMonth(dataVencimento.getMonth() + 1);
+              break;
+            case 'trimestral':
+              dataVencimento.setMonth(dataVencimento.getMonth() + 3);
+              break;
+            case 'semestral':
+              dataVencimento.setMonth(dataVencimento.getMonth() + 6);
+              break;
+            case 'anual':
+              dataVencimento.setFullYear(dataVencimento.getFullYear() + 1);
+              break;
+          }
         }
       }
+
+      console.log("Parcelas a serem inseridas:", parcelas);
 
       const { error: parcelasError } = await supabase
         .from("movimentacoes_parcelas")
