@@ -1043,6 +1043,48 @@ export type Database = {
           },
         ]
       }
+      movimentacoes_parcelas_antecipacoes: {
+        Row: {
+          antecipacao_id: string
+          created_at: string
+          id: string
+          movimentacao_parcela_id: string
+          updated_at: string
+          valor_utilizado: number
+        }
+        Insert: {
+          antecipacao_id: string
+          created_at?: string
+          id?: string
+          movimentacao_parcela_id: string
+          updated_at?: string
+          valor_utilizado?: number
+        }
+        Update: {
+          antecipacao_id?: string
+          created_at?: string
+          id?: string
+          movimentacao_parcela_id?: string
+          updated_at?: string
+          valor_utilizado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_parcelas_antecipacoe_movimentacao_parcela_id_fkey"
+            columns: ["movimentacao_parcela_id"]
+            isOneToOne: false
+            referencedRelation: "movimentacoes_parcelas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_parcelas_antecipacoes_antecipacao_id_fkey"
+            columns: ["antecipacao_id"]
+            isOneToOne: false
+            referencedRelation: "antecipacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orcamentos: {
         Row: {
           codigo: string

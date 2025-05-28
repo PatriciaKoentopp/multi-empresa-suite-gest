@@ -244,12 +244,6 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
         forma_pagamento: formaPagamento
       };
 
-      // Incluir dados da primeira antecipação se estiver sendo usada (para compatibilidade)
-      if (usarAntecipacao && antecipacoesSelecionadas.length > 0) {
-        updateData.antecipacao_id = antecipacoesSelecionadas[0].id;
-        updateData.valor_antecipacao_utilizado = valorTotalAntecipacoes;
-      }
-
       // Incluir conta corrente apenas se houver valor a receber
       if (valorAReceber > 0 && contaCorrenteId) {
         updateData.conta_corrente_id = contaCorrenteId;
@@ -262,24 +256,67 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
 
       if (updateError) throw updateError;
 
-      // 2. Atualizar valor utilizado nas antecipações
-      for (const antSel of antecipacoesSelecionadas) {
-        const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
-        if (antecipacao && antSel.valor > 0) {
-          const novoValorUtilizado = (antecipacao.valor_total - antecipacao.valor_disponivel) + antSel.valor;
-          
-          const { error: antecipacaoError } = await supabase
-            .from("antecipacoes")
-            .update({
-              valor_utilizado: novoValorUtilizado
-            })
-            .eq("id", antSel.id);
+      // 2. Inserir registros na nova tabela de relacionamento para cada antecipação
+      if (usarAntecipacao && antecipacoesSelecionadas.length > 0) {
+        for (const antSel of antecipacoesSelecionadas) {
+          if (antSel.valor > 0) {
+            const { error: relationError } = await supabase
+              .from("movimentacoes_parcelas_antecipacoes")
+              .insert({
+                movimentacao_parcela_id: conta?.id,
+                antecipacao_id: antSel.id,
+                valor_utilizado: antSel.valor
+              });
 
-          if (antecipacaoError) throw antecipacaoError;
+            if (relationError) throw relationError;
+          }
+        }
+
+        // 3. Atualizar valor utilizado nas antecipações
+        for (const antSel of antecipacoesSelecionadas) {
+          const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
+          if (antecipacao && antSel.valor > 0) {
+            const novoValorUtilizado = antecipacao.valor_utilizado + antSel.valor;
+            
+            const { error: antecipacaoError } = await supabase
+              .from("antecipacoes")
+              .update({
+                valor_utilizado: novoValorUtilizado
+              })
+              .eq("id", antSel.id);
+
+            if (antecipacaoError) throw antecipacaoError;
+          }
+        }
+
+        // 4. Inserir registros no fluxo de caixa para cada antecipação utilizada
+        for (const antSel of antecipacoesSelecionadas) {
+          if (antSel.valor > 0) {
+            const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
+            
+            const { error: fluxoAntecipacaoError } = await supabase
+              .from("fluxo_caixa")
+              .insert({
+                empresa_id: currentCompany?.id,
+                data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
+                valor: -antSel.valor, // Negativo pois é utilização de antecipação
+                saldo: -antSel.valor,
+                tipo_operacao: "receber",
+                origem: "antecipacao",
+                movimentacao_parcela_id: conta?.id,
+                movimentacao_id: conta?.movimentacao_id,
+                antecipacao_id: antSel.id,
+                situacao: "nao_conciliado",
+                descricao: `Utilização ${antecipacao?.descricao || 'Antecipação'} - ${conta?.cliente}`,
+                forma_pagamento: formaPagamento
+              });
+
+            if (fluxoAntecipacaoError) throw fluxoAntecipacaoError;
+          }
         }
       }
 
-      // 3. Inserir no fluxo de caixa apenas se houver valor efetivamente recebido
+      // 5. Inserir no fluxo de caixa apenas se houver valor efetivamente recebido
       if (valorAReceber > 0 && contaCorrenteId) {
         const { error: fluxoError } = await supabase
           .from("fluxo_caixa")

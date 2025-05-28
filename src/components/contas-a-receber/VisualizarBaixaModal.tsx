@@ -47,41 +47,40 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
     try {
       console.log("Buscando antecipações para parcela:", conta.id);
 
-      // Primeiro, buscar todas as movimentações de fluxo de caixa relacionadas a esta parcela que são antecipações
-      const { data: fluxosAntecipacao, error: fluxoError } = await supabase
-        .from("fluxo_caixa")
-        .select("antecipacao_id, valor")
-        .eq("movimentacao_parcela_id", conta.id)
-        .eq("origem", "antecipacao")
-        .not("antecipacao_id", "is", null);
+      // Buscar na nova tabela de relacionamento
+      const { data: relacionamentos, error: relError } = await supabase
+        .from("movimentacoes_parcelas_antecipacoes")
+        .select(`
+          valor_utilizado,
+          antecipacao_id,
+          antecipacoes (
+            id,
+            descricao,
+            data_lancamento,
+            numero_documento
+          )
+        `)
+        .eq("movimentacao_parcela_id", conta.id);
 
-      if (fluxoError) {
-        console.error("Erro ao buscar fluxos de antecipação:", fluxoError);
+      if (relError) {
+        console.error("Erro ao buscar relacionamentos:", relError);
       }
 
-      console.log("Fluxos de antecipação encontrados:", fluxosAntecipacao);
+      console.log("Relacionamentos encontrados:", relacionamentos);
 
       const antecipacoes: AntecipacaoUtilizada[] = [];
 
-      // Se encontrou fluxos de antecipação (formato novo), buscar detalhes de cada antecipação
-      if (fluxosAntecipacao && fluxosAntecipacao.length > 0) {
-        for (const fluxo of fluxosAntecipacao) {
-          if (fluxo.antecipacao_id) {
-            const { data: antecipacao, error: antError } = await supabase
-              .from("antecipacoes")
-              .select("id, descricao, data_lancamento, numero_documento")
-              .eq("id", fluxo.antecipacao_id)
-              .single();
-
-            if (!antError && antecipacao) {
-              antecipacoes.push({
-                id: antecipacao.id,
-                descricao: antecipacao.descricao || "Antecipação",
-                data_lancamento: antecipacao.data_lancamento,
-                numero_documento: antecipacao.numero_documento || "-",
-                valor_utilizado: Math.abs(fluxo.valor) // Usar valor absoluto pois antecipações são negativas no fluxo
-              });
-            }
+      // Se encontrou relacionamentos na nova tabela
+      if (relacionamentos && relacionamentos.length > 0) {
+        for (const rel of relacionamentos) {
+          if (rel.antecipacoes) {
+            antecipacoes.push({
+              id: rel.antecipacoes.id,
+              descricao: rel.antecipacoes.descricao || "Antecipação",
+              data_lancamento: rel.antecipacoes.data_lancamento,
+              numero_documento: rel.antecipacoes.numero_documento || "-",
+              valor_utilizado: rel.valor_utilizado
+            });
           }
         }
       } else {

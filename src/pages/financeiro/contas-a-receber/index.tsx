@@ -401,7 +401,53 @@ export default function ContasAReceberPage() {
         return;
       }
 
-      // 2. Se não estiver conciliado, prosseguir com a operação de desfazer baixa
+      // 2. Buscar as antecipações utilizadas na nova tabela de relacionamento
+      const { data: relacionamentos, error: relError } = await supabase
+        .from("movimentacoes_parcelas_antecipacoes")
+        .select("antecipacao_id, valor_utilizado")
+        .eq("movimentacao_parcela_id", conta.id);
+
+      if (relError) {
+        console.error("Erro ao buscar relacionamentos de antecipação:", relError);
+      }
+
+      // 3. Reverter valores das antecipações utilizadas
+      if (relacionamentos && relacionamentos.length > 0) {
+        for (const rel of relacionamentos) {
+          // Buscar valor atual utilizado da antecipação
+          const { data: antecipacao, error: antError } = await supabase
+            .from("antecipacoes")
+            .select("valor_utilizado")
+            .eq("id", rel.antecipacao_id)
+            .single();
+
+          if (!antError && antecipacao) {
+            // Subtrair o valor que estava sendo utilizado
+            const novoValorUtilizado = antecipacao.valor_utilizado - rel.valor_utilizado;
+            
+            const { error: updateAntError } = await supabase
+              .from("antecipacoes")
+              .update({ valor_utilizado: Math.max(0, novoValorUtilizado) })
+              .eq("id", rel.antecipacao_id);
+
+            if (updateAntError) {
+              console.error("Erro ao reverter antecipação:", updateAntError);
+            }
+          }
+        }
+
+        // 4. Excluir os relacionamentos da nova tabela
+        const { error: deleteRelError } = await supabase
+          .from("movimentacoes_parcelas_antecipacoes")
+          .delete()
+          .eq("movimentacao_parcela_id", conta.id);
+
+        if (deleteRelError) {
+          console.error("Erro ao excluir relacionamentos:", deleteRelError);
+        }
+      }
+
+      // 5. Limpar campos antigos de compatibilidade na parcela
       const { error: updateError } = await supabase
         .from('movimentacoes_parcelas')
         .update({
@@ -410,13 +456,15 @@ export default function ContasAReceberPage() {
           multa: null,
           juros: null,
           desconto: null,
-          conta_corrente_id: null
+          conta_corrente_id: null,
+          antecipacao_id: null,
+          valor_antecipacao_utilizado: null
         })
         .eq('id', conta.id);
 
       if (updateError) throw updateError;
 
-      // 3. Excluir o registro do fluxo de caixa
+      // 6. Excluir todos os registros do fluxo de caixa relacionados a esta parcela
       const { error: deleteError } = await supabase
         .from('fluxo_caixa')
         .delete()
@@ -424,7 +472,7 @@ export default function ContasAReceberPage() {
 
       if (deleteError) throw deleteError;
 
-      // 4. Atualizar a lista local
+      // 7. Atualizar a lista local
       setContas(prev => prev.map(c => 
         c.id === conta.id
           ? { ...c, dataRecebimento: undefined, status: "em_aberto" as const, formaPagamento: null, multa: null, juros: null, desconto: null, contaCorrenteId: null }
