@@ -9,6 +9,7 @@ import { ContaReceber } from "./contas-a-receber-table";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
@@ -45,6 +46,11 @@ interface Antecipacao {
   valor_disponivel: number;
 }
 
+interface AntecipacaoSelecionada {
+  id: string;
+  valor: number;
+}
+
 export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: BaixarContaReceberModalProps) {
   const { currentCompany } = useCompany();
   const [dataRecebimento, setDataRecebimento] = useState<Date | undefined>(conta?.dataVencimento);
@@ -54,10 +60,9 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
   const [juros, setJuros] = useState<number>(0);
   const [desconto, setDesconto] = useState<number>(0);
   
-  // Novos estados para antecipação
+  // Estados para múltiplas antecipações
   const [usarAntecipacao, setUsarAntecipacao] = useState<boolean>(false);
-  const [antecipacaoSelecionada, setAntecipacaoSelecionada] = useState<string>("");
-  const [valorAntecipacao, setValorAntecipacao] = useState<number>(0);
+  const [antecipacoesSelecionadas, setAntecipacoesSelecionadas] = useState<AntecipacaoSelecionada[]>([]);
 
   // Buscar favorecido_id da conta
   const [favorecidoId, setFavorecidoId] = useState<string | null>(null);
@@ -141,23 +146,52 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
       setJuros(0);
       setDesconto(0);
       setUsarAntecipacao(false);
-      setAntecipacaoSelecionada("");
-      setValorAntecipacao(0);
+      setAntecipacoesSelecionadas([]);
     }
   }, [conta, open]);
 
   // Calcular valores
   const valorConta = conta?.valor || 0;
   const valorAcrescimos = multa + juros;
+  const valorTotalAntecipacoes = antecipacoesSelecionadas.reduce((total, ant) => total + ant.valor, 0);
   const valorTotalConta = valorConta + valorAcrescimos - desconto;
-  const valorAReceber = Math.max(0, valorTotalConta - valorAntecipacao);
+  const valorAReceber = Math.max(0, valorTotalConta - valorTotalAntecipacoes);
 
-  // Obter antecipação selecionada
-  const antecipacaoAtual = antecipacoesDisponiveis.find(ant => ant.id === antecipacaoSelecionada);
-  const maxValorAntecipacao = Math.min(
-    antecipacaoAtual?.valor_disponivel || 0,
-    valorTotalConta
-  );
+  // Funções para gerenciar antecipações selecionadas
+  const handleAntecipacaoChange = (antecipacaoId: string, checked: boolean) => {
+    if (checked) {
+      const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antecipacaoId);
+      if (antecipacao) {
+        setAntecipacoesSelecionadas(prev => [
+          ...prev,
+          { id: antecipacaoId, valor: 0 }
+        ]);
+      }
+    } else {
+      setAntecipacoesSelecionadas(prev => prev.filter(ant => ant.id !== antecipacaoId));
+    }
+  };
+
+  const handleValorAntecipacaoChange = (antecipacaoId: string, valor: number) => {
+    setAntecipacoesSelecionadas(prev =>
+      prev.map(ant =>
+        ant.id === antecipacaoId ? { ...ant, valor } : ant
+      )
+    );
+  };
+
+  const getMaxValorAntecipacao = (antecipacaoId: string) => {
+    const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antecipacaoId);
+    const valorJaUsado = antecipacoesSelecionadas
+      .filter(ant => ant.id !== antecipacaoId)
+      .reduce((total, ant) => total + ant.valor, 0);
+    const valorRestante = Math.max(0, valorTotalConta - valorJaUsado);
+    
+    return Math.min(
+      antecipacao?.valor_disponivel || 0,
+      valorRestante
+    );
+  };
 
   async function handleConfirmar() {
     if (!dataRecebimento || (!contaCorrenteId && valorAReceber > 0) || !formaPagamento) {
@@ -165,14 +199,22 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
       return;
     }
 
-    if (usarAntecipacao && (!antecipacaoSelecionada || valorAntecipacao <= 0)) {
-      toast.error("Selecione uma antecipação e informe o valor a ser usado.");
+    if (usarAntecipacao && antecipacoesSelecionadas.length === 0) {
+      toast.error("Selecione pelo menos uma antecipação.");
       return;
     }
 
-    if (valorAntecipacao > maxValorAntecipacao) {
-      toast.error("Valor da antecipação não pode exceder o disponível ou o valor da conta.");
-      return;
+    // Validar valores das antecipações
+    for (const antSel of antecipacoesSelecionadas) {
+      const maxValor = getMaxValorAntecipacao(antSel.id);
+      if (antSel.valor <= 0) {
+        toast.error("Informe valores válidos para as antecipações selecionadas.");
+        return;
+      }
+      if (antSel.valor > maxValor) {
+        toast.error("Valor da antecipação não pode exceder o disponível ou o valor da conta.");
+        return;
+      }
     }
 
     try {
@@ -200,10 +242,10 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
         forma_pagamento: formaPagamento
       };
 
-      // Incluir dados da antecipação se estiver sendo usada
-      if (usarAntecipacao && antecipacaoSelecionada && valorAntecipacao > 0) {
-        updateData.antecipacao_id = antecipacaoSelecionada;
-        updateData.valor_antecipacao_utilizado = valorAntecipacao;
+      // Incluir dados da primeira antecipação se estiver sendo usada (para compatibilidade)
+      if (usarAntecipacao && antecipacoesSelecionadas.length > 0) {
+        updateData.antecipacao_id = antecipacoesSelecionadas[0].id;
+        updateData.valor_antecipacao_utilizado = valorTotalAntecipacoes;
       }
 
       // Incluir conta corrente apenas se houver valor a receber
@@ -218,16 +260,21 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
 
       if (updateError) throw updateError;
 
-      // 2. Atualizar valor utilizado na antecipação
-      if (usarAntecipacao && antecipacaoSelecionada && valorAntecipacao > 0) {
-        const { error: antecipacaoError } = await supabase
-          .from("antecipacoes")
-          .update({
-            valor_utilizado: (antecipacaoAtual?.valor_total || 0) - (antecipacaoAtual?.valor_disponivel || 0) + valorAntecipacao
-          })
-          .eq("id", antecipacaoSelecionada);
+      // 2. Atualizar valor utilizado nas antecipações
+      for (const antSel of antecipacoesSelecionadas) {
+        const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
+        if (antecipacao && antSel.valor > 0) {
+          const novoValorUtilizado = (antecipacao.valor_total - antecipacao.valor_disponivel) + antSel.valor;
+          
+          const { error: antecipacaoError } = await supabase
+            .from("antecipacoes")
+            .update({
+              valor_utilizado: novoValorUtilizado
+            })
+            .eq("id", antSel.id);
 
-        if (antecipacaoError) throw antecipacaoError;
+          if (antecipacaoError) throw antecipacaoError;
+        }
       }
 
       // 3. Inserir no fluxo de caixa apenas se houver valor efetivamente recebido
@@ -262,8 +309,8 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
       });
       onClose();
       
-      if (usarAntecipacao && valorAntecipacao > 0) {
-        toast.success(`Recebimento registrado! Valor da antecipação usado: ${formatCurrency(valorAntecipacao)}`);
+      if (usarAntecipacao && valorTotalAntecipacoes > 0) {
+        toast.success(`Recebimento registrado! Valor das antecipações usado: ${formatCurrency(valorTotalAntecipacoes)}`);
       } else {
         toast.success("Recebimento registrado com sucesso!");
       }
@@ -294,7 +341,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
             </div>
           </div>
 
-          {/* Seção de Antecipação */}
+          {/* Seção de Antecipações */}
           {antecipacoesDisponiveis.length > 0 && (
             <div className="border rounded-lg p-3 bg-blue-50">
               <div className="flex items-center space-x-2 mb-3">
@@ -304,45 +351,51 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
                   onCheckedChange={setUsarAntecipacao}
                 />
                 <Label htmlFor="usar-antecipacao" className="text-sm font-medium">
-                  Usar antecipação deste cliente
+                  Usar antecipações deste cliente
                 </Label>
               </div>
 
               {usarAntecipacao && (
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Antecipação</label>
-                    <Select value={antecipacaoSelecionada} onValueChange={setAntecipacaoSelecionada}>
-                      <SelectTrigger className="w-full bg-white">
-                        <SelectValue placeholder="Selecione a antecipação" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        {antecipacoesDisponiveis.map((ant) => (
-                          <SelectItem key={ant.id} value={ant.id}>
-                            {ant.descricao} - Disponível: {formatCurrency(ant.valor_disponivel)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {antecipacaoSelecionada && (
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Valor a usar (máx: {formatCurrency(maxValorAntecipacao)})
-                      </label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={maxValorAntecipacao}
-                        step="0.01"
-                        value={valorAntecipacao}
-                        onChange={e => setValorAntecipacao(Number(e.target.value))}
-                        placeholder="0.00"
-                        className="bg-white"
-                      />
-                    </div>
-                  )}
+                  <div className="text-sm font-medium mb-2">Selecione as antecipações:</div>
+                  {antecipacoesDisponiveis.map((antecipacao) => {
+                    const isSelected = antecipacoesSelecionadas.some(ant => ant.id === antecipacao.id);
+                    const valorSelecionado = antecipacoesSelecionadas.find(ant => ant.id === antecipacao.id)?.valor || 0;
+                    const maxValor = getMaxValorAntecipacao(antecipacao.id);
+                    
+                    return (
+                      <div key={antecipacao.id} className="border rounded-md p-3 bg-white">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Checkbox
+                            id={`ant-${antecipacao.id}`}
+                            checked={isSelected}
+                            onCheckedChange={(checked) => handleAntecipacaoChange(antecipacao.id, checked as boolean)}
+                          />
+                          <Label htmlFor={`ant-${antecipacao.id}`} className="text-sm">
+                            {antecipacao.descricao} - Disponível: {formatCurrency(antecipacao.valor_disponivel)}
+                          </Label>
+                        </div>
+                        
+                        {isSelected && (
+                          <div className="ml-6">
+                            <label className="block text-xs text-gray-600 mb-1">
+                              Valor a usar (máx: {formatCurrency(maxValor)})
+                            </label>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={maxValor}
+                              step="0.01"
+                              value={valorSelecionado}
+                              onChange={e => handleValorAntecipacaoChange(antecipacao.id, Number(e.target.value))}
+                              placeholder="0.00"
+                              className="w-full"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -428,10 +481,10 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
               <span>Desconto:</span>
               <span>-{formatCurrency(desconto)}</span>
             </div>
-            {usarAntecipacao && valorAntecipacao > 0 && (
+            {usarAntecipacao && valorTotalAntecipacoes > 0 && (
               <div className="flex justify-between text-sm text-blue-600">
-                <span>Antecipação usada:</span>
-                <span>-{formatCurrency(valorAntecipacao)}</span>
+                <span>Total antecipações usadas:</span>
+                <span>-{formatCurrency(valorTotalAntecipacoes)}</span>
               </div>
             )}
             <hr />
