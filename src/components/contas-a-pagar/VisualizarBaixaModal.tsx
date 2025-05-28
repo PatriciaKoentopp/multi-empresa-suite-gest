@@ -17,6 +17,8 @@ interface VisualizarBaixaModalProps {
 interface AntecipacaoUtilizada {
   id: string;
   descricao: string;
+  data_lancamento: string;
+  numero_documento: string;
   valor_utilizado: number;
 }
 
@@ -29,24 +31,81 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
     queryFn: async () => {
       if (!conta.id) return [];
 
-      const { data, error } = await supabase
+      console.log("Buscando antecipações para parcela:", conta.id);
+
+      // Buscar na nova tabela de relacionamento
+      const { data: relacionamentos, error: relError } = await supabase
         .from("movimentacoes_parcelas_antecipacoes")
         .select(`
           valor_utilizado,
-          antecipacao:antecipacoes(id, descricao)
+          antecipacao_id,
+          antecipacoes (
+            id,
+            descricao,
+            data_lancamento,
+            numero_documento
+          )
         `)
         .eq("movimentacao_parcela_id", conta.id);
 
-      if (error) {
-        console.error("Erro ao buscar antecipações utilizadas:", error);
-        return [];
+      if (relError) {
+        console.error("Erro ao buscar relacionamentos:", relError);
       }
 
-      return (data || []).map(item => ({
-        id: item.antecipacao.id,
-        descricao: item.antecipacao.descricao,
-        valor_utilizado: item.valor_utilizado
-      })) as AntecipacaoUtilizada[];
+      console.log("Relacionamentos encontrados:", relacionamentos);
+
+      const antecipacoes: AntecipacaoUtilizada[] = [];
+
+      // Se encontrou relacionamentos na nova tabela
+      if (relacionamentos && relacionamentos.length > 0) {
+        for (const rel of relacionamentos) {
+          if (rel.antecipacoes) {
+            antecipacoes.push({
+              id: rel.antecipacoes.id,
+              descricao: rel.antecipacoes.descricao || "Antecipação",
+              data_lancamento: rel.antecipacoes.data_lancamento,
+              numero_documento: rel.antecipacoes.numero_documento || "-",
+              valor_utilizado: rel.valor_utilizado
+            });
+          }
+        }
+      } else {
+        // Fallback: verificar se existe antecipacao_id na parcela (formato antigo)
+        const { data: parcela, error: parcelaError } = await supabase
+          .from("movimentacoes_parcelas")
+          .select("antecipacao_id, valor_antecipacao_utilizado")
+          .eq("id", conta.id)
+          .single();
+
+        if (parcelaError) {
+          console.error("Erro ao buscar parcela:", parcelaError);
+          return [];
+        }
+
+        console.log("Dados da parcela (formato antigo):", parcela);
+
+        // Se tem antecipacao_id (formato antigo - uma única antecipação)
+        if (parcela?.antecipacao_id && parcela?.valor_antecipacao_utilizado > 0) {
+          const { data: antecipacao, error: antError } = await supabase
+            .from("antecipacoes")
+            .select("id, descricao, data_lancamento, numero_documento")
+            .eq("id", parcela.antecipacao_id)
+            .single();
+
+          if (!antError && antecipacao) {
+            antecipacoes.push({
+              id: antecipacao.id,
+              descricao: antecipacao.descricao || "Antecipação",
+              data_lancamento: antecipacao.data_lancamento,
+              numero_documento: antecipacao.numero_documento || "-",
+              valor_utilizado: parcela.valor_antecipacao_utilizado
+            });
+          }
+        }
+      }
+
+      console.log("Antecipações processadas:", antecipacoes);
+      return antecipacoes;
     },
     enabled: !!conta.id && open,
   });
@@ -116,6 +175,46 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
             <p className="text-base">{formatFormaPagamento(conta.formaPagamento)}</p>
           </div>
           
+          {/* Seção de Antecipações Utilizadas */}
+          {antecipacoesUtilizadas.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-2">Antecipações Utilizadas</p>
+              <div className="space-y-3">
+                {antecipacoesUtilizadas.map((antecipacao) => (
+                  <div key={antecipacao.id} className="border rounded-md p-3 bg-blue-50">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-start">
+                        <p className="text-sm font-medium text-gray-700">{antecipacao.descricao}</p>
+                        <p className="text-sm font-bold text-blue-600">
+                          {formatCurrency(antecipacao.valor_utilizado)}
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                        <div>
+                          <span className="font-medium">Data Lançamento:</span>
+                          <br />
+                          {formatDate(new Date(antecipacao.data_lancamento))}
+                        </div>
+                        <div>
+                          <span className="font-medium">Nº Documento:</span>
+                          <br />
+                          {antecipacao.numero_documento}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-between items-center pt-1 border-t">
+                  <p className="text-sm font-medium text-gray-700">Total das antecipações:</p>
+                  <p className="text-sm font-bold text-blue-600">
+                    {formatCurrency(valorTotalAntecipacoes)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <Card className="mt-4">
             <CardContent className="p-4">
               <div className="grid grid-cols-2 gap-4">
@@ -137,24 +236,11 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
                 </div>
               </div>
               
-              {antecipacoesUtilizadas.length > 0 && (
-                <div className="mt-4 pt-4 border-t">
-                  <div className="text-sm font-medium text-gray-500 mb-2">Antecipações Utilizadas</div>
-                  <div className="space-y-2">
-                    {antecipacoesUtilizadas.map((antecipacao) => (
-                      <div key={antecipacao.id} className="flex justify-between items-center p-2 bg-blue-50 rounded-md">
-                        <span className="text-sm">{antecipacao.descricao}</span>
-                        <span className="text-sm font-medium text-blue-600">
-                          -{formatCurrency(antecipacao.valor_utilizado)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-blue-200">
-                    <span className="text-sm font-medium">Total de Antecipações:</span>
-                    <span className="text-sm font-bold text-blue-600">
-                      -{formatCurrency(valorTotalAntecipacoes)}
-                    </span>
+              {valorTotalAntecipacoes > 0 && (
+                <div className="mt-3 pt-3 border-t">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Antecipações utilizadas:</span>
+                    <span className="text-blue-600">-{formatCurrency(valorTotalAntecipacoes)}</span>
                   </div>
                 </div>
               )}
@@ -172,9 +258,19 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
                     </div>
                   )}
                   <div className="flex justify-between items-center">
-                    <p className="text-sm font-bold">Valor Pago:</p>
-                    <p className="text-lg font-bold text-blue-600">{formatCurrency(valorPago)}</p>
+                    <p className="text-sm font-bold">
+                      {valorTotalAntecipacoes > 0 ? "Valor Efetivamente Pago:" : "Valor Total:"}
+                    </p>
+                    <p className="text-lg font-bold text-blue-600">
+                      {formatCurrency(valorTotalAntecipacoes > 0 ? valorPago : valorTotal)}
+                    </p>
                   </div>
+                  {valorTotalAntecipacoes > 0 && (
+                    <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
+                      <span>Valor total da conta:</span>
+                      <span>{formatCurrency(valorTotal)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
