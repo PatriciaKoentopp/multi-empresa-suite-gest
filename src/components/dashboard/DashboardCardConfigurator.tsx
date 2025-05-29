@@ -65,6 +65,8 @@ export const DashboardCardConfigurator = ({
         return 'Configurar Cards do Painel Financeiro';
       case 'painel-vendas':
         return 'Configurar Cards do Painel de Vendas';
+      case 'painel-crm':
+        return 'Configurar Cards do Painel CRM';
       case 'dashboard':
       default:
         return 'Configurar Cards do Dashboard';
@@ -77,6 +79,8 @@ export const DashboardCardConfigurator = ({
         return 'Escolha quais cards deseja exibir no painel financeiro da sua empresa.';
       case 'painel-vendas':
         return 'Escolha quais cards deseja exibir no painel de vendas da sua empresa.';
+      case 'painel-crm':
+        return 'Escolha quais cards deseja exibir no painel CRM da sua empresa.';
       case 'dashboard':
       default:
         return 'Escolha quais cards deseja exibir no dashboard da sua empresa.';
