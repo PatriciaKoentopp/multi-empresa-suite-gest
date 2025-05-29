@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -10,20 +11,37 @@ export const useSalesData = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [salesData, setSalesData] = useState<SalesData | null>(null);
 
-  const fetchSalesData = async () => {
+  const fetchSalesData = async (startDateParam?: string, endDateParam?: string) => {
     try {
       setIsLoading(true);
       
       const currentYear = new Date().getFullYear();
       
-      // Definir datas para mês atual e anterior
-      const startCurrentMonth = startOfMonth(new Date());
-      const endCurrentMonth = endOfMonth(new Date());
+      // Se parâmetros de data foram fornecidos, usar eles para filtrar o período
+      // Caso contrário, usar lógica padrão (mês atual e anterior)
+      let startCurrentMonth, endCurrentMonth, startLastMonth, endLastMonth;
+      
+      if (startDateParam && endDateParam) {
+        // Usar as datas fornecidas como período atual
+        startCurrentMonth = new Date(startDateParam);
+        endCurrentMonth = new Date(endDateParam);
+        
+        // Para comparação, usar o mesmo período do ano anterior
+        const yearBefore = startCurrentMonth.getFullYear() - 1;
+        startLastMonth = new Date(yearBefore, startCurrentMonth.getMonth(), startCurrentMonth.getDate());
+        endLastMonth = new Date(yearBefore, endCurrentMonth.getMonth(), endCurrentMonth.getDate());
+      } else {
+        // Lógica padrão - mês atual vs mês anterior
+        startCurrentMonth = startOfMonth(new Date());
+        endCurrentMonth = endOfMonth(new Date());
+        startLastMonth = startOfMonth(subMonths(new Date(), 1));
+        endLastMonth = endOfMonth(subMonths(new Date(), 1));
+      }
       
       const startCurrentMonthFormatted = formatDateForSupabase(startCurrentMonth);
       const endCurrentMonthFormatted = formatDateForSupabase(endCurrentMonth);
       
-      // Buscar vendas do mês atual
+      // Buscar vendas do período atual
       const { data: currentMonthData, error: currentMonthError } = await supabase
         .from('orcamentos')
         .select(`
@@ -43,10 +61,7 @@ export const useSalesData = () => {
         return acc + orcamentoTotal;
       }, 0) || 0;
       
-      // Buscar vendas do mês anterior
-      const startLastMonth = startOfMonth(subMonths(new Date(), 1));
-      const endLastMonth = endOfMonth(subMonths(new Date(), 1));
-      
+      // Buscar vendas do período anterior para comparação
       const startLastMonthFormatted = formatDateForSupabase(startLastMonth);
       const endLastMonthFormatted = formatDateForSupabase(endLastMonth);
       
@@ -69,7 +84,6 @@ export const useSalesData = () => {
       }, 0) || 0;
 
       // Calcular variação percentual mantendo o sinal
-      // Se o mês anterior for zero, consideramos como 100% de aumento
       let variacaoPercentual = 0;
       if (vendasMesAnterior === 0) {
         variacaoPercentual = vendasMesAtual > 0 ? 100 : 0;
@@ -100,7 +114,7 @@ export const useSalesData = () => {
         return acc + orcamentoTotal;
       }, 0) || 0;
       
-      // Buscar média de ticket - ANO CORRENTE (alterado de 90 dias para o ano corrente)
+      // Buscar média de ticket - ANO CORRENTE
       const { data: ticketData, error: ticketError } = await supabase
         .from('orcamentos')
         .select(`
@@ -216,6 +230,8 @@ export const useSalesData = () => {
         description: error.message || "Não foi possível carregar os dados básicos de vendas"
       });
       return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
