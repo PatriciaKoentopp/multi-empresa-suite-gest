@@ -1,26 +1,21 @@
-
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
-import { SalesDashboardCard } from "@/components/vendas/SalesDashboardCard";
-import { BanknoteIcon, CalendarX, CreditCard, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { useToast } from "@/components/ui/use-toast";
-import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
-import { ContaCorrente } from "@/types/conta-corrente";
+import { formatCurrency } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
-import { AlertsSection } from "@/components/dashboard/AlertsSection";
 import { LeadInteracao } from "@/pages/crm/leads/types";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDashboardConfig } from "@/hooks/useDashboardConfig";
+import { DashboardCardRenderer } from "@/components/dashboard/DashboardCardRenderer";
+import { DashboardCardsConfig } from "@/components/dashboard/DashboardCardsConfig";
 
 interface DashboardData {
   totalVendas: number;
   totalOrcamentos: number;
   contasReceber: number;
   contasPagar: number;
-  parcelasEmAtraso: ContaReceber[];
-  parcelasHoje: ContaReceber[];
+  parcelasEmAtraso: any[];
+  parcelasHoje: any[];
   saldoContas: {
     id: string;
     nome: string;
@@ -49,6 +44,7 @@ export function Dashboard() {
   const { userData, isAuthenticated, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const { getVisibleCards, isCardVisible } = useDashboardConfig();
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     totalVendas: 0,
     totalOrcamentos: 0,
@@ -72,8 +68,6 @@ export function Dashboard() {
 
   // Buscar dados somente após inicialização
   useEffect(() => {
-    if (!isInitialized) return;
-    
     const fetchDados = async () => {
       try {
         setIsLoading(true);
@@ -82,7 +76,6 @@ export function Dashboard() {
           return;
         }
 
-        // Verificar se o usuário tem acesso a esta empresa
         if (userData && userData.empresa_id && userData.empresa_id !== currentCompany.id) {
           toast({
             variant: "destructive",
@@ -93,14 +86,12 @@ export function Dashboard() {
           return;
         }
 
-        // Data atual e primeiro dia do mês
         const hoje = new Date();
         const anoAtual = hoje.getFullYear();
         const anoAnterior = anoAtual - 1;
         const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
         const inicioMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
 
-        // Formato para o Supabase: YYYY-MM-DD
         const hojeFormatado = hoje.toISOString().split('T')[0];
         const inicioMesFormatado = inicioMes.toISOString().split('T')[0];
         const inicioMesAnteriorFormatado = inicioMesAnterior.toISOString().split('T')[0];
@@ -118,12 +109,10 @@ export function Dashboard() {
 
         if (erroContasCorrentes) throw erroContasCorrentes;
 
-        // Contas com saldos iniciais
         const saldoContas = [];
         let totalSaldo = 0;
 
         if (contasCorrentes && contasCorrentes.length > 0) {
-          // Para cada conta, buscar TODAS as movimentações ordenadas por data
           for (const conta of contasCorrentes) {
             const { data: movimentacoes, error: erroMovimentacoes } = await supabase
               .from('fluxo_caixa')
@@ -134,11 +123,9 @@ export function Dashboard() {
 
             if (erroMovimentacoes) throw erroMovimentacoes;
 
-            // Calcular o saldo como na página de fluxo de caixa
             let saldoAtual = Number(conta.saldo_inicial || 0);
 
             if (movimentacoes && movimentacoes.length > 0) {
-              // Somar todas as movimentações ordenadas cronologicamente
               for (const mov of movimentacoes) {
                 saldoAtual += Number(mov.valor);
               }
@@ -151,13 +138,11 @@ export function Dashboard() {
               considerar_saldo: conta.considerar_saldo
             });
 
-            // Adicionar ao total APENAS se a conta deve ser considerada no saldo
             if (conta.considerar_saldo) {
               totalSaldo += saldoAtual;
             }
           }
         }
-        
         
         // 1. Buscar total de vendas do mês atual
         const {
@@ -214,8 +199,8 @@ export function Dashboard() {
         }, 0) || 0;
 
         // Buscar parcelas em atraso e as que vencem hoje
-        const parcelasEmAtraso: ContaReceber[] = [];
-        const parcelasHoje: ContaReceber[] = [];
+        const parcelasEmAtraso: any[] = [];
+        const parcelasHoje: any[] = [];
 
         // Buscar contas a pagar em aberto
         const {
@@ -275,7 +260,7 @@ export function Dashboard() {
             
             const favorecidoNome = favorecidosMap.get(parcela.movimentacao.favorecido_id) || 'Desconhecido';
             
-            const parcelaFormatada: ContaReceber = {
+            const parcelaFormatada: any = {
               id: parcela.id,
               cliente: favorecidoNome,
               descricao: parcela.movimentacao.descricao || 'Sem descrição',
@@ -330,13 +315,13 @@ export function Dashboard() {
         if (erroVendasAnoAnterior) throw erroVendasAnoAnterior;
         
         // Agregar dados por cliente para o ano atual - Alterado para incluir nome_fantasia
-        const clientesAnoAtual = {};
+        const clientesAnoAtual: any = {};
         if (vendasAnoAtual) {
           vendasAnoAtual.forEach(venda => {
             if (!venda.favorecido_id) return;
             
             const valorTotal = venda.orcamentos_itens.reduce(
-              (sum, item) => sum + (Number(item.valor) || 0), 0
+              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
             );
             
             if (!clientesAnoAtual[venda.favorecido_id]) {
@@ -353,13 +338,13 @@ export function Dashboard() {
         }
         
         // Agregar dados por cliente para o ano anterior - Alterado para incluir nome_fantasia
-        const clientesAnoAnterior = {};
+        const clientesAnoAnterior: any = {};
         if (vendasAnoAnterior) {
           vendasAnoAnterior.forEach(venda => {
             if (!venda.favorecido_id) return;
             
             const valorTotal = venda.orcamentos_itens.reduce(
-              (sum, item) => sum + (Number(item.valor) || 0), 0
+              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
             );
             
             if (!clientesAnoAnterior[venda.favorecido_id]) {
@@ -488,7 +473,7 @@ export function Dashboard() {
       }
     };
     
-    if (isAuthenticated && currentCompany?.id) {
+    if (isInitialized && isAuthenticated && currentCompany?.id) {
       console.log("[Dashboard] Iniciando carregamento de dados");
       fetchDados();
     } else {
@@ -497,15 +482,21 @@ export function Dashboard() {
     }
   }, [isInitialized, currentCompany?.id, isAuthenticated, userData, toast]);
 
-  // Estado de loading combinado: carregando autenticação, empresa ou dashboard
   const showLoading = authLoading || companyLoading || (isInitialized && isLoading);
 
-  return <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Visão geral da empresa {currentCompany?.nomeFantasia || ""}
-        </p>
+  // Obter cards visíveis para renderização
+  const visibleCards = getVisibleCards();
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Visão geral da empresa {currentCompany?.nomeFantasia || ""}
+          </p>
+        </div>
+        <DashboardCardsConfig />
       </div>
       
       {showLoading ? (
@@ -516,127 +507,32 @@ export function Dashboard() {
           </div>
         </div>
       ) : (
-        <>
-          {/* Nova seção de alertas - ajustada para largura total */}
-          <div className="grid gap-6">
-            <div className="col-span-1">
-              <AlertsSection 
-                parcelasVencidas={dashboardData.parcelasEmAtraso}
-                parcelasHoje={dashboardData.parcelasHoje}
-                interacoesPendentes={dashboardData.interacoesPendentes}
-                isLoading={false}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <SalesDashboardCard title="Vendas do Mês" value={formatCurrency(dashboardData.totalVendas)} description="Total do mês atual" icon="money" />
-            <SalesDashboardCard title="Total de Orçamentos" value={formatCurrency(dashboardData.totalOrcamentos)} description="Soma de todos os orçamentos ativos" icon="chart" />
-            <SalesDashboardCard title="Contas a Pagar" value={formatCurrency(dashboardData.contasPagar)} description="Pagamentos pendentes" icon="sales" />
-            <SalesDashboardCard title="Contas a Receber" value={formatCurrency(dashboardData.contasReceber)} description={`${dashboardData.parcelasEmAtraso.filter(p => p.tipo === 'receber').length} título(s) em atraso`} icon="users" />
-          </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {visibleCards.map((cardConfig) => (
+            <DashboardCardRenderer
+              key={cardConfig.card_id}
+              cardId={cardConfig.card_id}
+              dashboardData={dashboardData}
+            />
+          ))}
           
-          {/* Card para Saldo das Contas - agora filtrando apenas contas com considerar_saldo=true */}
-          <div>
-            <Card className="bg-white">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-blue-500" /> 
-                  Saldo das Contas
-                </CardTitle>
-                <CardDescription>
-                  Saldo atual em contas correntes consideradas no cálculo
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {dashboardData.saldoContas.length > 0 ? (
-                  <div className="space-y-4">
-                    {/* Total geral */}
-                    <div className="flex items-center justify-between border-b pb-2">
-                      <p className="font-semibold text-lg">Saldo Total</p>
-                      <p className={`font-bold text-lg ${dashboardData.totalSaldo > 0 ? 'text-green-600' : dashboardData.totalSaldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                        {formatCurrency(dashboardData.totalSaldo)}
-                      </p>
-                    </div>
-                    
-                    {/* Lista de contas - Filtrar apenas as contas que devem ser consideradas no saldo */}
-                    <div className="space-y-2">
-                      {dashboardData.saldoContas
-                        .filter(conta => conta.considerar_saldo)
-                        .map(conta => (
-                          <div key={conta.id} className="flex items-center justify-between">
-                            <p className="text-gray-800">{conta.nome}</p>
-                            <p className={`${conta.saldo > 0 ? 'text-green-600' : conta.saldo < 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                              {formatCurrency(conta.saldo)}
-                            </p>
-                          </div>
-                        ))
-                      }
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-4">
-                    Nenhuma conta corrente encontrada
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="grid gap-6 md:grid-cols-1">
-            <Card className="col-span-1">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BanknoteIcon className="h-5 w-5 text-blue-500" />
-                  Top 5 Clientes
-                </CardTitle>
-                <CardDescription>
-                  Clientes com maior valor de vendas em {new Date().getFullYear()} e {new Date().getFullYear() - 1}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left pb-2 pr-2 w-[25%]">Cliente</th>
-                        <th className="text-right pb-2 pr-8 w-[25%]">{new Date().getFullYear()}</th>
-                        <th className="text-left pb-2 pl-8 w-[25%]">Cliente</th>
-                        <th className="text-right pb-2 w-[25%]">{new Date().getFullYear() - 1}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Array.from({ length: 5 }).map((_, index) => (
-                        <tr key={index} className="border-b">
-                          <td className="py-2 font-medium pr-2">
-                            {dashboardData.topClientesAnoAtual[index]?.nomeFantasia || 
-                             dashboardData.topClientesAnoAtual[index]?.nome || "-"}
-                          </td>
-                          <td className="py-2 text-right pr-8">
-                            {dashboardData.topClientesAnoAtual[index]
-                              ? formatCurrency(dashboardData.topClientesAnoAtual[index].totalVendas)
-                              : "-"}
-                          </td>
-                          <td className="py-2 font-medium pl-8 border-l">
-                            {dashboardData.topClientesAnoAnterior[index]?.nomeFantasia || 
-                             dashboardData.topClientesAnoAnterior[index]?.nome || "-"}
-                          </td>
-                          <td className="py-2 text-right">
-                            {dashboardData.topClientesAnoAnterior[index]
-                              ? formatCurrency(dashboardData.topClientesAnoAnterior[index].totalVendas)
-                              : "-"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </>
+          {/* Fallback para cards que não estão configurados mas ainda devem aparecer */}
+          {!isCardVisible('vendas-mes') && (
+            <DashboardCardRenderer cardId="vendas-mes" dashboardData={dashboardData} />
+          )}
+          {!isCardVisible('total-orcamentos') && (
+            <DashboardCardRenderer cardId="total-orcamentos" dashboardData={dashboardData} />
+          )}
+          {!isCardVisible('contas-pagar') && (
+            <DashboardCardRenderer cardId="contas-pagar" dashboardData={dashboardData} />
+          )}
+          {!isCardVisible('contas-receber') && (
+            <DashboardCardRenderer cardId="contas-receber" dashboardData={dashboardData} />
+          )}
+        </div>
       )}
-    </div>;
+    </div>
+  );
 }
 
 export default Dashboard;
