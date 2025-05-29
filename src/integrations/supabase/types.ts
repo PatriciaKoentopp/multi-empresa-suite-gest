@@ -275,47 +275,6 @@ export type Database = {
           },
         ]
       }
-      dashboard_cards_config: {
-        Row: {
-          card_id: string
-          created_at: string
-          empresa_id: string
-          id: string
-          is_visible: boolean
-          order_position: number
-          page_id: string
-          updated_at: string
-        }
-        Insert: {
-          card_id: string
-          created_at?: string
-          empresa_id: string
-          id?: string
-          is_visible?: boolean
-          order_position?: number
-          page_id?: string
-          updated_at?: string
-        }
-        Update: {
-          card_id?: string
-          created_at?: string
-          empresa_id?: string
-          id?: string
-          is_visible?: boolean
-          order_position?: number
-          page_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "dashboard_cards_config_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       empresas: {
         Row: {
           bairro: string
