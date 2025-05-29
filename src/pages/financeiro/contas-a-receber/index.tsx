@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -84,7 +85,7 @@ export default function ContasAReceberPage() {
     try {
       setIsLoading(true);
       
-      // Buscar somente movimentações parcelas (contas a receber)
+      // Buscar somente movimentações parcelas (contas a receber) ordenadas por data de vencimento
       const { data: movimentacoesParcelas, error: errorMovimentacoes } = await supabase
         .from('movimentacoes_parcelas')
         .select(`
@@ -111,7 +112,8 @@ export default function ContasAReceberPage() {
           )
         `)
         .eq('movimentacao.empresa_id', currentCompany.id)
-        .eq('movimentacao.tipo_operacao', 'receber');
+        .eq('movimentacao.tipo_operacao', 'receber')
+        .order('data_vencimento', { ascending: true });
       
       if (errorMovimentacoes) throw errorMovimentacoes;
 
