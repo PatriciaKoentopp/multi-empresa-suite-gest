@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
@@ -14,6 +13,7 @@ import Empresas from "./pages/empresas";
 
 // Admin
 import Usuarios from "./pages/admin/usuarios";
+import Parametros from "./pages/admin/parametros";
 
 // Cadastros
 import GrupoFavorecidos from "./pages/cadastros/grupo-favorecidos";
@@ -111,6 +111,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <Empresas />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/parametros"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <Parametros />
                   </MainLayout>
                 </PrivateRoute>
               }

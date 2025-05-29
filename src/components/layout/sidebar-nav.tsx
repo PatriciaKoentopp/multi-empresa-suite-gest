@@ -24,6 +24,7 @@ import {
   User, 
   Users 
 } from "lucide-react";
+import { useModulosParametros } from "@/hooks/useModulosParametros";
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {
   items: ModuleNavItem[];
@@ -56,10 +57,14 @@ const renderIcon = (icon?: React.ReactNode | string) => {
 
 export function SidebarNav({ items, className, isCollapsed, closeSidebar, ...props }: SidebarNavProps) {
   const location = useLocation();
+  const { getNavegacaoFiltrada, isLoading } = useModulosParametros();
+
+  // Usar navegação filtrada se disponível, senão usar items originais
+  const navigationItems = !isLoading ? getNavegacaoFiltrada() : items;
 
   return (
     <nav className={cn("grid gap-1", className)} {...props}>
-      {items.map((item, index) => {
+      {navigationItems.map((item, index) => {
         // Verificar se a rota atual corresponde ao item ou aos subitens
         const isRouteActive =
           location.pathname === item.href ||

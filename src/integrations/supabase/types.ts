@@ -997,6 +997,33 @@ export type Database = {
           },
         ]
       }
+      modulos_parametros: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          empresa_id: string
+          id: string
+          modulo_key: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id: string
+          id?: string
+          modulo_key: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          modulo_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       motivos_perda: {
         Row: {
           created_at: string
