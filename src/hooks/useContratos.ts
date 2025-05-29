@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,11 +56,19 @@ export const useContratos = () => {
   // Função para calcular o mês de referência baseado na data de início do contrato e número da parcela
   const calcularMesReferencia = (dataInicio: Date, numeroParcela: number): string => {
     const dataReferencia = new Date(dataInicio);
-    // Primeira parcela = mês de início, segunda = mês seguinte, etc.
+    // A primeira parcela usa o mês de início da vigência (numeroParcela - 1 = 0)
+    // A segunda parcela usa o mês seguinte (numeroParcela - 1 = 1), etc.
     dataReferencia.setMonth(dataReferencia.getMonth() + (numeroParcela - 1));
     
     const mes = String(dataReferencia.getMonth() + 1).padStart(2, '0');
     const ano = dataReferencia.getFullYear();
+    
+    console.log("Cálculo mês referência:", {
+      dataInicio: dataInicio.toISOString().split('T')[0],
+      numeroParcela,
+      dataReferencia: dataReferencia.toISOString().split('T')[0],
+      mesReferencia: `${mes}/${ano}`
+    });
     
     return `${mes}/${ano}`;
   };
@@ -238,7 +245,7 @@ export const useContratos = () => {
 
       // Verificar se existem parcelas baixadas (com data_pagamento preenchida)
       const temParcelasBaixadas = movimentacoes?.some(mov => 
-        mov.movimentacoes_parcelas?.some(parcela => parcela.data_pagamento !== null)
+        mov.movimentacoes_parcelas?.some(parcela => parcela.data_pagamento != null)
       );
 
       console.log("Tem parcelas baixadas:", temParcelasBaixadas);
