@@ -44,6 +44,7 @@ export default function ContratosPage() {
     updateContrato,
     deleteContrato,
     generateInvoices,
+    changeStatus,
   } = useContratos();
 
   const contratosFiltrados = contratos.filter((contrato) => {
@@ -92,6 +93,13 @@ export default function ContratosPage() {
 
   const handleGenerateInvoices = async (contrato: Contrato) => {
     await generateInvoices.mutateAsync(contrato.id);
+  };
+
+  const handleChangeStatus = async (contrato: Contrato, novoStatus: string) => {
+    await changeStatus.mutateAsync({ 
+      id: contrato.id, 
+      status: novoStatus 
+    });
   };
 
   const formatInitialData = (contrato: Contrato): Partial<ContratoFormData> => {
@@ -153,6 +161,7 @@ export default function ContratosPage() {
             onDelete={handleDelete}
             onView={handleView}
             onGenerateInvoices={handleGenerateInvoices}
+            onChangeStatus={handleChangeStatus}
             isLoading={isLoading}
           />
         </CardContent>

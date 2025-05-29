@@ -3,12 +3,13 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Edit, Trash2, Eye, FileText } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Eye, FileText, RotateCcw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -20,6 +21,7 @@ interface ContratosTableProps {
   onDelete: (contrato: Contrato) => void;
   onView: (contrato: Contrato) => void;
   onGenerateInvoices: (contrato: Contrato) => void;
+  onChangeStatus: (contrato: Contrato, novoStatus: string) => void;
   isLoading?: boolean;
 }
 
@@ -70,6 +72,7 @@ export function ContratosTable({
   onDelete,
   onView,
   onGenerateInvoices,
+  onChangeStatus,
   isLoading = false,
 }: ContratosTableProps) {
   if (isLoading) {
@@ -100,7 +103,7 @@ export function ContratosTable({
             <TableHead>Periodicidade</TableHead>
             <TableHead>Vigência</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="w-[50px]"></TableHead>
+            <TableHead className="w-[100px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -170,6 +173,42 @@ export function ContratosTable({
                       <FileText className="mr-2 h-4 w-4" />
                       Gerar Contas a Receber
                     </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator />
+                    
+                    {/* Opções de mudança de status */}
+                    {contrato.status !== "ativo" && (
+                      <DropdownMenuItem 
+                        onClick={() => onChangeStatus(contrato, "ativo")}
+                        className="flex items-center gap-2 text-green-600 focus:bg-green-100 focus:text-green-700"
+                      >
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Ativar
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {contrato.status !== "suspenso" && (
+                      <DropdownMenuItem 
+                        onClick={() => onChangeStatus(contrato, "suspenso")}
+                        className="flex items-center gap-2 text-yellow-600 focus:bg-yellow-100 focus:text-yellow-700"
+                      >
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Suspender
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {contrato.status !== "encerrado" && (
+                      <DropdownMenuItem 
+                        onClick={() => onChangeStatus(contrato, "encerrado")}
+                        className="flex items-center gap-2 text-orange-600 focus:bg-orange-100 focus:text-orange-700"
+                      >
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Encerrar
+                      </DropdownMenuItem>
+                    )}
+                    
+                    <DropdownMenuSeparator />
+                    
                     <DropdownMenuItem 
                       onClick={() => onDelete(contrato)}
                       className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"

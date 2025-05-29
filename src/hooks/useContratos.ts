@@ -162,6 +162,28 @@ export const useContratos = () => {
     },
   });
 
+  const changeStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { data, error } = await supabase
+        .from("contratos")
+        .update({ status })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contratos"] });
+      toast.success("Status do contrato alterado com sucesso!");
+    },
+    onError: (error) => {
+      console.error("Erro ao alterar status do contrato:", error);
+      toast.error("Erro ao alterar status do contrato");
+    },
+  });
+
   const deleteContrato = useMutation({
     mutationFn: async (contratoId: string) => {
       console.log("Tentando excluir contrato:", contratoId);
@@ -381,5 +403,6 @@ export const useContratos = () => {
     updateContrato,
     deleteContrato,
     generateInvoices,
+    changeStatus,
   };
 };
