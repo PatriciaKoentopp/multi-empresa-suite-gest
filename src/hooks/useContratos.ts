@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +52,17 @@ export const useContratos = () => {
     });
     
     return mesesVigencia;
+  };
+
+  // Função para calcular o mês de referência baseado na data de início do contrato e número da parcela
+  const calcularMesReferencia = (dataInicio: Date, numeroParcela: number): string => {
+    const dataReferencia = new Date(dataInicio);
+    dataReferencia.setMonth(dataReferencia.getMonth() + (numeroParcela - 1));
+    
+    const mes = String(dataReferencia.getMonth() + 1).padStart(2, '0');
+    const ano = dataReferencia.getFullYear();
+    
+    return `${mes}/${ano}`;
   };
 
   const createContrato = useMutation({
@@ -302,7 +314,7 @@ export const useContratos = () => {
     },
   });
 
-  // Função para gerar movimentações a partir do contrato
+  // Função para gerar movimentações independentes a partir do contrato
   const gerarMovimentacoesContrato = async (contratoId: string) => {
     try {
       // Buscar dados do contrato
@@ -340,54 +352,52 @@ export const useContratos = () => {
           break;
       }
 
-      const valorTotal = valorParcela * numeroParcelas;
-
-      // Criar a movimentação principal
-      const { data: movimentacao, error: movError } = await supabase
-        .from("movimentacoes")
-        .insert({
-          empresa_id: contrato.empresa_id,
-          tipo_operacao: 'receber',
-          data_lancamento: contrato.data_inicio,
-          numero_documento: contrato.codigo,
-          favorecido_id: contrato.favorecido_id,
-          descricao: `Contrato ${contrato.codigo} - ${contrato.favorecido?.nome || 'Cliente'}`,
-          valor: valorTotal,
-          numero_parcelas: numeroParcelas,
-          primeiro_vencimento: contrato.data_primeiro_vencimento,
-          forma_pagamento: contrato.forma_pagamento,
-          considerar_dre: true
-        })
-        .select()
-        .single();
-
-      if (movError) throw movError;
-
-      // Criar as parcelas - simplesmente o número de meses da vigência
-      const parcelas = [];
+      // Gerar movimentações independentes - uma para cada parcela
       let dataVencimento = new Date(dataPrimeiroVencimento);
       
       for (let i = 1; i <= numeroParcelas; i++) {
-        parcelas.push({
-          movimentacao_id: movimentacao.id,
-          numero: i,
-          valor: valorParcela,
-          data_vencimento: dataVencimento.toISOString().split('T')[0]
-        });
+        // Calcular mês de referência baseado na data de início e número da parcela
+        const mesReferencia = calcularMesReferencia(dataInicio, i);
+        
+        // Criar uma movimentação independente para cada parcela
+        const { data: movimentacao, error: movError } = await supabase
+          .from("movimentacoes")
+          .insert({
+            empresa_id: contrato.empresa_id,
+            tipo_operacao: 'receber',
+            data_lancamento: contrato.data_inicio,
+            numero_documento: `${contrato.codigo}/${String(i).padStart(2, '0')}`,
+            favorecido_id: contrato.favorecido_id,
+            descricao: `Contrato ${contrato.codigo} - Parcela ${String(i).padStart(2, '0')} - ${contrato.favorecido?.nome || 'Cliente'}`,
+            valor: valorParcela,
+            numero_parcelas: 1, // Cada movimentação tem apenas 1 parcela
+            primeiro_vencimento: dataVencimento.toISOString().split('T')[0],
+            forma_pagamento: contrato.forma_pagamento,
+            considerar_dre: true,
+            mes_referencia: mesReferencia
+          })
+          .select()
+          .single();
+
+        if (movError) throw movError;
+
+        // Criar a parcela única para esta movimentação
+        const { error: parcelaError } = await supabase
+          .from("movimentacoes_parcelas")
+          .insert({
+            movimentacao_id: movimentacao.id,
+            numero: 1, // Sempre 1 pois cada movimentação tem apenas uma parcela
+            valor: valorParcela,
+            data_vencimento: dataVencimento.toISOString().split('T')[0]
+          });
+
+        if (parcelaError) throw parcelaError;
 
         // Próxima parcela sempre no mês seguinte
         if (i < numeroParcelas) {
           dataVencimento.setMonth(dataVencimento.getMonth() + 1);
         }
       }
-
-      console.log("Parcelas a serem inseridas:", parcelas);
-
-      const { error: parcelasError } = await supabase
-        .from("movimentacoes_parcelas")
-        .insert(parcelas);
-
-      if (parcelasError) throw parcelasError;
 
     } catch (error) {
       console.error("Erro ao gerar movimentações:", error);
