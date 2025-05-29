@@ -75,7 +75,7 @@ const PainelVendasPage = () => {
 
   // Verificar se algum dos cards de vendas está visível
   const hasVisibleSalesCards = [
-    'vendas-mes-anual',
+    'vendas-mes-atual',
     'total-vendas-ano', 
     'ticket-medio-projeto',
     'clientes-ativos'

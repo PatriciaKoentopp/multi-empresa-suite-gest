@@ -31,7 +31,7 @@ export const SalesDashboardCards = ({ salesData }: SalesDashboardCardsProps) => 
           icon="money"
         />
       )}
-      {isCardVisible('vendas-mes-anual') && (
+      {isCardVisible('vendas-mes-atual') && (
         <SalesDashboardCard
           title={`Vendas (${format(new Date(), 'MMMM', { locale: ptBR })})`}
           value={formatCurrency(salesData?.vendas_mes_atual || 0)}
