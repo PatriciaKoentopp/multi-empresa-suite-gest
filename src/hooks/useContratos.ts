@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,25 +35,23 @@ export const useContratos = () => {
     mutationFn: async (formData: ContratoFormData) => {
       if (!currentCompany?.id) throw new Error("Empresa não selecionada");
 
-      // Calcular meses de vigência - forma simples
+      // Calcular meses de vigência - forma correta
       const dataInicio = new Date(formData.data_inicio!);
       const dataFim = new Date(formData.data_fim!);
       
-      // Calcular diferença em meses
+      // Calcular diferença em meses corretamente
       const anosDiferenca = dataFim.getFullYear() - dataInicio.getFullYear();
       const mesesDiferenca = dataFim.getMonth() - dataInicio.getMonth();
       const mesesVigencia = anosDiferenca * 12 + mesesDiferenca + 1;
 
-      // Número de parcelas = número de meses de vigência (simples!)
-      const numeroParcelas = mesesVigencia;
-
       console.log("Vigência:", {
         dataInicio: dataInicio.toISOString().split('T')[0],
         dataFim: dataFim.toISOString().split('T')[0],
-        mesesVigencia,
-        numeroParcelas,
-        periodicidade: formData.periodicidade
+        mesesVigencia
       });
+
+      // Número de parcelas = número de meses de vigência
+      const numeroParcelas = mesesVigencia;
 
       // Calcular valor da parcela baseado na periodicidade
       let valorParcela = formData.valor_mensal;
@@ -280,26 +279,24 @@ export const useContratos = () => {
 
       if (contratoError) throw contratoError;
 
-      // Calcular meses de vigência - forma simples
+      // Calcular meses de vigência - forma correta
       const dataInicio = new Date(contrato.data_inicio);
       const dataFim = new Date(contrato.data_fim);
       const dataPrimeiroVencimento = new Date(contrato.data_primeiro_vencimento);
       
-      // Calcular diferença em meses
+      // Calcular diferença em meses corretamente
       const anosDiferenca = dataFim.getFullYear() - dataInicio.getFullYear();
       const mesesDiferenca = dataFim.getMonth() - dataInicio.getMonth();
       const mesesVigencia = anosDiferenca * 12 + mesesDiferenca + 1;
 
-      // Número de parcelas = número de meses de vigência (simples!)
-      const numeroParcelas = mesesVigencia;
-
       console.log("Gerando movimentações - Vigência:", {
         dataInicio: contrato.data_inicio,
         dataFim: contrato.data_fim,
-        mesesVigencia,
-        numeroParcelas,
-        periodicidade: contrato.periodicidade
+        mesesVigencia
       });
+
+      // Número de parcelas = número de meses de vigência
+      const numeroParcelas = mesesVigencia;
 
       // Calcular valor da parcela baseado na periodicidade
       let valorParcela = contrato.valor_mensal;
@@ -350,7 +347,7 @@ export const useContratos = () => {
           data_vencimento: dataVencimento.toISOString().split('T')[0]
         });
 
-        // Próxima parcela sempre no mês seguinte (independente da periodicidade)
+        // Próxima parcela sempre no mês seguinte
         if (i < numeroParcelas) {
           dataVencimento.setMonth(dataVencimento.getMonth() + 1);
         }
