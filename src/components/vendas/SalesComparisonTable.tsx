@@ -14,7 +14,6 @@ import {
 import { ChevronDown, ChevronRight, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { YearlyComparison } from "@/types";
-import { useDashboardCards } from "@/hooks/useDashboardCards";
 
 interface SalesComparisonTableProps {
   yearlyComparisonData: YearlyComparison[];
@@ -25,15 +24,9 @@ export const SalesComparisonTable = ({
   yearlyComparisonData, 
   getMonthlySalesData 
 }: SalesComparisonTableProps) => {
-  const { isCardVisible } = useDashboardCards('painel-vendas');
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
   const [monthlyDataCache, setMonthlyDataCache] = useState<Record<number, any[]>>({});
   const [loadingMonths, setLoadingMonths] = useState<Set<number>>(new Set());
-
-  // Se o card da tabela não estiver visível, não renderizar
-  if (!isCardVisible('tabela-comparacao')) {
-    return null;
-  }
 
   const toggleYear = async (year: number) => {
     const newExpanded = new Set(expandedYears);
