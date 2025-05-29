@@ -4,7 +4,9 @@ import { SalesDashboardHeader } from "@/components/vendas/SalesDashboardHeader";
 import { SalesDashboardCards } from "@/components/vendas/SalesDashboardCards";
 import { SalesPerformanceTabs } from "@/components/vendas/SalesPerformanceTabs";
 import { SalesComparisonTable } from "@/components/vendas/SalesComparisonTable";
+import { DashboardCardConfigurator } from "@/components/dashboard/DashboardCardConfigurator";
 import { useVendasDashboard } from "@/hooks/useVendasDashboard";
+import { useDashboardCards } from "@/hooks/useDashboardCards";
 import { useEffect, useState } from "react";
 import { format, subDays } from "date-fns";
 import { CrmDateRangeFilter } from "@/components/crm/dashboard/CrmDateRangeFilter";
@@ -25,6 +27,8 @@ const PainelVendasPage = () => {
     fetchMonthlySalesData,
     fetchSalesData
   } = useVendasDashboard();
+
+  const { isCardVisible } = useDashboardCards('painel-vendas');
 
   useEffect(() => {
     console.log("Estado do Painel de Vendas:", {
@@ -66,7 +70,8 @@ const PainelVendasPage = () => {
       <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center mb-4">
         <SalesDashboardHeader />
         
-        <div className="flex items-center">
+        <div className="flex items-center gap-4">
+          <DashboardCardConfigurator pageId="painel-vendas" />
           <CrmDateRangeFilter
             startDate={startDate}
             endDate={endDate}
@@ -75,18 +80,26 @@ const PainelVendasPage = () => {
         </div>
       </div>
 
-      <SalesDashboardCards salesData={salesData} />
-      <SalesPerformanceTabs
-        barChartData={safeBarChartData}
-        quarterlyChartData={safeQuarterlyChartData}
-        yearlyChartData={safeYearlyChartData}
-        monthlyComparisonData={safeMonthlyComparisonData}
-        ticketMedioPorProjetoData={safeTicketMedioPorProjetoData}
-      />
-      <SalesComparisonTable 
-        yearlyComparisonData={safeYearlyComparisonData}
-        getMonthlySalesData={fetchMonthlySalesData}
-      />
+      {isCardVisible('cards-vendas') && (
+        <SalesDashboardCards salesData={salesData} />
+      )}
+      
+      {isCardVisible('desempenho-vendas') && (
+        <SalesPerformanceTabs
+          barChartData={safeBarChartData}
+          quarterlyChartData={safeQuarterlyChartData}
+          yearlyChartData={safeYearlyChartData}
+          monthlyComparisonData={safeMonthlyComparisonData}
+          ticketMedioPorProjetoData={safeTicketMedioPorProjetoData}
+        />
+      )}
+      
+      {isCardVisible('comparacao-anual') && (
+        <SalesComparisonTable 
+          yearlyComparisonData={safeYearlyComparisonData}
+          getMonthlySalesData={fetchMonthlySalesData}
+        />
+      )}
     </div>
   );
 }

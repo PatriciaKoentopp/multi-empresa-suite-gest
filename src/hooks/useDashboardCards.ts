@@ -40,6 +40,11 @@ export const useDashboardCards = (pageId: string = 'dashboard') => {
       { card_id: 'filtro-fluxo-caixa', name: 'Filtro do Fluxo de Caixa', order_position: 9, is_visible: true },
       { card_id: 'grafico-fluxo-caixa', name: 'Gráfico do Fluxo de Caixa', order_position: 10, is_visible: true },
       { card_id: 'tabela-fluxo-mensal', name: 'Tabela do Fluxo Mensal', order_position: 11, is_visible: true },
+    ],
+    'painel-vendas': [
+      { card_id: 'cards-vendas', name: 'Cards de Vendas', order_position: 1, is_visible: true },
+      { card_id: 'desempenho-vendas', name: 'Desempenho de Vendas', order_position: 2, is_visible: true },
+      { card_id: 'comparacao-anual', name: 'Comparação Anual', order_position: 3, is_visible: true },
     ]
   };
 
