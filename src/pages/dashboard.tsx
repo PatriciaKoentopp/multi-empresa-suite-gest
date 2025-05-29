@@ -48,7 +48,7 @@ export function Dashboard() {
   const { currentCompany, loading: companyLoading } = useCompany();
   const { toast } = useToast();
   const { userData, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { isCardVisible } = useDashboardCards();
+  const { isCardVisible, refetch: refetchCardsConfig } = useDashboardCards();
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData>({
@@ -64,6 +64,11 @@ export function Dashboard() {
     topClientesAnoAtual: [],
     topClientesAnoAnterior: []
   });
+
+  // Função para recarregar a configuração dos cards
+  const handleConfigChange = () => {
+    refetchCardsConfig();
+  };
 
   // Verificar se a autenticação e a empresa foram carregados
   useEffect(() => {
@@ -510,7 +515,7 @@ export function Dashboard() {
             Visão geral da empresa {currentCompany?.nomeFantasia || ""}
           </p>
         </div>
-        <DashboardCardConfigurator />
+        <DashboardCardConfigurator onConfigChange={handleConfigChange} />
       </div>
       
       {showLoading ? (

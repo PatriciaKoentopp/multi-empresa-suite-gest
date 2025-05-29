@@ -102,6 +102,7 @@ export const useDashboardCards = () => {
 
       if (error) throw error;
 
+      // Atualizar estado local imediatamente
       setCardsConfig(prev => 
         prev.map(card => 
           card.card_id === cardId ? { ...card, is_visible: isVisible } : card
@@ -112,6 +113,9 @@ export const useDashboardCards = () => {
         title: "Sucesso",
         description: `Card ${isVisible ? 'habilitado' : 'desabilitado'} com sucesso`
       });
+
+      // Retornar true para indicar sucesso
+      return true;
     } catch (error: any) {
       console.error('Erro ao atualizar visibilidade do card:', error);
       toast({
@@ -119,6 +123,7 @@ export const useDashboardCards = () => {
         title: "Erro",
         description: "Não foi possível atualizar a configuração do card"
       });
+      return false;
     }
   };
 

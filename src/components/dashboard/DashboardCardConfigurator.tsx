@@ -15,7 +15,11 @@ import {
 } from '@/components/ui/dialog';
 import { useDashboardCards } from '@/hooks/useDashboardCards';
 
-export const DashboardCardConfigurator = () => {
+interface DashboardCardConfiguratorProps {
+  onConfigChange?: () => void;
+}
+
+export const DashboardCardConfigurator = ({ onConfigChange }: DashboardCardConfiguratorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { 
     cardsConfig, 
@@ -27,7 +31,20 @@ export const DashboardCardConfigurator = () => {
   } = useDashboardCards();
 
   const handleVisibilityChange = async (cardId: string, isVisible: boolean) => {
-    await updateCardVisibility(cardId, isVisible);
+    const success = await updateCardVisibility(cardId, isVisible);
+    
+    // Se a atualização foi bem-sucedida e há callback, executar
+    if (success && onConfigChange) {
+      onConfigChange();
+    }
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    // Chamar callback quando fechar o modal
+    if (onConfigChange) {
+      onConfigChange();
+    }
   };
 
   if (isLoading) {
@@ -35,7 +52,12 @@ export const DashboardCardConfigurator = () => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (!open && onConfigChange) {
+        onConfigChange();
+      }
+    }}>
       <DialogTrigger asChild>
         <Button 
           variant="outline" 
@@ -84,7 +106,7 @@ export const DashboardCardConfigurator = () => {
         </div>
         
         <div className="flex justify-end pt-4">
-          <Button onClick={() => setIsOpen(false)}>
+          <Button onClick={handleClose}>
             Fechar
           </Button>
         </div>
