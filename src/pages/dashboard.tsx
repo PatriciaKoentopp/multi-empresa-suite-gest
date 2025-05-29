@@ -515,20 +515,6 @@ export function Dashboard() {
               dashboardData={dashboardData}
             />
           ))}
-          
-          {/* Fallback para cards que não estão configurados mas ainda devem aparecer */}
-          {!isCardVisible('vendas-mes') && (
-            <DashboardCardRenderer cardId="vendas-mes" dashboardData={dashboardData} />
-          )}
-          {!isCardVisible('total-orcamentos') && (
-            <DashboardCardRenderer cardId="total-orcamentos" dashboardData={dashboardData} />
-          )}
-          {!isCardVisible('contas-pagar') && (
-            <DashboardCardRenderer cardId="contas-pagar" dashboardData={dashboardData} />
-          )}
-          {!isCardVisible('contas-receber') && (
-            <DashboardCardRenderer cardId="contas-receber" dashboardData={dashboardData} />
-          )}
         </div>
       )}
     </div>
