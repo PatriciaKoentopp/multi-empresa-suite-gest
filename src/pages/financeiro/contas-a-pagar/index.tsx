@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -520,6 +521,7 @@ export default function ContasAPagarPage() {
   // Carregar dados do Supabase
   const carregarContasAPagar = async () => {
     try {
+      // Buscar movimentações ordenadas por data de vencimento das parcelas
       const { data: movimentacoes, error } = await supabase
         .from('movimentacoes')
         .select(`
@@ -566,6 +568,9 @@ export default function ContasAPagarPage() {
             formaPagamento: parcela.forma_pagamento
           }));
         });
+
+        // Ordenar por data de vencimento em ordem crescente
+        contasFormatadas.sort((a, b) => a.dataVencimento.getTime() - b.dataVencimento.getTime());
 
         setContas(contasFormatadas);
       }
