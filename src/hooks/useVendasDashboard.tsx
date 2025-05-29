@@ -145,7 +145,6 @@ export const useVendasDashboard = () => {
     yearlyComparisonData,
     monthlyComparisonData,
     ticketMedioPorProjetoData,
-    fetchMonthlySalesData,
-    fetchSalesData
+    fetchMonthlySalesData
   };
 };

@@ -1,181 +1,222 @@
-
-import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import * as React from "react";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "@/components/ui/table";
-import { ChevronDown, ChevronRight, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VariationDisplay } from "./VariationDisplay";
 import { YearlyComparison } from "@/types";
+import { formatCurrency } from "@/lib/utils";
+import { useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface SalesComparisonTableProps {
   yearlyComparisonData: YearlyComparison[];
-  getMonthlySalesData: (year: number) => Promise<any[]>;
+  getMonthlySalesData?: (year: number) => Promise<{ name: string; faturado: number; variacao_percentual: number | null; variacao_ano_anterior: number | null; }[]>;
 }
 
 export const SalesComparisonTable = ({ 
-  yearlyComparisonData, 
+  yearlyComparisonData,
   getMonthlySalesData 
 }: SalesComparisonTableProps) => {
-  const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
-  const [monthlyDataCache, setMonthlyDataCache] = useState<Record<number, any[]>>({});
-  const [loadingMonths, setLoadingMonths] = useState<Set<number>>(new Set());
+  
+  const [expandedYears, setExpandedYears] = useState<{[key: number]: boolean}>({});
+  const [monthlyData, setMonthlyData] = useState<{[key: number]: {name: string; faturado: number; variacao_percentual: number | null; variacao_ano_anterior: number | null;}[]}>({});
+  const [loadingYear, setLoadingYear] = useState<number | null>(null);
+  
+  // Garantir que temos dados válidos para exibir
+  console.log("Dados recebidos na tabela de comparação:", yearlyComparisonData);
+  
+  if (!yearlyComparisonData || yearlyComparisonData.length === 0) {
+    return (
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-muted/30">
+          <CardTitle className="text-lg">Comparativo de Vendas</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 text-center text-muted-foreground">
+          Nenhum dado de comparação disponível.
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const toggleYear = async (year: number) => {
-    const newExpanded = new Set(expandedYears);
+  // Verificando dados antes de renderizar
+  const hasValidData = yearlyComparisonData.some(item => 
+    typeof item.year === 'number' && 
+    typeof item.total === 'number' && 
+    item.total > 0
+  );
+
+  if (!hasValidData) {
+    console.warn("Dados inválidos na tabela de comparação:", yearlyComparisonData);
+    return (
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-muted/30">
+          <CardTitle className="text-lg">Comparativo de Vendas</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 text-center text-muted-foreground">
+          Dados de comparação inválidos ou incompletos.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Função para alternar a expansão de um ano
+  const toggleYearExpansion = async (year: number) => {
     
-    if (newExpanded.has(year)) {
-      newExpanded.delete(year);
-    } else {
-      newExpanded.add(year);
-      
-      // Carregar dados mensais se ainda não foram carregados
-      if (!monthlyDataCache[year]) {
-        setLoadingMonths(prev => new Set(prev).add(year));
-        try {
-          const monthlyData = await getMonthlySalesData(year);
-          setMonthlyDataCache(prev => ({ ...prev, [year]: monthlyData }));
-        } catch (error) {
-          console.error(`Erro ao carregar dados mensais para ${year}:`, error);
-        } finally {
-          setLoadingMonths(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(year);
-            return newSet;
-          });
-        }
+    // Se já estamos carregando, não faz nada
+    if (loadingYear !== null) return;
+
+    // Se já temos os dados e estamos apenas alternando a visibilidade
+    if (expandedYears[year]) {
+      setExpandedYears(prev => ({
+        ...prev,
+        [year]: !prev[year]
+      }));
+      return;
+    }
+
+    // Se precisamos buscar os dados
+    if (getMonthlySalesData) {
+      try {
+        setLoadingYear(year);
+        console.log(`Buscando dados mensais para o ano ${year}`);
+        const data = await getMonthlySalesData(year);
+        console.log(`Dados mensais recebidos para o ano ${year}:`, data);
+        
+        // Ordenar os dados mensais em ordem decrescente (dezembro -> janeiro)
+        const orderedData = [...data].sort((a, b) => {
+          // Mapeamento de nomes de meses para números (dezembro = 12, janeiro = 1)
+          const mesesMap: {[key: string]: number} = {
+            "Janeiro": 1, "Fevereiro": 2, "Março": 3, "Abril": 4,
+            "Maio": 5, "Junho": 6, "Julho": 7, "Agosto": 8,
+            "Setembro": 9, "Outubro": 10, "Novembro": 11, "Dezembro": 12
+          };
+          
+          // Obter o valor numérico para cada mês
+          const mesA = mesesMap[a.name] || 0;
+          const mesB = mesesMap[b.name] || 0;
+          
+          // Ordenar de forma decrescente (dezembro primeiro)
+          return mesB - mesA;
+        });
+        
+        setMonthlyData(prev => ({
+          ...prev,
+          [year]: orderedData
+        }));
+        
+        setExpandedYears(prev => ({
+          ...prev,
+          [year]: true
+        }));
+      } catch (error) {
+        console.error(`Erro ao buscar dados mensais para ${year}:`, error);
+      } finally {
+        setLoadingYear(null);
       }
     }
-    
-    setExpandedYears(newExpanded);
   };
 
-  const getTrendIcon = (variation: number | null) => {
-    if (variation === null) return <Minus className="h-4 w-4" />;
-    if (variation > 0) return <TrendingUp className="h-4 w-4 text-green-600" />;
-    if (variation < 0) return <TrendingDown className="h-4 w-4 text-red-600" />;
-    return <Minus className="h-4 w-4" />;
-  };
+  // Renderizar linhas de dados mensais para um ano
+  const renderMonthlyRows = (year: number) => {
+    const data = monthlyData[year];
+    if (!data || !data.length) return null;
 
-  const getTrendColor = (variation: number | null) => {
-    if (variation === null) return "secondary";
-    if (variation > 0) return "default";
-    if (variation < 0) return "destructive";
-    return "secondary";
+    return data.map((month, idx) => (
+      <TableRow key={`month-${year}-${idx}`} className="bg-muted/5 hover:bg-muted/20">
+        <TableCell className="pl-8 font-normal text-sm">{month.name}</TableCell>
+        <TableCell className="text-right font-normal text-sm">
+          {formatCurrency(month.faturado || 0)}
+        </TableCell>
+        <TableCell className="text-right text-sm">
+          <VariationDisplay value={month.variacao_percentual} tipoConta="receita" />
+        </TableCell>
+        {/* Não exibimos a coluna de média mensal para dados mensais, mas mantemos a célula para preservar o alinhamento */}
+        <TableCell className="text-right text-sm">
+          {/* Célula vazia para manter o alinhamento correto */}
+        </TableCell>
+        <TableCell className="text-right text-sm">
+          <VariationDisplay 
+            value={month.variacao_ano_anterior} 
+            tipoConta="receita" 
+            tooltip={`Comparado a ${month.name}/${year-1}`} 
+          />
+        </TableCell>
+      </TableRow>
+    ));
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Comparação Anual de Vendas</CardTitle>
-        <CardDescription>
-          Análise comparativa do desempenho de vendas por ano com detalhamento mensal
-        </CardDescription>
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-muted/30">
+        <CardTitle className="text-lg">Comparativo de Vendas</CardTitle>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-16"></TableHead>
-              <TableHead>Ano</TableHead>
-              <TableHead className="text-right">Total de Vendas</TableHead>
-              <TableHead className="text-right">Variação</TableHead>
-              <TableHead className="text-right">Média Mensal</TableHead>
-              <TableHead className="text-right">Variação Média</TableHead>
-              <TableHead className="text-center">Meses com Vendas</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {yearlyComparisonData.map((yearData) => (
-              <React.Fragment key={yearData.year}>
-                <TableRow className="hover:bg-muted/50">
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleYear(yearData.year)}
-                      className="p-1"
-                    >
-                      {loadingMonths.has(yearData.year) ? (
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      ) : expandedYears.has(yearData.year) ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </TableCell>
-                  <TableCell className="font-medium">{yearData.year}</TableCell>
-                  <TableCell className="text-right font-mono">
-                    {formatCurrency(yearData.total)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {yearData.variacao_total !== null ? (
-                      <Badge variant={getTrendColor(yearData.variacao_total)} className="gap-1">
-                        {getTrendIcon(yearData.variacao_total)}
-                        {Math.abs(yearData.variacao_total).toFixed(1)}%
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">-</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {formatCurrency(yearData.media_mensal)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {yearData.variacao_media !== null ? (
-                      <Badge variant={getTrendColor(yearData.variacao_media)} className="gap-1">
-                        {getTrendIcon(yearData.variacao_media)}
-                        {Math.abs(yearData.variacao_media).toFixed(1)}%
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">-</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="outline">{yearData.num_meses}/12</Badge>
-                  </TableCell>
-                </TableRow>
-                
-                {expandedYears.has(yearData.year) && monthlyDataCache[yearData.year] && (
-                  <>
-                    <TableRow>
-                      <TableCell colSpan={7} className="p-0">
-                        <div className="bg-muted/30 px-4 py-2">
-                          <h4 className="font-medium text-sm text-muted-foreground">
-                            Detalhamento Mensal - {yearData.year}
-                          </h4>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    {monthlyDataCache[yearData.year].map((monthData, index) => (
-                      <TableRow key={`${yearData.year}-${index}`} className="bg-muted/20">
-                        <TableCell></TableCell>
-                        <TableCell className="pl-8 text-sm">
-                          {monthData.name}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {formatCurrency(monthData.faturado)}
-                        </TableCell>
-                        <TableCell></TableCell>
-                        <TableCell></TableCell>
-                        <TableCell></TableCell>
-                        <TableCell></TableCell>
-                      </TableRow>
-                    ))}
-                  </>
-                )}
-              </React.Fragment>
-            ))}
-          </TableBody>
-        </Table>
+      <CardContent className="p-0">
+        <div className="rounded-md">
+          <Table>
+            <TableHeader className="bg-muted/40">
+              <TableRow>
+                <TableHead className="w-[130px] text-left">Período</TableHead>
+                <TableHead className="text-right w-[170px]">Total de Vendas</TableHead>
+                <TableHead className="text-right w-[100px]">Variação</TableHead>
+                <TableHead className="text-right w-[170px]">Média Mensal</TableHead>
+                <TableHead className="text-right w-[100px]">Variação Anual</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {yearlyComparisonData.map((yearData, index) => (
+                <React.Fragment key={`yearly-comparison-${yearData.year || index}`}>
+                  <TableRow 
+                    className={(yearData.year || 0) % 2 === 0 ? "bg-white" : "bg-muted/10"}
+                    onClick={() => getMonthlySalesData ? toggleYearExpansion(yearData.year) : null}
+                    style={{ cursor: getMonthlySalesData ? 'pointer' : 'default' }}
+                  >
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {getMonthlySalesData && (
+                          <>
+                            {loadingYear === yearData.year ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                            ) : (
+                              <>
+                                {expandedYears[yearData.year] ? (
+                                  <ChevronDown className="h-4 w-4 text-blue-500" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 text-blue-500" />
+                                )}
+                              </>
+                            )}
+                          </>
+                        )}
+                        {yearData.year || "N/A"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(yearData.total || 0)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <VariationDisplay value={yearData.variacao_total} tipoConta="receita" />
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(yearData.media_mensal || 0)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <VariationDisplay value={yearData.variacao_media} tipoConta="receita" />
+                    </TableCell>
+                  </TableRow>
+                  
+                  {/* Linhas expandidas para mostrar dados mensais */}
+                  {expandedYears[yearData.year] && renderMonthlyRows(yearData.year)}
+                </React.Fragment>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
