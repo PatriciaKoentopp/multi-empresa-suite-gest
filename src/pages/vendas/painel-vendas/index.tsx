@@ -4,7 +4,9 @@ import { SalesDashboardHeader } from "@/components/vendas/SalesDashboardHeader";
 import { SalesDashboardCards } from "@/components/vendas/SalesDashboardCards";
 import { SalesPerformanceTabs } from "@/components/vendas/SalesPerformanceTabs";
 import { SalesComparisonTable } from "@/components/vendas/SalesComparisonTable";
+import { DashboardCardConfigurator } from "@/components/dashboard/DashboardCardConfigurator";
 import { useVendasDashboard } from "@/hooks/useVendasDashboard";
+import { useDashboardCards } from "@/hooks/useDashboardCards";
 import { useEffect, useState } from "react";
 import { format, subDays } from "date-fns";
 import { CrmDateRangeFilter } from "@/components/crm/dashboard/CrmDateRangeFilter";
@@ -12,6 +14,7 @@ import { CrmDateRangeFilter } from "@/components/crm/dashboard/CrmDateRangeFilte
 const PainelVendasPage = () => {
   const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState<Date>(new Date());
+  const [forceRender, setForceRender] = useState(0);
 
   const {
     isLoading,
@@ -25,6 +28,8 @@ const PainelVendasPage = () => {
     fetchMonthlySalesData,
     fetchSalesData
   } = useVendasDashboard();
+
+  const { refetch: refetchCardsConfig } = useDashboardCards('painel-vendas');
 
   useEffect(() => {
     console.log("Estado do Painel de Vendas:", {
@@ -49,6 +54,13 @@ const PainelVendasPage = () => {
     fetchSalesData(format(start, "yyyy-MM-dd"), format(end, "yyyy-MM-dd"));
   };
 
+  const handleConfigChange = async () => {
+    // Atualizar configuração dos cards
+    await refetchCardsConfig();
+    // Forçar re-render completo incrementando o estado
+    setForceRender(prev => prev + 1);
+  };
+
   if (isLoading) {
     return <SalesLoadingState />;
   }
@@ -62,11 +74,15 @@ const PainelVendasPage = () => {
   const safeTicketMedioPorProjetoData = Array.isArray(ticketMedioPorProjetoData) ? ticketMedioPorProjetoData : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" key={forceRender}>
       <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center mb-4">
         <SalesDashboardHeader />
         
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
+          <DashboardCardConfigurator 
+            pageId="painel-vendas" 
+            onConfigChange={handleConfigChange} 
+          />
           <CrmDateRangeFilter
             startDate={startDate}
             endDate={endDate}

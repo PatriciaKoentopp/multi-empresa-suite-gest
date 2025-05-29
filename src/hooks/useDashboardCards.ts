@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/company-context';
@@ -40,6 +39,14 @@ export const useDashboardCards = (pageId: string = 'dashboard') => {
       { card_id: 'filtro-fluxo-caixa', name: 'Filtro do Fluxo de Caixa', order_position: 9, is_visible: true },
       { card_id: 'grafico-fluxo-caixa', name: 'Gráfico do Fluxo de Caixa', order_position: 10, is_visible: true },
       { card_id: 'tabela-fluxo-mensal', name: 'Tabela do Fluxo Mensal', order_position: 11, is_visible: true },
+    ],
+    'painel-vendas': [
+      { card_id: 'total-vendas-ano', name: 'Total de Vendas no Ano', order_position: 1, is_visible: true },
+      { card_id: 'vendas-mes-atual', name: 'Vendas do Mês Atual', order_position: 2, is_visible: true },
+      { card_id: 'ticket-medio-projeto', name: 'Ticket Médio por Projeto', order_position: 3, is_visible: true },
+      { card_id: 'clientes-ativos', name: 'Clientes Ativos', order_position: 4, is_visible: true },
+      { card_id: 'tabs-performance', name: 'Gráficos de Performance', order_position: 5, is_visible: true },
+      { card_id: 'tabela-comparacao', name: 'Tabela de Comparação Anual', order_position: 6, is_visible: true },
     ]
   };
 

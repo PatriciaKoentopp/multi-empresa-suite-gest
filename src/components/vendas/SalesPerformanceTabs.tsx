@@ -1,14 +1,17 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SalesBarChart } from "./SalesBarChart";
+import { SalesLineChart } from "./SalesLineChart";
+import { BarChart, LineChart, AreaChart } from "lucide-react";
+import { useDashboardCards } from "@/hooks/useDashboardCards";
 
 interface SalesPerformanceTabsProps {
   barChartData: any[];
   quarterlyChartData: any[];
   yearlyChartData: any[];
-  monthlyComparisonData: any[]; // Dados para comparação mensal
-  ticketMedioPorProjetoData: any[]; // Novo tipo de dados para ticket médio por projeto
+  monthlyComparisonData: any[];
+  ticketMedioPorProjetoData: any[];
 }
 
 export const SalesPerformanceTabs = ({
@@ -18,90 +21,75 @@ export const SalesPerformanceTabs = ({
   monthlyComparisonData,
   ticketMedioPorProjetoData
 }: SalesPerformanceTabsProps) => {
-  // Verificar se todos os dados estão presentes
-  console.log("SalesPerformanceTabs - Dados recebidos:", {
-    barChartDataLength: barChartData?.length,
-    quarterlyChartDataLength: quarterlyChartData?.length,
-    yearlyChartDataLength: yearlyChartData?.length,
-    monthlyComparisonDataLength: monthlyComparisonData?.length,
-    ticketMedioPorProjetoDataLength: ticketMedioPorProjetoData?.length,
-    monthlyComparisonSample: monthlyComparisonData?.slice(0, 2)
-  });
+  const { isCardVisible } = useDashboardCards('painel-vendas');
+
+  // Se o card de tabs não estiver visível, não renderizar
+  if (!isCardVisible('tabs-performance')) {
+    return null;
+  }
 
   return (
-    <div className="space-y-4">
-      <Tabs defaultValue="monthly">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold">Desempenho de Vendas</h3>
-          <TabsList>
-            <TabsTrigger value="monthly">Mensal</TabsTrigger>
-            <TabsTrigger value="quarterly">Trimestral</TabsTrigger>
-            <TabsTrigger value="yearly">Anual</TabsTrigger>
-            <TabsTrigger value="monthly-comparison">Comparativo Mensal</TabsTrigger>
-            <TabsTrigger value="ticket-medio-projeto">Ticket por Projeto</TabsTrigger>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <BarChart className="h-5 w-5" />
+          Performance de Vendas
+        </CardTitle>
+        <CardDescription>
+          Análise detalhada dos dados de vendas em diferentes períodos
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="mensal" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="mensal">Mensal</TabsTrigger>
+            <TabsTrigger value="trimestral">Trimestral</TabsTrigger>
+            <TabsTrigger value="anual">Anual</TabsTrigger>
+            <TabsTrigger value="comparacao">Comparação</TabsTrigger>
+            <TabsTrigger value="ticket">Ticket Médio</TabsTrigger>
           </TabsList>
-        </div>
-        <TabsContent value="monthly" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Vendas por Mês</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SalesBarChart data={barChartData} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="quarterly">
-          <Card>
-            <CardHeader>
-              <CardTitle>Vendas por Trimestre</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SalesBarChart data={quarterlyChartData} multiColor={true} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="yearly">
-          <Card>
-            <CardHeader>
-              <CardTitle>Comparativo Anual</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SalesBarChart data={yearlyChartData} multiColor={true} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="monthly-comparison">
-          <Card>
-            <CardHeader>
-              <CardTitle>Comparativo Mensal por Ano</CardTitle>
-              <p className="text-sm text-muted-foreground">Comparação de todos os anos com dados de vendas</p>
-            </CardHeader>
-            <CardContent className="pb-0">
-              <SalesBarChart 
-                data={monthlyComparisonData} 
-                multiColor={true} 
-                isMonthlyComparison={true} 
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="ticket-medio-projeto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Ticket Médio por Projeto por Ano</CardTitle>
-              <p className="text-sm text-muted-foreground">Dados disponíveis a partir de 2024</p>
-            </CardHeader>
-            <CardContent>
-              <SalesBarChart 
-                data={ticketMedioPorProjetoData} 
-                multiColor={true}
-                valueKey="ticket_medio"
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+          
+          <TabsContent value="mensal" className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart className="h-4 w-4" />
+              <h3 className="text-lg font-semibold">Vendas Mensais</h3>
+            </div>
+            <SalesBarChart data={barChartData} />
+          </TabsContent>
+          
+          <TabsContent value="trimestral" className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart className="h-4 w-4" />
+              <h3 className="text-lg font-semibold">Vendas Trimestrais</h3>
+            </div>
+            <SalesBarChart data={quarterlyChartData} />
+          </TabsContent>
+          
+          <TabsContent value="anual" className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <LineChart className="h-4 w-4" />
+              <h3 className="text-lg font-semibold">Vendas Anuais</h3>
+            </div>
+            <SalesLineChart data={yearlyChartData} />
+          </TabsContent>
+          
+          <TabsContent value="comparacao" className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <AreaChart className="h-4 w-4" />
+              <h3 className="text-lg font-semibold">Comparação Mensal por Ano</h3>
+            </div>
+            <SalesBarChart data={monthlyComparisonData} />
+          </TabsContent>
+          
+          <TabsContent value="ticket" className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <LineChart className="h-4 w-4" />
+              <h3 className="text-lg font-semibold">Ticket Médio por Projeto</h3>
+            </div>
+            <SalesLineChart data={ticketMedioPorProjetoData} />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
