@@ -205,6 +205,7 @@ export const useModulosParametros = () => {
           return false;
         }
         
+        // Retornar item com subitens filtrados
         return {
           ...item,
           subItems: subItensAtivos
@@ -213,6 +214,21 @@ export const useModulosParametros = () => {
       
       console.log(`Módulo ${moduloKey} incluído no menu`);
       return true;
+    }).map(item => {
+      // Se o item tem subitens, aplicar o filtro novamente
+      if (item.subItems) {
+        const subItensAtivos = item.subItems.filter(subItem => {
+          const rotinaKey = subItem.href.replace('/', '');
+          return isModuloAtivo(rotinaKey);
+        });
+        
+        return {
+          ...item,
+          subItems: subItensAtivos
+        };
+      }
+      
+      return item;
     });
 
     console.log('Navegação filtrada final:', navegacaoFiltrada);
