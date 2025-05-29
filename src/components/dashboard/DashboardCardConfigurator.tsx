@@ -67,6 +67,8 @@ export const DashboardCardConfigurator = ({
         return 'Configurar Cards do Painel de Vendas';
       case 'painel-crm':
         return 'Configurar Cards do Painel CRM';
+      case 'relatorios':
+        return 'Configurar Relatórios';
       case 'dashboard':
       default:
         return 'Configurar Cards do Dashboard';
@@ -81,6 +83,8 @@ export const DashboardCardConfigurator = ({
         return 'Escolha quais cards deseja exibir no painel de vendas da sua empresa.';
       case 'painel-crm':
         return 'Escolha quais cards deseja exibir no painel CRM da sua empresa.';
+      case 'relatorios':
+        return 'Escolha quais relatórios deseja exibir na página de relatórios.';
       case 'dashboard':
       default:
         return 'Escolha quais cards deseja exibir no dashboard da sua empresa.';
@@ -101,7 +105,7 @@ export const DashboardCardConfigurator = ({
           className="flex items-center gap-2"
         >
           <Settings className="h-4 w-4" />
-          Configurar Cards
+          {pageId === 'relatorios' ? 'Configurar Relatórios' : 'Configurar Cards'}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">

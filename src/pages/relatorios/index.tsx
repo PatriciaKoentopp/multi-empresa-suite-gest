@@ -1,11 +1,16 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Users, Calculator, BarChart, Award, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { DashboardCardConfigurator } from "@/components/dashboard/DashboardCardConfigurator";
+import { useDashboardCards } from "@/hooks/useDashboardCards";
 
 export default function Relatorios() {
   const navigate = useNavigate();
+  const [forceRender, setForceRender] = useState(0);
+  const { isCardVisible, refetch: refetchCardsConfig } = useDashboardCards('relatorios');
 
   const relatorios = [
     {
@@ -56,44 +61,68 @@ export default function Relatorios() {
     navigate(route);
   };
 
+  const handleConfigChange = async () => {
+    // Atualizar configuração dos cards
+    await refetchCardsConfig();
+    // Forçar re-render completo incrementando o estado
+    setForceRender(prev => prev + 1);
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Relatórios</h1>
-        <p className="text-muted-foreground">
-          Consulte relatórios detalhados para análise de dados
-        </p>
+    <div className="space-y-6" key={forceRender}>
+      <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Relatórios</h1>
+          <p className="text-muted-foreground">
+            Consulte relatórios detalhados para análise de dados
+          </p>
+        </div>
+        
+        <DashboardCardConfigurator 
+          pageId="relatorios" 
+          onConfigChange={handleConfigChange}
+        />
       </div>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {relatorios.map(relatorio => (
-          <Card 
-            key={relatorio.id} 
-            className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' ? '' : 'opacity-60'}`}
-            onClick={() => handleCardClick(relatorio.route)}
-          >
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div className="space-y-1">
-                <CardTitle className="text-xl">{relatorio.title}</CardTitle>
-                <CardDescription>
-                  {relatorio.description}
-                </CardDescription>
-              </div>
-              <div className="rounded-full p-2 bg-gray-100 dark:bg-gray-800">
-                {relatorio.icon}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                variant={relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' ? "default" : "outline"} 
-                className="w-full"
-                onClick={() => handleCardClick(relatorio.route)}
-              >
-                Acessar Relatório
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+        {relatorios.map(relatorio => {
+          // Verificar se o card está visível na configuração
+          const isVisible = isCardVisible(relatorio.id);
+          
+          // Se não estiver visível, não renderizar o card
+          if (!isVisible) {
+            return null;
+          }
+
+          return (
+            <Card 
+              key={relatorio.id} 
+              className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' ? '' : 'opacity-60'}`}
+              onClick={() => handleCardClick(relatorio.route)}
+            >
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div className="space-y-1">
+                  <CardTitle className="text-xl">{relatorio.title}</CardTitle>
+                  <CardDescription>
+                    {relatorio.description}
+                  </CardDescription>
+                </div>
+                <div className="rounded-full p-2 bg-gray-100 dark:bg-gray-800">
+                  {relatorio.icon}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  variant={relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' ? "default" : "outline"} 
+                  className="w-full"
+                  onClick={() => handleCardClick(relatorio.route)}
+                >
+                  Acessar Relatório
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
