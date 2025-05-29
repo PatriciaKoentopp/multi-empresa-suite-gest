@@ -11,22 +11,37 @@ export interface DashboardCardConfig {
   order_position: number;
 }
 
-export const useDashboardCards = () => {
+export const useDashboardCards = (pageId: string = 'dashboard') => {
   const { currentCompany } = useCompany();
   const { toast } = useToast();
   const [cardsConfig, setCardsConfig] = useState<DashboardCardConfig[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Configurações padrão dos cards
-  const defaultCards = [
-    { card_id: 'alertas', name: 'Alertas', order_position: 1, is_visible: true },
-    { card_id: 'vendas-mes', name: 'Vendas do Mês', order_position: 2, is_visible: true },
-    { card_id: 'total-orcamentos', name: 'Total de Orçamentos', order_position: 3, is_visible: true },
-    { card_id: 'contas-pagar', name: 'Contas a Pagar', order_position: 4, is_visible: true },
-    { card_id: 'contas-receber', name: 'Contas a Receber', order_position: 5, is_visible: true },
-    { card_id: 'saldo-contas', name: 'Saldo das Contas', order_position: 6, is_visible: true },
-    { card_id: 'top-clientes', name: 'Top 5 Clientes', order_position: 7, is_visible: true },
-  ];
+  // Configurações padrão dos cards por página
+  const defaultCards = {
+    dashboard: [
+      { card_id: 'alertas', name: 'Alertas', order_position: 1, is_visible: true },
+      { card_id: 'vendas-mes', name: 'Vendas do Mês', order_position: 2, is_visible: true },
+      { card_id: 'total-orcamentos', name: 'Total de Orçamentos', order_position: 3, is_visible: true },
+      { card_id: 'contas-pagar', name: 'Contas a Pagar', order_position: 4, is_visible: true },
+      { card_id: 'contas-receber', name: 'Contas a Receber', order_position: 5, is_visible: true },
+      { card_id: 'saldo-contas', name: 'Saldo das Contas', order_position: 6, is_visible: true },
+      { card_id: 'top-clientes', name: 'Top 5 Clientes', order_position: 7, is_visible: true },
+    ],
+    'painel-financeiro': [
+      { card_id: 'total-receber', name: 'Total a Receber', order_position: 1, is_visible: true },
+      { card_id: 'total-pagar', name: 'Total a Pagar', order_position: 2, is_visible: true },
+      { card_id: 'saldo-contas', name: 'Saldo em Contas', order_position: 3, is_visible: true },
+      { card_id: 'previsao-saldo', name: 'Previsão de Saldo', order_position: 4, is_visible: true },
+      { card_id: 'contas-vencidas-receber', name: 'Contas a Receber Vencidas', order_position: 5, is_visible: true },
+      { card_id: 'contas-vencer-receber', name: 'Contas a Receber a Vencer', order_position: 6, is_visible: true },
+      { card_id: 'contas-vencidas-pagar', name: 'Contas a Pagar Vencidas', order_position: 7, is_visible: true },
+      { card_id: 'contas-vencer-pagar', name: 'Contas a Pagar a Vencer', order_position: 8, is_visible: true },
+      { card_id: 'filtro-fluxo-caixa', name: 'Filtro do Fluxo de Caixa', order_position: 9, is_visible: true },
+      { card_id: 'grafico-fluxo-caixa', name: 'Gráfico do Fluxo de Caixa', order_position: 10, is_visible: true },
+      { card_id: 'tabela-fluxo-mensal', name: 'Tabela do Fluxo Mensal', order_position: 11, is_visible: true },
+    ]
+  };
 
   const fetchCardsConfig = async () => {
     if (!currentCompany?.id) return;
@@ -38,7 +53,7 @@ export const useDashboardCards = () => {
         .from('dashboard_cards_config')
         .select('*')
         .eq('empresa_id', currentCompany.id)
-        .eq('page_id', 'dashboard')
+        .eq('page_id', pageId)
         .order('order_position');
 
       if (error) throw error;
@@ -66,9 +81,10 @@ export const useDashboardCards = () => {
     if (!currentCompany?.id) return;
 
     try {
-      const configsToInsert = defaultCards.map(card => ({
+      const cards = defaultCards[pageId as keyof typeof defaultCards] || [];
+      const configsToInsert = cards.map(card => ({
         empresa_id: currentCompany.id,
-        page_id: 'dashboard',
+        page_id: pageId,
         card_id: card.card_id,
         is_visible: card.is_visible,
         order_position: card.order_position
@@ -97,7 +113,7 @@ export const useDashboardCards = () => {
         .from('dashboard_cards_config')
         .update({ is_visible: isVisible })
         .eq('empresa_id', currentCompany.id)
-        .eq('page_id', 'dashboard')
+        .eq('page_id', pageId)
         .eq('card_id', cardId);
 
       if (error) throw error;
@@ -133,13 +149,14 @@ export const useDashboardCards = () => {
   };
 
   const getCardName = (cardId: string): string => {
-    const defaultCard = defaultCards.find(c => c.card_id === cardId);
+    const cards = defaultCards[pageId as keyof typeof defaultCards] || [];
+    const defaultCard = cards.find(c => c.card_id === cardId);
     return defaultCard ? defaultCard.name : cardId;
   };
 
   useEffect(() => {
     fetchCardsConfig();
-  }, [currentCompany?.id]);
+  }, [currentCompany?.id, pageId]);
 
   return {
     cardsConfig,
@@ -147,7 +164,7 @@ export const useDashboardCards = () => {
     updateCardVisibility,
     isCardVisible,
     getCardName,
-    defaultCards,
+    defaultCards: defaultCards[pageId as keyof typeof defaultCards] || [],
     refetch: fetchCardsConfig
   };
 };

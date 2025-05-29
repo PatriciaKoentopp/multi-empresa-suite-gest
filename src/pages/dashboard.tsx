@@ -48,7 +48,7 @@ export function Dashboard() {
   const { currentCompany, loading: companyLoading } = useCompany();
   const { toast } = useToast();
   const { userData, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { isCardVisible, refetch: refetchCardsConfig } = useDashboardCards();
+  const { isCardVisible, refetch: refetchCardsConfig } = useDashboardCards('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData>({
@@ -515,7 +515,7 @@ export function Dashboard() {
             Visão geral da empresa {currentCompany?.nomeFantasia || ""}
           </p>
         </div>
-        <DashboardCardConfigurator onConfigChange={handleConfigChange} />
+        <DashboardCardConfigurator pageId="dashboard" onConfigChange={handleConfigChange} />
       </div>
       
       {showLoading ? (

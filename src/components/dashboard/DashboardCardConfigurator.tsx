@@ -16,10 +16,14 @@ import {
 import { useDashboardCards } from '@/hooks/useDashboardCards';
 
 interface DashboardCardConfiguratorProps {
+  pageId?: string;
   onConfigChange?: () => void;
 }
 
-export const DashboardCardConfigurator = ({ onConfigChange }: DashboardCardConfiguratorProps) => {
+export const DashboardCardConfigurator = ({ 
+  pageId = 'dashboard', 
+  onConfigChange 
+}: DashboardCardConfiguratorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { 
     cardsConfig, 
@@ -28,7 +32,7 @@ export const DashboardCardConfigurator = ({ onConfigChange }: DashboardCardConfi
     isCardVisible, 
     getCardName,
     defaultCards 
-  } = useDashboardCards();
+  } = useDashboardCards(pageId);
 
   const handleVisibilityChange = async (cardId: string, isVisible: boolean) => {
     const success = await updateCardVisibility(cardId, isVisible);
@@ -51,6 +55,26 @@ export const DashboardCardConfigurator = ({ onConfigChange }: DashboardCardConfi
     return null;
   }
 
+  const getPageTitle = () => {
+    switch (pageId) {
+      case 'painel-financeiro':
+        return 'Configurar Cards do Painel Financeiro';
+      case 'dashboard':
+      default:
+        return 'Configurar Cards do Dashboard';
+    }
+  };
+
+  const getPageDescription = () => {
+    switch (pageId) {
+      case 'painel-financeiro':
+        return 'Escolha quais cards deseja exibir no painel financeiro da sua empresa.';
+      case 'dashboard':
+      default:
+        return 'Escolha quais cards deseja exibir no dashboard da sua empresa.';
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       setIsOpen(open);
@@ -70,9 +94,9 @@ export const DashboardCardConfigurator = ({ onConfigChange }: DashboardCardConfi
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Configurar Cards do Dashboard</DialogTitle>
+          <DialogTitle>{getPageTitle()}</DialogTitle>
           <DialogDescription>
-            Escolha quais cards deseja exibir no dashboard da sua empresa.
+            {getPageDescription()}
           </DialogDescription>
         </DialogHeader>
         
