@@ -56,8 +56,8 @@ export const useContratos = () => {
   // Função para calcular o mês de referência baseado na data de início do contrato e número da parcela
   const calcularMesReferencia = (dataInicio: Date, numeroParcela: number): string => {
     const dataReferencia = new Date(dataInicio);
-    // A primeira parcela usa o mês de início da vigência (numeroParcela - 1 = 0)
-    // A segunda parcela usa o mês seguinte (numeroParcela - 1 = 1), etc.
+    // A primeira parcela usa o mês de início da vigência (numeroParcela 1 = +0 meses)
+    // A segunda parcela usa o mês seguinte (numeroParcela 2 = +1 mês), etc.
     dataReferencia.setMonth(dataReferencia.getMonth() + (numeroParcela - 1));
     
     const mes = String(dataReferencia.getMonth() + 1).padStart(2, '0');
@@ -66,6 +66,7 @@ export const useContratos = () => {
     console.log("Cálculo mês referência:", {
       dataInicio: dataInicio.toISOString().split('T')[0],
       numeroParcela,
+      mesInicioVigencia: `${String(dataInicio.getMonth() + 1).padStart(2, '0')}/${dataInicio.getFullYear()}`,
       dataReferencia: dataReferencia.toISOString().split('T')[0],
       mesReferencia: `${mes}/${ano}`
     });
