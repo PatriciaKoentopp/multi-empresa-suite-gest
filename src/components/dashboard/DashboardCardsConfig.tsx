@@ -15,6 +15,7 @@ export const DashboardCardsConfig = () => {
   const availableCards = getDashboardCards();
 
   const handleToggleCard = (cardId: string, isVisible: boolean) => {
+    console.log('Alternando card:', cardId, 'para:', isVisible);
     updateCardConfig({ cardId, isVisible });
   };
 
@@ -44,31 +45,35 @@ export const DashboardCardsConfig = () => {
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
-          {availableCards.map((card) => (
-            <Card key={card.id} className="relative">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <GripVertical className="h-4 w-4 text-gray-400" />
-                    <div>
-                      <CardTitle className="text-sm font-medium">{card.name}</CardTitle>
-                      <CardDescription className="text-xs">{card.description}</CardDescription>
+          {availableCards.map((card) => {
+            const isVisible = isCardVisible(card.id);
+            
+            return (
+              <Card key={card.id} className="relative">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <GripVertical className="h-4 w-4 text-gray-400" />
+                      <div>
+                        <CardTitle className="text-sm font-medium">{card.name}</CardTitle>
+                        <CardDescription className="text-xs">{card.description}</CardDescription>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className={getCategoryColor(card.category)}>
+                        {card.category}
+                      </Badge>
+                      <Switch
+                        checked={isVisible}
+                        onCheckedChange={(checked) => handleToggleCard(card.id, checked)}
+                        disabled={isUpdating}
+                      />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className={getCategoryColor(card.category)}>
-                      {card.category}
-                    </Badge>
-                    <Switch
-                      checked={isCardVisible(card.id)}
-                      onCheckedChange={(checked) => handleToggleCard(card.id, checked)}
-                      disabled={isUpdating}
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
+                </CardHeader>
+              </Card>
+            );
+          })}
         </div>
 
         <div className="flex justify-between items-center pt-4 border-t">

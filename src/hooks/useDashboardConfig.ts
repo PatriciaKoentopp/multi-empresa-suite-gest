@@ -64,25 +64,50 @@ export const useDashboardConfig = (pageId: string = 'dashboard') => {
     }) => {
       if (!currentCompany?.id) throw new Error('Empresa não encontrada');
 
-      const updates: any = {};
-      if (isVisible !== undefined) updates.is_visible = isVisible;
-      if (orderPosition !== undefined) updates.order_position = orderPosition;
+      console.log('Atualizando configuração:', { cardId, isVisible, orderPosition });
 
-      const { data, error } = await supabase
+      // Buscar configuração existente
+      const { data: existingConfig } = await supabase
         .from('dashboard_cards_config')
-        .upsert({
-          empresa_id: currentCompany.id,
-          page_id: pageId,
-          card_id: cardId,
-          ...updates
-        })
-        .select();
+        .select('*')
+        .eq('empresa_id', currentCompany.id)
+        .eq('page_id', pageId)
+        .eq('card_id', cardId)
+        .single();
 
-      if (error) throw error;
-      return data;
+      if (existingConfig) {
+        // Atualizar configuração existente
+        const updates: any = {};
+        if (isVisible !== undefined) updates.is_visible = isVisible;
+        if (orderPosition !== undefined) updates.order_position = orderPosition;
+
+        const { data, error } = await supabase
+          .from('dashboard_cards_config')
+          .update(updates)
+          .eq('id', existingConfig.id)
+          .select();
+
+        if (error) throw error;
+        return data;
+      } else {
+        // Criar nova configuração
+        const { data, error } = await supabase
+          .from('dashboard_cards_config')
+          .insert({
+            empresa_id: currentCompany.id,
+            page_id: pageId,
+            card_id: cardId,
+            is_visible: isVisible ?? true,
+            order_position: orderPosition ?? 0
+          })
+          .select();
+
+        if (error) throw error;
+        return data;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dashboard-config'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-config', currentCompany?.id, pageId] });
       toast({
         title: "Configuração atualizada",
         description: "As alterações foram salvas com sucesso."
