@@ -53,6 +53,27 @@ export const useContratos = () => {
     return mesesVigencia;
   };
 
+  // Função para gerar datas de vencimento dentro do período de vigência
+  const gerarDatasVencimento = (dataPrimeiroVencimento: Date, dataFimContrato: Date, numeroParcelas: number): Date[] => {
+    const datas: Date[] = [];
+    let dataAtual = new Date(dataPrimeiroVencimento);
+    
+    for (let i = 0; i < numeroParcelas; i++) {
+      // Verificar se a data está dentro do período de vigência
+      if (dataAtual <= dataFimContrato) {
+        datas.push(new Date(dataAtual));
+      }
+      
+      // Próxima parcela sempre no mês seguinte
+      if (i < numeroParcelas - 1) {
+        dataAtual.setMonth(dataAtual.getMonth() + 1);
+      }
+    }
+    
+    console.log("Datas de vencimento geradas:", datas.map(d => d.toISOString().split('T')[0]));
+    return datas;
+  };
+
   const createContrato = useMutation({
     mutationFn: async (formData: ContratoFormData) => {
       if (!currentCompany?.id) throw new Error("Empresa não selecionada");
@@ -302,6 +323,14 @@ export const useContratos = () => {
       // Número de parcelas = número de meses de vigência
       const numeroParcelas = mesesVigencia;
 
+      // Gerar as datas de vencimento dentro do período de vigência
+      const datasVencimento = gerarDatasVencimento(dataPrimeiroVencimento, dataFim, numeroParcelas);
+
+      // Usar apenas as datas que estão dentro do período
+      const parcelasValidas = datasVencimento.length;
+
+      console.log("Parcelas válidas dentro do período:", parcelasValidas);
+
       // Calcular valor da parcela baseado na periodicidade
       let valorParcela = contrato.valor_mensal;
       switch (contrato.periodicidade) {
@@ -316,7 +345,7 @@ export const useContratos = () => {
           break;
       }
 
-      const valorTotal = valorParcela * numeroParcelas;
+      const valorTotal = valorParcela * parcelasValidas;
 
       // Criar a movimentação principal
       const { data: movimentacao, error: movError } = await supabase
@@ -329,7 +358,7 @@ export const useContratos = () => {
           favorecido_id: contrato.favorecido_id,
           descricao: `Contrato ${contrato.codigo} - ${contrato.favorecido?.nome || 'Cliente'}`,
           valor: valorTotal,
-          numero_parcelas: numeroParcelas,
+          numero_parcelas: parcelasValidas,
           primeiro_vencimento: contrato.data_primeiro_vencimento,
           forma_pagamento: contrato.forma_pagamento,
           considerar_dre: true
@@ -339,23 +368,13 @@ export const useContratos = () => {
 
       if (movError) throw movError;
 
-      // Criar as parcelas - uma por mês de vigência
-      const parcelas = [];
-      let dataVencimento = new Date(dataPrimeiroVencimento);
-      
-      for (let i = 1; i <= numeroParcelas; i++) {
-        parcelas.push({
-          movimentacao_id: movimentacao.id,
-          numero: i,
-          valor: valorParcela,
-          data_vencimento: dataVencimento.toISOString().split('T')[0]
-        });
-
-        // Próxima parcela sempre no mês seguinte
-        if (i < numeroParcelas) {
-          dataVencimento.setMonth(dataVencimento.getMonth() + 1);
-        }
-      }
+      // Criar as parcelas usando apenas as datas válidas
+      const parcelas = datasVencimento.map((dataVencimento, index) => ({
+        movimentacao_id: movimentacao.id,
+        numero: index + 1,
+        valor: valorParcela,
+        data_vencimento: dataVencimento.toISOString().split('T')[0]
+      }));
 
       console.log("Parcelas a serem inseridas:", parcelas);
 
