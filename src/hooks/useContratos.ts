@@ -53,21 +53,27 @@ export const useContratos = () => {
     return mesesVigencia;
   };
 
-  // Função para calcular o mês de referência baseado na data de início do contrato e número da parcela
+  // Função para calcular o mês de referência - VERSÃO SIMPLIFICADA
   const calcularMesReferencia = (dataInicio: Date, numeroParcela: number): string => {
-    const dataReferencia = new Date(dataInicio);
-    // A primeira parcela usa o mês de início da vigência (numeroParcela 1 = +0 meses)
-    // A segunda parcela usa o mês seguinte (numeroParcela 2 = +1 mês), etc.
-    dataReferencia.setMonth(dataReferencia.getMonth() + (numeroParcela - 1));
+    // Pegar o mês e ano da data de início
+    const mesInicio = dataInicio.getMonth(); // 0-11 (janeiro=0, maio=4)
+    const anoInicio = dataInicio.getFullYear();
     
+    // Calcular o mês da parcela: primeira parcela = mês de início, segunda = mês seguinte, etc.
+    const mesReferencia = mesInicio + (numeroParcela - 1);
+    
+    // Criar nova data com o mês calculado
+    const dataReferencia = new Date(anoInicio, mesReferencia, 1);
+    
+    // Formatar como MM/YYYY
     const mes = String(dataReferencia.getMonth() + 1).padStart(2, '0');
     const ano = dataReferencia.getFullYear();
     
     console.log("Cálculo mês referência:", {
       dataInicio: dataInicio.toISOString().split('T')[0],
       numeroParcela,
-      mesInicioVigencia: `${String(dataInicio.getMonth() + 1).padStart(2, '0')}/${dataInicio.getFullYear()}`,
-      dataReferencia: dataReferencia.toISOString().split('T')[0],
+      mesInicioDaVigencia: `${String(dataInicio.getMonth() + 1).padStart(2, '0')}/${dataInicio.getFullYear()}`,
+      mesCalculado: mesReferencia,
       mesReferencia: `${mes}/${ano}`
     });
     
@@ -246,7 +252,7 @@ export const useContratos = () => {
 
       // Verificar se existem parcelas baixadas (com data_pagamento preenchida)
       const temParcelasBaixadas = movimentacoes?.some(mov => 
-        mov.movimentacoes_parcelas?.some(parcela => parcela.data_pagamento != null)
+        mov.movimentacoes_parcelas?.some(parcela => parcela.data_pagamento !== null)
       );
 
       console.log("Tem parcelas baixadas:", temParcelasBaixadas);
