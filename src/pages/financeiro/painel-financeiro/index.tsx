@@ -13,6 +13,7 @@ import { useDashboardCards } from "@/hooks/useDashboardCards";
 
 const PainelFinanceiroPage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [forceRender, setForceRender] = useState(0);
   const { 
     isLoading, 
     dadosFinanceiros, 
@@ -33,9 +34,8 @@ const PainelFinanceiroPage = () => {
   const handleConfigChange = async () => {
     // Atualizar configuração dos cards
     await refetchCardsConfig();
-    // Forçar re-render dos componentes
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 100);
+    // Forçar re-render completo incrementando o estado
+    setForceRender(prev => prev + 1);
   };
 
   if (isLoading) {
@@ -43,7 +43,7 @@ const PainelFinanceiroPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" key={forceRender}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Painel Financeiro</h1>
@@ -63,21 +63,15 @@ const PainelFinanceiroPage = () => {
         </div>
       </div>
       
-      {/* Cards principais - renderizados se visíveis */}
-      {(isCardVisible('total-receber') || isCardVisible('total-pagar') || 
-        isCardVisible('saldo-contas') || isCardVisible('previsao-saldo')) && (
-        <FinanceiroDashboardCards dadosFinanceiros={dadosFinanceiros} />
-      )}
+      {/* Cards principais */}
+      <FinanceiroDashboardCards dadosFinanceiros={dadosFinanceiros} />
       
-      {/* Cards de status - renderizados se visíveis */}
-      {(isCardVisible('contas-vencidas-receber') || isCardVisible('contas-vencer-receber') || 
-        isCardVisible('contas-vencidas-pagar') || isCardVisible('contas-vencer-pagar')) && (
-        <ContasStatusCards dadosFinanceiros={dadosFinanceiros} />
-      )}
+      {/* Cards de status */}
+      <ContasStatusCards dadosFinanceiros={dadosFinanceiros} />
       
       {dadosFinanceiros && (
         <>
-          {/* Filtro do fluxo de caixa - renderizado se visível */}
+          {/* Filtro do fluxo de caixa */}
           {isCardVisible('filtro-fluxo-caixa') && (
             <FluxoCaixaFilter 
               filtro={filtroFluxoCaixa}
@@ -86,7 +80,7 @@ const PainelFinanceiroPage = () => {
             />
           )}
           
-          {/* Gráfico do fluxo de caixa - renderizado se visível */}
+          {/* Gráfico do fluxo de caixa */}
           {isCardVisible('grafico-fluxo-caixa') && (
             <FluxoCaixaChart 
               data={dadosFinanceiros.fluxo_caixa || []} 
@@ -96,7 +90,7 @@ const PainelFinanceiroPage = () => {
         </>
       )}
       
-      {/* Tabela do fluxo mensal - renderizada se visível */}
+      {/* Tabela do fluxo mensal */}
       {dadosFinanceiros?.fluxo_por_mes && isCardVisible('tabela-fluxo-mensal') && (
         <FluxoFinanceiroTable fluxoMensal={dadosFinanceiros.fluxo_por_mes} />
       )}

@@ -11,6 +11,18 @@ interface FinanceiroDashboardCardsProps {
 export const FinanceiroDashboardCards = ({ dadosFinanceiros }: FinanceiroDashboardCardsProps) => {
   const { isCardVisible } = useDashboardCards('painel-financeiro');
   
+  // Verificar se há pelo menos um card visível
+  const hasVisibleCards = [
+    'total-receber',
+    'total-pagar', 
+    'saldo-contas',
+    'previsao-saldo'
+  ].some(cardId => isCardVisible(cardId));
+
+  if (!hasVisibleCards) {
+    return null;
+  }
+  
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {isCardVisible('total-receber') && (

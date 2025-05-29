@@ -11,14 +11,15 @@ interface ContasStatusCardsProps {
 export const ContasStatusCards = ({ dadosFinanceiros }: ContasStatusCardsProps) => {
   const { isCardVisible } = useDashboardCards('painel-financeiro');
   
-  const visibleCards = [
-    isCardVisible('contas-vencidas-receber'),
-    isCardVisible('contas-vencer-receber'),
-    isCardVisible('contas-vencidas-pagar'),
-    isCardVisible('contas-vencer-pagar')
-  ].some(Boolean);
+  // Verificar se há pelo menos um card de status visível
+  const hasVisibleStatusCards = [
+    'contas-vencidas-receber',
+    'contas-vencer-receber',
+    'contas-vencidas-pagar',
+    'contas-vencer-pagar'
+  ].some(cardId => isCardVisible(cardId));
 
-  if (!visibleCards) {
+  if (!hasVisibleStatusCards) {
     return null;
   }
 
