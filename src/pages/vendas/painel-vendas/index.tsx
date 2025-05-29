@@ -14,6 +14,7 @@ import { CrmDateRangeFilter } from "@/components/crm/dashboard/CrmDateRangeFilte
 const PainelVendasPage = () => {
   const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState<Date>(new Date());
+  const [forceRender, setForceRender] = useState(0);
 
   const {
     isLoading,
@@ -28,7 +29,7 @@ const PainelVendasPage = () => {
     fetchSalesData
   } = useVendasDashboard();
 
-  const { isCardVisible, refetch } = useDashboardCards('painel-vendas');
+  const { isCardVisible, refetch: refetchCardsConfig } = useDashboardCards('painel-vendas');
 
   useEffect(() => {
     console.log("Estado do Painel de Vendas:", {
@@ -53,9 +54,11 @@ const PainelVendasPage = () => {
     fetchSalesData(format(start, "yyyy-MM-dd"), format(end, "yyyy-MM-dd"));
   };
 
-  const handleConfigChange = () => {
-    // Forçar uma re-renderização dos cards após mudança de configuração
-    refetch();
+  const handleConfigChange = async () => {
+    // Atualizar configuração dos cards
+    await refetchCardsConfig();
+    // Forçar re-render completo incrementando o estado
+    setForceRender(prev => prev + 1);
   };
 
   if (isLoading) {
@@ -79,7 +82,7 @@ const PainelVendasPage = () => {
   ].some(cardId => isCardVisible(cardId));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" key={forceRender}>
       <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center mb-4">
         <SalesDashboardHeader />
         
