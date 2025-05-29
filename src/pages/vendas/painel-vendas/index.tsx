@@ -28,7 +28,7 @@ const PainelVendasPage = () => {
     fetchSalesData
   } = useVendasDashboard();
 
-  const { isCardVisible } = useDashboardCards('painel-vendas');
+  const { isCardVisible, refetch } = useDashboardCards('painel-vendas');
 
   useEffect(() => {
     console.log("Estado do Painel de Vendas:", {
@@ -51,6 +51,11 @@ const PainelVendasPage = () => {
     setStartDate(start);
     setEndDate(end);
     fetchSalesData(format(start, "yyyy-MM-dd"), format(end, "yyyy-MM-dd"));
+  };
+
+  const handleConfigChange = () => {
+    // Forçar uma re-renderização dos cards após mudança de configuração
+    refetch();
   };
 
   if (isLoading) {
@@ -79,7 +84,10 @@ const PainelVendasPage = () => {
         <SalesDashboardHeader />
         
         <div className="flex items-center gap-4">
-          <DashboardCardConfigurator pageId="painel-vendas" />
+          <DashboardCardConfigurator 
+            pageId="painel-vendas" 
+            onConfigChange={handleConfigChange}
+          />
           <CrmDateRangeFilter
             startDate={startDate}
             endDate={endDate}
