@@ -30,8 +30,12 @@ const PainelFinanceiroPage = () => {
     setIsRefreshing(false);
   };
 
-  const handleConfigChange = () => {
-    refetchCardsConfig();
+  const handleConfigChange = async () => {
+    // Atualizar configuração dos cards
+    await refetchCardsConfig();
+    // Forçar re-render dos componentes
+    setIsRefreshing(true);
+    setTimeout(() => setIsRefreshing(false), 100);
   };
 
   if (isLoading) {
@@ -48,7 +52,10 @@ const PainelFinanceiroPage = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <DashboardCardConfigurator pageId="painel-financeiro" onConfigChange={handleConfigChange} />
+          <DashboardCardConfigurator 
+            pageId="painel-financeiro" 
+            onConfigChange={handleConfigChange} 
+          />
           <FinanceiroDashboardHeader 
             onRefresh={handleRefresh} 
             isRefreshing={isRefreshing} 
