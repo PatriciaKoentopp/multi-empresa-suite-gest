@@ -65,6 +65,14 @@ const PainelVendasPage = () => {
   const safeMonthlyComparisonData = Array.isArray(monthlyComparisonData) ? monthlyComparisonData : [];
   const safeTicketMedioPorProjetoData = Array.isArray(ticketMedioPorProjetoData) ? ticketMedioPorProjetoData : [];
 
+  // Verificar se algum dos cards de vendas está visível
+  const hasVisibleSalesCards = [
+    'vendas-mes-anual',
+    'total-vendas-ano', 
+    'ticket-medio-projeto',
+    'clientes-ativos'
+  ].some(cardId => isCardVisible(cardId));
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center mb-4">
@@ -80,11 +88,11 @@ const PainelVendasPage = () => {
         </div>
       </div>
 
-      {isCardVisible('cards-vendas') && (
+      {hasVisibleSalesCards && (
         <SalesDashboardCards salesData={salesData} />
       )}
       
-      {isCardVisible('desempenho-vendas') && (
+      {isCardVisible('tabs-performance') && (
         <SalesPerformanceTabs
           barChartData={safeBarChartData}
           quarterlyChartData={safeQuarterlyChartData}
@@ -94,7 +102,7 @@ const PainelVendasPage = () => {
         />
       )}
       
-      {isCardVisible('comparacao-anual') && (
+      {isCardVisible('tabela-comparacao') && (
         <SalesComparisonTable 
           yearlyComparisonData={safeYearlyComparisonData}
           getMonthlySalesData={fetchMonthlySalesData}

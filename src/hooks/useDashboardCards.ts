@@ -42,9 +42,12 @@ export const useDashboardCards = (pageId: string = 'dashboard') => {
       { card_id: 'tabela-fluxo-mensal', name: 'Tabela do Fluxo Mensal', order_position: 11, is_visible: true },
     ],
     'painel-vendas': [
-      { card_id: 'cards-vendas', name: 'Cards de Vendas', order_position: 1, is_visible: true },
-      { card_id: 'desempenho-vendas', name: 'Desempenho de Vendas', order_position: 2, is_visible: true },
-      { card_id: 'comparacao-anual', name: 'Comparação Anual', order_position: 3, is_visible: true },
+      { card_id: 'vendas-mes-anual', name: 'Vendas do Mês Atual', order_position: 1, is_visible: true },
+      { card_id: 'total-vendas-ano', name: 'Total de Vendas no Ano', order_position: 2, is_visible: true },
+      { card_id: 'ticket-medio-projeto', name: 'Ticket Médio por Projeto', order_position: 3, is_visible: true },
+      { card_id: 'clientes-ativos', name: 'Clientes Ativos', order_position: 4, is_visible: true },
+      { card_id: 'tabs-performance', name: 'Abas de Performance', order_position: 5, is_visible: true },
+      { card_id: 'tabela-comparacao', name: 'Tabela de Comparação Anual', order_position: 6, is_visible: true },
     ]
   };
 
@@ -111,7 +114,7 @@ export const useDashboardCards = (pageId: string = 'dashboard') => {
   };
 
   const updateCardVisibility = async (cardId: string, isVisible: boolean) => {
-    if (!currentCompany?.id) return;
+    if (!currentCompany?.id) return false;
 
     try {
       const { error } = await supabase
