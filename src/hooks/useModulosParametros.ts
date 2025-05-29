@@ -45,15 +45,23 @@ export const useModulosParametros = () => {
     try {
       setIsLoading(true);
       
+      console.log('Buscando parâmetros para empresa:', currentCompany.id);
+      
       const { data, error } = await supabase
         .from('modulos_parametros')
         .select('*')
         .eq('empresa_id', currentCompany.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar parâmetros:', error);
+        throw error;
+      }
+
+      console.log('Parâmetros encontrados:', data);
 
       // Se não há parâmetros salvos, criar configurações padrão (tudo ativo)
       if (!data || data.length === 0) {
+        console.log('Nenhum parâmetro encontrado, criando padrões...');
         await criarParametrosPadrao();
         return;
       }
@@ -76,24 +84,42 @@ export const useModulosParametros = () => {
 
     try {
       const chaves = gerarChavesModulos();
+      console.log('Criando parâmetros padrão para chaves:', chaves);
+      
       const parametrosDefault = chaves.map(chave => ({
         empresa_id: currentCompany.id,
         modulo_key: chave,
         ativo: true
       }));
 
+      console.log('Inserindo parâmetros:', parametrosDefault);
+
       const { data, error } = await supabase
         .from('modulos_parametros')
         .insert(parametrosDefault)
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao inserir parâmetros:', error);
+        throw error;
+      }
+      
+      console.log('Parâmetros criados:', data);
       
       if (data) {
         setParametros(data);
+        toast({
+          title: "Sucesso",
+          description: "Parâmetros dos módulos criados com sucesso"
+        });
       }
     } catch (error: any) {
       console.error('Erro ao criar parâmetros padrão:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível criar os parâmetros padrão"
+      });
     }
   };
 
@@ -101,13 +127,18 @@ export const useModulosParametros = () => {
     if (!currentCompany?.id) return false;
 
     try {
+      console.log('Atualizando parâmetro:', moduloKey, 'para:', ativo);
+      
       const { error } = await supabase
         .from('modulos_parametros')
         .update({ ativo })
         .eq('empresa_id', currentCompany.id)
         .eq('modulo_key', moduloKey);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao atualizar:', error);
+        throw error;
+      }
 
       // Atualizar estado local
       setParametros(prev => 
@@ -166,7 +197,9 @@ export const useModulosParametros = () => {
   };
 
   useEffect(() => {
-    fetchParametros();
+    if (currentCompany?.id) {
+      fetchParametros();
+    }
   }, [currentCompany?.id]);
 
   return {

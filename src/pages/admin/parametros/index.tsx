@@ -8,6 +8,7 @@ import { Settings, Grid, List, DollarSign, Calculator, ShoppingBag, Users, BarCh
 import { useModulosParametros } from "@/hooks/useModulosParametros";
 import { navigationConfig } from "@/config/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 const getIconForModule = (title: string) => {
   switch (title) {
@@ -24,13 +25,15 @@ const getIconForModule = (title: string) => {
 };
 
 export default function Parametros() {
-  const { parametros, isLoading, updateParametro, isModuloAtivo } = useModulosParametros();
+  const { parametros, isLoading, updateParametro, isModuloAtivo, refetch } = useModulosParametros();
 
   const handleModuloChange = async (moduloKey: string, ativo: boolean) => {
+    console.log('Alterando módulo:', moduloKey, 'para:', ativo);
     await updateParametro(moduloKey, ativo);
   };
 
   const handleSubItemChange = async (subItemKey: string, ativo: boolean) => {
+    console.log('Alterando subitem:', subItemKey, 'para:', ativo);
     await updateParametro(subItemKey, ativo);
   };
 
@@ -55,11 +58,22 @@ export default function Parametros() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Parâmetros do Sistema</h1>
-        <p className="text-muted-foreground">
-          Configure quais módulos e rotinas devem aparecer no menu do sistema
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Parâmetros do Sistema</h1>
+          <p className="text-muted-foreground">
+            Configure quais módulos e rotinas devem aparecer no menu do sistema
+          </p>
+        </div>
+        <Button onClick={refetch} variant="outline">
+          Recarregar
+        </Button>
+      </div>
+      
+      <div className="space-y-4">
+        <div className="text-sm text-muted-foreground">
+          Total de parâmetros carregados: {parametros.length}
+        </div>
       </div>
       
       <div className="grid gap-6">
@@ -76,7 +90,7 @@ export default function Parametros() {
                     <div>
                       <CardTitle className="text-lg">{modulo.title}</CardTitle>
                       <CardDescription>
-                        {modulo.subItems ? `${modulo.subItems.length} rotinas disponíveis` : 'Módulo principal'}
+                        Chave: {moduloKey} | {modulo.subItems ? `${modulo.subItems.length} rotinas disponíveis` : 'Módulo principal'}
                       </CardDescription>
                     </div>
                   </div>
@@ -110,7 +124,7 @@ export default function Parametros() {
                                 {subItem.title}
                               </Label>
                               <p className="text-xs text-muted-foreground mt-1">
-                                Rota: {subItem.href}
+                                Chave: {subItemKey} | Rota: {subItem.href}
                               </p>
                             </div>
                             <div className="flex items-center space-x-2">
