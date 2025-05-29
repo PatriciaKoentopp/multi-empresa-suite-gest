@@ -30,6 +30,29 @@ export const useContratos = () => {
     enabled: !!currentCompany?.id,
   });
 
+  // Função para calcular meses de vigência corretamente
+  const calcularMesesVigencia = (dataInicio: Date, dataFim: Date): number => {
+    const anoInicio = dataInicio.getFullYear();
+    const mesInicio = dataInicio.getMonth();
+    const anoFim = dataFim.getFullYear();
+    const mesFim = dataFim.getMonth();
+    
+    // Calcular a diferença em meses
+    const mesesVigencia = (anoFim - anoInicio) * 12 + (mesFim - mesInicio) + 1;
+    
+    console.log("Cálculo meses vigência:", {
+      dataInicio: dataInicio.toISOString().split('T')[0],
+      dataFim: dataFim.toISOString().split('T')[0],
+      anoInicio,
+      mesInicio,
+      anoFim,
+      mesFim,
+      mesesVigencia
+    });
+    
+    return mesesVigencia;
+  };
+
   const createContrato = useMutation({
     mutationFn: async (formData: ContratoFormData) => {
       if (!currentCompany?.id) throw new Error("Empresa não selecionada");
@@ -38,15 +61,7 @@ export const useContratos = () => {
       const dataInicio = new Date(formData.data_inicio!);
       const dataFim = new Date(formData.data_fim!);
       
-      // Calcular diferença em meses de forma simples e direta
-      const mesesVigencia = (dataFim.getFullYear() - dataInicio.getFullYear()) * 12 + 
-                           (dataFim.getMonth() - dataInicio.getMonth()) + 1;
-
-      console.log("Vigência:", {
-        dataInicio: dataInicio.toISOString().split('T')[0],
-        dataFim: dataFim.toISOString().split('T')[0],
-        mesesVigencia
-      });
+      const mesesVigencia = calcularMesesVigencia(dataInicio, dataFim);
 
       // Número de parcelas = número de meses de vigência
       const numeroParcelas = mesesVigencia;
@@ -282,15 +297,7 @@ export const useContratos = () => {
       const dataFim = new Date(contrato.data_fim);
       const dataPrimeiroVencimento = new Date(contrato.data_primeiro_vencimento);
       
-      // Calcular diferença em meses de forma simples e direta
-      const mesesVigencia = (dataFim.getFullYear() - dataInicio.getFullYear()) * 12 + 
-                           (dataFim.getMonth() - dataInicio.getMonth()) + 1;
-
-      console.log("Gerando movimentações - Vigência:", {
-        dataInicio: contrato.data_inicio,
-        dataFim: contrato.data_fim,
-        mesesVigencia
-      });
+      const mesesVigencia = calcularMesesVigencia(dataInicio, dataFim);
 
       // Número de parcelas = número de meses de vigência
       const numeroParcelas = mesesVigencia;
