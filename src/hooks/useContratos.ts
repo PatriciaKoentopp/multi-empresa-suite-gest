@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +38,7 @@ export const useContratos = () => {
     const anoFim = dataFim.getFullYear();
     const mesFim = dataFim.getMonth();
     
-    // Calcular a diferença em meses
+    // Calcular a diferença em meses + 1 (para incluir o mês inicial)
     const mesesVigencia = (anoFim - anoInicio) * 12 + (mesFim - mesInicio) + 1;
     
     console.log("Cálculo meses vigência:", {
@@ -51,27 +52,6 @@ export const useContratos = () => {
     });
     
     return mesesVigencia;
-  };
-
-  // Função para gerar datas de vencimento dentro do período de vigência
-  const gerarDatasVencimento = (dataPrimeiroVencimento: Date, dataFimContrato: Date, numeroParcelas: number): Date[] => {
-    const datas: Date[] = [];
-    let dataAtual = new Date(dataPrimeiroVencimento);
-    
-    for (let i = 0; i < numeroParcelas; i++) {
-      // Verificar se a data está dentro do período de vigência
-      if (dataAtual <= dataFimContrato) {
-        datas.push(new Date(dataAtual));
-      }
-      
-      // Próxima parcela sempre no mês seguinte
-      if (i < numeroParcelas - 1) {
-        dataAtual.setMonth(dataAtual.getMonth() + 1);
-      }
-    }
-    
-    console.log("Datas de vencimento geradas:", datas.map(d => d.toISOString().split('T')[0]));
-    return datas;
   };
 
   const createContrato = useMutation({
@@ -313,7 +293,7 @@ export const useContratos = () => {
 
       if (contratoError) throw contratoError;
 
-      // Calcular meses de vigência corretamente
+      // Calcular meses de vigência
       const dataInicio = new Date(contrato.data_inicio);
       const dataFim = new Date(contrato.data_fim);
       const dataPrimeiroVencimento = new Date(contrato.data_primeiro_vencimento);
@@ -323,13 +303,7 @@ export const useContratos = () => {
       // Número de parcelas = número de meses de vigência
       const numeroParcelas = mesesVigencia;
 
-      // Gerar as datas de vencimento dentro do período de vigência
-      const datasVencimento = gerarDatasVencimento(dataPrimeiroVencimento, dataFim, numeroParcelas);
-
-      // Usar apenas as datas que estão dentro do período
-      const parcelasValidas = datasVencimento.length;
-
-      console.log("Parcelas válidas dentro do período:", parcelasValidas);
+      console.log("Número de parcelas a gerar:", numeroParcelas);
 
       // Calcular valor da parcela baseado na periodicidade
       let valorParcela = contrato.valor_mensal;
@@ -345,7 +319,7 @@ export const useContratos = () => {
           break;
       }
 
-      const valorTotal = valorParcela * parcelasValidas;
+      const valorTotal = valorParcela * numeroParcelas;
 
       // Criar a movimentação principal
       const { data: movimentacao, error: movError } = await supabase
@@ -358,7 +332,7 @@ export const useContratos = () => {
           favorecido_id: contrato.favorecido_id,
           descricao: `Contrato ${contrato.codigo} - ${contrato.favorecido?.nome || 'Cliente'}`,
           valor: valorTotal,
-          numero_parcelas: parcelasValidas,
+          numero_parcelas: numeroParcelas,
           primeiro_vencimento: contrato.data_primeiro_vencimento,
           forma_pagamento: contrato.forma_pagamento,
           considerar_dre: true
@@ -368,13 +342,23 @@ export const useContratos = () => {
 
       if (movError) throw movError;
 
-      // Criar as parcelas usando apenas as datas válidas
-      const parcelas = datasVencimento.map((dataVencimento, index) => ({
-        movimentacao_id: movimentacao.id,
-        numero: index + 1,
-        valor: valorParcela,
-        data_vencimento: dataVencimento.toISOString().split('T')[0]
-      }));
+      // Criar as parcelas - simplesmente o número de meses da vigência
+      const parcelas = [];
+      let dataVencimento = new Date(dataPrimeiroVencimento);
+      
+      for (let i = 1; i <= numeroParcelas; i++) {
+        parcelas.push({
+          movimentacao_id: movimentacao.id,
+          numero: i,
+          valor: valorParcela,
+          data_vencimento: dataVencimento.toISOString().split('T')[0]
+        });
+
+        // Próxima parcela sempre no mês seguinte
+        if (i < numeroParcelas) {
+          dataVencimento.setMonth(dataVencimento.getMonth() + 1);
+        }
+      }
 
       console.log("Parcelas a serem inseridas:", parcelas);
 
