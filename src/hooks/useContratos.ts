@@ -57,6 +57,7 @@ export const useContratos = () => {
   // Função para calcular o mês de referência baseado na data de início do contrato e número da parcela
   const calcularMesReferencia = (dataInicio: Date, numeroParcela: number): string => {
     const dataReferencia = new Date(dataInicio);
+    // Primeira parcela = mês de início, segunda = mês seguinte, etc.
     dataReferencia.setMonth(dataReferencia.getMonth() + (numeroParcela - 1));
     
     const mes = String(dataReferencia.getMonth() + 1).padStart(2, '0');
@@ -214,7 +215,7 @@ export const useContratos = () => {
 
       console.log("Código do contrato:", contrato.codigo);
 
-      // Buscar movimentações relacionadas ao contrato usando o código
+      // Buscar movimentações relacionadas ao contrato usando LIKE para pegar todas as parcelas
       const { data: movimentacoes, error: movError } = await supabase
         .from("movimentacoes")
         .select(`
@@ -225,7 +226,7 @@ export const useContratos = () => {
             data_pagamento
           )
         `)
-        .eq("numero_documento", contrato.codigo)
+        .like("numero_documento", `${contrato.codigo}%`)
         .eq("tipo_operacao", "receber");
 
       if (movError) {
