@@ -67,8 +67,8 @@ export const useContratos = () => {
     // Criar data para o mês de vigência correto
     const dataVigencia = new Date(anoInicioVigencia, mesVigenciaAtual, 1);
     
-    // Formatar como MM/YYYY
-    const mes = String(dataVigencia.getMonth() + 1).padStart(2, '0');
+    // Formatar como MM/YYYY - SOMANDO 1 para corrigir o problema
+    const mes = String(dataVigencia.getMonth() + 1 + 1).padStart(2, '0');
     const ano = dataVigencia.getFullYear();
     
     console.log("Cálculo mês referência baseado na vigência:", {
