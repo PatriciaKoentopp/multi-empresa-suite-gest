@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,8 +37,8 @@ export const useContratos = () => {
     const anoFim = dataFim.getFullYear();
     const mesFim = dataFim.getMonth();
     
-    // Calcular a diferença em meses + 1 (para incluir o mês inicial)
-    const mesesVigencia = (anoFim - anoInicio) * 12 + (mesFim - mesInicio) + 1;
+    // Calcular a diferença em meses (SEM adicionar 1)
+    const mesesVigencia = (anoFim - anoInicio) * 12 + (mesFim - mesInicio);
     
     console.log("Cálculo meses vigência:", {
       dataInicio: dataInicio.toISOString().split('T')[0],
