@@ -59,8 +59,11 @@ export function SidebarNav({ items, className, isCollapsed, closeSidebar, ...pro
   const location = useLocation();
   const { getNavegacaoFiltrada, isLoading } = useModulosParametros();
 
-  // Usar navegação filtrada se disponível, senão usar items originais
-  const navigationItems = !isLoading ? getNavegacaoFiltrada() : items;
+  // Se ainda está carregando, usar items originais para evitar menu vazio
+  const navigationItems = isLoading ? items : getNavegacaoFiltrada();
+
+  console.log('SidebarNav - isLoading:', isLoading);
+  console.log('SidebarNav - navigationItems:', navigationItems);
 
   return (
     <nav className={cn("grid gap-1", className)} {...props}>

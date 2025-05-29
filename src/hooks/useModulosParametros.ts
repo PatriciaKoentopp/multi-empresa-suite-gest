@@ -147,6 +147,8 @@ export const useModulosParametros = () => {
         )
       );
 
+      console.log('Parâmetro atualizado com sucesso no estado local');
+
       toast({
         title: "Sucesso",
         description: `Módulo ${ativo ? 'habilitado' : 'desabilitado'} com sucesso`
@@ -165,26 +167,43 @@ export const useModulosParametros = () => {
   };
 
   const isModuloAtivo = (moduloKey: string): boolean => {
+    console.log(`Verificando se módulo ${moduloKey} está ativo...`);
     const parametro = parametros.find(p => p.modulo_key === moduloKey);
-    return parametro ? parametro.ativo : true;
+    const ativo = parametro ? parametro.ativo : true;
+    console.log(`Módulo ${moduloKey}: ${ativo ? 'ATIVO' : 'INATIVO'}`);
+    return ativo;
   };
 
   const getNavegacaoFiltrada = () => {
-    return navigationConfig.filter(item => {
+    console.log('Filtrando navegação com parâmetros:', parametros);
+    
+    const navegacaoFiltrada = navigationConfig.filter(item => {
       const moduloKey = item.href ? item.href.replace('/', '') : item.title.toLowerCase().replace(/\s+/g, '-');
       const moduloAtivo = isModuloAtivo(moduloKey);
       
-      if (!moduloAtivo) return false;
+      console.log(`Verificando módulo principal: ${moduloKey} - Ativo: ${moduloAtivo}`);
+      
+      if (!moduloAtivo) {
+        console.log(`Módulo ${moduloKey} está INATIVO, removendo do menu`);
+        return false;
+      }
       
       // Se tem subitens, filtrar os subitens ativos
       if (item.subItems) {
         const subItensAtivos = item.subItems.filter(subItem => {
           const rotinaKey = subItem.href.replace('/', '');
-          return isModuloAtivo(rotinaKey);
+          const rotinaAtiva = isModuloAtivo(rotinaKey);
+          console.log(`Verificando subitem: ${rotinaKey} - Ativo: ${rotinaAtiva}`);
+          return rotinaAtiva;
         });
         
+        console.log(`Subitens ativos para ${moduloKey}:`, subItensAtivos.length);
+        
         // Se não há subitens ativos, não mostrar o módulo principal
-        if (subItensAtivos.length === 0) return false;
+        if (subItensAtivos.length === 0) {
+          console.log(`Nenhum subitem ativo para ${moduloKey}, removendo módulo`);
+          return false;
+        }
         
         return {
           ...item,
@@ -192,8 +211,12 @@ export const useModulosParametros = () => {
         };
       }
       
+      console.log(`Módulo ${moduloKey} incluído no menu`);
       return true;
     });
+
+    console.log('Navegação filtrada final:', navegacaoFiltrada);
+    return navegacaoFiltrada;
   };
 
   useEffect(() => {
