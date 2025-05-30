@@ -11,6 +11,7 @@ interface SalesComparisonTableProps {
   getMonthlySalesData?: (year: number) => Promise<{
     name: string;
     faturado: number;
+    qtde_vendas: number;
     variacao_percentual: number | null;
     variacao_ano_anterior: number | null;
   }[]>;
@@ -26,6 +27,7 @@ export const SalesComparisonTable = ({
     [key: number]: {
       name: string;
       faturado: number;
+      qtde_vendas: number;
       variacao_percentual: number | null;
       variacao_ano_anterior: number | null;
     }[];
@@ -131,6 +133,9 @@ export const SalesComparisonTable = ({
     return data.map((month, idx) => <TableRow key={`month-${year}-${idx}`} className="bg-muted/5 hover:bg-muted/20">
         <TableCell className="pl-8 font-normal text-sm">{month.name}</TableCell>
         <TableCell className="text-right font-normal text-sm">
+          {month.qtde_vendas || 0}
+        </TableCell>
+        <TableCell className="text-right font-normal text-sm">
           {formatCurrency(month.faturado || 0)}
         </TableCell>
         <TableCell className="text-right text-sm">
@@ -145,6 +150,7 @@ export const SalesComparisonTable = ({
         </TableCell>
       </TableRow>);
   };
+
   return <Card className="overflow-hidden">
       <CardHeader className="bg-muted/30">
         <CardTitle className="text-lg">Comparativo de Vendas Anual</CardTitle>
@@ -155,6 +161,7 @@ export const SalesComparisonTable = ({
             <TableHeader className="bg-muted/40">
               <TableRow>
                 <TableHead className="w-[130px] text-left">Período</TableHead>
+                <TableHead className="text-right w-[80px]">Qtde</TableHead>
                 <TableHead className="text-right w-[170px]">Total de Vendas</TableHead>
                 <TableHead className="text-right w-[100px]">Variação</TableHead>
                 <TableHead className="text-right w-[170px]">Média Mensal</TableHead>
@@ -175,6 +182,9 @@ export const SalesComparisonTable = ({
                           </>}
                         {yearData.year || "N/A"}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {yearData.qtde_vendas || 0}
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrency(yearData.total || 0)}

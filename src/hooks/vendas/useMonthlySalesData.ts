@@ -30,8 +30,33 @@ export const useMonthlySalesData = () => {
         // Se não há dados do ano anterior, continuar sem comparação
       }
 
+      // Buscar quantidade de vendas por mês do ano atual
+      const { data: salesCountData, error: salesCountError } = await supabase
+        .from('orcamentos')
+        .select('id, data_venda')
+        .eq('tipo', 'venda')
+        .eq('status', 'ativo')
+        .gte('data_venda', `${year}-01-01`)
+        .lte('data_venda', `${year}-12-31`)
+        .not('data_venda', 'is', null);
+
+      if (salesCountError) {
+        console.error(`Erro ao buscar contagem de vendas de ${year}:`, salesCountError);
+      }
+
+      // Criar mapa de quantidade de vendas por mês
+      const salesCountByMonth = new Map();
+      if (salesCountData) {
+        salesCountData.forEach((sale: any) => {
+          const monthName = new Date(sale.data_venda).toLocaleDateString('pt-BR', { month: 'long' });
+          const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+          salesCountByMonth.set(capitalizedMonth, (salesCountByMonth.get(capitalizedMonth) || 0) + 1);
+        });
+      }
+
       console.log(`Dados mensais ${year}:`, currentYearData);
       console.log(`Dados mensais ${year - 1}:`, previousYearData);
+      console.log(`Contagem de vendas por mês ${year}:`, salesCountByMonth);
 
       // Criar mapa dos dados do ano anterior para facilitar comparação
       const previousYearMap = new Map();
@@ -45,6 +70,7 @@ export const useMonthlySalesData = () => {
       const processedData = currentYearData?.map((currentMonth: any, index: number) => {
         const previousMonthValue = previousYearMap.get(currentMonth.name) || 0;
         const currentValue = currentMonth.faturado || 0;
+        const qtdeVendas = salesCountByMonth.get(currentMonth.name) || 0;
         
         // Calcular variação percentual em relação ao ano anterior
         let variacao_ano_anterior = null;
@@ -68,6 +94,7 @@ export const useMonthlySalesData = () => {
         return {
           name: currentMonth.name,
           faturado: currentValue,
+          qtde_vendas: qtdeVendas,
           variacao_percentual,
           variacao_ano_anterior
         };
