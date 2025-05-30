@@ -49,7 +49,10 @@ export function FavorecidosForm({
       cidade: favorecido.cidade || "",
       estado: favorecido.estado || "",
       pais: favorecido.pais || "",
-      data_aniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
+      data_aniversario: favorecido.data_aniversario ? 
+        (favorecido.data_aniversario instanceof Date ? 
+          favorecido.data_aniversario : 
+          new Date(favorecido.data_aniversario)) : undefined,
       status: favorecido.status as "ativo" | "inativo",
     } : {
       tipo: "fisica",
@@ -92,7 +95,7 @@ export function FavorecidosForm({
       cidade: data.cidade,
       estado: data.estado,
       pais: data.pais,
-      data_aniversario: data.data_aniversario,
+      data_aniversario: data.data_aniversario?.toISOString().split('T')[0],
       status: data.status,
     };
     
