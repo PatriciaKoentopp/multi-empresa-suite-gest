@@ -43,7 +43,7 @@ export const SalesDashboardCards = ({ salesData }: SalesDashboardCardsProps) => 
       )}
       {isCardVisible('ticket-medio-projeto') && (
         <SalesDashboardCard
-          title="Ticket Médio"
+          title="Ticket Médio por Projeto"
           value={formatCurrency(salesData?.media_ticket_projeto || 0)}
           description={`Por projeto em ${currentYear}`}
           icon="sales"

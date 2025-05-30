@@ -1,168 +1,618 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Calendar, Clock, DollarSign } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useCompany } from "@/contexts/company-context";
-import { format, addDays, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
-interface Alert {
-  id: string;
-  tipo: string;
-  mensagem: string;
-  data_criacao: string;
-  data_vencimento?: string;
-  valor?: number;
+import React, { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Bell, CalendarClock, CreditCard, Clock, Calendar, AlertCircle, CheckCircle2 } from "lucide-react";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
+import { LeadInteracao } from "@/pages/crm/leads/types";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+interface AlertsSectionProps {
+  parcelasVencidas: ContaReceber[];
+  parcelasHoje: ContaReceber[];
+  interacoesPendentes: LeadInteracao[];
+  isLoading: boolean;
 }
 
-const AlertsSection = () => {
-  const { currentCompany } = useCompany();
-  const [alertas, setAlertas] = useState<Alert[]>([]);
-  const [filtroSelecionado, setFiltroSelecionado] = useState<string>("todos");
-
-  useEffect(() => {
-    fetchAlertas();
-  }, [currentCompany?.id]);
-
-  const fetchAlertas = async () => {
-    if (!currentCompany?.id) return;
-
+export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPendentes, isLoading }: AlertsSectionProps) {
+  const navigate = useNavigate();
+  const [selectedTab, setSelectedTab] = useState<string>("tudo");
+  const [atualizandoStatus, setAtualizandoStatus] = useState<string | null>(null);
+  
+  // Filtrando apenas interações com status "Aberto"
+  const interacoesAbertas = interacoesPendentes.filter(interacao => interacao.status === "Aberto");
+  
+  // Contar totais para cada categoria
+  const totalInteracoes = interacoesAbertas.length;
+  const totalParcelas = parcelasVencidas.length + parcelasHoje.length;
+  const total = totalInteracoes + totalParcelas;
+  
+  // Função para navegar para a página de contas a receber
+  const navegarParaContasReceber = () => {
+    navigate("/financeiro/contas-receber");
+  };
+  
+  // Função para navegar para a página de contas a pagar
+  const navegarParaContasPagar = () => {
+    navigate("/financeiro/contas-a-pagar");
+  };
+  
+  // Função para navegar para a página de leads
+  const navegarParaLead = (leadId: string) => {
+    navigate(`/crm/leads?leadId=${leadId}`);
+  };
+  
+  // Função para marcar interação como concluída
+  const marcarInteracaoConcluida = async (interacao: LeadInteracao) => {
     try {
-      const { data, error } = await supabase
-        .from('alertas')
-        .select('*')
-        .eq('empresa_id', currentCompany.id)
-        .order('data_criacao', { ascending: false });
-
+      setAtualizandoStatus(interacao.id);
+      
+      // Atualizar no banco de dados
+      const { error } = await supabase
+        .from('leads_interacoes')
+        .update({ status: "Realizado" })
+        .eq('id', interacao.id);
+      
       if (error) {
-        console.error("Erro ao buscar alertas:", error);
-        return;
+        throw error;
       }
-
-      setAlertas(data || []);
+      
+      toast.success("Interação marcada como concluída");
+      
+      // Remover da lista localmente - não podemos modificar o array original
+      const novasInteracoes = interacoesAbertas.filter(i => i.id !== interacao.id);
+      // Note que isso não atualiza o estado real, apenas remove da visualização local
+      // No próximo carregamento do dashboard os dados serão atualizados
+      
     } catch (error) {
-      console.error("Erro ao buscar alertas:", error);
+      console.error('Erro ao atualizar status da interação:', error);
+      toast.error('Erro ao atualizar status', {
+        description: 'Não foi possível atualizar o status da interação.'
+      });
+    } finally {
+      setAtualizandoStatus(null);
     }
   };
 
-  const formatarData = (data: string) => {
-    return format(parseISO(data), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR });
-  };
-
-  const formatarDataVencimento = (data: string) => {
-    return format(parseISO(data), "dd 'de' MMMM", { locale: ptBR });
-  };
-
-  const renderAlert = (alerta: Alert) => {
-    switch (alerta.tipo) {
-      case "financeiro":
-        return (
-          <div key={alerta.id} className="mb-4 p-4 border rounded-md shadow-sm">
-            <div className="flex items-center space-x-2 mb-2">
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-semibold">Alerta Financeiro</span>
-            </div>
-            <p className="text-sm">{alerta.mensagem}</p>
-            <div className="mt-2 text-xs text-gray-500">
-              Criado em: {formatarData(alerta.data_criacao)}
-            </div>
+  if (isLoading) {
+    return (
+      <Card className="shadow-md">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <Bell className="h-5 w-5 text-orange-500" />
+            Alertas e Pendências
+          </CardTitle>
+          <CardDescription>Carregando alertas...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-40">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent" />
           </div>
-        );
-      case "vencimento_conta":
-        return (
-          <div key={alerta.id} className="mb-4 p-4 border rounded-md shadow-sm">
-            <div className="flex items-center space-x-2 mb-2">
-              <Clock className="h-4 w-4 text-red-500" />
-              <span className="text-sm font-semibold">Vencimento de Conta</span>
-            </div>
-            <p className="text-sm">{alerta.mensagem}</p>
-            {alerta.data_vencimento && (
-              <div className="text-xs text-gray-500">
-                Vencimento: {formatarDataVencimento(alerta.data_vencimento)}
-              </div>
-            )}
-            {alerta.valor !== undefined && (
-              <div className="text-xs text-gray-500">
-                Valor: R$ {alerta.valor.toFixed(2)}
-              </div>
-            )}
-            <div className="mt-2 text-xs text-gray-500">
-              Criado em: {formatarData(alerta.data_criacao)}
-            </div>
-          </div>
-        );
-      case "meta_vendas":
-        return (
-          <div key={alerta.id} className="mb-4 p-4 border rounded-md shadow-sm">
-            <div className="flex items-center space-x-2 mb-2">
-              <DollarSign className="h-4 w-4 text-green-500" />
-              <span className="text-sm font-semibold">Meta de Vendas</span>
-            </div>
-            <p className="text-sm">{alerta.mensagem}</p>
-            <div className="mt-2 text-xs text-gray-500">
-              Criado em: {formatarData(alerta.data_criacao)}
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const aplicarFiltro = (filtro: string) => {
-    setFiltroSelecionado(filtro);
-  };
-
-  const alertasFiltrados = alertas.filter(alerta => {
-    if (filtroSelecionado === "todos") return true;
-    return alerta.tipo === filtroSelecionado;
-  });
+  if (total === 0) {
+    return (
+      <Card className="shadow-md">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <Bell className="h-5 w-5 text-green-500" />
+            Alertas e Pendências
+          </CardTitle>
+          <CardDescription>Visão geral de pendências e alertas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <CheckCircle2 className="h-12 w-12 text-green-500 mb-2" />
+            <h3 className="text-lg font-medium">Nenhuma pendência</h3>
+            <p className="text-muted-foreground mt-1">
+              Você não possui tarefas pendentes ou alertas ativos.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Alertas e Notificações</CardTitle>
+    <Card className="shadow-md">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Bell className="h-5 w-5 text-orange-500" />
+              Alertas e Pendências
+              {total > 0 && (
+                <Badge variant="destructive" className="ml-2 rounded-full">
+                  {total}
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>Visão geral de pendências e alertas</CardDescription>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-4">
-          <Badge
-            variant={filtroSelecionado === "todos" ? "secondary" : "outline"}
-            onClick={() => aplicarFiltro("todos")}
-            className="mr-2 cursor-pointer"
-          >
-            Todos
-          </Badge>
-          <Badge
-            variant={filtroSelecionado === "financeiro" ? "secondary" : "outline"}
-            onClick={() => aplicarFiltro("financeiro")}
-            className="mr-2 cursor-pointer"
-          >
-            Financeiro
-          </Badge>
-          <Badge
-            variant={filtroSelecionado === "vencimento_conta" ? "secondary" : "outline"}
-            onClick={() => aplicarFiltro("vencimento_conta")}
-            className="mr-2 cursor-pointer"
-          >
-            Vencimento de Contas
-          </Badge>
-           <Badge
-            variant={filtroSelecionado === "meta_vendas" ? "secondary" : "outline"}
-            onClick={() => aplicarFiltro("meta_vendas")}
-            className="mr-2 cursor-pointer"
-          >
-            Meta de Vendas
-          </Badge>
-        </div>
-        {alertasFiltrados.length > 0 ? (
-          alertasFiltrados.map(alerta => renderAlert(alerta))
-        ) : (
-          <div className="text-center text-gray-500">Nenhum alerta encontrado.</div>
-        )}
+        <Tabs defaultValue="tudo" value={selectedTab} onValueChange={setSelectedTab}>
+          <TabsList className="mb-4 grid grid-cols-3">
+            <TabsTrigger value="tudo">
+              Tudo
+              {total > 0 && <Badge variant="destructive" className="ml-1.5">{total}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="financeiro">
+              Financeiro
+              {totalParcelas > 0 && <Badge variant="destructive" className="ml-1.5">{totalParcelas}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="crm">
+              CRM
+              {totalInteracoes > 0 && <Badge variant="destructive" className="ml-1.5">{totalInteracoes}</Badge>}
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="tudo" className="space-y-4">
+            {/* Contas a receber em atraso */}
+            {parcelasVencidas.filter(p => p.tipo === 'receber').length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-4 w-4" /> Contas a Receber em atraso
+                </h3>
+                <div className="divide-y">
+                  {parcelasVencidas.filter(p => p.tipo === 'receber').slice(0, 3).map(parcela => (
+                    <div key={parcela.id} className="py-2">
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
+                        </div>
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <CalendarClock className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                          <span className="text-xs text-red-600 truncate">
+                            {formatDate(parcela.dataVencimento)}
+                          </span>
+                        </div>
+                        <div className="col-span-2 text-right">
+                          <p className="font-medium text-destructive">{formatCurrency(parcela.valor)}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {parcelasVencidas.filter(p => p.tipo === 'receber').length > 3 && (
+                  <div className="text-center pt-2">
+                    <Button variant="outline" size="sm" onClick={navegarParaContasReceber}>
+                      Ver mais {parcelasVencidas.filter(p => p.tipo === 'receber').length - 3} contas a receber em atraso
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Contas a pagar em atraso */}
+            {parcelasVencidas.filter(p => p.tipo === 'pagar').length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-4 w-4" /> Contas a Pagar em atraso
+                </h3>
+                <div className="divide-y">
+                  {parcelasVencidas.filter(p => p.tipo === 'pagar').slice(0, 3).map(parcela => (
+                    <div key={parcela.id} className="py-2">
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
+                        </div>
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <CalendarClock className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                          <span className="text-xs text-red-600 truncate">
+                            {formatDate(parcela.dataVencimento)}
+                          </span>
+                        </div>
+                        <div className="col-span-2 text-right">
+                          <p className="font-medium text-destructive">{formatCurrency(parcela.valor)}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {parcelasVencidas.filter(p => p.tipo === 'pagar').length > 3 && (
+                  <div className="text-center pt-2">
+                    <Button variant="outline" size="sm" onClick={navegarParaContasPagar}>
+                      Ver mais {parcelasVencidas.filter(p => p.tipo === 'pagar').length - 3} contas a pagar em atraso
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Parcelas a receber que vencem hoje */}
+            {parcelasHoje.filter(p => p.tipo === 'receber').length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium text-amber-600 flex items-center gap-1">
+                  <Calendar className="h-4 w-4" /> Contas a Receber vencem hoje
+                </h3>
+                <div className="divide-y">
+                  {parcelasHoje.filter(p => p.tipo === 'receber').slice(0, 3).map(parcela => (
+                    <div key={parcela.id} className="py-2">
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
+                        </div>
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5 text-amber-600 flex-shrink-0" />
+                          <span className="text-xs text-amber-600 truncate">Vence hoje</span>
+                        </div>
+                        <div className="col-span-2 text-right">
+                          <p className="font-medium text-amber-600">{formatCurrency(parcela.valor)}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {parcelasHoje.filter(p => p.tipo === 'receber').length > 3 && (
+                  <div className="text-center pt-2">
+                    <Button variant="outline" size="sm" onClick={navegarParaContasReceber}>
+                      Ver mais {parcelasHoje.filter(p => p.tipo === 'receber').length - 3} contas a receber para hoje
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Parcelas a pagar que vencem hoje */}
+            {parcelasHoje.filter(p => p.tipo === 'pagar').length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium text-amber-600 flex items-center gap-1">
+                  <Calendar className="h-4 w-4" /> Contas a Pagar vencem hoje
+                </h3>
+                <div className="divide-y">
+                  {parcelasHoje.filter(p => p.tipo === 'pagar').slice(0, 3).map(parcela => (
+                    <div key={parcela.id} className="py-2">
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
+                        </div>
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5 text-amber-600 flex-shrink-0" />
+                          <span className="text-xs text-amber-600 truncate">Vence hoje</span>
+                        </div>
+                        <div className="col-span-2 text-right">
+                          <p className="font-medium text-amber-600">{formatCurrency(parcela.valor)}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {parcelasHoje.filter(p => p.tipo === 'pagar').length > 3 && (
+                  <div className="text-center pt-2">
+                    <Button variant="outline" size="sm" onClick={navegarParaContasPagar}>
+                      Ver mais {parcelasHoje.filter(p => p.tipo === 'pagar').length - 3} contas a pagar para hoje
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Interações pendentes - agora exibindo apenas com status "Aberto" */}
+            {interacoesAbertas.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium text-blue-600 flex items-center gap-1">
+                  <Clock className="h-4 w-4" /> Interações pendentes
+                </h3>
+                <div className="divide-y">
+                  {interacoesAbertas.slice(0, 3).map(interacao => (
+                    <div key={interacao.id} className="py-2">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="capitalize">
+                              {interacao.tipo}
+                            </Badge>
+                            <p className="font-medium truncate max-w-[180px]">{interacao.descricao}</p>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {interacao.responsavelNome || "Responsável não atribuído"}
+                          </p>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                            <span className={interacao.data < hojeFormatado ? "text-red-600" : "text-blue-600"}>
+                              {interacao.data < hojeFormatado 
+                                ? `Atrasado desde ${formatDate(interacao.data)}` 
+                                : formatDate(interacao.data)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col space-y-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="px-2 h-8"
+                            onClick={() => navegarParaLead(interacao.leadId)}
+                          >
+                            Ver lead
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="secondary" 
+                            className="px-2 h-8"
+                            onClick={() => marcarInteracaoConcluida(interacao)}
+                            disabled={atualizandoStatus === interacao.id}
+                          >
+                            {atualizandoStatus === interacao.id ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-r-transparent" />
+                            ) : (
+                              "Concluir"
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {interacoesAbertas.length > 3 && (
+                  <div className="text-center pt-2">
+                    <Button variant="outline" size="sm" onClick={() => navigate("/crm/leads")}>
+                      Ver mais {interacoesAbertas.length - 3} interações pendentes
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="financeiro" className="space-y-4">
+            {/* Contas a Receber em atraso */}
+            {parcelasVencidas.filter(p => p.tipo === 'receber').length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-4 w-4" /> Contas a Receber em atraso
+                </h3>
+                <div className="divide-y">
+                  {parcelasVencidas.filter(p => p.tipo === 'receber').map(parcela => (
+                    <div key={parcela.id} className="py-2">
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
+                        </div>
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <CalendarClock className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                          <span className="text-xs text-red-600 truncate">
+                            {formatDate(parcela.dataVencimento)}
+                          </span>
+                        </div>
+                        <div className="col-span-2 text-right">
+                          <p className="font-medium text-destructive">{formatCurrency(parcela.valor)}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Contas a Pagar em atraso */}
+            {parcelasVencidas.filter(p => p.tipo === 'pagar').length > 0 && (
+              <div className="space-y-2 mt-4">
+                <h3 className="font-medium text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-4 w-4" /> Contas a Pagar em atraso
+                </h3>
+                <div className="divide-y">
+                  {parcelasVencidas.filter(p => p.tipo === 'pagar').map(parcela => (
+                    <div key={parcela.id} className="py-2">
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
+                        </div>
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <CalendarClock className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                          <span className="text-xs text-red-600 truncate">
+                            {formatDate(parcela.dataVencimento)}
+                          </span>
+                        </div>
+                        <div className="col-span-2 text-right">
+                          <p className="font-medium text-destructive">{formatCurrency(parcela.valor)}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Contas a receber para hoje */}
+            {parcelasHoje.filter(p => p.tipo === 'receber').length > 0 && (
+              <div className="space-y-2 mt-4">
+                <h3 className="font-medium text-amber-600 flex items-center gap-1">
+                  <Calendar className="h-4 w-4" /> Contas a Receber vencem hoje
+                </h3>
+                <div className="divide-y">
+                  {parcelasHoje.filter(p => p.tipo === 'receber').map(parcela => (
+                    <div key={parcela.id} className="py-2">
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
+                        </div>
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5 text-amber-600 flex-shrink-0" />
+                          <span className="text-xs text-amber-600 truncate">Vence hoje</span>
+                        </div>
+                        <div className="col-span-2 text-right">
+                          <p className="font-medium text-amber-600">{formatCurrency(parcela.valor)}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Contas a pagar para hoje */}
+            {parcelasHoje.filter(p => p.tipo === 'pagar').length > 0 && (
+              <div className="space-y-2 mt-4">
+                <h3 className="font-medium text-amber-600 flex items-center gap-1">
+                  <Calendar className="h-4 w-4" /> Contas a Pagar vencem hoje
+                </h3>
+                <div className="divide-y">
+                  {parcelasHoje.filter(p => p.tipo === 'pagar').map(parcela => (
+                    <div key={parcela.id} className="py-2">
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 truncate">
+                          <p className="font-medium truncate">{parcela.cliente}</p>
+                        </div>
+                        <div className="col-span-3 truncate">
+                          <p className="text-sm text-muted-foreground truncate">{parcela.descricao || "Sem descrição"}</p>
+                        </div>
+                        <div className="col-span-3 flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5 text-amber-600 flex-shrink-0" />
+                          <span className="text-xs text-amber-600 truncate">Vence hoje</span>
+                        </div>
+                        <div className="col-span-2 text-right">
+                          <p className="font-medium text-amber-600">{formatCurrency(parcela.valor)}</p>
+                          <p className="text-xs text-muted-foreground">{parcela.numeroParcela}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {parcelasVencidas.filter(p => p.tipo === 'receber').length === 0 && parcelasVencidas.filter(p => p.tipo === 'pagar').length === 0 && 
+             parcelasHoje.filter(p => p.tipo === 'receber').length === 0 && parcelasHoje.filter(p => p.tipo === 'pagar').length === 0 && (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <CheckCircle2 className="h-12 w-12 text-green-500 mb-2" />
+                <h3 className="text-lg font-medium">Sem pendências financeiras</h3>
+                <p className="text-muted-foreground mt-1">
+                  Não há contas vencidas ou a vencer hoje.
+                </p>
+              </div>
+            )}
+            
+            {/* Botões de ação - removidos os botões duplicados, mantido apenas um conjunto */}
+            {(parcelasVencidas.filter(p => p.tipo === 'receber').length > 0 || parcelasVencidas.filter(p => p.tipo === 'pagar').length > 0 || 
+              parcelasHoje.filter(p => p.tipo === 'receber').length > 0 || parcelasHoje.filter(p => p.tipo === 'pagar').length > 0) && (
+              <div className="grid gap-4 grid-cols-2 pt-4">
+                <Button onClick={navegarParaContasReceber}>
+                  Gerenciar contas a receber
+                </Button>
+                <Button onClick={navegarParaContasPagar}>
+                  Gerenciar contas a pagar
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="crm" className="space-y-4">
+            {/* Interações pendentes - agora exibindo apenas com status "Aberto" */}
+            {interacoesAbertas.length > 0 ? (
+              <div className="space-y-2">
+                <h3 className="font-medium text-blue-600 flex items-center gap-1">
+                  <Clock className="h-4 w-4" /> Interações pendentes
+                </h3>
+                <div className="divide-y">
+                  {interacoesAbertas.map(interacao => (
+                    <div key={interacao.id} className="py-2">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="capitalize">
+                              {interacao.tipo}
+                            </Badge>
+                            <p className="font-medium truncate max-w-[180px]">{interacao.descricao}</p>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {interacao.responsavelNome || "Responsável não atribuído"}
+                          </p>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                            <span className={interacao.data < hojeFormatado ? "text-red-600" : "text-blue-600"}>
+                              {interacao.data < hojeFormatado 
+                                ? `Atrasado desde ${formatDate(interacao.data)}` 
+                                : formatDate(interacao.data)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col space-y-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="px-2 h-8"
+                            onClick={() => navegarParaLead(interacao.leadId)}
+                          >
+                            Ver lead
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="secondary" 
+                            className="px-2 h-8"
+                            onClick={() => marcarInteracaoConcluida(interacao)}
+                            disabled={atualizandoStatus === interacao.id}
+                          >
+                            {atualizandoStatus === interacao.id ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-r-transparent" />
+                            ) : (
+                              "Concluir"
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-center pt-4">
+                  <Button onClick={() => navigate("/crm/leads")}>
+                    Gerenciar leads
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <CheckCircle2 className="h-12 w-12 text-green-500 mb-2" />
+                <h3 className="text-lg font-medium">Sem interações pendentes</h3>
+                <p className="text-muted-foreground mt-1">
+                  Não há interações pendentes ou atrasadas.
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
-};
+}
 
-export default AlertsSection;
+// Definir a data de hoje para comparações (formato YYYY-MM-DD)
+const hoje = new Date();
+const hojeFormatado = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;

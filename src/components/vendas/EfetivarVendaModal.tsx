@@ -1,193 +1,219 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+import React, { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Orcamento } from "@/types";
+import { useCompany } from "@/contexts/company-context";
+import { Label } from "@/components/ui/label";
 
-interface Orcamento {
+interface TipoTitulo {
   id: string;
-  codigo: string;
-  favorecido_id: string;
-  cliente_id: string;
-  data_criacao: string;
-  data_validade: string;
-  total: number;
-  desconto: number;
+  nome: string;
   tipo: string;
   status: string;
-  observacoes: string | null;
-  empresa_id: string;
-  data_venda: string | null;
-  numero_nota_fiscal: string | null;
-  data_nota_fiscal: string | null;
 }
 
 interface EfetivarVendaModalProps {
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
-  orcamento: Orcamento | null;
+  orcamento?: Orcamento | null;
   onSuccess: () => void;
 }
 
-export const EfetivarVendaModal = ({ isOpen, onClose, orcamento, onSuccess }: EfetivarVendaModalProps) => {
-  const [dataVenda, setDataVenda] = useState<Date | undefined>(new Date());
-  const [dataNotaFiscal, setDataNotaFiscal] = useState<Date | undefined>();
-  const [numeroNotaFiscal, setNumeroNotaFiscal] = useState("");
-  const [observacoes, setObservacoes] = useState("");
+export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: EfetivarVendaModalProps) {
+  const { currentCompany } = useCompany();
+  const [dataVenda, setDataVenda] = useState(format(new Date(), "yyyy-MM-dd"));
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const [tipoTitulos, setTipoTitulos] = useState<TipoTitulo[]>([]);
+  const [tipoTituloId, setTipoTituloId] = useState<string>("");
 
-  const resetForm = () => {
-    setDataVenda(new Date());
-    setDataNotaFiscal(undefined);
-    setNumeroNotaFiscal("");
-    setObservacoes("");
-  };
+  useEffect(() => {
+    if (open && currentCompany?.id) {
+      carregarTiposTitulos();
+    }
+  }, [open, currentCompany?.id]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!orcamento || !dataVenda || !numeroNotaFiscal.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Preencha todos os campos obrigatórios"
-      });
+  async function carregarTiposTitulos() {
+    try {
+      const { data, error } = await supabase
+        .from('tipos_titulos')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .eq('tipo', 'receber')
+        .eq('status', 'ativo');
+
+      if (error) throw error;
+      setTipoTitulos(data || []);
+      if (data && data.length > 0) {
+        setTipoTituloId(data[0].id); // Seleciona o primeiro tipo por padrão
+      }
+    } catch (error) {
+      console.error('Erro ao carregar tipos de títulos:', error);
+      toast.error("Erro ao carregar tipos de títulos");
+    }
+  }
+
+  async function handleConfirmar() {
+    if (!orcamento || !currentCompany?.id || !tipoTituloId) {
+      toast.error("Selecione um tipo de título");
       return;
     }
 
+    setIsLoading(true);
     try {
-      setIsLoading(true);
+      // 1. Buscar todos os itens e parcelas do orçamento
+      const { data: itens, error: itensError } = await supabase
+        .from('orcamentos_itens')
+        .select('*')
+        .eq('orcamento_id', orcamento.id);
 
-      // Atualizar o orçamento para venda
-      const { error: updateError } = await supabase
-        .from('orcamentos')
-        .update({
-          tipo: 'venda',
-          data_venda: format(dataVenda, 'yyyy-MM-dd'),
-          numero_nota_fiscal: numeroNotaFiscal,
-          data_nota_fiscal: dataNotaFiscal ? format(dataNotaFiscal, 'yyyy-MM-dd') : null,
-          observacoes: observacoes || null
-        })
-        .eq('id', orcamento.id);
+      if (itensError) throw itensError;
 
-      if (updateError) throw updateError;
+      const { data: parcelas, error: parcelasError } = await supabase
+        .from('orcamentos_parcelas')
+        .select('*')
+        .eq('orcamento_id', orcamento.id);
 
-      toast({
-        title: "Sucesso",
-        description: "Venda efetivada com sucesso!"
-      });
+      if (parcelasError) throw parcelasError;
 
+      // 2. Criar movimentação com as novas informações
+      const valorTotal = itens.reduce((sum, item) => sum + Number(item.valor), 0);
+      
+      // Começar uma transação em JavaScript
+      try {
+        // Criar a movimentação
+        const { data: movimentacao, error: movError } = await supabase
+          .from('movimentacoes')
+          .insert({
+            empresa_id: currentCompany.id,
+            tipo_operacao: 'receber',
+            data_lancamento: dataVenda,
+            data_emissao: dataVenda,
+            favorecido_id: orcamento.favorecido_id,
+            forma_pagamento: orcamento.forma_pagamento,
+            valor: valorTotal,
+            numero_parcelas: parcelas.length,
+            primeiro_vencimento: parcelas[0]?.data_vencimento,
+            descricao: `Venda ${orcamento.codigo}`,
+            considerar_dre: true,
+            numero_documento: orcamento.codigo,
+            tipo_titulo_id: tipoTituloId
+          })
+          .select()
+          .single();
+  
+        if (movError) throw movError;
+  
+        // 3. Criar parcelas da movimentação
+        const parcelasMovimentacao = parcelas.map(parcela => ({
+          movimentacao_id: movimentacao.id,
+          numero: parseInt(parcela.numero_parcela.split('/')[1]),
+          valor: parcela.valor,
+          data_vencimento: parcela.data_vencimento
+        }));
+  
+        const { error: parcelasMovError } = await supabase
+          .from('movimentacoes_parcelas')
+          .insert(parcelasMovimentacao);
+  
+        if (parcelasMovError) throw parcelasMovError;
+  
+        // 4. Atualizar o orçamento para tipo "venda" e incluir data_venda
+        const { error: orcamentoError } = await supabase
+          .from('orcamentos')
+          .update({ 
+            tipo: 'venda',
+            data_venda: dataVenda
+          })
+          .eq('id', orcamento.id);
+  
+        if (orcamentoError) throw orcamentoError;
+      } catch (error) {
+        // Se algo falhar, rolamos de volta
+        console.error("Erro na transação:", error);
+        throw error;
+      }
+
+      toast.success("Venda efetivada com sucesso!");
       onSuccess();
       onClose();
-      resetForm();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erro ao efetivar venda:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: error.message || "Não foi possível efetivar a venda"
-      });
+      toast.error("Erro ao efetivar venda");
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Efetivar Venda</DialogTitle>
-          <DialogDescription>
-            Preencha os dados abaixo para confirmar a venda.
-          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="dataVenda">Data da Venda</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-[240px] justify-start text-left font-normal",
-                    !dataVenda && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dataVenda ? format(dataVenda, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dataVenda}
-                  onSelect={setDataVenda}
-                  disabled={(date) => date > new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="numeroNotaFiscal">Número da Nota Fiscal</Label>
+
+        <div className="space-y-4">
+          <div>
+            <Label className="block text-sm font-medium mb-1">Data da Venda *</Label>
             <Input
-              id="numeroNotaFiscal"
-              value={numeroNotaFiscal}
-              onChange={(e) => setNumeroNotaFiscal(e.target.value)}
-              placeholder="Digite o número da nota fiscal"
+              type="date"
+              value={dataVenda}
+              onChange={(e) => setDataVenda(e.target.value)}
               required
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="dataNotaFiscal">Data da Nota Fiscal (opcional)</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-[240px] justify-start text-left font-normal",
-                    !dataNotaFiscal && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dataNotaFiscal ? format(dataNotaFiscal, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dataNotaFiscal}
-                  onSelect={setDataNotaFiscal}
-                  disabled={(date) => date > new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+
+          <div>
+            <Label className="block text-sm font-medium mb-1">Tipo de Título *</Label>
+            <Select value={tipoTituloId} onValueChange={setTipoTituloId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo de título" />
+              </SelectTrigger>
+              <SelectContent>
+                {tipoTitulos.map((tipo) => (
+                  <SelectItem key={tipo.id} value={tipo.id}>
+                    {tipo.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="observacoes">Observações (opcional)</Label>
-            <Textarea
-              id="observacoes"
-              placeholder="Observações sobre a venda"
-              value={observacoes}
-              onChange={(e) => setObservacoes(e.target.value)}
-            />
-          </div>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Efetivando..." : "Efetivar Venda"}
+
+          {orcamento && (
+            <div className="border rounded-md p-3 bg-gray-50">
+              <p className="font-medium">Orçamento: {orcamento.codigo}</p>
+              <p className="text-sm text-muted-foreground">
+                {orcamento.favorecido?.nome || "Favorecido não identificado"}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="mt-6">
+          <DialogClose asChild>
+            <Button variant="outline" disabled={isLoading}>Cancelar</Button>
+          </DialogClose>
+          <Button 
+            variant="blue" 
+            onClick={handleConfirmar}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 mr-2 border-t-2 border-white" />
+                Processando...
+              </>
+            ) : (
+              "Confirmar"
+            )}
           </Button>
-        </form>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
+}
