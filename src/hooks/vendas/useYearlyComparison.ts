@@ -25,7 +25,6 @@ export const useYearlyComparison = () => {
       const processedYearlyData = Array.isArray(yearComparisonData) ? yearComparisonData.map((item: any) => ({
         year: Number(item.year || 0),
         total: Number(item.total || 0),
-        qtde_vendas: Number(item.qtde_vendas || 0),
         variacao_total: item.variacao_total !== null ? Number(item.variacao_total) : null,
         media_mensal: Number(item.media_mensal || 0),
         variacao_media: item.variacao_media !== null ? Number(item.variacao_media) : null,

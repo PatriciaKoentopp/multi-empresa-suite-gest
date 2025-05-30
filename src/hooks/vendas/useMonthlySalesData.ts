@@ -30,58 +30,8 @@ export const useMonthlySalesData = () => {
         // Se não há dados do ano anterior, continuar sem comparação
       }
 
-      // Buscar quantidade de vendas por mês usando a mesma query da função SQL
-      // Vamos buscar os dados exatamente como a função get_yearly_sales_comparison faz
-      const { data: salesCountData, error: salesCountError } = await supabase
-        .from('orcamentos')
-        .select(`
-          id, 
-          data_venda,
-          orcamentos_itens!inner(valor)
-        `)
-        .eq('tipo', 'venda')
-        .eq('status', 'ativo')
-        .gte('data_venda', `${year}-01-01`)
-        .lte('data_venda', `${year}-12-31`)
-        .not('data_venda', 'is', null)
-        .gt('orcamentos_itens.valor', 0);
-
-      if (salesCountError) {
-        console.error(`Erro ao buscar contagem de vendas de ${year}:`, salesCountError);
-      }
-
-      // Criar mapa de quantidade de vendas por mês - usando exatamente o mesmo critério da função SQL
-      const salesCountByMonth = new Map();
-      const orcamentosContados = new Set();
-      
-      if (salesCountData) {
-        salesCountData.forEach((sale: any) => {
-          // Contar apenas uma vez cada orçamento que tem pelo menos um item com valor > 0
-          if (!orcamentosContados.has(sale.id)) {
-            orcamentosContados.add(sale.id);
-            
-            // Extrair o mês diretamente da string da data (formato YYYY-MM-DD)
-            // Isso evita problemas de timezone
-            const mesString = sale.data_venda.substring(5, 7); // Pega MM da string YYYY-MM-DD
-            const mesNumero = parseInt(mesString, 10); // Converte para número (1-12)
-            
-            // Mapear número do mês para nome completo
-            const nomesMeses = [
-              '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-            ];
-            
-            const nomeMes = nomesMeses[mesNumero];
-            if (nomeMes) {
-              salesCountByMonth.set(nomeMes, (salesCountByMonth.get(nomeMes) || 0) + 1);
-            }
-          }
-        });
-      }
-
       console.log(`Dados mensais ${year}:`, currentYearData);
       console.log(`Dados mensais ${year - 1}:`, previousYearData);
-      console.log(`Contagem de vendas por mês ${year}:`, salesCountByMonth);
 
       // Criar mapa dos dados do ano anterior para facilitar comparação
       const previousYearMap = new Map();
@@ -95,7 +45,6 @@ export const useMonthlySalesData = () => {
       const processedData = currentYearData?.map((currentMonth: any, index: number) => {
         const previousMonthValue = previousYearMap.get(currentMonth.name) || 0;
         const currentValue = currentMonth.faturado || 0;
-        const qtdeVendas = salesCountByMonth.get(currentMonth.name) || 0;
         
         // Calcular variação percentual em relação ao ano anterior
         let variacao_ano_anterior = null;
@@ -119,7 +68,6 @@ export const useMonthlySalesData = () => {
         return {
           name: currentMonth.name,
           faturado: currentValue,
-          qtde_vendas: qtdeVendas,
           variacao_percentual,
           variacao_ano_anterior
         };
