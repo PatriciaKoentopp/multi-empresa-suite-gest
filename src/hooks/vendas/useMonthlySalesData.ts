@@ -2,271 +2,95 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { getMesesMap, calcularTotalVendasAno, getMesesNomes } from "./salesChartUtils";
 
 export const useMonthlySalesData = () => {
   const { toast } = useToast();
-  const [loadingMonth, setLoadingMonth] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Função para buscar dados mensais por ano
   const fetchMonthlySalesData = async (year: number) => {
     try {
-      setLoadingMonth(true);
+      setIsLoading(true);
       console.log(`Buscando dados mensais para o ano ${year}`);
       
-      // Tentar usar a função RPC para dados mensais se disponível
-      try {
-        const { data, error } = await supabase
-          .rpc('get_monthly_sales_chart_data', { year_param: year });
-          
-        if (!error && data) {
-          console.log(`Dados mensais recebidos via RPC para ${year}:`, data);
-          
-          // Mapear os nomes dos meses para valores numéricos para ordenação
-          const mesesMap = getMesesMap();
-          
-          // Processar os dados mensais
-          const mesesProcessados = data
-            .map((item: any) => ({
-              name: String(item.name || ''),
-              faturado: Number(item.faturado || 0),
-              monthNumber: mesesMap[String(item.name)] || 0,
-              variacao_percentual: null,
-              variacao_ano_anterior: null
-            }));
-          
-          console.log("Meses processados com valores para tabela:", mesesProcessados);
-          
-          if (mesesProcessados.length === 0) {
-            return [{
-              name: `Sem dados para ${year}`,
-              faturado: 0,
-              variacao_percentual: null,
-              variacao_ano_anterior: null
-            }];
-          }
-          
-          // Buscar dados dos mesmos meses do ano anterior para comparação
-          const anoAnterior = year - 1;
-          let dadosMesmoMesAnoAnterior: any[] = [];
-          
-          try {
-            const { data: dataAnoAnterior, error: errorAnoAnterior } = await supabase
-              .rpc('get_monthly_sales_chart_data', { year_param: anoAnterior });
-              
-            if (!errorAnoAnterior && dataAnoAnterior) {
-              // Transformar em formato mais fácil de pesquisar
-              dadosMesmoMesAnoAnterior = dataAnoAnterior
-                .map((item: any) => ({
-                  name: String(item.name || ''),
-                  faturado: Number(item.faturado || 0),
-                  monthNumber: mesesMap[String(item.name)] || 0
-                }));
-              
-              console.log(`Dados do ano anterior (${anoAnterior}) para comparação:`, dadosMesmoMesAnoAnterior);
-            }
-          } catch (e) {
-            console.warn(`Erro ao buscar dados do ano anterior (${anoAnterior})`, e);
-          }
-          
-          // Calcular percentuais de variação mês a mês
-          const dadosComVariacao = mesesProcessados.map((mesAtual) => {
-            // Mês anterior no mesmo ano (para calcular variação em relação ao mês anterior)
-            let mesAnteriorMesmoAno = null;
-            let variacaoMesAnterior = null;
-            
-            if (mesAtual.monthNumber > 1) {
-              // Se não é janeiro, usamos o mês anterior do mesmo ano
-              const mesAnteriorNumero = mesAtual.monthNumber - 1;
-              mesAnteriorMesmoAno = mesesProcessados.find(m => m.monthNumber === mesAnteriorNumero);
-            } else {
-              // Se é janeiro, usamos dezembro do ano anterior
-              const dezAnoAnterior = dadosMesmoMesAnoAnterior.find(m => m.monthNumber === 12);
-              mesAnteriorMesmoAno = dezAnoAnterior;
-            }
-            
-            // Calculamos a variação em relação ao mês anterior (mesmo se dezembro do ano anterior)
-            if (mesAnteriorMesmoAno && mesAnteriorMesmoAno.faturado > 0) {
-              variacaoMesAnterior = ((mesAtual.faturado - mesAnteriorMesmoAno.faturado) / mesAnteriorMesmoAno.faturado) * 100;
-            }
-            
-            // Mesmo mês no ano anterior (para calcular variação em relação ao mesmo mês do ano anterior)
-            const mesmoMesAnoAnterior = dadosMesmoMesAnoAnterior.find(
-              m => m.monthNumber === mesAtual.monthNumber
-            );
-            
-            // Calcular variação em relação ao mesmo mês no ano anterior
-            let variacaoAnoAnterior = null;
-            if (mesmoMesAnoAnterior && mesmoMesAnoAnterior.faturado > 0) {
-              variacaoAnoAnterior = ((mesAtual.faturado - mesmoMesAnoAnterior.faturado) / mesmoMesAnoAnterior.faturado) * 100;
-            }
-            
-            return {
-              ...mesAtual,
-              variacao_percentual: variacaoMesAnterior,
-              variacao_ano_anterior: variacaoAnoAnterior
-            };
-          });
-          
-          console.log("Dados mensais com variações calculadas:", dadosComVariacao);
-          return dadosComVariacao;
-        }
-      } catch (rpcError) {
-        console.warn(`Erro na chamada RPC para dados mensais: ${rpcError}`);
-      }
-      
-      // Fallback: buscar dados mensais manualmente
-      console.log(`Buscando dados mensais manualmente para ${year}`);
-      
-      // Buscar todas as vendas do ano especificado
-      const { data: vendaAnual, error: vendaAnualError } = await supabase
-        .from('orcamentos')
-        .select(`
-          id, 
-          data_venda,
-          orcamentos_itens (valor)
-        `)
-        .eq('tipo', 'venda')
-        .eq('status', 'ativo')
-        .gte('data_venda', `${year}-01-01`)
-        .lte('data_venda', `${year}-12-31`);
-      
-      if (vendaAnualError) {
-        console.error(`Erro ao buscar vendas anuais para ${year}:`, vendaAnualError);
-        throw vendaAnualError;
-      }
-      
-      console.log(`Vendas do ano ${year} encontradas:`, vendaAnual?.length);
+      // Buscar dados mensais do ano atual
+      const { data: currentYearData, error: currentError } = await supabase
+        .rpc('get_monthly_sales_chart_data', { year_param: year });
 
-      // Criar estrutura mensal com valores iniciais zerados
-      const meses = getMesesNomes();
-      
-      // Mapeamento reverso de mês para número (para ordenação posterior)
-      const mesesMap = getMesesMap();
-      
-      const dadosMensais = meses.map((name, index) => ({
-        name,
-        faturado: 0,
-        monthNumber: index + 1,
-        variacao_percentual: null,
-        variacao_ano_anterior: null
-      }));
-      
-      // Preencher os valores de cada mês para o ano atual
-      if (vendaAnual && vendaAnual.length > 0) {
-        vendaAnual.forEach(venda => {
-          if (venda.data_venda) {
-            const mesString = venda.data_venda.substring(5, 7);
-            const mes = parseInt(mesString, 10) - 1;
-            
-            const valorTotal = venda.orcamentos_itens.reduce(
-              (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
-            );
-            
-            if (mes >= 0 && mes < 12) {
-              dadosMensais[mes].faturado += valorTotal;
-            }
-          }
+      if (currentError) {
+        console.error(`Erro ao buscar dados mensais de ${year}:`, currentError);
+        throw currentError;
+      }
+
+      // Buscar dados mensais do ano anterior para comparação
+      const { data: previousYearData, error: previousError } = await supabase
+        .rpc('get_monthly_sales_chart_data', { year_param: year - 1 });
+
+      if (previousError) {
+        console.error(`Erro ao buscar dados mensais de ${year - 1}:`, previousError);
+        // Se não há dados do ano anterior, continuar sem comparação
+      }
+
+      console.log(`Dados mensais ${year}:`, currentYearData);
+      console.log(`Dados mensais ${year - 1}:`, previousYearData);
+
+      // Criar mapa dos dados do ano anterior para facilitar comparação
+      const previousYearMap = new Map();
+      if (previousYearData) {
+        previousYearData.forEach((item: any) => {
+          previousYearMap.set(item.name, item.faturado);
         });
       }
-      
-      // Buscar dados para ano anterior (para comparação)
-      const anoAnterior = year - 1;
-      const dadosMensaisAnoAnterior = [...dadosMensais].map(item => ({...item, faturado: 0}));
-      
-      try {
-        const { data: vendaAnoAnterior, error: vendaAnoAnteriorError } = await supabase
-          .from('orcamentos')
-          .select(`
-            id, 
-            data_venda,
-            orcamentos_itens (valor)
-          `)
-          .eq('tipo', 'venda')
-          .eq('status', 'ativo')
-          .gte('data_venda', `${anoAnterior}-01-01`)
-          .lte('data_venda', `${anoAnterior}-12-31`);
-          
-        if (!vendaAnoAnteriorError && vendaAnoAnterior && vendaAnoAnterior.length > 0) {
-          // Preencher os valores de cada mês para o ano anterior
-          vendaAnoAnterior.forEach((venda: any) => {
-            if (venda.data_venda) {
-              const mesString = venda.data_venda.substring(5, 7);
-              const mes = parseInt(mesString, 10) - 1;
-              
-              const valorTotal = venda.orcamentos_itens.reduce(
-                (sum: number, item: any) => sum + (Number(item.valor) || 0), 0
-              );
-              
-              if (mes >= 0 && mes < 12) {
-                dadosMensaisAnoAnterior[mes].faturado += valorTotal;
-              }
-            }
-          });
-        }
-      } catch (e) {
-        console.warn(`Erro ao buscar vendas do ano anterior (${anoAnterior})`, e);
-      }
-      
-      // Calcular percentuais de variação mês a mês
-      for (let i = 0; i < dadosMensais.length; i++) {
-        // Calcular variação em relação ao mês anterior
-        if (i > 0) {
-          // Para meses de fevereiro a dezembro, compara com mês anterior do mesmo ano
-          if (dadosMensais[i-1].faturado > 0) {
-            dadosMensais[i].variacao_percentual = 
-              ((dadosMensais[i].faturado - dadosMensais[i-1].faturado) / dadosMensais[i-1].faturado) * 100;
-          }
-        } else {
-          // Para janeiro, compara com dezembro do ano anterior
-          if (dadosMensaisAnoAnterior[11].faturado > 0) {
-            dadosMensais[i].variacao_percentual = 
-              ((dadosMensais[i].faturado - dadosMensaisAnoAnterior[11].faturado) / dadosMensaisAnoAnterior[11].faturado) * 100;
-          }
-        }
+
+      // Processar dados com variações
+      const processedData = currentYearData?.map((currentMonth: any, index: number) => {
+        const previousMonthValue = previousYearMap.get(currentMonth.name) || 0;
+        const currentValue = currentMonth.faturado || 0;
         
-        // Calcular variação em relação ao mesmo mês do ano anterior
-        if (dadosMensaisAnoAnterior[i].faturado > 0) {
-          dadosMensais[i].variacao_ano_anterior = 
-            ((dadosMensais[i].faturado - dadosMensaisAnoAnterior[i].faturado) / dadosMensaisAnoAnterior[i].faturado) * 100;
+        // Calcular variação percentual em relação ao ano anterior
+        let variacao_ano_anterior = null;
+        if (previousMonthValue > 0) {
+          variacao_ano_anterior = ((currentValue - previousMonthValue) / previousMonthValue) * 100;
+        } else if (currentValue > 0) {
+          variacao_ano_anterior = 100; // Se não havia venda no ano anterior e agora há, é 100% de crescimento
         }
-      }
-      
-      // Filtrar apenas meses com vendas
-      const mesesComVendas = dadosMensais.filter(mes => mes.faturado > 0);
-      
-      if (mesesComVendas.length === 0) {
-        return [{
-          name: `Sem dados para ${year}`,
-          faturado: 0,
-          variacao_percentual: null,
-          variacao_ano_anterior: null
-        }];
-      }
-      
-      console.log("Dados mensais processados manualmente:", mesesComVendas);
-      return mesesComVendas;
-      
+
+        // Calcular variação percentual em relação ao mês anterior
+        let variacao_percentual = null;
+        if (index > 0 && currentYearData[index - 1]) {
+          const previousValue = currentYearData[index - 1].faturado || 0;
+          if (previousValue > 0) {
+            variacao_percentual = ((currentValue - previousValue) / previousValue) * 100;
+          } else if (currentValue > 0) {
+            variacao_percentual = 100;
+          }
+        }
+
+        return {
+          name: currentMonth.name,
+          faturado: currentValue,
+          variacao_percentual,
+          variacao_ano_anterior
+        };
+      }) || [];
+
+      console.log(`Dados mensais processados para ${year}:`, processedData);
+      return processedData;
+
     } catch (error: any) {
-      console.error(`Erro ao buscar dados mensais para ${year}:`, error);
+      console.error(`Erro ao buscar dados mensais de ${year}:`, error);
       toast({
         variant: "destructive",
-        title: `Erro ao carregar dados mensais de ${year}`,
-        description: error.message || "Não foi possível carregar os dados mensais"
+        title: "Erro ao carregar dados mensais",
+        description: error.message || `Não foi possível carregar os dados mensais de ${year}`
       });
-      return [{
-        name: `Erro ao carregar ${year}`,
-        faturado: 0,
-        variacao_percentual: null,
-        variacao_ano_anterior: null
-      }];
+      return [];
     } finally {
-      setLoadingMonth(false);
+      setIsLoading(false);
     }
   };
 
   return {
     fetchMonthlySalesData,
-    loadingMonth
+    isLoading
   };
 };
