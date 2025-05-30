@@ -4,6 +4,7 @@ import { SalesDashboardHeader } from "@/components/vendas/SalesDashboardHeader";
 import { SalesDashboardCards } from "@/components/vendas/SalesDashboardCards";
 import { SalesPerformanceTabs } from "@/components/vendas/SalesPerformanceTabs";
 import { SalesComparisonTable } from "@/components/vendas/SalesComparisonTable";
+import { SalesByServiceChart } from "@/components/vendas/SalesByServiceChart";
 import { DashboardCardConfigurator } from "@/components/dashboard/DashboardCardConfigurator";
 import { useVendasDashboard } from "@/hooks/useVendasDashboard";
 import { useDashboardCards } from "@/hooks/useDashboardCards";
@@ -119,6 +120,9 @@ const PainelVendasPage = () => {
           getMonthlySalesData={fetchMonthlySalesData}
         />
       )}
+
+      {/* Novo gráfico de pizza de vendas por serviço */}
+      <SalesByServiceChart />
     </div>
   );
 }

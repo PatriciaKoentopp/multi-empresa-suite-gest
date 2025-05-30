@@ -8,6 +8,7 @@ import { useChartData } from "./vendas/useChartData";
 import { useMonthlySalesData } from "./vendas/useMonthlySalesData";
 import { useYearlyComparison } from "./vendas/useYearlyComparison";
 import { useTicketMedioProjeto } from "./vendas/useTicketMedioProjeto";
+import { useSalesByService } from "./vendas/useSalesByService";
 
 export const useVendasDashboard = () => {
   const { toast } = useToast();
@@ -17,6 +18,7 @@ export const useVendasDashboard = () => {
   const { fetchMonthlySalesData } = useMonthlySalesData();
   const { yearlyComparisonData, fetchYearlyComparison } = useYearlyComparison();
   const { fetchTicketMedioPorProjeto } = useTicketMedioProjeto();
+  const { salesByServiceData, fetchSalesByService } = useSalesByService();
   
   const [monthlyComparisonData, setMonthlyComparisonData] = useState<any[]>([]);
   const [ticketMedioPorProjetoData, setTicketMedioPorProjetoData] = useState<TicketMedioData[]>([]);
@@ -145,7 +147,9 @@ export const useVendasDashboard = () => {
     yearlyComparisonData,
     monthlyComparisonData,
     ticketMedioPorProjetoData,
+    salesByServiceData,
     fetchMonthlySalesData,
-    fetchSalesData
+    fetchSalesData,
+    fetchSalesByService
   };
 };
