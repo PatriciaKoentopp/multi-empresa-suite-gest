@@ -44,37 +44,6 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
   // Inicializar parcelas
   const [parcelas, setParcelas] = useState<Parcela[]>(() => getParcelas(0, numeroParcelas, codigoVenda));
 
-  // Função para buscar o próximo código sequencial
-  async function buscarProximoCodigo(): Promise<string> {
-    if (!currentCompany?.id) return "1";
-    
-    try {
-      const { data: ultimoOrcamento, error } = await supabase
-        .from('orcamentos')
-        .select('codigo')
-        .eq('empresa_id', currentCompany.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('Erro ao buscar último código:', error);
-        return "1";
-      }
-
-      if (!ultimoOrcamento) {
-        return "1";
-      }
-
-      // Extrair número do código e incrementar
-      const numeroAtual = parseInt(ultimoOrcamento.codigo) || 0;
-      return (numeroAtual + 1).toString();
-    } catch (error) {
-      console.error('Erro ao buscar próximo código:', error);
-      return "1";
-    }
-  }
-
   function getParcelas(valorTotal: number, numParcelas: number, codigo: string, datasPrimeiroVencimento?: string) {
     if (numParcelas <= 1) {
       return [{
@@ -121,11 +90,6 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
       // Se temos um ID de orçamento, vamos carregar os dados
       if (orcamentoId) {
         carregarOrcamento(orcamentoId);
-      } else {
-        // Para novos orçamentos, gerar código automaticamente
-        buscarProximoCodigo().then(codigo => {
-          setCodigoVenda(codigo);
-        });
       }
     }
   }, [currentCompany?.id, orcamentoId]);
@@ -259,6 +223,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }
   }
 
+  // Carregar serviços
   async function carregarServicos() {
     try {
       const { data, error } = await supabase
@@ -278,6 +243,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }
   }
 
+  // Carregar tabelas de preço
   async function carregarTabelasPreco() {
     try {
       const { data: tabelas, error: tabelasError } = await supabase
@@ -442,6 +408,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }
   };
 
+  // Manipulador de alteração do arquivo de nota fiscal
   const handleNotaFiscalPdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files && e.target.files[0];
     
@@ -466,6 +433,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }
   };
 
+  // Voltar para a lista de faturamento
   const handleCancel = () => {
     navigate("/vendas/faturamento");
   };
