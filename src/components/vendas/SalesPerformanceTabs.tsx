@@ -38,7 +38,7 @@ export const SalesPerformanceTabs = ({
             <TabsTrigger value="quarterly">Trimestral</TabsTrigger>
             <TabsTrigger value="yearly">Anual</TabsTrigger>
             <TabsTrigger value="monthly-comparison">Comparativo Mensal</TabsTrigger>
-            <TabsTrigger value="ticket-medio-projeto">Ticket por Projeto</TabsTrigger>
+            <TabsTrigger value="ticket-medio-projeto">Ticket Médio</TabsTrigger>
           </TabsList>
         </div>
 
@@ -90,7 +90,7 @@ export const SalesPerformanceTabs = ({
         <TabsContent value="ticket-medio-projeto">
           <Card>
             <CardHeader>
-              <CardTitle>Ticket Médio por Projeto por Ano</CardTitle>
+              <CardTitle>Ticket Médio por Ano</CardTitle>
               <p className="text-sm text-muted-foreground">Dados desde a primeira venda registrada</p>
             </CardHeader>
             <CardContent>
