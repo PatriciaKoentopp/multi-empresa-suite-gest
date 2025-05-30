@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/company-context';
@@ -48,6 +47,7 @@ export const useDashboardCards = (pageId: string = 'dashboard') => {
       { card_id: 'clientes-ativos', name: 'Clientes Ativos', order_position: 4, is_visible: true },
       { card_id: 'tabs-performance', name: 'Abas de Performance', order_position: 5, is_visible: true },
       { card_id: 'tabela-comparacao', name: 'Tabela de Comparação Anual', order_position: 6, is_visible: true },
+      { card_id: 'vendas-por-servico-ano', name: 'Vendas por Serviço por Ano', order_position: 7, is_visible: true },
     ],
     'painel-crm': [
       { card_id: 'total-leads', name: 'Total de Leads', order_position: 1, is_visible: true },

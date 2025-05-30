@@ -121,8 +121,10 @@ const PainelVendasPage = () => {
         />
       )}
 
-      {/* Novo gráfico de pizza de vendas por serviço */}
-      <SalesByServiceChart />
+      {/* Gráfico de vendas por serviço por ano */}
+      {isCardVisible('vendas-por-servico-ano') && (
+        <SalesByServiceChart />
+      )}
     </div>
   );
 }
