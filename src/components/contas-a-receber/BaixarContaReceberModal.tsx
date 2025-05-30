@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,14 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { Antecipacao, AntecipacaoSelecionada } from "@/types/financeiro";
+
+interface AntecipacaoDisponivel {
+  id: string;
+  descricao: string;
+  valor_total: number;
+  valor_utilizado: number;
+  valor_disponivel: number;
+}
 
 interface BaixarContaReceberModalProps {
   conta?: ContaReceber | null;
