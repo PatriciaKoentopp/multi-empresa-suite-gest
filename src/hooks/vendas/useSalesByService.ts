@@ -5,8 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface SalesByServiceData {
   name: string;
-  value: number;
-  color: string;
+  [key: string]: any; // Para permitir propriedades dinâmicas dos anos
 }
 
 export const useSalesByService = () => {
@@ -79,38 +78,76 @@ export const useSalesByService = () => {
 
       console.log("Dados brutos de vendas por serviço:", data);
 
-      // Processar dados para agrupar por serviço
-      const serviceMap: Record<string, number> = {};
-      
-      if (data) {
-        data.forEach(orcamento => {
-          orcamento.orcamentos_itens.forEach((item: any) => {
-            if (item.valor > 0 && item.servicos) {
-              const serviceName = item.servicos.nome;
-              serviceMap[serviceName] = (serviceMap[serviceName] || 0) + Number(item.valor);
-            }
+      if (year) {
+        // Para um ano específico, retornar formato simples para gráfico de barras
+        const serviceMap: Record<string, number> = {};
+        
+        if (data) {
+          data.forEach(orcamento => {
+            orcamento.orcamentos_itens.forEach((item: any) => {
+              if (item.valor > 0 && item.servicos) {
+                const serviceName = item.servicos.nome;
+                serviceMap[serviceName] = (serviceMap[serviceName] || 0) + Number(item.valor);
+              }
+            });
           });
+        }
+
+        const processedData = Object.entries(serviceMap)
+          .map(([name, value]) => ({
+            name,
+            value
+          }))
+          .sort((a, b) => b.value - a.value);
+
+        console.log("Dados processados de vendas por serviço (ano específico):", processedData);
+        setSalesByServiceData(processedData);
+        return processedData;
+      } else {
+        // Para todos os anos, agrupar por serviço e ano
+        const serviceYearMap: Record<string, Record<string, number>> = {};
+        const yearsSet = new Set<string>();
+        
+        if (data) {
+          data.forEach(orcamento => {
+            const year = orcamento.data_venda.substring(0, 4);
+            yearsSet.add(year);
+            
+            orcamento.orcamentos_itens.forEach((item: any) => {
+              if (item.valor > 0 && item.servicos) {
+                const serviceName = item.servicos.nome;
+                
+                if (!serviceYearMap[serviceName]) {
+                  serviceYearMap[serviceName] = {};
+                }
+                
+                serviceYearMap[serviceName][year] = (serviceYearMap[serviceName][year] || 0) + Number(item.valor);
+              }
+            });
+          });
+        }
+
+        // Converter para formato do gráfico empilhado
+        const years = Array.from(yearsSet).sort();
+        const processedData = Object.entries(serviceYearMap).map(([serviceName, yearValues]) => {
+          const serviceData: SalesByServiceData = { name: serviceName };
+          
+          years.forEach(year => {
+            serviceData[year] = yearValues[year] || 0;
+          });
+          
+          return serviceData;
+        }).sort((a, b) => {
+          // Ordenar por total de vendas (soma de todos os anos)
+          const totalA = years.reduce((sum, year) => sum + (a[year] || 0), 0);
+          const totalB = years.reduce((sum, year) => sum + (b[year] || 0), 0);
+          return totalB - totalA;
         });
+
+        console.log("Dados processados de vendas por serviço (todos os anos):", processedData);
+        setSalesByServiceData(processedData);
+        return processedData;
       }
-
-      // Converter para formato do gráfico com cores
-      const colors = [
-        '#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6',
-        '#06b6d4', '#f97316', '#84cc16', '#ec4899', '#6366f1'
-      ];
-
-      const processedData = Object.entries(serviceMap)
-        .map(([name, value], index) => ({
-          name,
-          value,
-          color: colors[index % colors.length]
-        }))
-        .sort((a, b) => b.value - a.value);
-
-      console.log("Dados processados de vendas por serviço:", processedData);
-      setSalesByServiceData(processedData);
-      
-      return processedData;
     } catch (error: any) {
       console.error("Erro ao processar dados de vendas por serviço:", error);
       toast({

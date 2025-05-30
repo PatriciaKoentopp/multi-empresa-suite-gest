@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SalesPieChart } from "./SalesPieChart";
+import { SalesBarChart } from "./SalesBarChart";
 import { useSalesByService } from "@/hooks/vendas/useSalesByService";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -69,7 +69,12 @@ export const SalesByServiceChart = () => {
             </div>
           </div>
         ) : salesByServiceData.length > 0 ? (
-          <SalesPieChart data={salesByServiceData} />
+          <SalesBarChart 
+            data={salesByServiceData} 
+            multiColor={true}
+            valueKey="value"
+            className="h-[400px]"
+          />
         ) : (
           <div className="text-center text-muted-foreground py-8">
             Nenhum dado de vendas por serviço encontrado
