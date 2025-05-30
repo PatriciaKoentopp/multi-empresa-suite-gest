@@ -83,6 +83,7 @@ export const useSalesByService = () => {
 
       // Agrupar por ano e serviço
       const yearServiceMap: Record<string, Record<string, number>> = {};
+      const yearServiceCountMap: Record<string, Record<string, number>> = {}; // Contador de vendas por serviço por ano
       const yearVendasCount: Record<string, number> = {}; // Contador de vendas por ano
       const servicesSet = new Set<string>();
       
@@ -93,6 +94,11 @@ export const useSalesByService = () => {
           // Contar vendas por ano (uma vez por orçamento)
           yearVendasCount[year] = (yearVendasCount[year] || 0) + 1;
           
+          // Inicializar mapas se não existirem
+          if (!yearServiceCountMap[year]) {
+            yearServiceCountMap[year] = {};
+          }
+          
           orcamento.orcamentos_itens.forEach((item: any) => {
             if (item.valor > 0 && item.servicos) {
               const serviceName = item.servicos.nome;
@@ -102,7 +108,11 @@ export const useSalesByService = () => {
                 yearServiceMap[year] = {};
               }
               
+              // Somar valores
               yearServiceMap[year][serviceName] = (yearServiceMap[year][serviceName] || 0) + Number(item.valor);
+              
+              // Contar quantidade de vendas por serviço (uma vez por orçamento)
+              yearServiceCountMap[year][serviceName] = (yearServiceCountMap[year][serviceName] || 0) + 1;
             }
           });
         });
@@ -121,6 +131,8 @@ export const useSalesByService = () => {
         
         services.forEach(service => {
           yearData[service] = yearServiceMap[year][service] || 0;
+          // Adicionar contador de vendas por serviço com sufixo _count
+          yearData[`${service}_count`] = yearServiceCountMap[year]?.[service] || 0;
         });
         
         return yearData;

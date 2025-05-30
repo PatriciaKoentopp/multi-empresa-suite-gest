@@ -69,6 +69,7 @@ export const SalesBarChart = ({
     valueKeys = Object.keys(chartData[0]).filter(key => 
       key !== "name" && 
       key !== "total_vendas" && // Excluir chave de quantidade de vendas dos valueKeys
+      !key.endsWith('_count') && // Excluir chaves de contagem
       typeof chartData[0][key] === 'number'
     );
   } else if (isMonthlyComparison) {
@@ -243,6 +244,10 @@ export const SalesBarChart = ({
                         const showVariacao = valueKey === "ticket_medio" && itemData?.variacao_percentual !== undefined;
                         const variacao = itemData?.variacao_percentual;
                         
+                        // Para gráfico de vendas por serviço por ano, mostrar quantidade de vendas do serviço
+                        const serviceName = entry.name;
+                        const serviceCount = isYearlyServiceComparison && itemData ? itemData[`${serviceName}_count`] : null;
+                        
                         return (
                           <div key={`tooltip-item-${index}`}>
                             <p 
@@ -251,6 +256,12 @@ export const SalesBarChart = ({
                             >
                               {entry.name === "ticket_medio" ? "Ticket Médio" : entry.name}: {formatCurrency(Number(entry.value || 0))}
                             </p>
+                            {/* Mostrar quantidade de vendas do serviço específico */}
+                            {serviceCount && (
+                              <p className="text-xs text-gray-600">
+                                Quantidade: {serviceCount} {serviceCount === 1 ? 'venda' : 'vendas'}
+                              </p>
+                            )}
                             {showCount && (
                               <p className="text-xs text-gray-600">
                                 Total de Projetos: {itemData.contagem_projetos}
@@ -264,10 +275,10 @@ export const SalesBarChart = ({
                           </div>
                         );
                       })}
-                      {/* Mostrar quantidade de vendas para gráfico de vendas por serviço por ano */}
+                      {/* Mostrar quantidade total de vendas para gráfico de vendas por serviço por ano */}
                       {isYearlyServiceComparison && chartData.find(d => d.name === label)?.total_vendas && (
-                        <p className="text-xs text-gray-600 mt-1">
-                          Total de Vendas: {chartData.find(d => d.name === label)?.total_vendas}
+                        <p className="text-xs text-gray-600 mt-1 border-t pt-1">
+                          Total de Vendas no Ano: {chartData.find(d => d.name === label)?.total_vendas}
                         </p>
                       )}
                     </div>
