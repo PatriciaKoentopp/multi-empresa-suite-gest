@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,6 +71,14 @@ export function RecebimentoForm({
 }: RecebimentoFormProps) {
   // Implementação similar ao PagamentoForm, mas com campos adaptados para recebimentos
   
+  const handleValorChange = (index: number, valor: number) => {
+    // Função vazia para compatibilidade
+  };
+
+  const handleDataChange = (index: number, data: Date) => {
+    // Função vazia para compatibilidade
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -243,7 +252,12 @@ export function RecebimentoForm({
       {parcelas.length > 0 && (
         <div className="mt-6">
           <h3 className="text-lg font-medium mb-2">Parcelas</h3>
-          <ParcelasForm parcelas={parcelas} readOnly={readOnly} />
+          <ParcelasForm 
+            parcelas={parcelas} 
+            readOnly={readOnly}
+            onValorChange={handleValorChange}
+            onDataChange={handleDataChange}
+          />
         </div>
       )}
     </div>
