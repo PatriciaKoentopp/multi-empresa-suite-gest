@@ -149,6 +149,7 @@ export interface TabelaPrecoItem {
 export interface YearlyComparison {
   year: number;
   total: number;
+  qtde_vendas: number;
   variacao_total: number | null;
   media_mensal: number;
   variacao_media: number | null;

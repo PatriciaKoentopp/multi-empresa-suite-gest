@@ -41,7 +41,25 @@ export const useMonthlySalesData = () => {
         });
       }
 
-      // Processar dados com variações
+      // Buscar dados de quantidade de vendas para o ano atual
+      const { data: orcamentosCurrentYear, error: orcamentosError } = await supabase
+        .from('orcamentos')
+        .select(`
+          id, 
+          data_venda,
+          orcamentos_itens (valor)
+        `)
+        .eq('tipo', 'venda')
+        .eq('status', 'ativo')
+        .gte('data_venda', `${year}-01-01`)
+        .lte('data_venda', `${year}-12-31`);
+
+      if (orcamentosError) {
+        console.error(`Erro ao buscar orçamentos de ${year}:`, orcamentosError);
+        throw orcamentosError;
+      }
+
+      // Processar dados com variações e quantidade
       const processedData = currentYearData?.map((currentMonth: any, index: number) => {
         const previousMonthValue = previousYearMap.get(currentMonth.name) || 0;
         const currentValue = currentMonth.faturado || 0;
@@ -65,9 +83,35 @@ export const useMonthlySalesData = () => {
           }
         }
 
+        // Calcular quantidade de vendas para este mês
+        const mesNumero = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+                          .indexOf(currentMonth.name) + 1;
+
+        let qtde_vendas = 0;
+        if (orcamentosCurrentYear) {
+          orcamentosCurrentYear.forEach(orcamento => {
+            if (orcamento.data_venda) {
+              // Extrair mês da data (formato YYYY-MM-DD)
+              const mesVenda = parseInt(orcamento.data_venda.substring(5, 7), 10);
+              
+              if (mesVenda === mesNumero) {
+                // Verificar se tem itens com valor > 0
+                const temValor = orcamento.orcamentos_itens.some((item: any) => 
+                  Number(item.valor) > 0
+                );
+                if (temValor) {
+                  qtde_vendas++;
+                }
+              }
+            }
+          });
+        }
+
         return {
           name: currentMonth.name,
           faturado: currentValue,
+          qtde_vendas,
           variacao_percentual,
           variacao_ano_anterior
         };
