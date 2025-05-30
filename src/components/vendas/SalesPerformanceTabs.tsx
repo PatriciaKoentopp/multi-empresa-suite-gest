@@ -33,7 +33,7 @@ export const SalesPerformanceTabs = ({
             <TabsTrigger value="quarterly">Trimestral</TabsTrigger>
             <TabsTrigger value="yearly">Anual</TabsTrigger>
             <TabsTrigger value="monthly-comparison">Comparativo Mensal</TabsTrigger>
-            <TabsTrigger value="ticket-medio-projeto">Ticket por Projeto/Venda</TabsTrigger>
+            <TabsTrigger value="ticket-medio-projeto">Ticket por Projeto</TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="monthly" className="mt-4">
