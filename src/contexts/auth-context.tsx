@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { fetchCompanyById } = useCompany();
+  const { refreshCompanies } = useCompany();
 
   // Função para buscar dados do usuário na tabela usuarios
   const fetchUserData = async (userId: string) => {
@@ -70,12 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("[AuthContext] Dados do usuário encontrados:", data);
         setUserData(data as UserData);
         
-        // Se o usuário tem uma empresa associada, carregamos essa empresa específica
+        // Se o usuário tem uma empresa associada, carregamos as empresas
         if (data.empresa_id) {
           console.log("[AuthContext] Carregando empresa do usuário:", data.empresa_id);
           // Guardar o ID da empresa do usuário no localStorage para persistência
           localStorage.setItem("userCompanyId", data.empresa_id);
-          await fetchCompanyById(data.empresa_id);
+          await refreshCompanies();
         }
       } else {
         console.log("[AuthContext] Nenhum dado de usuário encontrado");
@@ -98,7 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Quando o estado de autenticação muda e temos um usuário, buscamos seus dados
       if (session?.user) {
         // Usar setTimeout para evitar potenciais problemas de deadlock
-        fetchUserData(session.user.id);
+        setTimeout(() => {
+          fetchUserData(session.user.id);
+        }, 0);
       } else {
         setUserData(null);
         setIsLoading(false);
