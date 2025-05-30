@@ -269,7 +269,13 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
         .eq('status', 'ativo');
 
       if (error) throw error;
-      setServicosDisponiveis(data || []);
+      
+      const servicosFormatados = (data || []).map(servico => ({
+        ...servico,
+        status: servico.status as "ativo" | "inativo"
+      }));
+      
+      setServicosDisponiveis(servicosFormatados);
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
       toast({

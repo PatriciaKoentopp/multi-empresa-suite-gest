@@ -1,18 +1,26 @@
 
 export interface LancamentoContabil {
   id: string;
-  empresa_id?: string;
-  data: string | Date;
+  empresa_id: string;
+  data: string;
   historico: string;
-  conta_debito_id?: string;
-  conta_credito_id?: string;
-  conta?: string; // Campo usado na visualização (mantido para compatibilidade)
-  conta_nome?: string;
-  conta_codigo?: string;
-  tipo?: 'debito' | 'credito';
+  conta_debito_id: string;
+  conta_credito_id: string;
   valor: number;
-  saldo?: number;
-  movimentacao_id?: string;
-  parcela_id?: string;
-  tipo_lancamento?: 'principal' | 'juros' | 'multa' | 'desconto';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlanoContas {
+  id: string;
+  codigo: string;
+  descricao: string;
+  tipo: string;
+  categoria: string;
+  considerar_dre: boolean;
+  classificacao_dre: string;
+  status: string;
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
 }
