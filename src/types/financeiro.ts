@@ -45,15 +45,26 @@ export interface AntecipacaoSelecionada {
 }
 
 export interface DadosFinanceiros {
-  totalReceber: number;
-  totalPagar: number;
-  saldoContas: number;
-  fluxoDiario: FluxoCaixaItem[];
+  total_a_receber: number;
+  total_a_pagar: number;
+  saldo_contas: number;
+  previsao_saldo: number;
+  contas_vencidas_receber: number;
+  contas_a_vencer_receber: number;
+  contas_vencidas_pagar: number;
+  contas_a_vencer_pagar: number;
+  fluxo_por_mes?: FluxoMensal[];
+  fluxo_caixa?: FluxoCaixaItem[];
+  contas_correntes?: any[];
 }
 
 export interface FluxoMensal {
   mes: string;
+  mes_numero: number;
+  ano: number;
   entradas: number;
   saidas: number;
   saldo: number;
+  total_recebido: number;
+  total_pago: number;
 }

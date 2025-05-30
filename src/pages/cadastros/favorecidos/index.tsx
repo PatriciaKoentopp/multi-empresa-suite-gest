@@ -60,7 +60,7 @@ export default function FavorecidosPage() {
       console.error('Erro ao carregar favorecidos:', error);
       toast({
         title: "Erro ao carregar favorecidos",
-        variant: "destructive",
+        description: "Não foi possível carregar os favorecidos",
       });
     } finally {
       setIsLoading(false);
@@ -87,7 +87,7 @@ export default function FavorecidosPage() {
       console.error('Erro ao carregar grupos:', error);
       toast({
         title: "Erro ao carregar grupos",
-        variant: "destructive",
+        description: "Não foi possível carregar os grupos",
       });
     }
   };
@@ -112,7 +112,7 @@ export default function FavorecidosPage() {
       console.error('Erro ao carregar profissões:', error);
       toast({
         title: "Erro ao carregar profissões",
-        variant: "destructive",
+        description: "Não foi possível carregar as profissões",
       });
     }
   };
@@ -149,12 +149,15 @@ export default function FavorecidosPage() {
       if (error) throw error;
 
       setFavorecidos(prev => prev.filter(f => f.id !== id));
-      toast({ title: "Favorecido excluído com sucesso!" });
+      toast({ 
+        title: "Favorecido excluído com sucesso!",
+        description: "O favorecido foi removido com sucesso"
+      });
     } catch (error) {
       console.error('Erro ao excluir favorecido:', error);
       toast({
         title: "Erro ao excluir favorecido",
-        variant: "destructive",
+        description: "Não foi possível excluir o favorecido",
       });
     } finally {
       setIsLoading(false);
@@ -187,19 +190,24 @@ export default function FavorecidosPage() {
           } : f)
         );
 
-        toast({ title: "Favorecido atualizado com sucesso!" });
+        toast({ 
+          title: "Favorecido atualizado com sucesso!",
+          description: "Os dados foram salvos com sucesso"
+        });
       } else {
+        const favorecidoData = {
+          ...data,
+          data_aniversario: data.data_aniversario instanceof Date 
+            ? data.data_aniversario.toISOString().split('T')[0]
+            : data.data_aniversario,
+          empresa_id: currentCompany?.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
         const { data: novoFavorecido, error } = await supabase
           .from('favorecidos')
-          .insert({
-            ...data,
-            data_aniversario: data.data_aniversario instanceof Date 
-              ? data.data_aniversario.toISOString().split('T')[0]
-              : data.data_aniversario,
-            empresa_id: currentCompany?.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
+          .insert(favorecidoData)
           .select()
           .single();
 
@@ -212,7 +220,10 @@ export default function FavorecidosPage() {
           data_aniversario: novoFavorecido.data_aniversario ? new Date(novoFavorecido.data_aniversario) : undefined,
         }]);
 
-        toast({ title: "Favorecido criado com sucesso!" });
+        toast({ 
+          title: "Favorecido criado com sucesso!",
+          description: "O novo favorecido foi adicionado"
+        });
       }
 
       setModalAberto(false);
@@ -221,7 +232,7 @@ export default function FavorecidosPage() {
       console.error('Erro ao salvar favorecido:', error);
       toast({
         title: "Erro ao salvar favorecido",
-        variant: "destructive",
+        description: "Não foi possível salvar o favorecido",
       });
     } finally {
       setIsLoading(false);
