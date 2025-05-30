@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,18 +11,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Orcamento {
   id: string;
   codigo: string;
   favorecido_id: string;
-  cliente_id: string;
-  data_criacao: string;
-  data_validade: string;
-  total: number;
-  desconto: number;
+  data: string;
   tipo: string;
   status: string;
   observacoes: string | null;
@@ -44,7 +41,6 @@ export const EfetivarVendaModal = ({ isOpen, onClose, orcamento, onSuccess }: Ef
   const [numeroNotaFiscal, setNumeroNotaFiscal] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const resetForm = () => {
     setDataVenda(new Date());

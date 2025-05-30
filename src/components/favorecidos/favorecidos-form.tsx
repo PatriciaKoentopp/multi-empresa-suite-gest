@@ -10,10 +10,10 @@ import { FavorecidoEndereco } from "./favorecido-endereco";
 import { FavorecidoDocumento } from "./favorecido-documento";
 import { FavorecidoTipoRadio } from "./favorecido-tipo-radio";
 import { FavorecidoAniversarioStatus } from "./favorecido-aniversario-status";
-import { GrupoFavorecidos, Profissao } from "@/types";
+import { GrupoFavorecido, Profissao } from "@/types";
 
 interface FavorecidosFormProps {
-  grupos: GrupoFavorecidos[];
+  grupos: GrupoFavorecido[];
   profissoes: Profissao[];
   onSubmit?: () => void;
   onCancel?: () => void;
@@ -65,6 +65,7 @@ export function FavorecidosForm({ grupos, profissoes, onSubmit, onCancel, favore
       const dadosFavorecido = {
         empresa_id: currentCompany.id,
         tipo,
+        tipo_documento: tipo === 'pf' ? 'cpf' : 'cnpj',
         nome,
         apelido,
         email,
@@ -123,59 +124,119 @@ export function FavorecidosForm({ grupos, profissoes, onSubmit, onCancel, favore
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <FavorecidoTipoRadio
-            tipo={tipo}
-            onTipoChange={setTipo}
+            value={tipo}
+            onChange={setTipo}
           />
 
           <FavorecidoDadosBasicos
-            nome={nome}
-            onNomeChange={setNome}
-            apelido={apelido}
-            onApelidoChange={setApelido}
-            email={email}
-            onEmailChange={setEmail}
-            telefone={telefone}
-            onTelefoneChange={setTelefone}
-            celular={celular}
-            onCelularChange={setCelular}
-            grupoId={grupoId}
-            onGrupoChange={setGrupoId}
-            profissaoId={profissaoId}
-            onProfissaoChange={setProfissaoId}
+            value={{
+              nome,
+              apelido,
+              email,
+              telefone,
+              celular,
+              grupoId,
+              profissaoId
+            }}
+            onChange={(field, value) => {
+              switch (field) {
+                case 'nome':
+                  setNome(value);
+                  break;
+                case 'apelido':
+                  setApelido(value);
+                  break;
+                case 'email':
+                  setEmail(value);
+                  break;
+                case 'telefone':
+                  setTelefone(value);
+                  break;
+                case 'celular':
+                  setCelular(value);
+                  break;
+                case 'grupoId':
+                  setGrupoId(value);
+                  break;
+                case 'profissaoId':
+                  setProfissaoId(value);
+                  break;
+              }
+            }}
             grupos={grupos}
             profissoes={profissoes}
           />
 
           <FavorecidoEndereco
-            logradouro={logradouro}
-            onLogradouroChange={setLogradouro}
-            numero={numero}
-            onNumeroChange={setNumero}
-            complemento={complemento}
-            onComplementoChange={setComplemento}
-            bairro={bairro}
-            onBairroChange={setBairro}
-            cidade={cidade}
-            onCidadeChange={setCidade}
-            uf={uf}
-            onUfChange={setUf}
-            cep={cep}
-            onCepChange={setCep}
+            value={{
+              logradouro,
+              numero,
+              complemento,
+              bairro,
+              cidade,
+              uf,
+              cep
+            }}
+            onChange={(field, value) => {
+              switch (field) {
+                case 'logradouro':
+                  setLogradouro(value);
+                  break;
+                case 'numero':
+                  setNumero(value);
+                  break;
+                case 'complemento':
+                  setComplemento(value);
+                  break;
+                case 'bairro':
+                  setBairro(value);
+                  break;
+                case 'cidade':
+                  setCidade(value);
+                  break;
+                case 'uf':
+                  setUf(value);
+                  break;
+                case 'cep':
+                  setCep(value);
+                  break;
+              }
+            }}
           />
 
           <FavorecidoDocumento
             tipo={tipo}
-            documento={documento}
-            onDocumentoChange={setDocumento}
-            rgIe={rgIe}
-            onRgIeChange={setRgIe}
+            value={{
+              documento,
+              rgIe
+            }}
+            onChange={(field, value) => {
+              switch (field) {
+                case 'documento':
+                  setDocumento(value);
+                  break;
+                case 'rgIe':
+                  setRgIe(value);
+                  break;
+              }
+            }}
           />
 
           <FavorecidoAniversarioStatus
-            dataAniversario={dataAniversario}
-            onDataAniversarioChange={setDataAniversario}
-            status={status}
-            onStatusChange={setStatus}
+            value={{
+              dataAniversario,
+              status
+            }}
+            onChange={(field, value) => {
+              switch (field) {
+                case 'dataAniversario':
+                  setDataAniversario(value);
+                  break;
+                case 'status':
+                  setStatus(value);
+                  break;
+              }
+            }}
           />
 
           <div className="flex gap-2 justify-end">
