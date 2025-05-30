@@ -19,7 +19,8 @@ interface SalesBarChartProps {
   className?: string;
   multiColor?: boolean;
   isMonthlyComparison?: boolean;
-  valueKey?: string; // Nova propriedade para especificar qual chave usar para valores
+  isYearlyServiceComparison?: boolean; // Nova propriedade
+  valueKey?: string;
 }
 
 const CHART_COLORS = [
@@ -42,7 +43,8 @@ export const SalesBarChart = ({
   className, 
   multiColor = false,
   isMonthlyComparison = false,
-  valueKey = "faturado" // Valor padrão é "faturado" para manter compatibilidade
+  isYearlyServiceComparison = false,
+  valueKey = "faturado"
 }: SalesBarChartProps) => {
   // Verificar se os dados estão presentes e em formato correto
   const chartData = Array.isArray(data) ? data : [];
@@ -60,18 +62,29 @@ export const SalesBarChart = ({
   }
 
   // Identificar as chaves que representam valores (além de "name")
-  // Para comparativo mensal, precisamos identificar corretamente os anos como chaves
-  const valueKeys = isMonthlyComparison ? 
-    Object.keys(chartData[0]).filter(key => 
+  let valueKeys: string[] = [];
+  
+  if (isYearlyServiceComparison) {
+    // Para gráfico de vendas por serviço por ano, as chaves são os nomes dos serviços
+    valueKeys = Object.keys(chartData[0]).filter(key => 
+      key !== "name" && 
+      typeof chartData[0][key] === 'number'
+    );
+  } else if (isMonthlyComparison) {
+    // Para comparativo mensal, precisamos identificar corretamente os anos como chaves
+    valueKeys = Object.keys(chartData[0]).filter(key => 
       key !== "name" && 
       key !== "variacao_percentual" && 
       key !== "variacao_ano_anterior" && 
       key !== "monthNumber" &&
       !isNaN(Number(key)) // Garantir que são apenas os anos (valores numéricos)
-    ).sort((a, b) => Number(b) - Number(a)) : // Ordenar anos em ordem decrescente
-    valueKey ? 
+    ).sort((a, b) => Number(b) - Number(a)); // Ordenar anos em ordem decrescente
+  } else {
+    // Para outros tipos de gráfico
+    valueKeys = valueKey ? 
       [valueKey] : 
       Object.keys(chartData[0]).filter(key => key !== "name");
+  }
   
   console.log("Chaves de valores identificadas:", valueKeys);
   
@@ -104,7 +117,7 @@ export const SalesBarChart = ({
     return `${value > 0 ? '+' : ''}${value.toFixed(2).replace('.', ',')}%`;
   };
 
-  // Definir a altura do gráfico com base no tipo de comparativo
+  // Definir a altura do gráfico
   const chartHeight = 300;
   
   // Calcular a largura mínima para o gráfico mensal (50px por mês * número de meses)
@@ -214,13 +227,14 @@ export const SalesBarChart = ({
                 tick={{ fontSize: 12 }}
                 tickFormatter={formatCurrency}
               />
+              {(multiColor || isYearlyServiceComparison) && <Legend />}
               <Tooltip 
                 content={({ payload, label }) => {
                   if (!payload || !payload.length) return null;
                   
                   return (
                     <div className="bg-white p-2 border rounded shadow">
-                      <p className="font-medium mb-1">{label}</p>
+                      <p className="font-medium mb-1">{isYearlyServiceComparison ? `Ano ${label}` : label}</p>
                       {payload.map((entry, index) => {
                         // Verificar se temos dados de projetos e variação para exibir
                         const itemData = chartData.find(d => d.name === label);
@@ -253,8 +267,8 @@ export const SalesBarChart = ({
                   );
                 }} 
               />
-              {multiColor ? (
-                // Se temos múltiplas chaves de valor (anos diferentes ou categorias)
+              {(multiColor && !isYearlyServiceComparison) || isYearlyServiceComparison ? (
+                // Se temos múltiplas chaves de valor (anos diferentes, categorias ou serviços)
                 valueKeys.map((key, index) => (
                   <Bar
                     key={`bar-${key}`}
@@ -262,6 +276,7 @@ export const SalesBarChart = ({
                     name={key}
                     fill={CHART_COLORS[index % CHART_COLORS.length]}
                     radius={[4, 4, 0, 0]}
+                    stackId={isYearlyServiceComparison ? "services" : undefined}
                   />
                 ))
               ) : (

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface SalesByServiceData {
   name: string;
-  [key: string]: any; // Para permitir propriedades dinâmicas dos anos
+  [key: string]: any; // Para permitir propriedades dinâmicas dos serviços
 }
 
 export const useSalesByService = () => {
@@ -43,10 +43,10 @@ export const useSalesByService = () => {
     }
   };
 
-  const fetchSalesByService = async (year?: number) => {
+  const fetchSalesByService = async () => {
     try {
       setIsLoading(true);
-      console.log("Buscando dados de vendas por serviço para o ano:", year || "todos");
+      console.log("Buscando dados de vendas por serviço agrupados por ano");
       
       let query = supabase
         .from('orcamentos')
@@ -62,13 +62,6 @@ export const useSalesByService = () => {
         .eq('status', 'ativo')
         .not('data_venda', 'is', null);
 
-      // Filtrar por ano se especificado
-      if (year) {
-        query = query
-          .gte('data_venda', `${year}-01-01`)
-          .lte('data_venda', `${year}-12-31`);
-      }
-
       const { data, error } = await query;
 
       if (error) {
@@ -78,76 +71,46 @@ export const useSalesByService = () => {
 
       console.log("Dados brutos de vendas por serviço:", data);
 
-      if (year) {
-        // Para um ano específico, retornar formato simples para gráfico de barras
-        const serviceMap: Record<string, number> = {};
-        
-        if (data) {
-          data.forEach(orcamento => {
-            orcamento.orcamentos_itens.forEach((item: any) => {
-              if (item.valor > 0 && item.servicos) {
-                const serviceName = item.servicos.nome;
-                serviceMap[serviceName] = (serviceMap[serviceName] || 0) + Number(item.valor);
-              }
-            });
-          });
-        }
-
-        const processedData = Object.entries(serviceMap)
-          .map(([name, value]) => ({
-            name,
-            value
-          }))
-          .sort((a, b) => b.value - a.value);
-
-        console.log("Dados processados de vendas por serviço (ano específico):", processedData);
-        setSalesByServiceData(processedData);
-        return processedData;
-      } else {
-        // Para todos os anos, agrupar por serviço e ano
-        const serviceYearMap: Record<string, Record<string, number>> = {};
-        const yearsSet = new Set<string>();
-        
-        if (data) {
-          data.forEach(orcamento => {
-            const year = orcamento.data_venda.substring(0, 4);
-            yearsSet.add(year);
-            
-            orcamento.orcamentos_itens.forEach((item: any) => {
-              if (item.valor > 0 && item.servicos) {
-                const serviceName = item.servicos.nome;
-                
-                if (!serviceYearMap[serviceName]) {
-                  serviceYearMap[serviceName] = {};
-                }
-                
-                serviceYearMap[serviceName][year] = (serviceYearMap[serviceName][year] || 0) + Number(item.valor);
-              }
-            });
-          });
-        }
-
-        // Converter para formato do gráfico empilhado
-        const years = Array.from(yearsSet).sort();
-        const processedData = Object.entries(serviceYearMap).map(([serviceName, yearValues]) => {
-          const serviceData: SalesByServiceData = { name: serviceName };
+      // Agrupar por ano e serviço
+      const yearServiceMap: Record<string, Record<string, number>> = {};
+      const servicesSet = new Set<string>();
+      
+      if (data) {
+        data.forEach(orcamento => {
+          const year = orcamento.data_venda.substring(0, 4);
           
-          years.forEach(year => {
-            serviceData[year] = yearValues[year] || 0;
+          orcamento.orcamentos_itens.forEach((item: any) => {
+            if (item.valor > 0 && item.servicos) {
+              const serviceName = item.servicos.nome;
+              servicesSet.add(serviceName);
+              
+              if (!yearServiceMap[year]) {
+                yearServiceMap[year] = {};
+              }
+              
+              yearServiceMap[year][serviceName] = (yearServiceMap[year][serviceName] || 0) + Number(item.valor);
+            }
           });
-          
-          return serviceData;
-        }).sort((a, b) => {
-          // Ordenar por total de vendas (soma de todos os anos)
-          const totalA = years.reduce((sum, year) => sum + (a[year] || 0), 0);
-          const totalB = years.reduce((sum, year) => sum + (b[year] || 0), 0);
-          return totalB - totalA;
         });
-
-        console.log("Dados processados de vendas por serviço (todos os anos):", processedData);
-        setSalesByServiceData(processedData);
-        return processedData;
       }
+
+      // Converter para formato do gráfico empilhado
+      const years = Object.keys(yearServiceMap).sort();
+      const services = Array.from(servicesSet);
+      
+      const processedData = years.map(year => {
+        const yearData: SalesByServiceData = { name: year };
+        
+        services.forEach(service => {
+          yearData[service] = yearServiceMap[year][service] || 0;
+        });
+        
+        return yearData;
+      });
+
+      console.log("Dados processados de vendas por serviço (por ano):", processedData);
+      setSalesByServiceData(processedData);
+      return processedData;
     } catch (error: any) {
       console.error("Erro ao processar dados de vendas por serviço:", error);
       toast({
