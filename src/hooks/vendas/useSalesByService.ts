@@ -13,6 +13,36 @@ export const useSalesByService = () => {
   const { toast } = useToast();
   const [salesByServiceData, setSalesByServiceData] = useState<SalesByServiceData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [firstSaleYear, setFirstSaleYear] = useState<number | null>(null);
+
+  const fetchFirstSaleYear = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orcamentos')
+        .select('data_venda')
+        .eq('tipo', 'venda')
+        .eq('status', 'ativo')
+        .not('data_venda', 'is', null)
+        .order('data_venda', { ascending: true })
+        .limit(1);
+
+      if (error) {
+        console.error("Erro ao buscar primeira venda:", error);
+        return null;
+      }
+
+      if (data && data.length > 0) {
+        const year = parseInt(data[0].data_venda.substring(0, 4));
+        setFirstSaleYear(year);
+        return year;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Erro ao processar primeira venda:", error);
+      return null;
+    }
+  };
 
   const fetchSalesByService = async (year?: number) => {
     try {
@@ -97,6 +127,8 @@ export const useSalesByService = () => {
   return {
     salesByServiceData,
     fetchSalesByService,
+    fetchFirstSaleYear,
+    firstSaleYear,
     isLoading
   };
 };

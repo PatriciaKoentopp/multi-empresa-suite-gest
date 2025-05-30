@@ -8,15 +8,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const SalesByServiceChart = () => {
   const [selectedYear, setSelectedYear] = useState<string>("all");
-  const { salesByServiceData, fetchSalesByService, isLoading } = useSalesByService();
-
-  // Gerar lista de anos disponíveis (últimos 5 anos + ano atual)
-  const currentYear = new Date().getFullYear();
-  const availableYears = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const { salesByServiceData, fetchSalesByService, fetchFirstSaleYear, firstSaleYear, isLoading } = useSalesByService();
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
 
   useEffect(() => {
-    // Carregar dados inicialmente (todos os anos)
-    fetchSalesByService();
+    // Carregar dados inicialmente e buscar primeiro ano de venda
+    const loadInitialData = async () => {
+      const firstYear = await fetchFirstSaleYear();
+      if (firstYear) {
+        // Gerar lista de anos a partir da primeira venda até o ano atual
+        const currentYear = new Date().getFullYear();
+        const years = Array.from({ length: currentYear - firstYear + 1 }, (_, i) => firstYear + i).reverse();
+        setAvailableYears(years);
+      }
+      fetchSalesByService();
+    };
+
+    loadInitialData();
   }, []);
 
   const handleYearChange = (value: string) => {
