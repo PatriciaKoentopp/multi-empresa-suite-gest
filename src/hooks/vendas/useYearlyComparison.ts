@@ -23,8 +23,8 @@ export const useYearlyComparison = () => {
       
       console.log("Dados de comparação anual brutos:", yearComparisonData);
       
-      // Buscar contagem de vendas por ano separadamente
-      const { data: salesCountData, error: countError } = await supabase
+      // Buscar todos os orçamentos de venda para calcular quantidades
+      const { data: salesData, error: salesError } = await supabase
         .from('orcamentos')
         .select(`
           data_venda,
@@ -34,32 +34,40 @@ export const useYearlyComparison = () => {
         .eq('status', 'ativo')
         .not('data_venda', 'is', null);
 
-      if (countError) {
-        console.error("Erro ao buscar contagem de vendas:", countError);
-        throw countError;
+      if (salesError) {
+        console.error("Erro ao buscar dados de vendas:", salesError);
+        throw salesError;
       }
 
-      // Processar contagem por ano
+      // Processar contagem por ano e mês usando a mesma lógica
       const salesCountByYear: Record<number, number> = {};
+      const salesCountByYearMonth: Record<string, number> = {};
       
-      if (salesCountData) {
-        salesCountData.forEach(orcamento => {
+      if (salesData) {
+        salesData.forEach(orcamento => {
           if (orcamento.data_venda) {
-            const year = new Date(orcamento.data_venda).getFullYear();
+            // Usar substring para extrair ano e mês da data (formato YYYY-MM-DD)
+            const year = parseInt(orcamento.data_venda.substring(0, 4), 10);
+            const month = parseInt(orcamento.data_venda.substring(5, 7), 10);
+            const yearMonthKey = `${year}-${month}`;
             
-            // Verificar se tem itens com valor > 0
+            // Verificar se tem itens com valor > 0 (mesmo critério usado nos dados mensais)
             const temValor = orcamento.orcamentos_itens.some((item: any) => 
               Number(item.valor) > 0
             );
             
             if (temValor) {
+              // Contar para o ano
               salesCountByYear[year] = (salesCountByYear[year] || 0) + 1;
+              // Contar para o mês específico do ano
+              salesCountByYearMonth[yearMonthKey] = (salesCountByYearMonth[yearMonthKey] || 0) + 1;
             }
           }
         });
       }
 
       console.log("Contagem de vendas por ano:", salesCountByYear);
+      console.log("Contagem de vendas por ano-mês:", salesCountByYearMonth);
       
       // Garantir que todos os campos numéricos sejam números e não nulos
       const processedYearlyData = Array.isArray(yearComparisonData) ? yearComparisonData.map((item: any) => ({

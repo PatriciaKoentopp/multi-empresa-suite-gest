@@ -83,7 +83,7 @@ export const useMonthlySalesData = () => {
           }
         }
 
-        // Calcular quantidade de vendas para este mês
+        // Calcular quantidade de vendas para este mês usando substring para extrair o mês
         const mesNumero = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
                           .indexOf(currentMonth.name) + 1;
@@ -92,11 +92,11 @@ export const useMonthlySalesData = () => {
         if (orcamentosCurrentYear) {
           orcamentosCurrentYear.forEach(orcamento => {
             if (orcamento.data_venda) {
-              // Extrair mês da data (formato YYYY-MM-DD)
+              // Usar substring para extrair mês da data (formato YYYY-MM-DD) - mesma lógica do hook anual
               const mesVenda = parseInt(orcamento.data_venda.substring(5, 7), 10);
               
               if (mesVenda === mesNumero) {
-                // Verificar se tem itens com valor > 0
+                // Verificar se tem itens com valor > 0 (mesma lógica do hook anual)
                 const temValor = orcamento.orcamentos_itens.some((item: any) => 
                   Number(item.valor) > 0
                 );
