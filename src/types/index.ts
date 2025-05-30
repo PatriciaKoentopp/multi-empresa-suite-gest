@@ -1,63 +1,39 @@
 
+export interface ModuleNavItem {
+  title: string;
+  href?: string;
+  icon?: React.ReactNode | string;
+  subItems?: SubNavItem[];
+}
 
-export interface Company {
+export interface SubNavItem {
+  title: string;
+  href: string;
+}
+
+export interface TipoTitulo {
   id: string;
-  razao_social: string;
-  nome_fantasia: string;
-  cnpj: string;
-  inscricao_estadual?: string;
-  inscricao_municipal?: string;
-  email?: string;
-  telefone?: string;
-  site?: string;
-  cnae?: string;
-  regime_tributacao?: string;
-  logo?: string;
-  cep: string;
-  logradouro: string;
-  numero: string;
-  complemento?: string;
-  bairro: string;
-  cidade: string;
-  estado: string;
-  pais: string;
-  created_at?: string | null;
-  updated_at?: string | null;
-  
-  // Aliases em camelCase para compatibilidade
-  razaoSocial: string;
-  nomeFantasia: string;
-  inscricaoEstadual?: string;
-  inscricaoMunicipal?: string;
-  regimeTributacao?: string;
-  createdAt?: string | null;
-  updatedAt?: string | null;
-  
-  // Objeto endereco para compatibilidade
-  endereco: {
-    cep: string;
-    logradouro: string;
-    numero: string;
-    complemento?: string;
-    bairro: string;
-    cidade: string;
-    estado: string;
-    pais: string;
-  };
+  nome: string;
+  tipo: string;
+  empresa_id: string;
+  conta_contabil_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Favorecido {
   id: string;
-  tipo: string;
-  tipo_documento: string;
-  documento: string;
-  grupo_id?: string | null;
-  profissao_id?: string | null;
   nome: string;
-  nome_fantasia?: string;
+  documento: string;
+  tipo: string;
   email?: string;
   telefone?: string;
-  cep?: string;
+  status: string;
+  empresa_id: string;
+  grupo_id?: string;
+  profissao_id?: string;
+  nome_fantasia?: string;
   logradouro?: string;
   numero?: string;
   complemento?: string;
@@ -65,50 +41,85 @@ export interface Favorecido {
   cidade?: string;
   estado?: string;
   pais?: string;
-  data_aniversario?: Date | string;
-  status: string;
-  empresa_id: string;
-  created_at?: string;
-  updated_at?: string;
+  cep?: string;
+  tipo_documento: string;
+  data_aniversario?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface GrupoFavorecido {
   id: string;
   nome: string;
-  status: "ativo" | "inativo";
   empresa_id: string;
-  created_at: Date | string;
-  updated_at: Date | string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Profissao {
   id: string;
   nome: string;
-  status: "ativo" | "inativo";
   empresa_id: string;
-  created_at: Date | string;
-  updated_at: Date | string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MotivoPerda {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Origem {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Usuario {
   id: string;
   nome: string;
   email: string;
-  tipo: "Administrador" | "Usuário";
-  status: "ativo" | "inativo";
-  vendedor: "sim" | "nao";
-  empresa_id?: string;
+  empresa_id: string;
+  tipo: 'Administrador' | 'Usuário';
+  vendedor: 'sim' | 'nao';
+  status: 'ativo' | 'inativo';
   created_at: string;
   updated_at: string;
 }
 
+// Interfaces para vendas
 export interface Servico {
   id: string;
   nome: string;
   descricao?: string;
-  conta_receita_id?: string;
-  status: "ativo" | "inativo";
   empresa_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Orcamento {
+  id: string;
+  codigo: string;
+  data: string;
+  favorecido_id: string;
+  empresa_id: string;
+  forma_pagamento: string;
+  numero_parcelas: number;
+  status: string;
+  tipo: string;
+  data_venda?: string;
+  observacoes?: string;
+  codigo_projeto?: string;
   created_at: string;
   updated_at: string;
 }
@@ -118,8 +129,8 @@ export interface TabelaPreco {
   nome: string;
   vigencia_inicial?: string;
   vigencia_final?: string;
-  status: "ativo" | "inativo";
   empresa_id: string;
+  status: string;
   created_at: string;
   updated_at: string;
 }
@@ -127,39 +138,22 @@ export interface TabelaPreco {
 export interface TabelaPrecoItem {
   id: string;
   tabela_id: string;
-  servico_id?: string;
   produto_id?: string;
+  servico_id?: string;
   preco: number;
   created_at: string;
   updated_at: string;
 }
 
-export interface MotivoPerda {
-  id: string;
-  nome: string;
-  status: "ativo" | "inativo";
-  empresa_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Origem {
-  id: string;
-  nome: string;
-  status: "ativo" | "inativo";
-  empresa_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
+// Interfaces para comparação de vendas
 export interface YearlyComparison {
   year: number;
   total: number;
-  variacao_total?: number;
+  qtde_vendas: number;
+  variacao_total: number | null;
   media_mensal: number;
-  variacao_media?: number;
+  variacao_media: number | null;
   num_meses: number;
-  qtde_vendas?: number;
 }
 
 export interface SaleData {
@@ -167,17 +161,25 @@ export interface SaleData {
   faturado: number;
 }
 
-export interface ModuleNavItem {
-  title: string;
-  icon: any;
-  href?: string;
-  subItems?: SubNavItem[];
-  module?: string;
+// Interface para empresa
+export interface Company {
+  id: string;
+  nome_fantasia: string;
+  razao_social: string;
+  cnpj: string;
+  email?: string;
+  telefone?: string;
+  logradouro: string;
+  numero: string;
+  complemento?: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+  pais: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface SubNavItem {
-  title: string;
-  href: string;
-  module?: string;
-}
-
+// Re-export das interfaces do arquivo financeiro
+export * from './financeiro';

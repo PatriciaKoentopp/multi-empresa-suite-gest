@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +29,8 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
             nome: grupoData.nome,
             status: grupoData.status as "ativo" | "inativo",
             empresa_id: grupoData.empresa_id,
-            created_at: grupoData.created_at,
-            updated_at: grupoData.updated_at
+            created_at: new Date(grupoData.created_at),
+            updated_at: new Date(grupoData.updated_at)
           });
         }
       }
@@ -47,8 +48,8 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
             nome: profissaoData.nome,
             status: profissaoData.status as "ativo" | "inativo",
             empresa_id: profissaoData.empresa_id,
-            created_at: profissaoData.created_at,
-            updated_at: profissaoData.updated_at
+            created_at: new Date(profissaoData.created_at),
+            updated_at: new Date(profissaoData.updated_at)
           });
         }
       }
@@ -174,9 +175,7 @@ export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps
                 <span className="text-muted-foreground">Aniversário:</span>
                 <span className="font-medium">
                   {favorecido.data_aniversario 
-                    ? formatDate(typeof favorecido.data_aniversario === 'string' 
-                        ? new Date(favorecido.data_aniversario) 
-                        : favorecido.data_aniversario)
+                    ? formatDate(favorecido.data_aniversario)
                     : "Não informado"}
                 </span>
               </div>

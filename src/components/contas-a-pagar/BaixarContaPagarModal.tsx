@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -15,14 +16,6 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { Antecipacao, AntecipacaoSelecionada } from "@/types/financeiro";
-
-interface AntecipacaoDisponivel {
-  id: string;
-  descricao: string;
-  valor_total: number;
-  valor_utilizado: number;
-  valor_disponivel: number;
-}
 
 interface BaixarContaPagarModalProps {
   conta?: ContaPagar | null;
@@ -156,11 +149,12 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
   const valorTotalConta = valorConta + valorAcrescimos - desconto;
   const valorAPagar = Math.max(0, valorTotalConta - valorTotalAntecipacoes);
 
-  // Funções para gerenciar antecipações selecionadas - usando 'valor' ao invés de 'valor_utilizado'
+  // Funções para gerenciar antecipações selecionadas
   const handleAntecipacaoChange = (antecipacaoId: string, checked: boolean) => {
     if (checked) {
       const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antecipacaoId);
       if (antecipacao) {
+        // Preencher automaticamente com o valor disponível da antecipação
         const valorDisponivel = antecipacao.valor_disponivel;
         setAntecipacoesSelecionadas(prev => [
           ...prev,

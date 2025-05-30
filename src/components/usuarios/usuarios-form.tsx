@@ -63,9 +63,9 @@ export function UsuariosForm({ usuario, onSubmit, onCancel }: UsuariosFormProps)
         tipo: data.tipo,
         status: data.status,
         vendedor: data.vendedor,
-        created_at: usuario?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        empresa_id: usuario?.empresa_id || undefined
+        created_at: usuario?.created_at || new Date(),
+        updated_at: new Date(),
+        empresa_id: usuario?.empresa_id || null
       };
       
       onSubmit(usuarioData);

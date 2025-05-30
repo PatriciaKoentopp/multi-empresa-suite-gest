@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -15,14 +16,6 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { Antecipacao, AntecipacaoSelecionada } from "@/types/financeiro";
-
-interface AntecipacaoDisponivel {
-  id: string;
-  descricao: string;
-  valor_total: number;
-  valor_utilizado: number;
-  valor_disponivel: number;
-}
 
 interface BaixarContaReceberModalProps {
   conta?: ContaReceber | null;
@@ -435,19 +428,21 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Conta Corrente *</label>
-            <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
-              <SelectTrigger className="w-full bg-white">
-                <SelectValue placeholder="Selecione a conta" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                {contasCorrente.map((opt) => (
-                  <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {valorAReceber > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Conta Corrente *</label>
+              <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
+                <SelectTrigger className="w-full bg-white">
+                  <SelectValue placeholder="Selecione a conta" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {contasCorrente.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium mb-1">Forma de Pagamento *</label>

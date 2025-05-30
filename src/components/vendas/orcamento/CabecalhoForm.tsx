@@ -73,10 +73,9 @@ export function CabecalhoForm({
             type="text" 
             value={codigoVenda} 
             onChange={onCodigoVendaChange}
-            placeholder="Código será gerado automaticamente"
+            placeholder="Digite o código da venda"
             required
-            disabled={true}
-            className="bg-gray-100 cursor-not-allowed"
+            disabled={disabled}
           />
         </div>
         

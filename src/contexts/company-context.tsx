@@ -99,8 +99,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           cidade: company.cidade,
           estado: company.estado,
           pais: company.pais,
-          created_at: company.created_at,
-          updated_at: company.updated_at,
+          created_at: company.created_at ? new Date(company.created_at) : null,
+          updated_at: company.updated_at ? new Date(company.updated_at) : null,
           
           // Adicionar aliases em camelCase para compatibilidade
           razaoSocial: company.razao_social,
@@ -108,8 +108,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           inscricaoEstadual: company.inscricao_estadual,
           inscricaoMunicipal: company.inscricao_municipal,
           regimeTributacao: company.regime_tributacao,
-          createdAt: company.created_at,
-          updatedAt: company.updated_at,
+          createdAt: company.created_at ? new Date(company.created_at) : null,
+          updatedAt: company.updated_at ? new Date(company.updated_at) : null,
           
           // Adicionar objeto endereco para compatibilidade
           endereco: {
@@ -177,8 +177,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           cidade: data.cidade,
           estado: data.estado,
           pais: data.pais,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
+          created_at: data.created_at ? new Date(data.created_at) : null,
+          updated_at: data.updated_at ? new Date(data.updated_at) : null,
           
           // Adicionar aliases em camelCase para compatibilidade
           razaoSocial: data.razao_social,
@@ -186,8 +186,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           inscricaoEstadual: data.inscricao_estadual,
           inscricaoMunicipal: data.inscricao_municipal,
           regimeTributacao: data.regime_tributacao,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
+          createdAt: data.created_at ? new Date(data.created_at) : null,
+          updatedAt: data.updated_at ? new Date(data.updated_at) : null,
           
           // Adicionar objeto endereco para compatibilidade
           endereco: {
@@ -221,16 +221,16 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       // Mapear os dados da aplicação para o formato do banco
       const { data, error } = await supabase.from("empresas").insert([
         {
-          razao_social: company.razao_social,
-          nome_fantasia: company.nome_fantasia,
+          razao_social: company.razao_social || company.razaoSocial,
+          nome_fantasia: company.nome_fantasia || company.nomeFantasia,
           cnpj: company.cnpj,
-          inscricao_estadual: company.inscricao_estadual,
-          inscricao_municipal: company.inscricao_municipal,
+          inscricao_estadual: company.inscricao_estadual || company.inscricaoEstadual,
+          inscricao_municipal: company.inscricao_municipal || company.inscricaoMunicipal,
           email: company.email,
           telefone: company.telefone,
           site: company.site,
           cnae: company.cnae,
-          regime_tributacao: company.regime_tributacao,
+          regime_tributacao: company.regime_tributacao || company.regimeTributacao,
           logo: company.logo,
           cep: company.cep || (company.endereco ? company.endereco.cep : ""),
           logradouro: company.logradouro || (company.endereco ? company.endereco.logradouro : ""),
@@ -266,16 +266,16 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase
         .from("empresas")
         .update({
-          razao_social: company.razao_social,
-          nome_fantasia: company.nome_fantasia,
+          razao_social: company.razao_social || company.razaoSocial,
+          nome_fantasia: company.nome_fantasia || company.nomeFantasia,
           cnpj: company.cnpj,
-          inscricao_estadual: company.inscricao_estadual,
-          inscricao_municipal: company.inscricao_municipal,
+          inscricao_estadual: company.inscricao_estadual || company.inscricaoEstadual,
+          inscricao_municipal: company.inscricao_municipal || company.inscricaoMunicipal,
           email: company.email,
           telefone: company.telefone,
           site: company.site,
           cnae: company.cnae,
-          regime_tributacao: company.regime_tributacao,
+          regime_tributacao: company.regime_tributacao || company.regimeTributacao,
           logo: company.logo,
           cep: company.cep || (company.endereco ? company.endereco.cep : ""),
           logradouro: company.logradouro || (company.endereco ? company.endereco.logradouro : ""),
