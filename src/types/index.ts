@@ -100,3 +100,81 @@ export interface Usuario {
   created_at: string;
   updated_at: string;
 }
+
+export interface Servico {
+  id: string;
+  nome: string;
+  descricao?: string;
+  conta_receita_id?: string;
+  status: "ativo" | "inativo";
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TabelaPreco {
+  id: string;
+  nome: string;
+  vigencia_inicial?: string;
+  vigencia_final?: string;
+  status: "ativo" | "inativo";
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TabelaPrecoItem {
+  id: string;
+  tabela_id: string;
+  servico_id?: string;
+  produto_id?: string;
+  preco: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MotivoPerda {
+  id: string;
+  nome: string;
+  status: "ativo" | "inativo";
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Origem {
+  id: string;
+  nome: string;
+  status: "ativo" | "inativo";
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface YearlyComparison {
+  year: number;
+  total: number;
+  variacao_total?: number;
+  media_mensal: number;
+  variacao_media?: number;
+  num_meses: number;
+}
+
+export interface SaleData {
+  name: string;
+  faturado: number;
+}
+
+export interface ModuleNavItem {
+  label: string;
+  icon: any;
+  href?: string;
+  subItems?: SubNavItem[];
+  module?: string;
+}
+
+export interface SubNavItem {
+  label: string;
+  href: string;
+  module?: string;
+}

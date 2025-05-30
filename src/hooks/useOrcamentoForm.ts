@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format, addMonths } from 'date-fns';
 import { toast } from "@/hooks/use-toast";
@@ -43,6 +42,38 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
 
   // Inicializar parcelas
   const [parcelas, setParcelas] = useState<Parcela[]>(() => getParcelas(0, numeroParcelas, codigoVenda));
+
+  // Função para gerar o próximo código de venda automaticamente
+  async function gerarProximoCodigoVenda() {
+    if (!currentCompany?.id) return "";
+    
+    try {
+      // Buscar o último código de venda da empresa
+      const { data: ultimoOrcamento, error } = await supabase
+        .from('orcamentos')
+        .select('codigo')
+        .eq('empresa_id', currentCompany.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('Erro ao buscar último código:', error);
+        return "1";
+      }
+
+      if (ultimoOrcamento && ultimoOrcamento.length > 0) {
+        const ultimoCodigo = ultimoOrcamento[0].codigo;
+        // Extrair o número do código (assumindo que é numérico)
+        const numeroAtual = parseInt(ultimoCodigo) || 0;
+        return String(numeroAtual + 1);
+      }
+
+      return "1"; // Primeiro orçamento da empresa
+    } catch (error) {
+      console.error('Erro ao gerar próximo código:', error);
+      return "1";
+    }
+  }
 
   function getParcelas(valorTotal: number, numParcelas: number, codigo: string, datasPrimeiroVencimento?: string) {
     if (numParcelas <= 1) {
@@ -90,6 +121,11 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
       // Se temos um ID de orçamento, vamos carregar os dados
       if (orcamentoId) {
         carregarOrcamento(orcamentoId);
+      } else {
+        // Se é um novo orçamento, gerar código automaticamente
+        gerarProximoCodigoVenda().then(codigo => {
+          setCodigoVenda(codigo);
+        });
       }
     }
   }, [currentCompany?.id, orcamentoId]);
