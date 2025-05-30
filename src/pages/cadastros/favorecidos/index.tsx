@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -69,8 +68,8 @@ export default function FavorecidosPage() {
             nome: grupo.nome,
             status: grupo.status as "ativo" | "inativo",
             empresa_id: grupo.empresa_id,
-            created_at: new Date(grupo.created_at),
-            updated_at: new Date(grupo.updated_at)
+            created_at: grupo.created_at,
+            updated_at: grupo.updated_at
           }));
           setGrupos(gruposFormatados);
         }
@@ -107,8 +106,8 @@ export default function FavorecidosPage() {
             nome: profissao.nome,
             status: profissao.status as "ativo" | "inativo",
             empresa_id: profissao.empresa_id,
-            created_at: new Date(profissao.created_at),
-            updated_at: new Date(profissao.updated_at)
+            created_at: profissao.created_at,
+            updated_at: profissao.updated_at
           }));
           setProfissoes(profissoesFormatadas);
         }
@@ -142,9 +141,9 @@ export default function FavorecidosPage() {
         if (data) {
           const favorecidosFormatados: Favorecido[] = data.map(favorecido => ({
             ...favorecido,
-            created_at: new Date(favorecido.created_at),
-            updated_at: new Date(favorecido.updated_at),
-            data_aniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
+            created_at: favorecido.created_at,
+            updated_at: favorecido.updated_at,
+            data_aniversario: favorecido.data_aniversario ? favorecido.data_aniversario : undefined,
             tipo: favorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor",
             tipo_documento: favorecido.tipo_documento as "cpf" | "cnpj",
             status: favorecido.status as "ativo" | "inativo"
@@ -194,18 +193,22 @@ export default function FavorecidosPage() {
     }
 
     try {
-      // Converter a data de aniversário para o formato YYYY-MM-DD para o Supabase
-      const dataAniversarioFormatada = data.data_aniversario ? dateToISOString(data.data_aniversario) : null;
+      // Converter a data de aniversário para string se for Date
+      const dataAniversarioFormatada = data.data_aniversario 
+        ? (data.data_aniversario instanceof Date 
+            ? data.data_aniversario.toISOString().split('T')[0] 
+            : data.data_aniversario)
+        : null;
 
       // Preparar os dados para inserção/atualização no Supabase
       const favorecidoData = {
         empresa_id: currentCompany.id,
-        tipo: data.tipo,
-        tipo_documento: data.tipo_documento,
-        documento: data.documento,
+        tipo: data.tipo || 'fisica',
+        tipo_documento: data.tipo_documento || 'cpf',
+        documento: data.documento || '',
         grupo_id: data.grupo_id === null ? null : data.grupo_id,
         profissao_id: data.profissao_id === null ? null : data.profissao_id,
-        nome: data.nome,
+        nome: data.nome || '',
         nome_fantasia: data.nome_fantasia,
         email: data.email,
         telefone: data.telefone,
@@ -218,7 +221,7 @@ export default function FavorecidosPage() {
         estado: data.estado,
         pais: data.pais,
         data_aniversario: dataAniversarioFormatada,
-        status: data.status,
+        status: data.status || 'ativo',
       };
 
       console.log('Dados enviados para o Supabase:', favorecidoData);
@@ -245,7 +248,7 @@ export default function FavorecidosPage() {
                 ...favorecidoData,
                 data_aniversario: data.data_aniversario,
                 created_at: f.created_at,
-                updated_at: new Date()
+                updated_at: new Date().toISOString()
               };
             }
             return f;
@@ -269,9 +272,9 @@ export default function FavorecidosPage() {
         if (novoFavorecido) {
           const novoFavorecidoFormatado = {
             ...novoFavorecido,
-            created_at: new Date(novoFavorecido.created_at),
-            updated_at: new Date(novoFavorecido.updated_at),
-            data_aniversario: novoFavorecido.data_aniversario ? new Date(novoFavorecido.data_aniversario) : undefined,
+            created_at: novoFavorecido.created_at,
+            updated_at: novoFavorecido.updated_at,
+            data_aniversario: novoFavorecido.data_aniversario ? novoFavorecido.data_aniversario : undefined,
             tipo: novoFavorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor",
             tipo_documento: novoFavorecido.tipo_documento as "cpf" | "cnpj",
             status: novoFavorecido.status as "ativo" | "inativo"
