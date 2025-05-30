@@ -1,4 +1,5 @@
 
+
 export interface Company {
   id: string;
   razao_social: string;
@@ -93,9 +94,9 @@ export interface Usuario {
   id: string;
   nome: string;
   email: string;
-  tipo: string;
-  status: string;
-  vendedor: string;
+  tipo: "Administrador" | "Usuário";
+  status: "ativo" | "inativo";
+  vendedor: "sim" | "nao";
   empresa_id?: string;
   created_at: string;
   updated_at: string;
@@ -158,6 +159,7 @@ export interface YearlyComparison {
   media_mensal: number;
   variacao_media?: number;
   num_meses: number;
+  qtde_vendas?: number;
 }
 
 export interface SaleData {
@@ -166,7 +168,7 @@ export interface SaleData {
 }
 
 export interface ModuleNavItem {
-  label: string;
+  title: string;
   icon: any;
   href?: string;
   subItems?: SubNavItem[];
@@ -174,7 +176,8 @@ export interface ModuleNavItem {
 }
 
 export interface SubNavItem {
-  label: string;
+  title: string;
   href: string;
   module?: string;
 }
+
