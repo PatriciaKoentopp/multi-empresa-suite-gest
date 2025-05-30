@@ -156,12 +156,11 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
   const valorTotalConta = valorConta + valorAcrescimos - desconto;
   const valorAPagar = Math.max(0, valorTotalConta - valorTotalAntecipacoes);
 
-  // Funções para gerenciar antecipações selecionadas
+  // Funções para gerenciar antecipações selecionadas - usando 'valor' ao invés de 'valor_utilizado'
   const handleAntecipacaoChange = (antecipacaoId: string, checked: boolean) => {
     if (checked) {
       const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antecipacaoId);
       if (antecipacao) {
-        // Preencher automaticamente com o valor disponível da antecipação
         const valorDisponivel = antecipacao.valor_disponivel;
         setAntecipacoesSelecionadas(prev => [
           ...prev,

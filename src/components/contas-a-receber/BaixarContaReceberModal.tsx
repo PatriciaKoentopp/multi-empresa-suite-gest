@@ -435,21 +435,19 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
             </div>
           )}
 
-          {valorAReceber > 0 && (
-            <div>
-              <label className="block text-sm font-medium mb-1">Conta Corrente *</label>
-              <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
-                <SelectTrigger className="w-full bg-white">
-                  <SelectValue placeholder="Selecione a conta" />
-                </SelectTrigger>
-                <SelectContent className="bg-white">
-                  {contasCorrente.map((opt) => (
-                    <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium mb-1">Conta Corrente *</label>
+            <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
+              <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder="Selecione a conta" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                {contasCorrente.map((opt) => (
+                  <SelectItem key={opt.id} value={opt.id}>{opt.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Forma de Pagamento *</label>
