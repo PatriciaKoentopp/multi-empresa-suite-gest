@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Calendar, Clock, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -22,29 +23,26 @@ const AlertsSection = () => {
   const [filtroSelecionado, setFiltroSelecionado] = useState<string>("todos");
 
   useEffect(() => {
-    fetchAlertas();
-  }, [currentCompany?.id]);
-
-  const fetchAlertas = async () => {
-    if (!currentCompany?.id) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('alertas')
-        .select('*')
-        .eq('empresa_id', currentCompany.id)
-        .order('data_criacao', { ascending: false });
-
-      if (error) {
-        console.error("Erro ao buscar alertas:", error);
-        return;
+    // Por enquanto vamos simular alguns alertas até a tabela ser criada
+    const alertasSimulados: Alert[] = [
+      {
+        id: "1",
+        tipo: "financeiro",
+        mensagem: "Saldo da conta principal está baixo",
+        data_criacao: new Date().toISOString(),
+        valor: 1500.00
+      },
+      {
+        id: "2", 
+        tipo: "vencimento_conta",
+        mensagem: "Conta de energia elétrica vence em 3 dias",
+        data_criacao: new Date().toISOString(),
+        data_vencimento: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        valor: 450.00
       }
-
-      setAlertas(data || []);
-    } catch (error) {
-      console.error("Erro ao buscar alertas:", error);
-    }
-  };
+    ];
+    setAlertas(alertasSimulados);
+  }, [currentCompany?.id]);
 
   const formatarData = (data: string) => {
     return format(parseISO(data), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR });
