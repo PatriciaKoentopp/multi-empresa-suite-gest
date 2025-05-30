@@ -68,6 +68,7 @@ export const SalesBarChart = ({
     // Para gráfico de vendas por serviço por ano, as chaves são os nomes dos serviços
     valueKeys = Object.keys(chartData[0]).filter(key => 
       key !== "name" && 
+      key !== "total_vendas" && // Excluir chave de quantidade de vendas dos valueKeys
       typeof chartData[0][key] === 'number'
     );
   } else if (isMonthlyComparison) {
@@ -263,6 +264,12 @@ export const SalesBarChart = ({
                           </div>
                         );
                       })}
+                      {/* Mostrar quantidade de vendas para gráfico de vendas por serviço por ano */}
+                      {isYearlyServiceComparison && chartData.find(d => d.name === label)?.total_vendas && (
+                        <p className="text-xs text-gray-600 mt-1">
+                          Total de Vendas: {chartData.find(d => d.name === label)?.total_vendas}
+                        </p>
+                      )}
                     </div>
                   );
                 }} 
