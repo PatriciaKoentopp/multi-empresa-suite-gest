@@ -30,7 +30,8 @@ export const useMonthlySalesData = () => {
         // Se não há dados do ano anterior, continuar sem comparação
       }
 
-      // Buscar quantidade de vendas por mês do ano atual - usando o mesmo critério do valor
+      // Buscar quantidade de vendas por mês usando a mesma query da função SQL
+      // Vamos buscar os dados exatamente como a função get_yearly_sales_comparison faz
       const { data: salesCountData, error: salesCountError } = await supabase
         .from('orcamentos')
         .select(`
@@ -49,19 +50,31 @@ export const useMonthlySalesData = () => {
         console.error(`Erro ao buscar contagem de vendas de ${year}:`, salesCountError);
       }
 
-      // Criar mapa de quantidade de vendas por mês - contando apenas orçamentos únicos com valor
+      // Criar mapa de quantidade de vendas por mês - usando exatamente o mesmo critério da função SQL
       const salesCountByMonth = new Map();
-      const uniqueOrcamentos = new Set();
+      const orcamentosContados = new Set();
       
       if (salesCountData) {
         salesCountData.forEach((sale: any) => {
-          // Evitar contar o mesmo orçamento múltiplas vezes (se tiver múltiplos itens)
-          if (!uniqueOrcamentos.has(sale.id)) {
-            uniqueOrcamentos.add(sale.id);
+          // Contar apenas uma vez cada orçamento que tem pelo menos um item com valor > 0
+          if (!orcamentosContados.has(sale.id)) {
+            orcamentosContados.add(sale.id);
             
-            const monthName = new Date(sale.data_venda).toLocaleDateString('pt-BR', { month: 'long' });
-            const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-            salesCountByMonth.set(capitalizedMonth, (salesCountByMonth.get(capitalizedMonth) || 0) + 1);
+            // Extrair o mês diretamente da string da data (formato YYYY-MM-DD)
+            // Isso evita problemas de timezone
+            const mesString = sale.data_venda.substring(5, 7); // Pega MM da string YYYY-MM-DD
+            const mesNumero = parseInt(mesString, 10); // Converte para número (1-12)
+            
+            // Mapear número do mês para nome completo
+            const nomesMeses = [
+              '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            
+            const nomeMes = nomesMeses[mesNumero];
+            if (nomeMes) {
+              salesCountByMonth.set(nomeMes, (salesCountByMonth.get(nomeMes) || 0) + 1);
+            }
           }
         });
       }
