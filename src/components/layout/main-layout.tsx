@@ -12,15 +12,15 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   const { isAuthenticated, isLoading: authLoading, userData } = useAuth();
-  const { currentCompany, loading: companyLoading, refreshCompanies } = useCompany();
+  const { currentCompany, loading: companyLoading, fetchCompanyById } = useCompany();
   
   // Verificar e carregar a empresa do usuário, se necessário
   useEffect(() => {
     if (userData?.empresa_id && !currentCompany) {
       console.log("[MainLayout] Carregando empresa do usuário:", userData.empresa_id);
-      refreshCompanies();
+      fetchCompanyById(userData.empresa_id);
     }
-  }, [userData, currentCompany, refreshCompanies]);
+  }, [userData, currentCompany, fetchCompanyById]);
   
   // Se loading de auth ou empresa, mostrar estado de carregamento
   if (authLoading || companyLoading) {

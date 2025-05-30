@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,8 +63,8 @@ export function UsuariosForm({ usuario, onSubmit, onCancel }: UsuariosFormProps)
         tipo: data.tipo,
         status: data.status,
         vendedor: data.vendedor,
-        created_at: usuario?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: usuario?.created_at || new Date(),
+        updated_at: new Date(),
         empresa_id: usuario?.empresa_id || null
       };
       
