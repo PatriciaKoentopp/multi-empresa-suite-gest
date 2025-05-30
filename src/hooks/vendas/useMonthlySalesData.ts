@@ -30,27 +30,39 @@ export const useMonthlySalesData = () => {
         // Se não há dados do ano anterior, continuar sem comparação
       }
 
-      // Buscar quantidade de vendas por mês do ano atual
+      // Buscar quantidade de vendas por mês do ano atual - usando o mesmo critério do valor
       const { data: salesCountData, error: salesCountError } = await supabase
         .from('orcamentos')
-        .select('id, data_venda')
+        .select(`
+          id, 
+          data_venda,
+          orcamentos_itens!inner(valor)
+        `)
         .eq('tipo', 'venda')
         .eq('status', 'ativo')
         .gte('data_venda', `${year}-01-01`)
         .lte('data_venda', `${year}-12-31`)
-        .not('data_venda', 'is', null);
+        .not('data_venda', 'is', null)
+        .gt('orcamentos_itens.valor', 0);
 
       if (salesCountError) {
         console.error(`Erro ao buscar contagem de vendas de ${year}:`, salesCountError);
       }
 
-      // Criar mapa de quantidade de vendas por mês
+      // Criar mapa de quantidade de vendas por mês - contando apenas orçamentos únicos com valor
       const salesCountByMonth = new Map();
+      const uniqueOrcamentos = new Set();
+      
       if (salesCountData) {
         salesCountData.forEach((sale: any) => {
-          const monthName = new Date(sale.data_venda).toLocaleDateString('pt-BR', { month: 'long' });
-          const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-          salesCountByMonth.set(capitalizedMonth, (salesCountByMonth.get(capitalizedMonth) || 0) + 1);
+          // Evitar contar o mesmo orçamento múltiplas vezes (se tiver múltiplos itens)
+          if (!uniqueOrcamentos.has(sale.id)) {
+            uniqueOrcamentos.add(sale.id);
+            
+            const monthName = new Date(sale.data_venda).toLocaleDateString('pt-BR', { month: 'long' });
+            const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+            salesCountByMonth.set(capitalizedMonth, (salesCountByMonth.get(capitalizedMonth) || 0) + 1);
+          }
         });
       }
 
