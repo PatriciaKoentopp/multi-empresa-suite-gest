@@ -25,3 +25,35 @@ export interface FluxoCaixaSaldo {
   totalSaidas: number;
   saldoFinal: number;
 }
+
+export interface Antecipacao {
+  id: string;
+  descricao: string;
+  valor_total: number;
+  valor_utilizado: number;
+  favorecido_id: string;
+  tipo_operacao: "receber" | "pagar";
+  status: "ativa" | "inativa";
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AntecipacaoSelecionada {
+  id: string;
+  valor: number;
+}
+
+export interface DadosFinanceiros {
+  totalReceber: number;
+  totalPagar: number;
+  saldoContas: number;
+  fluxoDiario: FluxoCaixaItem[];
+}
+
+export interface FluxoMensal {
+  mes: string;
+  entradas: number;
+  saidas: number;
+  saldo: number;
+}

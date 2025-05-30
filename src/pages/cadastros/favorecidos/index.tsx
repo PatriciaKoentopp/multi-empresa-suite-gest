@@ -1,5 +1,5 @@
+
 import { useState, useEffect } from "react";
-import { MainNav } from "@/components/main-nav";
 import { useCompany } from "@/contexts/company-context";
 import { useNavigate } from "react-router-dom";
 import { Favorecido } from "@/types";
@@ -77,7 +77,12 @@ export default function FavorecidosPage() {
         .eq('empresa_id', currentCompany.id);
 
       if (error) throw error;
-      setGrupos(data || []);
+      setGrupos((data || []).map(item => ({
+        ...item,
+        status: item.status as "ativo" | "inativo",
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      })));
     } catch (error) {
       console.error('Erro ao carregar grupos:', error);
       toast({
@@ -97,7 +102,12 @@ export default function FavorecidosPage() {
         .eq('empresa_id', currentCompany.id);
 
       if (error) throw error;
-      setProfissoes(data || []);
+      setProfissoes((data || []).map(item => ({
+        ...item,
+        status: item.status as "ativo" | "inativo",
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      })));
     } catch (error) {
       console.error('Erro ao carregar profissões:', error);
       toast({
@@ -159,6 +169,9 @@ export default function FavorecidosPage() {
           .from('favorecidos')
           .update({
             ...data,
+            data_aniversario: data.data_aniversario instanceof Date 
+              ? data.data_aniversario.toISOString().split('T')[0]
+              : data.data_aniversario,
             updated_at: new Date().toISOString(),
           })
           .eq('id', favorecidoEditando.id);
@@ -180,6 +193,9 @@ export default function FavorecidosPage() {
           .from('favorecidos')
           .insert({
             ...data,
+            data_aniversario: data.data_aniversario instanceof Date 
+              ? data.data_aniversario.toISOString().split('T')[0]
+              : data.data_aniversario,
             empresa_id: currentCompany?.id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -216,7 +232,7 @@ export default function FavorecidosPage() {
     <>
       <div className="border-b">
         <div className="flex h-full max-w-screen-xl items-center justify-between py-2 px-4 sm:px-6 lg:px-8">
-          <MainNav />
+          <h1 className="text-2xl font-bold">Favorecidos</h1>
           <div className="flex items-center gap-2">
             <Dialog>
               <DialogTrigger asChild>

@@ -10,6 +10,7 @@ export function useLancamentosContabeis() {
   const [lancamentos, setLancamentos] = useState<LancamentoContabil[]>([]);
   const [contasDebito, setContasDebito] = useState<PlanoContas[]>([]);
   const [contasCredito, setContasCredito] = useState<PlanoContas[]>([]);
+  const [planosContas, setPlanosContas] = useState<PlanoContas[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const carregarContas = async () => {
@@ -41,6 +42,7 @@ export function useLancamentosContabeis() {
 
       setContasDebito(contasFormatadas);
       setContasCredito(contasFormatadas);
+      setPlanosContas(contasFormatadas);
     } catch (error) {
       console.error('Erro ao carregar contas:', error);
       toast({
@@ -129,6 +131,10 @@ export function useLancamentosContabeis() {
     }
   };
 
+  const carregarDados = async () => {
+    await Promise.all([carregarContas(), carregarLancamentos()]);
+  };
+
   useEffect(() => {
     if (currentCompany?.id) {
       carregarContas();
@@ -140,8 +146,10 @@ export function useLancamentosContabeis() {
     lancamentos,
     contasDebito,
     contasCredito,
+    planosContas,
     isLoading,
     criarLancamento,
     recarregarLancamentos: carregarLancamentos,
+    carregarDados,
   };
 }

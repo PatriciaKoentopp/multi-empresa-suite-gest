@@ -1,12 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -36,6 +34,9 @@ export default function UsuariosPage() {
 
       const usuariosFormatados = (data || []).map(usuario => ({
         ...usuario,
+        tipo: usuario.tipo as "Administrador" | "Usuário",
+        status: usuario.status as "ativo" | "inativo", 
+        vendedor: usuario.vendedor as "sim" | "nao",
         created_at: usuario.created_at,
         updated_at: usuario.updated_at,
       }));
