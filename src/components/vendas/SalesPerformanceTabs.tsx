@@ -1,6 +1,8 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SalesBarChart } from "./SalesBarChart";
+
 interface SalesPerformanceTabsProps {
   barChartData: any[];
   quarterlyChartData: any[];
@@ -8,6 +10,7 @@ interface SalesPerformanceTabsProps {
   monthlyComparisonData: any[]; // Dados para comparação mensal
   ticketMedioPorProjetoData: any[]; // Novo tipo de dados para ticket médio por projeto
 }
+
 export const SalesPerformanceTabs = ({
   barChartData,
   quarterlyChartData,
@@ -24,7 +27,9 @@ export const SalesPerformanceTabs = ({
     ticketMedioPorProjetoDataLength: ticketMedioPorProjetoData?.length,
     monthlyComparisonSample: monthlyComparisonData?.slice(0, 2)
   });
-  return <div className="space-y-4">
+
+  return (
+    <div className="space-y-4">
       <Tabs defaultValue="monthly">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold">Desempenho de Vendas</h3>
@@ -36,6 +41,7 @@ export const SalesPerformanceTabs = ({
             <TabsTrigger value="ticket-medio-projeto">Ticket por Projeto</TabsTrigger>
           </TabsList>
         </div>
+
         <TabsContent value="monthly" className="mt-4">
           <Card>
             <CardHeader>
@@ -46,6 +52,7 @@ export const SalesPerformanceTabs = ({
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="quarterly">
           <Card>
             <CardHeader>
@@ -56,6 +63,7 @@ export const SalesPerformanceTabs = ({
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="yearly">
           <Card>
             <CardHeader>
@@ -66,6 +74,7 @@ export const SalesPerformanceTabs = ({
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="monthly-comparison">
           <Card>
             <CardHeader>
@@ -77,11 +86,12 @@ export const SalesPerformanceTabs = ({
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="ticket-medio-projeto">
           <Card>
             <CardHeader>
               <CardTitle>Ticket Médio por Projeto por Ano</CardTitle>
-              <p className="text-sm text-muted-foreground">Dados disponíveis a partir de 2024</p>
+              <p className="text-sm text-muted-foreground">Dados desde a primeira venda registrada</p>
             </CardHeader>
             <CardContent>
               <SalesBarChart data={ticketMedioPorProjetoData} multiColor={true} valueKey="ticket_medio" />
@@ -89,5 +99,6 @@ export const SalesPerformanceTabs = ({
           </Card>
         </TabsContent>
       </Tabs>
-    </div>;
+    </div>
+  );
 };

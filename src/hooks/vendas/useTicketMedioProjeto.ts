@@ -12,8 +12,31 @@ export const useTicketMedioProjeto = () => {
       console.log("Buscando dados de ticket médio por projeto por ano");
       const currentYear = new Date().getFullYear();
       
-      // Vamos buscar dados a partir de 2024 (ajustado conforme solicitado)
-      const anoInicial = 2024;
+      // Buscar o primeiro ano com vendas para definir o início
+      const { data: primeiraVenda, error: errorPrimeiraVenda } = await supabase
+        .from('orcamentos')
+        .select('data_venda')
+        .eq('tipo', 'venda')
+        .eq('status', 'ativo')
+        .not('data_venda', 'is', null)
+        .order('data_venda', { ascending: true })
+        .limit(1);
+
+      if (errorPrimeiraVenda) {
+        console.error("Erro ao buscar primeira venda:", errorPrimeiraVenda);
+        throw errorPrimeiraVenda;
+      }
+
+      if (!primeiraVenda || primeiraVenda.length === 0) {
+        console.log("Nenhuma venda encontrada");
+        return [];
+      }
+
+      // Extrair o ano da primeira venda
+      const anoInicial = new Date(primeiraVenda[0].data_venda).getFullYear();
+      
+      console.log(`Buscando dados de ticket médio desde ${anoInicial} até ${currentYear}`);
+      
       const anosDisponiveis = [];
       for (let ano = anoInicial; ano <= currentYear; ano++) {
         anosDisponiveis.push(ano);
