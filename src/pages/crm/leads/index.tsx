@@ -176,7 +176,7 @@ export default function LeadsPage() {
         vendedor: usuario.vendedor || 'nao',
         empresa_id: usuario.empresa_id,
         created_at: usuario.created_at ? new Date(usuario.created_at) : undefined,
-        updated_at: funil.updated_at ? new Date(funil.updated_at) : undefined
+        updated_at: usuario.updated_at ? new Date(usuario.updated_at) : undefined
       }));
       
       setUsuarios(usuariosFormatados);
