@@ -1292,6 +1292,35 @@ export type Database = {
           },
         ]
       }
+      numeracao_orcamentos: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          proximo_numero: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          proximo_numero?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          proximo_numero?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "numeracao_orcamentos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orcamentos: {
         Row: {
           codigo: string
@@ -1899,6 +1928,10 @@ export type Database = {
       gerar_parcelas_contrato: {
         Args: { contrato_id_param: string }
         Returns: undefined
+      }
+      gerar_proximo_numero_orcamento: {
+        Args: { empresa_id_param: string }
+        Returns: number
       }
       get_monthly_sales_chart_data: {
         Args: { year_param: number }

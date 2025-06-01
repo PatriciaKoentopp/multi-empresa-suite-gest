@@ -86,16 +86,22 @@ export default function OrcamentoPage() {
     );
   }
 
+  // Definir título baseado no contexto
+  const getPageTitle = () => {
+    if (orcamentoId) {
+      if (isVisualizacao) {
+        return `Visualizar Orçamento ${codigoVenda}`;
+      }
+      return `Editar Orçamento ${codigoVenda}`;
+    }
+    return "Novo Orçamento";
+  };
+
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">
-          {orcamentoId 
-            ? isVisualizacao 
-              ? "Visualizar Orçamento" 
-              : "Editar Orçamento" 
-            : "Novo Orçamento"
-          }
+          {getPageTitle()}
         </h2>
       </div>
       

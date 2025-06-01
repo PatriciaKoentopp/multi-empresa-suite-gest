@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format, addMonths } from 'date-fns';
 import { toast } from "@/hooks/use-toast";
@@ -41,8 +40,8 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
   // Cálculo do total do orçamento
   const total = servicos.reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
 
-  // Inicializar parcelas
-  const [parcelas, setParcelas] = useState<Parcela[]>(() => getParcelas(0, numeroParcelas, codigoVenda));
+  // Inicializar parcelas - usa o código do orçamento quando disponível
+  const [parcelas, setParcelas] = useState<Parcela[]>(() => getParcelas(0, numeroParcelas, codigoVenda || "TEMP"));
 
   function getParcelas(valorTotal: number, numParcelas: number, codigo: string, datasPrimeiroVencimento?: string) {
     if (numParcelas <= 1) {
@@ -100,7 +99,8 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     // ou quando for uma nova inicialização, não a cada edição de valor
     if (!parcelasCarregadas) {
       const dataPrimeiroParcela = parcelas.length > 0 ? parcelas[0].dataVencimento : "";
-      const novasParcelas = getParcelas(total, numeroParcelas, codigoVenda, dataPrimeiroParcela);
+      const codigoParaParcelas = codigoVenda || "TEMP";
+      const novasParcelas = getParcelas(total, numeroParcelas, codigoParaParcelas, dataPrimeiroParcela);
       setParcelas(novasParcelas);
     }
   }, [numeroParcelas, codigoVenda]);
@@ -111,7 +111,8 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     // ou se o orçamento é novo, recalcular as parcelas
     if (total !== ultimoTotal && (!parcelasCarregadas || !orcamentoId)) {
       const dataPrimeiroParcela = parcelas.length > 0 ? parcelas[0].dataVencimento : "";
-      const novasParcelas = getParcelas(total, numeroParcelas, codigoVenda, dataPrimeiroParcela);
+      const codigoParaParcelas = codigoVenda || "TEMP";
+      const novasParcelas = getParcelas(total, numeroParcelas, codigoParaParcelas, dataPrimeiroParcela);
       setParcelas(novasParcelas);
       setUltimoTotal(total);
     }
@@ -532,12 +533,13 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
         if (parcelasError) throw parcelasError;
       } else {
         // Inserir novo orçamento (sempre como tipo "orcamento")
+        // O código será gerado automaticamente pelo trigger
         const { data: orcamento, error: orcamentoError } = await supabase
           .from('orcamentos')
           .insert({
             empresa_id: currentCompany?.id,
             favorecido_id: favorecidoId,
-            codigo: codigoVenda,
+            // Remover codigo do INSERT - será gerado automaticamente
             tipo: 'orcamento', // Tipo fixo como "orcamento"
             data: data ? new Date(data).toISOString() : new Date().toISOString(),
             codigo_projeto: codigoProjeto || null,
@@ -554,6 +556,9 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
 
         if (orcamentoError) throw orcamentoError;
 
+        // Atualizar o código local com o valor gerado
+        setCodigoVenda(orcamento.codigo);
+
         // Inserir itens do orçamento
         const itensOrcamento = servicos.map(s => ({
           orcamento_id: orcamento.id,
@@ -567,10 +572,10 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
 
         if (itensError) throw itensError;
 
-        // Inserir parcelas
-        const parcelasOrcamento = parcelas.map(p => ({
+        // Inserir parcelas usando o código gerado
+        const parcelasOrcamento = parcelas.map((p, index) => ({
           orcamento_id: orcamento.id,
-          numero_parcela: p.numeroParcela,
+          numero_parcela: `${orcamento.codigo}/${index + 1}`,
           valor: p.valor,
           data_vencimento: p.dataVencimento
         }));

@@ -1,32 +1,24 @@
 
-import React, { useState } from 'react';
-import { DateInput } from "@/components/movimentacao/DateInput";
+import React from "react";
 import { Input } from "@/components/ui/input";
-import { Favorecido } from '@/types';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue 
-} from "@/components/ui/select";
-import { Check, Search } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Favorecido } from "@/types";
 
 interface CabecalhoFormProps {
-  data?: Date;
-  onDataChange: (date?: Date) => void;
+  data: Date | undefined;
+  onDataChange: (data: Date | undefined) => void;
   codigoVenda: string;
   onCodigoVendaChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   favorecidoId: string;
-  onFavorecidoChange: (id: string) => void;
+  onFavorecidoChange: (value: string) => void;
   favorecidos: Favorecido[];
   disabled?: boolean;
 }
@@ -41,104 +33,76 @@ export function CabecalhoForm({
   favorecidos,
   disabled = false
 }: CabecalhoFormProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [open, setOpen] = useState(false);
-  
-  // Função para filtrar os favorecidos com base no termo de busca
-  const filteredFavorecidos = favorecidos.filter(favorecido => {
-    if (!searchTerm) return true;
-    return favorecido.nome.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-  
-  // Encontra o favorecido selecionado
-  const selectedFavorecido = favorecidos.find(f => f.id === favorecidoId);
-
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full">
-          <label className="block text-sm mb-1">Data</label>
-          <DateInput 
-            value={data} 
-            onChange={onDataChange}
-            disabled={disabled}
-          />
-        </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <Label htmlFor="data" className="block text-sm font-medium mb-1">
+          Data *
+        </Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !data && "text-muted-foreground"
+              )}
+              disabled={disabled}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {data ? format(data, "dd/MM/yyyy", { locale: ptBR }) : "Selecione a data"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={data}
+              onSelect={onDataChange}
+              initialFocus
+              locale={ptBR}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
-      
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-1/2">
-          <label className="block text-sm mb-1">Código da Venda *</label>
-          <Input 
-            type="text" 
-            value={codigoVenda} 
-            onChange={onCodigoVendaChange}
-            placeholder="Digite o código da venda"
-            required
-            disabled={disabled}
+
+      {/* Mostrar código apenas quando estiver editando/visualizando um orçamento existente */}
+      {codigoVenda && (
+        <div>
+          <Label htmlFor="codigo" className="block text-sm font-medium mb-1">
+            Código do Orçamento
+          </Label>
+          <Input
+            id="codigo"
+            type="text"
+            value={codigoVenda}
+            readOnly
+            disabled
+            className="bg-gray-50"
+            placeholder="Será gerado automaticamente"
           />
         </div>
-        
-        <div className="w-full md:w-1/2">
-          <label className="block text-sm mb-1">Favorecido *</label>
-          
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className="w-full justify-between"
-                disabled={disabled}
-              >
-                {selectedFavorecido ? selectedFavorecido.nome : "Selecione o Favorecido"}
-                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-white">
-              <div className="px-3 py-2">
-                <Input
-                  placeholder="Buscar favorecido..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="h-9 w-full"
-                />
-              </div>
-              <ScrollArea className="h-72">
-                <div className="p-1">
-                  {filteredFavorecidos.length > 0 ? (
-                    filteredFavorecidos.map((favorecido) => (
-                      <div
-                        key={favorecido.id}
-                        className={cn(
-                          "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
-                          favorecidoId === favorecido.id ? "bg-accent text-accent-foreground" : "hover:bg-accent hover:text-accent-foreground"
-                        )}
-                        onClick={() => {
-                          onFavorecidoChange(favorecido.id);
-                          setOpen(false);
-                          setSearchTerm("");
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            favorecidoId === favorecido.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {favorecido.nome}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-6 text-muted-foreground">
-                      Nenhum favorecido encontrado
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </PopoverContent>
-          </Popover>
-        </div>
+      )}
+
+      <div className={codigoVenda ? "" : "md:col-span-2"}>
+        <Label htmlFor="favorecido" className="block text-sm font-medium mb-1">
+          Cliente/Favorecido *
+        </Label>
+        <Select 
+          value={favorecidoId} 
+          onValueChange={onFavorecidoChange}
+          disabled={disabled}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione o favorecido" />
+          </SelectTrigger>
+          <SelectContent>
+            {favorecidos.map((favorecido) => (
+              <SelectItem key={favorecido.id} value={favorecido.id}>
+                {favorecido.nome}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
