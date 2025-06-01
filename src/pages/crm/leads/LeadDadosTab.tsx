@@ -21,12 +21,12 @@ export function LeadDadosTab({
   formData,
   handleChange,
   handleSelectChange,
-  etapas,
-  origensAtivas,
-  vendedoresAtivos
+  etapas = [],
+  origensAtivas = [],
+  vendedoresAtivos = []
 }: LeadDadosTabProps) {
-  const { items: produtosServicos, isLoading: isLoadingProdutos } = useProdutosServicos();
-  const { favorecidos, isLoading: isLoadingFavorecidos } = useFavorecidos();
+  const { items: produtosServicos = [], isLoading: isLoadingProdutos } = useProdutosServicos();
+  const { favorecidos = [], isLoading: isLoadingFavorecidos } = useFavorecidos();
 
   // Função para lidar com a seleção de produto ou serviço
   const handleItemSelect = (value: string) => {
@@ -96,7 +96,7 @@ export function LeadDadosTab({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Nome</Label>
-          <Input name="nome" value={formData.nome} onChange={handleChange} />
+          <Input name="nome" value={formData.nome || ""} onChange={handleChange} />
         </div>
         <div className="space-y-2">
           <Label>Empresa</Label>
@@ -164,11 +164,11 @@ export function LeadDadosTab({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Email</Label>
-          <Input name="email" value={formData.email} onChange={handleChange} />
+          <Input name="email" value={formData.email || ""} onChange={handleChange} />
         </div>
         <div className="space-y-2">
           <Label>Telefone</Label>
-          <Input name="telefone" value={formData.telefone} onChange={handleChange} />
+          <Input name="telefone" value={formData.telefone || ""} onChange={handleChange} />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -233,7 +233,7 @@ export function LeadDadosTab({
           <Input
             type="number"
             name="valor"
-            value={formData.valor}
+            value={formData.valor || ""}
             onChange={handleChange}
           />
         </div>
