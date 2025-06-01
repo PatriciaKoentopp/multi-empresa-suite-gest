@@ -65,25 +65,22 @@ export function CabecalhoForm({
         </Popover>
       </div>
 
-      {/* Mostrar código apenas quando estiver editando/visualizando um orçamento existente */}
-      {codigoVenda && (
-        <div>
-          <Label htmlFor="codigo" className="block text-sm font-medium mb-1">
-            Código do Orçamento
-          </Label>
-          <Input
-            id="codigo"
-            type="text"
-            value={codigoVenda}
-            readOnly
-            disabled
-            className="bg-gray-50"
-            placeholder="Será gerado automaticamente"
-          />
-        </div>
-      )}
+      <div>
+        <Label htmlFor="codigo" className="block text-sm font-medium mb-1">
+          Código do Orçamento
+        </Label>
+        <Input
+          id="codigo"
+          type="text"
+          value={codigoVenda || ""}
+          readOnly
+          disabled
+          className="bg-gray-50"
+          placeholder="Será gerado automaticamente"
+        />
+      </div>
 
-      <div className={codigoVenda ? "" : "md:col-span-2"}>
+      <div>
         <Label htmlFor="favorecido" className="block text-sm font-medium mb-1">
           Cliente/Favorecido *
         </Label>
