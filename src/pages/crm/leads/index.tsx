@@ -5,10 +5,6 @@ import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Select,
@@ -22,7 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Filter, Search, Check, Square } from "lucide-react";
+import { Plus, Filter, Search } from "lucide-react";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
 import { Origem, Usuario, Funil, EtapaFunil } from "@/types"; 
@@ -36,8 +32,8 @@ import { useAuth } from "@/contexts/auth-context";
 export default function LeadsPage() {
   const { user, userData, isAuthenticated, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [leads, setLeads] = useState([]);
-  const [filteredLeads, setFilteredLeads] = useState([]);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [filteredLeads, setFilteredLeads] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEtapas, setSelectedEtapas] = useState<string[]>([]);
   const [allStagesSelected, setAllStagesSelected] = useState(true);
@@ -47,7 +43,7 @@ export default function LeadsPage() {
   const [origens, setOrigens] = useState<Origem[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [funis, setFunis] = useState<Funil[]>([]);
-  const [motivosPerda, setMotivosPerda] = useState([]);
+  const [motivosPerda, setMotivosPerda] = useState<any[]>([]);
   const [selectedFunilId, setSelectedFunilId] = useState<string>("");
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -119,14 +115,14 @@ export default function LeadsPage() {
       console.log('Funis obtidos:', funisData?.length);
       
       // Transformar dados dos funis para o formato esperado
-      const funisFormatados = funisData.map(funil => ({
+      const funisFormatados = (funisData || []).map(funil => ({
         id: funil.id,
         nome: funil.nome,
         descricao: funil.descricao,
         ativo: funil.ativo,
         empresa_id: funil.empresa_id,
         data_criacao: funil.data_criacao,
-        etapas: funil.etapas.sort((a, b) => a.ordem - b.ordem),
+        etapas: (funil.etapas || []).sort((a: any, b: any) => a.ordem - b.ordem),
         created_at: funil.created_at ? new Date(funil.created_at) : undefined,
         updated_at: funil.updated_at ? new Date(funil.updated_at) : undefined
       }));
@@ -155,7 +151,7 @@ export default function LeadsPage() {
       }
       
       console.log('Origens obtidas:', origensData?.length);
-      setOrigens(origensData);
+      setOrigens(origensData || []);
 
       // Buscar usuários vendedores
       const { data: usuariosData, error: usuariosError } = await supabase
@@ -171,7 +167,7 @@ export default function LeadsPage() {
       
       console.log('Usuários obtidos:', usuariosData?.length);
       
-      const usuariosFormatados = usuariosData.map(usuario => ({
+      const usuariosFormatados = (usuariosData || []).map(usuario => ({
         id: usuario.id,
         nome: usuario.nome,
         email: usuario.email,
@@ -180,7 +176,7 @@ export default function LeadsPage() {
         vendedor: usuario.vendedor || 'nao',
         empresa_id: usuario.empresa_id,
         created_at: usuario.created_at ? new Date(usuario.created_at) : undefined,
-        updated_at: usuario.updated_at ? new Date(usuario.updated_at) : undefined
+        updated_at: funil.updated_at ? new Date(funil.updated_at) : undefined
       }));
       
       setUsuarios(usuariosFormatados);
@@ -199,7 +195,7 @@ export default function LeadsPage() {
       }
       
       console.log('Motivos de perda obtidos:', motivosPerdaData?.length);
-      setMotivosPerda(motivosPerdaData);
+      setMotivosPerda(motivosPerdaData || []);
       
       // Buscar leads após ter os dados de funis
       if (funisFormatados.length > 0) {
@@ -211,7 +207,7 @@ export default function LeadsPage() {
         });
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar dados:', error);
       setLoadError(`Erro ao carregar dados: ${error.message}`);
       toast.error("Erro ao carregar dados", {
@@ -223,7 +219,7 @@ export default function LeadsPage() {
   };
 
   // Função para buscar leads baseado no funil selecionado
-  const fetchLeads = async (empId: string = null, funilId: string = null) => {
+  const fetchLeads = async (empId: string | null = null, funilId: string | null = null) => {
     try {
       // Se não temos funil selecionado ainda, retorna
       const empresaIdToUse = empId || empresaId;
@@ -343,7 +339,7 @@ export default function LeadsPage() {
 
   // Filtrar leads baseado no termo de busca e etapas selecionadas
   useEffect(() => {
-    let filtered = [...leads];
+    let filtered = [...(leads || [])];
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -375,10 +371,8 @@ export default function LeadsPage() {
     setIsFormModalOpen(false);
   };
 
-  // Função para salvar um novo lead ou atualizar um existente
-  const handleSaveLead = async (leadData) => {
+  const handleSaveLead = async (leadData: any) => {
     try {
-      // Garantir que temos um ID de empresa válido
       if (!leadData.empresa_id && !empresaId) {
         toast.error("Erro ao salvar lead", {
           description: "ID da empresa não encontrado."
@@ -386,7 +380,6 @@ export default function LeadsPage() {
         return;
       }
       
-      // Preparar os dados para o formato da tabela no Supabase
       const leadToSave = {
         nome: leadData.nome,
         empresa: leadData.empresa,
@@ -405,7 +398,6 @@ export default function LeadsPage() {
       console.log('Dados a serem salvos:', leadToSave);
 
       if (editingLead) {
-        // Atualizar lead existente
         const { error } = await supabase
           .from('leads')
           .update(leadToSave)
@@ -415,7 +407,6 @@ export default function LeadsPage() {
         
         toast.success("Lead atualizado com sucesso!");
       } else {
-        // Criar novo lead
         const { error } = await supabase
           .from('leads')
           .insert([leadToSave]);
@@ -425,10 +416,9 @@ export default function LeadsPage() {
         toast.success("Lead criado com sucesso!");
       }
       
-      // Recarregar dados após salvar
       fetchLeads();
       handleCloseFormModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar lead:', error);
       toast.error("Erro ao salvar lead", {
         description: "Não foi possível salvar as alterações. Detalhes: " + error.message
@@ -436,8 +426,7 @@ export default function LeadsPage() {
     }
   };
 
-  // Função para deletar um lead
-  const handleDeleteLead = async (id) => {
+  const handleDeleteLead = async (id: string) => {
     try {
       const { error } = await supabase
         .from('leads')
@@ -446,7 +435,6 @@ export default function LeadsPage() {
 
       if (error) throw error;
       
-      // Atualizar a lista de leads localmente
       setLeads(leads.filter((lead) => lead.id !== id));
       toast.success("Lead removido com sucesso!");
     } catch (error) {
@@ -457,7 +445,6 @@ export default function LeadsPage() {
     }
   };
 
-  // Função para mover lead para outra etapa
   const handleMoveLead = async (leadId: string, newEtapaId: string) => {
     try {
       const { error } = await supabase
@@ -467,7 +454,6 @@ export default function LeadsPage() {
 
       if (error) throw error;
       
-      // Atualizar a lista de leads localmente
       const updatedLeads = leads.map(lead => 
         lead.id === leadId ? { ...lead, etapaId: newEtapaId } : lead
       );
@@ -482,137 +468,60 @@ export default function LeadsPage() {
     }
   };
 
-  // Função para lidar com o fim do drag and drop
   const onDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
-    // Se não tiver destino ou o destino for o mesmo que a origem, não faz nada
     if (!destination || 
         (destination.droppableId === source.droppableId && 
          destination.index === source.index)) {
       return;
     }
 
-    // Convertendo o id da etapa de destino para número
     const targetEtapaId = destination.droppableId;
-    // Convertendo o id do lead para número
     const leadId = draggableId;
 
-    // Chamando a função de mover lead
     handleMoveLead(leadId, targetEtapaId);
   };
 
-  // Manipulador para quando o funil é alterado
   const handleFunilChange = (funilId: string) => {
     console.log('Alterando funil para:', funilId);
     setSelectedFunilId(funilId);
-    // Resetar filtros de etapas ao mudar de funil
     setAllStagesSelected(true);
     setSelectedEtapas([]);
   };
 
-  // Manipulador para quando o status é alterado
   const handleStatusChange = (status: string) => {
     console.log('Alterando status para:', status);
     setStatusFilter(status);
   };
   
-  // Manipulador para alternar a seleção de "todas as etapas"
   const handleAllStagesToggle = (checked: boolean) => {
     console.log('Alterando seleção "todas as etapas" para:', checked);
     setAllStagesSelected(checked);
     if (checked) {
-      // Se "todas as etapas" for selecionado, limpar etapas individuais
       setSelectedEtapas([]);
     }
   };
   
-  // Manipulador para alternar a seleção de uma etapa específica
   const handleStageToggle = (etapaId: string, checked: boolean) => {
     console.log('Alterando seleção da etapa', etapaId, 'para:', checked);
     if (checked) {
-      // Adicionar etapa à seleção
       setSelectedEtapas(prev => [...prev, etapaId]);
-      // Se estiver selecionando uma etapa, desmarcar "todas as etapas"
       setAllStagesSelected(false);
     } else {
-      // Remover etapa da seleção
       setSelectedEtapas(prev => prev.filter(id => id !== etapaId));
-      // Se não houver etapas selecionadas, marcar "todas as etapas"
       if (selectedEtapas.filter(id => id !== etapaId).length === 0) {
         setAllStagesSelected(true);
       }
     }
   };
 
-  // Função para obter o nome do responsável por ID
-  const getNomeResponsavel = (id: string): string => {
-    return usuarios.find(u => u.id === id)?.nome || "Não atribuído";
-  };
-
-  // Obter o ID da empresa
-  const getEmpresaId = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('empresas')
-        .select('id')
-        .limit(1)
-        .single();
-      
-      if (error) throw error;
-      return data?.id;
-    } catch (error) {
-      console.error('Erro ao obter ID da empresa:', error);
-      return null;
-    }
-  };
-
-  // Função para salvar lead
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      console.log('Salvando dados do lead...');
-      // Obter o ID da empresa
-      const empresaId = await getEmpresaId();
-      
-      if (!empresaId) {
-        console.error('ID da empresa não encontrado');
-        toast.error("Erro ao salvar", {
-          description: "ID da empresa não encontrado"
-        });
-        return;
-      }
-      
-      // Adicionar o ID da empresa aos dados do lead
-      const leadDataWithCompany = {
-        ...formData,
-        empresa_id: empresaId
-      };
-      
-      // Chamar a função original para salvar os dados do lead
-      console.log('Salvando dados do lead:', leadDataWithCompany);
-      onConfirm(leadDataWithCompany);
-      
-      // Fechar o modal após salvar
-      onClose();
-    } catch (error) {
-      console.error('Erro ao salvar lead:', error);
-      toast.error("Erro ao salvar os dados", {
-        description: "Ocorreu um erro ao salvar o lead."
-      });
-    }
-  };
-
   // Obter apenas etapas do funil selecionado para o filtro
-  const etapasFunilSelecionado = selectedFunil ? selectedFunil.etapas : [];
+  const etapasFunilSelecionado = selectedFunil ? (selectedFunil.etapas || []) : [];
 
   // Agrupar leads por etapa do funil
-  const leadsByStage = selectedFunil?.etapas.map(etapa => {
-    // Filtramos aqui os leads que pertencem a esta etapa e que já estão pré-filtrados
-    const stageLeads = filteredLeads.filter(lead => lead.etapaId === etapa.id);
-    
-    // Calcular o valor total dos leads nesta etapa
+  const leadsByStage = (selectedFunil?.etapas || []).map(etapa => {
+    const stageLeads = (filteredLeads || []).filter(lead => lead.etapaId === etapa.id);
     const totalValor = stageLeads.reduce((total, lead) => total + (lead.valor || 0), 0);
     
     return {
@@ -620,7 +529,7 @@ export default function LeadsPage() {
       leads: stageLeads,
       totalValor
     };
-  }) || [];
+  });
 
   // Filtrar as etapas que devem ser exibidas com base na seleção do usuário
   const filteredStages = allStagesSelected

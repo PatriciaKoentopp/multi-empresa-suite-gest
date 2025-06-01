@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
@@ -12,7 +13,7 @@ interface DashboardLead {
   etapa_id: string;
   etapa_nome?: string;
   etapa_cor?: string;
-  etapa_ordem?: number; // Adicionando ordem da etapa
+  etapa_ordem?: number;
   funil_id: string;
   funil_nome?: string;
   valor: number;
@@ -28,7 +29,7 @@ interface FunnelData {
   quantidade: number;
   valor: number;
   color: string;
-  ordem: number; // Adicionando ordem para ordenação
+  ordem: number;
 }
 
 interface OriginData {
@@ -154,7 +155,7 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
         .from("leads")
         .select("*")
         .eq("empresa_id", currentCompany.id)
-        .neq("status", "inativo") // Filtrar excluindo apenas leads inativos
+        .neq("status", "inativo")
         .gte("data_criacao", format(startDate, "yyyy-MM-dd"))
         .lte("data_criacao", format(endDate, "yyyy-MM-dd"));
       
@@ -187,14 +188,14 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
         
         // Adicionar informações de etapa e origem aos leads
         const enrichedLeads = (leadsData || []).map((lead: any) => {
-          const etapa = etapasData?.find((e) => e.id === lead.etapa_id);
-          const origem = origensData?.find((o) => o.id === lead.origem_id);
+          const etapa = (etapasData || []).find((e) => e.id === lead.etapa_id);
+          const origem = (origensData || []).find((o) => o.id === lead.origem_id);
           
           return {
             ...lead,
             etapa_nome: etapa?.nome || "Não especificada",
             etapa_cor: etapa?.cor || "#999999",
-            etapa_ordem: etapa?.ordem || 999, // Adicionando a ordem da etapa
+            etapa_ordem: etapa?.ordem || 999,
             funil_nome: etapa?.funis?.nome || "Não especificado",
             origem_nome: origem?.nome || "Não especificada",
           };
@@ -236,18 +237,17 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
     }
   };
 
-  const totalLeads = useMemo(() => filteredLeads.length, [filteredLeads]);
+  const totalLeads = useMemo(() => filteredLeads?.length || 0, [filteredLeads]);
   
   const activeLeads = useMemo(() => 
-    filteredLeads.filter(lead => lead.status === "ativo").length, 
+    (filteredLeads || []).filter(lead => lead.status === "ativo").length, 
   [filteredLeads]);
 
   const leadsByEtapa: FunnelData[] = useMemo(() => {
     const etapasMap = new Map<string, { quantidade: number; valor: number; cor: string; ordem: number }>();
     
-    filteredLeads.forEach(lead => {
+    (filteredLeads || []).forEach(lead => {
       if (lead.etapa_nome) {
-        // Usar a cor da etapa se disponível ou gerar uma cor roxa
         const cor = lead.etapa_cor || getRandomColor();
         const ordem = lead.etapa_ordem || 999;
         
@@ -275,13 +275,13 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
         color: data.cor,
         ordem: data.ordem
       }))
-      .sort((a, b) => a.ordem - b.ordem); // Ordenar por ordem crescente
+      .sort((a, b) => a.ordem - b.ordem);
   }, [filteredLeads]);
 
   const leadsByOrigin: OriginData[] = useMemo(() => {
     const origensMap = new Map<string, number>();
     
-    filteredLeads.forEach(lead => {
+    (filteredLeads || []).forEach(lead => {
       const origem = lead.origem_nome || "Não especificada";
       origensMap.set(origem, (origensMap.get(origem) || 0) + 1);
     });
@@ -298,7 +298,7 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
   const leadsTimeline: TimelineData[] = useMemo(() => {
     const timelineMap = new Map<string, number>();
     
-    filteredLeads.forEach(lead => {
+    (filteredLeads || []).forEach(lead => {
       const date = lead.data_criacao ? format(new Date(lead.data_criacao), "dd/MM") : "Sem data";
       timelineMap.set(date, (timelineMap.get(date) || 0) + 1);
     });
@@ -318,13 +318,13 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
 
   // Taxa de conversão (estimada com base em leads fechados vs total)
   const conversionRate = useMemo(() => {
-    const closed = filteredLeads.filter(lead => lead.status !== "ativo").length;
+    const closed = (filteredLeads || []).filter(lead => lead.status !== "ativo").length;
     return totalLeads > 0 ? Math.round((closed / totalLeads) * 100) : 0;
   }, [filteredLeads, totalLeads]);
 
   // Valor potencial (soma do valor de leads ativos)
   const potentialValue = useMemo(() => 
-    filteredLeads
+    (filteredLeads || [])
       .filter(lead => lead.status === "ativo")
       .reduce((sum, lead) => sum + (lead.valor || 0), 0),
   [filteredLeads]);
@@ -341,7 +341,7 @@ export const useCrmDashboard = (funnelId?: string): UseCrmDashboardResult => {
     leadsTimeline,
     conversionRate,
     potentialValue,
-    funisList: funis,
+    funisList: funis || [],
     filterByFunnelId,
   };
 };
