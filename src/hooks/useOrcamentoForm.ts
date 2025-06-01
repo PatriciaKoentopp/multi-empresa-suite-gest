@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format, addMonths } from 'date-fns';
 import { toast } from "@/hooks/use-toast";
@@ -39,6 +40,31 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
   
   // Cálculo do total do orçamento
   const total = servicos.reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
+
+  // Gerar código temporário para novos orçamentos
+  const gerarCodigoTemporario = async () => {
+    if (!currentCompany?.id) return "TEMP";
+    
+    try {
+      // Buscar o próximo número que seria gerado (sem consumir)
+      const { data: numeracao, error } = await supabase
+        .from('numeracao_orcamentos')
+        .select('proximo_numero')
+        .eq('empresa_id', currentCompany.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erro ao buscar numeração:', error);
+        return "TEMP";
+      }
+
+      const proximoNumero = numeracao?.proximo_numero || 1;
+      return `TEMP-${proximoNumero}`;
+    } catch (error) {
+      console.error('Erro ao gerar código temporário:', error);
+      return "TEMP";
+    }
+  };
 
   // Inicializar parcelas - usa o código do orçamento quando disponível
   const [parcelas, setParcelas] = useState<Parcela[]>(() => getParcelas(0, numeroParcelas, codigoVenda || "TEMP"));
@@ -89,6 +115,11 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
       // Se temos um ID de orçamento, vamos carregar os dados
       if (orcamentoId) {
         carregarOrcamento(orcamentoId);
+      } else {
+        // Para novos orçamentos, gerar código temporário
+        gerarCodigoTemporario().then(codigo => {
+          setCodigoVenda(codigo);
+        });
       }
     }
   }, [currentCompany?.id, orcamentoId]);
@@ -224,7 +255,6 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }
   }
 
-  // Carregar serviços
   async function carregarServicos() {
     try {
       const { data, error } = await supabase
@@ -244,7 +274,6 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }
   }
 
-  // Carregar tabelas de preço
   async function carregarTabelasPreco() {
     try {
       const { data: tabelas, error: tabelasError } = await supabase
@@ -299,14 +328,12 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }));
   };
 
-  // Adicionar função para atualizar valor da parcela
   const handleParcelaValorChange = (idx: number, valor: number) => {
     setParcelas(prev => prev.map((parcela, i) =>
       i === idx ? { ...parcela, valor } : parcela
     ));
   };
 
-  // Calcular a soma dos valores das parcelas
   const somaParcelas = parcelas.reduce((acc, parcela) => acc + parcela.valor, 0);
 
   // Atualiza valor do serviço selecionado
@@ -327,12 +354,10 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     });
   };
 
-  // Adiciona novo serviço
   const handleAddServico = () => {
     setServicos(prev => [...prev, { servicoId: "", valor: 0 }]);
   };
 
-  // Remove serviço
   const handleRemoveServico = (idx: number) => {
     if (servicos.length === 1) return;
     setServicos(prev => prev.filter((_, i) => i !== idx));
@@ -409,7 +434,6 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }
   };
 
-  // Manipulador de alteração do arquivo de nota fiscal
   const handleNotaFiscalPdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files && e.target.files[0];
     
@@ -434,7 +458,6 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
     }
   };
 
-  // Voltar para a lista de faturamento
   const handleCancel = () => {
     navigate("/vendas/faturamento");
   };
