@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format, addMonths } from 'date-fns';
 import { toast } from "@/hooks/use-toast";
@@ -43,7 +42,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
 
   // Gerar código temporário para novos orçamentos
   const gerarCodigoTemporario = async () => {
-    if (!currentCompany?.id) return "TEMP";
+    if (!currentCompany?.id) return "1";
     
     try {
       // Buscar o próximo número que seria gerado (sem consumir)
@@ -55,14 +54,14 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
 
       if (error && error.code !== 'PGRST116') {
         console.error('Erro ao buscar numeração:', error);
-        return "TEMP";
+        return "1";
       }
 
       const proximoNumero = numeracao?.proximo_numero || 1;
-      return `TEMP-${proximoNumero}`;
+      return proximoNumero.toString();
     } catch (error) {
       console.error('Erro ao gerar código temporário:', error);
-      return "TEMP";
+      return "1";
     }
   };
 

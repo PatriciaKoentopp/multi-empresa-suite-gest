@@ -33,8 +33,6 @@ export function CabecalhoForm({
   favorecidos,
   disabled = false
 }: CabecalhoFormProps) {
-  const isTemporaryCod = codigoVenda?.startsWith('TEMP');
-  
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
@@ -77,17 +75,9 @@ export function CabecalhoForm({
           value={codigoVenda || ""}
           readOnly
           disabled
-          className={cn(
-            "bg-gray-50",
-            isTemporaryCod && "text-gray-500 italic"
-          )}
+          className="bg-gray-50"
           placeholder="Carregando..."
         />
-        {isTemporaryCod && (
-          <p className="text-xs text-gray-500 mt-1">
-            Código final será gerado ao salvar
-          </p>
-        )}
       </div>
 
       <div>
