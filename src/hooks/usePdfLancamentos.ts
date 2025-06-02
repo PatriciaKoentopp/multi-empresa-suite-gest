@@ -1,4 +1,3 @@
-
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrency } from '@/lib/utils';
@@ -69,6 +68,18 @@ export const usePdfLancamentos = () => {
           default:
             return "Principal";
         }
+      };
+
+      // Função para formatar código e descrição da conta
+      const formatarCodigoConta = (lancamento: LancamentoContabil) => {
+        const codigo = lancamento.conta_codigo || '-';
+        const nome = lancamento.conta_nome || '';
+        
+        if (codigo === '-' || !nome) {
+          return codigo;
+        }
+        
+        return `${codigo} - ${nome}`;
       };
 
       // Função para formatar histórico com favorecido
@@ -150,7 +161,7 @@ export const usePdfLancamentos = () => {
 
         dadosTabela.push([
           formatDateBR(lanc.data),
-          lanc.conta_codigo || '-', // Apenas o código da conta
+          formatarCodigoConta(lanc), // Código e descrição da conta
           formatarHistorico(lanc), // Histórico com favorecido
           valorDebito,
           valorCredito,
@@ -166,7 +177,7 @@ export const usePdfLancamentos = () => {
 
       // Gerar tabela com colunas otimizadas
       autoTable(doc, {
-        head: [['Data', 'Código', 'Histórico', 'Débito', 'Crédito', 'Saldo']],
+        head: [['Data', 'Conta', 'Histórico', 'Débito', 'Crédito', 'Saldo']],
         body: dadosTabela,
         startY: startY,
         margin: { left: 15, right: 15, top: headerHeight, bottom: 20 },
@@ -191,8 +202,8 @@ export const usePdfLancamentos = () => {
         },
         columnStyles: {
           0: { cellWidth: 18, halign: 'center', overflow: 'ellipsize' }, // Data
-          1: { cellWidth: 25, halign: 'center', overflow: 'ellipsize' }, // Código (reduzida)
-          2: { cellWidth: 120, halign: 'left', overflow: 'ellipsize' },  // Histórico (aumentada)
+          1: { cellWidth: 60, halign: 'left', overflow: 'ellipsize' },   // Conta (aumentada para comportar código + descrição)
+          2: { cellWidth: 85, halign: 'left', overflow: 'ellipsize' },   // Histórico (reduzida para compensar)
           3: { cellWidth: 30, halign: 'right', overflow: 'ellipsize' },  // Débito
           4: { cellWidth: 30, halign: 'right', overflow: 'ellipsize' },  // Crédito
           5: { cellWidth: 25, halign: 'right', overflow: 'ellipsize' }   // Saldo
