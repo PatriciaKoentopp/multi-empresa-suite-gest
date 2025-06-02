@@ -1,4 +1,3 @@
-
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrency } from '@/lib/utils';
@@ -59,12 +58,10 @@ export const usePdfFluxoCaixa = () => {
         return "-";
       };
 
-      // Função para obter título/parcela com truncamento
+      // Função para obter título/parcela sem truncamento
       const getTituloParcela = (linha: FluxoCaixaItem) => {
-        let titulo = "-";
-        
         if (linha.origem === "antecipacao" && linha.antecipacoes?.numero_documento) {
-          titulo = `${linha.antecipacoes.numero_documento}/1`;
+          return `${linha.antecipacoes.numero_documento}/1`;
         } else if (linha.movimentacao_parcela_id) {
           const parcela = parcelasCache[linha.movimentacao_parcela_id];
           if (parcela && parcela.movimentacao_id) {
@@ -72,21 +69,16 @@ export const usePdfFluxoCaixa = () => {
             const movPai = documentosCache[movimentacaoId];
             const numeroDoc = movPai?.numero_documento || '-';
             const numeroParcela = parcela.numero || '1';
-            titulo = `${numeroDoc}/${numeroParcela}`;
+            return `${numeroDoc}/${numeroParcela}`;
           }
         } else if (linha.movimentacao_id) {
           const movimento = documentosCache[linha.movimentacao_id];
           if (movimento) {
-            titulo = `${movimento.numero_documento || '-'}/1`;
+            return `${movimento.numero_documento || '-'}/1`;
           }
         }
         
-        // Truncar título se for muito longo (máximo 15 caracteres)
-        if (titulo.length > 15) {
-          titulo = titulo.substring(0, 12) + '...';
-        }
-        
-        return titulo;
+        return "-";
       };
 
       // Função para adicionar cabeçalho
@@ -201,12 +193,12 @@ export const usePdfFluxoCaixa = () => {
           fillColor: [248, 249, 250]
         },
         columnStyles: {
-          0: { cellWidth: 22, halign: 'center', overflow: 'ellipsize' }, // Data
-          1: { cellWidth: 30, halign: 'center', overflow: 'ellipsize' }, // Título/Parcela
-          2: { cellWidth: 65, halign: 'left', overflow: 'ellipsize' },   // Favorecido
-          3: { cellWidth: 85, halign: 'left', overflow: 'ellipsize' },   // Descrição
+          0: { cellWidth: 18, halign: 'center', overflow: 'ellipsize' }, // Data (reduzida)
+          1: { cellWidth: 35, halign: 'center', overflow: 'ellipsize' }, // Título/Parcela (aumentada)
+          2: { cellWidth: 70, halign: 'left', overflow: 'ellipsize' },   // Favorecido
+          3: { cellWidth: 90, halign: 'left', overflow: 'ellipsize' },   // Descrição
           4: { cellWidth: 30, halign: 'right', overflow: 'ellipsize' },  // Valor
-          5: { cellWidth: 35, halign: 'right', overflow: 'ellipsize' }   // Saldo
+          5: { cellWidth: 25, halign: 'right', overflow: 'ellipsize' }   // Saldo (reduzida)
         },
         didDrawPage: (data) => {
           // Adicionar rodapé em cada página
