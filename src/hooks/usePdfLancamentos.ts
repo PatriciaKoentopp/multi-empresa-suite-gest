@@ -155,12 +155,15 @@ export const usePdfLancamentos = () => {
       // Adicionar cabeçalho da primeira página
       let startY = adicionarCabecalho();
 
+      // Variável para armazenar a altura do cabeçalho
+      let headerHeight = startY;
+
       // Gerar tabela com colunas otimizadas
       autoTable(doc, {
         head: [['Data', 'Código', 'Histórico', 'Débito', 'Crédito', 'Saldo']],
         body: dadosTabela,
         startY: startY,
-        margin: { left: 15, right: 15 },
+        margin: { left: 15, right: 15, top: headerHeight, bottom: 20 },
         styles: {
           fontSize: 8,
           cellPadding: 2,
@@ -193,16 +196,27 @@ export const usePdfLancamentos = () => {
           
           // Se não é a primeira página, adicionar cabeçalho
           if (pageNumber > 1) {
-            const headerHeight = adicionarCabecalho();
-            // Ajustar o startY da próxima página para não sobrepor o cabeçalho
-            data.settings.startY = headerHeight;
+            headerHeight = adicionarCabecalho();
+            // Definir margem superior para a próxima página
+            if (data.settings.margin) {
+              data.settings.margin.top = headerHeight;
+            }
           }
           
           // Adicionar rodapé
           const totalPages = doc.internal.getNumberOfPages();
           adicionarRodape(pageNumber, totalPages);
         },
-        showHead: 'everyPage'
+        showHead: 'everyPage',
+        didDrawCell: (data) => {
+          // Se é uma nova página e não é a primeira, ajustar a posição
+          if (data.section === 'head' && data.pageNumber > 1) {
+            const currentHeaderHeight = adicionarCabecalho();
+            if (data.settings.margin) {
+              data.settings.margin.top = currentHeaderHeight;
+            }
+          }
+        }
       });
 
       // Calcular totais para o rodapé da tabela
