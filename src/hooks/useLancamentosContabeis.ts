@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -203,6 +202,9 @@ export function useLancamentosContabeis() {
       const historico = mov.descricao || (tipoOperacao === 'transferencia' ? 'Transferência entre contas' : 
         tipoOperacao === 'pagar' ? 'Pagamento' : 'Recebimento');
       
+      // Extrair nome do favorecido (se vier da consulta com JOIN)
+      const favorecidoNome = (mov as any).favorecido?.nome || '';
+      
       // Lançamento para pagamentos
       if (tipoOperacao === 'pagar') {
         // Skip se não tem categoria_id
@@ -248,7 +250,8 @@ export function useLancamentosContabeis() {
           valor: mov.valor,
           saldo: 0, // Será calculado depois
           movimentacao_id: mov.id,
-          tipo_lancamento: 'principal'
+          tipo_lancamento: 'principal',
+          favorecido: favorecidoNome
         };
         
         // Contrapartida (crédito na conta definida pelo tipo título)
@@ -263,7 +266,8 @@ export function useLancamentosContabeis() {
           valor: mov.valor,
           saldo: 0, // Será calculado depois
           movimentacao_id: mov.id,
-          tipo_lancamento: 'principal'
+          tipo_lancamento: 'principal',
+          favorecido: favorecidoNome
         };
         
         lancamentosGerados.push(lancamentoDespesa, lancamentoContrapartida);
@@ -312,7 +316,8 @@ export function useLancamentosContabeis() {
           valor: mov.valor,
           saldo: 0, // Será calculado depois
           movimentacao_id: mov.id,
-          tipo_lancamento: 'principal'
+          tipo_lancamento: 'principal',
+          favorecido: favorecidoNome
         };
         
         // Contrapartida (débito na conta definida pelo tipo título)
@@ -327,7 +332,8 @@ export function useLancamentosContabeis() {
           valor: mov.valor,
           saldo: 0, // Será calculado depois
           movimentacao_id: mov.id,
-          tipo_lancamento: 'principal'
+          tipo_lancamento: 'principal',
+          favorecido: favorecidoNome
         };
         
         lancamentosGerados.push(lancamentoReceita, lancamentoContrapartida);
@@ -375,7 +381,8 @@ export function useLancamentosContabeis() {
           valor: mov.valor,
           saldo: 0, // Será calculado depois
           movimentacao_id: mov.id,
-          tipo_lancamento: 'principal'
+          tipo_lancamento: 'principal',
+          favorecido: favorecidoNome
         };
         
         // Crédito na conta contábil associada à conta corrente origem
@@ -390,7 +397,8 @@ export function useLancamentosContabeis() {
           valor: mov.valor,
           saldo: 0, // Será calculado depois
           movimentacao_id: mov.id,
-          tipo_lancamento: 'principal'
+          tipo_lancamento: 'principal',
+          favorecido: favorecidoNome
         };
         
         lancamentosGerados.push(lancamentoDebito, lancamentoCredito);
@@ -460,7 +468,8 @@ export function useLancamentosContabeis() {
                 saldo: 0,
                 parcela_id: parcela.id,
                 movimentacao_id: mov.id,
-                tipo_lancamento: 'principal'
+                tipo_lancamento: 'principal',
+                favorecido: favorecidoNome
               };
               
               // Crédito na conta contábil associada à conta corrente
@@ -476,7 +485,8 @@ export function useLancamentosContabeis() {
                 saldo: 0,
                 parcela_id: parcela.id,
                 movimentacao_id: mov.id,
-                tipo_lancamento: 'principal'
+                tipo_lancamento: 'principal',
+                favorecido: favorecidoNome
               };
               
               lancamentosGerados.push(lancamentoAPagar, lancamentoBanco);
@@ -498,7 +508,8 @@ export function useLancamentosContabeis() {
                     saldo: 0,
                     parcela_id: parcela.id,
                     movimentacao_id: mov.id,
-                    tipo_lancamento: 'juros'
+                    tipo_lancamento: 'juros',
+                    favorecido: favorecidoNome
                   };
                   
                   // Crédito na conta contábil associada à conta corrente
@@ -514,7 +525,8 @@ export function useLancamentosContabeis() {
                     saldo: 0,
                     parcela_id: parcela.id,
                     movimentacao_id: mov.id,
-                    tipo_lancamento: 'juros'
+                    tipo_lancamento: 'juros',
+                    favorecido: favorecidoNome
                   };
                   
                   lancamentosGerados.push(lancamentoJurosDebito, lancamentoJurosCredito);
@@ -538,7 +550,8 @@ export function useLancamentosContabeis() {
                     saldo: 0,
                     parcela_id: parcela.id,
                     movimentacao_id: mov.id,
-                    tipo_lancamento: 'multa'
+                    tipo_lancamento: 'multa',
+                    favorecido: favorecidoNome
                   };
                   
                   // Crédito na conta contábil associada à conta corrente
@@ -554,7 +567,8 @@ export function useLancamentosContabeis() {
                     saldo: 0,
                     parcela_id: parcela.id,
                     movimentacao_id: mov.id,
-                    tipo_lancamento: 'multa'
+                    tipo_lancamento: 'multa',
+                    favorecido: favorecidoNome
                   };
                   
                   lancamentosGerados.push(lancamentoMultaDebito, lancamentoMultaCredito);
@@ -578,7 +592,8 @@ export function useLancamentosContabeis() {
                     saldo: 0,
                     parcela_id: parcela.id,
                     movimentacao_id: mov.id,
-                    tipo_lancamento: 'desconto'
+                    tipo_lancamento: 'desconto',
+                    favorecido: favorecidoNome
                   };
                   
                   // Débito na conta do tipo de título
@@ -594,7 +609,8 @@ export function useLancamentosContabeis() {
                     saldo: 0,
                     parcela_id: parcela.id,
                     movimentacao_id: mov.id,
-                    tipo_lancamento: 'desconto'
+                    tipo_lancamento: 'desconto',
+                    favorecido: favorecidoNome
                   };
                   
                   lancamentosGerados.push(lancamentoDescontoCredito, lancamentoDescontoDebito);
@@ -629,7 +645,8 @@ export function useLancamentosContabeis() {
                 saldo: 0,
                 parcela_id: parcela.id,
                 movimentacao_id: mov.id,
-                tipo_lancamento: 'principal'
+                tipo_lancamento: 'principal',
+                favorecido: favorecidoNome
               };
               
               // Crédito em contas a receber (conta do tipo de título)
@@ -645,7 +662,8 @@ export function useLancamentosContabeis() {
                 saldo: 0,
                 parcela_id: parcela.id,
                 movimentacao_id: mov.id,
-                tipo_lancamento: 'principal'
+                tipo_lancamento: 'principal',
+                favorecido: favorecidoNome
               };
               
               lancamentosGerados.push(lancamentoBanco, lancamentoAReceber);
@@ -667,7 +685,8 @@ export function useLancamentosContabeis() {
                     saldo: 0,
                     parcela_id: parcela.id,
                     movimentacao_id: mov.id,
-                    tipo_lancamento: 'juros'
+                    tipo_lancamento: 'juros',
+                    favorecido: favorecidoNome
                   };
                   
                   // Crédito na conta de juros
@@ -683,7 +702,8 @@ export function useLancamentosContabeis() {
                     saldo: 0,
                     parcela_id: parcela.id,
                     movimentacao_id: mov.id,
-                    tipo_lancamento: 'juros'
+                    tipo_lancamento: 'juros',
+                    favorecido: favorecidoNome
                   };
                   
                   lancamentosGerados.push(lancamentoJurosDebito, lancamentoJurosCredito);
@@ -707,7 +727,8 @@ export function useLancamentosContabeis() {
                     saldo: 0,
                     parcela_id: parcela.id,
                     movimentacao_id: mov.id,
-                    tipo_lancamento: 'multa'
+                    tipo_lancamento: 'multa',
+                    favorecido: favorecidoNome
                   };
                   
                   // Crédito na conta de multa
@@ -723,7 +744,8 @@ export function useLancamentosContabeis() {
                     saldo: 0,
                     parcela_id: parcela.id,
                     movimentacao_id: mov.id,
-                    tipo_lancamento: 'multa'
+                    tipo_lancamento: 'multa',
+                    favorecido: favorecidoNome
                   };
                   
                   lancamentosGerados.push(lancamentoMultaDebito, lancamentoMultaCredito);
@@ -747,7 +769,8 @@ export function useLancamentosContabeis() {
                     saldo: 0,
                     parcela_id: parcela.id,
                     movimentacao_id: mov.id,
-                    tipo_lancamento: 'desconto'
+                    tipo_lancamento: 'desconto',
+                    favorecido: favorecidoNome
                   };
                   
                   // Crédito na conta do tipo de título
@@ -763,7 +786,8 @@ export function useLancamentosContabeis() {
                     saldo: 0,
                     parcela_id: parcela.id,
                     movimentacao_id: mov.id,
-                    tipo_lancamento: 'desconto'
+                    tipo_lancamento: 'desconto',
+                    favorecido: favorecidoNome
                   };
                   
                   lancamentosGerados.push(lancamentoDescontoDebito, lancamentoDescontoCredito);
@@ -853,12 +877,13 @@ export function useLancamentosContabeis() {
       // 3. Carregar contas correntes
       await carregarContasCorrentes();
       
-      // 4. Carregar movimentações com join em tipos_titulos
+      // 4. Carregar movimentações com JOIN para favorecidos
       const { data: movimentacoes, error: movError } = await supabase
         .from("movimentacoes")
         .select(`
           *,
-          tipo_titulo:tipos_titulos(*)
+          tipo_titulo:tipos_titulos(*),
+          favorecido:favorecidos(nome)
         `)
         .eq("empresa_id", currentCompany.id);
         
