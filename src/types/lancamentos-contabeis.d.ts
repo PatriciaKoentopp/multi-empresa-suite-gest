@@ -15,4 +15,5 @@ export interface LancamentoContabil {
   movimentacao_id?: string;
   parcela_id?: string;
   tipo_lancamento?: 'principal' | 'juros' | 'multa' | 'desconto';
+  favorecido?: string; // Nome do favorecido para exibição no histórico
 }

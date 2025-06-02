@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -52,7 +53,6 @@ export default function LancamentosPage() {
   const {
     lancamentos,
     planosContas,
-    isLoading,
     carregarDados,
     adicionarLancamento,
     excluirLancamento
@@ -60,8 +60,7 @@ export default function LancamentosPage() {
   
   console.log("📊 LancamentosPage - Estados:", {
     lancamentosCount: lancamentos?.length || 0,
-    planosContasCount: planosContas?.length || 0,
-    isLoading
+    planosContasCount: planosContas?.length || 0
   });
   
   const { gerarPdfLancamentos } = usePdfLancamentos();
@@ -279,7 +278,6 @@ export default function LancamentosPage() {
   }
 
   console.log("🎨 LancamentosPage - Renderizando componente", { 
-    isLoading, 
     filteredCount: filteredLancamentos?.length || 0,
     hasModal: novoModalOpen 
   });
@@ -501,9 +499,10 @@ export default function LancamentosPage() {
                           <TableCell>
                             <div className="max-w-xs">
                               <div className="font-medium">{lanc.historico}</div>
-                              {lanc.favorecido_nome && (
+                              {/* Mostrar favorecido se existir */}
+                              {lanc.favorecido && (
                                 <div className="text-xs text-blue-600 font-medium">
-                                  {lanc.favorecido_nome}
+                                  {lanc.favorecido}
                                 </div>
                               )}
                               <div className="text-xs text-gray-500">
