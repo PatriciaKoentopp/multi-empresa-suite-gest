@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, RefreshCcw, Search, X } from "lucide-react";
+import { Calendar as CalendarIcon, RefreshCcw, Search, X, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,6 +10,7 @@ import LancarDiarioModal from "./LancarDiarioModal";
 import { useLancamentosContabeis } from "@/hooks/useLancamentosContabeis";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { usePdfLancamentos } from "@/hooks/usePdfLancamentos";
 
 // Utilidades de data
 function dateToBR(date?: Date) {
@@ -53,6 +54,7 @@ export default function LancamentosPage() {
     adicionarLancamento,
     excluirLancamento
   } = useLancamentosContabeis();
+  const { gerarPdfLancamentos } = usePdfLancamentos();
   const [contaId, setContaId] = useState<string>("todos");
   const [periodo, setPeriodo] = useState<"mes_atual" | "mes_anterior" | "personalizado">("mes_atual");
   const [dataInicial, setDataInicial] = useState<Date | undefined>();
@@ -214,14 +216,45 @@ export default function LancamentosPage() {
         return "Principal";
     }
   }
+
+  // Função para gerar PDF
+  function handleGerarPdf() {
+    const contaSelecionada = contaId !== "todos" 
+      ? planosContas.find(conta => conta.id === contaId)
+      : undefined;
+
+    const tipoFiltro = tipoLancamentoFiltro !== "todos" ? tipoLancamentoFiltro : undefined;
+
+    const sucesso = gerarPdfLancamentos(
+      filteredLancamentos,
+      "Nome da Empresa", // Pode ser obtido do contexto da empresa
+      contaSelecionada,
+      dataInicial,
+      dataFinal,
+      tipoFiltro
+    );
+
+    if (sucesso) {
+      toast.success("PDF gerado com sucesso!");
+    } else {
+      toast.error("Erro ao gerar PDF");
+    }
+  }
+
   return <div className="space-y-4">
       <LancarDiarioModal open={novoModalOpen} onClose={() => setNovoModalOpen(false)} onSave={handleNovoLancamento} contas={planosContas} contaInicalId={contaId !== "todos" ? contaId : ""} />
       
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Razão Contábil</h1>
-        <Button variant="blue" className="rounded-md px-6 py-2 text-base font-semibold" onClick={() => setNovoModalOpen(true)}>
-          Novo Lançamento
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="rounded-md px-6 py-2 text-base font-semibold text-blue-500 border-blue-500 hover:bg-blue-50" onClick={handleGerarPdf}>
+            <FileText className="h-4 w-4 mr-2" />
+            Gerar PDF
+          </Button>
+          <Button variant="blue" className="rounded-md px-6 py-2 text-base font-semibold" onClick={() => setNovoModalOpen(true)}>
+            Novo Lançamento
+          </Button>
+        </div>
       </div>
       <Card>
         <CardContent className="pt-6 pb-6">
