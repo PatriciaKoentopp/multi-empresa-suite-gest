@@ -189,12 +189,13 @@ export const usePdfLancamentos = () => {
           5: { cellWidth: 25, halign: 'right', overflow: 'ellipsize' }   // Saldo
         },
         didDrawPage: (data) => {
-          // Adicionar cabeçalho e rodapé em cada página
           const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
           
           // Se não é a primeira página, adicionar cabeçalho
           if (pageNumber > 1) {
-            adicionarCabecalho();
+            const headerHeight = adicionarCabecalho();
+            // Ajustar o startY da próxima página para não sobrepor o cabeçalho
+            data.settings.startY = headerHeight;
           }
           
           // Adicionar rodapé
