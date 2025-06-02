@@ -13,6 +13,7 @@ interface LancamentoContabil {
   valor: number;
   saldo?: number;
   tipo_lancamento?: string;
+  favorecido?: string;
 }
 
 interface PlanoContas {
@@ -70,11 +71,16 @@ export const usePdfLancamentos = () => {
         }
       };
 
-      // Função para obter código completo com tipo de lançamento
-      const getCodigoCompleto = (lancamento: LancamentoContabil) => {
-        const codigo = lancamento.conta_codigo || '-';
-        const tipoTexto = getTipoLancamentoTexto(lancamento.tipo_lancamento);
-        return `${codigo} - ${tipoTexto}`;
+      // Função para formatar histórico com favorecido
+      const formatarHistorico = (lancamento: LancamentoContabil) => {
+        let historico = lancamento.historico || '';
+        
+        // Adicionar favorecido se disponível
+        if (lancamento.favorecido) {
+          historico = `${historico} - ${lancamento.favorecido}`;
+        }
+        
+        return historico;
       };
 
       // Função para adicionar cabeçalho
@@ -144,8 +150,8 @@ export const usePdfLancamentos = () => {
 
         dadosTabela.push([
           formatDateBR(lanc.data),
-          getCodigoCompleto(lanc),
-          lanc.historico,
+          lanc.conta_codigo || '-', // Apenas o código da conta
+          formatarHistorico(lanc), // Histórico com favorecido
           valorDebito,
           valorCredito,
           formatCurrency(lanc.saldo || 0)
@@ -185,8 +191,8 @@ export const usePdfLancamentos = () => {
         },
         columnStyles: {
           0: { cellWidth: 18, halign: 'center', overflow: 'ellipsize' }, // Data
-          1: { cellWidth: 40, halign: 'left', overflow: 'ellipsize' },   // Código (aumentada)
-          2: { cellWidth: 100, halign: 'left', overflow: 'ellipsize' },  // Histórico (aumentada)
+          1: { cellWidth: 25, halign: 'center', overflow: 'ellipsize' }, // Código (reduzida)
+          2: { cellWidth: 120, halign: 'left', overflow: 'ellipsize' },  // Histórico (aumentada)
           3: { cellWidth: 30, halign: 'right', overflow: 'ellipsize' },  // Débito
           4: { cellWidth: 30, halign: 'right', overflow: 'ellipsize' },  // Crédito
           5: { cellWidth: 25, halign: 'right', overflow: 'ellipsize' }   // Saldo
