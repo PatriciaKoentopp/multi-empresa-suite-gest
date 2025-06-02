@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -452,101 +451,100 @@ export default function LancamentosPage() {
           <div className="mb-4" />
           
           <div className="mt-6">
-            {isLoading ? (
-              <div className="flex justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-              </div>
-            ) : (
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Histórico</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Débito</TableHead>
+                    <TableHead>Crédito</TableHead>
+                    <TableHead>Saldo</TableHead>
+                    <TableHead className="text-center w-[60px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLancamentos.length === 0 ? (
                     <TableRow>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Código</TableHead>
-                      <TableHead>Histórico</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Débito</TableHead>
-                      <TableHead>Crédito</TableHead>
-                      <TableHead>Saldo</TableHead>
-                      <TableHead className="text-center w-[60px]">Ações</TableHead>
+                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                        Nenhum lançamento encontrado
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredLancamentos.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                          Nenhum lançamento encontrado
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredLancamentos.map(lanc => {
-                        // Exibir a data exatamente como está no formato DD/MM/YYYY sem alterar timezone
-                        let dataExibicao = "";
-                        if (typeof lanc.data === "string") {
-                          if (lanc.data.includes("/")) {
-                            // Já está no formato DD/MM/YYYY, usar diretamente
-                            dataExibicao = lanc.data;
-                          } else {
-                            // Converter formato ISO para DD/MM/YYYY sem ajuste de timezone
-                            const [anoMesDia] = lanc.data.split('T');
-                            const [ano, mes, dia] = anoMesDia.split('-');
-                            dataExibicao = `${dia}/${mes}/${ano}`;
-                          }
-                        } else if (lanc.data instanceof Date) {
-                          // Convertendo Date para formato brasileiro sem ajuste de timezone
-                          const dia = String(lanc.data.getDate()).padStart(2, '0');
-                          const mes = String(lanc.data.getMonth() + 1).padStart(2, '0');
-                          const ano = lanc.data.getFullYear();
+                  ) : (
+                    filteredLancamentos.map(lanc => {
+                      // Exibir a data exatamente como está no formato DD/MM/YYYY sem alterar timezone
+                      let dataExibicao = "";
+                      if (typeof lanc.data === "string") {
+                        if (lanc.data.includes("/")) {
+                          // Já está no formato DD/MM/YYYY, usar diretamente
+                          dataExibicao = lanc.data;
+                        } else {
+                          // Converter formato ISO para DD/MM/YYYY sem ajuste de timezone
+                          const [anoMesDia] = lanc.data.split('T');
+                          const [ano, mes, dia] = anoMesDia.split('-');
                           dataExibicao = `${dia}/${mes}/${ano}`;
                         }
+                      } else if (lanc.data instanceof Date) {
+                        // Convertendo Date para formato brasileiro sem ajuste de timezone
+                        const dia = String(lanc.data.getDate()).padStart(2, '0');
+                        const mes = String(lanc.data.getMonth() + 1).padStart(2, '0');
+                        const ano = lanc.data.getFullYear();
+                        dataExibicao = `${dia}/${mes}/${ano}`;
+                      }
 
-                        return (
-                          <TableRow key={lanc.id}>
-                            <TableCell>{dataExibicao}</TableCell>
-                            <TableCell className="font-mono">{lanc.conta_codigo || '-'}</TableCell>
-                            <TableCell>
-                              <div className="max-w-xs truncate">
-                                {lanc.historico}
-                              </div>
+                      return (
+                        <TableRow key={lanc.id}>
+                          <TableCell>{dataExibicao}</TableCell>
+                          <TableCell className="font-mono">{lanc.conta_codigo || '-'}</TableCell>
+                          <TableCell>
+                            <div className="max-w-xs">
+                              <div className="font-medium">{lanc.historico}</div>
+                              {lanc.favorecido_nome && (
+                                <div className="text-xs text-blue-600 font-medium">
+                                  {lanc.favorecido_nome}
+                                </div>
+                              )}
                               <div className="text-xs text-gray-500">
                                 {lanc.conta_nome || ''}
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={getBadgeVariant(lanc.tipo_lancamento)}>
-                                {getTipoLancamentoTexto(lanc.tipo_lancamento)}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {lanc.tipo === "debito" ? formatCurrency(lanc.valor) : "-"}
-                            </TableCell>
-                            <TableCell>
-                              {lanc.tipo === "credito" ? formatCurrency(lanc.valor) : "-"}
-                            </TableCell>
-                            <TableCell>{formatCurrency(lanc.saldo || 0)}</TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center gap-2 justify-center">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="text-red-500 hover:bg-red-100" 
-                                  aria-label="Excluir" 
-                                  onClick={() => excluirLancamento(lanc.id)}
-                                >
-                                  <svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getBadgeVariant(lanc.tipo_lancamento)}>
+                              {getTipoLancamentoTexto(lanc.tipo_lancamento)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {lanc.tipo === "debito" ? formatCurrency(lanc.valor) : "-"}
+                          </TableCell>
+                          <TableCell>
+                            {lanc.tipo === "credito" ? formatCurrency(lanc.valor) : "-"}
+                          </TableCell>
+                          <TableCell>{formatCurrency(lanc.saldo || 0)}</TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center gap-2 justify-center">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-red-500 hover:bg-red-100" 
+                                aria-label="Excluir" 
+                                onClick={() => excluirLancamento(lanc.id)}
+                              >
+                                <svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </CardContent>
       </Card>
