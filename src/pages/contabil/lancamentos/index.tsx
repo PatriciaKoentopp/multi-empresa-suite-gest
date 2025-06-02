@@ -1,5 +1,5 @@
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -62,8 +62,7 @@ export default function LancamentosPage() {
   console.log("📊 LancamentosPage - Estados:", {
     lancamentosCount: lancamentos?.length || 0,
     planosContasCount: planosContas?.length || 0,
-    isLoading,
-    hasCarregarDados: !!carregarDados
+    isLoading
   });
   
   const { gerarPdfLancamentos } = usePdfLancamentos();
@@ -77,29 +76,18 @@ export default function LancamentosPage() {
   const [novoModalOpen, setNovoModalOpen] = useState(false);
   const [tipoLancamentoFiltro, setTipoLancamentoFiltro] = useState<string>("todos");
 
-  // Carregar dados iniciais
-  useEffect(() => {
-    console.log("🔄 LancamentosPage - useEffect inicial executando");
-    if (carregarDados) {
-      console.log("📞 LancamentosPage - Chamando carregarDados");
-      carregarDados();
-    } else {
-      console.log("❌ LancamentosPage - carregarDados não disponível");
-    }
-  }, [carregarDados]);
-
-  // Definir datas iniciais conforme o período selecionado
-  useEffect(() => {
-    console.log("📅 LancamentosPage - Configurando período:", periodo);
+  // Configurar datas iniciais apenas uma vez
+  const configurarDatasPeriodo = (tipoPeriodo: "mes_atual" | "mes_anterior" | "personalizado") => {
+    console.log("📅 LancamentosPage - Configurando período:", tipoPeriodo);
     const hoje = new Date();
-    if (periodo === "mes_atual") {
+    if (tipoPeriodo === "mes_atual") {
       const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
       const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
       setDataInicial(inicio);
       setDataInicialStr(dateToBR(inicio));
       setDataFinal(fim);
       setDataFinalStr(dateToBR(fim));
-    } else if (periodo === "mes_anterior") {
+    } else if (tipoPeriodo === "mes_anterior") {
       const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
       const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
       setDataInicial(inicio);
@@ -112,7 +100,12 @@ export default function LancamentosPage() {
       setDataFinal(undefined);
       setDataFinalStr("");
     }
-  }, [periodo]);
+  };
+
+  // Configurar período inicial apenas uma vez ao carregar
+  if (!dataInicial && !dataFinal && periodo === "mes_atual") {
+    configurarDatasPeriodo("mes_atual");
+  }
 
   // Funções para manipulação das datas do filtro
   function onChangeDataInicialStr(e: React.ChangeEvent<HTMLInputElement>) {
@@ -136,6 +129,12 @@ export default function LancamentosPage() {
       setDataFinal(undefined);
       setDataFinalStr("");
     }
+  }
+
+  // Alterar período e atualizar datas
+  function handlePeriodoChange(novoPeriodo: "mes_atual" | "mes_anterior" | "personalizado") {
+    setPeriodo(novoPeriodo);
+    configurarDatasPeriodo(novoPeriodo);
   }
 
   // Filtro de lançamentos
@@ -193,7 +192,7 @@ export default function LancamentosPage() {
       case 'multa':
         return "destructive";
       case 'desconto':
-        return "default"; // Mudando de "success" para "default" pois "success" não existe
+        return "default";
       case 'principal':
       default:
         return "outline";
@@ -229,13 +228,15 @@ export default function LancamentosPage() {
     setPeriodo("mes_atual");
     setSearchTerm("");
     setTipoLancamentoFiltro("todos");
-    const hoje = new Date();
-    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-    setDataInicial(inicio);
-    setDataInicialStr(dateToBR(inicio));
-    setDataFinal(fim);
-    setDataFinalStr(dateToBR(fim));
+    configurarDatasPeriodo("mes_atual");
+  }
+
+  // Função para atualizar dados
+  function handleAtualizarDados() {
+    console.log("🔄 LancamentosPage - Atualizando dados manualmente");
+    if (carregarDados) {
+      carregarDados();
+    }
   }
 
   // Traduzir o tipo de lançamento para português e formatar para exibição
@@ -345,7 +346,7 @@ export default function LancamentosPage() {
 
             {/* Período */}
             <div className="col-span-1">
-              <Select value={periodo} onValueChange={v => setPeriodo(v as any)}>
+              <Select value={periodo} onValueChange={handlePeriodoChange}>
                 <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
                   <CalendarIcon className="mr-2 h-5 w-5 text-neutral-400" />
                   <SelectValue placeholder="Selecionar Período" />
@@ -429,7 +430,7 @@ export default function LancamentosPage() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={carregarDados} 
+                onClick={handleAtualizarDados} 
                 className="text-blue-500 hover:bg-blue-100 h-[52px] w-[52px]" 
                 title="Atualizar dados"
               >
