@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,10 @@ function formatCurrency(val: number) {
     minimumFractionDigits: 2
   });
 }
+
 export default function LancamentosPage() {
+  console.log("🔄 LancamentosPage - Iniciando componente");
+  
   const {
     lancamentos,
     planosContas,
@@ -54,6 +58,14 @@ export default function LancamentosPage() {
     adicionarLancamento,
     excluirLancamento
   } = useLancamentosContabeis();
+  
+  console.log("📊 LancamentosPage - Estados:", {
+    lancamentosCount: lancamentos?.length || 0,
+    planosContasCount: planosContas?.length || 0,
+    isLoading,
+    hasCarregarDados: !!carregarDados
+  });
+  
   const { gerarPdfLancamentos } = usePdfLancamentos();
   const [contaId, setContaId] = useState<string>("todos");
   const [periodo, setPeriodo] = useState<"mes_atual" | "mes_anterior" | "personalizado">("mes_atual");
@@ -65,8 +77,20 @@ export default function LancamentosPage() {
   const [novoModalOpen, setNovoModalOpen] = useState(false);
   const [tipoLancamentoFiltro, setTipoLancamentoFiltro] = useState<string>("todos");
 
+  // Carregar dados iniciais
+  useEffect(() => {
+    console.log("🔄 LancamentosPage - useEffect inicial executando");
+    if (carregarDados) {
+      console.log("📞 LancamentosPage - Chamando carregarDados");
+      carregarDados();
+    } else {
+      console.log("❌ LancamentosPage - carregarDados não disponível");
+    }
+  }, [carregarDados]);
+
   // Definir datas iniciais conforme o período selecionado
   useEffect(() => {
+    console.log("📅 LancamentosPage - Configurando período:", periodo);
     const hoje = new Date();
     if (periodo === "mes_atual") {
       const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
@@ -116,6 +140,20 @@ export default function LancamentosPage() {
 
   // Filtro de lançamentos
   const filteredLancamentos = useMemo(() => {
+    console.log("🔍 LancamentosPage - Filtrando lançamentos:", {
+      totalLancamentos: lancamentos?.length || 0,
+      contaId,
+      tipoLancamentoFiltro,
+      searchTerm,
+      hasDataInicial: !!dataInicial,
+      hasDataFinal: !!dataFinal
+    });
+    
+    if (!lancamentos) {
+      console.log("❌ LancamentosPage - Sem lançamentos para filtrar");
+      return [];
+    }
+    
     return lancamentos.filter(l => {
       // Filtrar por conta
       const isConta = contaId === "todos" || l.conta === contaId;
@@ -155,20 +193,16 @@ export default function LancamentosPage() {
       case 'multa':
         return "destructive";
       case 'desconto':
-        return "success";
+        return "default"; // Mudando de "success" para "default" pois "success" não existe
       case 'principal':
       default:
         return "outline";
     }
   }
 
-  // Função para editar um lançamento
-  function handleEdit(id: string) {
-    toast.info("Ação de editar lançamento: " + id);
-  }
-
   // Função para excluir um lançamento
   function handleDelete(id: string) {
+    console.log("🗑️ LancamentosPage - Excluindo lançamento:", id);
     excluirLancamento(id);
   }
 
@@ -180,6 +214,7 @@ export default function LancamentosPage() {
     credito: string;
     valor: number;
   }) {
+    console.log("➕ LancamentosPage - Adicionando novo lançamento:", novo);
     adicionarLancamento(novo).then(success => {
       if (success) {
         setNovoModalOpen(false);
@@ -189,6 +224,7 @@ export default function LancamentosPage() {
 
   // Limpar filtros
   function limparFiltros() {
+    console.log("🧹 LancamentosPage - Limpando filtros");
     setContaId("todos");
     setPeriodo("mes_atual");
     setSearchTerm("");
@@ -219,6 +255,7 @@ export default function LancamentosPage() {
 
   // Função para gerar PDF
   function handleGerarPdf() {
+    console.log("📄 LancamentosPage - Gerando PDF");
     const contaSelecionada = contaId !== "todos" 
       ? planosContas.find(conta => conta.id === contaId)
       : undefined;
@@ -241,8 +278,21 @@ export default function LancamentosPage() {
     }
   }
 
-  return <div className="space-y-4">
-      <LancarDiarioModal open={novoModalOpen} onClose={() => setNovoModalOpen(false)} onSave={handleNovoLancamento} contas={planosContas} contaInicalId={contaId !== "todos" ? contaId : ""} />
+  console.log("🎨 LancamentosPage - Renderizando componente", { 
+    isLoading, 
+    filteredCount: filteredLancamentos?.length || 0,
+    hasModal: novoModalOpen 
+  });
+
+  return (
+    <div className="space-y-4">
+      <LancarDiarioModal 
+        open={novoModalOpen} 
+        onClose={() => setNovoModalOpen(false)} 
+        onSave={handleNovoLancamento} 
+        contas={planosContas} 
+        contaInicalId={contaId !== "todos" ? contaId : ""} 
+      />
       
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Razão Contábil</h1>
@@ -251,11 +301,12 @@ export default function LancamentosPage() {
             <FileText className="h-4 w-4 mr-2" />
             Gerar PDF
           </Button>
-          <Button variant="blue" className="rounded-md px-6 py-2 text-base font-semibold" onClick={() => setNovoModalOpen(true)}>
+          <Button variant="default" className="rounded-md px-6 py-2 text-base font-semibold bg-blue-500 hover:bg-blue-600" onClick={() => setNovoModalOpen(true)}>
             Novo Lançamento
           </Button>
         </div>
       </div>
+
       <Card>
         <CardContent className="pt-6 pb-6">
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
@@ -267,12 +318,15 @@ export default function LancamentosPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-white border max-h-[400px] overflow-y-auto">
                   <SelectItem value="todos">Todas as Contas</SelectItem>
-                  {planosContas.map(cc => <SelectItem key={cc.id} value={cc.id}>
+                  {planosContas.map(cc => (
+                    <SelectItem key={cc.id} value={cc.id}>
                       {cc.codigo} - {cc.descricao}
-                    </SelectItem>)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+
             {/* Tipo de lançamento */}
             <div className="col-span-1">
               <Select value={tipoLancamentoFiltro} onValueChange={setTipoLancamentoFiltro}>
@@ -288,6 +342,7 @@ export default function LancamentosPage() {
                 </SelectContent>
               </Select>
             </div>
+
             {/* Período */}
             <div className="col-span-1">
               <Select value={periodo} onValueChange={v => setPeriodo(v as any)}>
@@ -302,54 +357,106 @@ export default function LancamentosPage() {
                 </SelectContent>
               </Select>
             </div>
+
             {/* Data Inicial */}
             <div className="col-span-1 flex flex-col">
               <label className="text-xs font-medium mb-1 ml-1">Data Inicial</label>
               <div className="relative">
-                <Input type="text" inputMode="numeric" className="bg-white border rounded-lg h-[52px] pl-10 text-base font-normal" placeholder="DD/MM/AAAA" disabled={periodo !== "personalizado"} value={dataInicialStr} maxLength={10} onChange={onChangeDataInicialStr} onFocus={e => {
-                if (!dataInicialStr) setDataInicialStr("");
-              }} onBlur={onBlurDataInicial} style={{
-                minHeight: 52
-              }} autoComplete="off" />
+                <Input 
+                  type="text" 
+                  inputMode="numeric" 
+                  className="bg-white border rounded-lg h-[52px] pl-10 text-base font-normal" 
+                  placeholder="DD/MM/AAAA" 
+                  disabled={periodo !== "personalizado"} 
+                  value={dataInicialStr} 
+                  maxLength={10} 
+                  onChange={onChangeDataInicialStr} 
+                  onFocus={e => {
+                    if (!dataInicialStr) setDataInicialStr("");
+                  }} 
+                  onBlur={onBlurDataInicial} 
+                  style={{ minHeight: 52 }} 
+                  autoComplete="off" 
+                />
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none" />
               </div>
             </div>
+
             {/* Data Final */}
             <div className="col-span-1 flex flex-col">
               <label className="text-xs font-medium mb-1 ml-1">Data Final</label>
               <div className="relative">
-                <Input type="text" inputMode="numeric" className="bg-white border rounded-lg h-[52px] pl-10 text-base font-normal" placeholder="DD/MM/AAAA" disabled={periodo !== "personalizado"} value={dataFinalStr} maxLength={10} onChange={onChangeDataFinalStr} onFocus={e => {
-                if (!dataFinalStr) setDataFinalStr("");
-              }} onBlur={onBlurDataFinal} style={{
-                minHeight: 52
-              }} autoComplete="off" />
+                <Input 
+                  type="text" 
+                  inputMode="numeric" 
+                  className="bg-white border rounded-lg h-[52px] pl-10 text-base font-normal" 
+                  placeholder="DD/MM/AAAA" 
+                  disabled={periodo !== "personalizado"} 
+                  value={dataFinalStr} 
+                  maxLength={10} 
+                  onChange={onChangeDataFinalStr} 
+                  onFocus={e => {
+                    if (!dataFinalStr) setDataFinalStr("");
+                  }} 
+                  onBlur={onBlurDataFinal} 
+                  style={{ minHeight: 52 }} 
+                  autoComplete="off" 
+                />
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none" />
               </div>
             </div>
+
             {/* Busca e Limpar filtros */}
             <div className="col-span-1 flex gap-2">
               <div className="relative flex-1 min-w-[140px]">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 p-0 m-0 bg-transparent border-none cursor-pointer text-neutral-400" style={{
-                lineHeight: 0
-              }} tabIndex={-1} aria-label="Buscar">
+                <span 
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-0 m-0 bg-transparent border-none cursor-pointer text-neutral-400" 
+                  style={{ lineHeight: 0 }} 
+                  tabIndex={-1} 
+                  aria-label="Buscar"
+                >
                   <Search className="h-5 w-5" />
                 </span>
-                <Input id="busca-lancamento" placeholder="Buscar" className="pl-10 bg-white border rounded-lg h-[52px] text-base font-normal border-gray-300 shadow-sm focus:bg-white min-w-[140px] w-full" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} autoComplete="off" />
+                <Input 
+                  id="busca-lancamento" 
+                  placeholder="Buscar" 
+                  className="pl-10 bg-white border rounded-lg h-[52px] text-base font-normal border-gray-300 shadow-sm focus:bg-white min-w-[140px] w-full" 
+                  value={searchTerm} 
+                  onChange={e => setSearchTerm(e.target.value)} 
+                  autoComplete="off" 
+                />
               </div>
-              <Button variant="ghost" size="icon" onClick={carregarDados} className="text-blue-500 hover:bg-blue-100 h-[52px] w-[52px]" title="Atualizar dados">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={carregarDados} 
+                className="text-blue-500 hover:bg-blue-100 h-[52px] w-[52px]" 
+                title="Atualizar dados"
+              >
                 <RefreshCcw className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={limparFiltros} className="text-gray-500 hover:bg-gray-100 h-[52px] w-[52px]" title="Limpar filtros">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={limparFiltros} 
+                className="text-gray-500 hover:bg-gray-100 h-[52px] w-[52px]" 
+                title="Limpar filtros"
+              >
                 <X className="h-5 w-5" />
               </Button>
             </div>
           </div>
+
           {/* Separador */}
           <div className="mb-4" />
+          
           <div className="mt-6">
-            {isLoading ? <div className="flex justify-center py-20">
+            {isLoading ? (
+              <div className="flex justify-center py-20">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-              </div> : <div className="border rounded-md">
+              </div>
+            ) : (
+              <div className="border rounded-md">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -364,67 +471,84 @@ export default function LancamentosPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredLancamentos.length === 0 ? <TableRow>
+                    {filteredLancamentos.length === 0 ? (
+                      <TableRow>
                         <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                           Nenhum lançamento encontrado
                         </TableCell>
-                      </TableRow> : filteredLancamentos.map(lanc => {
-                  // Exibir a data exatamente como está no formato DD/MM/YYYY sem alterar timezone
-                  let dataExibicao = "";
-                  if (typeof lanc.data === "string") {
-                    if (lanc.data.includes("/")) {
-                      // Já está no formato DD/MM/YYYY, usar diretamente
-                      dataExibicao = lanc.data;
-                    } else {
-                      // Converter formato ISO para DD/MM/YYYY sem ajuste de timezone
-                      const [anoMesDia] = lanc.data.split('T');
-                      const [ano, mes, dia] = anoMesDia.split('-');
-                      dataExibicao = `${dia}/${mes}/${ano}`;
-                    }
-                  } else if (lanc.data instanceof Date) {
-                    // Convertendo Date para formato brasileiro sem ajuste de timezone
-                    const dia = String(lanc.data.getDate()).padStart(2, '0');
-                    const mes = String(lanc.data.getMonth() + 1).padStart(2, '0');
-                    const ano = lanc.data.getFullYear();
-                    dataExibicao = `${dia}/${mes}/${ano}`;
-                  }
-                  return <TableRow key={lanc.id}>
-                          <TableCell>{dataExibicao}</TableCell>
-                          <TableCell className="font-mono">{lanc.conta_codigo || '-'}</TableCell>
-                          <TableCell>
-                            <div className="max-w-xs truncate">
-                              {lanc.historico}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {lanc.conta_nome || ''}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={getBadgeVariant(lanc.tipo_lancamento)}>
-                              {getTipoLancamentoTexto(lanc.tipo_lancamento)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {lanc.tipo === "debito" ? formatCurrency(lanc.valor) : "-"}
-                          </TableCell>
-                          <TableCell>
-                            {lanc.tipo === "credito" ? formatCurrency(lanc.valor) : "-"}
-                          </TableCell>
-                          <TableCell>{formatCurrency(lanc.saldo || 0)}</TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex items-center gap-2 justify-center">
-                              <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-100" aria-label="Excluir" onClick={() => excluirLancamento(lanc.id)}>
-                                <svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>;
-                })}
+                      </TableRow>
+                    ) : (
+                      filteredLancamentos.map(lanc => {
+                        // Exibir a data exatamente como está no formato DD/MM/YYYY sem alterar timezone
+                        let dataExibicao = "";
+                        if (typeof lanc.data === "string") {
+                          if (lanc.data.includes("/")) {
+                            // Já está no formato DD/MM/YYYY, usar diretamente
+                            dataExibicao = lanc.data;
+                          } else {
+                            // Converter formato ISO para DD/MM/YYYY sem ajuste de timezone
+                            const [anoMesDia] = lanc.data.split('T');
+                            const [ano, mes, dia] = anoMesDia.split('-');
+                            dataExibicao = `${dia}/${mes}/${ano}`;
+                          }
+                        } else if (lanc.data instanceof Date) {
+                          // Convertendo Date para formato brasileiro sem ajuste de timezone
+                          const dia = String(lanc.data.getDate()).padStart(2, '0');
+                          const mes = String(lanc.data.getMonth() + 1).padStart(2, '0');
+                          const ano = lanc.data.getFullYear();
+                          dataExibicao = `${dia}/${mes}/${ano}`;
+                        }
+
+                        return (
+                          <TableRow key={lanc.id}>
+                            <TableCell>{dataExibicao}</TableCell>
+                            <TableCell className="font-mono">{lanc.conta_codigo || '-'}</TableCell>
+                            <TableCell>
+                              <div className="max-w-xs truncate">
+                                {lanc.historico}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {lanc.conta_nome || ''}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={getBadgeVariant(lanc.tipo_lancamento)}>
+                                {getTipoLancamentoTexto(lanc.tipo_lancamento)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {lanc.tipo === "debito" ? formatCurrency(lanc.valor) : "-"}
+                            </TableCell>
+                            <TableCell>
+                              {lanc.tipo === "credito" ? formatCurrency(lanc.valor) : "-"}
+                            </TableCell>
+                            <TableCell>{formatCurrency(lanc.saldo || 0)}</TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex items-center gap-2 justify-center">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="text-red-500 hover:bg-red-100" 
+                                  aria-label="Excluir" 
+                                  onClick={() => excluirLancamento(lanc.id)}
+                                >
+                                  <svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinejoin="round" strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
                   </TableBody>
                 </Table>
-              </div>}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 }
