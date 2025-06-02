@@ -550,6 +550,52 @@ export default function DrePage() {
     }
     return 'receita';
   }
+
+  // Função para calcular totais acumulados por conta
+  function calcularTotaisAcumulados(resultadosMensais: ResultadoMensal[]) {
+    const totaisAcumulados: Record<string, number> = {};
+    
+    contasDRE.forEach(conta => {
+      let acumulado = 0;
+      resultadosMensais.forEach(resultado => {
+        const grupoMes = resultado.dados?.find(g => g.tipo === conta);
+        acumulado += grupoMes?.valor || 0;
+      });
+      totaisAcumulados[conta] = acumulado;
+    });
+    
+    return totaisAcumulados;
+  }
+
+  // Função para calcular totais acumulados por subconta
+  function calcularTotaisAcumuladosSubcontas(resultadosMensais: ResultadoMensal[]) {
+    const totaisAcumuladosSubcontas: Record<string, Record<string, number>> = {};
+    
+    contasDRE.forEach(conta => {
+      totaisAcumuladosSubcontas[conta] = {};
+      
+      // Obter todas as subcontas únicas para esta conta
+      const subccontasUnicas = Array.from(new Set(
+        resultadosMensais.flatMap(resultado => {
+          const grupo = resultado.dados?.find(g => g.tipo === conta);
+          return grupo?.contas?.map(c => c.descricao) || [];
+        })
+      ));
+      
+      subccontasUnicas.forEach(descricaoConta => {
+        let acumulado = 0;
+        resultadosMensais.forEach(resultado => {
+          const grupo = resultado.dados?.find(g => g.tipo === conta);
+          const subconta = grupo?.contas?.find(c => c.descricao === descricaoConta);
+          acumulado += subconta?.valor || 0;
+        });
+        totaisAcumuladosSubcontas[conta][descricaoConta] = acumulado;
+      });
+    });
+    
+    return totaisAcumuladosSubcontas;
+  }
+
   return <div className="w-full">
       <Card className="w-full">
         <CardHeader>
@@ -846,13 +892,18 @@ export default function DrePage() {
                 </Accordion>}
 
               {/* Mensal todos os meses em colunas com expansão para subcontas */}
-              {visualizacao === "mensal" && mes === "todos" && <>
+              {visualizacao === "mensal" && mes === "todos" && (() => {
+                const totaisAcumulados = calcularTotaisAcumulados(dadosDRE as ResultadoMensal[]);
+                const totaisAcumuladosSubcontas = calcularTotaisAcumuladosSubcontas(dadosDRE as ResultadoMensal[]);
+                
+                return <>
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Conta</TableHead>
                           {meses.map(m => <TableHead key={m.value} className="text-center">{m.label}</TableHead>)}
+                          <TableHead className="text-center font-bold">Total Acumulado</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -875,6 +926,10 @@ export default function DrePage() {
                                       {formatCurrency(linhaMes?.valor || 0)}
                                     </TableCell>;
                         })}
+                        
+                                <TableCell className="text-right font-bold">
+                                  {formatCurrency(totaisAcumulados[conta] || 0)}
+                                </TableCell>
                               </TableRow>
                               
                               {contemSubcontas && estaExpandida && Array.from(new Set((dadosDRE as ResultadoMensal[]).flatMap(resultadoMensal => {
@@ -892,13 +947,17 @@ export default function DrePage() {
                                         {formatCurrency(subconta?.valor || 0)}
                                       </TableCell>;
                         })}
+                                  <TableCell className="text-right text-sm font-bold">
+                                    {formatCurrency(totaisAcumuladosSubcontas[conta]?.[descricaoConta] || 0)}
+                                  </TableCell>
                                 </TableRow>)}
                             </React.Fragment>;
                   })}
                       </TableBody>
                     </Table>
                   </div>
-                </>}
+                </>;
+              })()}
             </div>}
         </CardContent>
       </Card>
