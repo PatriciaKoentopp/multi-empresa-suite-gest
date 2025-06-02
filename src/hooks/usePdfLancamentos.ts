@@ -70,8 +70,15 @@ export const usePdfLancamentos = () => {
         }
       };
 
+      // Função para obter código completo com tipo de lançamento
+      const getCodigoCompleto = (lancamento: LancamentoContabil) => {
+        const codigo = lancamento.conta_codigo || '-';
+        const tipoTexto = getTipoLancamentoTexto(lancamento.tipo_lancamento);
+        return `${codigo} - ${tipoTexto}`;
+      };
+
       // Função para adicionar cabeçalho
-      const adicionarCabecalho = (pageNumber: number) => {
+      const adicionarCabecalho = () => {
         // Nome da empresa (canto esquerdo)
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
@@ -137,9 +144,8 @@ export const usePdfLancamentos = () => {
 
         dadosTabela.push([
           formatDateBR(lanc.data),
-          lanc.conta_codigo || '-',
+          getCodigoCompleto(lanc),
           lanc.historico,
-          getTipoLancamentoTexto(lanc.tipo_lancamento),
           valorDebito,
           valorCredito,
           formatCurrency(lanc.saldo || 0)
@@ -147,11 +153,11 @@ export const usePdfLancamentos = () => {
       });
 
       // Adicionar cabeçalho da primeira página
-      let startY = adicionarCabecalho(1);
+      let startY = adicionarCabecalho();
 
-      // Gerar tabela com colunas otimizadas para largura
+      // Gerar tabela com colunas otimizadas
       autoTable(doc, {
-        head: [['Data', 'Código', 'Histórico', 'Tipo', 'Débito', 'Crédito', 'Saldo']],
+        head: [['Data', 'Código', 'Histórico', 'Débito', 'Crédito', 'Saldo']],
         body: dadosTabela,
         startY: startY,
         margin: { left: 15, right: 15 },
@@ -176,23 +182,26 @@ export const usePdfLancamentos = () => {
         },
         columnStyles: {
           0: { cellWidth: 18, halign: 'center', overflow: 'ellipsize' }, // Data
-          1: { cellWidth: 20, halign: 'center', overflow: 'ellipsize' }, // Código
-          2: { cellWidth: 90, halign: 'left', overflow: 'ellipsize' },   // Histórico
-          3: { cellWidth: 25, halign: 'center', overflow: 'ellipsize' }, // Tipo
-          4: { cellWidth: 30, halign: 'right', overflow: 'ellipsize' },  // Débito
-          5: { cellWidth: 30, halign: 'right', overflow: 'ellipsize' },  // Crédito
-          6: { cellWidth: 25, halign: 'right', overflow: 'ellipsize' }   // Saldo
+          1: { cellWidth: 40, halign: 'left', overflow: 'ellipsize' },   // Código (aumentada)
+          2: { cellWidth: 100, halign: 'left', overflow: 'ellipsize' },  // Histórico (aumentada)
+          3: { cellWidth: 30, halign: 'right', overflow: 'ellipsize' },  // Débito
+          4: { cellWidth: 30, halign: 'right', overflow: 'ellipsize' },  // Crédito
+          5: { cellWidth: 25, halign: 'right', overflow: 'ellipsize' }   // Saldo
         },
         didDrawPage: (data) => {
-          // Adicionar rodapé em cada página
+          // Adicionar cabeçalho e rodapé em cada página
           const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
-          const totalPages = doc.internal.getNumberOfPages();
           
+          // Se não é a primeira página, adicionar cabeçalho
           if (pageNumber > 1) {
-            adicionarCabecalho(pageNumber);
+            adicionarCabecalho();
           }
+          
+          // Adicionar rodapé
+          const totalPages = doc.internal.getNumberOfPages();
           adicionarRodape(pageNumber, totalPages);
-        }
+        },
+        showHead: 'everyPage'
       });
 
       // Calcular totais para o rodapé da tabela
