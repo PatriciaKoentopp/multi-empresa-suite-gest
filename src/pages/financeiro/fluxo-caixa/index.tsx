@@ -1,10 +1,9 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Search, Filter, X } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Filter, X, FileText } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -28,6 +27,7 @@ import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
+import { usePdfFluxoCaixa } from "@/hooks/usePdfFluxoCaixa";
 
 // Função para formatar datas (DD/MM/YYYY)
 function formatDateBR(dateStr: string) {
@@ -533,18 +533,62 @@ export default function FluxoCaixaPage() {
     return filteredMovimentacoes[filteredMovimentacoes.length - 1]?.saldo_calculado || saldoInicial;
   }, [filteredMovimentacoes, saldoInicial]);
 
+  const { gerarPdfFluxoCaixa } = usePdfFluxoCaixa();
+
+  // Função para gerar PDF
+  const handleGerarPdf = () => {
+    if (!contaCorrenteSelecionada) {
+      toast.error("Selecione uma conta corrente para gerar o relatório");
+      return;
+    }
+
+    if (filteredMovimentacoes.length === 0) {
+      toast.error("Não há movimentações para gerar o relatório");
+      return;
+    }
+
+    const sucesso = gerarPdfFluxoCaixa(
+      filteredMovimentacoes,
+      currentCompany?.nome_fantasia || currentCompany?.razao_social || "Empresa",
+      contaCorrenteSelecionada,
+      dataInicial,
+      dataFinal,
+      saldoInicial,
+      favorecidosCache,
+      documentosCache,
+      parcelasCache
+    );
+
+    if (sucesso) {
+      toast.success("Relatório PDF gerado com sucesso!");
+    } else {
+      toast.error("Erro ao gerar relatório PDF");
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {/* Título e botão de nova movimentação */}
+      {/* Título e botões */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Fluxo de Caixa</h1>
-        <Button
-          variant="blue"
-          className="rounded-md px-6 py-2 text-base font-semibold"
-          onClick={() => navigate("/financeiro/incluir-movimentacao")}
-        >
-          Nova Movimentação
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="rounded-md px-6 py-2 text-base font-semibold text-blue-600 border-blue-600 hover:bg-blue-50"
+            onClick={handleGerarPdf}
+            disabled={!contaCorrenteId || filteredMovimentacoes.length === 0}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Gerar PDF
+          </Button>
+          <Button
+            variant="blue"
+            className="rounded-md px-6 py-2 text-base font-semibold"
+            onClick={() => navigate("/financeiro/incluir-movimentacao")}
+          >
+            Nova Movimentação
+          </Button>
+        </div>
       </div>
 
       {/* Card com informações de saldo */}
