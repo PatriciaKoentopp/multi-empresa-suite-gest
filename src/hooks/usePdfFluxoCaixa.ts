@@ -144,7 +144,6 @@ export const usePdfFluxoCaixa = () => {
         '-',
         'Saldo Inicial',
         '-',
-        '-',
         formatCurrency(saldoInicial)
       ]);
 
@@ -165,7 +164,6 @@ export const usePdfFluxoCaixa = () => {
           getTituloParcela(linha),
           getFavorecidoNome(linha),
           linha.descricao || linha.movimentacoes?.descricao || '-',
-          linha.situacao === 'conciliado' ? 'Conciliado' : 'Não Conciliado',
           valorFormatado,
           formatCurrency(linha.saldo_calculado)
         ]);
@@ -174,35 +172,38 @@ export const usePdfFluxoCaixa = () => {
       // Adicionar cabeçalho da primeira página
       let startY = adicionarCabecalho(1);
 
-      // Gerar tabela
+      // Gerar tabela com colunas otimizadas para largura
       autoTable(doc, {
-        head: [['Data', 'Título/Parcela', 'Favorecido', 'Descrição', 'Situação', 'Valor', 'Saldo']],
+        head: [['Data', 'Título/Parcela', 'Favorecido', 'Descrição', 'Valor', 'Saldo']],
         body: dadosTabela,
         startY: startY,
         margin: { left: 15, right: 15 },
         styles: {
-          fontSize: 7,
-          cellPadding: 1,
+          fontSize: 8,
+          cellPadding: 2,
           lineColor: [200, 200, 200],
-          lineWidth: 0.1
+          lineWidth: 0.1,
+          minCellHeight: 8,
+          overflow: 'linebreak',
+          valign: 'middle'
         },
         headStyles: {
           fillColor: [45, 55, 72],
           textColor: 255,
           fontStyle: 'bold',
-          fontSize: 8
+          fontSize: 9,
+          minCellHeight: 10
         },
         alternateRowStyles: {
           fillColor: [248, 249, 250]
         },
         columnStyles: {
-          0: { cellWidth: 20, halign: 'center' },
-          1: { cellWidth: 25, halign: 'center' },
-          2: { cellWidth: 40, halign: 'left' },
-          3: { cellWidth: 60, halign: 'left' },
-          4: { cellWidth: 25, halign: 'center' },
-          5: { cellWidth: 25, halign: 'right' },
-          6: { cellWidth: 25, halign: 'right' }
+          0: { cellWidth: 22, halign: 'center' }, // Data
+          1: { cellWidth: 30, halign: 'center' }, // Título/Parcela
+          2: { cellWidth: 65, halign: 'left' },   // Favorecido (aumentado)
+          3: { cellWidth: 85, halign: 'left' },   // Descrição (aumentado)
+          4: { cellWidth: 30, halign: 'right' },  // Valor
+          5: { cellWidth: 35, halign: 'right' }   // Saldo
         },
         didDrawPage: (data) => {
           // Adicionar rodapé em cada página
