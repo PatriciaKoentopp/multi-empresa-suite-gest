@@ -59,31 +59,34 @@ export const usePdfFluxoCaixa = () => {
         return "-";
       };
 
-      // Função para obter título/parcela
+      // Função para obter título/parcela com truncamento
       const getTituloParcela = (linha: FluxoCaixaItem) => {
-        if (linha.origem === "antecipacao" && linha.antecipacoes?.numero_documento) {
-          return `${linha.antecipacoes.numero_documento}/1`;
-        }
+        let titulo = "-";
         
-        if (linha.movimentacao_parcela_id) {
+        if (linha.origem === "antecipacao" && linha.antecipacoes?.numero_documento) {
+          titulo = `${linha.antecipacoes.numero_documento}/1`;
+        } else if (linha.movimentacao_parcela_id) {
           const parcela = parcelasCache[linha.movimentacao_parcela_id];
           if (parcela && parcela.movimentacao_id) {
             const movimentacaoId = parcela.movimentacao_id;
             const movPai = documentosCache[movimentacaoId];
             const numeroDoc = movPai?.numero_documento || '-';
             const numeroParcela = parcela.numero || '1';
-            return `${numeroDoc}/${numeroParcela}`;
+            titulo = `${numeroDoc}/${numeroParcela}`;
           }
-        }
-        
-        if (linha.movimentacao_id) {
+        } else if (linha.movimentacao_id) {
           const movimento = documentosCache[linha.movimentacao_id];
           if (movimento) {
-            return `${movimento.numero_documento || '-'}/1`;
+            titulo = `${movimento.numero_documento || '-'}/1`;
           }
         }
         
-        return "-";
+        // Truncar título se for muito longo (máximo 15 caracteres)
+        if (titulo.length > 15) {
+          titulo = titulo.substring(0, 12) + '...';
+        }
+        
+        return titulo;
       };
 
       // Função para adicionar cabeçalho
@@ -184,7 +187,7 @@ export const usePdfFluxoCaixa = () => {
           lineColor: [200, 200, 200],
           lineWidth: 0.1,
           minCellHeight: 8,
-          overflow: 'linebreak',
+          overflow: 'ellipsize',
           valign: 'middle'
         },
         headStyles: {
@@ -198,12 +201,12 @@ export const usePdfFluxoCaixa = () => {
           fillColor: [248, 249, 250]
         },
         columnStyles: {
-          0: { cellWidth: 22, halign: 'center' }, // Data
-          1: { cellWidth: 30, halign: 'center' }, // Título/Parcela
-          2: { cellWidth: 65, halign: 'left' },   // Favorecido (aumentado)
-          3: { cellWidth: 85, halign: 'left' },   // Descrição (aumentado)
-          4: { cellWidth: 30, halign: 'right' },  // Valor
-          5: { cellWidth: 35, halign: 'right' }   // Saldo
+          0: { cellWidth: 22, halign: 'center', overflow: 'ellipsize' }, // Data
+          1: { cellWidth: 30, halign: 'center', overflow: 'ellipsize' }, // Título/Parcela
+          2: { cellWidth: 65, halign: 'left', overflow: 'ellipsize' },   // Favorecido
+          3: { cellWidth: 85, halign: 'left', overflow: 'ellipsize' },   // Descrição
+          4: { cellWidth: 30, halign: 'right', overflow: 'ellipsize' },  // Valor
+          5: { cellWidth: 35, halign: 'right', overflow: 'ellipsize' }   // Saldo
         },
         didDrawPage: (data) => {
           // Adicionar rodapé em cada página
