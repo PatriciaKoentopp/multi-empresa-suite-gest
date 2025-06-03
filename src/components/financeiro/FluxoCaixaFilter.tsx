@@ -1,154 +1,194 @@
-import { useState } from "react";
-import { DateRange } from "react-day-picker";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface FiltroFluxoCaixa {
-  dataInicio: Date;
-  dataFim: Date;
-  conta_corrente_id: string;
-  situacao: string;
-}
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon, Filter } from "lucide-react";
+import { format, subDays, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { FiltroFluxoCaixa, ContaCorrenteItem } from "@/types/financeiro";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface FluxoCaixaFilterProps {
-  onFilter: (filtros: FiltroFluxoCaixa) => void;
-  contas: any[];
+  contas: ContaCorrenteItem[];
+  filtro: FiltroFluxoCaixa;
+  onFiltroChange: (filtro: FiltroFluxoCaixa) => void;
 }
 
-export function FluxoCaixaFilter({ onFilter, contas }: FluxoCaixaFilterProps) {
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: new Date(),
-  });
-  const [dataInicio, setDataInicio] = useState<Date>(new Date());
-  const [dataFim, setDataFim] = useState<Date>(new Date());
-  const [open, setOpen] = useState(false);
-  const [contaId, setContaId] = useState("");
-  const [situacao, setSituacao] = useState("todas");
+export const FluxoCaixaFilter = ({
+  contas,
+  filtro,
+  onFiltroChange,
+}: FluxoCaixaFilterProps) => {
+  const [dataInicio, setDataInicio] = useState<Date>(filtro.dataInicio);
+  const [dataFim, setDataFim] = useState<Date>(filtro.dataFim);
+  const [contaId, setContaId] = useState<string | null>(filtro.contaId);
+  const [situacao, setSituacao] = useState<string | null>(filtro.situacao || "todos");
 
-  const handleDateChange = (newDate: DateRange | undefined) => {
-    setDate(newDate);
-    if (newDate?.from) {
-      setDataInicio(newDate.from);
-    }
-    if (newDate?.to) {
-      setDataFim(newDate.to);
-    }
-  };
-
-  const handleFilter = () => {
-    onFilter({
+  const aplicarFiltro = () => {
+    onFiltroChange({
       dataInicio,
       dataFim,
-      conta_corrente_id: contaId,
-      situacao
+      contaId,
+      situacao,
     });
   };
 
-  const handleReset = () => {
-    setDate({
-      from: new Date(),
-      to: new Date(),
-    });
-    setDataInicio(new Date());
-    setDataFim(new Date());
-    setContaId("");
-    setSituacao("todas");
+  const aplicarFiltroPreDefinido = (tipo: string) => {
+    const hoje = new Date();
+    let novaDataInicio;
+    let novaDataFim = hoje;
+
+    switch (tipo) {
+      case "7dias":
+        novaDataInicio = subDays(hoje, 7);
+        break;
+      case "30dias":
+        novaDataInicio = subDays(hoje, 30);
+        break;
+      case "mesAtual":
+        novaDataInicio = startOfMonth(hoje);
+        novaDataFim = endOfMonth(hoje);
+        break;
+      case "mesAnterior":
+        const mesAnterior = subMonths(hoje, 1);
+        novaDataInicio = startOfMonth(mesAnterior);
+        novaDataFim = endOfMonth(mesAnterior);
+        break;
+      default:
+        novaDataInicio = dataInicio;
+    }
+
+    setDataInicio(novaDataInicio);
+    setDataFim(novaDataFim);
     
-    onFilter({
-      dataInicio: new Date(),
-      dataFim: new Date(),
-      conta_corrente_id: "",
-      situacao: "todas"
+    onFiltroChange({
+      dataInicio: novaDataInicio,
+      dataFim: novaDataFim,
+      contaId,
+      situacao,
     });
   };
 
   return (
-    <div className="border rounded-md p-4 space-y-4">
-      <h2 className="text-lg font-semibold">Filtros</h2>
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <h4 className="text-sm font-medium">Filtros</h4>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Seletor de Data */}
-        <div>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !date?.from && "text-muted-foreground"
-                )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="conta" className="text-xs text-muted-foreground">
+                Conta
+              </label>
+              <Select
+                value={contaId || "todas"}
+                onValueChange={(valor) => setContaId(valor === "todas" ? null : valor)}
               >
-                {date?.from ? (
-                  date.to ? (
-                    `${date.from?.toLocaleDateString()} - ${date.to?.toLocaleDateString()}`
-                  ) : (
-                    date.from?.toLocaleDateString()
-                  )
-                ) : (
-                  <span>Pick a date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="range"
-                defaultMonth={date?.from}
-                selected={date}
-                onSelect={handleDateChange}
-                numberOfMonths={2}
-                pagedNavigation
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+                <SelectTrigger id="conta" className="h-8">
+                  <SelectValue placeholder="Todas as contas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as contas</SelectItem>
+                  {contas.map((conta) => (
+                    <SelectItem key={conta.id} value={conta.id}>
+                      {conta.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        {/* Seletor de Conta Corrente */}
-        <div>
-          <Select value={contaId} onValueChange={setContaId}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecione a Conta" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todas</SelectItem>
-              {contas.map((conta) => (
-                <SelectItem key={conta.id} value={conta.id}>
-                  {conta.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground">Data inicial</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-8 justify-start text-left font-normal",
+                      !dataInicio && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dataInicio ? (
+                      format(dataInicio, "dd/MM/yyyy")
+                    ) : (
+                      <span>Selecione a data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={dataInicio}
+                    onSelect={(date) => date && setDataInicio(date)}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-        {/* Seletor de Situação */}
-        <div>
-          <Select value={situacao} onValueChange={setSituacao}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecione a Situação" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas</SelectItem>
-              <SelectItem value="pendentes">Pendentes</SelectItem>
-              <SelectItem value="pagas">Pagas</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground">Data final</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-8 justify-start text-left font-normal",
+                      !dataFim && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dataFim ? (
+                      format(dataFim, "dd/MM/yyyy")
+                    ) : (
+                      <span>Selecione a data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={dataFim}
+                    onSelect={(date) => date && setDataFim(date)}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-      {/* Ações */}
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={handleReset}>
-          Limpar
-        </Button>
-        <Button type="button" onClick={handleFilter}>
-          Filtrar
-        </Button>
-      </div>
-    </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground">Período</label>
+              <Select
+                onValueChange={aplicarFiltroPreDefinido}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7dias">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30dias">Últimos 30 dias</SelectItem>
+                  <SelectItem value="mesAtual">Mês atual</SelectItem>
+                  <SelectItem value="mesAnterior">Mês anterior</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button className="h-8 self-end" onClick={aplicarFiltro}>
+              Aplicar Filtros
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
-}
+};
