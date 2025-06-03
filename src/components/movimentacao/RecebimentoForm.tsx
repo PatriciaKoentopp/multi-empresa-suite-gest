@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -331,7 +330,7 @@ export function RecebimentoForm({
           <ParcelasForm 
             parcelas={parcelas}
             onValorChange={(valor) => form.setValue("valor", valor)}
-            onDataChange={(data) => form.setValue("primeiro_vencimento", data)}
+            onDataChange={(data) => form.setValue("primeiro_vencimento", new Date(data))}
           />
         )}
 

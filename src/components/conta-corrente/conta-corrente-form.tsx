@@ -20,14 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ContaCorrente } from "@/types/conta-corrente";
-import { ptBR } from "date-fns/locale";
-import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import React from "react";
 import { Switch } from "@/components/ui/switch";
+import { DateInput } from "@/components/movimentacao/DateInput";
 
 const formSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
@@ -157,48 +151,24 @@ export function ContaCorrenteForm({
           )}
         />
 
-        {/* Campo Data */}
         <FormField
           control={form.control}
           name="data"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
+            <FormItem>
               <FormLabel>Data</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {field.value
-                        ? format(field.value, "dd/MM/yyyy", { locale: ptBR })
-                        : <span>Selecione a data</span>
-                      }
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    initialFocus
-                    locale={ptBR}
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
+              <FormControl>
+                <DateInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="DD/MM/AAAA"
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Campo Saldo Inicial */}
         <FormField
           control={form.control}
           name="saldoInicial"
@@ -218,7 +188,6 @@ export function ContaCorrenteForm({
           )}
         />
 
-        {/* Campo Considerar no Saldo */}
         <FormField
           control={form.control}
           name="considerar_saldo"
