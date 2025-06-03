@@ -75,7 +75,7 @@ export default function ContaCorrentePage() {
         throw error;
       }
       
-      // Converter dados para o formato ContaCorrente
+      // Converter dados para o formato ContaCorrente - CORRIGIDO para tratar datas corretamente
       const formattedData: ContaCorrente[] = data.map(item => ({
         id: item.id,
         nome: item.nome,
@@ -86,7 +86,14 @@ export default function ContaCorrentePage() {
         status: item.status as "ativo" | "inativo",
         createdAt: new Date(item.created_at),
         updatedAt: new Date(item.updated_at),
-        data: item.data ? new Date(item.data) : undefined,
+        // Corrigir conversão da data para evitar problemas de timezone
+        data: item.data ? (() => {
+          if (typeof item.data === 'string') {
+            const [year, month, day] = item.data.split('-').map(Number);
+            return new Date(year, month - 1, day, 12, 0, 0, 0);
+          }
+          return new Date(item.data);
+        })() : undefined,
         saldoInicial: item.saldo_inicial,
         considerar_saldo: item.considerar_saldo
       }));
@@ -155,6 +162,14 @@ export default function ContaCorrentePage() {
     }
     
     try {
+      // Converter data corretamente para o banco usando dateToISOString
+      const dataFormatted = data.data ? (() => {
+        const year = data.data.getFullYear();
+        const month = String(data.data.getMonth() + 1).padStart(2, '0');
+        const day = String(data.data.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      })() : null;
+
       if (editingConta) {
         // Update existing conta corrente
         const { error } = await supabase
@@ -166,7 +181,7 @@ export default function ContaCorrentePage() {
             numero: data.numero,
             conta_contabil_id: data.contaContabilId,
             status: data.status,
-            data: data.data?.toISOString(),
+            data: dataFormatted,
             saldo_inicial: data.saldoInicial,
             considerar_saldo: data.considerar_saldo,
             updated_at: new Date().toISOString()
@@ -188,7 +203,7 @@ export default function ContaCorrentePage() {
             numero: data.numero,
             conta_contabil_id: data.contaContabilId,
             status: data.status,
-            data: data.data?.toISOString(),
+            data: dataFormatted,
             saldo_inicial: data.saldoInicial,
             considerar_saldo: data.considerar_saldo
           });
