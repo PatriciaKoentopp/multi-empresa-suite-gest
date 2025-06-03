@@ -1,136 +1,118 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { ContaContabil, LancamentoContabil } from '@/types/lancamentos-contabeis';
-import { useCompany } from '@/contexts/company-context';
-import { toast } from 'sonner';
 
-interface SaldoConta {
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
+
+interface ContaContabil {
   id: string;
   codigo: string;
   descricao: string;
   tipo: string;
   categoria: string;
+  considerar_dre: boolean;
+  classificacao_dre: string;
+  status: string;
+}
+
+interface SaldoConta {
+  conta_id: string;
   saldo: number;
 }
 
-export const useBalancoPatrimonial = (dataInicio: string, dataFim: string) => {
-  const [contas, setContas] = useState<ContaContabil[]>([]);
-  const [lancamentos, setLancamentos] = useState<LancamentoContabil[]>([]);
-  const [saldos, setSaldos] = useState<SaldoConta[]>([]);
-  const [loading, setLoading] = useState(false);
+export const useBalancoPatrimonial = () => {
   const { currentCompany } = useCompany();
+  const [contasContabeis, setContasContabeis] = useState<ContaContabil[]>([]);
+  const [saldosContas, setSaldosContas] = useState<SaldoConta[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchContas = useCallback(async () => {
-    if (!currentCompany) return;
-    setLoading(true);
+  const fetchContasContabeis = async () => {
+    if (!currentCompany?.id) return;
+
     try {
-      const { data, error } = await supabase
-        .from('contas_contabeis')
+      const { data: contas, error } = await supabase
+        .from('plano_contas')
         .select('*')
-        .eq('empresa_id', currentCompany.id);
+        .eq('empresa_id', currentCompany.id)
+        .eq('status', 'ativo')
+        .order('codigo');
 
-      if (error) {
-        console.error("Erro ao buscar contas contábeis:", error);
-        toast.error("Erro ao buscar contas contábeis.");
-        return;
-      }
+      if (error) throw error;
 
-      if (data) {
-        setContas(data);
-      }
+      const contasFormatadas: ContaContabil[] = (contas || []).map(conta => ({
+        id: conta.id,
+        codigo: conta.codigo,
+        descricao: conta.descricao,
+        tipo: conta.tipo,
+        categoria: conta.categoria,
+        considerar_dre: conta.considerar_dre || false,
+        classificacao_dre: conta.classificacao_dre || 'nao_classificado',
+        status: conta.status
+      }));
+
+      setContasContabeis(contasFormatadas);
     } catch (error) {
-      console.error("Erro ao buscar contas contábeis:", error);
-      toast.error("Erro ao buscar contas contábeis.");
-    } finally {
-      setLoading(false);
+      console.error('Erro ao buscar contas contábeis:', error);
     }
-  }, [currentCompany]);
-
-  const fetchLancamentos = useCallback(async () => {
-    if (!currentCompany) return;
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('lancamentos_contabeis')
-        .select('*')
-        .eq('empresa_id', currentCompany.id);
-
-      if (error) {
-        console.error("Erro ao buscar lançamentos contábeis:", error);
-        toast.error("Erro ao buscar lançamentos contábeis.");
-        return;
-      }
-
-      if (data) {
-        setLancamentos(data);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar lançamentos contábeis:", error);
-      toast.error("Erro ao buscar lançamentos contábeis.");
-    } finally {
-      setLoading(false);
-    }
-  }, [currentCompany]);
-
-  useEffect(() => {
-    fetchContas();
-    fetchLancamentos();
-  }, [fetchContas, fetchLancamentos]);
-
-  const formatarData = (data: string | Date): string => {
-    if (typeof data === 'string') return data;
-    return data.toISOString().split('T')[0];
   };
 
-  const processarLancamentos = useCallback(() => {
-    if (!lancamentos.length || !contas.length) return;
+  const fetchSaldosContas = async () => {
+    if (!currentCompany?.id) return;
 
-    const lancamentosFiltrados = lancamentos.filter(lancamento => {
-      const dataLancamento = formatarData(lancamento.data);
-      return dataLancamento >= dataInicio && dataLancamento <= dataFim;
-    });
+    try {
+      const { data: lancamentos, error } = await supabase
+        .from('lancamentos_contabeis')
+        .select('conta_debito_id, conta_credito_id, valor')
+        .eq('empresa_id', currentCompany.id);
 
-    const saldosIniciais: SaldoConta[] = contas.map(conta => ({
-      id: conta.id,
-      codigo: conta.codigo,
-      descricao: conta.descricao,
-      tipo: conta.tipo,
-      categoria: conta.categoria,
-      saldo: 0
-    }));
+      if (error) throw error;
 
-    setSaldos(saldosIniciais);
+      const saldos: { [key: string]: number } = {};
 
-    const adicionarSaldo = (conta: SaldoConta, valor: number, isDebito: boolean) => {
-      setSaldos(prevSaldos => {
-        return prevSaldos.map(saldo => {
-          if (saldo.id === conta.id) {
-            const novoSaldo = isDebito ? saldo.saldo + valor : saldo.saldo - valor;
-            return { ...saldo, saldo: novoSaldo };
-          }
-          return saldo;
-        });
+      (lancamentos || []).forEach(lancamento => {
+        // Débito aumenta o saldo da conta de débito
+        if (!saldos[lancamento.conta_debito_id]) {
+          saldos[lancamento.conta_debito_id] = 0;
+        }
+        saldos[lancamento.conta_debito_id] += Number(lancamento.valor);
+
+        // Crédito diminui o saldo da conta de crédito
+        if (!saldos[lancamento.conta_credito_id]) {
+          saldos[lancamento.conta_credito_id] = 0;
+        }
+        saldos[lancamento.conta_credito_id] -= Number(lancamento.valor);
       });
-    };
 
-    lancamentosFiltrados.forEach(lancamento => {
-      const contaDebito = contas.find(conta => conta.id === lancamento.conta_debito_id);
-      const contaCredito = contas.find(conta => conta.id === lancamento.conta_credito_id);
-      
-      if (contaDebito) {
-        adicionarSaldo(contaDebito as any, lancamento.valor, true);
-      }
-      
-      if (contaCredito) {
-        adicionarSaldo(contaCredito as any, lancamento.valor, false);
-      }
-    });
+      const saldosArray: SaldoConta[] = Object.entries(saldos).map(([conta_id, saldo]) => ({
+        conta_id,
+        saldo
+      }));
 
-  }, [lancamentos, contas, dataInicio, dataFim]);
+      setSaldosContas(saldosArray);
+    } catch (error) {
+      console.error('Erro ao calcular saldos:', error);
+    }
+  };
 
   useEffect(() => {
-    processarLancamentos();
-  }, [processarLancamentos]);
+    const loadData = async () => {
+      setIsLoading(true);
+      await fetchContasContabeis();
+      await fetchSaldosContas();
+      setIsLoading(false);
+    };
 
-  return { saldos, loading };
+    if (currentCompany?.id) {
+      loadData();
+    }
+  }, [currentCompany?.id]);
+
+  return {
+    contasContabeis,
+    saldosContas,
+    isLoading,
+    refetch: async () => {
+      await fetchContasContabeis();
+      await fetchSaldosContas();
+    }
+  };
 };
