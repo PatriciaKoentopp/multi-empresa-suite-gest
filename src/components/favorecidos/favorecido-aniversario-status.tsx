@@ -1,15 +1,9 @@
 
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn, formatDate, parseDateString } from "@/lib/utils";
 import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "./favorecidos-form.schema";
-import * as React from 'react';
+import { DateInput } from "@/components/movimentacao/DateInput";
 
 interface FavorecidoAniversarioStatusProps {
   form: UseFormReturn<FormValues>;
@@ -17,31 +11,6 @@ interface FavorecidoAniversarioStatusProps {
 }
 
 export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniversarioStatusProps) {
-  const [dateInputValue, setDateInputValue] = React.useState("");
-
-  // Função para validar e converter a entrada de texto para objeto Date
-  const handleDateInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setDateInputValue(value);
-    
-    if (value.length === 10) {
-      const parsedDate = parseDateString(value);
-      if (parsedDate) {
-        form.setValue("data_aniversario", parsedDate);
-      }
-    }
-  };
-  
-  // Inicializa o campo de input quando o componente é montado ou quando a data muda
-  React.useEffect(() => {
-    const date = form.watch("data_aniversario");
-    if (date) {
-      setDateInputValue(formatDate(date));
-    } else {
-      setDateInputValue("");
-    }
-  }, [form.watch("data_aniversario")]);
-
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4">
       <h3 className="font-medium text-base">Data de Aniversário e Status</h3>
@@ -53,53 +22,14 @@ export function FavorecidoAniversarioStatus({ form, readOnly }: FavorecidoAniver
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Data de Aniversário</FormLabel>
-              <div className="flex">
-                <Input
+              <FormControl>
+                <DateInput
+                  value={field.value}
+                  onChange={field.onChange}
                   disabled={readOnly}
                   placeholder="DD/MM/AAAA"
-                  className="w-full"
-                  value={dateInputValue}
-                  onChange={handleDateInput}
-                  maxLength={10}
                 />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="ml-2"
-                      disabled={readOnly}
-                    >
-                      <CalendarIcon className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={(date) => {
-                        if (date) {
-                          // Preservamos o dia exato selecionado usando UTC
-                          const utcDate = new Date(Date.UTC(
-                            date.getFullYear(),
-                            date.getMonth(),
-                            date.getDate(),
-                            12, 0, 0
-                          ));
-                          
-                          field.onChange(utcDate);
-                          setDateInputValue(formatDate(utcDate));
-                        } else {
-                          field.onChange(undefined);
-                          setDateInputValue("");
-                        }
-                      }}
-                      disabled={readOnly}
-                      initialFocus
-                      className="p-3 pointer-events-auto bg-white"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

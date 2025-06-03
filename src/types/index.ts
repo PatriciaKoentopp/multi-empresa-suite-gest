@@ -87,7 +87,7 @@ export interface Profissao {
 export interface Favorecido {
   id: string;
   nome: string;
-	tipo: string;
+  tipo: string;
   tipo_documento: string;
   documento: string;
   grupo_id?: string | null;
