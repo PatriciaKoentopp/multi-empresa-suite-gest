@@ -61,11 +61,15 @@ export function RecebimentoForm({
 
     if (numParcelas && valorTotal && primeiroVencimento) {
       const valorParcela = valorTotal / numParcelas;
-      const parcelasCalculadas = Array.from({ length: numParcelas }, (_, i) => ({
-        numero: i + 1,
-        valor: valorParcela,
-        data_vencimento: new Date(primeiroVencimento), //TODO: somar os dias
-      }));
+      const parcelasCalculadas = Array.from({ length: numParcelas }, (_, i) => {
+        const dataVencimento = new Date(primeiroVencimento);
+        dataVencimento.setMonth(dataVencimento.getMonth() + i);
+        return {
+          numero: i + 1,
+          valor: valorParcela,
+          data_vencimento: dataVencimento,
+        };
+      });
       setParcelas(parcelasCalculadas);
     }
   }, [form.watch("numero_parcelas"), form.watch("valor"), form.watch("primeiro_vencimento")]);
@@ -223,7 +227,11 @@ export function RecebimentoForm({
               <FormItem>
                 <FormLabel>Número de Parcelas</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input 
+                    type="number" 
+                    {...field} 
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -237,7 +245,11 @@ export function RecebimentoForm({
               <FormItem>
                 <FormLabel>Valor</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input 
+                    type="number" 
+                    {...field} 
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -253,7 +265,11 @@ export function RecebimentoForm({
               <FormItem>
                 <FormLabel>Juros</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input 
+                    type="number" 
+                    {...field} 
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -267,7 +283,11 @@ export function RecebimentoForm({
               <FormItem>
                 <FormLabel>Multa</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input 
+                    type="number" 
+                    {...field} 
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -281,7 +301,11 @@ export function RecebimentoForm({
               <FormItem>
                 <FormLabel>Desconto</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input 
+                    type="number" 
+                    {...field} 
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
