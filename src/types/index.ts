@@ -1,4 +1,3 @@
-
 export interface Company {
   id: string;
   razao_social: string;
