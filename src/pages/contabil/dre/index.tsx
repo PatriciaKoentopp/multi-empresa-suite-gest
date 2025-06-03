@@ -230,8 +230,6 @@ export default function DrePage() {
 
   // Função para processar movimentações e calcular totais
   function processarMovimentacoes(movimentacoes: any[]) {
-    console.log('Processando movimentações:', movimentacoes.length);
-    
     const grupos: {
       [key: string]: MovimentacaoDetalhe[];
     } = {
@@ -266,30 +264,15 @@ export default function DrePage() {
     let despesasFinanceiras = 0;
     let distribuicaoLucros = 0;
     let impostos = 0;
-    
-    movimentacoes.forEach((mov, index) => {
-      console.log(`Processando movimentação ${index + 1}:`, {
-        descricao: mov.descricao,
-        valor: mov.valor,
-        tipo_operacao: mov.tipo_operacao,
-        considerar_dre_mov: mov.movimentacoes?.considerar_dre,
-        plano_contas: mov.plano_contas?.plano_contas
-      });
-      
+    movimentacoes.forEach(mov => {
       const considerarDreMovimentacao = mov.movimentacoes?.considerar_dre !== false;
-      if (!considerarDreMovimentacao) {
-        console.log('Movimentação ignorada - considerar_dre = false');
-        return;
-      }
+      if (!considerarDreMovimentacao) return;
 
       const planoContas = mov.plano_contas?.plano_contas;
       
       // Novo filtro: verificar se a conta deve ser considerada no DRE
       const considerarDreConta = planoContas?.considerar_dre !== false;
-      if (!considerarDreConta) {
-        console.log('Movimentação ignorada - conta considerar_dre = false');
-        return;
-      }
+      if (!considerarDreConta) return;
 
       const valor = Number(mov.valor);
       const tipoOperacao = mov.movimentacoes?.tipo_operacao;
@@ -304,13 +287,8 @@ export default function DrePage() {
         conta_id: contaId,
         conta_descricao: descricaoCategoria
       };
-      
-      // Inicializar grupoDestino como null para verificar se foi definido
-      let grupoDestino: string | null = null;
-      
-      // Primeiro, verificar se há classificação DRE específica
       if (planoContas && planoContas.classificacao_dre && planoContas.classificacao_dre !== 'nao_classificado') {
-        console.log('Usando classificação DRE:', planoContas.classificacao_dre);
+        let grupoDestino = "";
         switch (planoContas.classificacao_dre) {
           case 'receita_bruta':
             receitaBruta += valor;
@@ -345,20 +323,28 @@ export default function DrePage() {
             grupoDestino = "IRPJ/CSLL";
             break;
         }
+        if (grupoDestino) {
+          grupos[grupoDestino].push(detalhe);
+          if (!contasAgrupamento[grupoDestino][contaId]) {
+            contasAgrupamento[grupoDestino][contaId] = [];
+          }
+          contasAgrupamento[grupoDestino][contaId].push(detalhe);
+        }
       } else {
-        // Lógica de fallback para movimentações sem classificação DRE
-        console.log('Usando lógica de fallback - tipo_operacao:', tipoOperacao, 'planoContas:', !!planoContas);
-        
-        if (tipoOperacao === 'receber') {
-          // Movimentações de recebimento são sempre receita
+        if (tipoOperacao === 'receber' && (!mov.movimentacoes?.categoria_id || !planoContas)) {
           receitaBruta += valor;
-          grupoDestino = "Receita Bruta";
-        } else if (tipoOperacao === 'pagar' && planoContas) {
-          // Movimentações de pagamento são classificadas pelo tipo da conta
-          const { tipo, descricao } = planoContas;
-          
+          grupos["Receita Bruta"].push(detalhe);
+          if (!contasAgrupamento["Receita Bruta"][contaId]) {
+            contasAgrupamento["Receita Bruta"][contaId] = [];
+          }
+          contasAgrupamento["Receita Bruta"][contaId].push(detalhe);
+        } else if (planoContas) {
+          const {
+            tipo,
+            descricao
+          } = planoContas;
+          let grupoDestino = "";
           if (tipo === 'receita') {
-            // Conta de receita com movimento de pagamento (estorno ou devolução)
             if (descricao.toLowerCase().includes('financeira') || descricao.toLowerCase().includes('juros') || descricao.toLowerCase().includes('rendimento')) {
               receitasFinanceiras += valor;
               grupoDestino = "Receitas Financeiras";
@@ -367,80 +353,46 @@ export default function DrePage() {
               grupoDestino = "Receita Bruta";
             }
           } else if (tipo === 'despesa') {
-            // Classificar despesas por descrição
-            const descricaoLower = descricao.toLowerCase();
-            
-            if (descricaoLower.includes('das') || descricaoLower.includes('simples nacional') || descricaoLower.includes('imposto') || descricaoLower.includes('taxa')) {
-              deducoes += valor;
-              grupoDestino = "Deduções";
-            } else if (descricaoLower.includes('pró-labore') || descricaoLower.includes('pro-labore') || 
-                      descricaoLower.includes('inss') || descricaoLower.includes('honorários') || 
-                      descricaoLower.includes('honorarios') || descricaoLower.includes('salário') || 
-                      descricaoLower.includes('salario')) {
-              despesasOperacionais += valor;
-              grupoDestino = "Despesas Operacionais";
-            } else if (descricaoLower.includes('distribuição') && descricaoLower.includes('lucro')) {
-              distribuicaoLucros += valor;
-              grupoDestino = "Distribuição de Lucros";
-            } else if (descricaoLower.includes('financeira') || descricaoLower.includes('juros') || 
-                      descricaoLower.includes('tarifas') || descricaoLower.includes('banco')) {
-              despesasFinanceiras += valor;
-              grupoDestino = "Despesas Financeiras";
-            } else {
-              // Despesas gerais vão para custos
-              custos += valor;
-              grupoDestino = "Custos";
+            switch (descricao.toLowerCase()) {
+              case 'das - simples nacional':
+                deducoes += valor;
+                grupoDestino = "Deduções";
+                break;
+              case 'pró-labore':
+              case 'pro-labore':
+              case 'pró labore':
+              case 'pro labore':
+              case 'inss':
+              case 'honorários contábeis':
+              case 'honorarios contabeis':
+                despesasOperacionais += valor;
+                grupoDestino = "Despesas Operacionais";
+                break;
+              case 'distribuição de lucros':
+              case 'distribuicao de lucros':
+                distribuicaoLucros += valor;
+                grupoDestino = "Distribuição de Lucros";
+                break;
+              default:
+                if (descricao.toLowerCase().includes('financeira') || descricao.toLowerCase().includes('juros') || descricao.toLowerCase().includes('tarifas')) {
+                  despesasFinanceiras += valor;
+                  grupoDestino = "Despesas Financeiras";
+                } else {
+                  custos += valor;
+                  grupoDestino = "Custos";
+                }
             }
-          } else {
-            // Tipo de conta não reconhecido, classificar como custo
-            custos += valor;
-            grupoDestino = "Custos";
           }
-        } else if (tipoOperacao === 'transferir') {
-          // Transferências normalmente não afetam o DRE, mas vamos classificar como operacional
-          despesasOperacionais += valor;
-          grupoDestino = "Despesas Operacionais";
-        } else {
-          // Casos não cobertos, classificar como despesa operacional
-          console.log('Caso não coberto - classificando como despesa operacional');
-          despesasOperacionais += valor;
-          grupoDestino = "Despesas Operacionais";
+          if (grupoDestino) {
+            grupos[grupoDestino].push(detalhe);
+            if (!contasAgrupamento[grupoDestino][contaId]) {
+              contasAgrupamento[grupoDestino][contaId] = [];
+            }
+            contasAgrupamento[grupoDestino][contaId].push(detalhe);
+          }
         }
       }
-      
-      console.log('Movimentação classificada:', {
-        grupoDestino,
-        valor,
-        valorFormatado: formatCurrency(valor)
-      });
-      
-      // Só adicionar aos grupos se grupoDestino foi definido
-      if (grupoDestino) {
-        grupos[grupoDestino].push(detalhe);
-        if (!contasAgrupamento[grupoDestino][contaId]) {
-          contasAgrupamento[grupoDestino][contaId] = [];
-        }
-        contasAgrupamento[grupoDestino][contaId].push(detalhe);
-      } else {
-        console.error('ERRO: grupoDestino não foi definido para movimentação:', {
-          descricao: mov.descricao,
-          tipo_operacao: tipoOperacao,
-          planoContas: planoContas
-        });
-      }
     });
-    
-    console.log('Totais calculados:', {
-      receitaBruta,
-      deducoes,
-      custos,
-      despesasOperacionais,
-      receitasFinanceiras,
-      despesasFinanceiras,
-      distribuicaoLucros,
-      impostos
-    });
-    
     const receitaLiquida = receitaBruta + deducoes;
     const lucroBruto = receitaLiquida + custos;
     const resultadoOperacional = lucroBruto + despesasOperacionais;

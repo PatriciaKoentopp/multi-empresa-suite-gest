@@ -1,158 +1,251 @@
 
-import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from '@/lib/utils';
-import { Textarea } from '@/components/ui/textarea';
+import React from 'react';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { DateInput } from "./DateInput";
 import { ParcelasForm } from './ParcelasForm';
 
-interface RecebimentoFormValues {
-  cliente: string;
-  valor: string;
-  dataVencimento: Date;
-  categoria: string;
-  conta: string;
-  descricao?: string;
-}
-
+// Mesma interface do PagamentoForm, com parâmetro readOnly adicionado
 interface RecebimentoFormProps {
-  onSubmit: (data: RecebimentoFormValues) => void;
-  isLoading: boolean;
+  numDoc: string;
+  onNumDocChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  tipoTituloId: string;
+  onTipoTituloChange: (id: string) => void;
+  favorecido: string;
+  onFavorecidoChange: (id: string) => void;
+  categoria: string;
+  onCategoriaChange: (id: string) => void;
+  formaPagamento: string;
+  onFormaPagamentoChange: (id: string) => void;
+  descricao: string;
+  onDescricaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  valor: string;
+  onValorChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  numParcelas: number;
+  onNumParcelasChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  dataPrimeiroVenc?: Date;
+  onDataPrimeiroVencChange: (date?: Date) => void;
+  considerarDRE: boolean;
+  onConsiderarDREChange: (checked: boolean) => void;
+  tiposTitulos: any[];
+  favorecidos: any[];
+  categorias: any[];
+  formasPagamento: any[];
+  onNovoFavorecido: () => void;
+  onNovaCategoria: () => void;
+  parcelas: any[];
+  readOnly?: boolean;
 }
 
-export function RecebimentoForm({ onSubmit, isLoading }: RecebimentoFormProps) {
-  const [formData, setFormData] = useState<RecebimentoFormValues>({
-    cliente: '',
-    valor: '',
-    dataVencimento: new Date(),
-    categoria: '',
-    conta: '',
-    descricao: '',
-  });
-
-  const [parcelas, setParcelas] = useState([{ id: 1, valor: '', data: new Date() }]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.cliente || !formData.valor) {
-      toast.error('Preencha todos os campos obrigatórios');
-      return;
-    }
-
-    onSubmit(formData);
-  };
-
-  const handleInputChange = (field: keyof RecebimentoFormValues, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
+export function RecebimentoForm({
+  numDoc,
+  onNumDocChange,
+  tipoTituloId,
+  onTipoTituloChange,
+  favorecido,
+  onFavorecidoChange,
+  categoria,
+  onCategoriaChange,
+  formaPagamento,
+  onFormaPagamentoChange,
+  descricao,
+  onDescricaoChange,
+  valor,
+  onValorChange,
+  numParcelas,
+  onNumParcelasChange,
+  dataPrimeiroVenc,
+  onDataPrimeiroVencChange,
+  considerarDRE,
+  onConsiderarDREChange,
+  tiposTitulos,
+  favorecidos,
+  categorias,
+  formasPagamento,
+  onNovoFavorecido,
+  onNovaCategoria,
+  parcelas,
+  readOnly = false
+}: RecebimentoFormProps) {
+  // Implementação similar ao PagamentoForm, mas com campos adaptados para recebimentos
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="cliente">Cliente</Label>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-2">
+          <Label>Número do Documento</Label>
           <Input 
-            id="cliente" 
-            type="text" 
-            placeholder="Nome do cliente" 
-            value={formData.cliente}
-            onChange={(e) => handleInputChange('cliente', e.target.value)}
+            value={numDoc} 
+            onChange={onNumDocChange}
+            className="bg-white"
+            disabled={readOnly}
           />
         </div>
-        <div>
-          <Label htmlFor="valor">Valor</Label>
+        <div className="flex flex-col gap-2">
+          <Label>Tipo de Título</Label>
+          <Select 
+            value={tipoTituloId} 
+            onValueChange={onTipoTituloChange}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {tiposTitulos.map(tipo => (
+                <SelectItem key={tipo.id} value={tipo.id}>
+                  {tipo.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between">
+            <Label>Favorecido</Label>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={onNovoFavorecido}
+                className="text-blue-500 text-sm"
+              >
+                + Novo
+              </button>
+            )}
+          </div>
+          <Select 
+            value={favorecido} 
+            onValueChange={onFavorecidoChange}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {favorecidos.map(fav => (
+                <SelectItem key={fav.id} value={fav.id}>
+                  {fav.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between">
+            <Label>Categoria</Label>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={onNovaCategoria}
+                className="text-blue-500 text-sm"
+              >
+                + Nova
+              </button>
+            )}
+          </div>
+          <Select 
+            value={categoria} 
+            onValueChange={onCategoriaChange}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {categorias.map(cat => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.descricao}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-2">
+          <Label>Forma Pagamento</Label>
+          <Select 
+            value={formaPagamento} 
+            onValueChange={onFormaPagamentoChange}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {formasPagamento.map(forma => (
+                <SelectItem key={forma.id} value={forma.id}>
+                  {forma.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col col-span-2 gap-2">
+          <Label>Descrição</Label>
           <Input 
-            id="valor" 
+            value={descricao} 
+            onChange={onDescricaoChange} 
+            className="bg-white"
+            disabled={readOnly}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-2">
+          <Label>Valor Total (R$)</Label>
+          <Input 
+            type="text" 
+            value={valor} 
+            onChange={onValorChange} 
+            className="bg-white"
+            disabled={readOnly}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label>Número de Parcelas</Label>
+          <Input 
             type="number" 
-            placeholder="0.00" 
-            value={formData.valor}
-            onChange={(e) => handleInputChange('valor', e.target.value)}
+            min={1} 
+            value={numParcelas} 
+            onChange={onNumParcelasChange} 
+            className="bg-white"
+            disabled={readOnly}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label>Data Primeiro Vencimento</Label>
+          <DateInput 
+            value={dataPrimeiroVenc} 
+            onChange={onDataPrimeiroVencChange}
+            disabled={readOnly}
           />
         </div>
       </div>
 
-      <div>
-        <Label>Data de Vencimento</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant={"outline"}
-              className={cn(
-                "w-[240px] justify-start text-left font-normal",
-                !formData.dataVencimento && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {formData.dataVencimento ? (
-                format(formData.dataVencimento, "dd/MM/yyyy")
-              ) : (
-                <span>Selecione uma data</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={formData.dataVencimento}
-              onSelect={(date) => handleInputChange('dataVencimento', date!)}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="categoria">Categoria</Label>
-          <Input 
-            id="categoria" 
-            type="text" 
-            placeholder="Categoria" 
-            value={formData.categoria}
-            onChange={(e) => handleInputChange('categoria', e.target.value)}
-          />
-        </div>
-        <div>
-          <Label htmlFor="conta">Conta</Label>
-          <Input 
-            id="conta" 
-            type="text" 
-            placeholder="Conta" 
-            value={formData.conta}
-            onChange={(e) => handleInputChange('conta', e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="descricao">Descrição</Label>
-        <Textarea 
-          id="descricao" 
-          placeholder="Descrição" 
-          value={formData.descricao}
-          onChange={(e) => handleInputChange('descricao', e.target.value)}
+      <div className="flex items-center space-x-2">
+        <Switch 
+          id="consider-dre" 
+          checked={considerarDRE} 
+          onCheckedChange={onConsiderarDREChange}
+          disabled={readOnly}
         />
+        <Label htmlFor="consider-dre">Considerar para DRE</Label>
       </div>
-      
-      <ParcelasForm 
-        parcelas={parcelas} 
-        onValorChange={() => {}}
-        onDataChange={() => {}}
-      />
 
-      <Button type="submit" disabled={isLoading}>
-        {isLoading ? 'Cadastrando...' : 'Cadastrar Recebimento'}
-      </Button>
-    </form>
+      {/* Tabela de parcelas */}
+      {parcelas.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-lg font-medium mb-2">Parcelas</h3>
+          <ParcelasForm parcelas={parcelas} />
+        </div>
+      )}
+    </div>
   );
 }
