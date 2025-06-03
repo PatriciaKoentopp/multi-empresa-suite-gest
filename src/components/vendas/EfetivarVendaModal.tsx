@@ -8,8 +8,13 @@ import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Orcamento } from "./vendas-table";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+
+interface Orcamento {
+  id: string;
+  favorecido_id: string;
+  // ... outras propriedades do orçamento
+}
 
 interface EfetivarVendaModalProps {
   orcamento?: Orcamento | null;
