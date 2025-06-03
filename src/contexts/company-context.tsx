@@ -12,6 +12,7 @@ interface CompanyContextType {
   fetchCompanyById: (companyId: string) => Promise<void>;
   createCompany: (company: Partial<Company>) => Promise<void>;
   updateCompany: (id: string, company: Partial<Company>) => Promise<void>;
+  addCompany: (company: Company) => void;
   loading: boolean;
 }
 
@@ -23,6 +24,7 @@ const CompanyContext = createContext<CompanyContextType>({
   fetchCompanyById: async () => {},
   createCompany: async () => {},
   updateCompany: async () => {},
+  addCompany: () => {},
   loading: false,
 });
 
@@ -311,6 +313,22 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   };
+  
+  // Método para adicionar uma empresa sem fazer chamada à API
+  // É usado pelo modal company para simular a adição sem precisar do backend
+  const addCompany = (company: Company) => {
+    try {
+      setCompanies((prevCompanies) => [...prevCompanies, company]);
+      setCurrentCompany(company);
+      localStorage.setItem("currentCompanyId", company.id);
+      
+      // Em seguida, criar no banco de dados
+      createCompany(company);
+    } catch (error) {
+      console.error("Erro ao adicionar empresa:", error);
+      toast.error("Erro ao adicionar empresa");
+    }
+  };
 
   return (
     <CompanyContext.Provider
@@ -325,6 +343,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         fetchCompanyById,
         createCompany,
         updateCompany,
+        addCompany,
         loading,
       }}
     >

@@ -62,7 +62,7 @@ interface CompanyModalProps {
 // O formulário agora trabalha com o formato "achatado" igual ao banco/existing page
 export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
   const { toast } = useToast();
-  const { addCompany, updateCompany } = useCompany();
+  const { createCompany, updateCompany } = useCompany();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -92,24 +92,24 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
   useEffect(() => {
     if (company) {
       form.reset({
-        razaoSocial: company.razaoSocial,
-        nomeFantasia: company.nomeFantasia,
-        cnpj: company.cnpj,
-        inscricaoEstadual: company.inscricaoEstadual || "",
-        inscricaoMunicipal: company.inscricaoMunicipal || "",
+        razaoSocial: company.razaoSocial || company.razao_social || "",
+        nomeFantasia: company.nomeFantasia || company.nome_fantasia || "",
+        cnpj: company.cnpj || "",
+        inscricaoEstadual: company.inscricaoEstadual || company.inscricao_estadual || "",
+        inscricaoMunicipal: company.inscricaoMunicipal || company.inscricao_municipal || "",
         cnae: company.cnae || "",
         email: company.email || "",
         site: company.site || "",
         telefone: company.telefone || "",
-        cep: company.endereco?.cep || "",
-        logradouro: company.endereco?.logradouro || "",
-        numero: company.endereco?.numero || "",
-        complemento: company.endereco?.complemento || "",
-        bairro: company.endereco?.bairro || "",
-        cidade: company.endereco?.cidade || "",
-        estado: company.endereco?.estado || "",
-        pais: company.endereco?.pais || "Brasil",
-        regimeTributacao: company.regimeTributacao || undefined,
+        cep: company.endereco?.cep || company.cep || "",
+        logradouro: company.endereco?.logradouro || company.logradouro || "",
+        numero: company.endereco?.numero || company.numero || "",
+        complemento: company.endereco?.complemento || company.complemento || "",
+        bairro: company.endereco?.bairro || company.bairro || "",
+        cidade: company.endereco?.cidade || company.cidade || "",
+        estado: company.endereco?.estado || company.estado || "",
+        pais: company.endereco?.pais || company.pais || "Brasil",
+        regimeTributacao: (company.regimeTributacao || company.regime_tributacao) as any,
         logo: company.logo || "",
       });
     } else {
@@ -139,17 +139,36 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
 
   const onSubmit = (values: FormValues) => {
     // Prepara objeto Company com endereço corretamente montado
-    const companyObj: Company = {
-      id: company?.id ?? crypto.randomUUID(),
-      razaoSocial: values.razaoSocial,
-      nomeFantasia: values.nomeFantasia,
+    const companyObj: Partial<Company> = {
+      id: company?.id,
+      razao_social: values.razaoSocial,
+      nome_fantasia: values.nomeFantasia,
       cnpj: values.cnpj,
-      inscricaoEstadual: values.inscricaoEstadual,
-      inscricaoMunicipal: values.inscricaoMunicipal,
+      inscricao_estadual: values.inscricaoEstadual,
+      inscricao_municipal: values.inscricaoMunicipal,
       cnae: values.cnae,
       email: values.email,
       site: values.site,
       telefone: values.telefone,
+      cep: values.cep,
+      logradouro: values.logradouro,
+      numero: values.numero,
+      complemento: values.complemento,
+      bairro: values.bairro,
+      cidade: values.cidade,
+      estado: values.estado,
+      pais: values.pais,
+      regime_tributacao: values.regimeTributacao,
+      logo: values.logo,
+      
+      // Aliases para compatibilidade
+      razaoSocial: values.razaoSocial,
+      nomeFantasia: values.nomeFantasia,
+      inscricaoEstadual: values.inscricaoEstadual,
+      inscricaoMunicipal: values.inscricaoMunicipal,
+      regimeTributacao: values.regimeTributacao,
+      
+      // Objeto endereco para compatibilidade
       endereco: {
         cep: values.cep,
         logradouro: values.logradouro,
@@ -159,12 +178,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
         cidade: values.cidade,
         estado: values.estado,
         pais: values.pais,
-      },
-      regimeTributacao: values.regimeTributacao,
-      logo: values.logo,
-      createdAt: company?.createdAt || new Date(),
-      updatedAt: new Date(),
-      name: values.nomeFantasia || values.razaoSocial // garantir compatibilidade com a tipagem
+      }
     };
 
     if (company) {
@@ -174,7 +188,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
         description: "As informações da empresa foram atualizadas com sucesso.",
       });
     } else {
-      addCompany(companyObj);
+      createCompany(companyObj);
       toast({
         title: "Empresa cadastrada",
         description: "A empresa foi cadastrada com sucesso.",

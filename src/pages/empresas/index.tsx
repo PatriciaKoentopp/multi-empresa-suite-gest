@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardDescription, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Company } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+
 const formSchema = z.object({
   razaoSocial: z.string().min(3, {
     message: "Razão Social é obrigatória"
@@ -58,6 +59,7 @@ const formSchema = z.object({
     message: "URL da logo inválida"
   }).optional().or(z.literal(""))
 });
+
 type FormValues = z.infer<typeof formSchema>;
 
 // Adiciona as funções utilitárias para formatação
@@ -87,8 +89,8 @@ export default function EmpresasPage() {
   const {
     currentCompany,
     updateCompany,
-    addCompany,
-    isLoading
+    createCompany,
+    loading
   } = useCompany();
   const {
     user
@@ -96,9 +98,11 @@ export default function EmpresasPage() {
   const {
     toast
   } = useToast();
+  
   // Agora, se não existe empresa, mostrar o formulário em modo "criar"
   const criandoEmpresa = !currentCompany;
   const [isEditing, setIsEditing] = useState(criandoEmpresa ? true : false);
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -126,26 +130,27 @@ export default function EmpresasPage() {
 
   // Carregar os dados da empresa atual quando disponíveis
   useEffect(() => {
+    console.log("Current company:", currentCompany);
     if (currentCompany) {
       form.reset({
-        razaoSocial: currentCompany.razaoSocial || "",
-        nomeFantasia: currentCompany.nomeFantasia || "",
+        razaoSocial: currentCompany.razaoSocial || currentCompany.razao_social || "",
+        nomeFantasia: currentCompany.nomeFantasia || currentCompany.nome_fantasia || "",
         cnpj: currentCompany.cnpj || "",
-        inscricaoEstadual: currentCompany.inscricaoEstadual || "",
-        inscricaoMunicipal: currentCompany.inscricaoMunicipal || "",
+        inscricaoEstadual: currentCompany.inscricaoEstadual || currentCompany.inscricao_estadual || "",
+        inscricaoMunicipal: currentCompany.inscricaoMunicipal || currentCompany.inscricao_municipal || "",
         cnae: currentCompany.cnae || "",
         email: currentCompany.email || "",
         site: currentCompany.site || "",
         telefone: currentCompany.telefone || "",
-        cep: currentCompany.endereco?.cep || "",
-        logradouro: currentCompany.endereco?.logradouro || "",
-        numero: currentCompany.endereco?.numero || "",
-        complemento: currentCompany.endereco?.complemento || "",
-        bairro: currentCompany.endereco?.bairro || "",
-        cidade: currentCompany.endereco?.cidade || "",
-        estado: currentCompany.endereco?.estado || "",
-        pais: currentCompany.endereco?.pais || "Brasil",
-        regimeTributacao: currentCompany.regimeTributacao,
+        cep: currentCompany.endereco?.cep || currentCompany.cep || "",
+        logradouro: currentCompany.endereco?.logradouro || currentCompany.logradouro || "",
+        numero: currentCompany.endereco?.numero || currentCompany.numero || "",
+        complemento: currentCompany.endereco?.complemento || currentCompany.complemento || "",
+        bairro: currentCompany.endereco?.bairro || currentCompany.bairro || "",
+        cidade: currentCompany.endereco?.cidade || currentCompany.cidade || "",
+        estado: currentCompany.endereco?.estado || currentCompany.estado || "",
+        pais: currentCompany.endereco?.pais || currentCompany.pais || "Brasil",
+        regimeTributacao: (currentCompany.regimeTributacao || currentCompany.regime_tributacao) as any,
         logo: currentCompany.logo || ""
       });
     } else {
@@ -176,17 +181,37 @@ export default function EmpresasPage() {
 
   const onSubmit = (values: FormValues) => {
     if (!user) return;
-    const empresaObject = {
-      id: currentCompany?.id || crypto.randomUUID(),
-      razaoSocial: values.razaoSocial,
-      nomeFantasia: values.nomeFantasia,
+    
+    const empresaObject: Partial<Company> = {
+      id: currentCompany?.id,
+      razao_social: values.razaoSocial,
+      nome_fantasia: values.nomeFantasia,
       cnpj: values.cnpj,
-      inscricaoEstadual: values.inscricaoEstadual,
-      inscricaoMunicipal: values.inscricaoMunicipal,
+      inscricao_estadual: values.inscricaoEstadual,
+      inscricao_municipal: values.inscricaoMunicipal,
       cnae: values.cnae,
       email: values.email,
       site: values.site,
       telefone: values.telefone,
+      cep: values.cep,
+      logradouro: values.logradouro,
+      numero: values.numero,
+      complemento: values.complemento,
+      bairro: values.bairro,
+      cidade: values.cidade,
+      estado: values.estado,
+      pais: values.pais || "Brasil",
+      regime_tributacao: values.regimeTributacao,
+      logo: values.logo,
+      
+      // Aliases para compatibilidade
+      razaoSocial: values.razaoSocial,
+      nomeFantasia: values.nomeFantasia,
+      inscricaoEstadual: values.inscricaoEstadual,
+      inscricaoMunicipal: values.inscricaoMunicipal,
+      regimeTributacao: values.regimeTributacao,
+      
+      // Objeto endereco para compatibilidade
       endereco: {
         cep: values.cep,
         logradouro: values.logradouro,
@@ -195,15 +220,12 @@ export default function EmpresasPage() {
         bairro: values.bairro,
         cidade: values.cidade,
         estado: values.estado,
-        pais: values.pais
-      },
-      regimeTributacao: values.regimeTributacao,
-      logo: values.logo,
-      createdAt: currentCompany?.createdAt || new Date(),
-      updatedAt: new Date()
+        pais: values.pais || "Brasil",
+      }
     };
+    
     if (criandoEmpresa || !currentCompany) {
-      addCompany(empresaObject as Company);
+      createCompany(empresaObject);
       toast({
         title: "Empresa cadastrada",
         description: "A empresa foi cadastrada com sucesso."
@@ -222,7 +244,7 @@ export default function EmpresasPage() {
     setIsEditing((editando) => !editando);
   };
 
-  if (isLoading) {
+  if (loading) {
     return <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center gap-2">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-r-transparent" />
