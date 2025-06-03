@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Company } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -176,8 +177,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           cidade: data.cidade,
           estado: data.estado,
           pais: data.pais,
-          created_at: data.created_at ? new Date(data.created_at) : null,
-          updated_at: data.updated_at ? new Date(data.updated_at) : null,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
           
           // Adicionar aliases em camelCase para compatibilidade
           razaoSocial: data.razao_social,
@@ -185,8 +186,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           inscricaoEstadual: data.inscricao_estadual,
           inscricaoMunicipal: data.inscricao_municipal,
           regimeTributacao: data.regime_tributacao,
-          createdAt: data.created_at ? new Date(data.created_at) : null,
-          updatedAt: data.updated_at ? new Date(data.updated_at) : null,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
           
           // Adicionar objeto endereco para compatibilidade
           endereco: {

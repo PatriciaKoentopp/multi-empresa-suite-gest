@@ -1,3 +1,4 @@
+
 export interface Company {
   id: string;
   razao_social: string;
@@ -60,8 +61,8 @@ export interface Usuario {
   tipo: string;
   status: string;
   vendedor: string;
-  created_at?: any;
-  updated_at?: any;
+  created_at?: string;
+  updated_at?: string;
   empresa_id?: string | null;
 }
 
@@ -69,6 +70,7 @@ export interface GrupoFavorecido {
   id: string;
   nome: string;
   empresa_id: string;
+  status: string;
   created_at: string;
   updated_at: string;
 }
@@ -77,6 +79,7 @@ export interface Profissao {
   id: string;
   nome: string;
   empresa_id: string;
+  status: string;
   created_at: string;
   updated_at: string;
 }
@@ -121,4 +124,75 @@ export interface Orcamento {
   created_at: string;
   updated_at: string;
   favorecido?: Favorecido;
+}
+
+export interface ModuleNavItem {
+  title: string;
+  href?: string;
+  icon?: string;
+  subItems?: SubNavItem[];
+}
+
+export interface SubNavItem {
+  title: string;
+  href: string;
+}
+
+export interface MotivoPerda {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Origem {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Servico {
+  id: string;
+  nome: string;
+  descricao?: string;
+  empresa_id: string;
+  conta_receita_id?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TabelaPreco {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  vigencia_inicial?: string;
+  vigencia_final?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TabelaPrecoItem {
+  id: string;
+  tabela_id: string;
+  produto_id?: string;
+  servico_id?: string;
+  preco: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface YearlyComparison {
+  year: number;
+  total: number;
+  variacao_total?: number;
+  media_mensal: number;
+  variacao_media?: number;
+  num_meses: number;
 }

@@ -30,3 +30,35 @@ export interface AntecipacaoSelecionada {
   valor: number;
   valor_utilizado?: number;
 }
+
+export interface DadosFinanceiros {
+  contasAPagar: {
+    vencendo: number;
+    vencidas: number;
+    total: number;
+  };
+  contasAReceber: {
+    vencendo: number;
+    vencidas: number;
+    total: number;
+  };
+  saldoContas: number;
+}
+
+export interface FluxoCaixaItem {
+  id: string;
+  data_movimentacao: string;
+  tipo_operacao: string;
+  valor: number;
+  saldo: number;
+  descricao?: string;
+  origem: string;
+  situacao: string;
+}
+
+export interface FluxoMensal {
+  mes: string;
+  entradas: number;
+  saidas: number;
+  saldo: number;
+}
