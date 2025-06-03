@@ -13,10 +13,23 @@ const usuarioSchema = z.object({
   id: z.string().optional(),
   nome: z.string().min(1, "O nome é obrigatório"),
   email: z.string().email("Email inválido").min(1, "O email é obrigatório"),
-  senha: z.string().min(6, "A senha deve ter pelo menos 6 caracteres").optional(),
+  senha: z.string().optional(),
   tipo: z.enum(["Administrador", "Usuário"]),
   status: z.enum(["ativo", "inativo"]),
   vendedor: z.enum(["sim", "nao"]),
+}).refine((data) => {
+  // Senha é obrigatória apenas para novos usuários
+  if (!data.id && (!data.senha || data.senha.length < 6)) {
+    return false;
+  }
+  // Para edição, senha é opcional, mas se informada deve ter pelo menos 6 caracteres
+  if (data.id && data.senha && data.senha.length < 6) {
+    return false;
+  }
+  return true;
+}, {
+  message: "A senha deve ter pelo menos 6 caracteres",
+  path: ["senha"]
 });
 
 type FormData = z.infer<typeof usuarioSchema>;

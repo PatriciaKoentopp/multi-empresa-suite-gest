@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Usuario } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -74,8 +73,8 @@ export default function UsuariosPage() {
           tipo: usuario.tipo as "Administrador" | "Usuário",
           status: usuario.status as "ativo" | "inativo",
           vendedor: usuario.vendedor as "sim" | "nao",
-          created_at: new Date(usuario.created_at),
-          updated_at: new Date(usuario.updated_at),
+          created_at: usuario.created_at, // Manter como string do banco
+          updated_at: usuario.updated_at, // Manter como string do banco
           empresa_id: usuario.empresa_id
         }));
         setUsuarios(usuariosFormatados);
