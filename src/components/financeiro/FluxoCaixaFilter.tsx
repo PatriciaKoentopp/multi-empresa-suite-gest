@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -32,6 +31,7 @@ export const FluxoCaixaFilter = ({
       dataInicio,
       dataFim,
       contaId,
+      conta_corrente_id: contaId,
       situacao,
     });
   };
@@ -68,6 +68,7 @@ export const FluxoCaixaFilter = ({
       dataInicio: novaDataInicio,
       dataFim: novaDataFim,
       contaId,
+      conta_corrente_id: contaId,
       situacao,
     });
   };

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Company } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,8 +98,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           cidade: company.cidade,
           estado: company.estado,
           pais: company.pais,
-          created_at: company.created_at ? new Date(company.created_at) : null,
-          updated_at: company.updated_at ? new Date(company.updated_at) : null,
+          created_at: company.created_at,
+          updated_at: company.updated_at,
           
           // Adicionar aliases em camelCase para compatibilidade
           razaoSocial: company.razao_social,
@@ -108,8 +107,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           inscricaoEstadual: company.inscricao_estadual,
           inscricaoMunicipal: company.inscricao_municipal,
           regimeTributacao: company.regime_tributacao,
-          createdAt: company.created_at ? new Date(company.created_at) : null,
-          updatedAt: company.updated_at ? new Date(company.updated_at) : null,
+          createdAt: company.created_at,
+          updatedAt: company.updated_at,
           
           // Adicionar objeto endereco para compatibilidade
           endereco: {
@@ -221,25 +220,25 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       // Mapear os dados da aplicação para o formato do banco
       const { data, error } = await supabase.from("empresas").insert([
         {
-          razao_social: company.razao_social || company.razaoSocial,
-          nome_fantasia: company.nome_fantasia || company.nomeFantasia,
+          razao_social: company.razao_social,
+          nome_fantasia: company.nome_fantasia,
           cnpj: company.cnpj,
-          inscricao_estadual: company.inscricao_estadual || company.inscricaoEstadual,
-          inscricao_municipal: company.inscricao_municipal || company.inscricaoMunicipal,
+          inscricao_estadual: company.inscricao_estadual,
+          inscricao_municipal: company.inscricao_municipal,
           email: company.email,
           telefone: company.telefone,
           site: company.site,
           cnae: company.cnae,
-          regime_tributacao: company.regime_tributacao || company.regimeTributacao,
+          regime_tributacao: company.regime_tributacao,
           logo: company.logo,
-          cep: company.cep || (company.endereco ? company.endereco.cep : ""),
-          logradouro: company.logradouro || (company.endereco ? company.endereco.logradouro : ""),
-          numero: company.numero || (company.endereco ? company.endereco.numero : ""),
-          complemento: company.complemento || (company.endereco ? company.endereco.complemento : null),
-          bairro: company.bairro || (company.endereco ? company.endereco.bairro : ""),
-          cidade: company.cidade || (company.endereco ? company.endereco.cidade : ""),
-          estado: company.estado || (company.endereco ? company.endereco.estado : ""),
-          pais: company.pais || (company.endereco ? company.endereco.pais : "Brasil"),
+          cep: company.cep,
+          logradouro: company.logradouro,
+          numero: company.numero,
+          complemento: company.complemento,
+          bairro: company.bairro,
+          cidade: company.cidade,
+          estado: company.estado,
+          pais: company.pais || "Brasil",
         },
       ]);
 
@@ -266,25 +265,25 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase
         .from("empresas")
         .update({
-          razao_social: company.razao_social || company.razaoSocial,
-          nome_fantasia: company.nome_fantasia || company.nomeFantasia,
+          razao_social: company.razao_social,
+          nome_fantasia: company.nome_fantasia,
           cnpj: company.cnpj,
-          inscricao_estadual: company.inscricao_estadual || company.inscricaoEstadual,
-          inscricao_municipal: company.inscricao_municipal || company.inscricaoMunicipal,
+          inscricao_estadual: company.inscricao_estadual,
+          inscricao_municipal: company.inscricao_municipal,
           email: company.email,
           telefone: company.telefone,
           site: company.site,
           cnae: company.cnae,
-          regime_tributacao: company.regime_tributacao || company.regimeTributacao,
+          regime_tributacao: company.regime_tributacao,
           logo: company.logo,
-          cep: company.cep || (company.endereco ? company.endereco.cep : ""),
-          logradouro: company.logradouro || (company.endereco ? company.endereco.logradouro : ""),
-          numero: company.numero || (company.endereco ? company.endereco.numero : ""),
-          complemento: company.complemento || (company.endereco ? company.endereco.complemento : null),
-          bairro: company.bairro || (company.endereco ? company.endereco.bairro : ""),
-          cidade: company.cidade || (company.endereco ? company.endereco.cidade : ""),
-          estado: company.estado || (company.endereco ? company.endereco.estado : ""),
-          pais: company.pais || (company.endereco ? company.endereco.pais : "Brasil"),
+          cep: company.cep,
+          logradouro: company.logradouro,
+          numero: company.numero,
+          complemento: company.complemento,
+          bairro: company.bairro,
+          cidade: company.cidade,
+          estado: company.estado,
+          pais: company.pais || "Brasil",
         })
         .eq("id", id);
 
