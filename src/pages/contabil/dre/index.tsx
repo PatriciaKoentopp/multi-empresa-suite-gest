@@ -287,8 +287,11 @@ export default function DrePage() {
         conta_id: contaId,
         conta_descricao: descricaoCategoria
       };
+      
+      // Inicializar grupoDestino como string vazia
+      let grupoDestino = "";
+      
       if (planoContas && planoContas.classificacao_dre && planoContas.classificacao_dre !== 'nao_classificado') {
-        let grupoDestino = "";
         switch (planoContas.classificacao_dre) {
           case 'receita_bruta':
             receitaBruta += valor;
@@ -323,27 +326,16 @@ export default function DrePage() {
             grupoDestino = "IRPJ/CSLL";
             break;
         }
-        if (grupoDestino) {
-          grupos[grupoDestino].push(detalhe);
-          if (!contasAgrupamento[grupoDestino][contaId]) {
-            contasAgrupamento[grupoDestino][contaId] = [];
-          }
-          contasAgrupamento[grupoDestino][contaId].push(detalhe);
-        }
       } else {
         if (tipoOperacao === 'receber' && (!mov.movimentacoes?.categoria_id || !planoContas)) {
           receitaBruta += valor;
-          grupos["Receita Bruta"].push(detalhe);
-          if (!contasAgrupamento["Receita Bruta"][contaId]) {
-            contasAgrupamento["Receita Bruta"][contaId] = [];
-          }
-          contasAgrupamento["Receita Bruta"][contaId].push(detalhe);
+          grupoDestino = "Receita Bruta";
         } else if (planoContas) {
           const {
             tipo,
             descricao
           } = planoContas;
-          let grupoDestino = "";
+          
           if (tipo === 'receita') {
             if (descricao.toLowerCase().includes('financeira') || descricao.toLowerCase().includes('juros') || descricao.toLowerCase().includes('rendimento')) {
               receitasFinanceiras += valor;
@@ -383,16 +375,19 @@ export default function DrePage() {
                 }
             }
           }
-          if (grupoDestino) {
-            grupos[grupoDestino].push(detalhe);
-            if (!contasAgrupamento[grupoDestino][contaId]) {
-              contasAgrupamento[grupoDestino][contaId] = [];
-            }
-            contasAgrupamento[grupoDestino][contaId].push(detalhe);
-          }
         }
       }
+      
+      // Só adicionar aos grupos se grupoDestino foi definido
+      if (grupoDestino) {
+        grupos[grupoDestino].push(detalhe);
+        if (!contasAgrupamento[grupoDestino][contaId]) {
+          contasAgrupamento[grupoDestino][contaId] = [];
+        }
+        contasAgrupamento[grupoDestino][contaId].push(detalhe);
+      }
     });
+    
     const receitaLiquida = receitaBruta + deducoes;
     const lucroBruto = receitaLiquida + custos;
     const resultadoOperacional = lucroBruto + despesasOperacionais;
