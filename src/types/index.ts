@@ -101,6 +101,19 @@ export interface Company {
   email?: string;
   telefone?: string;
   logo?: string;
+  inscricao_estadual?: string;
+  inscricao_municipal?: string;
+  cnae?: string;
+  site?: string;
+  regime_tributacao?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
 }
 
 export interface Servico {
@@ -120,6 +133,9 @@ export interface Orcamento {
   tipo: "orcamento" | "venda";
   data: string;
   favorecido_id: string;
+  favorecido?: {
+    nome: string;
+  };
   empresa_id: string;
   forma_pagamento: string;
   numero_parcelas: number;
@@ -130,6 +146,7 @@ export interface Orcamento {
   numero_nota_fiscal?: string;
   data_nota_fiscal?: string;
   nota_fiscal_pdf?: string;
+  valor?: number;
   created_at: string;
   updated_at: string;
 }
@@ -156,12 +173,13 @@ export interface TabelaPrecoItem {
 }
 
 export interface YearlyComparison {
-  ano: number;
-  mes: string;
-  vendas_atual: number;
-  vendas_anterior: number;
-  variacao: number;
-  variacao_percentual: number;
+  year: number;
+  total: number;
+  qtde_vendas: number;
+  variacao_total: number | null;
+  media_mensal: number;
+  variacao_media: number | null;
+  num_meses: number;
 }
 
 export interface ModuleNavItem {
@@ -196,9 +214,14 @@ export interface MovimentacaoItem {
     nome: string;
     banco: string;
   };
-  favorecido?: {
-    nome: string;
-  };
+  favorecido?: string;
+  dataLancamento?: string;
+  mes_referencia?: string;
+  documento_pdf?: string;
+  numeroTitulo?: string;
+  numeroParcela?: string;
+  dataVencimento?: string;
+  dataPagamento?: string;
 }
 
 export interface MovimentacaoFormData {
