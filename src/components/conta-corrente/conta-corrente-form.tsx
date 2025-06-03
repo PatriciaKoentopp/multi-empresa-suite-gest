@@ -22,6 +22,7 @@ import {
 import { ContaCorrente } from "@/types/conta-corrente";
 import { Switch } from "@/components/ui/switch";
 import { DateInput } from "@/components/movimentacao/DateInput";
+import { parseDateString } from "@/lib/utils";
 
 const formSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
@@ -59,7 +60,8 @@ export function ContaCorrenteForm({
       numero: initialData?.numero || "",
       contaContabilId: initialData?.contaContabilId || "",
       status: initialData?.status || "ativo",
-      data: initialData?.data ? new Date(initialData.data) : new Date(),
+      // Usar parseDateString para evitar problemas de timezone, seguindo o padrão do favorecidos
+      data: initialData?.data ? parseDateString(initialData.data) : new Date(),
       saldoInicial: initialData?.saldoInicial ?? 0,
       considerar_saldo: initialData?.considerar_saldo !== undefined ? initialData.considerar_saldo : true,
     },
