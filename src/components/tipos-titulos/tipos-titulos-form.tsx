@@ -83,9 +83,21 @@ export function TiposTitulosForm({
     conta.status === "ativo"
   );
 
+  const handleSubmit = (data: FormValues) => {
+    // Converter valores "sem_conta" para null antes de enviar
+    const formattedData = {
+      ...data,
+      conta_juros_id: data.conta_juros_id === "sem_conta" ? null : data.conta_juros_id,
+      conta_multa_id: data.conta_multa_id === "sem_conta" ? null : data.conta_multa_id,
+      conta_desconto_id: data.conta_desconto_id === "sem_conta" ? null : data.conta_desconto_id,
+    };
+    
+    onSubmit(formattedData);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="nome"
@@ -165,7 +177,7 @@ export function TiposTitulosForm({
               <Select 
                 onValueChange={field.onChange} 
                 defaultValue={field.value}
-                value={field.value || undefined}
+                value={field.value || "sem_conta"}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -195,7 +207,7 @@ export function TiposTitulosForm({
               <Select 
                 onValueChange={field.onChange} 
                 defaultValue={field.value}
-                value={field.value || undefined}
+                value={field.value || "sem_conta"}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -225,7 +237,7 @@ export function TiposTitulosForm({
               <Select 
                 onValueChange={field.onChange} 
                 defaultValue={field.value}
-                value={field.value || undefined}
+                value={field.value || "sem_conta"}
               >
                 <FormControl>
                   <SelectTrigger>
