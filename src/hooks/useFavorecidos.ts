@@ -2,19 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
-
-export interface Favorecido {
-  id: string;
-  nome: string;
-  documento: string;
-  tipo: string;
-  email?: string;
-  telefone?: string;
-  status: string;
-  empresa_id: string;
-  created_at: string;
-  updated_at: string;
-}
+import { Favorecido } from "@/types";
 
 export function useFavorecidos() {
   const { currentCompany } = useCompany();

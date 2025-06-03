@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
@@ -92,7 +91,7 @@ export function FavorecidosForm({
       cidade: data.cidade,
       estado: data.estado,
       pais: data.pais,
-      data_aniversario: data.data_aniversario,
+      data_aniversario: data.data_aniversario ? data.data_aniversario.toISOString().split('T')[0] : undefined,
       status: data.status,
     };
     
