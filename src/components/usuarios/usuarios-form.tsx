@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,9 +38,9 @@ export function UsuariosForm({ usuario, onSubmit, onCancel }: UsuariosFormProps)
           nome: usuario.nome,
           email: usuario.email,
           senha: "",
-          tipo: usuario.tipo,
-          status: usuario.status,
-          vendedor: usuario.vendedor,
+          tipo: usuario.tipo as "Administrador" | "Usuário",
+          status: usuario.status as "ativo" | "inativo",
+          vendedor: usuario.vendedor as "sim" | "nao",
         }
       : {
           nome: "",
