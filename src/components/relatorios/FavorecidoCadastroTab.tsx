@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,8 +35,12 @@ const filterSchema = z.object({
 
 type FilterValues = z.infer<typeof filterSchema>;
 
-export function FavorecidoCadastroTab() {
-  const [data, setData] = useState<Favorecido[]>([]);
+interface FavorecidoCadastroTabProps {
+  favorecido?: Favorecido;
+}
+
+export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps) {
+  const [data, setData] = useState<Favorecido[]>(favorecido ? [favorecido] : []);
   const form = useForm<FilterValues>({
     resolver: zodResolver(filterSchema),
     defaultValues: {
@@ -45,14 +50,14 @@ export function FavorecidoCadastroTab() {
   });
 
   const filters = form.watch();
-  const componentRef = useRef(null);
+  const componentRef = useRef<HTMLDivElement>(null);
 
   const handleExport = () => {
     const dataInicio = filters.dataInicio ? 
-      (typeof filters.dataInicio === 'string' ? filters.dataInicio : filters.dataInicio.toISOString().split('T')[0]) : 
+      (typeof filters.dataInicio === 'string' ? filters.dataInicio : format(filters.dataInicio, "dd/MM/yyyy")) : 
       "";
     const dataFim = filters.dataFim ? 
-      (typeof filters.dataFim === 'string' ? filters.dataFim : filters.dataFim.toISOString().split('T')[0]) : 
+      (typeof filters.dataFim === 'string' ? filters.dataFim : format(filters.dataFim, "dd/MM/yyyy")) : 
       "";
 
     const csvData = data.map(item => ({
@@ -60,10 +65,10 @@ export function FavorecidoCadastroTab() {
       Nome: item.nome,
       Tipo: item.tipo,
       Documento: item.documento,
-      Email: item.email,
-      Telefone: item.telefone,
+      Email: item.email || '',
+      Telefone: item.telefone || '',
       Status: item.status,
-      DataAniversario: item.data_aniversario,
+      DataAniversario: item.data_aniversario || '',
       DataCriacao: item.created_at,
     }));
 
@@ -84,25 +89,14 @@ export function FavorecidoCadastroTab() {
     };
   };
 
-  const handlePrintReport = () => {
-    const dataInicio = filters.dataInicio ? 
-      (typeof filters.dataInicio === 'string' ? filters.dataInicio : filters.dataInicio.toISOString().split('T')[0]) : 
-      "";
-    const dataFim = filters.dataFim ? 
-      (typeof filters.dataFim === 'string' ? filters.dataFim : filters.dataFim.toISOString().split('T')[0]) : 
-      "";
-
-    if (componentRef.current) {
-      handlePrint();
-    }
-  };
-
   const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
+    contentRef: componentRef,
     documentTitle: 'Relatório de Cadastro de Favorecidos',
-    onBeforeGetContent: () => Promise.resolve(),
-    onAfterPrint: () => Promise.resolve(),
   });
+
+  const handlePrintReport = () => {
+    handlePrint();
+  };
 
   return (
     <div className="w-full">
@@ -124,7 +118,7 @@ export function FavorecidoCadastroTab() {
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "PPP")
+                        format(field.value, "dd/MM/yyyy")
                       ) : (
                         <span>Selecione a data</span>
                       )}
@@ -164,7 +158,7 @@ export function FavorecidoCadastroTab() {
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "PPP")
+                        format(field.value, "dd/MM/yyyy")
                       ) : (
                         <span>Selecione a data</span>
                       )}
@@ -206,36 +200,38 @@ export function FavorecidoCadastroTab() {
       <div ref={componentRef} className="p-4">
         <h1 className="text-2xl font-bold mb-4">Relatório de Cadastro de Favorecidos</h1>
         {data.length > 0 ? (
-          <table className="min-w-full border border-gray-300">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="py-2 px-4 border-b">ID</th>
-                <th className="py-2 px-4 border-b">Nome</th>
-                <th className="py-2 px-4 border-b">Tipo</th>
-                <th className="py-2 px-4 border-b">Documento</th>
-                <th className="py-2 px-4 border-b">Email</th>
-                <th className="py-2 px-4 border-b">Telefone</th>
-                <th className="py-2 px-4 border-b">Status</th>
-                <th className="py-2 px-4 border-b">Data de Aniversário</th>
-                <th className="py-2 px-4 border-b">Data de Criação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map(item => (
-                <tr key={item.id}>
-                  <td className="py-2 px-4 border-b">{item.id}</td>
-                  <td className="py-2 px-4 border-b">{item.nome}</td>
-                  <td className="py-2 px-4 border-b">{item.tipo}</td>
-                  <td className="py-2 px-4 border-b">{item.documento}</td>
-                  <td className="py-2 px-4 border-b">{item.email}</td>
-                  <td className="py-2 px-4 border-b">{item.telefone}</td>
-                  <td className="py-2 px-4 border-b">{item.status}</td>
-                  <td className="py-2 px-4 border-b">{item.data_aniversario}</td>
-                  <td className="py-2 px-4 border-b">{item.created_at}</td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full border border-gray-300">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="py-2 px-4 border-b text-left">ID</th>
+                  <th className="py-2 px-4 border-b text-left">Nome</th>
+                  <th className="py-2 px-4 border-b text-left">Tipo</th>
+                  <th className="py-2 px-4 border-b text-left">Documento</th>
+                  <th className="py-2 px-4 border-b text-left">Email</th>
+                  <th className="py-2 px-4 border-b text-left">Telefone</th>
+                  <th className="py-2 px-4 border-b text-left">Status</th>
+                  <th className="py-2 px-4 border-b text-left">Data de Aniversário</th>
+                  <th className="py-2 px-4 border-b text-left">Data de Criação</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.map(item => (
+                  <tr key={item.id}>
+                    <td className="py-2 px-4 border-b">{item.id}</td>
+                    <td className="py-2 px-4 border-b">{item.nome}</td>
+                    <td className="py-2 px-4 border-b">{item.tipo}</td>
+                    <td className="py-2 px-4 border-b">{item.documento}</td>
+                    <td className="py-2 px-4 border-b">{item.email || '-'}</td>
+                    <td className="py-2 px-4 border-b">{item.telefone || '-'}</td>
+                    <td className="py-2 px-4 border-b">{item.status}</td>
+                    <td className="py-2 px-4 border-b">{item.data_aniversario ? format(new Date(item.data_aniversario), "dd/MM/yyyy") : '-'}</td>
+                    <td className="py-2 px-4 border-b">{format(new Date(item.created_at), "dd/MM/yyyy")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <p>Nenhum dado disponível para o período selecionado.</p>
         )}
