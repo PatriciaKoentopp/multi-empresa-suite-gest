@@ -1,3 +1,4 @@
+
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrency } from '@/lib/utils';
@@ -82,7 +83,7 @@ export const usePdfFluxoCaixa = () => {
       };
 
       // Função para adicionar cabeçalho
-      const adicionarCabecalho = (pageNumber: number) => {
+      const adicionarCabecalho = () => {
         // Nome da empresa (canto esquerdo)
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
@@ -165,14 +166,17 @@ export const usePdfFluxoCaixa = () => {
       });
 
       // Adicionar cabeçalho da primeira página
-      let startY = adicionarCabecalho(1);
+      let startY = adicionarCabecalho();
+
+      // Variável para armazenar a altura do cabeçalho
+      let headerHeight = startY;
 
       // Gerar tabela com colunas otimizadas para largura
       autoTable(doc, {
         head: [['Data', 'Título/Parcela', 'Favorecido', 'Descrição', 'Valor', 'Saldo']],
         body: dadosTabela,
         startY: startY,
-        margin: { left: 15, right: 15 },
+        margin: { left: 15, right: 15, top: headerHeight, bottom: 20 },
         styles: {
           fontSize: 8,
           cellPadding: 2,
@@ -201,14 +205,30 @@ export const usePdfFluxoCaixa = () => {
           5: { cellWidth: 25, halign: 'right', overflow: 'ellipsize' }   // Saldo (reduzida)
         },
         didDrawPage: (data) => {
-          // Adicionar rodapé em cada página
           const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
-          const totalPages = doc.internal.getNumberOfPages();
           
+          // Se não é a primeira página, adicionar cabeçalho
           if (pageNumber > 1) {
-            adicionarCabecalho(pageNumber);
+            headerHeight = adicionarCabecalho();
+            // Definir margem superior para a próxima página
+            if (data.settings.margin) {
+              data.settings.margin.top = headerHeight;
+            }
           }
+          
+          // Adicionar rodapé
+          const totalPages = doc.internal.getNumberOfPages();
           adicionarRodape(pageNumber, totalPages);
+        },
+        showHead: 'everyPage',
+        didDrawCell: (data) => {
+          // Se é uma nova página e não é a primeira, ajustar a posição
+          if (data.section === 'head' && data.pageNumber > 1) {
+            const currentHeaderHeight = adicionarCabecalho();
+            if (data.settings.margin) {
+              data.settings.margin.top = currentHeaderHeight;
+            }
+          }
         }
       });
 
