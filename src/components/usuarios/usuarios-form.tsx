@@ -1,214 +1,122 @@
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Usuario } from "@/types";
-
-const usuarioSchema = z.object({
-  id: z.string().optional(),
-  nome: z.string().min(1, "O nome é obrigatório"),
-  email: z.string().email("Email inválido").min(1, "O email é obrigatório"),
-  senha: z.string().min(6, "A senha deve ter pelo menos 6 caracteres").optional(),
-  tipo: z.enum(["Administrador", "Usuário"]),
-  status: z.enum(["ativo", "inativo"]),
-  vendedor: z.enum(["sim", "nao"]),
-});
-
-type FormData = z.infer<typeof usuarioSchema>;
+import { Button } from "@/components/ui/button";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { toast } from "sonner";
+import { useCompany } from "@/contexts/company-context";
+import { format } from "date-fns";
 
 interface UsuariosFormProps {
-  usuario?: Usuario;
-  onSubmit: (data: Usuario) => void;
+  usuario?: {
+    id: string;
+    nome: string;
+    email: string;
+    tipo: string;
+    vendedor: string;
+    status: string;
+    empresa_id: string;
+    created_at: string;
+    updated_at: string;
+  };
+  onSave: (data: any) => Promise<void>;
   onCancel: () => void;
 }
 
-export function UsuariosForm({ usuario, onSubmit, onCancel }: UsuariosFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const form = useForm<FormData>({
-    resolver: zodResolver(usuarioSchema),
-    defaultValues: usuario
-      ? {
-          id: usuario.id,
-          nome: usuario.nome,
-          email: usuario.email,
-          senha: "",
-          tipo: usuario.tipo,
-          status: usuario.status,
-          vendedor: usuario.vendedor,
-        }
-      : {
-          nome: "",
-          email: "",
-          senha: "",
-          tipo: "Usuário",
-          status: "ativo",
-          vendedor: "nao",
-        },
-  });
+export function UsuariosForm({ usuario, onSave, onCancel }: UsuariosFormProps) {
+  const [nome, setNome] = useState(usuario?.nome || "");
+  const [email, setEmail] = useState(usuario?.email || "");
+  const [tipo, setTipo] = useState(usuario?.tipo || "Usuário");
+  const [vendedor, setVendedor] = useState(usuario?.vendedor || "nao");
+  const [status, setStatus] = useState(usuario?.status || "ativo");
+  const { currentCompany } = useCompany();
 
-  const handleSubmit = async (data: FormData) => {
-    setIsLoading(true);
-    try {
-      const usuarioData: Usuario = {
-        id: usuario?.id || crypto.randomUUID(),
-        nome: data.nome,
-        email: data.email,
-        tipo: data.tipo,
-        status: data.status,
-        vendedor: data.vendedor,
-        created_at: usuario?.created_at || new Date(),
-        updated_at: new Date(),
-        empresa_id: usuario?.empresa_id || null
-      };
-      
-      onSubmit(usuarioData);
-    } finally {
-      setIsLoading(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!nome || !email) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
     }
+
+    const userData = {
+      id: usuario?.id,
+      nome,
+      email,
+      tipo: tipo as 'Admin' | 'Usuário',
+      vendedor: vendedor as 'sim' | 'nao',
+      status: status as 'ativo' | 'inativo',
+      empresa_id: currentCompany?.id,
+      created_at: usuario?.created_at || format(new Date(), 'yyyy-MM-dd'),
+      updated_at: format(new Date(), 'yyyy-MM-dd')
+    };
+
+    await onSave(userData);
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="nome"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Nome do usuário" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="nome">Nome *</Label>
+        <Input
+          type="text"
+          id="nome"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
         />
-
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="email@exemplo.com" type="email" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+      </div>
+      <div>
+        <Label htmlFor="email">Email *</Label>
+        <Input
+          type="email"
+          id="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
-
-        <FormField
-          control={form.control}
-          name="senha"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{usuario ? "Nova senha (opcional)" : "Senha"}</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="******" type="password" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="tipo"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Tipo de Usuário</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Administrador" id="admin" />
-                    <Label htmlFor="admin">Administrador</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Usuário" id="user" />
-                    <Label htmlFor="user">Usuário</Label>
-                  </div>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="status"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Status</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="ativo" id="ativo" />
-                    <Label htmlFor="ativo">Ativo</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="inativo" id="inativo" />
-                    <Label htmlFor="inativo">Inativo</Label>
-                  </div>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="vendedor"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>É vendedor?</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="sim" id="sim" />
-                    <Label htmlFor="sim">Sim</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="nao" id="nao" />
-                    <Label htmlFor="nao">Não</Label>
-                  </div>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button type="submit" variant="blue" disabled={isLoading}>
-            {isLoading ? "Salvando..." : usuario ? "Atualizar" : "Criar"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+      </div>
+      <div>
+        <Label htmlFor="tipo">Tipo</Label>
+        <Select value={tipo} onValueChange={setTipo}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Selecione o tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Usuário">Usuário</SelectItem>
+            <SelectItem value="Admin">Administrador</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label htmlFor="vendedor">Vendedor</Label>
+        <Select value={vendedor} onValueChange={setVendedor}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Selecione" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="sim">Sim</SelectItem>
+            <SelectItem value="nao">Não</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label htmlFor="status">Status</Label>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Selecione o status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ativo">Ativo</SelectItem>
+            <SelectItem value="inativo">Inativo</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit">Salvar</Button>
+      </DialogFooter>
+    </form>
   );
 }

@@ -1,238 +1,185 @@
-
-import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "lucide-react";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { GrupoFavorecido, Profissao, Favorecido } from "@/types";
-import { formatDate } from "@/lib/utils";
+import { useCompany } from "@/contexts/company-context";
 
-interface FavorecidoCadastroTabProps {
-  favorecido: Favorecido;
+interface RelatorioFavorecido {
+  id: string;
+  nome: string;
+  cpf_cnpj: string;
+  tipo: string;
+  data_cadastro: string;
+  data_aniversario: string;
+  telefone: string;
+  email: string;
+  endereco: string;
+  observacoes: string;
 }
 
-export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps) {
-  const [grupo, setGrupo] = useState<GrupoFavorecido | null>(null);
-  const [profissao, setProfissao] = useState<Profissao | null>(null);
-  
-  useEffect(() => {
-    const fetchRelacionamentos = async () => {
-      if (favorecido.grupo_id) {
-        const { data: grupoData } = await supabase
-          .from('grupo_favorecidos')
-          .select('*')
-          .eq('id', favorecido.grupo_id)
-          .single();
-          
-        if (grupoData) {
-          setGrupo({
-            id: grupoData.id,
-            nome: grupoData.nome,
-            status: grupoData.status as "ativo" | "inativo",
-            empresa_id: grupoData.empresa_id,
-            created_at: new Date(grupoData.created_at),
-            updated_at: new Date(grupoData.updated_at)
-          });
-        }
-      }
-      
-      if (favorecido.profissao_id) {
-        const { data: profissaoData } = await supabase
-          .from('profissoes')
-          .select('*')
-          .eq('id', favorecido.profissao_id)
-          .single();
-          
-        if (profissaoData) {
-          setProfissao({
-            id: profissaoData.id,
-            nome: profissaoData.nome,
-            status: profissaoData.status as "ativo" | "inativo",
-            empresa_id: profissaoData.empresa_id,
-            created_at: new Date(profissaoData.created_at),
-            updated_at: new Date(profissaoData.updated_at)
-          });
-        }
-      }
-    };
-    
-    fetchRelacionamentos();
-  }, [favorecido.grupo_id, favorecido.profissao_id]);
+export function FavorecidoCadastroTab() {
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+  const [dataAniversarioInicio, setDataAniversarioInicio] = useState('');
+  const [dataAniversarioFim, setDataAniversarioFim] = useState('');
+  const { currentCompany } = useCompany();
 
-  const getTipoFavorecidoLabel = (tipo: string) => {
-    switch (tipo) {
-      case "fisica":
-        return "Pessoa Física";
-      case "juridica":
-        return "Pessoa Jurídica";
-      case "cliente":
-        return "Cliente";
-      case "fornecedor":
-        return "Fornecedor";
-      case "publico":
-        return "Órgão Público";
-      case "funcionario":
-        return "Funcionário";
-      default:
-        return tipo;
-    }
+  const { data: relatorioFavorecidos, isLoading } = useQuery({
+    queryKey: ['relatorio-favorecidos', dataInicio, dataFim, dataAniversarioInicio, dataAniversarioFim, currentCompany?.id],
+    queryFn: async () => {
+      if (!currentCompany?.id) return [];
+
+      let query = supabase
+        .from('favorecidos')
+        .select('*')
+        .eq('empresa_id', currentCompany.id);
+
+      if (dataInicio) {
+        query = query.gte('data_cadastro', dataInicio);
+      }
+      if (dataFim) {
+        query = query.lte('data_cadastro', dataFim);
+      }
+      if (dataAniversarioInicio) {
+        query = query.gte('data_aniversario', dataAniversarioInicio);
+      }
+      if (dataAniversarioFim) {
+        query = query.lte('data_aniversario', dataAniversarioFim);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Erro ao buscar relatório de favorecidos:", error);
+        return [];
+      }
+
+      return data as RelatorioFavorecido[];
+    },
+  });
+
+  const handleDataInicioChange = (date: Date | undefined) => {
+    setDataInicio(date ? format(date, 'yyyy-MM-dd') : '');
   };
 
-  // Função atualizada para formatar corretamente CPF e CNPJ independente do tipo de favorecido
-  const formatarDocumento = (documento: string, tipoDocumento: string): string => {
-    if (!documento) return "Não informado";
-    
-    // Remove caracteres não numéricos
-    const numeros = documento.replace(/\D/g, '');
-    
-    if (tipoDocumento === "cpf") {
-      // Formatação para CPF: 000.000.000-00
-      if (numeros.length !== 11) return documento;
-      return numeros.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-    } else if (tipoDocumento === "cnpj") {
-      // Formatação para CNPJ: 00.000.000/0000-00
-      if (numeros.length !== 14) return documento;
-      return numeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
-    }
-    
-    return documento;
+  const handleDataFimChange = (date: Date | undefined) => {
+    setDataFim(date ? format(date, 'yyyy-MM-dd') : '');
   };
-  
-  // Nova função para formatar o telefone no padrão (00) 00000-0000
-  const formatarTelefone = (telefone: string): string => {
-    if (!telefone) return "Não informado";
-    
-    // Remove caracteres não numéricos
-    const numeros = telefone.replace(/\D/g, '');
-    
-    if (numeros.length === 11) {
-      // Celular: (00) 00000-0000
-      return numeros.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
-    } else if (numeros.length === 10) {
-      // Telefone fixo: (00) 0000-0000
-      return numeros.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
-    }
-    
-    return telefone;
+
+  const handleDataAniversarioInicioChange = (date: Date | undefined) => {
+    setDataAniversarioInicio(date ? format(date, 'yyyy-MM-dd') : '');
   };
-  
-  // Nova função para formatar o CEP no padrão 00.000-000
-  const formatarCep = (cep: string): string => {
-    if (!cep) return "Não informado";
-    
-    // Remove caracteres não numéricos
-    const numeros = cep.replace(/\D/g, '');
-    
-    if (numeros.length === 8) {
-      return numeros.replace(/(\d{2})(\d{3})(\d{3})/, "$1.$2-$3");
-    }
-    
-    return cep;
+
+  const handleDataAniversarioFimChange = (date: Date | undefined) => {
+    setDataAniversarioFim(date ? format(date, 'yyyy-MM-dd') : '');
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-6">
-        <Card className="md:w-1/2">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Informações Básicas</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Nome:</span>
-                <span className="font-medium">{favorecido.nome}</span>
-              </div>
-              {favorecido.nome_fantasia && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Nome Fantasia:</span>
-                  <span className="font-medium">{favorecido.nome_fantasia}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tipo:</span>
-                <Badge variant="outline">{getTipoFavorecidoLabel(favorecido.tipo)}</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Status:</span>
-                <Badge variant={favorecido.status === 'ativo' ? 'success' : 'destructive'}>
-                  {favorecido.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                </Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Documento:</span>
-                <span className="font-medium">
-                  {favorecido.tipo_documento === 'cpf' ? 'CPF: ' : 'CNPJ: '}
-                  {formatarDocumento(favorecido.documento, favorecido.tipo_documento)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Grupo:</span>
-                <span className="font-medium">{grupo?.nome || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Profissão:</span>
-                <span className="font-medium">{profissao?.nome || "Não informada"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Aniversário:</span>
-                <span className="font-medium">
-                  {favorecido.data_aniversario 
-                    ? formatDate(favorecido.data_aniversario)
-                    : "Não informado"}
-                </span>
+    <Card>
+      <CardHeader>
+        <CardTitle>Relatório de Cadastro de Favorecidos</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4">
+          <div className="flex gap-2">
+            <div className="grid gap-2">
+              <Label htmlFor="dataInicio">Data de Cadastro (Início)</Label>
+              <div className="relative">
+                <Input
+                  type="date"
+                  id="dataInicio"
+                  value={dataInicio}
+                  onChange={(e) => handleDataInicioChange(e.target.value ? new Date(e.target.value) : undefined)}
+                />
+                <Calendar className="absolute top-2 right-2 h-4 w-4 text-muted-foreground" />
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="grid gap-2">
+              <Label htmlFor="dataFim">Data de Cadastro (Fim)</Label>
+              <div className="relative">
+                <Input
+                  type="date"
+                  id="dataFim"
+                  value={dataFim}
+                  onChange={(e) => handleDataFimChange(e.target.value ? new Date(e.target.value) : undefined)}
+                />
+                <Calendar className="absolute top-2 right-2 h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="grid gap-2">
+              <Label htmlFor="dataAniversarioInicio">Data de Aniversário (Início)</Label>
+              <div className="relative">
+                <Input
+                  type="date"
+                  id="dataAniversarioInicio"
+                  value={dataAniversarioInicio}
+                  onChange={(e) => handleDataAniversarioInicioChange(e.target.value ? new Date(e.target.value) : undefined)}
+                />
+                <Calendar className="absolute top-2 right-2 h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="dataAniversarioFim">Data de Aniversário (Fim)</Label>
+              <div className="relative">
+                <Input
+                  type="date"
+                  id="dataAniversarioFim"
+                  value={dataAniversarioFim}
+                  onChange={(e) => handleDataAniversarioFimChange(e.target.value ? new Date(e.target.value) : undefined)}
+                />
+                <Calendar className="absolute top-2 right-2 h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+          </div>
+          <Button variant="outline">Gerar Relatório</Button>
+        </div>
 
-        <Card className="md:w-1/2">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Contato</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Email:</span>
-                <span className="font-medium">{favorecido.email || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Telefone:</span>
-                <span className="font-medium">{formatarTelefone(favorecido.telefone || "")}</span>
-              </div>
-              
-              <h3 className="text-lg font-semibold mt-4 mb-2">Endereço</h3>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">CEP:</span>
-                <span className="font-medium">{formatarCep(favorecido.cep || "")}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Logradouro:</span>
-                <span className="font-medium">{favorecido.logradouro || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Número:</span>
-                <span className="font-medium">{favorecido.numero || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Complemento:</span>
-                <span className="font-medium">{favorecido.complemento || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Bairro:</span>
-                <span className="font-medium">{favorecido.bairro || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Cidade:</span>
-                <span className="font-medium">{favorecido.cidade || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Estado:</span>
-                <span className="font-medium">{favorecido.estado || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">País:</span>
-                <span className="font-medium">{favorecido.pais || "Brasil"}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        <div className="mt-4">
+          {isLoading ? (
+            <div>Carregando dados...</div>
+          ) : (
+            <Table>
+              <TableCaption>Lista de Favorecidos Cadastrados</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>CPF/CNPJ</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Data de Cadastro</TableHead>
+                  <TableHead>Data de Aniversário</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Endereço</TableHead>
+                  <TableHead>Observações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {relatorioFavorecidos?.map((favorecido) => (
+                  <TableRow key={favorecido.id}>
+                    <TableCell>{favorecido.nome}</TableCell>
+                    <TableCell>{favorecido.cpf_cnpj}</TableCell>
+                    <TableCell>{favorecido.tipo}</TableCell>
+                    <TableCell>{favorecido.data_cadastro}</TableCell>
+                    <TableCell>{favorecido.data_aniversario}</TableCell>
+                    <TableCell>{favorecido.telefone}</TableCell>
+                    <TableCell>{favorecido.email}</TableCell>
+                    <TableCell>{favorecido.endereco}</TableCell>
+                    <TableCell>{favorecido.observacoes}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,158 +1,253 @@
-
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { useEffect } from "react";
-import { FavorecidoTipoRadio } from "./favorecido-tipo-radio";
-import { FavorecidoDocumento } from "./favorecido-documento";
-import { FavorecidoDadosBasicos } from "./favorecido-dados-basicos";
-import { FavorecidoEndereco } from "./favorecido-endereco";
-import { FavorecidoAniversarioStatus } from "./favorecido-aniversario-status";
-import { formSchema, FormValues } from "./favorecidos-form.schema";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { format } from "date-fns";
+import { Calendar } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { useCompany } from "@/contexts/company-context";
+import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
 interface FavorecidosFormProps {
-  favorecido?: Favorecido;
-  grupos: GrupoFavorecido[];
-  profissoes: Profissao[];
-  onSubmit: (data: Partial<Favorecido>) => void;
+  favorecido?: any;
+  onSave: (data: any) => Promise<void>;
   onCancel: () => void;
-  readOnly?: boolean;
 }
 
-export function FavorecidosForm({
-  favorecido,
-  grupos,
-  profissoes,
-  onSubmit,
-  onCancel,
-  readOnly = false,
-}: FavorecidosFormProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: favorecido ? {
-      tipo: favorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario",
-      tipo_documento: favorecido.tipo_documento as "cpf" | "cnpj",
-      documento: favorecido.documento,
-      grupo_id: favorecido.grupo_id || "null",
-      profissao_id: favorecido.profissao_id || "null",
-      nome: favorecido.nome,
-      nome_fantasia: favorecido.nome_fantasia || "",
-      email: favorecido.email || "",
-      telefone: favorecido.telefone || "",
-      cep: favorecido.cep || "",
-      logradouro: favorecido.logradouro || "",
-      numero: favorecido.numero || "",
-      complemento: favorecido.complemento || "",
-      bairro: favorecido.bairro || "",
-      cidade: favorecido.cidade || "",
-      estado: favorecido.estado || "",
-      pais: favorecido.pais || "",
-      data_aniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
-      status: favorecido.status as "ativo" | "inativo",
-    } : {
-      tipo: "fisica",
-      tipo_documento: "cpf",
-      documento: "",
-      grupo_id: "null",
-      profissao_id: "null",
-      nome: "",
-      nome_fantasia: "",
-      email: "",
-      telefone: "",
-      cep: "",
-      logradouro: "",
-      numero: "",
-      complemento: "",
-      bairro: "",
-      cidade: "",
-      estado: "",
-      pais: "Brasil",
-      status: "ativo",
-    },
-  });
+export function FavorecidosForm({ favorecido, onSave, onCancel }: FavorecidosFormProps) {
+  const { toast } = useToast();
+  const { currentCompany } = useCompany();
 
-  const handleSubmit = (data: FormValues) => {
-    const formattedData: Partial<Favorecido> = {
-      tipo: data.tipo,
-      tipo_documento: data.tipo_documento,
-      documento: data.documento,
-      grupo_id: data.grupo_id === "null" ? null : data.grupo_id,
-      profissao_id: data.profissao_id === "null" ? null : data.profissao_id,
-      nome: data.nome,
-      nome_fantasia: data.nome_fantasia,
-      email: data.email,
-      telefone: data.telefone,
-      cep: data.cep,
-      logradouro: data.logradouro,
-      numero: data.numero,
-      complemento: data.complemento,
-      bairro: data.bairro,
-      cidade: data.cidade,
-      estado: data.estado,
-      pais: data.pais,
-      data_aniversario: data.data_aniversario,
-      status: data.status,
-    };
-    
-    console.log('Dados formatados para envio:', formattedData);
-    onSubmit(formattedData);
+  const [nome, setNome] = useState(favorecido?.nome || "");
+  const [tipo, setTipo] = useState(favorecido?.tipo || "fornecedor");
+  const [cpfCnpj, setCpfCnpj] = useState(favorecido?.cpf_cnpj || "");
+  const [dataAniversario, setDataAniversario] = useState(favorecido?.data_aniversario || "");
+  const [email, setEmail] = useState(favorecido?.email || "");
+  const [telefone, setTelefone] = useState(favorecido?.telefone || "");
+  const [endereco, setEndereco] = useState(favorecido?.endereco || "");
+  const [numero, setNumero] = useState(favorecido?.numero || "");
+  const [complemento, setComplemento] = useState(favorecido?.complemento || "");
+  const [bairro, setBairro] = useState(favorecido?.bairro || "");
+  const [cidade, setCidade] = useState(favorecido?.cidade || "");
+  const [estado, setEstado] = useState(favorecido?.estado || "");
+  const [cep, setCep] = useState(favorecido?.cep || "");
+  const [observacoes, setObservacoes] = useState(favorecido?.observacoes || "");
+  const [dataAniversarioDate, setDataAniversarioDate] = useState<Date | undefined>(favorecido?.data_aniversario ? new Date(favorecido.data_aniversario) : undefined);
+
+  useEffect(() => {
+    // Atualiza o estado dataAniversarioDate quando favorecido.data_aniversario muda
+    if (favorecido?.data_aniversario) {
+      setDataAniversarioDate(new Date(favorecido.data_aniversario));
+    } else {
+      setDataAniversarioDate(undefined);
+    }
+  }, [favorecido?.data_aniversario]);
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setDataAniversario(format(date, 'yyyy-MM-dd'));
+    } else {
+      setDataAniversario('');
+    }
   };
 
-  // Atualizar tipo de documento baseado no tipo de favorecido
-  useEffect(() => {
-    const tipoFavorecido = form.watch("tipo");
-    const tipoDocumentoAtual = form.watch("tipo_documento");
-    
-    if (tipoFavorecido === "fisica" && tipoDocumentoAtual !== "cpf") {
-      form.setValue("tipo_documento", "cpf");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!nome || !cpfCnpj) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os campos obrigatórios.",
+        variant: "destructive",
+      });
+      return;
     }
-    else if (
-      (tipoFavorecido === "juridica" || 
-       tipoFavorecido === "publico" || 
-       tipoFavorecido === "funcionario") && 
-      tipoDocumentoAtual !== "cnpj"
-    ) {
-      form.setValue("tipo_documento", "cnpj");
-    }
-  }, [form.watch("tipo")]);
+
+    const favorecidoData = {
+      id: favorecido?.id,
+      empresa_id: currentCompany?.id,
+      nome,
+      tipo,
+      cpf_cnpj: cpfCnpj,
+      data_aniversario: dataAniversario || null,
+      email,
+      telefone,
+      endereco,
+      numero,
+      complemento,
+      bairro,
+      cidade,
+      estado,
+      cep,
+      observacoes,
+      created_at: favorecido?.created_at || format(new Date(), 'yyyy-MM-dd'),
+      updated_at: format(new Date(), 'yyyy-MM-dd')
+    };
+
+    await onSave(favorecidoData);
+  };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-              <FavorecidoTipoRadio form={form} readOnly={readOnly} />
-              <FavorecidoDocumento form={form} readOnly={readOnly} />
-            </div>
-            <FavorecidoDadosBasicos form={form} grupos={grupos} profissoes={profissoes} readOnly={readOnly} />
-          </div>
-
-          <div className="space-y-6">
-            <FavorecidoEndereco form={form} readOnly={readOnly} />
-            <FavorecidoAniversarioStatus form={form} readOnly={readOnly} />
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="nome">Nome *</Label>
+        <Input
+          type="text"
+          id="nome"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor="tipo">Tipo</Label>
+        <Select value={tipo} onValueChange={setTipo}>
+          <SelectTrigger className="w-full bg-white">
+            <SelectValue placeholder="Selecione o tipo" />
+          </SelectTrigger>
+          <SelectContent className="bg-white">
+            <SelectItem value="fornecedor">Fornecedor</SelectItem>
+            <SelectItem value="cliente">Cliente</SelectItem>
+            <SelectItem value="funcionario">Funcionário</SelectItem>
+            <SelectItem value="outros">Outros</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label htmlFor="cpfCnpj">CPF/CNPJ *</Label>
+        <Input
+          type="text"
+          id="cpfCnpj"
+          value={cpfCnpj}
+          onChange={(e) => setCpfCnpj(e.target.value)}
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor="dataAniversario">Data de Aniversário</Label>
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            id="dataAniversario"
+            value={dataAniversarioDate ? format(dataAniversarioDate, "yyyy-MM-dd") : ""}
+            onChange={(e) => {
+              const newDate = e.target.value ? new Date(e.target.value + "T00:00:00") : undefined;
+              setDataAniversarioDate(newDate);
+              handleDateChange(newDate);
+            }}
+          />
+          <Calendar className="text-blue-500" />
         </div>
-
-        {!readOnly ? (
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="blue">
-              Salvar
-            </Button>
-          </div>
-        ) : (
-          <div className="flex justify-end">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Fechar
-            </Button>
-          </div>
-        )}
-      </form>
-    </Form>
+      </div>
+      <div>
+        <Label htmlFor="email">Email</Label>
+        <Input
+          type="email"
+          id="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+      </div>
+      <div>
+        <Label htmlFor="telefone">Telefone</Label>
+        <Input
+          type="tel"
+          id="telefone"
+          value={telefone}
+          onChange={(e) => setTelefone(e.target.value)}
+        />
+      </div>
+      <div>
+        <Label htmlFor="endereco">Endereço</Label>
+        <Input
+          type="text"
+          id="endereco"
+          value={endereco}
+          onChange={(e) => setEndereco(e.target.value)}
+        />
+      </div>
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <Label htmlFor="numero">Número</Label>
+          <Input
+            type="text"
+            id="numero"
+            value={numero}
+            onChange={(e) => setNumero(e.target.value)}
+          />
+        </div>
+        <div className="flex-1">
+          <Label htmlFor="complemento">Complemento</Label>
+          <Input
+            type="text"
+            id="complemento"
+            value={complemento}
+            onChange={(e) => setComplemento(e.target.value)}
+          />
+        </div>
+      </div>
+      <div>
+        <Label htmlFor="bairro">Bairro</Label>
+        <Input
+          type="text"
+          id="bairro"
+          value={bairro}
+          onChange={(e) => setBairro(e.target.value)}
+        />
+      </div>
+      <div>
+        <Label htmlFor="cidade">Cidade</Label>
+        <Input
+          type="text"
+          id="cidade"
+          value={cidade}
+          onChange={(e) => setCidade(e.target.value)}
+        />
+      </div>
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <Label htmlFor="estado">Estado</Label>
+          <Input
+            type="text"
+            id="estado"
+            value={estado}
+            onChange={(e) => setEstado(e.target.value)}
+          />
+        </div>
+        <div className="flex-1">
+          <Label htmlFor="cep">CEP</Label>
+          <Input
+            type="text"
+            id="cep"
+            value={cep}
+            onChange={(e) => setCep(e.target.value)}
+          />
+        </div>
+      </div>
+      <div>
+        <Label htmlFor="observacoes">Observações</Label>
+        <Input
+          type="text"
+          id="observacoes"
+          value={observacoes}
+          onChange={(e) => setObservacoes(e.target.value)}
+        />
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit">Salvar</Button>
+      </div>
+    </form>
   );
 }

@@ -1,218 +1,146 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "lucide-react";
 import { format } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Orcamento } from "@/types";
 import { useCompany } from "@/contexts/company-context";
-import { Label } from "@/components/ui/label";
-
-interface TipoTitulo {
-  id: string;
-  nome: string;
-  tipo: string;
-  status: string;
-}
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Orcamento } from "./vendas-table";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
 interface EfetivarVendaModalProps {
+  orcamento?: Orcamento | null;
   open: boolean;
   onClose: () => void;
-  orcamento?: Orcamento | null;
-  onSuccess: () => void;
+  onEfetivar: (vendaData: {
+    data_venda: string;
+    numero_nota_fiscal: string;
+    data_nota_fiscal: string | null;
+    nota_fiscal_pdf: string | null;
+  }) => Promise<void>;
 }
 
-export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: EfetivarVendaModalProps) {
+export function EfetivarVendaModal({ orcamento, open, onClose, onEfetivar }: EfetivarVendaModalProps) {
   const { currentCompany } = useCompany();
-  const [dataVenda, setDataVenda] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [isLoading, setIsLoading] = useState(false);
-  const [tipoTitulos, setTipoTitulos] = useState<TipoTitulo[]>([]);
-  const [tipoTituloId, setTipoTituloId] = useState<string>("");
+  const [dataVenda, setDataVenda] = useState<Date | null>(new Date());
+  const [numeroNotaFiscal, setNumeroNotaFiscal] = useState<string>("");
+  const [dataNotaFiscal, setDataNotaFiscal] = useState<Date | null>(new Date());
+  const [notaFiscalPdf, setNotaFiscalPdf] = useState<string | null>(null);
+
+  const { data: favorecidos = [] } = useQuery({
+    queryKey: ["favorecidos", currentCompany?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("favorecidos")
+        .select("*")
+        .eq("empresa_id", currentCompany?.id);
+
+      if (error) {
+        console.error("Erro ao buscar favorecidos:", error);
+        return [];
+      }
+
+      return data;
+    },
+    enabled: !!currentCompany?.id,
+  });
 
   useEffect(() => {
-    if (open && currentCompany?.id) {
-      carregarTiposTitulos();
+    if (open) {
+      setDataVenda(new Date());
+      setNumeroNotaFiscal("");
+      setDataNotaFiscal(new Date());
+      setNotaFiscalPdf(null);
     }
-  }, [open, currentCompany?.id]);
+  }, [orcamento, open]);
 
-  async function carregarTiposTitulos() {
-    try {
-      const { data, error } = await supabase
-        .from('tipos_titulos')
-        .select('*')
-        .eq('empresa_id', currentCompany?.id)
-        .eq('tipo', 'receber')
-        .eq('status', 'ativo');
+  const favorecidoData = favorecidos?.find(f => f.id === orcamento?.favorecido_id);
 
-      if (error) throw error;
-      setTipoTitulos(data || []);
-      if (data && data.length > 0) {
-        setTipoTituloId(data[0].id); // Seleciona o primeiro tipo por padrão
-      }
-    } catch (error) {
-      console.error('Erro ao carregar tipos de títulos:', error);
-      toast.error("Erro ao carregar tipos de títulos");
-    }
-  }
-
-  async function handleConfirmar() {
-    if (!orcamento || !currentCompany?.id || !tipoTituloId) {
-      toast.error("Selecione um tipo de título");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!dataVenda || !numeroNotaFiscal) {
+      toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
-    setIsLoading(true);
-    try {
-      // 1. Buscar todos os itens e parcelas do orçamento
-      const { data: itens, error: itensError } = await supabase
-        .from('orcamentos_itens')
-        .select('*')
-        .eq('orcamento_id', orcamento.id);
+    const vendaData = {
+      data_venda: format(dataVenda, "yyyy-MM-dd"),
+      numero_nota_fiscal: numeroNotaFiscal,
+      data_nota_fiscal: dataNotaFiscal ? format(dataNotaFiscal, "yyyy-MM-dd") : null,
+      nota_fiscal_pdf: notaFiscalPdf
+    };
 
-      if (itensError) throw itensError;
-
-      const { data: parcelas, error: parcelasError } = await supabase
-        .from('orcamentos_parcelas')
-        .select('*')
-        .eq('orcamento_id', orcamento.id);
-
-      if (parcelasError) throw parcelasError;
-
-      // 2. Criar movimentação com as novas informações
-      const valorTotal = itens.reduce((sum, item) => sum + Number(item.valor), 0);
-      
-      // Começar uma transação em JavaScript
-      try {
-        // Criar a movimentação
-        const { data: movimentacao, error: movError } = await supabase
-          .from('movimentacoes')
-          .insert({
-            empresa_id: currentCompany.id,
-            tipo_operacao: 'receber',
-            data_lancamento: dataVenda,
-            data_emissao: dataVenda,
-            favorecido_id: orcamento.favorecido_id,
-            forma_pagamento: orcamento.forma_pagamento,
-            valor: valorTotal,
-            numero_parcelas: parcelas.length,
-            primeiro_vencimento: parcelas[0]?.data_vencimento,
-            descricao: `Venda ${orcamento.codigo}`,
-            considerar_dre: true,
-            numero_documento: orcamento.codigo,
-            tipo_titulo_id: tipoTituloId
-          })
-          .select()
-          .single();
-  
-        if (movError) throw movError;
-  
-        // 3. Criar parcelas da movimentação
-        const parcelasMovimentacao = parcelas.map(parcela => ({
-          movimentacao_id: movimentacao.id,
-          numero: parseInt(parcela.numero_parcela.split('/')[1]),
-          valor: parcela.valor,
-          data_vencimento: parcela.data_vencimento
-        }));
-  
-        const { error: parcelasMovError } = await supabase
-          .from('movimentacoes_parcelas')
-          .insert(parcelasMovimentacao);
-  
-        if (parcelasMovError) throw parcelasMovError;
-  
-        // 4. Atualizar o orçamento para tipo "venda" e incluir data_venda
-        const { error: orcamentoError } = await supabase
-          .from('orcamentos')
-          .update({ 
-            tipo: 'venda',
-            data_venda: dataVenda
-          })
-          .eq('id', orcamento.id);
-  
-        if (orcamentoError) throw orcamentoError;
-      } catch (error) {
-        // Se algo falhar, rolamos de volta
-        console.error("Erro na transação:", error);
-        throw error;
-      }
-
-      toast.success("Venda efetivada com sucesso!");
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error('Erro ao efetivar venda:', error);
-      toast.error("Erro ao efetivar venda");
-    } finally {
-      setIsLoading(false);
-    }
-  }
+    await onEfetivar(vendaData);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Efetivar Venda</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-1">
           <div>
-            <Label className="block text-sm font-medium mb-1">Data da Venda *</Label>
+            <label className="block text-sm font-medium mb-1">Data da Venda *</label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                className="w-full"
+                value={dataVenda ? format(dataVenda, "yyyy-MM-dd") : ""}
+                onChange={e => setDataVenda(e.target.value ? new Date(e.target.value + "T00:00:00") : null)}
+              />
+              <Calendar className="text-blue-500" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Número da Nota Fiscal *</label>
             <Input
-              type="date"
-              value={dataVenda}
-              onChange={(e) => setDataVenda(e.target.value)}
-              required
+              type="text"
+              value={numeroNotaFiscal}
+              onChange={e => setNumeroNotaFiscal(e.target.value)}
+              placeholder="Digite o número da nota fiscal"
             />
           </div>
 
           <div>
-            <Label className="block text-sm font-medium mb-1">Tipo de Título *</Label>
-            <Select value={tipoTituloId} onValueChange={setTipoTituloId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o tipo de título" />
-              </SelectTrigger>
-              <SelectContent>
-                {tipoTitulos.map((tipo) => (
-                  <SelectItem key={tipo.id} value={tipo.id}>
-                    {tipo.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <label className="block text-sm font-medium mb-1">Data da Nota Fiscal</label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                className="w-full"
+                value={dataNotaFiscal ? format(dataNotaFiscal, "yyyy-MM-dd") : ""}
+                onChange={e => setDataNotaFiscal(e.target.value ? new Date(e.target.value + "T00:00:00") : null)}
+              />
+              <Calendar className="text-blue-500" />
+            </div>
           </div>
 
-          {orcamento && (
-            <div className="border rounded-md p-3 bg-gray-50">
-              <p className="font-medium">Orçamento: {orcamento.codigo}</p>
-              <p className="text-sm text-muted-foreground">
-                {orcamento.favorecido?.nome || "Favorecido não identificado"}
-              </p>
-            </div>
-          )}
-        </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Nota Fiscal (PDF)</label>
+            <Input
+              type="text"
+              value={notaFiscalPdf || ""}
+              onChange={e => setNotaFiscalPdf(e.target.value)}
+              placeholder="Link para o PDF da nota fiscal"
+            />
+          </div>
 
-        <DialogFooter className="mt-6">
-          <DialogClose asChild>
-            <Button variant="outline" disabled={isLoading}>Cancelar</Button>
-          </DialogClose>
-          <Button 
-            variant="blue" 
-            onClick={handleConfirmar}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 mr-2 border-t-2 border-white" />
-                Processando...
-              </>
-            ) : (
-              "Confirmar"
-            )}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" type="button">
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button type="submit" variant="blue">
+              Efetivar Venda
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
