@@ -16,14 +16,14 @@ import {
   TabsList,
   TabsTrigger
 } from "@/components/ui/tabs";
-import { Origem, Usuario, MotivoPerda } from "@/types";
+import { Origem, Usuario, MotivoPerda, Lead } from "@/types";
 import { LeadDadosTab } from "./LeadDadosTab";
 import { LeadFechamentoTab } from "./LeadFechamentoTab";
 import { InteracoesTab } from "./components/InteracoesTab";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "./utils/leadUtils";
 import { toast } from "sonner";
-import { LeadInteracao, EtapaFunil, Lead } from "./types";
+import { LeadInteracao, EtapaFunil } from "./types";
 import { format } from "date-fns";
 
 import { abrirWhatsApp } from "./utils/whatsappUtils";
@@ -195,6 +195,16 @@ export function LeadFormModal({
       console.error('Erro ao buscar dados de fechamento:', error);
     }
   };
+
+  useEffect(() => {
+    if (lead?.id) {
+      buscarInteracoes(lead.id);
+      buscarFechamento(lead.id);
+    } else {
+      setInteracoes([]);
+      setFechamento(null);
+    }
+  }, [lead]);
 
   useEffect(() => {
     if (lead) {
@@ -379,9 +389,9 @@ export function LeadFormModal({
     try {
       let dataFormatada = interacaoEditada.data;
       
-      // Corrigir a verificação do tipo Date
-      if (typeof interacaoEditada.data === 'object' && interacaoEditada.data instanceof Date) {
-        dataFormatada = format(interacaoEditada.data, "yyyy-MM-dd");
+      // Verificação corrigida do tipo Date
+      if (interacaoEditada.data && typeof interacaoEditada.data === 'object' && 'getTime' in interacaoEditada.data) {
+        dataFormatada = format(interacaoEditada.data as Date, "yyyy-MM-dd");
       }
       
       const { error } = await supabase
@@ -539,6 +549,8 @@ export function LeadFormModal({
                     handleInteracaoSelectChange={handleInteracaoSelectChange}
                     handleInteracaoDataChange={handleInteracaoDataChange}
                     adicionarInteracao={adicionarInteracao}
+                    excluirInteracao={excluirInteracao}
+                    confirmarEdicaoInteracao={confirmarEdicaoInteracao}
                     vendedoresAtivos={vendedoresAtivos}
                     getNomeResponsavel={getNomeResponsavel}
                   />

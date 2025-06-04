@@ -183,7 +183,7 @@ export default function LeadsPage() {
     setEditingLead(null);
   };
 
-  const handleConfirm = async (leadData: Lead) => {
+  const handleConfirm = async (leadData: any) => {
     if (!currentCompany) {
       toast.error("Nenhuma empresa selecionada");
       return;
