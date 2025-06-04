@@ -22,6 +22,13 @@ export interface MovimentacaoItem {
   favorecido?: {
     nome: string;
   };
+  dataLancamento?: string;
+  mes_referencia?: string;
+  documento_pdf?: string;
+  numeroTitulo?: string;
+  numeroParcela?: string;
+  dataVencimento?: string;
+  dataPagamento?: string;
 }
 
 export interface MovimentacaoFormData {
