@@ -59,9 +59,9 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="empresa">Empresa</Label>
           <Select 
-            value={formData.favorecido_id || "none"} 
+            value={formData.favorecido_id || "no_company"} 
             onValueChange={(value) => {
-              if (value === "none") {
+              if (value === "no_company") {
                 handleSelectChange("favorecido_id", "");
                 handleSelectChange("empresa", "");
               } else {
@@ -79,7 +79,7 @@ export function LeadDadosTab({
               <SelectValue placeholder={loadingFavorecidos ? "Carregando..." : "Selecione uma empresa (opcional)"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Nenhuma empresa</SelectItem>
+              <SelectItem value="no_company">Nenhuma empresa</SelectItem>
               {favorecidos.map((favorecido) => (
                 <SelectItem key={favorecido.id} value={favorecido.id}>
                   {favorecido.nome} - {favorecido.documento}
@@ -115,9 +115,9 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="etapaId">Etapa *</Label>
           <Select 
-            value={formData.etapaId || "select_etapa"} 
+            value={formData.etapaId || "no_stage"} 
             onValueChange={(value) => {
-              if (value !== "select_etapa") {
+              if (value !== "no_stage") {
                 handleSelectChange("etapaId", value);
               }
             }}
@@ -126,7 +126,7 @@ export function LeadDadosTab({
               <SelectValue placeholder="Selecione uma etapa" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="select_etapa" disabled>Selecione uma etapa</SelectItem>
+              <SelectItem value="no_stage" disabled>Selecione uma etapa</SelectItem>
               {etapas.map((etapa) => (
                 <SelectItem key={etapa.id} value={etapa.id}>
                   {etapa.nome}
@@ -152,9 +152,9 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="origemId">Origem</Label>
           <Select 
-            value={formData.origemId || "select_origem"} 
+            value={formData.origemId || "no_origin"} 
             onValueChange={(value) => {
-              if (value !== "select_origem") {
+              if (value !== "no_origin") {
                 handleSelectChange("origemId", value);
               }
             }}
@@ -163,7 +163,7 @@ export function LeadDadosTab({
               <SelectValue placeholder="Selecione uma origem" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="select_origem" disabled>Selecione uma origem</SelectItem>
+              <SelectItem value="no_origin" disabled>Selecione uma origem</SelectItem>
               {origensAtivas.map((origem) => (
                 <SelectItem key={origem.id} value={origem.id}>
                   {origem.nome}
@@ -176,9 +176,9 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="responsavelId">Responsável</Label>
           <Select 
-            value={formData.responsavelId || "select_responsavel"} 
+            value={formData.responsavelId || "no_responsible"} 
             onValueChange={(value) => {
-              if (value !== "select_responsavel") {
+              if (value !== "no_responsible") {
                 handleSelectChange("responsavelId", value);
               }
             }}
@@ -187,7 +187,7 @@ export function LeadDadosTab({
               <SelectValue placeholder="Selecione um responsável" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="select_responsavel" disabled>Selecione um responsável</SelectItem>
+              <SelectItem value="no_responsible" disabled>Selecione um responsável</SelectItem>
               {vendedoresAtivos.map((usuario) => (
                 <SelectItem key={usuario.id} value={usuario.id}>
                   {usuario.nome}

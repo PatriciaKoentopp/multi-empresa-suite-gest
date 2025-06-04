@@ -19,6 +19,3 @@ export interface EtapaFunil {
   ordem: number;
   funil_id?: string;
 }
-
-// Usando a interface Lead do types/index.ts
-export type { Lead } from "@/types";

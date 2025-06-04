@@ -197,16 +197,6 @@ export function LeadFormModal({
   };
 
   useEffect(() => {
-    if (lead?.id) {
-      buscarInteracoes(lead.id);
-      buscarFechamento(lead.id);
-    } else {
-      setInteracoes([]);
-      setFechamento(null);
-    }
-  }, [lead]);
-
-  useEffect(() => {
     if (lead) {
       setFormData({
         nome: lead.nome || "",
