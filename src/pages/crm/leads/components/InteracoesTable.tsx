@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -26,27 +25,35 @@ export function InteracoesTable({
   getNomeResponsavel = () => "Não atribuído"
 }: InteracoesTableProps) {
   // Função para formatar a data no padrão brasileiro DD/MM/YYYY
-  const formatarDataBR = (dataStr: string): string => {
-    if (!dataStr) return "-";
+  const formatarDataBR = (data: string | Date): string => {
+    if (!data) return "-";
     
-    // Se já estiver no formato DD/MM/YYYY, retornar como está
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataStr)) return dataStr;
+    // Se for um objeto Date, converter para string
+    if (data instanceof Date) {
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      const ano = data.getFullYear();
+      return `${dia}/${mes}/${ano}`;
+    }
     
-    // Se estiver no formato ISO (YYYY-MM-DD)
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) {
-      const [ano, mes, dia] = dataStr.split('-');
+    // Se for string e já estiver no formato DD/MM/YYYY, retornar como está
+    if (typeof data === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(data)) return data;
+    
+    // Se for string no formato ISO (YYYY-MM-DD)
+    if (typeof data === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
+      const [ano, mes, dia] = data.split('-');
       return `${dia}/${mes}/${ano}`;
     }
     
     // Para outros formatos, tentar converter
     try {
-      const data = new Date(dataStr);
-      const dia = String(data.getDate()).padStart(2, '0');
-      const mes = String(data.getMonth() + 1).padStart(2, '0');
-      const ano = data.getFullYear();
+      const dataObj = new Date(data);
+      const dia = String(dataObj.getDate()).padStart(2, '0');
+      const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+      const ano = dataObj.getFullYear();
       return `${dia}/${mes}/${ano}`;
     } catch (e) {
-      return dataStr; // Retornar o valor original se falhar
+      return typeof data === 'string' ? data : "-";
     }
   };
 

@@ -376,11 +376,13 @@ export function LeadFormModal({
     if (!interacaoEditada) return;
     
     try {
-      let dataFormatada = interacaoEditada.data;
+      let dataFormatada: string;
       
       // Verificação corrigida do tipo Date
-      if (interacaoEditada.data && typeof interacaoEditada.data === 'object' && interacaoEditada.data instanceof Date) {
+      if (typeof interacaoEditada.data === 'object' && interacaoEditada.data instanceof Date) {
         dataFormatada = format(interacaoEditada.data, "yyyy-MM-dd");
+      } else {
+        dataFormatada = interacaoEditada.data as string;
       }
       
       const { error } = await supabase
@@ -399,6 +401,7 @@ export function LeadFormModal({
       setInteracoes(prev => prev.map(item => 
         item.id === interacaoEditada.id ? {
           ...interacaoEditada,
+          data: dataFormatada,
           responsavelNome: usuarios.find(u => u.id === interacaoEditada.responsavelId)?.nome || 'Desconhecido'
         } : item
       ));
