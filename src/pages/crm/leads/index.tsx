@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,6 @@ export default function LeadsPage() {
         .select(`
           id, nome, empresa, email, telefone, etapa_id, funil_id, valor, origem_id,
           data_criacao, ultimo_contato, responsavel_id, produto, status,
-          favorecido_id, produto_id, servico_id,
           origens ( nome )
         `)
         .eq('empresa_id', currentCompany.id);
@@ -70,9 +70,6 @@ export default function LeadsPage() {
         status: lead.status as "ativo" | "inativo" | "fechado",
         origemNome: lead.origens?.nome || "Desconhecida",
         responsavelNome: "Não atribuído",
-        favorecido_id: lead.favorecido_id,
-        produto_id: lead.produto_id,
-        servico_id: lead.servico_id,
       })) : [];
 
       setLeads(leadsComNomes);
@@ -194,16 +191,13 @@ export default function LeadsPage() {
             empresa: leadData.empresa || "",
             email: leadData.email,
             telefone: leadData.telefone,
-            etapa_id: leadData.etapaId,
-            funil_id: leadData.funilId,
+            etapa_id: leadData.etapa_id,
+            funil_id: leadData.funil_id,
             valor: leadData.valor,
-            origem_id: leadData.origemId,
-            responsavel_id: leadData.responsavelId,
+            origem_id: leadData.origem_id,
+            responsavel_id: leadData.responsavel_id,
             produto: leadData.produto,
             status: leadData.status,
-            favorecido_id: leadData.favorecido_id,
-            produto_id: leadData.produto_id,
-            servico_id: leadData.servico_id,
           })
           .eq('id', editingLead.id);
 
@@ -217,16 +211,13 @@ export default function LeadsPage() {
             empresa: leadData.empresa || "",
             email: leadData.email,
             telefone: leadData.telefone,
-            etapa_id: leadData.etapaId,
-            funil_id: leadData.funilId,
+            etapa_id: leadData.etapa_id,
+            funil_id: leadData.funil_id,
             valor: leadData.valor,
-            origem_id: leadData.origemId,
-            responsavel_id: leadData.responsavelId,
+            origem_id: leadData.origem_id,
+            responsavel_id: leadData.responsavel_id,
             produto: leadData.produto,
             status: leadData.status,
-            favorecido_id: leadData.favorecido_id,
-            produto_id: leadData.produto_id,
-            servico_id: leadData.servico_id,
             empresa_id: currentCompany.id,
             data_criacao: new Date().toISOString().split('T')[0],
             ultimo_contato: new Date().toISOString().split('T')[0]

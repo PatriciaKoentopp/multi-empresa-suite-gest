@@ -23,7 +23,7 @@ import { InteracoesTab } from "./components/InteracoesTab";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "./utils/leadUtils";
 import { toast } from "sonner";
-import { LeadInteracao, EtapaFunil } from "./types";
+import { LeadInteracao, EtapaFunil, LeadFormData } from "./types";
 import { format } from "date-fns";
 import { abrirWhatsApp } from "./utils/whatsappUtils";
 
@@ -48,13 +48,9 @@ export function LeadFormModal({
   usuarios, 
   motivosPerda 
 }: LeadFormModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<LeadFormData>({
     nome: "",
     empresa: "",
-    favorecido_id: "",
-    produto: "",
-    produto_id: "",
-    servico_id: "",
     email: "",
     telefone: "",
     etapaId: "",
@@ -63,6 +59,8 @@ export function LeadFormModal({
     dataCriacao: new Date().toLocaleDateString("pt-BR"),
     ultimoContato: new Date().toLocaleDateString("pt-BR"),
     responsavelId: "",
+    produto: "",
+    status: "ativo",
   });
 
   // Estado para a nova interação
@@ -200,10 +198,6 @@ export function LeadFormModal({
       setFormData({
         nome: lead.nome || "",
         empresa: lead.empresa || "",
-        favorecido_id: lead.favorecido_id || "",
-        produto: lead.produto || "",
-        produto_id: lead.produto_id || "",
-        servico_id: lead.servico_id || "",
         email: lead.email || "",
         telefone: lead.telefone || "",
         etapaId: lead.etapaId || (etapas.length > 0 ? etapas[0].id : ""),
@@ -212,6 +206,8 @@ export function LeadFormModal({
         dataCriacao: lead.dataCriacao || new Date().toLocaleDateString("pt-BR"),
         ultimoContato: lead.ultimoContato || new Date().toLocaleDateString("pt-BR"),
         responsavelId: lead.responsavelId || "",
+        produto: lead.produto || "",
+        status: lead.status || "ativo",
       });
       
       // Inicializa a nova interação com o responsável atual do lead
@@ -224,23 +220,20 @@ export function LeadFormModal({
       // Encontrar o primeiro usuário vendedor ativo, se existir
       const primeiroVendedor = usuarios.find(u => u.vendedor === "sim" && u.status === "ativo")?.id || "";
       const primeiraEtapa = etapas.length > 0 ? etapas[0].id : "";
-      const primeiraOrigem = origens.length > 0 ? origens[0].id : "";
       
       setFormData({
         nome: "",
         empresa: "",
-        favorecido_id: "",
-        produto: "",
-        produto_id: "",
-        servico_id: "",
         email: "",
         telefone: "",
         etapaId: primeiraEtapa,
         valor: 0,
-        origemId: primeiraOrigem,
+        origemId: "",
         dataCriacao: new Date().toLocaleDateString("pt-BR"),
         ultimoContato: new Date().toLocaleDateString("pt-BR"),
         responsavelId: primeiroVendedor,
+        produto: "",
+        status: "ativo",
       });
       
       // Inicializa a nova interação com o primeiro vendedor
@@ -262,11 +255,6 @@ export function LeadFormModal({
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleProdutoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    setFormData((prev) => ({ ...prev, produto: value }));
   };
 
   const handleInteracaoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -456,15 +444,23 @@ export function LeadFormModal({
         return;
       }
       
-      // Adicionar o ID da empresa aos dados do lead
-      const leadDataWithCompany = {
-        ...formData,
+      // Preparar dados para salvar (apenas campos que usamos)
+      const leadDataToSave = {
+        nome: formData.nome,
+        empresa: formData.empresa || "",
+        email: formData.email || "",
+        telefone: formData.telefone || "",
+        etapa_id: formData.etapaId,
+        valor: formData.valor,
+        origem_id: formData.origemId || null,
+        responsavel_id: formData.responsavelId || null,
+        produto: formData.produto || "",
+        status: formData.status,
         empresa_id: empresaId
       };
       
-      // Chamar a função original para salvar os dados do lead
-      console.log('Salvando dados do lead:', leadDataWithCompany);
-      onConfirm(leadDataWithCompany);
+      console.log('Dados a serem salvos:', leadDataToSave);
+      onConfirm(leadDataToSave);
       
       // Fechar o modal após salvar
       onClose();

@@ -4,25 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Origem, Usuario } from "@/types";
-import { EtapaFunil } from "./types";
+import { EtapaFunil, LeadFormData } from "./types";
 
 interface LeadDadosTabProps {
-  formData: {
-    nome: string;
-    empresa: string;
-    favorecido_id: string;
-    produto: string;
-    produto_id: string;
-    servico_id: string;
-    email: string;
-    telefone: string;
-    etapaId: string;
-    valor: number;
-    origemId: string;
-    dataCriacao: string;
-    ultimoContato: string;
-    responsavelId: string;
-  };
+  formData: LeadFormData;
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSelectChange: (name: string, value: string) => void;
   etapas: EtapaFunil[];
@@ -90,18 +75,13 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="etapaId">Etapa *</Label>
           <Select 
-            value={formData.etapaId || "placeholder_stage"} 
-            onValueChange={(value) => {
-              if (value !== "placeholder_stage") {
-                handleSelectChange("etapaId", value);
-              }
-            }}
+            value={formData.etapaId} 
+            onValueChange={(value) => handleSelectChange("etapaId", value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma etapa" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="placeholder_stage" disabled>Selecione uma etapa</SelectItem>
               {etapas.map((etapa) => (
                 <SelectItem key={etapa.id} value={etapa.id}>
                   {etapa.nome}
@@ -127,18 +107,14 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="origemId">Origem</Label>
           <Select 
-            value={formData.origemId || "placeholder_origin"} 
-            onValueChange={(value) => {
-              if (value !== "placeholder_origin") {
-                handleSelectChange("origemId", value);
-              }
-            }}
+            value={formData.origemId || ""} 
+            onValueChange={(value) => handleSelectChange("origemId", value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma origem" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="placeholder_origin" disabled>Selecione uma origem</SelectItem>
+              <SelectItem value="">Nenhuma origem</SelectItem>
               {origensAtivas.map((origem) => (
                 <SelectItem key={origem.id} value={origem.id}>
                   {origem.nome}
@@ -151,18 +127,14 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="responsavelId">Responsável</Label>
           <Select 
-            value={formData.responsavelId || "placeholder_responsible"} 
-            onValueChange={(value) => {
-              if (value !== "placeholder_responsible") {
-                handleSelectChange("responsavelId", value);
-              }
-            }}
+            value={formData.responsavelId || ""} 
+            onValueChange={(value) => handleSelectChange("responsavelId", value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione um responsável" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="placeholder_responsible" disabled>Selecione um responsável</SelectItem>
+              <SelectItem value="">Nenhum responsável</SelectItem>
               {vendedoresAtivos.map((usuario) => (
                 <SelectItem key={usuario.id} value={usuario.id}>
                   {usuario.nome}
