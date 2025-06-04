@@ -82,7 +82,7 @@ export function LeadDadosTab({
               <SelectValue placeholder="Selecione uma etapa" />
             </SelectTrigger>
             <SelectContent>
-              {etapas.map((etapa) => (
+              {etapas.filter(etapa => etapa.id && etapa.id.trim() !== "").map((etapa) => (
                 <SelectItem key={etapa.id} value={etapa.id}>
                   {etapa.nome}
                 </SelectItem>
@@ -115,7 +115,7 @@ export function LeadDadosTab({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="no_origin">Nenhuma origem</SelectItem>
-              {origensAtivas.map((origem) => (
+              {origensAtivas.filter(origem => origem.id && origem.id.trim() !== "").map((origem) => (
                 <SelectItem key={origem.id} value={origem.id}>
                   {origem.nome}
                 </SelectItem>
@@ -135,7 +135,7 @@ export function LeadDadosTab({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="no_responsible">Nenhum responsável</SelectItem>
-              {vendedoresAtivos.map((usuario) => (
+              {vendedoresAtivos.filter(usuario => usuario.id && usuario.id.trim() !== "").map((usuario) => (
                 <SelectItem key={usuario.id} value={usuario.id}>
                   {usuario.nome}
                 </SelectItem>

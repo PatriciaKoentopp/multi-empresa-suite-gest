@@ -280,7 +280,7 @@ export default function LeadsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all_funnels">Todos os funis</SelectItem>
-                  {funis.map(funil => (
+                  {funis.filter(funil => funil.id && funil.id.trim() !== "").map(funil => (
                     <SelectItem key={funil.id} value={funil.id}>{funil.nome}</SelectItem>
                   ))}
                 </SelectContent>
@@ -297,7 +297,7 @@ export default function LeadsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all_stages">Todas as etapas</SelectItem>
-                  {etapasFiltradas.map(etapa => (
+                  {etapasFiltradas.filter(etapa => etapa.id && etapa.id.trim() !== "").map(etapa => (
                     <SelectItem key={etapa.id} value={etapa.id}>{etapa.nome}</SelectItem>
                   ))}
                 </SelectContent>
