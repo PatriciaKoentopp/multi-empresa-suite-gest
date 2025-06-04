@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +24,6 @@ import { formatDate } from "./utils/leadUtils";
 import { toast } from "sonner";
 import { LeadInteracao, EtapaFunil } from "./types";
 import { format } from "date-fns";
-
 import { abrirWhatsApp } from "./utils/whatsappUtils";
 
 interface LeadFormModalProps {
