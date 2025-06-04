@@ -1,3 +1,4 @@
+
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrency } from '@/lib/utils';
@@ -204,7 +205,8 @@ export const usePdfFluxoCaixa = () => {
           5: { cellWidth: 25, halign: 'right', overflow: 'ellipsize' }   // Saldo (reduzida)
         },
         didDrawPage: (data) => {
-          const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+          const pageInfo = (doc as any).internal;
+          const pageNumber = pageInfo.getCurrentPageInfo ? pageInfo.getCurrentPageInfo().pageNumber : 1;
           
           // Se não é a primeira página, adicionar cabeçalho
           if (pageNumber > 1) {
@@ -216,7 +218,7 @@ export const usePdfFluxoCaixa = () => {
           }
           
           // Adicionar rodapé
-          const totalPages = doc.internal.getNumberOfPages();
+          const totalPages = pageInfo.getNumberOfPages ? pageInfo.getNumberOfPages() : 1;
           adicionarRodape(pageNumber, totalPages);
         },
         showHead: 'everyPage',

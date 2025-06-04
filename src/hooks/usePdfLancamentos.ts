@@ -210,7 +210,8 @@ export const usePdfLancamentos = () => {
           5: { cellWidth: 25, halign: 'right', overflow: 'ellipsize' }   // Saldo
         },
         didDrawPage: (data) => {
-          const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+          const pageInfo = (doc as any).internal;
+          const pageNumber = pageInfo.getCurrentPageInfo ? pageInfo.getCurrentPageInfo().pageNumber : 1;
           
           // Se não é a primeira página, adicionar cabeçalho
           if (pageNumber > 1) {
@@ -222,7 +223,7 @@ export const usePdfLancamentos = () => {
           }
           
           // Adicionar rodapé
-          const totalPages = doc.internal.getNumberOfPages();
+          const totalPages = pageInfo.getNumberOfPages ? pageInfo.getNumberOfPages() : 1;
           adicionarRodape(pageNumber, totalPages);
         },
         showHead: 'everyPage',
