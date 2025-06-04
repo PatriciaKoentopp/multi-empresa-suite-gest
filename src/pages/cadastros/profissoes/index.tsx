@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Profissao } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -32,7 +31,7 @@ export default function ProfissoesPage() {
       try {
         const { data, error } = await supabase
           .from("profissoes")
-          .select("*")
+          .select("id, nome, status, empresa_id, created_at, updated_at")
           .eq("empresa_id", currentCompany.id)
           .order("nome");
 
@@ -111,7 +110,7 @@ export default function ProfissoesPage() {
             nome: data.nome,
             status: data.status
           }])
-          .select()
+          .select("id, nome, status, empresa_id, created_at, updated_at")
           .single();
 
         if (error) {

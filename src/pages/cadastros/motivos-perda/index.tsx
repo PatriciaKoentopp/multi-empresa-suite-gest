@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { MotivoPerda } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -65,7 +64,7 @@ export default function MotivosPerdaPage() {
       
       const { data, error } = await supabase
         .from('motivos_perda')
-        .select('*')
+        .select('id, nome, status, empresa_id, created_at, updated_at')
         .eq('empresa_id', currentCompany.id);
         
       if (error) {
@@ -77,8 +76,9 @@ export default function MotivosPerdaPage() {
         id: item.id,
         nome: item.nome,
         status: item.status as "ativo" | "inativo",
-        createdAt: new Date(item.created_at),
-        updatedAt: new Date(item.updated_at)
+        empresa_id: item.empresa_id,
+        created_at: item.created_at,
+        updated_at: item.updated_at
       }));
       
       setMotivosPerda(formattedData);
