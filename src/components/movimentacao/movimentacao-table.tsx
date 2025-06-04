@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -25,6 +24,7 @@ interface MovimentacaoItem extends ContaPagar {
   dataLancamento?: string;
   mes_referencia?: string;
   documento_pdf?: string;
+  tipo_operacao?: string;
 }
 
 interface MovimentacaoTableProps {
