@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -285,12 +284,12 @@ export default function LeadsPage() {
             </div>
 
             <div>
-              <Select value={funilFilter} onValueChange={setFunilFilter}>
+              <Select value={funilFilter || "all_funis"} onValueChange={(value) => setFunilFilter(value === "all_funis" ? "" : value)}>
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Filtrar por funil..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os funis</SelectItem>
+                  <SelectItem value="all_funis">Todos os funis</SelectItem>
                   {funis.map(funil => (
                     <SelectItem key={funil.id} value={funil.id}>{funil.nome}</SelectItem>
                   ))}
@@ -299,12 +298,12 @@ export default function LeadsPage() {
             </div>
 
             <div>
-              <Select value={etapaFilter} onValueChange={setEtapaFilter}>
+              <Select value={etapaFilter || "all_etapas"} onValueChange={(value) => setEtapaFilter(value === "all_etapas" ? "" : value)}>
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Filtrar por etapa..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as etapas</SelectItem>
+                  <SelectItem value="all_etapas">Todas as etapas</SelectItem>
                   {etapasFiltradas.map(etapa => (
                     <SelectItem key={etapa.id} value={etapa.id}>{etapa.nome}</SelectItem>
                   ))}

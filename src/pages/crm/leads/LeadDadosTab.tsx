@@ -115,13 +115,18 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="etapaId">Etapa *</Label>
           <Select 
-            value={formData.etapaId} 
-            onValueChange={(value) => handleSelectChange("etapaId", value)}
+            value={formData.etapaId || "select_etapa"} 
+            onValueChange={(value) => {
+              if (value !== "select_etapa") {
+                handleSelectChange("etapaId", value);
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma etapa" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="select_etapa" disabled>Selecione uma etapa</SelectItem>
               {etapas.map((etapa) => (
                 <SelectItem key={etapa.id} value={etapa.id}>
                   {etapa.nome}
@@ -147,13 +152,18 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="origemId">Origem</Label>
           <Select 
-            value={formData.origemId} 
-            onValueChange={(value) => handleSelectChange("origemId", value)}
+            value={formData.origemId || "select_origem"} 
+            onValueChange={(value) => {
+              if (value !== "select_origem") {
+                handleSelectChange("origemId", value);
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma origem" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="select_origem" disabled>Selecione uma origem</SelectItem>
               {origensAtivas.map((origem) => (
                 <SelectItem key={origem.id} value={origem.id}>
                   {origem.nome}
@@ -166,13 +176,18 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="responsavelId">Responsável</Label>
           <Select 
-            value={formData.responsavelId} 
-            onValueChange={(value) => handleSelectChange("responsavelId", value)}
+            value={formData.responsavelId || "select_responsavel"} 
+            onValueChange={(value) => {
+              if (value !== "select_responsavel") {
+                handleSelectChange("responsavelId", value);
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione um responsável" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="select_responsavel" disabled>Selecione um responsável</SelectItem>
               {vendedoresAtivos.map((usuario) => (
                 <SelectItem key={usuario.id} value={usuario.id}>
                   {usuario.nome}
