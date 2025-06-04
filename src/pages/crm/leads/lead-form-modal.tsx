@@ -100,73 +100,69 @@ export function LeadFormModal({
   }, [lead]);
 
   const buscarInteracoes = async (leadId: string) => {
-  setCarregandoInteracoes(true);
-  console.log('Buscando interações para lead ID:', leadId);
-  
-  try {
-    // Consulta principal para buscar todas as interações do lead
-    const { data, error } = await supabase
-      .from('leads_interacoes')
-      .select('*')
-      .eq('lead_id', leadId)
-      .order('data', { ascending: false });
+    setCarregandoInteracoes(true);
+    console.log('Buscando interações para lead ID:', leadId);
     
-    if (error) {
-      console.error('Erro ao buscar interações:', error);
-      throw error;
-    }
-    
-    console.log('Interações encontradas:', data?.length, data);
-    
-    if (!data || data.length === 0) {
-      setInteracoes([]);
-      setCarregandoInteracoes(false);
-      return;
-    }
-    
-    // Agora vamos buscar os dados dos responsáveis
-    const responsaveisIds = data
-      .filter(item => item.responsavel_id)
-      .map(item => item.responsavel_id);
-    
-    let responsaveisMap = new Map();
-    
-    if (responsaveisIds.length > 0) {
-      const { data: responsaveisData, error: responsaveisError } = await supabase
-        .from('usuarios')
-        .select('id, nome')
-        .in('id', responsaveisIds);
+    try {
+      const { data, error } = await supabase
+        .from('leads_interacoes')
+        .select('*')
+        .eq('lead_id', leadId)
+        .order('data', { ascending: false });
       
-      if (responsaveisError) {
-        console.error('Erro ao buscar responsáveis:', responsaveisError);
-      } else if (responsaveisData) {
-        // Criar mapa de ID -> nome para fácil acesso
-        responsaveisData.forEach(resp => {
-          responsaveisMap.set(resp.id, resp.nome);
-        });
+      if (error) {
+        console.error('Erro ao buscar interações:', error);
+        throw error;
       }
+      
+      console.log('Interações encontradas:', data?.length, data);
+      
+      if (!data || data.length === 0) {
+        setInteracoes([]);
+        setCarregandoInteracoes(false);
+        return;
+      }
+      
+      const responsaveisIds = data
+        .filter(item => item.responsavel_id)
+        .map(item => item.responsavel_id);
+      
+      let responsaveisMap = new Map();
+      
+      if (responsaveisIds.length > 0) {
+        const { data: responsaveisData, error: responsaveisError } = await supabase
+          .from('usuarios')
+          .select('id, nome')
+          .in('id', responsaveisIds);
+        
+        if (responsaveisError) {
+          console.error('Erro ao buscar responsáveis:', responsaveisError);
+        } else if (responsaveisData) {
+          responsaveisData.forEach(resp => {
+            responsaveisMap.set(resp.id, resp.nome);
+          });
+        }
+      }
+      
+      const interacoesFormatadas = data.map(item => ({
+        id: item.id.toString(),
+        leadId: item.lead_id,
+        tipo: item.tipo as "email" | "ligacao" | "reuniao" | "mensagem" | "whatsapp" | "telegram" | "instagram" | "facebook" | "outro",
+        descricao: item.descricao,
+        data: item.data,
+        responsavelId: item.responsavel_id,
+        responsavelNome: item.responsavel_id ? (responsaveisMap.get(item.responsavel_id) || 'Desconhecido') : 'Não atribuído',
+        status: item.status || 'Aberto'
+      }));
+      
+      console.log('Interações formatadas:', interacoesFormatadas);
+      setInteracoes(interacoesFormatadas);
+    } catch (error) {
+      console.error('Erro ao buscar interações:', error);
+    } finally {
+      setCarregandoInteracoes(false);
     }
-    
-    // Formatar as interações com nomes de responsáveis, mas sem converter as datas
-    const interacoesFormatadas = data.map(item => ({
-      id: item.id,
-      leadId: item.lead_id,
-      tipo: item.tipo,
-      descricao: item.descricao,
-      data: item.data,  // Usar a data exatamente como vem do banco
-      responsavelId: item.responsavel_id,
-      responsavelNome: item.responsavel_id ? (responsaveisMap.get(item.responsavel_id) || 'Desconhecido') : 'Não atribuído',
-      status: item.status || 'Aberto'
-    }));
-    
-    console.log('Interações formatadas:', interacoesFormatadas);
-    setInteracoes(interacoesFormatadas);
-  } catch (error) {
-    console.error('Erro ao buscar interações:', error);
-  } finally {
-    setCarregandoInteracoes(false);
-  }
-};
+  };
 
   const buscarFechamento = async (leadId: string) => {
     try {
@@ -185,7 +181,7 @@ export function LeadFormModal({
       if (data) {
         console.log('Fechamento encontrado:', data);
         setFechamento({
-          status: data.status,
+          status: data.status as "sucesso" | "perda",
           motivoPerdaId: data.motivo_perda_id,
           descricao: data.descricao || '',
           data: new Date(data.data)
@@ -299,7 +295,6 @@ export function LeadFormModal({
     try {
       const dataFormatada = format(novaInteracao.data, "yyyy-MM-dd");
       
-      // Salvar no Supabase
       const { data, error } = await supabase
         .from('leads_interacoes')
         .insert([
@@ -309,25 +304,23 @@ export function LeadFormModal({
             descricao: novaInteracao.descricao,
             data: dataFormatada,
             responsavel_id: novaInteracao.responsavelId,
-            status: 'Aberto' // Definir o status inicial como "Aberto"
+            status: 'Aberto'
           }
         ])
         .select();
       
       if (error) throw error;
       
-      // Atualizar último contato do lead
       await supabase
         .from('leads')
         .update({ ultimo_contato: dataFormatada })
         .eq('id', lead.id);
       
-      // Atualizar a lista local
       if (data && data[0]) {
         const novaInteracaoCompleta = {
-          id: data[0].id,
+          id: data[0].id.toString(),
           leadId: data[0].lead_id,
-          tipo: data[0].tipo,
+          tipo: data[0].tipo as "email" | "ligacao" | "reuniao" | "mensagem" | "whatsapp" | "telegram" | "instagram" | "facebook" | "outro",
           descricao: data[0].descricao,
           data: formatDate(data[0].data),
           responsavelId: data[0].responsavel_id,
@@ -338,12 +331,10 @@ export function LeadFormModal({
         setInteracoes(prev => [novaInteracaoCompleta, ...prev]);
       }
 
-      // Se o tipo de interação for WhatsApp, abrir o WhatsApp com a mensagem
       if (novaInteracao.tipo === "whatsapp" && lead.telefone) {
         abrirWhatsApp(lead.telefone, novaInteracao.descricao);
       }
 
-      // Limpar o formulário
       setNovaInteracao({
         tipo: "mensagem",
         descricao: "",
@@ -356,12 +347,10 @@ export function LeadFormModal({
     }
   };
 
-  // Função para excluir uma interação
-  const excluirInteracao = async (interacaoId: string | number) => {
+  const excluirInteracao = async (interacaoId: string) => {
     if (!interacaoId) return;
     
     try {
-      // Verificar o status da interação antes de excluir
       const interacaoParaExcluir = interacoes.find(item => item.id === interacaoId);
       if (interacaoParaExcluir && interacaoParaExcluir.status !== "Aberto") {
         toast.error("Não é possível excluir", {
@@ -377,57 +366,50 @@ export function LeadFormModal({
       
       if (error) throw error;
       
-      // Atualizar a lista local
       setInteracoes(prev => prev.filter(item => item.id !== interacaoId));
       
       toast.success("Interação excluída com sucesso");
       
     } catch (error) {
       console.error('Erro ao excluir interação:', error);
-      toast.error("Erro ao excluir", {
-        description: "Ocorreu um erro ao excluir a interação."
-      });
+      toast.error("Erro ao excluir interação");
     }
   };
 
-  // Função para confirmar a edição da interação
   const confirmarEdicaoInteracao = async (interacaoEditada: LeadInteracao) => {
-  if (!interacaoEditada) return;
-  
-  try {
-    // Verificar o tipo de dado da data
-    let dataFormatada = interacaoEditada.data;
+    if (!interacaoEditada) return;
     
-    // Se for um objeto Date, formatar para string (formato ISO) antes de enviar para o banco
-    if (interacaoEditada.data instanceof Date) {
-      dataFormatada = format(interacaoEditada.data, "yyyy-MM-dd");
+    try {
+      let dataFormatada = interacaoEditada.data;
+      
+      if (typeof interacaoEditada.data === 'object' && interacaoEditada.data instanceof Date) {
+        dataFormatada = format(interacaoEditada.data, "yyyy-MM-dd");
+      }
+      
+      const { error } = await supabase
+        .from('leads_interacoes')
+        .update({
+          tipo: interacaoEditada.tipo,
+          descricao: interacaoEditada.descricao,
+          data: dataFormatada,
+          responsavel_id: interacaoEditada.responsavelId,
+          status: interacaoEditada.status || 'Aberto'
+        })
+        .eq('id', interacaoEditada.id);
+      
+      if (error) throw error;
+      
+      setInteracoes(prev => prev.map(item => 
+        item.id === interacaoEditada.id ? {
+          ...interacaoEditada,
+          responsavelNome: usuarios.find(u => u.id === interacaoEditada.responsavelId)?.nome || 'Desconhecido'
+        } : item
+      ));
+      
+    } catch (error) {
+      console.error('Erro ao atualizar interação:', error);
     }
-    
-    const { error } = await supabase
-      .from('leads_interacoes')
-      .update({
-        tipo: interacaoEditada.tipo,
-        descricao: interacaoEditada.descricao,
-        data: dataFormatada,
-        responsavel_id: interacaoEditada.responsavelId,
-        status: interacaoEditada.status || 'Aberto'
-      })
-      .eq('id', interacaoEditada.id);
-    
-    if (error) throw error;
-    
-    // Atualizar a lista local
-    setInteracoes(prev => prev.map(item => 
-      item.id === interacaoEditada.id ? {
-        ...interacaoEditada,
-        responsavelNome: usuarios.find(u => u.id === interacaoEditada.responsavelId)?.nome || 'Desconhecido'
-      } : item
-    ));
-    
-  } catch (error) {
-    console.error('Erro ao atualizar interação:', error);
-  }
-};
+  };
 
   // Filtrar apenas origens ativas
   const origensAtivas = origens.filter(origem => origem.status === "ativo");

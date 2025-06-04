@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -159,7 +158,7 @@ export default function LeadsPage() {
     setEditingLead(null);
   };
 
-  const handleSubmit = async (leadData: Lead) => {
+  const handleConfirm = async (leadData: Lead) => {
     if (!currentCompany) {
       toast.error("Nenhuma empresa selecionada");
       return;
@@ -167,7 +166,6 @@ export default function LeadsPage() {
 
     try {
       if (editingLead) {
-        // Atualizar lead existente
         const { error } = await supabase
           .from('leads')
           .update({
@@ -188,7 +186,6 @@ export default function LeadsPage() {
         if (error) throw error;
         toast.success("Lead atualizado com sucesso!");
       } else {
-        // Criar novo lead
         const { error } = await supabase
           .from('leads')
           .insert({
@@ -299,7 +296,7 @@ export default function LeadsPage() {
       <LeadFormModal
         open={isModalOpen}
         onClose={handleCloseModal}
-        onSubmit={handleSubmit}
+        onConfirm={handleConfirm}
         lead={editingLead}
         funis={funis}
         etapas={etapas}

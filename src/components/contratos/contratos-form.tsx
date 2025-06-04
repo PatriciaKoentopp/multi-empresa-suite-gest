@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,7 +40,7 @@ interface ContratosFormProps {
 
 export function ContratosForm({ onSubmit, onCancel, initialData, isLoading = false }: ContratosFormProps) {
   const { currentCompany } = useCompany();
-  const { data: favorecidos = [], isLoading: loadingFavorecidos } = useFavorecidos();
+  const { favorecidos, isLoading: loadingFavorecidos } = useFavorecidos();
 
   // Buscar serviços ativos
   const { data: servicos = [], isLoading: loadingServicos } = useQuery({
