@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -326,7 +327,7 @@ export function LeadFormModal({
         setInteracoes(prev => [novaInteracaoCompleta, ...prev]);
       }
 
-      // Corrigir a comparação - só abre WhatsApp se o tipo for "whatsapp"
+      // Só abre WhatsApp se o tipo for "whatsapp"
       if (novaInteracao.tipo === "whatsapp" && lead.telefone) {
         abrirWhatsApp(lead.telefone, novaInteracao.descricao);
       }
@@ -379,7 +380,7 @@ export function LeadFormModal({
       let dataFormatada = interacaoEditada.data;
       
       // Corrigir a verificação do tipo Date
-      if (interacaoEditada.data instanceof Date) {
+      if (typeof interacaoEditada.data === 'object' && interacaoEditada.data instanceof Date) {
         dataFormatada = format(interacaoEditada.data, "yyyy-MM-dd");
       }
       

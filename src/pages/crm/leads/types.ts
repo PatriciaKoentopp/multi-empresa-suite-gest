@@ -12,28 +12,6 @@ export interface LeadInteracao {
   leadEmpresa?: string;
 }
 
-export interface Lead {
-  id: string;
-  nome: string;
-  empresa?: string; // Campo opcional
-  email?: string;
-  telefone?: string;
-  etapaId: string;
-  funilId?: string;
-  valor?: number;
-  origemId?: string;
-  dataCriacao: string;
-  ultimoContato?: string;
-  responsavelId?: string;
-  produto?: string;
-  status: "ativo" | "inativo" | "fechado";
-  origemNome?: string;
-  responsavelNome?: string;
-  favorecido_id?: string;
-  produto_id?: string;
-  servico_id?: string;
-}
-
 export interface EtapaFunil {
   id: string;
   nome: string;
@@ -41,3 +19,6 @@ export interface EtapaFunil {
   ordem: number;
   funil_id?: string;
 }
+
+// Usando a interface Lead do types/index.ts
+export type { Lead } from "@/types";

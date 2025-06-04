@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,8 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
-import { Funil, Origem, Usuario, MotivoPerda } from "@/types";
-import { Lead, EtapaFunil } from "./types"; // Usar interface local
+import { Funil, Origem, Usuario, MotivoPerda, Lead } from "@/types";
+import { EtapaFunil } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
@@ -50,8 +51,7 @@ export default function LeadsPage() {
           id, nome, empresa, email, telefone, etapa_id, funil_id, valor, origem_id,
           data_criacao, ultimo_contato, responsavel_id, produto, status,
           favorecido_id, produto_id, servico_id,
-          origens ( nome ),
-          usuarios ( nome )
+          origens ( nome )
         `)
         .eq('empresa_id', currentCompany.id);
 
@@ -73,7 +73,7 @@ export default function LeadsPage() {
         produto: lead.produto,
         status: lead.status,
         origemNome: lead.origens?.nome || "Desconhecida",
-        responsavelNome: lead.usuarios?.nome || "Não atribuído",
+        responsavelNome: "Não atribuído",
         favorecido_id: lead.favorecido_id,
         produto_id: lead.produto_id,
         servico_id: lead.servico_id,

@@ -186,6 +186,22 @@ export interface Company {
   pais?: string;
   created_at: string;
   updated_at: string;
+  // Aliases para compatibilidade
+  razaoSocial?: string;
+  nomeFantasia?: string;
+  inscricaoEstadual?: string;
+  inscricaoMunicipal?: string;
+  regimeTributacao?: string;
+  endereco?: {
+    cep?: string;
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    cidade?: string;
+    estado?: string;
+    pais?: string;
+  };
 }
 
 export interface Orcamento {
@@ -239,16 +255,19 @@ export interface Lead {
   email?: string;
   telefone?: string;
   etapaId: string;
-  funilId: string;
+  funilId?: string;
   valor?: number;
   origemId?: string;
   dataCriacao: string;
   ultimoContato?: string;
   responsavelId?: string;
   produto?: string;
-  status: string;
+  status: "ativo" | "inativo" | "fechado";
   origemNome?: string;
   responsavelNome?: string;
+  favorecido_id?: string;
+  produto_id?: string;
+  servico_id?: string;
 }
 
 export interface LeadInteracao {
