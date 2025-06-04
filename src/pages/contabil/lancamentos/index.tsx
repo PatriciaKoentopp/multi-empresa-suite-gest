@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -150,7 +151,7 @@ export default function LancamentosPage() {
     
     return lancamentos.filter(l => {
       // Filtrar por conta
-      const isConta = contaId === "todos" || l.conta === contaId;
+      const isConta = contaId === "todos" || l.conta_debito_id === contaId || l.conta_credito_id === contaId;
 
       // Filtrar por tipo de lançamento
       const tipoLancamentoOk = tipoLancamentoFiltro === "todos" || l.tipo_lancamento === tipoLancamentoFiltro;

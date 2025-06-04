@@ -1,41 +1,9 @@
 
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
-
-interface ContaContabil {
-  id: string;
-  codigo: string;
-  descricao: string;
-  tipo: string;
-  categoria: string;
-  considerar_dre: boolean;
-  classificacao_dre: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  empresa_id: string;
-}
-
-interface LancamentoContabil {
-  id: string;
-  data: string;
-  conta_debito_id: string;
-  conta_credito_id: string;
-  valor: number;
-  historico: string;
-  created_at: string;
-  updated_at: string;
-  empresa_id: string;
-  tipo_lancamento?: string;
-  conta?: string;
-  conta_nome?: string;
-  conta_codigo?: string;
-  favorecido?: string;
-  tipo?: "debito" | "credito";
-  saldo?: number;
-}
+import { ContaContabil, LancamentoContabil } from "@/types/lancamentos-contabeis";
 
 export const useLancamentosContabeis = () => {
   const { toast } = useToast();
@@ -61,8 +29,8 @@ export const useLancamentosContabeis = () => {
         id: conta.id,
         codigo: conta.codigo,
         descricao: conta.descricao,
-        tipo: conta.tipo,
-        categoria: conta.categoria,
+        tipo: conta.tipo as "ativo" | "passivo" | "receita" | "despesa" | "patrimonio",
+        categoria: conta.categoria as "título" | "movimentação",
         considerar_dre: conta.considerar_dre || false,
         classificacao_dre: conta.classificacao_dre || 'nao_classificado',
         status: conta.status,
@@ -104,22 +72,35 @@ export const useLancamentosContabeis = () => {
 
       if (error) throw error;
 
-      const lancamentosFormatados: LancamentoContabil[] = (lancamentosData || []).map(lancamento => ({
-        id: lancamento.id,
-        data: lancamento.data,
-        conta_debito_id: lancamento.conta_debito_id,
-        conta_credito_id: lancamento.conta_credito_id,
-        valor: Number(lancamento.valor),
-        historico: lancamento.historico,
-        created_at: lancamento.created_at,
-        updated_at: lancamento.updated_at,
-        empresa_id: lancamento.empresa_id,
-        tipo_lancamento: 'principal',
-        conta_codigo: '1.1.01',
-        conta_nome: 'Caixa',
-        tipo: 'debito',
-        saldo: 0
-      }));
+      // Buscar dados das contas para enriquecer os lançamentos
+      const { data: contasData } = await supabase
+        .from('plano_contas')
+        .select('id, codigo, descricao')
+        .eq('empresa_id', currentCompany.id);
+
+      const contasMap = new Map(contasData?.map(conta => [conta.id, conta]) || []);
+
+      const lancamentosFormatados: LancamentoContabil[] = (lancamentosData || []).map(lancamento => {
+        const contaDebito = contasMap.get(lancamento.conta_debito_id);
+        const contaCredito = contasMap.get(lancamento.conta_credito_id);
+
+        return {
+          id: lancamento.id,
+          data: lancamento.data,
+          conta_debito_id: lancamento.conta_debito_id,
+          conta_credito_id: lancamento.conta_credito_id,
+          valor: Number(lancamento.valor),
+          historico: lancamento.historico,
+          created_at: lancamento.created_at,
+          updated_at: lancamento.updated_at,
+          empresa_id: lancamento.empresa_id,
+          tipo_lancamento: 'principal',
+          conta_codigo: contaDebito?.codigo || '',
+          conta_nome: contaDebito?.descricao || '',
+          tipo: 'debito',
+          saldo: 0
+        };
+      });
 
       setLancamentos(lancamentosFormatados);
     } catch (error) {
