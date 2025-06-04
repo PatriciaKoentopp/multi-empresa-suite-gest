@@ -4,25 +4,75 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, X } from "lucide-react";
-import { useDashboardCards } from "@/hooks/useDashboardCards";
-
-interface Alert {
-  id: string;
-  type: "warning" | "info" | "error";
-  message: string;
-  action?: string;
-}
+import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
+import { LeadInteracao } from "@/pages/crm/leads/types";
 
 interface AlertsSectionProps {
-  alerts: Alert[];
+  parcelasVencidas: ContaReceber[];
+  parcelasHoje: ContaReceber[];
+  interacoesPendentes: LeadInteracao[];
+  isLoading: boolean;
 }
 
-export const AlertsSection = ({ alerts }: AlertsSectionProps) => {
-  const { isCardVisible } = useDashboardCards('dashboard');
+export const AlertsSection = ({ 
+  parcelasVencidas, 
+  parcelasHoje, 
+  interacoesPendentes, 
+  isLoading 
+}: AlertsSectionProps) => {
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
 
-  if (!isCardVisible('alerts') || !alerts || alerts.length === 0) {
-    return null;
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Alertas do Sistema</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-muted-foreground py-4">
+            Carregando alertas...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Criar alertas baseado nos dados
+  const alerts: {
+    id: string;
+    type: "warning" | "info" | "error";
+    message: string;
+    action?: string;
+  }[] = [];
+
+  // Alertas de parcelas vencidas
+  if (parcelasVencidas && parcelasVencidas.length > 0) {
+    alerts.push({
+      id: "parcelas-vencidas",
+      type: "error",
+      message: `${parcelasVencidas.length} conta(s) em atraso`,
+      action: "Verifique as contas a receber e a pagar vencidas"
+    });
+  }
+
+  // Alertas de parcelas que vencem hoje
+  if (parcelasHoje && parcelasHoje.length > 0) {
+    alerts.push({
+      id: "parcelas-hoje",
+      type: "warning",
+      message: `${parcelasHoje.length} conta(s) vencem hoje`,
+      action: "Providencie o pagamento das contas que vencem hoje"
+    });
+  }
+
+  // Alertas de interações pendentes
+  if (interacoesPendentes && interacoesPendentes.length > 0) {
+    alerts.push({
+      id: "interacoes-pendentes",
+      type: "info",
+      message: `${interacoesPendentes.length} interação(ões) de leads pendente(s)`,
+      action: "Verifique as interações de leads que precisam de atenção"
+    });
   }
 
   const visibleAlerts = alerts.filter(alert => !dismissedAlerts.includes(alert.id));
@@ -53,8 +103,20 @@ export const AlertsSection = ({ alerts }: AlertsSectionProps) => {
     }
   };
 
+  // Se não há alertas, mostrar mensagem
   if (visibleAlerts.length === 0) {
-    return null;
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Alertas do Sistema</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-muted-foreground py-4">
+            Nenhum alerta no momento
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
