@@ -24,7 +24,7 @@ interface InteracoesTabProps {
   handleInteracaoSelectChange: (name: string, value: string) => void;
   handleInteracaoDataChange: (date: Date) => void;
   adicionarInteracao: () => void;
-  excluirInteracao?: (id: string | number) => void;
+  excluirInteracao?: (id: string) => void;
   confirmarEdicaoInteracao?: (interacao: LeadInteracao) => void;
   vendedoresAtivos: Usuario[];
   getNomeResponsavel: (id: string) => string;
@@ -87,7 +87,7 @@ export function InteracoesTab({
 
   const handleInteracaoEditDateChange = (date: Date) => {
     if (!interacaoParaEditar) return;
-    setInteracaoParaEditar(prev => prev ? { ...prev, data: date } : null);
+    setInteracaoParaEditar(prev => prev ? { ...prev, data: date.toISOString().split('T')[0] } : null);
   };
 
   const handleSalvarEdicao = () => {

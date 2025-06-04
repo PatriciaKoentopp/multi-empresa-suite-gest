@@ -10,6 +10,7 @@ export interface ContaContabil {
   status: string;
   created_at: string;
   updated_at: string;
+  empresa_id: string;
 }
 
 export interface LancamentoContabil {

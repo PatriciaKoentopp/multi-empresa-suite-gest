@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ export default function LeadsPage() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const { currentCompany } = useCompany();
 
-  const { data: favorecidos } = useFavorecidos();
+  const favorecidosQuery = useFavorecidos();
 
   useEffect(() => {
     if (currentCompany) {
@@ -44,8 +45,8 @@ export default function LeadsPage() {
       const { data, error } = await supabase
         .from('leads')
         .select(`
-          id, nome, empresa, email, telefone, etapaId, funilId, valor, origemId,
-          dataCriacao, ultimoContato, responsavelId, produto, status,
+          id, nome, empresa, email, telefone, etapa_id, funil_id, valor, origem_id,
+          data_criacao, ultimo_contato, responsavel_id, produto, status,
           origens ( nome ),
           usuarios ( nome )
         `)
@@ -59,13 +60,13 @@ export default function LeadsPage() {
         empresa: lead.empresa,
         email: lead.email,
         telefone: lead.telefone,
-        etapaId: lead.etapaId,
-        funilId: lead.funilId,
+        etapaId: lead.etapa_id,
+        funilId: lead.funil_id,
         valor: lead.valor,
-        origemId: lead.origemId,
-        dataCriacao: lead.dataCriacao,
-        ultimoContato: lead.ultimoContato,
-        responsavelId: lead.responsavelId,
+        origemId: lead.origem_id,
+        dataCriacao: lead.data_criacao,
+        ultimoContato: lead.ultimo_contato,
+        responsavelId: lead.responsavel_id,
         produto: lead.produto,
         status: lead.status,
         origemNome: lead.origens?.nome || "Desconhecida",
@@ -89,7 +90,6 @@ export default function LeadsPage() {
         .eq('empresa_id', currentCompany.id);
 
       if (error) throw error;
-      // Type assertion para corrigir o problema de tipos
       setFunis((data as Funil[]) || []);
     } catch (error) {
       console.error('Erro ao carregar funis:', error);
@@ -102,12 +102,10 @@ export default function LeadsPage() {
 
     try {
       const { data, error } = await supabase
-        .from('etapas_funil')
-        .select('*')
-        .eq('empresa_id', currentCompany.id);
+        .from('funil_etapas')
+        .select('*');
 
       if (error) throw error;
-      // Type assertion para corrigir o problema de tipos
       setEtapas((data as EtapaFunil[]) || []);
     } catch (error) {
       console.error('Erro ao carregar etapas:', error);
@@ -126,7 +124,6 @@ export default function LeadsPage() {
         .eq('status', 'ativo');
 
       if (error) throw error;
-      // Type assertion para corrigir o problema de tipos
       setOrigens((data as Origem[]) || []);
     } catch (error) {
       console.error('Erro ao carregar origens:', error);
@@ -145,7 +142,6 @@ export default function LeadsPage() {
         .eq('status', 'ativo');
 
       if (error) throw error;
-      // Type assertion para corrigir o problema de tipos
       setUsuarios((data as Usuario[]) || []);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
@@ -179,11 +175,11 @@ export default function LeadsPage() {
             empresa: leadData.empresa,
             email: leadData.email,
             telefone: leadData.telefone,
-            etapaId: leadData.etapaId,
-            funilId: leadData.funilId,
+            etapa_id: leadData.etapaId,
+            funil_id: leadData.funilId,
             valor: leadData.valor,
-            origemId: leadData.origemId,
-            responsavelId: leadData.responsavelId,
+            origem_id: leadData.origemId,
+            responsavel_id: leadData.responsavelId,
             produto: leadData.produto,
             status: leadData.status,
           })
@@ -196,10 +192,20 @@ export default function LeadsPage() {
         const { error } = await supabase
           .from('leads')
           .insert({
-            ...leadData,
+            nome: leadData.nome,
+            empresa: leadData.empresa,
+            email: leadData.email,
+            telefone: leadData.telefone,
+            etapa_id: leadData.etapaId,
+            funil_id: leadData.funilId,
+            valor: leadData.valor,
+            origem_id: leadData.origemId,
+            responsavel_id: leadData.responsavelId,
+            produto: leadData.produto,
+            status: leadData.status,
             empresa_id: currentCompany.id,
-            dataCriacao: new Date().toISOString(),
-            ultimoContato: new Date().toISOString()
+            data_criacao: new Date().toISOString().split('T')[0],
+            ultimo_contato: new Date().toISOString().split('T')[0]
           });
 
         if (error) throw error;
@@ -219,7 +225,7 @@ export default function LeadsPage() {
 
   const leadsFiltrados = leads.filter(lead => {
     const searchRegex = new RegExp(searchTerm, 'i');
-    const searchMatch = searchRegex.test(lead.nome) || searchRegex.test(lead.empresa) || searchRegex.test(lead.email);
+    const searchMatch = searchRegex.test(lead.nome) || searchRegex.test(lead.empresa || '') || searchRegex.test(lead.email || '');
     const funilMatch = !funilFilter || lead.funilId === funilFilter;
     const etapaMatch = !etapaFilter || lead.etapaId === etapaFilter;
 

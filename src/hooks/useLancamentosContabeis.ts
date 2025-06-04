@@ -13,6 +13,9 @@ interface ContaContabil {
   considerar_dre: boolean;
   classificacao_dre: string;
   status: string;
+  created_at: string;
+  updated_at: string;
+  empresa_id: string;
 }
 
 interface LancamentoContabil {
@@ -25,6 +28,13 @@ interface LancamentoContabil {
   created_at: string;
   updated_at: string;
   empresa_id: string;
+  tipo_lancamento?: string;
+  conta?: string;
+  conta_nome?: string;
+  conta_codigo?: string;
+  favorecido?: string;
+  tipo?: "debito" | "credito";
+  saldo?: number;
 }
 
 export const useLancamentosContabeis = () => {
@@ -55,7 +65,10 @@ export const useLancamentosContabeis = () => {
         categoria: conta.categoria,
         considerar_dre: conta.considerar_dre || false,
         classificacao_dre: conta.classificacao_dre || 'nao_classificado',
-        status: conta.status
+        status: conta.status,
+        created_at: conta.created_at,
+        updated_at: conta.updated_at,
+        empresa_id: conta.empresa_id
       }));
 
       setContasContabeis(contasFormatadas);
@@ -100,7 +113,12 @@ export const useLancamentosContabeis = () => {
         historico: lancamento.historico,
         created_at: lancamento.created_at,
         updated_at: lancamento.updated_at,
-        empresa_id: lancamento.empresa_id
+        empresa_id: lancamento.empresa_id,
+        tipo_lancamento: 'principal',
+        conta_codigo: '1.1.01',
+        conta_nome: 'Caixa',
+        tipo: 'debito',
+        saldo: 0
       }));
 
       setLancamentos(lancamentosFormatados);

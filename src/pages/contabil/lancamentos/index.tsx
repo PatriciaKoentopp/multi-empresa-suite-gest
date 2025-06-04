@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import LancarDiarioModal from "./LancarDiarioModal";
 import { useLancamentosContabeis } from "@/hooks/useLancamentosContabeis";
-import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { usePdfLancamentos } from "@/hooks/usePdfLancamentos";
 
@@ -51,14 +50,14 @@ export default function LancamentosPage() {
   
   const {
     lancamentos,
-    contasContabeis: planosContas,
-    fetchLancamentos: carregarDados,
-    criarLancamento: adicionarLancamento
+    contasContabeis,
+    fetchLancamentos,
+    criarLancamento
   } = useLancamentosContabeis();
   
   console.log("📊 LancamentosPage - Estados:", {
     lancamentosCount: lancamentos?.length || 0,
-    planosContasCount: planosContas?.length || 0
+    contasContabeisCount: contasContabeis?.length || 0
   });
   
   const { gerarPdfLancamentos } = usePdfLancamentos();
@@ -169,8 +168,6 @@ export default function LancamentosPage() {
           // Se for uma data ISO, converter para Date
           dataLanc = new Date(l.data);
         }
-      } else if (l.data instanceof Date) {
-        dataLanc = l.data;
       }
 
       // Filtrar por data
@@ -210,7 +207,7 @@ export default function LancamentosPage() {
     valor: number;
   }) {
     console.log("➕ LancamentosPage - Adicionando novo lançamento:", novo);
-    adicionarLancamento({
+    criarLancamento({
       data: novo.data,
       conta_debito_id: novo.debito,
       conta_credito_id: novo.credito,
@@ -234,8 +231,8 @@ export default function LancamentosPage() {
   // Função para atualizar dados
   function handleAtualizarDados() {
     console.log("🔄 LancamentosPage - Atualizando dados manualmente");
-    if (carregarDados) {
-      carregarDados();
+    if (fetchLancamentos) {
+      fetchLancamentos();
     }
   }
 
@@ -258,7 +255,7 @@ export default function LancamentosPage() {
   function handleGerarPdf() {
     console.log("📄 LancamentosPage - Gerando PDF");
     const contaSelecionada = contaId !== "todos" 
-      ? planosContas.find(conta => conta.id === contaId)
+      ? contasContabeis.find(conta => conta.id === contaId)
       : undefined;
 
     const tipoFiltro = tipoLancamentoFiltro !== "todos" ? tipoLancamentoFiltro : undefined;
@@ -290,7 +287,7 @@ export default function LancamentosPage() {
         open={novoModalOpen} 
         onClose={() => setNovoModalOpen(false)} 
         onSave={handleNovoLancamento} 
-        contas={planosContas} 
+        contas={contasContabeis} 
         contaInicalId={contaId !== "todos" ? contaId : ""} 
       />
       
@@ -318,7 +315,7 @@ export default function LancamentosPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-white border max-h-[400px] overflow-y-auto">
                   <SelectItem value="todos">Todas as Contas</SelectItem>
-                  {planosContas.map(cc => (
+                  {contasContabeis.map(cc => (
                     <SelectItem key={cc.id} value={cc.id}>
                       {cc.codigo} - {cc.descricao}
                     </SelectItem>
@@ -486,12 +483,6 @@ export default function LancamentosPage() {
                           const [ano, mes, dia] = anoMesDia.split('-');
                           dataExibicao = `${dia}/${mes}/${ano}`;
                         }
-                      } else if (lanc.data instanceof Date) {
-                        // Convertendo Date para formato brasileiro sem ajuste de timezone
-                        const dia = String(lanc.data.getDate()).padStart(2, '0');
-                        const mes = String(lanc.data.getMonth() + 1).padStart(2, '0');
-                        const ano = lanc.data.getFullYear();
-                        dataExibicao = `${dia}/${mes}/${ano}`;
                       }
 
                       return (

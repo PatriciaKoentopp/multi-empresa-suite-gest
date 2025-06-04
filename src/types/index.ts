@@ -168,8 +168,22 @@ export interface Company {
   razao_social: string;
   nome_fantasia: string;
   cnpj: string;
+  inscricao_estadual?: string;
+  inscricao_municipal?: string;
   email?: string;
   telefone?: string;
+  site?: string;
+  cnae?: string;
+  regime_tributacao?: string;
+  logo?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
   created_at: string;
   updated_at: string;
 }
