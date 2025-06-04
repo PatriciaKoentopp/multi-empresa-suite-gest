@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format, addMonths } from 'date-fns';
 import { toast } from "@/hooks/use-toast";
@@ -244,7 +245,8 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
         .eq('status', 'ativo');
 
       if (error) throw error;
-      setFavorecidos(data || []);
+      // Fazer type assertion para corrigir o problema de tipos
+      setFavorecidos((data as Favorecido[]) || []);
     } catch (error) {
       console.error('Erro ao carregar favorecidos:', error);
       toast({
@@ -263,7 +265,8 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
         .eq('status', 'ativo');
 
       if (error) throw error;
-      setServicosDisponiveis(data || []);
+      // Fazer type assertion para corrigir o problema de tipos
+      setServicosDisponiveis((data as Servico[]) || []);
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
       toast({
@@ -561,7 +564,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
           .insert({
             empresa_id: currentCompany?.id,
             favorecido_id: favorecidoId,
-            // Remover codigo do INSERT - será gerado automaticamente
+            codigo: codigoVenda, // Incluir o código para resolver o erro
             tipo: 'orcamento', // Tipo fixo como "orcamento"
             data: data ? new Date(data).toISOString() : new Date().toISOString(),
             codigo_projeto: codigoProjeto || null,
