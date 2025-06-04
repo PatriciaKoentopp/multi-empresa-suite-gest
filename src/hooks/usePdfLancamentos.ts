@@ -1,3 +1,4 @@
+
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrency } from '@/lib/utils';
@@ -25,10 +26,10 @@ export const usePdfLancamentos = () => {
   const gerarPdfLancamentos = (
     lancamentos: LancamentoContabil[],
     nomeEmpresa: string,
-    contaSelecionada?: PlanoContas,
-    dataInicial?: Date,
-    dataFinal?: Date,
-    tipoLancamentoFiltro?: string
+    contaSelecionada: PlanoContas,
+    dataInicial: Date,
+    dataFinal: Date,
+    tipoLancamentoFiltro: string
   ) => {
     try {
       // Criar documento PDF em formato landscape

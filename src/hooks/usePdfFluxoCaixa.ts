@@ -1,4 +1,3 @@
-
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrency } from '@/lib/utils';
@@ -28,8 +27,8 @@ export const usePdfFluxoCaixa = () => {
     movimentacoes: FluxoCaixaItem[],
     nomeEmpresa: string,
     contaCorrenteSelecionada: any,
-    dataInicial?: Date,
-    dataFinal?: Date,
+    dataInicial: Date,
+    dataFinal: Date,
     saldoInicial: number,
     favorecidosCache: Record<string, any>,
     documentosCache: Record<string, any>,

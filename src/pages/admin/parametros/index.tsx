@@ -124,7 +124,7 @@ export default function Parametros() {
           </Button>
           <Button 
             onClick={saveChanges} 
-            variant="blue"
+            variant="default"
             disabled={Object.keys(changes).length === 0 || isSaving}
           >
             <Save className="h-4 w-4 mr-2" />
