@@ -114,6 +114,8 @@ export interface Company {
   cidade?: string;
   estado?: string;
   pais?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Servico {
