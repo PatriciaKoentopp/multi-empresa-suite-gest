@@ -12,7 +12,6 @@ import { EtapaFunil } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
-import { useFavorecidos } from "@/hooks/useFavorecidos";
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -27,8 +26,6 @@ export default function LeadsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const { currentCompany } = useCompany();
-
-  const { favorecidos } = useFavorecidos();
 
   useEffect(() => {
     if (currentCompany) {
@@ -195,7 +192,7 @@ export default function LeadsPage() {
           .from('leads')
           .update({
             nome: leadData.nome,
-            empresa: leadData.empresa,
+            empresa: leadData.empresa || "",
             email: leadData.email,
             telefone: leadData.telefone,
             etapa_id: leadData.etapaId,
@@ -218,7 +215,7 @@ export default function LeadsPage() {
           .from('leads')
           .insert({
             nome: leadData.nome,
-            empresa: leadData.empresa,
+            empresa: leadData.empresa || "",
             email: leadData.email,
             telefone: leadData.telefone,
             etapa_id: leadData.etapaId,
