@@ -31,6 +31,6 @@ export interface LancamentoContabil {
   conta_codigo?: string;
   conta_nome?: string;
   favorecido?: string;
-  tipo?: "debito" | "credito";
+  tipo: "debito" | "credito";
   saldo?: number;
 }
