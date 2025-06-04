@@ -107,14 +107,14 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="origemId">Origem</Label>
           <Select 
-            value={formData.origemId || ""} 
-            onValueChange={(value) => handleSelectChange("origemId", value)}
+            value={formData.origemId || "no_origin"} 
+            onValueChange={(value) => handleSelectChange("origemId", value === "no_origin" ? "" : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma origem" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Nenhuma origem</SelectItem>
+              <SelectItem value="no_origin">Nenhuma origem</SelectItem>
               {origensAtivas.map((origem) => (
                 <SelectItem key={origem.id} value={origem.id}>
                   {origem.nome}
@@ -127,14 +127,14 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="responsavelId">Responsável</Label>
           <Select 
-            value={formData.responsavelId || ""} 
-            onValueChange={(value) => handleSelectChange("responsavelId", value)}
+            value={formData.responsavelId || "no_responsible"} 
+            onValueChange={(value) => handleSelectChange("responsavelId", value === "no_responsible" ? "" : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione um responsável" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Nenhum responsável</SelectItem>
+              <SelectItem value="no_responsible">Nenhum responsável</SelectItem>
               {vendedoresAtivos.map((usuario) => (
                 <SelectItem key={usuario.id} value={usuario.id}>
                   {usuario.nome}

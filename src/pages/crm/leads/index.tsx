@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -188,15 +187,15 @@ export default function LeadsPage() {
           .from('leads')
           .update({
             nome: leadData.nome,
-            empresa: leadData.empresa || "",
-            email: leadData.email,
-            telefone: leadData.telefone,
+            empresa: leadData.empresa || null,
+            email: leadData.email || null,
+            telefone: leadData.telefone || null,
             etapa_id: leadData.etapa_id,
-            funil_id: leadData.funil_id,
-            valor: leadData.valor,
-            origem_id: leadData.origem_id,
-            responsavel_id: leadData.responsavel_id,
-            produto: leadData.produto,
+            funil_id: leadData.funil_id || null,
+            valor: leadData.valor || 0,
+            origem_id: leadData.origem_id || null,
+            responsavel_id: leadData.responsavel_id || null,
+            produto: leadData.produto || null,
             status: leadData.status,
           })
           .eq('id', editingLead.id);
@@ -208,15 +207,15 @@ export default function LeadsPage() {
           .from('leads')
           .insert({
             nome: leadData.nome,
-            empresa: leadData.empresa || "",
-            email: leadData.email,
-            telefone: leadData.telefone,
+            empresa: leadData.empresa || null,
+            email: leadData.email || null,
+            telefone: leadData.telefone || null,
             etapa_id: leadData.etapa_id,
-            funil_id: leadData.funil_id,
-            valor: leadData.valor,
-            origem_id: leadData.origem_id,
-            responsavel_id: leadData.responsavel_id,
-            produto: leadData.produto,
+            funil_id: leadData.funil_id || null,
+            valor: leadData.valor || 0,
+            origem_id: leadData.origem_id || null,
+            responsavel_id: leadData.responsavel_id || null,
+            produto: leadData.produto || null,
             status: leadData.status,
             empresa_id: currentCompany.id,
             data_criacao: new Date().toISOString().split('T')[0],
@@ -271,7 +270,10 @@ export default function LeadsPage() {
             </div>
 
             <div>
-              <Select value={funilFilter || "all_funnels"} onValueChange={(value) => setFunilFilter(value === "all_funnels" ? "" : value)}>
+              <Select 
+                value={funilFilter || "all_funnels"} 
+                onValueChange={(value) => setFunilFilter(value === "all_funnels" ? "" : value)}
+              >
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Filtrar por funil..." />
                 </SelectTrigger>
@@ -285,7 +287,10 @@ export default function LeadsPage() {
             </div>
 
             <div>
-              <Select value={etapaFilter || "all_stages"} onValueChange={(value) => setEtapaFilter(value === "all_stages" ? "" : value)}>
+              <Select 
+                value={etapaFilter || "all_stages"} 
+                onValueChange={(value) => setEtapaFilter(value === "all_stages" ? "" : value)}
+              >
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Filtrar por etapa..." />
                 </SelectTrigger>

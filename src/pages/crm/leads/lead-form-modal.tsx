@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -444,17 +443,17 @@ export function LeadFormModal({
         return;
       }
       
-      // Preparar dados para salvar (apenas campos que usamos)
+      // Preparar dados para salvar
       const leadDataToSave = {
         nome: formData.nome,
-        empresa: formData.empresa || "",
-        email: formData.email || "",
-        telefone: formData.telefone || "",
+        empresa: formData.empresa || null,
+        email: formData.email || null,
+        telefone: formData.telefone || null,
         etapa_id: formData.etapaId,
         valor: formData.valor,
         origem_id: formData.origemId || null,
         responsavel_id: formData.responsavelId || null,
-        produto: formData.produto || "",
+        produto: formData.produto || null,
         status: formData.status,
         empresa_id: empresaId
       };
