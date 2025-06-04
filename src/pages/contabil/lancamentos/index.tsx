@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -52,10 +51,9 @@ export default function LancamentosPage() {
   
   const {
     lancamentos,
-    planosContas,
-    carregarDados,
-    adicionarLancamento,
-    excluirLancamento
+    contasContabeis: planosContas,
+    fetchLancamentos: carregarDados,
+    criarLancamento: adicionarLancamento
   } = useLancamentosContabeis();
   
   console.log("📊 LancamentosPage - Estados:", {
@@ -197,10 +195,10 @@ export default function LancamentosPage() {
     }
   }
 
-  // Função para excluir um lançamento
-  function handleDelete(id: string) {
+  // Função para excluir um lançamento (placeholder já que não existe no hook)
+  function excluirLancamento(id: string) {
     console.log("🗑️ LancamentosPage - Excluindo lançamento:", id);
-    excluirLancamento(id);
+    toast.error("Função de exclusão não implementada ainda");
   }
 
   // Função para adicionar um novo lançamento contábil
@@ -212,10 +210,14 @@ export default function LancamentosPage() {
     valor: number;
   }) {
     console.log("➕ LancamentosPage - Adicionando novo lançamento:", novo);
-    adicionarLancamento(novo).then(success => {
-      if (success) {
-        setNovoModalOpen(false);
-      }
+    adicionarLancamento({
+      data: novo.data,
+      conta_debito_id: novo.debito,
+      conta_credito_id: novo.credito,
+      valor: novo.valor,
+      historico: novo.historico
+    }).then(() => {
+      setNovoModalOpen(false);
     });
   }
 

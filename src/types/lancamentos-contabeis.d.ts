@@ -25,4 +25,11 @@ export interface LancamentoContabil {
   movimentacao_id?: string;
   parcela_id?: string;
   tipo_lancamento?: string;
+  // Propriedades adicionais que estão sendo usadas nas páginas
+  conta?: string;
+  conta_nome?: string;
+  conta_codigo?: string;
+  favorecido?: string;
+  tipo?: "debito" | "credito";
+  saldo?: number;
 }
