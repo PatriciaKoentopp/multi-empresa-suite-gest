@@ -380,8 +380,8 @@ export function LeadFormModal({
       let dataFormatada = interacaoEditada.data;
       
       // Verificação corrigida do tipo Date
-      if (interacaoEditada.data && typeof interacaoEditada.data === 'object' && 'getTime' in interacaoEditada.data) {
-        dataFormatada = format(interacaoEditada.data as Date, "yyyy-MM-dd");
+      if (interacaoEditada.data && typeof interacaoEditada.data === 'object' && interacaoEditada.data instanceof Date) {
+        dataFormatada = format(interacaoEditada.data, "yyyy-MM-dd");
       }
       
       const { error } = await supabase

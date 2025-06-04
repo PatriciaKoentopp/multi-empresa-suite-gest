@@ -17,5 +17,5 @@ export interface EtapaFunil {
   nome: string;
   cor: string;
   ordem: number;
-  funil_id?: string;
+  funil_id: string;
 }
