@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Origem, Usuario } from "@/types";
 import { EtapaFunil } from "./types";
+import { FavorecidoSelect } from "@/components/ui/favorecido-select";
 import { useFavorecidos } from "@/hooks/useFavorecidos";
 
 interface LeadDadosTabProps {
@@ -39,7 +40,22 @@ export function LeadDadosTab({
   origensAtivas,
   vendedoresAtivos
 }: LeadDadosTabProps) {
-  const { favorecidos, isLoading: loadingFavorecidos } = useFavorecidos();
+  const { favorecidos } = useFavorecidos();
+
+  const handleFavorecidoChange = (favorecidoId: string) => {
+    handleSelectChange("favorecido_id", favorecidoId);
+    
+    // Se um favorecido foi selecionado, preencher o campo empresa
+    if (favorecidoId) {
+      const favorecidoSelecionado = favorecidos.find(f => f.id === favorecidoId);
+      if (favorecidoSelecionado) {
+        handleSelectChange("empresa", favorecidoSelecionado.nome);
+      }
+    } else {
+      // Se nenhum favorecido selecionado, limpar o campo empresa
+      handleSelectChange("empresa", "");
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -58,35 +74,13 @@ export function LeadDadosTab({
 
         <div className="space-y-2">
           <Label htmlFor="empresa">Empresa</Label>
-          <Select 
-            value={formData.favorecido_id || "no_company"} 
-            onValueChange={(value) => {
-              if (value === "no_company") {
-                handleSelectChange("favorecido_id", "");
-                handleSelectChange("empresa", "");
-              } else {
-                handleSelectChange("favorecido_id", value);
-                // Encontrar o favorecido selecionado e preencher o campo empresa
-                const favorecidoSelecionado = favorecidos.find(f => f.id === value);
-                if (favorecidoSelecionado) {
-                  handleSelectChange("empresa", favorecidoSelecionado.nome);
-                }
-              }
-            }}
-            disabled={loadingFavorecidos}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={loadingFavorecidos ? "Carregando..." : "Selecione uma empresa (opcional)"} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="no_company">Nenhuma empresa</SelectItem>
-              {favorecidos.map((favorecido) => (
-                <SelectItem key={favorecido.id} value={favorecido.id}>
-                  {favorecido.nome} - {favorecido.documento}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <FavorecidoSelect
+            value={formData.favorecido_id}
+            onValueChange={handleFavorecidoChange}
+            placeholder="Selecione uma empresa (opcional)"
+            allowEmpty={true}
+            emptyLabel="Nenhuma empresa"
+          />
         </div>
 
         <div className="space-y-2">
