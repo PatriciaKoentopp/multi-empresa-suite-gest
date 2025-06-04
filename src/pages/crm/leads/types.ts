@@ -4,10 +4,10 @@ export interface LeadInteracao {
   leadId: string;
   tipo: "email" | "ligacao" | "reuniao" | "mensagem" | "whatsapp" | "telegram" | "instagram" | "facebook" | "outro";
   descricao: string;
-  data: string;
+  data: string | Date;
   responsavelId: string;
   responsavelNome?: string;
-  status: string; // Status pode ser "Aberto" ou "Realizado"
+  status: string;
   leadNome?: string;
   leadEmpresa?: string;
 }
