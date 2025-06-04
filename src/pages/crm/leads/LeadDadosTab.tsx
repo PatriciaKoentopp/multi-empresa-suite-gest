@@ -58,7 +58,7 @@ export function LeadDadosTab({
           <Input
             id="empresa"
             name="empresa"
-            value={formData.empresa}
+            value={formData.empresa || ""}
             onChange={handleChange}
             placeholder="Nome da empresa (opcional)"
           />
@@ -70,7 +70,7 @@ export function LeadDadosTab({
             id="email"
             name="email"
             type="email"
-            value={formData.email}
+            value={formData.email || ""}
             onChange={handleChange}
             placeholder="email@exemplo.com"
           />
@@ -81,7 +81,7 @@ export function LeadDadosTab({
           <Input
             id="telefone"
             name="telefone"
-            value={formData.telefone}
+            value={formData.telefone || ""}
             onChange={handleChange}
             placeholder="(11) 99999-9999"
           />
@@ -90,9 +90,9 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="etapaId">Etapa *</Label>
           <Select 
-            value={formData.etapaId || "no_stage"} 
+            value={formData.etapaId || "placeholder_stage"} 
             onValueChange={(value) => {
-              if (value !== "no_stage") {
+              if (value !== "placeholder_stage") {
                 handleSelectChange("etapaId", value);
               }
             }}
@@ -101,7 +101,7 @@ export function LeadDadosTab({
               <SelectValue placeholder="Selecione uma etapa" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="no_stage" disabled>Selecione uma etapa</SelectItem>
+              <SelectItem value="placeholder_stage" disabled>Selecione uma etapa</SelectItem>
               {etapas.map((etapa) => (
                 <SelectItem key={etapa.id} value={etapa.id}>
                   {etapa.nome}
@@ -127,9 +127,9 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="origemId">Origem</Label>
           <Select 
-            value={formData.origemId || "no_origin"} 
+            value={formData.origemId || "placeholder_origin"} 
             onValueChange={(value) => {
-              if (value !== "no_origin") {
+              if (value !== "placeholder_origin") {
                 handleSelectChange("origemId", value);
               }
             }}
@@ -138,7 +138,7 @@ export function LeadDadosTab({
               <SelectValue placeholder="Selecione uma origem" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="no_origin" disabled>Selecione uma origem</SelectItem>
+              <SelectItem value="placeholder_origin" disabled>Selecione uma origem</SelectItem>
               {origensAtivas.map((origem) => (
                 <SelectItem key={origem.id} value={origem.id}>
                   {origem.nome}
@@ -151,9 +151,9 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="responsavelId">Responsável</Label>
           <Select 
-            value={formData.responsavelId || "no_responsible"} 
+            value={formData.responsavelId || "placeholder_responsible"} 
             onValueChange={(value) => {
-              if (value !== "no_responsible") {
+              if (value !== "placeholder_responsible") {
                 handleSelectChange("responsavelId", value);
               }
             }}
@@ -162,7 +162,7 @@ export function LeadDadosTab({
               <SelectValue placeholder="Selecione um responsável" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="no_responsible" disabled>Selecione um responsável</SelectItem>
+              <SelectItem value="placeholder_responsible" disabled>Selecione um responsável</SelectItem>
               {vendedoresAtivos.map((usuario) => (
                 <SelectItem key={usuario.id} value={usuario.id}>
                   {usuario.nome}
@@ -177,7 +177,7 @@ export function LeadDadosTab({
           <Input
             id="produto"
             name="produto"
-            value={formData.produto}
+            value={formData.produto || ""}
             onChange={handleChange}
             placeholder="Produto ou serviço de interesse"
           />
