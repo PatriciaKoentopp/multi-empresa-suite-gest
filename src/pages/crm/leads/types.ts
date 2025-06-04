@@ -20,7 +20,7 @@ export interface EtapaFunil {
   funil_id: string;
 }
 
-// Interface local para o formulário de leads
+// Interface local para o formulário de leads - alinhada com a tabela do Supabase
 export interface LeadFormData {
   nome: string;
   empresa?: string;
