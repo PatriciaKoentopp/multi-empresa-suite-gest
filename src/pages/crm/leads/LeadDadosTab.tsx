@@ -5,8 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Origem, Usuario } from "@/types";
 import { EtapaFunil } from "./types";
-import { FavorecidoSelect } from "@/components/ui/favorecido-select";
-import { useFavorecidos } from "@/hooks/useFavorecidos";
 
 interface LeadDadosTabProps {
   formData: {
@@ -40,23 +38,6 @@ export function LeadDadosTab({
   origensAtivas,
   vendedoresAtivos
 }: LeadDadosTabProps) {
-  const { favorecidos } = useFavorecidos();
-
-  const handleFavorecidoChange = (favorecidoId: string) => {
-    handleSelectChange("favorecido_id", favorecidoId);
-    
-    // Se um favorecido foi selecionado, preencher o campo empresa
-    if (favorecidoId) {
-      const favorecidoSelecionado = favorecidos.find(f => f.id === favorecidoId);
-      if (favorecidoSelecionado) {
-        handleSelectChange("empresa", favorecidoSelecionado.nome);
-      }
-    } else {
-      // Se nenhum favorecido selecionado, limpar o campo empresa
-      handleSelectChange("empresa", "");
-    }
-  };
-
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -74,12 +55,12 @@ export function LeadDadosTab({
 
         <div className="space-y-2">
           <Label htmlFor="empresa">Empresa</Label>
-          <FavorecidoSelect
-            value={formData.favorecido_id}
-            onValueChange={handleFavorecidoChange}
-            placeholder="Selecione uma empresa (opcional)"
-            allowEmpty={true}
-            emptyLabel="Nenhuma empresa"
+          <Input
+            id="empresa"
+            name="empresa"
+            value={formData.empresa}
+            onChange={handleChange}
+            placeholder="Nome da empresa (opcional)"
           />
         </div>
 
