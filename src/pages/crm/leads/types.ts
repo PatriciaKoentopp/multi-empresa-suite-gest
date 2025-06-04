@@ -15,7 +15,7 @@ export interface LeadInteracao {
 export interface Lead {
   id: string;
   nome: string;
-  empresa?: string;
+  empresa?: string; // Campo opcional
   email?: string;
   telefone?: string;
   etapaId: string;

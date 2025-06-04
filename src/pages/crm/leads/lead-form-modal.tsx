@@ -22,7 +22,7 @@ import { InteracoesTab } from "./components/InteracoesTab";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "./utils/leadUtils";
 import { toast } from "sonner";
-import { LeadInteracao, EtapaFunil } from "./types";
+import { LeadInteracao, EtapaFunil, Lead } from "./types";
 import { format } from "date-fns";
 
 import { abrirWhatsApp } from "./utils/whatsappUtils";
@@ -31,7 +31,7 @@ interface LeadFormModalProps {
   open: boolean;
   onClose: () => void;
   onConfirm: (lead: any) => void;
-  lead?: any;
+  lead?: Lead;
   etapas: EtapaFunil[];
   origens: Origem[];
   usuarios: Usuario[];
@@ -264,29 +264,24 @@ export function LeadFormModal({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handler para o campo Produto (aba dados)
   const handleProdutoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     setFormData((prev) => ({ ...prev, produto: value }));
   };
 
-  // Handler para mudanças em inputs EXCETO o campo data
   const handleInteracaoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNovaInteracao(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handler para data
   const handleInteracaoDataChange = (date: Date) => {
     setNovaInteracao(prev => ({ ...prev, data: date }));
   };
 
-  // Handler para seleção no formulário de nova interação
   const handleInteracaoSelectChange = (name: string, value: string) => {
     setNovaInteracao(prev => ({ ...prev, [name]: value }));
   };
 
-  // Adicionar interação ao banco de dados
   const adicionarInteracao = async () => {
     if (!lead?.id || novaInteracao.descricao.trim() === "" || !novaInteracao.responsavelId) {
       return;
@@ -331,6 +326,7 @@ export function LeadFormModal({
         setInteracoes(prev => [novaInteracaoCompleta, ...prev]);
       }
 
+      // Corrigir a comparação - só abre WhatsApp se o tipo for "whatsapp"
       if (novaInteracao.tipo === "whatsapp" && lead.telefone) {
         abrirWhatsApp(lead.telefone, novaInteracao.descricao);
       }
@@ -382,7 +378,8 @@ export function LeadFormModal({
     try {
       let dataFormatada = interacaoEditada.data;
       
-      if (typeof interacaoEditada.data === 'object' && interacaoEditada.data instanceof Date) {
+      // Corrigir a verificação do tipo Date
+      if (interacaoEditada.data instanceof Date) {
         dataFormatada = format(interacaoEditada.data, "yyyy-MM-dd");
       }
       

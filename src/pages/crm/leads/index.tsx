@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
-import { Lead, Funil, EtapaFunil, Origem, Usuario } from "@/types";
+import { Funil, Origem, Usuario, MotivoPerda } from "@/types";
+import { Lead, EtapaFunil } from "./types"; // Usar interface local
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
@@ -18,6 +20,7 @@ export default function LeadsPage() {
   const [etapas, setEtapas] = useState<EtapaFunil[]>([]);
   const [origens, setOrigens] = useState<Origem[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [motivosPerda, setMotivosPerda] = useState<MotivoPerda[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [funilFilter, setFunilFilter] = useState("");
   const [etapaFilter, setEtapaFilter] = useState("");
@@ -25,7 +28,7 @@ export default function LeadsPage() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const { currentCompany } = useCompany();
 
-  const favorecidosQuery = useFavorecidos();
+  const { favorecidos } = useFavorecidos();
 
   useEffect(() => {
     if (currentCompany) {
@@ -34,6 +37,7 @@ export default function LeadsPage() {
       carregarEtapas();
       carregarOrigens();
       carregarUsuarios();
+      carregarMotivosPerda();
     }
   }, [currentCompany]);
 
@@ -46,6 +50,7 @@ export default function LeadsPage() {
         .select(`
           id, nome, empresa, email, telefone, etapa_id, funil_id, valor, origem_id,
           data_criacao, ultimo_contato, responsavel_id, produto, status,
+          favorecido_id, produto_id, servico_id,
           origens ( nome ),
           usuarios ( nome )
         `)
@@ -69,7 +74,10 @@ export default function LeadsPage() {
         produto: lead.produto,
         status: lead.status,
         origemNome: lead.origens?.nome || "Desconhecida",
-        responsavelNome: lead.usuarios?.nome || "Não atribuído"
+        responsavelNome: lead.usuarios?.nome || "Não atribuído",
+        favorecido_id: lead.favorecido_id,
+        produto_id: lead.produto_id,
+        servico_id: lead.servico_id,
       })) : [];
 
       setLeads(leadsComNomes);
@@ -148,6 +156,24 @@ export default function LeadsPage() {
     }
   };
 
+  const carregarMotivosPerda = async () => {
+    if (!currentCompany) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('motivos_perda')
+        .select('*')
+        .eq('empresa_id', currentCompany.id)
+        .eq('status', 'ativo');
+
+      if (error) throw error;
+      setMotivosPerda((data as MotivoPerda[]) || []);
+    } catch (error) {
+      console.error('Erro ao carregar motivos de perda:', error);
+      toast.error('Erro ao carregar motivos de perda');
+    }
+  };
+
   const handleOpenModal = (lead?: Lead) => {
     setEditingLead(lead ? { ...lead } : null);
     setIsModalOpen(true);
@@ -180,6 +206,9 @@ export default function LeadsPage() {
             responsavel_id: leadData.responsavelId,
             produto: leadData.produto,
             status: leadData.status,
+            favorecido_id: leadData.favorecido_id,
+            produto_id: leadData.produto_id,
+            servico_id: leadData.servico_id,
           })
           .eq('id', editingLead.id);
 
@@ -200,6 +229,9 @@ export default function LeadsPage() {
             responsavel_id: leadData.responsavelId,
             produto: leadData.produto,
             status: leadData.status,
+            favorecido_id: leadData.favorecido_id,
+            produto_id: leadData.produto_id,
+            servico_id: leadData.servico_id,
             empresa_id: currentCompany.id,
             data_criacao: new Date().toISOString().split('T')[0],
             ultimo_contato: new Date().toISOString().split('T')[0]
@@ -298,10 +330,10 @@ export default function LeadsPage() {
         onClose={handleCloseModal}
         onConfirm={handleConfirm}
         lead={editingLead}
-        funis={funis}
         etapas={etapas}
         origens={origens}
         usuarios={usuarios}
+        motivosPerda={motivosPerda}
       />
     </div>
   );
