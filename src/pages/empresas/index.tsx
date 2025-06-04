@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useCompany } from "@/contexts/company-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -133,24 +134,24 @@ export default function EmpresasPage() {
     console.log("Current company:", currentCompany);
     if (currentCompany) {
       form.reset({
-        razaoSocial: currentCompany.razaoSocial || currentCompany.razao_social || "",
-        nomeFantasia: currentCompany.nomeFantasia || currentCompany.nome_fantasia || "",
+        razaoSocial: currentCompany.razao_social || "",
+        nomeFantasia: currentCompany.nome_fantasia || "",
         cnpj: currentCompany.cnpj || "",
-        inscricaoEstadual: currentCompany.inscricaoEstadual || currentCompany.inscricao_estadual || "",
-        inscricaoMunicipal: currentCompany.inscricaoMunicipal || currentCompany.inscricao_municipal || "",
+        inscricaoEstadual: currentCompany.inscricao_estadual || "",
+        inscricaoMunicipal: currentCompany.inscricao_municipal || "",
         cnae: currentCompany.cnae || "",
         email: currentCompany.email || "",
         site: currentCompany.site || "",
         telefone: currentCompany.telefone || "",
-        cep: currentCompany.endereco?.cep || currentCompany.cep || "",
-        logradouro: currentCompany.endereco?.logradouro || currentCompany.logradouro || "",
-        numero: currentCompany.endereco?.numero || currentCompany.numero || "",
-        complemento: currentCompany.endereco?.complemento || currentCompany.complemento || "",
-        bairro: currentCompany.endereco?.bairro || currentCompany.bairro || "",
-        cidade: currentCompany.endereco?.cidade || currentCompany.cidade || "",
-        estado: currentCompany.endereco?.estado || currentCompany.estado || "",
-        pais: currentCompany.endereco?.pais || currentCompany.pais || "Brasil",
-        regimeTributacao: (currentCompany.regimeTributacao || currentCompany.regime_tributacao) as any,
+        cep: currentCompany.cep || "",
+        logradouro: currentCompany.logradouro || "",
+        numero: currentCompany.numero || "",
+        complemento: currentCompany.complemento || "",
+        bairro: currentCompany.bairro || "",
+        cidade: currentCompany.cidade || "",
+        estado: currentCompany.estado || "",
+        pais: currentCompany.pais || "Brasil",
+        regimeTributacao: currentCompany.regime_tributacao as any,
         logo: currentCompany.logo || ""
       });
     } else {
@@ -203,25 +204,6 @@ export default function EmpresasPage() {
       pais: values.pais || "Brasil",
       regime_tributacao: values.regimeTributacao,
       logo: values.logo,
-      
-      // Aliases para compatibilidade
-      razaoSocial: values.razaoSocial,
-      nomeFantasia: values.nomeFantasia,
-      inscricaoEstadual: values.inscricaoEstadual,
-      inscricaoMunicipal: values.inscricaoMunicipal,
-      regimeTributacao: values.regimeTributacao,
-      
-      // Objeto endereco para compatibilidade
-      endereco: {
-        cep: values.cep,
-        logradouro: values.logradouro,
-        numero: values.numero,
-        complemento: values.complemento,
-        bairro: values.bairro,
-        cidade: values.cidade,
-        estado: values.estado,
-        pais: values.pais || "Brasil",
-      }
     };
     
     if (criandoEmpresa || !currentCompany) {

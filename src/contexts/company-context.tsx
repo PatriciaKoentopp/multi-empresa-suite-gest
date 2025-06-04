@@ -103,27 +103,6 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           pais: company.pais,
           created_at: company.created_at,
           updated_at: company.updated_at,
-          
-          // Adicionar aliases em camelCase para compatibilidade
-          razaoSocial: company.razao_social,
-          nomeFantasia: company.nome_fantasia,
-          inscricaoEstadual: company.inscricao_estadual,
-          inscricaoMunicipal: company.inscricao_municipal,
-          regimeTributacao: company.regime_tributacao,
-          createdAt: company.created_at,
-          updatedAt: company.updated_at,
-          
-          // Adicionar objeto endereco para compatibilidade
-          endereco: {
-            cep: company.cep,
-            logradouro: company.logradouro,
-            numero: company.numero,
-            complemento: company.complemento,
-            bairro: company.bairro,
-            cidade: company.cidade,
-            estado: company.estado,
-            pais: company.pais,
-          },
         }));
 
         setCompanies(formattedCompanies);
@@ -181,27 +160,6 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           pais: data.pais,
           created_at: data.created_at,
           updated_at: data.updated_at,
-          
-          // Adicionar aliases em camelCase para compatibilidade
-          razaoSocial: data.razao_social,
-          nomeFantasia: data.nome_fantasia,
-          inscricaoEstadual: data.inscricao_estadual,
-          inscricaoMunicipal: data.inscricao_municipal,
-          regimeTributacao: data.regime_tributacao,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-          
-          // Adicionar objeto endereco para compatibilidade
-          endereco: {
-            cep: data.cep,
-            logradouro: data.logradouro,
-            numero: data.numero,
-            complemento: data.complemento,
-            bairro: data.bairro,
-            cidade: data.cidade,
-            estado: data.estado,
-            pais: data.pais,
-          },
         };
 
         // Atualizar o estado com a empresa carregada
