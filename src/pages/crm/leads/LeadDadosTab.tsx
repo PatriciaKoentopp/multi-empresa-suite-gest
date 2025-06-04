@@ -59,13 +59,18 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="empresa">Empresa</Label>
           <Select 
-            value={formData.favorecido_id} 
+            value={formData.favorecido_id || "none"} 
             onValueChange={(value) => {
-              handleSelectChange("favorecido_id", value);
-              // Encontrar o favorecido selecionado e preencher o campo empresa
-              const favorecidoSelecionado = favorecidos.find(f => f.id === value);
-              if (favorecidoSelecionado) {
-                handleSelectChange("empresa", favorecidoSelecionado.nome);
+              if (value === "none") {
+                handleSelectChange("favorecido_id", "");
+                handleSelectChange("empresa", "");
+              } else {
+                handleSelectChange("favorecido_id", value);
+                // Encontrar o favorecido selecionado e preencher o campo empresa
+                const favorecidoSelecionado = favorecidos.find(f => f.id === value);
+                if (favorecidoSelecionado) {
+                  handleSelectChange("empresa", favorecidoSelecionado.nome);
+                }
               }
             }}
             disabled={loadingFavorecidos}
@@ -74,7 +79,7 @@ export function LeadDadosTab({
               <SelectValue placeholder={loadingFavorecidos ? "Carregando..." : "Selecione uma empresa (opcional)"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Nenhuma empresa</SelectItem>
+              <SelectItem value="none">Nenhuma empresa</SelectItem>
               {favorecidos.map((favorecido) => (
                 <SelectItem key={favorecido.id} value={favorecido.id}>
                   {favorecido.nome} - {favorecido.documento}
