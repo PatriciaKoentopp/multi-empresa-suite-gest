@@ -13,80 +13,52 @@ import {
   DropdownMenuPortal,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import { EllipsisVertical, Phone, Mail, Building, Calendar, User, Tag, MoveRight } from "lucide-react";
-import { Origem, Usuario } from "@/types";
-
-interface Lead {
-  id: string;
-  nome: string;
-  empresa: string;
-  email: string;
-  telefone: string;
-  etapaId: string;
-  valor: number;
-  origemId: string;
-  origemNome?: string;
-  dataCriacao: string;
-  ultimoContato: string;
-  responsavelId: string;
-  responsavelNome?: string;
-  produto?: string;
-}
-
-interface EtapaFunil {
-  id: string;
-  nome: string;
-  cor: string;
-  ordem: number;
-}
+import { EllipsisVertical, User } from "lucide-react";
+import { LeadFormData, EtapaFunil } from "./types";
 
 interface LeadCardProps {
-  lead: Lead;
+  lead: LeadFormData;
   etapas: EtapaFunil[];
-  origens: Origem[];
-  usuarios: Usuario[];
   onEdit: () => void;
   onDelete: () => void;
-  onMove: (leadId: string, etapaId: string) => void;
+  onMove?: (leadId: string, etapaId: string) => void;
+  origens?: any[];
+  usuarios?: any[];
 }
 
-export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, onMove }: LeadCardProps) {
+export function LeadCard({ lead, etapas, onEdit, onDelete, onMove, origens = [], usuarios = [] }: LeadCardProps) {
   const etapa = useMemo(
-    () => etapas.find((e) => e.id === lead.etapaId) || etapas[0],
-    [lead.etapaId, etapas]
+    () => etapas.find((e) => e.id === lead.etapa_id) || etapas[0],
+    [lead.etapa_id, etapas]
   );
 
-  // Buscar a origem pelo ID ou usar a origem nome se disponível
   const origem = useMemo(
     () => {
-      if (lead.origemNome) return lead.origemNome;
-      return origens.find((o) => o.id === lead.origemId)?.nome || "Desconhecida";
+      return origens.find((o) => o.id === lead.origem_id)?.nome || "Não informada";
     },
-    [lead.origemId, lead.origemNome, origens]
+    [lead.origem_id, origens]
   );
   
-  // Buscar o responsável pelo ID ou usar a responsável nome se disponível
   const responsavel = useMemo(
     () => {
-      if (lead.responsavelNome) return lead.responsavelNome;
-      return usuarios.find((u) => u.id === lead.responsavelId)?.nome || "Não atribuído";
+      return usuarios.find((u) => u.id === lead.responsavel_id)?.nome || "Não atribuído";
     },
-    [lead.responsavelId, lead.responsavelNome, usuarios]
+    [lead.responsavel_id, usuarios]
   );
 
-  const valorFormatado = lead.valor.toLocaleString('pt-BR', {
+  const valorFormatado = (lead.valor || 0).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL'
   });
 
   return (
     <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-      <div className="h-1" style={{ backgroundColor: etapa?.cor }}></div>
+      <div className="h-1" style={{ backgroundColor: etapa?.cor || '#cccccc' }}></div>
       <CardContent className="p-3">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="font-semibold text-base">{lead.nome}</h3>
-            <p className="text-xs text-muted-foreground">{lead.empresa}</p>
+            <p className="text-xs text-muted-foreground">{lead.empresa || 'Empresa não informada'}</p>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -108,29 +80,6 @@ export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, on
                 Editar
               </DropdownMenuItem>
               
-              <DropdownMenuSeparator />
-
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="flex items-center gap-2">
-                  <MoveRight className="h-3 w-3" />
-                  <span>Mover para...</span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent className="bg-white">
-                    {etapas.filter(e => e.id !== lead.etapaId).map(etapa => (
-                      <DropdownMenuItem 
-                        key={etapa.id} 
-                        onClick={() => onMove(lead.id, etapa.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: etapa.cor }}></div>
-                        <span>{etapa.nome}</span>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
-
               <DropdownMenuSeparator />
               
               <DropdownMenuItem

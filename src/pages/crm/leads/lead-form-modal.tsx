@@ -133,7 +133,6 @@ export function LeadFormModal({
       };
 
       if (lead) {
-        // Atualizar lead existente
         const { data, error } = await supabase
           .from('leads')
           .update(leadToSave)
@@ -145,7 +144,6 @@ export function LeadFormModal({
         toast.success("Lead atualizado com sucesso!");
         onSave(data as LeadFormData);
       } else {
-        // Criar novo lead
         const { data, error } = await supabase
           .from('leads')
           .insert(leadToSave)
@@ -175,11 +173,10 @@ export function LeadFormModal({
 
       if (error) throw error;
       
-      // Converter para LeadInteracao
       const interacoesFormatadas: LeadInteracao[] = (data || []).map(item => ({
         id: item.id,
         leadId: item.lead_id,
-        tipo: item.tipo as any,
+        tipo: item.tipo as LeadInteracao['tipo'],
         descricao: item.descricao,
         data: item.data,
         responsavelId: item.responsavel_id || "",
@@ -195,13 +192,17 @@ export function LeadFormModal({
 
   const handleCreateInteracao = async (interacao: LeadInteracao) => {
     try {
+      const dataFormatada = typeof interacao.data === 'string' 
+        ? interacao.data 
+        : interacao.data.toISOString().split('T')[0];
+
       const { data, error } = await supabase
         .from('leads_interacoes')
         .insert({
           lead_id: interacao.leadId,
           tipo: interacao.tipo,
           descricao: interacao.descricao,
-          data: interacao.data,
+          data: dataFormatada,
           responsavel_id: interacao.responsavelId,
           status: interacao.status
         })
@@ -214,7 +215,7 @@ export function LeadFormModal({
       const novaInteracao: LeadInteracao = {
         id: data.id,
         leadId: data.lead_id,
-        tipo: data.tipo,
+        tipo: data.tipo as LeadInteracao['tipo'],
         descricao: data.descricao,
         data: data.data,
         responsavelId: data.responsavel_id,
@@ -253,7 +254,6 @@ export function LeadFormModal({
     
     window.open(whatsappUrl, '_blank');
 
-    // Registrar interação automática
     if (lead?.id && activeTab === "dados") {
       handleCreateInteracao({
         id: "",
@@ -297,7 +297,7 @@ export function LeadFormModal({
           <TabsContent value="fechamento" className="space-y-2">
             {lead && (
               <LeadFechamentoTab
-                leadData={lead as any}
+                lead={lead as any}
                 motivosPerda={motivosPerda}
                 handleChange={handleChange}
               />
@@ -306,9 +306,21 @@ export function LeadFormModal({
           <TabsContent value="interacoes" className="space-y-2">
             {lead && (
               <InteracoesTab
-                leadId={lead.id!}
+                lead={lead as any}
                 interacoes={interacoes}
-                onCreateInteracao={handleCreateInteracao}
+                carregandoInteracoes={false}
+                novaInteracao={{
+                  tipo: "email",
+                  descricao: "",
+                  data: new Date(),
+                  responsavelId: ""
+                }}
+                handleInteracaoChange={() => {}}
+                handleInteracaoSelectChange={() => {}}
+                handleInteracaoDataChange={() => {}}
+                adicionarInteracao={() => {}}
+                vendedoresAtivos={[]}
+                getNomeResponsavel={() => ""}
               />
             )}
           </TabsContent>

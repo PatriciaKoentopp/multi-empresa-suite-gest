@@ -73,6 +73,7 @@ export default function LeadsPage() {
   const [motivosPerda, setMotivosPerda] = useState<MotivoPerda[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [usuarios, setUsuarios] = useState<any[]>([]);
   const { currentCompany } = useCompany();
   const [etapasSelecionadas, setEtapasSelecionadas] = useState<string[]>([]);
 
@@ -85,6 +86,7 @@ export default function LeadsPage() {
       loadMotivosPerda();
       loadServicos();
       loadProdutos();
+      loadUsuarios();
     }
   }, [currentCompany?.id]);
 
@@ -128,13 +130,12 @@ export default function LeadsPage() {
 
       if (error) throw error;
       
-      // Converter dados para EtapaFunil, garantindo que cor seja obrigatória
       const etapasFormatadas: EtapaFunil[] = (data || [])
         .filter(etapa => etapa.id && etapa.id.trim() !== "")
         .map(etapa => ({
           id: etapa.id,
           nome: etapa.nome,
-          cor: etapa.cor || '#000000', // Garantir que cor sempre tenha valor
+          cor: etapa.cor || '#000000',
           ordem: etapa.ordem,
           funil_id: etapa.funil_id
         }));
@@ -207,6 +208,22 @@ export default function LeadsPage() {
     } catch (error) {
       console.error('Erro ao carregar produtos:', error);
       toast.error('Erro ao carregar produtos');
+    }
+  };
+
+  const loadUsuarios = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .eq('status', 'ativo');
+
+      if (error) throw error;
+      setUsuarios(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+      toast.error('Erro ao carregar usuários');
     }
   };
 
@@ -366,10 +383,12 @@ export default function LeadsPage() {
         {filteredLeads.map(lead => (
           <LeadCard
             key={lead.id}
-            lead={lead as any}
+            lead={lead}
             onEdit={() => handleOpenModal(lead)}
             onDelete={() => handleDeleteLead(lead.id!)}
-            etapas={etapas as any}
+            etapas={etapas}
+            origens={origens}
+            usuarios={usuarios}
           />
         ))}
       </div>
@@ -377,10 +396,10 @@ export default function LeadsPage() {
       <LeadFormModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        lead={editingLead as any}
-        onSave={handleSaveLead as any}
+        lead={editingLead}
+        onSave={handleSaveLead}
         funis={funis}
-        etapas={etapas as any}
+        etapas={etapas}
         origens={origens}
         motivosPerda={motivosPerda}
         favorecidos={[]}
