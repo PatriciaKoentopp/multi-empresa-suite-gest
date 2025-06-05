@@ -44,10 +44,27 @@ export function LeadDadosTab({
     handleNumberChange('valor', value);
   };
 
-  // Filtrar dados para evitar IDs vazios
-  const funisValidos = funis.filter(funil => funil.id && funil.id.trim() !== "");
-  const etapasValidas = etapas.filter(etapa => etapa.id && etapa.id.trim() !== "");
-  const origensValidas = origens.filter(origem => origem.id && origem.id.trim() !== "");
+  // Filtrar dados para garantir que não há valores vazios
+  const funisValidos = funis?.filter(funil => 
+    funil?.id && 
+    typeof funil.id === 'string' && 
+    funil.id.trim() !== "" && 
+    funil.nome
+  ) || [];
+
+  const etapasValidas = etapas?.filter(etapa => 
+    etapa?.id && 
+    typeof etapa.id === 'string' && 
+    etapa.id.trim() !== "" && 
+    etapa.nome
+  ) || [];
+
+  const origensValidas = origens?.filter(origem => 
+    origem?.id && 
+    typeof origem.id === 'string' && 
+    origem.id.trim() !== "" && 
+    origem.nome
+  ) || [];
 
   return (
     <div className="space-y-4">
@@ -165,14 +182,14 @@ export function LeadDadosTab({
         <div className="space-y-2">
           <Label htmlFor="origem_id">Origem</Label>
           <Select 
-            value={formData.origem_id || "no_origin"} 
-            onValueChange={(value) => handleSelectChange("origem_id", value === "no_origin" ? "" : value)}
+            value={formData.origem_id || ""} 
+            onValueChange={(value) => handleSelectChange("origem_id", value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma origem" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="no_origin">Nenhuma origem</SelectItem>
+              <SelectItem value="">Nenhuma origem</SelectItem>
               {origensValidas.map((origem) => (
                 <SelectItem key={origem.id} value={origem.id}>
                   {origem.nome}

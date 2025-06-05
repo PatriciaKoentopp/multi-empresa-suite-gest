@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -114,7 +113,15 @@ export default function LeadsPage() {
         .eq('ativo', true);
 
       if (error) throw error;
-      setFunis((data as Funil[]) || []);
+      
+      // Filtrar funis válidos
+      const funisValidos = (data || []).filter(funil => 
+        funil.id && 
+        typeof funil.id === 'string' && 
+        funil.id.trim() !== ""
+      );
+      
+      setFunis(funisValidos);
     } catch (error) {
       console.error('Erro ao carregar funis:', error);
       toast.error('Erro ao carregar funis');
@@ -130,8 +137,14 @@ export default function LeadsPage() {
 
       if (error) throw error;
       
-      const etapasFormatadas: EtapaFunil[] = (data || [])
-        .filter(etapa => etapa.id && etapa.id.trim() !== "")
+      // Filtrar e mapear etapas válidas
+      const etapasValidas: EtapaFunil[] = (data || [])
+        .filter(etapa => 
+          etapa.id && 
+          typeof etapa.id === 'string' && 
+          etapa.id.trim() !== "" && 
+          etapa.nome
+        )
         .map(etapa => ({
           id: etapa.id,
           nome: etapa.nome,
@@ -140,7 +153,7 @@ export default function LeadsPage() {
           funil_id: etapa.funil_id
         }));
       
-      setEtapas(etapasFormatadas);
+      setEtapas(etapasValidas);
     } catch (error) {
       console.error('Erro ao carregar etapas:', error);
       toast.error('Erro ao carregar etapas');
@@ -156,7 +169,15 @@ export default function LeadsPage() {
         .eq('status', 'ativo');
 
       if (error) throw error;
-      setOrigens((data as Origem[]) || []);
+      
+      // Filtrar origens válidas
+      const origensValidas = (data || []).filter(origem => 
+        origem.id && 
+        typeof origem.id === 'string' && 
+        origem.id.trim() !== ""
+      );
+      
+      setOrigens(origensValidas);
     } catch (error) {
       console.error('Erro ao carregar origens:', error);
       toast.error('Erro ao carregar origens');
@@ -316,6 +337,22 @@ export default function LeadsPage() {
     });
   };
 
+  // Filtrar funis válidos para o Select
+  const funisValidosParaSelect = funis.filter(funil => 
+    funil.id && 
+    typeof funil.id === 'string' && 
+    funil.id.trim() !== "" && 
+    funil.nome
+  );
+
+  // Filtrar etapas válidas para renderização
+  const etapasValidasParaRender = etapasDoFunil.filter(etapa => 
+    etapa.id && 
+    typeof etapa.id === 'string' && 
+    etapa.id.trim() !== "" && 
+    etapa.nome
+  );
+
   return (
     <div className="container mx-auto py-6">
       <div className="flex items-center justify-between mb-4">
@@ -349,7 +386,7 @@ export default function LeadsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os Funis</SelectItem>
-                  {funis.filter(funil => funil.id && funil.id.trim() !== "").map(funil => (
+                  {funisValidosParaSelect.map(funil => (
                     <SelectItem key={funil.id} value={funil.id}>
                       {funil.nome}
                     </SelectItem>
@@ -365,7 +402,7 @@ export default function LeadsPage() {
             <CardTitle>Etapas</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col">
-            {etapasDoFunil.filter(etapa => etapa.id && etapa.id.trim() !== "").map(etapa => (
+            {etapasValidasParaRender.map(etapa => (
               <StageFilterCheckbox
                 key={etapa.id}
                 id={etapa.id}
