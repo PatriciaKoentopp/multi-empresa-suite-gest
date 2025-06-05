@@ -2,9 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -138,9 +135,27 @@ export function LeadFormModal({ isOpen, onClose, lead, onSave }: LeadFormModalPr
     setLoading(true);
 
     try {
+      // Garantir que os campos obrigatórios estão presentes
       const leadData = {
-        ...formData,
-        empresa_id: currentCompany?.id
+        nome: formData.nome,
+        empresa: formData.empresa || null,
+        email: formData.email || null,
+        telefone: formData.telefone || null,
+        etapa_id: formData.etapa_id,
+        funil_id: formData.funil_id,
+        valor: formData.valor || 0,
+        origem_id: formData.origem_id || null,
+        data_criacao: formData.data_criacao || new Date().toISOString().split('T')[0],
+        ultimo_contato: formData.ultimo_contato || null,
+        responsavel_id: formData.responsavel_id || null,
+        produto: formData.produto || null,
+        observacoes: formData.observacoes || null,
+        status: formData.status || 'ativo',
+        empresa_id: currentCompany?.id,
+        favorecido_id: formData.favorecido_id || null,
+        servico_id: formData.servico_id || null,
+        produto_id: formData.produto_id || null,
+        motivo_perda_id: formData.motivo_perda_id || null
       };
 
       if (lead?.id) {
@@ -210,7 +225,7 @@ export function LeadFormModal({ isOpen, onClose, lead, onSave }: LeadFormModalPr
           </TabsContent>
 
           <TabsContent value="interacoes" className="space-y-4">
-            {lead?.id && <InteracoesTab leadId={lead.id} />}
+            {lead?.id && <InteracoesTab lead={lead} />}
           </TabsContent>
         </Tabs>
 

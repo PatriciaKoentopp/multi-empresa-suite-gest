@@ -3,7 +3,6 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Send } from "lucide-react";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { Usuario } from "@/types";
@@ -20,7 +19,7 @@ interface NovaInteracaoFormProps {
   handleInteracaoDataChange: (date: Date) => void;
   adicionarInteracao: () => void;
   vendedoresAtivos: Usuario[];
-  leadTelefone?: string; // Adicionamos o telefone do lead como prop opcional
+  leadTelefone?: string;
 }
 
 export function NovaInteracaoForm({
@@ -32,9 +31,7 @@ export function NovaInteracaoForm({
   vendedoresAtivos,
   leadTelefone
 }: NovaInteracaoFormProps) {
-  // Função para lidar com o registro da interação
   const handleRegistrarInteracao = () => {
-    // Chama a função de adicionar interação passada como prop
     adicionarInteracao();
   };
 
@@ -45,47 +42,42 @@ export function NovaInteracaoForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="interacaoTipo">Tipo de Interação</Label>
-            <Select
+            <select
+              id="interacaoTipo"
               value={novaInteracao.tipo}
-              onValueChange={(value) => handleInteracaoSelectChange("tipo", value)}
+              onChange={(e) => handleInteracaoSelectChange("tipo", e.target.value)}
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white"
             >
-              <SelectTrigger id="interacaoTipo" className="bg-white">
-                <SelectValue placeholder="Selecione o tipo" />
-              </SelectTrigger>
-              <SelectContent className="bg-white z-50">
-                <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="ligacao">Ligação</SelectItem>
-                <SelectItem value="reuniao">Reunião</SelectItem>
-                <SelectItem value="mensagem">Mensagem</SelectItem>
-                <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                <SelectItem value="telegram">Telegram</SelectItem>
-                <SelectItem value="instagram">Direct do Instagram</SelectItem>
-                <SelectItem value="facebook">Messenger do Facebook</SelectItem>
-                <SelectItem value="outro">Outro</SelectItem>
-              </SelectContent>
-            </Select>
+              <option value="">Selecione o tipo</option>
+              <option value="email">Email</option>
+              <option value="ligacao">Ligação</option>
+              <option value="reuniao">Reunião</option>
+              <option value="mensagem">Mensagem</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="telegram">Telegram</option>
+              <option value="instagram">Direct do Instagram</option>
+              <option value="facebook">Messenger do Facebook</option>
+              <option value="outro">Outro</option>
+            </select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="interacaoResponsavel">Responsável</Label>
-            <Select
+            <select
+              id="interacaoResponsavel"
               value={novaInteracao.responsavelId}
-              onValueChange={(value) => handleInteracaoSelectChange("responsavelId", value)}
+              onChange={(e) => handleInteracaoSelectChange("responsavelId", e.target.value)}
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white"
             >
-              <SelectTrigger id="interacaoResponsavel" className="bg-white">
-                <SelectValue placeholder="Selecione o responsável" />
-              </SelectTrigger>
-              <SelectContent className="bg-white z-50">
-                {vendedoresAtivos.map((vendedor) => (
-                  <SelectItem key={vendedor.id} value={vendedor.id}>
-                    {vendedor.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="">Selecione o responsável</option>
+              {vendedoresAtivos.map((vendedor) => (
+                <option key={vendedor.id} value={vendedor.id}>
+                  {vendedor.nome}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        {/* Campo data interação */}
         <div className="space-y-2">
           <Label>Data da Interação</Label>
           <DateInput
@@ -110,8 +102,7 @@ export function NovaInteracaoForm({
         <Button
           type="button"
           onClick={handleRegistrarInteracao}
-          variant="blue"
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
           disabled={novaInteracao.descricao.trim() === "" || !novaInteracao.responsavelId}
         >
           <Send className="mr-2 h-4 w-4" />

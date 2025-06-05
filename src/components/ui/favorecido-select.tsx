@@ -1,6 +1,5 @@
 
 import React from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFavorecidos } from "@/hooks/useFavorecidos";
 
 interface FavorecidoSelectProps {
@@ -22,7 +21,8 @@ export function FavorecidoSelect({
 }: FavorecidoSelectProps) {
   const { favorecidos, isLoading } = useFavorecidos();
 
-  const handleValueChange = (selectedValue: string) => {
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedValue = e.target.value;
     if (selectedValue === "no_company") {
       onValueChange("");
     } else {
@@ -31,24 +31,23 @@ export function FavorecidoSelect({
   };
 
   return (
-    <Select 
-      value={value || "no_company"} 
-      onValueChange={handleValueChange}
+    <select
+      value={value || "no_company"}
+      onChange={handleChange}
       disabled={disabled || isLoading}
+      className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white"
     >
-      <SelectTrigger>
-        <SelectValue placeholder={isLoading ? "Carregando..." : placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {allowEmpty && (
-          <SelectItem value="no_company">{emptyLabel}</SelectItem>
-        )}
-        {favorecidos.map((favorecido) => (
-          <SelectItem key={favorecido.id} value={favorecido.id}>
-            {favorecido.nome} - {favorecido.documento}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      <option value="" disabled>
+        {isLoading ? "Carregando..." : placeholder}
+      </option>
+      {allowEmpty && (
+        <option value="no_company">{emptyLabel}</option>
+      )}
+      {favorecidos.map((favorecido) => (
+        <option key={favorecido.id} value={favorecido.id}>
+          {favorecido.nome} - {favorecido.documento}
+        </option>
+      ))}
+    </select>
   );
 }
