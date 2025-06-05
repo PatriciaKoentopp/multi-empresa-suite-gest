@@ -20,19 +20,25 @@ export interface EtapaFunil {
   funil_id: string;
 }
 
-// Interface local para o formulário de leads - alinhada com a tabela do Supabase
+// Interface para dados do formulário - alinhada com a tabela do Supabase
 export interface LeadFormData {
+  id?: string;
   nome: string;
   empresa?: string;
   email?: string;
   telefone?: string;
-  etapaId: string;
-  funilId?: string;
-  valor: number;
-  origemId?: string;
-  dataCriacao: string;
-  ultimoContato?: string;
-  responsavelId?: string;
+  etapa_id: string;
+  funil_id: string;
+  valor?: number;
+  origem_id?: string;
+  data_criacao: string;
+  ultimo_contato?: string;
+  responsavel_id?: string;
   produto?: string;
+  observacoes?: string;
   status: "ativo" | "inativo" | "fechado";
+  empresa_id: string;
+  favorecido_id?: string;
+  servico_id?: string;
+  produto_id?: string;
 }

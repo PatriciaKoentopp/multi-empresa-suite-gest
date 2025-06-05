@@ -14,41 +14,20 @@ import { InteracoesTab } from "./components/InteracoesTab";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
+import { LeadFormData, EtapaFunil, LeadInteracao } from "./types";
 
 interface LeadFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  lead?: Lead | null;
-  onSave: (lead: Lead) => void;
+  lead?: LeadFormData | null;
+  onSave: (lead: LeadFormData) => void;
   funis: Funil[];
-  etapas: Etapa[];
+  etapas: EtapaFunil[];
   origens: Origem[];
   motivosPerda: MotivoPerda[];
   favorecidos: any[];
   servicos: any[];
   produtos: any[];
-}
-
-interface Lead {
-  id: string;
-  nome: string;
-  empresa?: string;
-  email?: string;
-  telefone?: string;
-  valor?: number;
-  produto?: string;
-  observacoes?: string;
-  etapa_id: string;
-  funil_id: string;
-  origem_id?: string;
-  responsavel_id?: string;
-  data_criacao: string;
-  ultimo_contato?: string;
-  status: string;
-  empresa_id: string;
-  favorecido_id?: string;
-  servico_id?: string;
-  produto_id?: string;
 }
 
 interface Funil {
@@ -57,16 +36,6 @@ interface Funil {
   descricao?: string;
   ativo: boolean;
   empresa_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Etapa {
-  id: string;
-  nome: string;
-  ordem: number;
-  cor?: string;
-  funil_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -89,15 +58,6 @@ interface MotivoPerda {
   updated_at: string;
 }
 
-interface Interacao {
-  id?: string;
-  lead_id: string;
-  tipo: string;
-  descricao: string;
-  data: string;
-  status: string;
-}
-
 export function LeadFormModal({ 
   isOpen, 
   onClose, 
@@ -114,19 +74,26 @@ export function LeadFormModal({
   const { currentCompany } = useCompany();
   const [activeTab, setActiveTab] = useState("dados");
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<Lead>>({
+  const [formData, setFormData] = useState<Partial<LeadFormData>>({
     status: "ativo",
   });
-  const [interacoes, setInteracoes] = useState<Interacao[]>([]);
+  const [interacoes, setInteracoes] = useState<LeadInteracao[]>([]);
 
   useEffect(() => {
     if (lead) {
       setFormData(lead);
-      loadInteracoes(lead.id);
+      loadInteracoes(lead.id!);
     } else {
-      setFormData({ status: "ativo" });
+      setFormData({ 
+        status: "ativo",
+        data_criacao: new Date().toISOString().split('T')[0],
+        etapa_id: "",
+        funil_id: "",
+        empresa_id: currentCompany?.id || "",
+        nome: ""
+      });
     }
-  }, [lead]);
+  }, [lead, currentCompany?.id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -156,8 +123,8 @@ export function LeadFormModal({
 
     setIsLoading(true);
     try {
-      const leadToSave = {
-        ...formData,
+      const leadToSave: LeadFormData = {
+        ...formData as LeadFormData,
         empresa_id: currentCompany.id,
         nome: formData.nome!,
         etapa_id: formData.etapa_id!,
@@ -176,7 +143,7 @@ export function LeadFormModal({
 
         if (error) throw error;
         toast.success("Lead atualizado com sucesso!");
-        onSave(data as Lead);
+        onSave(data as LeadFormData);
       } else {
         // Criar novo lead
         const { data, error } = await supabase
@@ -187,7 +154,7 @@ export function LeadFormModal({
 
         if (error) throw error;
         toast.success("Lead criado com sucesso!");
-        onSave(data as Lead);
+        onSave(data as LeadFormData);
       }
       onClose();
     } catch (error: any) {
@@ -207,27 +174,54 @@ export function LeadFormModal({
         .order('data', { ascending: false });
 
       if (error) throw error;
-      setInteracoes(data || []);
+      
+      // Converter para LeadInteracao
+      const interacoesFormatadas: LeadInteracao[] = (data || []).map(item => ({
+        id: item.id,
+        leadId: item.lead_id,
+        tipo: item.tipo as any,
+        descricao: item.descricao,
+        data: item.data,
+        responsavelId: item.responsavel_id || "",
+        status: item.status
+      }));
+      
+      setInteracoes(interacoesFormatadas);
     } catch (error) {
       console.error('Erro ao carregar interações:', error);
       toast.error('Erro ao carregar interações');
     }
   };
 
-  const handleCreateInteracao = async (interacao: Interacao) => {
+  const handleCreateInteracao = async (interacao: LeadInteracao) => {
     try {
       const { data, error } = await supabase
         .from('leads_interacoes')
         .insert({
-          ...interacao,
-          empresa_id: currentCompany?.id
+          lead_id: interacao.leadId,
+          tipo: interacao.tipo,
+          descricao: interacao.descricao,
+          data: interacao.data,
+          responsavel_id: interacao.responsavelId,
+          status: interacao.status
         })
         .select()
         .single();
 
       if (error) throw error;
       toast.success("Interação criada com sucesso!");
-      setInteracoes(prev => [data, ...prev]);
+      
+      const novaInteracao: LeadInteracao = {
+        id: data.id,
+        leadId: data.lead_id,
+        tipo: data.tipo,
+        descricao: data.descricao,
+        data: data.data,
+        responsavelId: data.responsavel_id,
+        status: data.status
+      };
+      
+      setInteracoes(prev => [novaInteracao, ...prev]);
     } catch (error: any) {
       console.error("Erro ao criar interação:", error);
       toast.error(error.message || "Erro ao criar interação");
@@ -262,11 +256,13 @@ export function LeadFormModal({
     // Registrar interação automática
     if (lead?.id && activeTab === "dados") {
       handleCreateInteracao({
-        lead_id: lead.id,
+        id: "",
+        leadId: lead.id,
         tipo: "whatsapp",
         descricao: `Mensagem enviada via WhatsApp para ${phoneNumber}`,
         data: new Date().toISOString().split('T')[0],
-        status: "Concluído"
+        status: "Concluído",
+        responsavelId: ""
       });
     }
   };
@@ -286,11 +282,11 @@ export function LeadFormModal({
           </TabsList>
           <TabsContent value="dados" className="space-y-2">
             <LeadDadosTab
-              formData={formData}
+              formData={formData as any}
               handleChange={handleChange}
               handleNumberChange={handleNumberChange}
               funis={funis}
-              etapas={etapas}
+              etapas={etapas as any}
               origens={origens}
               favorecidos={favorecidos}
               servicos={servicos}
@@ -301,7 +297,7 @@ export function LeadFormModal({
           <TabsContent value="fechamento" className="space-y-2">
             {lead && (
               <LeadFechamentoTab
-                lead={lead}
+                leadData={lead as any}
                 motivosPerda={motivosPerda}
                 handleChange={handleChange}
               />
@@ -310,7 +306,7 @@ export function LeadFormModal({
           <TabsContent value="interacoes" className="space-y-2">
             {lead && (
               <InteracoesTab
-                leadId={lead.id}
+                leadId={lead.id!}
                 interacoes={interacoes}
                 onCreateInteracao={handleCreateInteracao}
               />

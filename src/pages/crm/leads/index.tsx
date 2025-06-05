@@ -4,7 +4,6 @@ import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,28 +11,7 @@ import { useCompany } from "@/contexts/company-context";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
 import { StageFilterCheckbox } from "@/components/crm/leads/StageFilterCheckbox";
-
-interface Lead {
-  id: string;
-  nome: string;
-  empresa?: string;
-  email?: string;
-  telefone?: string;
-  valor?: number;
-  produto?: string;
-  observacoes?: string;
-  etapa_id: string;
-  funil_id: string;
-  origem_id?: string;
-  responsavel_id?: string;
-  data_criacao: string;
-  ultimo_contato?: string;
-  status: string;
-  empresa_id: string;
-  favorecido_id?: string;
-  servico_id?: string;
-  produto_id?: string;
-}
+import { LeadFormData, EtapaFunil } from "./types";
 
 interface MotivoPerda {
   id: string;
@@ -50,16 +28,6 @@ interface Funil {
   descricao?: string;
   ativo: boolean;
   empresa_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Etapa {
-  id: string;
-  nome: string;
-  ordem: number;
-  cor?: string;
-  funil_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -95,12 +63,12 @@ interface Produto {
 
 export default function LeadsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [leads, setLeads] = useState<LeadFormData[]>([]);
+  const [editingLead, setEditingLead] = useState<LeadFormData | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [funilId, setFunilId] = useState<string>("todos");
   const [funis, setFunis] = useState<Funil[]>([]);
-  const [etapas, setEtapas] = useState<Etapa[]>([]);
+  const [etapas, setEtapas] = useState<EtapaFunil[]>([]);
   const [origens, setOrigens] = useState<Origem[]>([]);
   const [motivosPerda, setMotivosPerda] = useState<MotivoPerda[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
@@ -128,7 +96,7 @@ export default function LeadsPage() {
         .eq('empresa_id', currentCompany?.id);
 
       if (error) throw error;
-      setLeads((data as Lead[]) || []);
+      setLeads((data as LeadFormData[]) || []);
     } catch (error) {
       console.error('Erro ao carregar leads:', error);
       toast.error('Erro ao carregar leads');
@@ -159,7 +127,19 @@ export default function LeadsPage() {
         .order('ordem');
 
       if (error) throw error;
-      setEtapas((data as Etapa[]) || []);
+      
+      // Converter dados para EtapaFunil, garantindo que cor seja obrigatória
+      const etapasFormatadas: EtapaFunil[] = (data || [])
+        .filter(etapa => etapa.id && etapa.id.trim() !== "")
+        .map(etapa => ({
+          id: etapa.id,
+          nome: etapa.nome,
+          cor: etapa.cor || '#000000', // Garantir que cor sempre tenha valor
+          ordem: etapa.ordem,
+          funil_id: etapa.funil_id
+        }));
+      
+      setEtapas(etapasFormatadas);
     } catch (error) {
       console.error('Erro ao carregar etapas:', error);
       toast.error('Erro ao carregar etapas');
@@ -230,7 +210,7 @@ export default function LeadsPage() {
     }
   };
 
-  const handleOpenModal = (lead?: Lead) => {
+  const handleOpenModal = (lead?: LeadFormData) => {
     setEditingLead(lead || null);
     setIsModalOpen(true);
   };
@@ -240,7 +220,7 @@ export default function LeadsPage() {
     setEditingLead(null);
   };
 
-  const handleSaveLead = async (leadData: Lead) => {
+  const handleSaveLead = async (leadData: LeadFormData) => {
     try {
       const { data, error } = editingLead
         ? await supabase
@@ -352,7 +332,7 @@ export default function LeadsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os Funis</SelectItem>
-                  {funis.map(funil => (
+                  {funis.filter(funil => funil.id && funil.id.trim() !== "").map(funil => (
                     <SelectItem key={funil.id} value={funil.id}>
                       {funil.nome}
                     </SelectItem>
@@ -368,12 +348,12 @@ export default function LeadsPage() {
             <CardTitle>Etapas</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col">
-            {etapasDoFunil.map(etapa => (
+            {etapasDoFunil.filter(etapa => etapa.id && etapa.id.trim() !== "").map(etapa => (
               <StageFilterCheckbox
                 key={etapa.id}
                 id={etapa.id}
                 label={etapa.nome}
-                color={etapa.cor || '#000000'}
+                color={etapa.cor}
                 checked={etapasSelecionadas.includes(etapa.id)}
                 onCheckedChange={(checked) => handleEtapaFilterChange(etapa.id, checked)}
               />
@@ -386,10 +366,10 @@ export default function LeadsPage() {
         {filteredLeads.map(lead => (
           <LeadCard
             key={lead.id}
-            lead={lead}
+            lead={lead as any}
             onEdit={() => handleOpenModal(lead)}
-            onDelete={() => handleDeleteLead(lead.id)}
-            etapas={etapas}
+            onDelete={() => handleDeleteLead(lead.id!)}
+            etapas={etapas as any}
           />
         ))}
       </div>
@@ -397,10 +377,10 @@ export default function LeadsPage() {
       <LeadFormModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        lead={editingLead}
-        onSave={handleSaveLead}
+        lead={editingLead as any}
+        onSave={handleSaveLead as any}
         funis={funis}
-        etapas={etapas}
+        etapas={etapas as any}
         origens={origens}
         motivosPerda={motivosPerda}
         favorecidos={[]}
