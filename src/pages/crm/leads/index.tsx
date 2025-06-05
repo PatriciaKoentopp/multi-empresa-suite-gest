@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -159,7 +158,7 @@ export default function LeadsPage() {
         .eq('status', 'ativo');
 
       if (error) throw error;
-      setMotivosPerda((data as MotivoPerda[]) || []);
+      setMotivosPerda((data as MotivosPerda[]) || []);
     } catch (error) {
       console.error('Erro ao carregar motivos de perda:', error);
       toast.error('Erro ao carregar motivos de perda');
@@ -167,7 +166,7 @@ export default function LeadsPage() {
   };
 
   const handleOpenModal = (lead?: Lead) => {
-    setEditingLead(lead ? { ...lead } : null);
+    setEditingLead(lead || null);
     setIsModalOpen(true);
   };
 
