@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,7 +55,7 @@ interface Funil {
   id: string;
   nome: string;
   descricao?: string;
-  status: string;
+  ativo: boolean;
   empresa_id: string;
   created_at: string;
   updated_at: string;
@@ -63,12 +64,9 @@ interface Funil {
 interface Etapa {
   id: string;
   nome: string;
-  descricao?: string;
   ordem: number;
   cor?: string;
   funil_id: string;
-  status: string;
-  empresa_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -151,16 +149,27 @@ export function LeadFormModal({
       return;
     }
 
+    if (!formData.nome || !formData.etapa_id || !formData.funil_id) {
+      toast.error("Preencha os campos obrigatórios");
+      return;
+    }
+
     setIsLoading(true);
     try {
+      const leadToSave = {
+        ...formData,
+        empresa_id: currentCompany.id,
+        nome: formData.nome!,
+        etapa_id: formData.etapa_id!,
+        funil_id: formData.funil_id!,
+        data_criacao: lead ? lead.data_criacao : new Date().toISOString().split('T')[0]
+      };
+
       if (lead) {
         // Atualizar lead existente
         const { data, error } = await supabase
           .from('leads')
-          .update({
-            ...formData,
-            empresa_id: currentCompany.id
-          })
+          .update(leadToSave)
           .eq('id', lead.id)
           .select()
           .single();
@@ -172,11 +181,7 @@ export function LeadFormModal({
         // Criar novo lead
         const { data, error } = await supabase
           .from('leads')
-          .insert({
-            ...formData,
-            empresa_id: currentCompany.id,
-            data_criacao: new Date().toISOString()
-          })
+          .insert(leadToSave)
           .select()
           .single();
 
@@ -196,7 +201,7 @@ export function LeadFormModal({
   const loadInteracoes = async (leadId: string) => {
     try {
       const { data, error } = await supabase
-        .from('interacoes')
+        .from('leads_interacoes')
         .select('*')
         .eq('lead_id', leadId)
         .order('data', { ascending: false });
@@ -212,7 +217,7 @@ export function LeadFormModal({
   const handleCreateInteracao = async (interacao: Interacao) => {
     try {
       const { data, error } = await supabase
-        .from('interacoes')
+        .from('leads_interacoes')
         .insert({
           ...interacao,
           empresa_id: currentCompany?.id

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,7 @@ interface Funil {
   id: string;
   nome: string;
   descricao?: string;
-  status: string;
+  ativo: boolean;
   empresa_id: string;
   created_at: string;
   updated_at: string;
@@ -56,12 +57,9 @@ interface Funil {
 interface Etapa {
   id: string;
   nome: string;
-  descricao?: string;
   ordem: number;
   cor?: string;
   funil_id: string;
-  status: string;
-  empresa_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -79,7 +77,6 @@ interface Servico {
   id: string;
   nome: string;
   descricao?: string;
-  preco?: number;
   status: string;
   empresa_id: string;
   created_at: string;
@@ -90,7 +87,6 @@ interface Produto {
   id: string;
   nome: string;
   descricao?: string;
-  preco?: number;
   status: string;
   empresa_id: string;
   created_at: string;
@@ -145,7 +141,7 @@ export default function LeadsPage() {
         .from('funis')
         .select('*')
         .eq('empresa_id', currentCompany?.id)
-        .eq('status', 'ativo');
+        .eq('ativo', true);
 
       if (error) throw error;
       setFunis((data as Funil[]) || []);
@@ -158,10 +154,9 @@ export default function LeadsPage() {
   const loadEtapas = async () => {
     try {
       const { data, error } = await supabase
-        .from('etapas')
+        .from('funil_etapas')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
-        .eq('status', 'ativo');
+        .order('ordem');
 
       if (error) throw error;
       setEtapas((data as Etapa[]) || []);
@@ -378,7 +373,7 @@ export default function LeadsPage() {
                 key={etapa.id}
                 id={etapa.id}
                 label={etapa.nome}
-                color={etapa.cor}
+                color={etapa.cor || '#000000'}
                 checked={etapasSelecionadas.includes(etapa.id)}
                 onCheckedChange={(checked) => handleEtapaFilterChange(etapa.id, checked)}
               />
@@ -393,7 +388,7 @@ export default function LeadsPage() {
             key={lead.id}
             lead={lead}
             onEdit={() => handleOpenModal(lead)}
-            onDelete={handleDeleteLead}
+            onDelete={() => handleDeleteLead(lead.id)}
             etapas={etapas}
           />
         ))}
