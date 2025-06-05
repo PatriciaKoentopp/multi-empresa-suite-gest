@@ -1,294 +1,145 @@
+
 import React, { useState, useEffect } from "react";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
-import { LeadCard } from "./lead-card";
-import { LeadFormModal } from "./lead-form-modal";
-import { StageFilterCheckbox } from "@/components/crm/leads/StageFilterCheckbox";
-import { LeadFormData, EtapaFunil } from "./types";
+import { LeadCard } from "./components/LeadCard";
+import { LeadModal } from "./components/LeadModal";
 
-interface MotivoPerda {
+interface Lead {
   id: string;
   nome: string;
+  empresa?: string;
+  email?: string;
+  telefone?: string;
+  valor?: number;
   status: string;
+  etapa_id: string;
+  funil_id: string;
+  origem_id?: string;
+  responsavel_id?: string;
+  data_criacao: string;
+  produto?: string;
+  observacoes?: string;
   empresa_id: string;
-  created_at: string;
-  updated_at: string;
 }
 
 interface Funil {
   id: string;
   nome: string;
-  descricao?: string;
   ativo: boolean;
-  empresa_id: string;
-  created_at: string;
-  updated_at: string;
+}
+
+interface Etapa {
+  id: string;
+  nome: string;
+  cor: string;
+  ordem: number;
+  funil_id: string;
 }
 
 interface Origem {
   id: string;
   nome: string;
   status: string;
-  empresa_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Servico {
-  id: string;
-  nome: string;
-  descricao?: string;
-  status: string;
-  empresa_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Produto {
-  id: string;
-  nome: string;
-  descricao?: string;
-  status: string;
-  empresa_id: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export default function LeadsPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [leads, setLeads] = useState<LeadFormData[]>([]);
-  const [editingLead, setEditingLead] = useState<LeadFormData | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [funilId, setFunilId] = useState<string>("todos");
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [funis, setFunis] = useState<Funil[]>([]);
-  const [etapas, setEtapas] = useState<EtapaFunil[]>([]);
+  const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [origens, setOrigens] = useState<Origem[]>([]);
-  const [motivosPerda, setMotivosPerda] = useState<MotivoPerda[]>([]);
-  const [servicos, setServicos] = useState<Servico[]>([]);
-  const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const { currentCompany } = useCompany();
-  const [etapasSelecionadas, setEtapasSelecionadas] = useState<string[]>([]);
-
-  // Função para validar se um ID é válido
-  const isValidId = (id: any): boolean => {
-    return id && typeof id === 'string' && id.trim() !== "" && id !== "null" && id !== "undefined";
-  };
-
-  // Função para validar objetos com ID e nome
-  const isValidObject = (obj: any): boolean => {
-    return obj && 
-           isValidId(obj.id) && 
-           obj.nome && 
-           typeof obj.nome === 'string' && 
-           obj.nome.trim() !== "";
-  };
 
   useEffect(() => {
     if (currentCompany?.id) {
-      loadLeads();
-      loadFunis();
-      loadEtapas();
-      loadOrigens();
-      loadMotivosPerda();
-      loadServicos();
-      loadProdutos();
-      loadUsuarios();
+      loadData();
     }
   }, [currentCompany?.id]);
 
-  const loadLeads = async () => {
+  const loadData = async () => {
     try {
-      const { data, error } = await supabase
+      console.log('Carregando dados...');
+      
+      // Carregar leads
+      const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
         .select('*')
         .eq('empresa_id', currentCompany?.id);
 
-      if (error) throw error;
-      console.log('Leads carregados:', data);
-      setLeads((data as LeadFormData[]) || []);
-    } catch (error) {
-      console.error('Erro ao carregar leads:', error);
-      toast.error('Erro ao carregar leads');
-    }
-  };
+      if (leadsError) {
+        console.error('Erro ao carregar leads:', leadsError);
+        throw leadsError;
+      }
 
-  const loadFunis = async () => {
-    try {
-      const { data, error } = await supabase
+      console.log('Leads carregados:', leadsData);
+      setLeads(leadsData || []);
+
+      // Carregar funis
+      const { data: funisData, error: funisError } = await supabase
         .from('funis')
         .select('*')
         .eq('empresa_id', currentCompany?.id)
         .eq('ativo', true);
 
-      if (error) throw error;
-      
-      console.log('Funis brutos:', data);
-      // Filtrar funis válidos
-      const funisValidos = (data || []).filter(isValidObject);
-      console.log('Funis válidos após filtro:', funisValidos);
-      
-      setFunis(funisValidos);
-    } catch (error) {
-      console.error('Erro ao carregar funis:', error);
-      toast.error('Erro ao carregar funis');
-    }
-  };
+      if (funisError) {
+        console.error('Erro ao carregar funis:', funisError);
+        throw funisError;
+      }
 
-  const loadEtapas = async () => {
-    try {
-      const { data, error } = await supabase
+      console.log('Funis carregados:', funisData);
+      setFunis(funisData || []);
+
+      // Carregar etapas
+      const { data: etapasData, error: etapasError } = await supabase
         .from('funil_etapas')
         .select('*')
         .order('ordem');
 
-      if (error) throw error;
-      
-      console.log('Etapas brutas:', data);
-      // Filtrar e mapear etapas válidas
-      const etapasValidas: EtapaFunil[] = (data || [])
-        .filter(isValidObject)
-        .map(etapa => ({
-          id: etapa.id,
-          nome: etapa.nome,
-          cor: etapa.cor || '#000000',
-          ordem: etapa.ordem,
-          funil_id: etapa.funil_id
-        }));
-      
-      console.log('Etapas válidas após filtro:', etapasValidas);
-      setEtapas(etapasValidas);
-    } catch (error) {
-      console.error('Erro ao carregar etapas:', error);
-      toast.error('Erro ao carregar etapas');
-    }
-  };
+      if (etapasError) {
+        console.error('Erro ao carregar etapas:', etapasError);
+        throw etapasError;
+      }
 
-  const loadOrigens = async () => {
-    try {
-      const { data, error } = await supabase
+      console.log('Etapas carregadas:', etapasData);
+      setEtapas(etapasData || []);
+
+      // Carregar origens
+      const { data: origensData, error: origensError } = await supabase
         .from('origens')
         .select('*')
         .eq('empresa_id', currentCompany?.id)
         .eq('status', 'ativo');
 
-      if (error) throw error;
-      
-      console.log('Origens brutas:', data);
-      // Filtrar origens válidas
-      const origensValidas = (data || []).filter(isValidObject);
-      console.log('Origens válidas após filtro:', origensValidas);
-      
-      setOrigens(origensValidas);
+      if (origensError) {
+        console.error('Erro ao carregar origens:', origensError);
+        throw origensError;
+      }
+
+      console.log('Origens carregadas:', origensData);
+      setOrigens(origensData || []);
+
     } catch (error) {
-      console.error('Erro ao carregar origens:', error);
-      toast.error('Erro ao carregar origens');
+      console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar dados');
     }
   };
 
-  const loadMotivosPerda = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('motivos_perda')
-        .select('*')
-        .eq('empresa_id', currentCompany?.id)
-        .eq('status', 'ativo');
-
-      if (error) throw error;
-      setMotivosPerda((data as MotivoPerda[]) || []);
-    } catch (error) {
-      console.error('Erro ao carregar motivos de perda:', error);
-      toast.error('Erro ao carregar motivos de perda');
-    }
-  };
-
-  const loadServicos = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('servicos')
-        .select('*')
-        .eq('empresa_id', currentCompany?.id)
-        .eq('status', 'ativo');
-
-      if (error) throw error;
-      setServicos((data as Servico[]) || []);
-    } catch (error) {
-      console.error('Erro ao carregar serviços:', error);
-      toast.error('Erro ao carregar serviços');
-    }
-  };
-
-  const loadProdutos = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('produtos')
-        .select('*')
-        .eq('empresa_id', currentCompany?.id)
-        .eq('status', 'ativo');
-
-      if (error) throw error;
-      setProdutos((data as Produto[]) || []);
-    } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-      toast.error('Erro ao carregar produtos');
-    }
-  };
-
-  const loadUsuarios = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('empresa_id', currentCompany?.id)
-        .eq('status', 'ativo');
-
-      if (error) throw error;
-      setUsuarios(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
-      toast.error('Erro ao carregar usuários');
-    }
-  };
-
-  const handleOpenModal = (lead?: LeadFormData) => {
-    setEditingLead(lead || null);
+  const handleCreateLead = () => {
+    setEditingLead(null);
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingLead(null);
-  };
-
-  const handleSaveLead = async (leadData: LeadFormData) => {
-    try {
-      const { data, error } = editingLead
-        ? await supabase
-            .from('leads')
-            .update(leadData)
-            .eq('id', editingLead.id)
-            .select()
-        : await supabase
-            .from('leads')
-            .insert([leadData])
-            .select();
-
-      if (error) throw error;
-
-      toast.success(`Lead ${editingLead ? 'atualizado' : 'criado'} com sucesso!`);
-      loadLeads();
-    } catch (error) {
-      console.error('Erro ao salvar lead:', error);
-      toast.error('Erro ao salvar lead');
-    } finally {
-      handleCloseModal();
-    }
+  const handleEditLead = (lead: Lead) => {
+    setEditingLead(lead);
+    setIsModalOpen(true);
   };
 
   const handleDeleteLead = async (id: string) => {
@@ -301,134 +152,98 @@ export default function LeadsPage() {
       if (error) throw error;
 
       toast.success('Lead excluído com sucesso!');
-      loadLeads();
+      loadData();
     } catch (error) {
       console.error('Erro ao excluir lead:', error);
       toast.error('Erro ao excluir lead');
     }
   };
 
-  const filteredLeads = React.useMemo(() => {
-    let filtered = leads;
+  const handleSaveLead = async (leadData: Partial<Lead>) => {
+    try {
+      if (editingLead) {
+        // Atualizar lead existente
+        const { error } = await supabase
+          .from('leads')
+          .update(leadData)
+          .eq('id', editingLead.id);
 
-    if (searchTerm) {
-      filtered = filtered.filter(lead =>
-        lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (lead.empresa && lead.empresa.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (lead.telefone && lead.telefone.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-
-    if (funilId !== "todos") {
-      filtered = filtered.filter(lead => lead.funil_id === funilId);
-    }
-
-    if (etapasSelecionadas.length > 0) {
-      filtered = filtered.filter(lead => etapasSelecionadas.includes(lead.etapa_id));
-    }
-
-    return filtered;
-  }, [leads, searchTerm, funilId, etapasSelecionadas]);
-
-  const etapasDoFunil = React.useMemo(() => {
-    return etapas.filter(etapa => etapa.funil_id === funilId || funilId === "todos");
-  }, [etapas, funilId]);
-
-  const handleEtapaFilterChange = (etapaId: string, checked: boolean) => {
-    setEtapasSelecionadas(prev => {
-      if (checked) {
-        return [...prev, etapaId];
+        if (error) throw error;
+        toast.success('Lead atualizado com sucesso!');
       } else {
-        return prev.filter(id => id !== etapaId);
+        // Criar novo lead
+        const { error } = await supabase
+          .from('leads')
+          .insert([{
+            ...leadData,
+            empresa_id: currentCompany?.id,
+            data_criacao: new Date().toISOString().split('T')[0],
+            status: 'ativo'
+          }]);
+
+        if (error) throw error;
+        toast.success('Lead criado com sucesso!');
       }
-    });
+
+      setIsModalOpen(false);
+      loadData();
+    } catch (error) {
+      console.error('Erro ao salvar lead:', error);
+      toast.error('Erro ao salvar lead');
+    }
   };
 
-  // Filtrar dados válidos para uso no Select e renderização
-  const funisValidosParaSelect = React.useMemo(() => {
-    return funis.filter(isValidObject);
-  }, [funis]);
+  const filteredLeads = leads.filter(lead =>
+    lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (lead.empresa && lead.empresa.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
-  const etapasValidasParaRender = React.useMemo(() => {
-    const etapasDoFunilAtual = etapas.filter(etapa => etapa.funil_id === funilId || funilId === "todos");
-    return etapasDoFunilAtual.filter(isValidObject);
-  }, [etapas, funilId]);
+  const getEtapaNome = (etapaId: string) => {
+    const etapa = etapas.find(e => e.id === etapaId);
+    return etapa?.nome || 'Sem etapa';
+  };
+
+  const getEtapaCor = (etapaId: string) => {
+    const etapa = etapas.find(e => e.id === etapaId);
+    return etapa?.cor || '#cccccc';
+  };
+
+  const getOrigemNome = (origemId?: string) => {
+    if (!origemId) return 'Não informada';
+    const origem = origens.find(o => o.id === origemId);
+    return origem?.nome || 'Não informada';
+  };
 
   return (
     <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Leads</h1>
-        <Button onClick={() => handleOpenModal()}>
+        <Button onClick={handleCreateLead} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="mr-2 h-4 w-4" />
           Novo Lead
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <Card className="col-span-2">
-          <CardHeader>
-            <CardTitle>Filtros</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center space-x-2">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Buscar lead..."
+                placeholder="Buscar por nome, empresa ou email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
               />
-              <Search className="h-5 w-5 text-gray-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
             </div>
-            <div className="flex items-center space-x-2">
-              <Select value={funilId} onValueChange={setFunilId}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Filtrar por Funil" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Funis</SelectItem>
-                  {funisValidosParaSelect.length > 0 ? (
-                    funisValidosParaSelect.map(funil => (
-                      <SelectItem key={funil.id} value={funil.id}>
-                        {funil.nome}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="no-funis" disabled>
-                      Nenhum funil disponível
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Etapas</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col">
-            {etapasValidasParaRender.length > 0 ? (
-              etapasValidasParaRender.map(etapa => (
-                <StageFilterCheckbox
-                  key={etapa.id}
-                  id={etapa.id}
-                  label={etapa.nome}
-                  color={etapa.cor}
-                  checked={etapasSelecionadas.includes(etapa.id)}
-                  onCheckedChange={(checked) => handleEtapaFilterChange(etapa.id, checked)}
-                />
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Nenhuma etapa disponível
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {filteredLeads.length > 0 ? (
@@ -436,35 +251,32 @@ export default function LeadsPage() {
             <LeadCard
               key={lead.id}
               lead={lead}
-              onEdit={() => handleOpenModal(lead)}
-              onDelete={() => handleDeleteLead(lead.id!)}
-              etapas={etapas}
-              origens={origens}
-              usuarios={usuarios}
+              etapaNome={getEtapaNome(lead.etapa_id)}
+              etapaCor={getEtapaCor(lead.etapa_id)}
+              origemNome={getOrigemNome(lead.origem_id)}
+              onEdit={() => handleEditLead(lead)}
+              onDelete={() => handleDeleteLead(lead.id)}
             />
           ))
         ) : (
           <div className="col-span-full text-center py-8">
             <p className="text-muted-foreground">
-              Nenhum lead encontrado. 
-              {leads.length === 0 ? " Clique em 'Novo Lead' para criar o primeiro." : " Ajuste os filtros para ver mais resultados."}
+              {leads.length === 0 
+                ? "Nenhum lead cadastrado. Clique em 'Novo Lead' para criar o primeiro." 
+                : "Nenhum lead encontrado com os filtros aplicados."}
             </p>
           </div>
         )}
       </div>
 
-      <LeadFormModal
+      <LeadModal
         isOpen={isModalOpen}
-        onClose={handleCloseModal}
+        onClose={() => setIsModalOpen(false)}
         lead={editingLead}
-        onSave={handleSaveLead}
         funis={funis}
         etapas={etapas}
         origens={origens}
-        motivosPerda={motivosPerda}
-        favorecidos={[]}
-        servicos={servicos}
-        produtos={produtos}
+        onSave={handleSaveLead}
       />
     </div>
   );
