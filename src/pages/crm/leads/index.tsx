@@ -76,6 +76,20 @@ export default function LeadsPage() {
   const { currentCompany } = useCompany();
   const [etapasSelecionadas, setEtapasSelecionadas] = useState<string[]>([]);
 
+  // Função para validar se um ID é válido
+  const isValidId = (id: any): boolean => {
+    return id && typeof id === 'string' && id.trim() !== "" && id !== "null" && id !== "undefined";
+  };
+
+  // Função para validar objetos com ID e nome
+  const isValidObject = (obj: any): boolean => {
+    return obj && 
+           isValidId(obj.id) && 
+           obj.nome && 
+           typeof obj.nome === 'string' && 
+           obj.nome.trim() !== "";
+  };
+
   useEffect(() => {
     if (currentCompany?.id) {
       loadLeads();
@@ -97,6 +111,7 @@ export default function LeadsPage() {
         .eq('empresa_id', currentCompany?.id);
 
       if (error) throw error;
+      console.log('Leads carregados:', data);
       setLeads((data as LeadFormData[]) || []);
     } catch (error) {
       console.error('Erro ao carregar leads:', error);
@@ -114,12 +129,10 @@ export default function LeadsPage() {
 
       if (error) throw error;
       
+      console.log('Funis brutos:', data);
       // Filtrar funis válidos
-      const funisValidos = (data || []).filter(funil => 
-        funil.id && 
-        typeof funil.id === 'string' && 
-        funil.id.trim() !== ""
-      );
+      const funisValidos = (data || []).filter(isValidObject);
+      console.log('Funis válidos após filtro:', funisValidos);
       
       setFunis(funisValidos);
     } catch (error) {
@@ -137,14 +150,10 @@ export default function LeadsPage() {
 
       if (error) throw error;
       
+      console.log('Etapas brutas:', data);
       // Filtrar e mapear etapas válidas
       const etapasValidas: EtapaFunil[] = (data || [])
-        .filter(etapa => 
-          etapa.id && 
-          typeof etapa.id === 'string' && 
-          etapa.id.trim() !== "" && 
-          etapa.nome
-        )
+        .filter(isValidObject)
         .map(etapa => ({
           id: etapa.id,
           nome: etapa.nome,
@@ -153,6 +162,7 @@ export default function LeadsPage() {
           funil_id: etapa.funil_id
         }));
       
+      console.log('Etapas válidas após filtro:', etapasValidas);
       setEtapas(etapasValidas);
     } catch (error) {
       console.error('Erro ao carregar etapas:', error);
@@ -170,12 +180,10 @@ export default function LeadsPage() {
 
       if (error) throw error;
       
+      console.log('Origens brutas:', data);
       // Filtrar origens válidas
-      const origensValidas = (data || []).filter(origem => 
-        origem.id && 
-        typeof origem.id === 'string' && 
-        origem.id.trim() !== ""
-      );
+      const origensValidas = (data || []).filter(isValidObject);
+      console.log('Origens válidas após filtro:', origensValidas);
       
       setOrigens(origensValidas);
     } catch (error) {
@@ -337,21 +345,15 @@ export default function LeadsPage() {
     });
   };
 
-  // Filtrar funis válidos para o Select
-  const funisValidosParaSelect = funis.filter(funil => 
-    funil.id && 
-    typeof funil.id === 'string' && 
-    funil.id.trim() !== "" && 
-    funil.nome
-  );
+  // Filtrar dados válidos para uso no Select e renderização
+  const funisValidosParaSelect = React.useMemo(() => {
+    return funis.filter(isValidObject);
+  }, [funis]);
 
-  // Filtrar etapas válidas para renderização
-  const etapasValidasParaRender = etapasDoFunil.filter(etapa => 
-    etapa.id && 
-    typeof etapa.id === 'string' && 
-    etapa.id.trim() !== "" && 
-    etapa.nome
-  );
+  const etapasValidasParaRender = React.useMemo(() => {
+    const etapasDoFunilAtual = etapas.filter(etapa => etapa.funil_id === funilId || funilId === "todos");
+    return etapasDoFunilAtual.filter(isValidObject);
+  }, [etapas, funilId]);
 
   return (
     <div className="container mx-auto py-6">
@@ -386,11 +388,17 @@ export default function LeadsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os Funis</SelectItem>
-                  {funisValidosParaSelect.map(funil => (
-                    <SelectItem key={funil.id} value={funil.id}>
-                      {funil.nome}
+                  {funisValidosParaSelect.length > 0 ? (
+                    funisValidosParaSelect.map(funil => (
+                      <SelectItem key={funil.id} value={funil.id}>
+                        {funil.nome}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-funis" disabled>
+                      Nenhum funil disponível
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -402,32 +410,47 @@ export default function LeadsPage() {
             <CardTitle>Etapas</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col">
-            {etapasValidasParaRender.map(etapa => (
-              <StageFilterCheckbox
-                key={etapa.id}
-                id={etapa.id}
-                label={etapa.nome}
-                color={etapa.cor}
-                checked={etapasSelecionadas.includes(etapa.id)}
-                onCheckedChange={(checked) => handleEtapaFilterChange(etapa.id, checked)}
-              />
-            ))}
+            {etapasValidasParaRender.length > 0 ? (
+              etapasValidasParaRender.map(etapa => (
+                <StageFilterCheckbox
+                  key={etapa.id}
+                  id={etapa.id}
+                  label={etapa.nome}
+                  color={etapa.cor}
+                  checked={etapasSelecionadas.includes(etapa.id)}
+                  onCheckedChange={(checked) => handleEtapaFilterChange(etapa.id, checked)}
+                />
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma etapa disponível
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredLeads.map(lead => (
-          <LeadCard
-            key={lead.id}
-            lead={lead}
-            onEdit={() => handleOpenModal(lead)}
-            onDelete={() => handleDeleteLead(lead.id!)}
-            etapas={etapas}
-            origens={origens}
-            usuarios={usuarios}
-          />
-        ))}
+        {filteredLeads.length > 0 ? (
+          filteredLeads.map(lead => (
+            <LeadCard
+              key={lead.id}
+              lead={lead}
+              onEdit={() => handleOpenModal(lead)}
+              onDelete={() => handleDeleteLead(lead.id!)}
+              etapas={etapas}
+              origens={origens}
+              usuarios={usuarios}
+            />
+          ))
+        ) : (
+          <div className="col-span-full text-center py-8">
+            <p className="text-muted-foreground">
+              Nenhum lead encontrado. 
+              {leads.length === 0 ? " Clique em 'Novo Lead' para criar o primeiro." : " Ajuste os filtros para ver mais resultados."}
+            </p>
+          </div>
+        )}
       </div>
 
       <LeadFormModal

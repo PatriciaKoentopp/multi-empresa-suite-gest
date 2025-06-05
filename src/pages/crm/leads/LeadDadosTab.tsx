@@ -44,27 +44,36 @@ export function LeadDadosTab({
     handleNumberChange('valor', value);
   };
 
-  // Filtrar dados para garantir que não há valores vazios
-  const funisValidos = funis?.filter(funil => 
-    funil?.id && 
-    typeof funil.id === 'string' && 
-    funil.id.trim() !== "" && 
-    funil.nome
-  ) || [];
+  // Função para validar se um ID é válido
+  const isValidId = (id: any): boolean => {
+    return id && typeof id === 'string' && id.trim() !== "" && id !== "null" && id !== "undefined";
+  };
 
-  const etapasValidas = etapas?.filter(etapa => 
-    etapa?.id && 
-    typeof etapa.id === 'string' && 
-    etapa.id.trim() !== "" && 
-    etapa.nome
-  ) || [];
+  // Função para validar objetos com ID e nome
+  const isValidObject = (obj: any): boolean => {
+    return obj && 
+           isValidId(obj.id) && 
+           obj.nome && 
+           typeof obj.nome === 'string' && 
+           obj.nome.trim() !== "";
+  };
 
-  const origensValidas = origens?.filter(origem => 
-    origem?.id && 
-    typeof origem.id === 'string' && 
-    origem.id.trim() !== "" && 
-    origem.nome
-  ) || [];
+  // Filtrar dados válidos de forma mais rigorosa
+  const funisValidos = React.useMemo(() => {
+    return (funis || []).filter(isValidObject);
+  }, [funis]);
+
+  const etapasValidas = React.useMemo(() => {
+    return (etapas || []).filter(isValidObject);
+  }, [etapas]);
+
+  const origensValidas = React.useMemo(() => {
+    return (origens || []).filter(isValidObject);
+  }, [origens]);
+
+  console.log('Debug - Funis válidos:', funisValidos);
+  console.log('Debug - Etapas válidas:', etapasValidas);
+  console.log('Debug - Origens válidas:', origensValidas);
 
   return (
     <div className="space-y-4">
@@ -138,11 +147,17 @@ export function LeadDadosTab({
               <SelectValue placeholder="Selecione um funil" />
             </SelectTrigger>
             <SelectContent>
-              {funisValidos.map((funil) => (
-                <SelectItem key={funil.id} value={funil.id}>
-                  {funil.nome}
+              {funisValidos.length > 0 ? (
+                funisValidos.map((funil) => (
+                  <SelectItem key={funil.id} value={funil.id}>
+                    {funil.nome}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="no-funis" disabled>
+                  Nenhum funil disponível
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -157,11 +172,17 @@ export function LeadDadosTab({
               <SelectValue placeholder="Selecione uma etapa" />
             </SelectTrigger>
             <SelectContent>
-              {etapasValidas.map((etapa) => (
-                <SelectItem key={etapa.id} value={etapa.id}>
-                  {etapa.nome}
+              {etapasValidas.length > 0 ? (
+                etapasValidas.map((etapa) => (
+                  <SelectItem key={etapa.id} value={etapa.id}>
+                    {etapa.nome}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="no-etapas" disabled>
+                  Nenhuma etapa disponível
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>
