@@ -1,579 +1,327 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-  SheetClose,
-} from "@/components/ui/sheet";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
-import { Origem, Usuario, MotivoPerda, Lead } from "@/types";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LeadDadosTab } from "./LeadDadosTab";
 import { LeadFechamentoTab } from "./LeadFechamentoTab";
 import { InteracoesTab } from "./components/InteracoesTab";
-import { supabase } from "@/integrations/supabase/client";
-import { formatDate } from "./utils/leadUtils";
 import { toast } from "sonner";
-import { LeadInteracao, EtapaFunil, LeadFormData } from "./types";
-import { format } from "date-fns";
-import { abrirWhatsApp } from "./utils/whatsappUtils";
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
 
 interface LeadFormModalProps {
-  open: boolean;
+  isOpen: boolean;
   onClose: () => void;
-  onConfirm: (lead: any) => void;
-  lead?: Lead;
-  etapas: EtapaFunil[];
+  lead?: Lead | null;
+  onSave: (lead: Lead) => void;
+  funis: Funil[];
+  etapas: Etapa[];
   origens: Origem[];
-  usuarios: Usuario[];
   motivosPerda: MotivoPerda[];
+  favorecidos: any[];
+  servicos: any[];
+  produtos: any[];
+}
+
+interface Lead {
+  id: string;
+  nome: string;
+  empresa?: string;
+  email?: string;
+  telefone?: string;
+  valor?: number;
+  produto?: string;
+  observacoes?: string;
+  etapa_id: string;
+  funil_id: string;
+  origem_id?: string;
+  responsavel_id?: string;
+  data_criacao: string;
+  ultimo_contato?: string;
+  status: string;
+  empresa_id: string;
+  favorecido_id?: string;
+  servico_id?: string;
+  produto_id?: string;
+}
+
+interface Funil {
+  id: string;
+  nome: string;
+  descricao?: string;
+  status: string;
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Etapa {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ordem: number;
+  cor?: string;
+  funil_id: string;
+  status: string;
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Origem {
+  id: string;
+  nome: string;
+  status: string;
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface MotivoPerda {
+  id: string;
+  nome: string;
+  status: string;
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Interacao {
+  id?: string;
+  lead_id: string;
+  tipo: string;
+  descricao: string;
+  data: string;
+  status: string;
 }
 
 export function LeadFormModal({ 
-  open, 
+  isOpen, 
   onClose, 
-  onConfirm, 
   lead, 
+  onSave, 
+  funis, 
   etapas, 
   origens, 
-  usuarios, 
-  motivosPerda 
+  motivosPerda, 
+  favorecidos, 
+  servicos, 
+  produtos 
 }: LeadFormModalProps) {
-  const [formData, setFormData] = useState<LeadFormData>({
-    nome: "",
-    empresa: "",
-    email: "",
-    telefone: "",
-    etapaId: "",
-    valor: 0,
-    origemId: "",
-    dataCriacao: new Date().toLocaleDateString("pt-BR"),
-    ultimoContato: new Date().toLocaleDateString("pt-BR"),
-    responsavelId: "",
-    produto: "",
+  const { currentCompany } = useCompany();
+  const [activeTab, setActiveTab] = useState("dados");
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<Partial<Lead>>({
     status: "ativo",
   });
-
-  // Estado para a nova interação
-  const [novaInteracao, setNovaInteracao] = useState({
-    tipo: "mensagem" as const,
-    descricao: "",
-    data: new Date(),
-    responsavelId: "",
-  });
-
-  // Estado para armazenar interações do lead atual
-  const [interacoes, setInteracoes] = useState<LeadInteracao[]>([]);
-  const [carregandoInteracoes, setCarregandoInteracoes] = useState(false);
-
-  // Estado para dados de fechamento
-  const [fechamento, setFechamento] = useState<{
-    status: "sucesso" | "perda";
-    motivoPerdaId?: string;
-    descricao: string;
-    data: Date;
-  } | null>(null);
-
-  // Estado para controlar a aba ativa
-  const [activeTab, setActiveTab] = useState("dados");
-  
-  // Carregar interações quando um lead é editado
-  useEffect(() => {
-    if (lead?.id) {
-      buscarInteracoes(lead.id);
-      buscarFechamento(lead.id);
-    } else {
-      setInteracoes([]);
-      setFechamento(null);
-    }
-  }, [lead]);
-
-  const buscarInteracoes = async (leadId: string) => {
-    setCarregandoInteracoes(true);
-    console.log('Buscando interações para lead ID:', leadId);
-    
-    try {
-      const { data, error } = await supabase
-        .from('leads_interacoes')
-        .select('*')
-        .eq('lead_id', leadId)
-        .order('data', { ascending: false });
-      
-      if (error) {
-        console.error('Erro ao buscar interações:', error);
-        throw error;
-      }
-      
-      console.log('Interações encontradas:', data?.length, data);
-      
-      if (!data || data.length === 0) {
-        setInteracoes([]);
-        setCarregandoInteracoes(false);
-        return;
-      }
-      
-      const responsaveisIds = data
-        .filter(item => item.responsavel_id)
-        .map(item => item.responsavel_id);
-      
-      let responsaveisMap = new Map();
-      
-      if (responsaveisIds.length > 0) {
-        const { data: responsaveisData, error: responsaveisError } = await supabase
-          .from('usuarios')
-          .select('id, nome')
-          .in('id', responsaveisIds);
-        
-        if (responsaveisError) {
-          console.error('Erro ao buscar responsáveis:', responsaveisError);
-        } else if (responsaveisData) {
-          responsaveisData.forEach(resp => {
-            responsaveisMap.set(resp.id, resp.nome);
-          });
-        }
-      }
-      
-      const interacoesFormatadas = data.map(item => ({
-        id: item.id.toString(),
-        leadId: item.lead_id,
-        tipo: item.tipo as "email" | "ligacao" | "reuniao" | "mensagem" | "whatsapp" | "telegram" | "instagram" | "facebook" | "outro",
-        descricao: item.descricao,
-        data: item.data,
-        responsavelId: item.responsavel_id,
-        responsavelNome: item.responsavel_id ? (responsaveisMap.get(item.responsavel_id) || 'Desconhecido') : 'Não atribuído',
-        status: item.status || 'Aberto'
-      }));
-      
-      console.log('Interações formatadas:', interacoesFormatadas);
-      setInteracoes(interacoesFormatadas);
-    } catch (error) {
-      console.error('Erro ao buscar interações:', error);
-    } finally {
-      setCarregandoInteracoes(false);
-    }
-  };
-
-  const buscarFechamento = async (leadId: string) => {
-    try {
-      console.log("Buscando fechamento para lead ID:", leadId);
-      const { data, error } = await supabase
-        .from('leads_fechamento')
-        .select('*')
-        .eq('lead_id', leadId)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Erro ao buscar dados de fechamento:', error);
-        return;
-      }
-      
-      if (data) {
-        console.log('Fechamento encontrado:', data);
-        setFechamento({
-          status: data.status as "sucesso" | "perda",
-          motivoPerdaId: data.motivo_perda_id,
-          descricao: data.descricao || '',
-          data: new Date(data.data)
-        });
-      } else {
-        console.log('Nenhum fechamento encontrado para este lead');
-        setFechamento(null);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar dados de fechamento:', error);
-    }
-  };
+  const [interacoes, setInteracoes] = useState<Interacao[]>([]);
 
   useEffect(() => {
     if (lead) {
-      setFormData({
-        nome: lead.nome || "",
-        empresa: lead.empresa || "",
-        email: lead.email || "",
-        telefone: lead.telefone || "",
-        etapaId: lead.etapaId || (etapas.length > 0 ? etapas[0].id : ""),
-        valor: lead.valor || 0,
-        origemId: lead.origemId || "",
-        dataCriacao: lead.dataCriacao || new Date().toLocaleDateString("pt-BR"),
-        ultimoContato: lead.ultimoContato || new Date().toLocaleDateString("pt-BR"),
-        responsavelId: lead.responsavelId || "",
-        produto: lead.produto || "",
-        status: lead.status || "ativo",
-      });
-      
-      // Inicializa a nova interação com o responsável atual do lead
-      setNovaInteracao(prev => ({
-        ...prev,
-        data: new Date(),
-        responsavelId: lead.responsavelId || ""
-      }));
+      setFormData(lead);
+      loadInteracoes(lead.id);
     } else {
-      // Encontrar o primeiro usuário vendedor ativo, se existir
-      const primeiroVendedor = usuarios.find(u => u.vendedor === "sim" && u.status === "ativo")?.id || "";
-      const primeiraEtapa = etapas.length > 0 ? etapas[0].id : "";
-      
-      setFormData({
-        nome: "",
-        empresa: "",
-        email: "",
-        telefone: "",
-        etapaId: primeiraEtapa,
-        valor: 0,
-        origemId: "",
-        dataCriacao: new Date().toLocaleDateString("pt-BR"),
-        ultimoContato: new Date().toLocaleDateString("pt-BR"),
-        responsavelId: primeiroVendedor,
-        produto: "",
-        status: "ativo",
-      });
-      
-      // Inicializa a nova interação com o primeiro vendedor
-      setNovaInteracao(prev => ({
-        ...prev,
-        data: new Date(),
-        responsavelId: primeiroVendedor
-      }));
-
-      // Reset do fechamento para null quando criamos um novo lead
-      setFechamento(null);
+      setFormData({ status: "ativo" });
     }
-  }, [lead, etapas, origens, usuarios, open]);
+  }, [lead]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: name === "valor" ? Number(value) : value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleNumberChange = (name: string, value: number | undefined) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleInteracaoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setNovaInteracao(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleInteracaoDataChange = (date: Date) => {
-    setNovaInteracao(prev => ({ ...prev, data: date }));
-  };
-
-  const handleInteracaoSelectChange = (name: string, value: string) => {
-    setNovaInteracao(prev => ({ ...prev, [name]: value }));
-  };
-
-  const adicionarInteracao = async () => {
-    if (!lead?.id || novaInteracao.descricao.trim() === "" || !novaInteracao.responsavelId) {
+  const handleSave = async () => {
+    if (!currentCompany?.id) {
+      toast.error("Empresa não selecionada");
       return;
     }
 
+    setIsLoading(true);
     try {
-      const dataFormatada = format(novaInteracao.data, "yyyy-MM-dd");
-      
-      const { data, error } = await supabase
-        .from('leads_interacoes')
-        .insert([
-          {
-            lead_id: lead.id,
-            tipo: novaInteracao.tipo,
-            descricao: novaInteracao.descricao,
-            data: dataFormatada,
-            responsavel_id: novaInteracao.responsavelId,
-            status: 'Aberto'
-          }
-        ])
-        .select();
-      
-      if (error) throw error;
-      
-      await supabase
-        .from('leads')
-        .update({ ultimo_contato: dataFormatada })
-        .eq('id', lead.id);
-      
-      if (data && data[0]) {
-        const novaInteracaoCompleta = {
-          id: data[0].id.toString(),
-          leadId: data[0].lead_id,
-          tipo: data[0].tipo as "email" | "ligacao" | "reuniao" | "mensagem" | "whatsapp" | "telegram" | "instagram" | "facebook" | "outro",
-          descricao: data[0].descricao,
-          data: formatDate(data[0].data),
-          responsavelId: data[0].responsavel_id,
-          responsavelNome: usuarios.find(u => u.id === data[0].responsavel_id)?.nome || 'Desconhecido',
-          status: data[0].status || 'Aberto'
-        };
+      if (lead) {
+        // Atualizar lead existente
+        const { data, error } = await supabase
+          .from('leads')
+          .update({
+            ...formData,
+            empresa_id: currentCompany.id
+          })
+          .eq('id', lead.id)
+          .select()
+          .single();
 
-        setInteracoes(prev => [novaInteracaoCompleta, ...prev]);
-      }
-
-      // Só abre WhatsApp se o tipo for "whatsapp"
-      if (novaInteracao.tipo === "whatsapp" && lead.telefone) {
-        abrirWhatsApp(lead.telefone, novaInteracao.descricao);
-      }
-
-      setNovaInteracao({
-        tipo: "mensagem",
-        descricao: "",
-        data: new Date(),
-        responsavelId: novaInteracao.responsavelId
-      });
-
-    } catch (error) {
-      console.error('Erro ao salvar interação:', error);
-    }
-  };
-
-  const excluirInteracao = async (interacaoId: string) => {
-    if (!interacaoId) return;
-    
-    try {
-      const interacaoParaExcluir = interacoes.find(item => item.id === interacaoId);
-      if (interacaoParaExcluir && interacaoParaExcluir.status !== "Aberto") {
-        toast.error("Não é possível excluir", {
-          description: "Somente interações com status Aberto podem ser excluídas."
-        });
-        return;
-      }
-      
-      const { error } = await supabase
-        .from('leads_interacoes')
-        .delete()
-        .eq('id', interacaoId);
-      
-      if (error) throw error;
-      
-      setInteracoes(prev => prev.filter(item => item.id !== interacaoId));
-      
-      toast.success("Interação excluída com sucesso");
-      
-    } catch (error) {
-      console.error('Erro ao excluir interação:', error);
-      toast.error("Erro ao excluir interação");
-    }
-  };
-
-  const confirmarEdicaoInteracao = async (interacaoEditada: LeadInteracao) => {
-    if (!interacaoEditada) return;
-    
-    try {
-      let dataFormatada: string;
-      
-      // Verificação corrigida do tipo Date
-      if (typeof interacaoEditada.data === 'object' && interacaoEditada.data instanceof Date) {
-        dataFormatada = format(interacaoEditada.data, "yyyy-MM-dd");
+        if (error) throw error;
+        toast.success("Lead atualizado com sucesso!");
+        onSave(data as Lead);
       } else {
-        dataFormatada = interacaoEditada.data as string;
+        // Criar novo lead
+        const { data, error } = await supabase
+          .from('leads')
+          .insert({
+            ...formData,
+            empresa_id: currentCompany.id,
+            data_criacao: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        toast.success("Lead criado com sucesso!");
+        onSave(data as Lead);
       }
-      
-      const { error } = await supabase
-        .from('leads_interacoes')
-        .update({
-          tipo: interacaoEditada.tipo,
-          descricao: interacaoEditada.descricao,
-          data: dataFormatada,
-          responsavel_id: interacaoEditada.responsavelId,
-          status: interacaoEditada.status || 'Aberto'
-        })
-        .eq('id', interacaoEditada.id);
-      
-      if (error) throw error;
-      
-      setInteracoes(prev => prev.map(item => 
-        item.id === interacaoEditada.id ? {
-          ...interacaoEditada,
-          data: dataFormatada,
-          responsavelNome: usuarios.find(u => u.id === interacaoEditada.responsavelId)?.nome || 'Desconhecido'
-        } : item
-      ));
-      
-    } catch (error) {
-      console.error('Erro ao atualizar interação:', error);
+      onClose();
+    } catch (error: any) {
+      console.error("Erro ao salvar lead:", error);
+      toast.error(error.message || "Erro ao salvar lead");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Filtrar apenas origens ativas
-  const origensAtivas = origens.filter(origem => origem.status === "ativo");
-  
-  // Filtrar apenas usuários que são vendedores e estão ativos
-  const vendedoresAtivos = usuarios.filter(usuario => usuario.vendedor === "sim" && usuario.status === "ativo");
-
-  // Função para obter o nome do responsável por ID
-  const getNomeResponsavel = (id: string): string => {
-    return usuarios.find(u => u.id === id)?.nome || "Não atribuído";
-  };
-
-  // Obter o ID da empresa
-  const getEmpresaId = async () => {
+  const loadInteracoes = async (leadId: string) => {
     try {
       const { data, error } = await supabase
-        .from('empresas')
-        .select('id')
-        .limit(1)
-        .single();
-      
+        .from('interacoes')
+        .select('*')
+        .eq('lead_id', leadId)
+        .order('data', { ascending: false });
+
       if (error) throw error;
-      return data?.id;
+      setInteracoes(data || []);
     } catch (error) {
-      console.error('Erro ao obter ID da empresa:', error);
-      return null;
+      console.error('Erro ao carregar interações:', error);
+      toast.error('Erro ao carregar interações');
     }
   };
 
-  // Função para salvar lead
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleCreateInteracao = async (interacao: Interacao) => {
     try {
-      console.log('Salvando dados do lead...');
-      // Obter o ID da empresa
-      const empresaId = await getEmpresaId();
-      
-      if (!empresaId) {
-        console.error('ID da empresa não encontrado');
-        toast.error("Erro ao salvar", {
-          description: "ID da empresa não encontrado"
-        });
-        return;
-      }
-      
-      // Preparar dados para salvar
-      const leadDataToSave = {
-        nome: formData.nome,
-        empresa: formData.empresa || null,
-        email: formData.email || null,
-        telefone: formData.telefone || null,
-        etapa_id: formData.etapaId,
-        valor: formData.valor,
-        origem_id: formData.origemId || null,
-        responsavel_id: formData.responsavelId || null,
-        produto: formData.produto || null,
-        status: formData.status,
-        empresa_id: empresaId
-      };
-      
-      console.log('Dados a serem salvos:', leadDataToSave);
-      onConfirm(leadDataToSave);
-      
-      // Fechar o modal após salvar
-      onClose();
-    } catch (error) {
-      console.error('Erro ao salvar lead:', error);
-      toast.error("Erro ao salvar os dados", {
-        description: "Ocorreu um erro ao salvar o lead."
+      const { data, error } = await supabase
+        .from('interacoes')
+        .insert({
+          ...interacao,
+          empresa_id: currentCompany?.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success("Interação criada com sucesso!");
+      setInteracoes(prev => [data, ...prev]);
+    } catch (error: any) {
+      console.error("Erro ao criar interação:", error);
+      toast.error(error.message || "Erro ao criar interação");
+    }
+  };
+
+  const handleWhatsAppClick = () => {
+    if (!formData.telefone) {
+      toast.error("Número de telefone não informado");
+      return;
+    }
+
+    let phoneNumber = formData.telefone.replace(/\D/g, "");
+    
+    if (phoneNumber.length === 11 && phoneNumber.startsWith("0")) {
+      phoneNumber = phoneNumber.substring(1);
+    }
+    
+    if (phoneNumber.length === 10) {
+      phoneNumber = phoneNumber.substring(0, 2) + "9" + phoneNumber.substring(2);
+    }
+    
+    if (!phoneNumber.startsWith("55")) {
+      phoneNumber = "55" + phoneNumber;
+    }
+
+    const message = encodeURIComponent(`Olá ${formData.nome}, tudo bem?`);
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+    
+    window.open(whatsappUrl, '_blank');
+
+    // Registrar interação automática
+    if (lead?.id && activeTab === "dados") {
+      handleCreateInteracao({
+        lead_id: lead.id,
+        tipo: "whatsapp",
+        descricao: `Mensagem enviada via WhatsApp para ${phoneNumber}`,
+        data: new Date().toISOString().split('T')[0],
+        status: "Concluído"
       });
     }
   };
 
   return (
-    <>
-      <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent side="right" className="w-full sm:max-w-full p-0 overflow-y-auto">
-          <div className="h-full flex flex-col">
-            <SheetHeader className="p-6 border-b">
-              <SheetTitle>{lead ? `Editar Lead: ${lead.nome}` : "Novo Lead"}</SheetTitle>
-              <SheetDescription>
-                {lead ? "Atualize as informações e gerencie as interações do lead" : "Preencha as informações para criar um novo lead"}
-              </SheetDescription>
-            </SheetHeader>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[825px]">
+        <DialogHeader>
+          <DialogTitle>{lead ? "Editar Lead" : "Novo Lead"}</DialogTitle>
+        </DialogHeader>
 
-            <Tabs 
-              value={activeTab} 
-              onValueChange={setActiveTab} 
-              className="flex-1 flex flex-col overflow-hidden"
-            >
-              <div className="border-b px-6">
-                <TabsList className="bg-transparent border-b-0 p-0">
-                  <TabsTrigger 
-                    value="dados" 
-                    className="pb-2 pt-2 px-4 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:text-blue-700 data-[state=active]:shadow-none data-[state=active]:bg-transparent"
-                  >
-                    Dados do Lead
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="interacoes" 
-                    className="pb-2 pt-2 px-4 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:text-blue-700 data-[state=active]:shadow-none data-[state=active]:bg-transparent"
-                  >
-                    Interações
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="fechamento"
-                    className="pb-2 pt-2 px-4 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:text-blue-700 data-[state=active]:shadow-none data-[state=active]:bg-transparent"
-                  >
-                    Fechamento
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-              <div className="flex-1 overflow-auto">
-                {/* DADOS */}
-                <TabsContent value="dados" className="p-6 mt-0">
-                  <form id="dadosLeadForm" onSubmit={handleSubmit}>
-                    <LeadDadosTab
-                      formData={formData}
-                      handleChange={handleChange}
-                      handleSelectChange={handleSelectChange}
-                      etapas={etapas}
-                      origensAtivas={origensAtivas}
-                      vendedoresAtivos={vendedoresAtivos}
-                    />
-                  </form>
-                </TabsContent>
+        <Tabs defaultValue="dados" className="space-y-4" onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="dados">Dados</TabsTrigger>
+            <TabsTrigger value="fechamento" disabled={!lead}>Fechamento</TabsTrigger>
+            <TabsTrigger value="interacoes" disabled={!lead}>Interações</TabsTrigger>
+          </TabsList>
+          <TabsContent value="dados" className="space-y-2">
+            <LeadDadosTab
+              formData={formData}
+              handleChange={handleChange}
+              handleNumberChange={handleNumberChange}
+              funis={funis}
+              etapas={etapas}
+              origens={origens}
+              favorecidos={favorecidos}
+              servicos={servicos}
+              produtos={produtos}
+              onWhatsAppClick={handleWhatsAppClick}
+            />
+          </TabsContent>
+          <TabsContent value="fechamento" className="space-y-2">
+            {lead && (
+              <LeadFechamentoTab
+                lead={lead}
+                motivosPerda={motivosPerda}
+                handleChange={handleChange}
+              />
+            )}
+          </TabsContent>
+          <TabsContent value="interacoes" className="space-y-2">
+            {lead && (
+              <InteracoesTab
+                leadId={lead.id}
+                interacoes={interacoes}
+                onCreateInteracao={handleCreateInteracao}
+              />
+            )}
+          </TabsContent>
+        </Tabs>
 
-                {/* INTERAÇÕES */}
-                <TabsContent value="interacoes" className="mt-0 flex flex-col overflow-hidden">
-                  <InteracoesTab
-                    lead={lead}
-                    interacoes={interacoes}
-                    carregandoInteracoes={carregandoInteracoes}
-                    novaInteracao={novaInteracao}
-                    handleInteracaoChange={handleInteracaoChange}
-                    handleInteracaoSelectChange={handleInteracaoSelectChange}
-                    handleInteracaoDataChange={handleInteracaoDataChange}
-                    adicionarInteracao={adicionarInteracao}
-                    excluirInteracao={excluirInteracao}
-                    confirmarEdicaoInteracao={confirmarEdicaoInteracao}
-                    vendedoresAtivos={vendedoresAtivos}
-                    getNomeResponsavel={getNomeResponsavel}
-                  />
-                </TabsContent>
-
-                {/* FECHAMENTO */}
-                <TabsContent value="fechamento" className="p-6 mt-0">
-                  <LeadFechamentoTab
-                    fechamento={fechamento}
-                    setFechamento={setFechamento}
-                    motivosPerda={motivosPerda}
-                    leadId={lead?.id}
-                  />
-                </TabsContent>
-              </div>
-            </Tabs>
-            
-            <SheetFooter className="border-t p-6">
-              <div className="flex justify-end gap-2 w-full">
-                <SheetClose asChild>
-                  <Button type="button" variant="outline">
-                    Cancelar
-                  </Button>
-                </SheetClose>
-                <Button 
-                  type="submit" 
-                  form="dadosLeadForm" 
-                  variant="blue"
-                >
-                  {lead ? "Salvar Alterações" : "Criar Lead"}
-                </Button>
-              </div>
-            </SheetFooter>
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={handleSave} disabled={isLoading}>
+            {isLoading ? "Salvando..." : "Salvar"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

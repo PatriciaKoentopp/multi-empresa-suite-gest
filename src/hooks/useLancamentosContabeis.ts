@@ -54,7 +54,8 @@ export const useLancamentosContabeis = () => {
     if (!currentCompany?.id) return;
 
     try {
-      const { data: lancamentosData, error } = await supabase
+      // 1. Buscar lançamentos manuais da tabela lancamentos_contabeis
+      const { data: lancamentosManuais, error: errorManuais } = await supabase
         .from('lancamentos_contabeis')
         .select(`
           id,
@@ -70,17 +71,39 @@ export const useLancamentosContabeis = () => {
         .eq('empresa_id', currentCompany.id)
         .order('data', { ascending: false });
 
-      if (error) throw error;
+      if (errorManuais) throw errorManuais;
 
-      // Buscar dados das contas para enriquecer os lançamentos
+      // 2. Buscar movimentações automáticas
+      const { data: movimentacoes, error: errorMovimentacoes } = await supabase
+        .from('movimentacoes')
+        .select(`
+          id,
+          data_lancamento,
+          descricao,
+          valor,
+          tipo_operacao,
+          favorecido_id,
+          created_at,
+          updated_at,
+          empresa_id,
+          favorecido:favorecidos(nome)
+        `)
+        .eq('empresa_id', currentCompany.id)
+        .not('data_lancamento', 'is', null)
+        .order('data_lancamento', { ascending: false });
+
+      if (errorMovimentacoes) throw errorMovimentacoes;
+
+      // 3. Buscar dados das contas para enriquecer os lançamentos
       const { data: contasData } = await supabase
         .from('plano_contas')
-        .select('id, codigo, descricao')
+        .select('id, codigo, descricao, tipo')
         .eq('empresa_id', currentCompany.id);
 
       const contasMap = new Map(contasData?.map(conta => [conta.id, conta]) || []);
 
-      const lancamentosFormatados: LancamentoContabil[] = (lancamentosData || []).map(lancamento => {
+      // 4. Processar lançamentos manuais
+      const lancamentosManuaisFormatados: LancamentoContabil[] = (lancamentosManuais || []).map(lancamento => {
         const contaDebito = contasMap.get(lancamento.conta_debito_id);
         const contaCredito = contasMap.get(lancamento.conta_credito_id);
 
@@ -102,7 +125,79 @@ export const useLancamentosContabeis = () => {
         };
       });
 
-      setLancamentos(lancamentosFormatados);
+      // 5. Processar movimentações automáticas - criar lançamentos de débito e crédito
+      const lancamentosAutomaticos: LancamentoContabil[] = [];
+      
+      (movimentacoes || []).forEach(mov => {
+        // Determinar contas baseado no tipo de operação
+        let contaDebito: any = null;
+        let contaCredito: any = null;
+        
+        // Buscar contas padrão baseado no tipo de operação
+        const contasArray = Array.from(contasMap.values());
+        
+        if (mov.tipo_operacao === 'recebimento') {
+          // Débito: Caixa/Bancos, Crédito: Contas a Receber
+          contaDebito = contasArray.find(c => c.tipo === 'ativo' && c.codigo?.includes('1.1'));
+          contaCredito = contasArray.find(c => c.tipo === 'ativo' && c.codigo?.includes('1.2'));
+        } else if (mov.tipo_operacao === 'pagamento') {
+          // Débito: Contas a Pagar, Crédito: Caixa/Bancos
+          contaDebito = contasArray.find(c => c.tipo === 'passivo' && c.codigo?.includes('2.1'));
+          contaCredito = contasArray.find(c => c.tipo === 'ativo' && c.codigo?.includes('1.1'));
+        } else if (mov.tipo_operacao === 'transferencia') {
+          // Débito: Conta Destino, Crédito: Conta Origem
+          contaDebito = contasArray.find(c => c.tipo === 'ativo' && c.codigo?.includes('1.1'));
+          contaCredito = contasArray.find(c => c.tipo === 'ativo' && c.codigo?.includes('1.1'));
+        }
+
+        if (contaDebito && contaCredito) {
+          // Criar lançamento de débito
+          lancamentosAutomaticos.push({
+            id: `${mov.id}_debito`,
+            data: mov.data_lancamento,
+            conta_debito_id: contaDebito.id,
+            conta_credito_id: contaCredito.id,
+            valor: Number(mov.valor),
+            historico: `${mov.tipo_operacao.toUpperCase()}: ${mov.descricao}`,
+            created_at: mov.created_at,
+            updated_at: mov.updated_at,
+            empresa_id: mov.empresa_id,
+            movimentacao_id: mov.id,
+            tipo_lancamento: 'principal',
+            conta_codigo: contaDebito.codigo || '',
+            conta_nome: contaDebito.descricao || '',
+            favorecido: (mov.favorecido as any)?.nome || '',
+            tipo: 'debito',
+            saldo: 0
+          });
+
+          // Criar lançamento de crédito
+          lancamentosAutomaticos.push({
+            id: `${mov.id}_credito`,
+            data: mov.data_lancamento,
+            conta_debito_id: contaDebito.id,
+            conta_credito_id: contaCredito.id,
+            valor: Number(mov.valor),
+            historico: `${mov.tipo_operacao.toUpperCase()}: ${mov.descricao}`,
+            created_at: mov.created_at,
+            updated_at: mov.updated_at,
+            empresa_id: mov.empresa_id,
+            movimentacao_id: mov.id,
+            tipo_lancamento: 'principal',
+            conta_codigo: contaCredito.codigo || '',
+            conta_nome: contaCredito.descricao || '',
+            favorecido: (mov.favorecido as any)?.nome || '',
+            tipo: 'credito',
+            saldo: 0
+          });
+        }
+      });
+
+      // 6. Combinar todos os lançamentos e ordenar por data
+      const todosLancamentos = [...lancamentosManuaisFormatados, ...lancamentosAutomaticos]
+        .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+
+      setLancamentos(todosLancamentos);
     } catch (error) {
       console.error('Erro ao buscar lançamentos:', error);
       toast({

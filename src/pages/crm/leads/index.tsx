@@ -2,90 +2,150 @@ import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-import { LeadCard } from "./lead-card";
-import { LeadFormModal } from "./lead-form-modal";
-import { Funil, Origem, Usuario, MotivoPerda, Lead } from "@/types";
-import { EtapaFunil } from "./types";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
-import { toast } from "sonner";
+import { LeadCard } from "./lead-card";
+import { LeadFormModal } from "./lead-form-modal";
+import { StageFilterCheckbox } from "@/components/crm/leads/StageFilterCheckbox";
+
+interface Lead {
+  id: string;
+  nome: string;
+  empresa?: string;
+  email?: string;
+  telefone?: string;
+  valor?: number;
+  produto?: string;
+  observacoes?: string;
+  etapa_id: string;
+  funil_id: string;
+  origem_id?: string;
+  responsavel_id?: string;
+  data_criacao: string;
+  ultimo_contato?: string;
+  status: string;
+  empresa_id: string;
+  favorecido_id?: string;
+  servico_id?: string;
+  produto_id?: string;
+}
+
+interface MotivoPerda {
+  id: string;
+  nome: string;
+  status: string;
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Funil {
+  id: string;
+  nome: string;
+  descricao?: string;
+  status: string;
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Etapa {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ordem: number;
+  cor?: string;
+  funil_id: string;
+  status: string;
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Origem {
+  id: string;
+  nome: string;
+  status: string;
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Servico {
+  id: string;
+  nome: string;
+  descricao?: string;
+  preco?: number;
+  status: string;
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Produto {
+  id: string;
+  nome: string;
+  descricao?: string;
+  preco?: number;
+  status: string;
+  empresa_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function LeadsPage() {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [funis, setFunis] = useState<Funil[]>([]);
-  const [etapas, setEtapas] = useState<EtapaFunil[]>([]);
-  const [origens, setOrigens] = useState<Origem[]>([]);
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [motivosPerda, setMotivosPerda] = useState<MotivoPerda[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [funilFilter, setFunilFilter] = useState("");
-  const [etapaFilter, setEtapaFilter] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [funilId, setFunilId] = useState<string>("todos");
+  const [funis, setFunis] = useState<Funil[]>([]);
+  const [etapas, setEtapas] = useState<Etapa[]>([]);
+  const [origens, setOrigens] = useState<Origem[]>([]);
+  const [motivosPerda, setMotivosPerda] = useState<MotivoPerda[]>([]);
+  const [servicos, setServicos] = useState<Servico[]>([]);
+  const [produtos, setProdutos] = useState<Produto[]>([]);
   const { currentCompany } = useCompany();
+  const [etapasSelecionadas, setEtapasSelecionadas] = useState<string[]>([]);
 
   useEffect(() => {
-    if (currentCompany) {
-      carregarLeads();
-      carregarFunis();
-      carregarEtapas();
-      carregarOrigens();
-      carregarUsuarios();
-      carregarMotivosPerda();
+    if (currentCompany?.id) {
+      loadLeads();
+      loadFunis();
+      loadEtapas();
+      loadOrigens();
+      loadMotivosPerda();
+      loadServicos();
+      loadProdutos();
     }
-  }, [currentCompany]);
+  }, [currentCompany?.id]);
 
-  const carregarLeads = async () => {
-    if (!currentCompany) return;
-
+  const loadLeads = async () => {
     try {
       const { data, error } = await supabase
         .from('leads')
-        .select(`
-          id, nome, empresa, email, telefone, etapa_id, funil_id, valor, origem_id,
-          data_criacao, ultimo_contato, responsavel_id, produto, status,
-          origens ( nome )
-        `)
-        .eq('empresa_id', currentCompany.id);
+        .select('*')
+        .eq('empresa_id', currentCompany?.id);
 
       if (error) throw error;
-
-      const leadsComNomes: Lead[] = data ? data.map((lead: any) => ({
-        id: lead.id,
-        nome: lead.nome,
-        empresa: lead.empresa || "",
-        email: lead.email || "",
-        telefone: lead.telefone || "",
-        etapaId: lead.etapa_id,
-        funilId: lead.funil_id,
-        valor: lead.valor || 0,
-        origemId: lead.origem_id,
-        dataCriacao: lead.data_criacao,
-        ultimoContato: lead.ultimo_contato,
-        responsavelId: lead.responsavel_id,
-        produto: lead.produto || "",
-        status: lead.status as "ativo" | "inativo" | "fechado",
-        origemNome: lead.origens?.nome || "Desconhecida",
-        responsavelNome: "Não atribuído",
-      })) : [];
-
-      setLeads(leadsComNomes);
+      setLeads((data as Lead[]) || []);
     } catch (error) {
       console.error('Erro ao carregar leads:', error);
       toast.error('Erro ao carregar leads');
     }
   };
 
-  const carregarFunis = async () => {
-    if (!currentCompany) return;
-
+  const loadFunis = async () => {
     try {
       const { data, error } = await supabase
         .from('funis')
         .select('*')
-        .eq('empresa_id', currentCompany.id);
+        .eq('empresa_id', currentCompany?.id)
+        .eq('status', 'ativo');
 
       if (error) throw error;
       setFunis((data as Funil[]) || []);
@@ -95,30 +155,28 @@ export default function LeadsPage() {
     }
   };
 
-  const carregarEtapas = async () => {
-    if (!currentCompany) return;
-
+  const loadEtapas = async () => {
     try {
       const { data, error } = await supabase
-        .from('funil_etapas')
-        .select('*');
+        .from('etapas')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .eq('status', 'ativo');
 
       if (error) throw error;
-      setEtapas((data as EtapaFunil[]) || []);
+      setEtapas((data as Etapa[]) || []);
     } catch (error) {
       console.error('Erro ao carregar etapas:', error);
       toast.error('Erro ao carregar etapas');
     }
   };
 
-  const carregarOrigens = async () => {
-    if (!currentCompany) return;
-
+  const loadOrigens = async () => {
     try {
       const { data, error } = await supabase
         .from('origens')
         .select('*')
-        .eq('empresa_id', currentCompany.id)
+        .eq('empresa_id', currentCompany?.id)
         .eq('status', 'ativo');
 
       if (error) throw error;
@@ -129,39 +187,51 @@ export default function LeadsPage() {
     }
   };
 
-  const carregarUsuarios = async () => {
-    if (!currentCompany) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('empresa_id', currentCompany.id)
-        .eq('status', 'ativo');
-
-      if (error) throw error;
-      setUsuarios((data as Usuario[]) || []);
-    } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
-      toast.error('Erro ao carregar usuários');
-    }
-  };
-
-  const carregarMotivosPerda = async () => {
-    if (!currentCompany) return;
-
+  const loadMotivosPerda = async () => {
     try {
       const { data, error } = await supabase
         .from('motivos_perda')
         .select('*')
-        .eq('empresa_id', currentCompany.id)
+        .eq('empresa_id', currentCompany?.id)
         .eq('status', 'ativo');
 
       if (error) throw error;
-      setMotivosPerda((data as MotivosPerda[]) || []);
+      setMotivosPerda((data as MotivoPerda[]) || []);
     } catch (error) {
       console.error('Erro ao carregar motivos de perda:', error);
       toast.error('Erro ao carregar motivos de perda');
+    }
+  };
+
+  const loadServicos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('servicos')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .eq('status', 'ativo');
+
+      if (error) throw error;
+      setServicos((data as Servico[]) || []);
+    } catch (error) {
+      console.error('Erro ao carregar serviços:', error);
+      toast.error('Erro ao carregar serviços');
+    }
+  };
+
+  const loadProdutos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('produtos')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .eq('status', 'ativo');
+
+      if (error) throw error;
+      setProdutos((data as Produto[]) || []);
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+      toast.error('Erro ao carregar produtos');
     }
   };
 
@@ -175,156 +245,172 @@ export default function LeadsPage() {
     setEditingLead(null);
   };
 
-  const handleConfirm = async (leadData: any) => {
-    if (!currentCompany) {
-      toast.error("Nenhuma empresa selecionada");
-      return;
-    }
-
+  const handleSaveLead = async (leadData: Lead) => {
     try {
-      if (editingLead) {
-        const { error } = await supabase
-          .from('leads')
-          .update({
-            nome: leadData.nome,
-            empresa: leadData.empresa || null,
-            email: leadData.email || null,
-            telefone: leadData.telefone || null,
-            etapa_id: leadData.etapa_id,
-            funil_id: leadData.funil_id || null,
-            valor: leadData.valor || 0,
-            origem_id: leadData.origem_id || null,
-            responsavel_id: leadData.responsavel_id || null,
-            produto: leadData.produto || null,
-            status: leadData.status,
-          })
-          .eq('id', editingLead.id);
+      const { data, error } = editingLead
+        ? await supabase
+            .from('leads')
+            .update(leadData)
+            .eq('id', editingLead.id)
+            .select()
+        : await supabase
+            .from('leads')
+            .insert([leadData])
+            .select();
 
-        if (error) throw error;
-        toast.success("Lead atualizado com sucesso!");
-      } else {
-        const { error } = await supabase
-          .from('leads')
-          .insert({
-            nome: leadData.nome,
-            empresa: leadData.empresa || null,
-            email: leadData.email || null,
-            telefone: leadData.telefone || null,
-            etapa_id: leadData.etapa_id,
-            funil_id: leadData.funil_id || null,
-            valor: leadData.valor || 0,
-            origem_id: leadData.origem_id || null,
-            responsavel_id: leadData.responsavel_id || null,
-            produto: leadData.produto || null,
-            status: leadData.status,
-            empresa_id: currentCompany.id,
-            data_criacao: new Date().toISOString().split('T')[0],
-            ultimo_contato: new Date().toISOString().split('T')[0]
-          });
+      if (error) throw error;
 
-        if (error) throw error;
-        toast.success("Lead criado com sucesso!");
-      }
-      carregarLeads();
-      handleCloseModal();
+      toast.success(`Lead ${editingLead ? 'atualizado' : 'criado'} com sucesso!`);
+      loadLeads();
     } catch (error) {
-      console.error("Erro ao salvar lead:", error);
-      toast.error("Erro ao salvar lead");
+      console.error('Erro ao salvar lead:', error);
+      toast.error('Erro ao salvar lead');
+    } finally {
+      handleCloseModal();
     }
   };
 
-  const etapasFiltradas = funilFilter
-    ? etapas.filter(etapa => etapa.funil_id === funilFilter)
-    : etapas;
+  const handleDeleteLead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', id);
 
-  const leadsFiltrados = leads.filter(lead => {
-    const searchRegex = new RegExp(searchTerm, 'i');
-    const searchMatch = searchRegex.test(lead.nome) || searchRegex.test(lead.empresa || '') || searchRegex.test(lead.email || '');
-    const funilMatch = !funilFilter || lead.funilId === funilFilter;
-    const etapaMatch = !etapaFilter || lead.etapaId === etapaFilter;
+      if (error) throw error;
 
-    return searchMatch && funilMatch && etapaMatch;
-  });
+      toast.success('Lead excluído com sucesso!');
+      loadLeads();
+    } catch (error) {
+      console.error('Erro ao excluir lead:', error);
+      toast.error('Erro ao excluir lead');
+    }
+  };
+
+  const filteredLeads = React.useMemo(() => {
+    let filtered = leads;
+
+    if (searchTerm) {
+      filtered = filtered.filter(lead =>
+        lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (lead.empresa && lead.empresa.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (lead.telefone && lead.telefone.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    if (funilId !== "todos") {
+      filtered = filtered.filter(lead => lead.funil_id === funilId);
+    }
+
+    if (etapasSelecionadas.length > 0) {
+      filtered = filtered.filter(lead => etapasSelecionadas.includes(lead.etapa_id));
+    }
+
+    return filtered;
+  }, [leads, searchTerm, funilId, etapasSelecionadas]);
+
+  const etapasDoFunil = React.useMemo(() => {
+    return etapas.filter(etapa => etapa.funil_id === funilId || funilId === "todos");
+  }, [etapas, funilId]);
+
+  const handleEtapaFilterChange = (etapaId: string, checked: boolean) => {
+    setEtapasSelecionadas(prev => {
+      if (checked) {
+        return [...prev, etapaId];
+      } else {
+        return prev.filter(id => id !== etapaId);
+      }
+    });
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto py-6">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Leads</h1>
-        <Button onClick={() => handleOpenModal()} variant="blue">
+        <Button onClick={() => handleOpenModal()}>
           <Plus className="mr-2 h-4 w-4" />
           Novo Lead
         </Button>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <Card className="col-span-2">
+          <CardHeader>
+            <CardTitle>Filtros</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex items-center space-x-2">
               <Input
+                type="text"
                 placeholder="Buscar lead..."
-                className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+              <Search className="h-5 w-5 text-gray-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
             </div>
-
-            <div>
-              <Select 
-                value={funilFilter || "all_funnels"} 
-                onValueChange={(value) => setFunilFilter(value === "all_funnels" ? "" : value)}
-              >
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Filtrar por funil..." />
+            <div className="flex items-center space-x-2">
+              <Select value={funilId} onValueChange={setFunilId}>
+                <SelectTrigger className="w-[180px]">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Filtrar por Funil" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all_funnels">Todos os funis</SelectItem>
-                  {funis.filter(funil => funil.id && funil.id.trim() !== "").map(funil => (
-                    <SelectItem key={funil.id} value={funil.id}>{funil.nome}</SelectItem>
+                  <SelectItem value="todos">Todos os Funis</SelectItem>
+                  {funis.map(funil => (
+                    <SelectItem key={funil.id} value={funil.id}>
+                      {funil.nome}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+          </CardContent>
+        </Card>
 
-            <div>
-              <Select 
-                value={etapaFilter || "all_stages"} 
-                onValueChange={(value) => setEtapaFilter(value === "all_stages" ? "" : value)}
-              >
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Filtrar por etapa..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all_stages">Todas as etapas</SelectItem>
-                  {etapasFiltradas.filter(etapa => etapa.id && etapa.id.trim() !== "").map(etapa => (
-                    <SelectItem key={etapa.id} value={etapa.id}>{etapa.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {leadsFiltrados.map(lead => (
-              <LeadCard
-                key={lead.id}
-                lead={lead}
-                onEdit={() => handleOpenModal(lead)}
+        <Card>
+          <CardHeader>
+            <CardTitle>Etapas</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col">
+            {etapasDoFunil.map(etapa => (
+              <StageFilterCheckbox
+                key={etapa.id}
+                id={etapa.id}
+                label={etapa.nome}
+                color={etapa.cor}
+                checked={etapasSelecionadas.includes(etapa.id)}
+                onCheckedChange={(checked) => handleEtapaFilterChange(etapa.id, checked)}
               />
             ))}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {filteredLeads.map(lead => (
+          <LeadCard
+            key={lead.id}
+            lead={lead}
+            onEdit={() => handleOpenModal(lead)}
+            onDelete={handleDeleteLead}
+            etapas={etapas}
+          />
+        ))}
+      </div>
 
       <LeadFormModal
-        open={isModalOpen}
+        isOpen={isModalOpen}
         onClose={handleCloseModal}
-        onConfirm={handleConfirm}
         lead={editingLead}
+        onSave={handleSaveLead}
+        funis={funis}
         etapas={etapas}
         origens={origens}
-        usuarios={usuarios}
         motivosPerda={motivosPerda}
+        favorecidos={[]}
+        servicos={servicos}
+        produtos={produtos}
       />
     </div>
   );
