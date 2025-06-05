@@ -32,6 +32,7 @@ interface Funil {
   id: string;
   nome: string;
   ativo: boolean;
+  empresa_id: string;
 }
 
 interface Etapa {
@@ -46,6 +47,7 @@ interface Origem {
   id: string;
   nome: string;
   status: string;
+  empresa_id: string;
 }
 
 export default function LeadsPage() {
@@ -66,7 +68,7 @@ export default function LeadsPage() {
 
   const loadData = async () => {
     try {
-      console.log('Carregando dados...');
+      console.log('Carregando dados dos leads...');
       
       // Carregar leads
       const { data: leadsData, error: leadsError } = await supabase
@@ -171,15 +173,20 @@ export default function LeadsPage() {
         if (error) throw error;
         toast.success('Lead atualizado com sucesso!');
       } else {
-        // Criar novo lead
+        // Criar novo lead - corrigir a inserção individual
+        const leadToInsert = {
+          ...leadData,
+          empresa_id: currentCompany?.id,
+          data_criacao: new Date().toISOString().split('T')[0],
+          status: 'ativo',
+          nome: leadData.nome || '',
+          etapa_id: leadData.etapa_id || '',
+          funil_id: leadData.funil_id || ''
+        };
+
         const { error } = await supabase
           .from('leads')
-          .insert([{
-            ...leadData,
-            empresa_id: currentCompany?.id,
-            data_criacao: new Date().toISOString().split('T')[0],
-            status: 'ativo'
-          }]);
+          .insert(leadToInsert);
 
         if (error) throw error;
         toast.success('Lead criado com sucesso!');

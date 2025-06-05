@@ -96,7 +96,7 @@ export function LeadModal({
         email: '',
         telefone: '',
         valor: '',
-        funil_id: funis[0]?.id || '',
+        funil_id: funis.length > 0 ? funis[0].id : '',
         etapa_id: '',
         origem_id: '',
         produto: '',
