@@ -1,7 +1,6 @@
 
 import React from "react";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { LeadFormData } from "./types";
 
@@ -17,54 +16,44 @@ interface MotivoPerda {
 interface LeadFechamentoTabProps {
   lead: LeadFormData;
   motivosPerda: MotivoPerda[];
-  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
 }
 
 export function LeadFechamentoTab({ lead, motivosPerda, handleChange }: LeadFechamentoTabProps) {
-  const handleSelectChange = (name: string, value: string) => {
-    const event = {
-      target: { name, value }
-    } as React.ChangeEvent<HTMLInputElement>;
-    handleChange(event);
-  };
-
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="status_fechamento">Status de Fechamento</Label>
-        <Select 
-          value={lead.status || "ativo"} 
-          onValueChange={(value) => handleSelectChange("status", value)}
+        <select
+          id="status_fechamento"
+          name="status"
+          value={lead.status || "ativo"}
+          onChange={handleChange}
+          className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white"
         >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione o status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ativo">Ativo</SelectItem>
-            <SelectItem value="fechado">Fechado - Ganho</SelectItem>
-            <SelectItem value="perdido">Fechado - Perdido</SelectItem>
-          </SelectContent>
-        </Select>
+          <option value="ativo">Ativo</option>
+          <option value="fechado">Fechado - Ganho</option>
+          <option value="perdido">Fechado - Perdido</option>
+        </select>
       </div>
 
       {lead.status === "perdido" && (
         <div className="space-y-2">
           <Label htmlFor="motivo_perda_id">Motivo da Perda</Label>
-          <Select 
-            value={lead.motivo_perda_id || ""} 
-            onValueChange={(value) => handleSelectChange("motivo_perda_id", value)}
+          <select
+            id="motivo_perda_id"
+            name="motivo_perda_id"
+            value={lead.motivo_perda_id || ""}
+            onChange={handleChange}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white"
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o motivo" />
-            </SelectTrigger>
-            <SelectContent>
-              {motivosPerda.map((motivo) => (
-                <SelectItem key={motivo.id} value={motivo.id}>
-                  {motivo.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="">Selecione o motivo</option>
+            {motivosPerda.map((motivo) => (
+              <option key={motivo.id} value={motivo.id}>
+                {motivo.nome}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 

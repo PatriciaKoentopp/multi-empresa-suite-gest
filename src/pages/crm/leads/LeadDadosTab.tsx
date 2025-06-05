@@ -2,14 +2,13 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { LeadFormData, EtapaFunil } from "./types";
 
 interface LeadDadosTabProps {
   formData: Partial<LeadFormData>;
-  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   handleNumberChange: (name: string, value: number | undefined) => void;
   funis: any[];
   etapas: EtapaFunil[];
@@ -32,48 +31,15 @@ export function LeadDadosTab({
   produtos,
   onWhatsAppClick
 }: LeadDadosTabProps) {
-  const handleSelectChange = (name: string, value: string) => {
-    const event = {
-      target: { name, value }
-    } as React.ChangeEvent<HTMLInputElement>;
-    handleChange(event);
-  };
-
   const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value ? parseFloat(e.target.value) : undefined;
     handleNumberChange('valor', value);
   };
 
-  // Função para validar se um ID é válido
-  const isValidId = (id: any): boolean => {
-    return id && typeof id === 'string' && id.trim() !== "" && id !== "null" && id !== "undefined";
-  };
-
-  // Função para validar objetos com ID e nome
-  const isValidObject = (obj: any): boolean => {
-    return obj && 
-           isValidId(obj.id) && 
-           obj.nome && 
-           typeof obj.nome === 'string' && 
-           obj.nome.trim() !== "";
-  };
-
-  // Filtrar dados válidos de forma mais rigorosa
-  const funisValidos = React.useMemo(() => {
-    return (funis || []).filter(isValidObject);
-  }, [funis]);
-
-  const etapasValidas = React.useMemo(() => {
-    return (etapas || []).filter(isValidObject);
-  }, [etapas]);
-
-  const origensValidas = React.useMemo(() => {
-    return (origens || []).filter(isValidObject);
-  }, [origens]);
-
-  console.log('Debug - Funis válidos:', funisValidos);
-  console.log('Debug - Etapas válidas:', etapasValidas);
-  console.log('Debug - Origens válidas:', origensValidas);
+  // Filtrar dados válidos
+  const funisValidos = (funis || []).filter(f => f && f.id && f.nome);
+  const etapasValidas = (etapas || []).filter(e => e && e.id && e.nome);
+  const origensValidas = (origens || []).filter(o => o && o.id && o.nome);
 
   return (
     <div className="space-y-4">
@@ -139,52 +105,40 @@ export function LeadDadosTab({
 
         <div className="space-y-2">
           <Label htmlFor="funil_id">Funil *</Label>
-          <Select 
-            value={formData.funil_id || ""} 
-            onValueChange={(value) => handleSelectChange("funil_id", value)}
+          <select
+            id="funil_id"
+            name="funil_id"
+            value={formData.funil_id || ""}
+            onChange={handleChange}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white"
+            required
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um funil" />
-            </SelectTrigger>
-            <SelectContent>
-              {funisValidos.length > 0 ? (
-                funisValidos.map((funil) => (
-                  <SelectItem key={funil.id} value={funil.id}>
-                    {funil.nome}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="no-funis" disabled>
-                  Nenhum funil disponível
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+            <option value="">Selecione um funil</option>
+            {funisValidos.map((funil) => (
+              <option key={funil.id} value={funil.id}>
+                {funil.nome}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="etapa_id">Etapa *</Label>
-          <Select 
-            value={formData.etapa_id || ""} 
-            onValueChange={(value) => handleSelectChange("etapa_id", value)}
+          <select
+            id="etapa_id"
+            name="etapa_id"
+            value={formData.etapa_id || ""}
+            onChange={handleChange}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white"
+            required
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione uma etapa" />
-            </SelectTrigger>
-            <SelectContent>
-              {etapasValidas.length > 0 ? (
-                etapasValidas.map((etapa) => (
-                  <SelectItem key={etapa.id} value={etapa.id}>
-                    {etapa.nome}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="no-etapas" disabled>
-                  Nenhuma etapa disponível
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+            <option value="">Selecione uma etapa</option>
+            {etapasValidas.map((etapa) => (
+              <option key={etapa.id} value={etapa.id}>
+                {etapa.nome}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="space-y-2">
@@ -202,22 +156,20 @@ export function LeadDadosTab({
 
         <div className="space-y-2">
           <Label htmlFor="origem_id">Origem</Label>
-          <Select 
-            value={formData.origem_id || ""} 
-            onValueChange={(value) => handleSelectChange("origem_id", value)}
+          <select
+            id="origem_id"
+            name="origem_id"
+            value={formData.origem_id || ""}
+            onChange={handleChange}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white"
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione uma origem" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Nenhuma origem</SelectItem>
-              {origensValidas.map((origem) => (
-                <SelectItem key={origem.id} value={origem.id}>
-                  {origem.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="">Selecione uma origem</option>
+            {origensValidas.map((origem) => (
+              <option key={origem.id} value={origem.id}>
+                {origem.nome}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="space-y-2">
