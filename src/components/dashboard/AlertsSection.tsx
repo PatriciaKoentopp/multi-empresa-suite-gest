@@ -1,12 +1,10 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, X } from "lucide-react";
-import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
-import { LeadInteracao } from "@/pages/crm/leads/types";
-import { useDashboardCards } from "@/hooks/useDashboardCards";
+import React from 'react';
+import { AlertTriangle, Calendar, Clock } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatCurrency, formatDate } from '@/lib/utils';
+import { ContaReceber } from '@/types/financeiro';
+import { LeadInteracao } from '@/pages/crm/leads/types';
 
 interface AlertsSectionProps {
   parcelasVencidas: ContaReceber[];
@@ -15,111 +13,42 @@ interface AlertsSectionProps {
   isLoading: boolean;
 }
 
-export const AlertsSection = ({ 
-  parcelasVencidas, 
-  parcelasHoje, 
-  interacoesPendentes, 
-  isLoading 
-}: AlertsSectionProps) => {
-  const { isCardVisible } = useDashboardCards('dashboard');
-  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
-
-  if (!isCardVisible('alertas')) {
-    return null;
-  }
+export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPendentes, isLoading }: AlertsSectionProps) {
+  const totalAlertas = parcelasVencidas.length + parcelasHoje.length + interacoesPendentes.length;
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Alertas do Sistema</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-yellow-500" />
+            Alertas
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-muted-foreground py-4">
-            Carregando alertas...
+          <div className="text-center py-4">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-r-transparent mx-auto" />
+            <p className="text-sm text-muted-foreground mt-2">Carregando alertas...</p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Criar alertas baseado nos dados
-  const alerts: {
-    id: string;
-    type: "warning" | "info" | "error";
-    message: string;
-    action?: string;
-  }[] = [];
-
-  // Alertas de parcelas vencidas
-  if (parcelasVencidas && parcelasVencidas.length > 0) {
-    alerts.push({
-      id: "parcelas-vencidas",
-      type: "error",
-      message: `${parcelasVencidas.length} conta(s) em atraso`,
-      action: "Verifique as contas a receber e a pagar vencidas"
-    });
-  }
-
-  // Alertas de parcelas que vencem hoje
-  if (parcelasHoje && parcelasHoje.length > 0) {
-    alerts.push({
-      id: "parcelas-hoje",
-      type: "warning",
-      message: `${parcelasHoje.length} conta(s) vencem hoje`,
-      action: "Providencie o pagamento das contas que vencem hoje"
-    });
-  }
-
-  // Alertas de interações pendentes
-  if (interacoesPendentes && interacoesPendentes.length > 0) {
-    alerts.push({
-      id: "interacoes-pendentes",
-      type: "info",
-      message: `${interacoesPendentes.length} interação(ões) de leads pendente(s)`,
-      action: "Verifique as interações de leads que precisam de atenção"
-    });
-  }
-
-  const visibleAlerts = alerts.filter(alert => !dismissedAlerts.includes(alert.id));
-
-  const dismissAlert = (alertId: string) => {
-    setDismissedAlerts(prev => [...prev, alertId]);
-  };
-
-  const getIcon = (type: string) => {
-    switch (type) {
-      case "warning":
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case "error":
-        return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-blue-500" />;
-    }
-  };
-
-  const getBadgeVariant = (type: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (type) {
-      case "warning":
-        return "secondary";
-      case "error":
-        return "destructive";
-      default:
-        return "default";
-    }
-  };
-
-  // Se não há alertas, mostrar mensagem
-  if (visibleAlerts.length === 0) {
+  if (totalAlertas === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Alertas do Sistema</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-green-500" />
+            Alertas
+          </CardTitle>
+          <CardDescription>
+            Nenhum alerta no momento
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-muted-foreground py-4">
-            Nenhum alerta no momento
-          </div>
+          <p className="text-green-600 font-medium">✓ Tudo em dia!</p>
         </CardContent>
       </Card>
     );
@@ -128,38 +57,81 @@ export const AlertsSection = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Alertas do Sistema</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-red-500" />
+          Alertas ({totalAlertas})
+        </CardTitle>
+        <CardDescription>
+          Itens que requerem sua atenção
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {visibleAlerts.map((alert) => (
-          <div
-            key={alert.id}
-            className="flex items-center justify-between p-3 rounded-lg border bg-muted/50"
-          >
-            <div className="flex items-center gap-3">
-              {getIcon(alert.type)}
-              <div className="flex-1">
-                <p className="text-sm font-medium">{alert.message}</p>
-                {alert.action && (
-                  <p className="text-xs text-muted-foreground mt-1">{alert.action}</p>
-                )}
-              </div>
-              <Badge variant={getBadgeVariant(alert.type)} className="ml-2">
-                {alert.type === "warning" ? "Atenção" : 
-                 alert.type === "error" ? "Erro" : "Info"}
-              </Badge>
+      <CardContent className="space-y-4">
+        {/* Parcelas Vencidas */}
+        {parcelasVencidas.length > 0 && (
+          <div className="border-l-4 border-red-500 pl-4">
+            <h4 className="font-medium text-red-700 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              {parcelasVencidas.length} título(s) em atraso
+            </h4>
+            <div className="mt-2 space-y-1">
+              {parcelasVencidas.slice(0, 3).map(parcela => (
+                <div key={parcela.id} className="text-sm text-gray-600">
+                  {parcela.cliente} - {formatCurrency(parcela.valor)} - Venceu em {formatDate(new Date(parcela.data_vencimento))}
+                </div>
+              ))}
+              {parcelasVencidas.length > 3 && (
+                <div className="text-sm text-gray-500">
+                  +{parcelasVencidas.length - 3} outros...
+                </div>
+              )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => dismissAlert(alert.id)}
-            >
-              <X className="h-3 w-3" />
-            </Button>
           </div>
-        ))}
+        )}
+
+        {/* Parcelas que vencem hoje */}
+        {parcelasHoje.length > 0 && (
+          <div className="border-l-4 border-yellow-500 pl-4">
+            <h4 className="font-medium text-yellow-700 flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              {parcelasHoje.length} título(s) vencem hoje
+            </h4>
+            <div className="mt-2 space-y-1">
+              {parcelasHoje.slice(0, 3).map(parcela => (
+                <div key={parcela.id} className="text-sm text-gray-600">
+                  {parcela.cliente} - {formatCurrency(parcela.valor)}
+                </div>
+              ))}
+              {parcelasHoje.length > 3 && (
+                <div className="text-sm text-gray-500">
+                  +{parcelasHoje.length - 3} outros...
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Interações Pendentes */}
+        {interacoesPendentes.length > 0 && (
+          <div className="border-l-4 border-blue-500 pl-4">
+            <h4 className="font-medium text-blue-700 flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              {interacoesPendentes.length} interação(ões) pendente(s)
+            </h4>
+            <div className="mt-2 space-y-1">
+              {interacoesPendentes.slice(0, 3).map(interacao => (
+                <div key={interacao.id} className="text-sm text-gray-600">
+                  {interacao.leadNome} - {interacao.tipo} - {formatDate(new Date(interacao.data))}
+                </div>
+              ))}
+              {interacoesPendentes.length > 3 && (
+                <div className="text-sm text-gray-500">
+                  +{interacoesPendentes.length - 3} outros...
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
-};
+}

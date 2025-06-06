@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -28,13 +27,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Company } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// ATENÇÃO: ajustando o esquema para refletir os campos obrigatórios da tabela
 const formSchema = z.object({
-  razaoSocial: z.string().min(1, "Nome da empresa é obrigatório"),
-  nomeFantasia: z.string().min(1, "Nome fantasia é obrigatório"),
+  razao_social: z.string().min(1, "Nome da empresa é obrigatório"),
+  nome_fantasia: z.string().min(1, "Nome fantasia é obrigatório"),
   cnpj: z.string().min(14, "CNPJ inválido"),
-  inscricaoEstadual: z.string().optional(),
-  inscricaoMunicipal: z.string().optional(),
+  inscricao_estadual: z.string().optional(),
+  inscricao_municipal: z.string().optional(),
   cnae: z.string().optional(),
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   site: z.string().url("URL inválida").optional().or(z.literal("")),
@@ -47,7 +45,7 @@ const formSchema = z.object({
   cidade: z.string().min(1, "Cidade é obrigatória"),
   estado: z.string().min(1, "Estado é obrigatório"),
   pais: z.string().min(1, "País é obrigatório").default("Brasil"),
-  regimeTributacao: z.enum(["simples", "lucro_presumido", "lucro_real", "mei"]).optional(),
+  regime_tributacao: z.enum(["simples", "lucro_presumido", "lucro_real", "mei"]).optional(),
   logo: z.string().url("URL inválida").optional().or(z.literal("")),
 });
 
@@ -59,7 +57,6 @@ interface CompanyModalProps {
   company: Company | null;
 }
 
-// O formulário agora trabalha com o formato "achatado" igual ao banco/existing page
 export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
   const { toast } = useToast();
   const { createCompany, updateCompany } = useCompany();
@@ -67,11 +64,11 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      razaoSocial: "",
-      nomeFantasia: "",
+      razao_social: "",
+      nome_fantasia: "",
       cnpj: "",
-      inscricaoEstadual: "",
-      inscricaoMunicipal: "",
+      inscricao_estadual: "",
+      inscricao_municipal: "",
       cnae: "",
       email: "",
       site: "",
@@ -84,7 +81,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
       cidade: "",
       estado: "",
       pais: "Brasil",
-      regimeTributacao: undefined,
+      regime_tributacao: undefined,
       logo: "",
     },
   });
@@ -92,33 +89,33 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
   useEffect(() => {
     if (company) {
       form.reset({
-        razaoSocial: company.razaoSocial || company.razao_social || "",
-        nomeFantasia: company.nomeFantasia || company.nome_fantasia || "",
+        razao_social: company.razao_social || "",
+        nome_fantasia: company.nome_fantasia || "",
         cnpj: company.cnpj || "",
-        inscricaoEstadual: company.inscricaoEstadual || company.inscricao_estadual || "",
-        inscricaoMunicipal: company.inscricaoMunicipal || company.inscricao_municipal || "",
+        inscricao_estadual: company.inscricao_estadual || "",
+        inscricao_municipal: company.inscricao_municipal || "",
         cnae: company.cnae || "",
         email: company.email || "",
         site: company.site || "",
         telefone: company.telefone || "",
-        cep: company.endereco?.cep || company.cep || "",
-        logradouro: company.endereco?.logradouro || company.logradouro || "",
-        numero: company.endereco?.numero || company.numero || "",
-        complemento: company.endereco?.complemento || company.complemento || "",
-        bairro: company.endereco?.bairro || company.bairro || "",
-        cidade: company.endereco?.cidade || company.cidade || "",
-        estado: company.endereco?.estado || company.estado || "",
-        pais: company.endereco?.pais || company.pais || "Brasil",
-        regimeTributacao: (company.regimeTributacao || company.regime_tributacao) as any,
+        cep: company.cep || "",
+        logradouro: company.logradouro || "",
+        numero: company.numero || "",
+        complemento: company.complemento || "",
+        bairro: company.bairro || "",
+        cidade: company.cidade || "",
+        estado: company.estado || "",
+        pais: company.pais || "Brasil",
+        regime_tributacao: company.regime_tributacao as any,
         logo: company.logo || "",
       });
     } else {
       form.reset({
-        razaoSocial: "",
-        nomeFantasia: "",
+        razao_social: "",
+        nome_fantasia: "",
         cnpj: "",
-        inscricaoEstadual: "",
-        inscricaoMunicipal: "",
+        inscricao_estadual: "",
+        inscricao_municipal: "",
         cnae: "",
         email: "",
         site: "",
@@ -131,64 +128,21 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
         cidade: "",
         estado: "",
         pais: "Brasil",
-        regimeTributacao: undefined,
+        regime_tributacao: undefined,
         logo: "",
       });
     }
   }, [company, form]);
 
   const onSubmit = (values: FormValues) => {
-    // Prepara objeto Company com endereço corretamente montado
-    const companyObj: Partial<Company> = {
-      id: company?.id,
-      razao_social: values.razaoSocial,
-      nome_fantasia: values.nomeFantasia,
-      cnpj: values.cnpj,
-      inscricao_estadual: values.inscricaoEstadual,
-      inscricao_municipal: values.inscricaoMunicipal,
-      cnae: values.cnae,
-      email: values.email,
-      site: values.site,
-      telefone: values.telefone,
-      cep: values.cep,
-      logradouro: values.logradouro,
-      numero: values.numero,
-      complemento: values.complemento,
-      bairro: values.bairro,
-      cidade: values.cidade,
-      estado: values.estado,
-      pais: values.pais,
-      regime_tributacao: values.regimeTributacao,
-      logo: values.logo,
-      
-      // Aliases para compatibilidade
-      razaoSocial: values.razaoSocial,
-      nomeFantasia: values.nomeFantasia,
-      inscricaoEstadual: values.inscricaoEstadual,
-      inscricaoMunicipal: values.inscricaoMunicipal,
-      regimeTributacao: values.regimeTributacao,
-      
-      // Objeto endereco para compatibilidade
-      endereco: {
-        cep: values.cep,
-        logradouro: values.logradouro,
-        numero: values.numero,
-        complemento: values.complemento,
-        bairro: values.bairro,
-        cidade: values.cidade,
-        estado: values.estado,
-        pais: values.pais,
-      }
-    };
-
     if (company) {
-      updateCompany(company.id, companyObj);
+      updateCompany(company.id, values);
       toast({
         title: "Empresa atualizada",
         description: "As informações da empresa foram atualizadas com sucesso.",
       });
     } else {
-      createCompany(companyObj);
+      createCompany(values);
       toast({
         title: "Empresa cadastrada",
         description: "A empresa foi cadastrada com sucesso.",
@@ -213,14 +167,14 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Dados básicos */}
               <div className="space-y-4 md:col-span-2">
                 <h3 className="text-lg font-medium">Dados básicos</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="razaoSocial"
+                    name="razao_social"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Razão Social*</FormLabel>
@@ -233,7 +187,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                   />
                   <FormField
                     control={form.control}
-                    name="nomeFantasia"
+                    name="nome_fantasia"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nome Fantasia*</FormLabel>
@@ -262,7 +216,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                   />
                   <FormField
                     control={form.control}
-                    name="inscricaoEstadual"
+                    name="inscricao_estadual"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Inscrição Estadual</FormLabel>
@@ -275,7 +229,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                   />
                   <FormField
                     control={form.control}
-                    name="inscricaoMunicipal"
+                    name="inscricao_municipal"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Inscrição Municipal</FormLabel>
@@ -304,7 +258,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                   />
                   <FormField
                     control={form.control}
-                    name="regimeTributacao"
+                    name="regime_tributacao"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Regime Tributário</FormLabel>
@@ -524,4 +478,3 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
     </Dialog>
   );
 }
-
