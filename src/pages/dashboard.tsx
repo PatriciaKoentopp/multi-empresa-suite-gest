@@ -6,7 +6,7 @@ import { BanknoteIcon, CalendarX, CreditCard, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
-import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
+import { ContaReceber } from "@/types/financeiro";
 import { ContaCorrente } from "@/types/conta-corrente";
 import { useAuth } from "@/contexts/auth-context";
 import { AlertsSection } from "@/components/dashboard/AlertsSection";
@@ -14,6 +14,13 @@ import { LeadInteracao } from "@/pages/crm/leads/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardCardConfigurator } from "@/components/dashboard/DashboardCardConfigurator";
 import { useDashboardCards } from "@/hooks/useDashboardCards";
+
+interface TopCliente {
+  id: string;
+  nome: string;
+  nomeFantasia: string;
+  totalVendas: number;
+}
 
 interface DashboardData {
   totalVendas: number;
@@ -30,18 +37,8 @@ interface DashboardData {
   }[];
   totalSaldo: number;
   interacoesPendentes: LeadInteracao[];
-  topClientesAnoAtual: {
-    id: string;
-    nome: string;
-    nomeFantasia: string;
-    totalVendas: number;
-  }[];
-  topClientesAnoAnterior: {
-    id: string;
-    nome: string;
-    nomeFantasia: string;
-    totalVendas: number;
-  }[];
+  topClientesAnoAtual: TopCliente[];
+  topClientesAnoAnterior: TopCliente[];
 }
 
 export function Dashboard() {
@@ -286,12 +283,12 @@ export function Dashboard() {
               id: parcela.id,
               cliente: favorecidoNome,
               descricao: parcela.movimentacao.descricao || 'Sem descrição',
-              dataVencimento: dataVencimento, // Mantido como string
+              dataVencimento: dataVencimento,
+              data_vencimento: dataVencimento,
               valor: Number(parcela.valor),
               status: 'em_aberto' as 'em_aberto',
               numeroParcela: parcela.movimentacao.numero_documento || '-',
               origem: 'Movimentação',
-              movimentacao_id: parcela.movimentacao_id,
               tipo: parcela.movimentacao.tipo_operacao
             };
 
@@ -337,7 +334,7 @@ export function Dashboard() {
         if (erroVendasAnoAnterior) throw erroVendasAnoAnterior;
         
         // Agregar dados por cliente para o ano atual - Alterado para incluir nome_fantasia
-        const clientesAnoAtual = {};
+        const clientesAnoAtual: Record<string, TopCliente> = {};
         if (vendasAnoAtual) {
           vendasAnoAtual.forEach(venda => {
             if (!venda.favorecido_id) return;
@@ -360,7 +357,7 @@ export function Dashboard() {
         }
         
         // Agregar dados por cliente para o ano anterior - Alterado para incluir nome_fantasia
-        const clientesAnoAnterior = {};
+        const clientesAnoAnterior: Record<string, TopCliente> = {};
         if (vendasAnoAnterior) {
           vendasAnoAnterior.forEach(venda => {
             if (!venda.favorecido_id) return;
@@ -384,12 +381,12 @@ export function Dashboard() {
         
         // Obter top 5 clientes do ano atual
         const topClientesAnoAtual = Object.values(clientesAnoAtual)
-          .sort((a: any, b: any) => b.totalVendas - a.totalVendas)
+          .sort((a, b) => b.totalVendas - a.totalVendas)
           .slice(0, 5);
         
         // Obter top 5 clientes do ano anterior
         const topClientesAnoAnterior = Object.values(clientesAnoAnterior)
-          .sort((a: any, b: any) => b.totalVendas - a.totalVendas)
+          .sort((a, b) => b.totalVendas - a.totalVendas)
           .slice(0, 5);
           
         
@@ -512,7 +509,7 @@ export function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Visão geral da empresa {currentCompany?.nomeFantasia || ""}
+            Visão geral da empresa {currentCompany?.nomeFantasia || currentCompany?.nome_fantasia || ""}
           </p>
         </div>
         <DashboardCardConfigurator pageId="dashboard" onConfigChange={handleConfigChange} />
@@ -571,7 +568,7 @@ export function Dashboard() {
               <SalesDashboardCard 
                 title="Contas a Receber" 
                 value={formatCurrency(dashboardData.contasReceber)} 
-                description={`${dashboardData.parcelasEmAtraso.filter(p => p.tipo === 'receber').length} título(s) em atraso`} 
+                description={`${dashboardData.parcelasEmAtraso.filter(p => p.movimentacao?.tipo_operacao === 'receber').length} título(s) em atraso`} 
                 icon="users" 
               />
             )}

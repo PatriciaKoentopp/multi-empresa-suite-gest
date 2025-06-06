@@ -14,14 +14,10 @@ export interface Usuario {
 export interface Company {
   id: string;
   razao_social: string;
-  razaoSocial: string;
   nome_fantasia: string;
-  nomeFantasia: string;
   cnpj: string;
   inscricao_estadual?: string | null;
-  inscricaoEstadual?: string | null;
   inscricao_municipal?: string | null;
-  inscricaoMunicipal?: string | null;
   cnae?: string | null;
   email?: string | null;
   telefone?: string | null;
@@ -38,6 +34,11 @@ export interface Company {
   regime_tributacao?: string | null;
   created_at?: string;
   updated_at?: string;
+  // Propriedades alternativas para compatibilidade
+  razaoSocial?: string;
+  nomeFantasia?: string;
+  inscricaoEstadual?: string | null;
+  inscricaoMunicipal?: string | null;
   endereco?: {
     cep: string;
     logradouro: string;
