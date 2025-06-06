@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { LeadDadosTab } from "./LeadDadosTab";
 import { LeadFechamentoTab } from "./LeadFechamentoTab";
-import { InteracoesTab } from "./components/InteracoesTab";
+import { InteracoesTabWrapper } from "./components/InteracoesTabWrapper";
 import { LeadFormData, EtapaFunil } from "./types";
 
 interface LeadFormModalProps {
@@ -225,7 +225,7 @@ export function LeadFormModal({ isOpen, onClose, lead, onSave }: LeadFormModalPr
           </TabsContent>
 
           <TabsContent value="interacoes" className="space-y-4">
-            {lead?.id && <InteracoesTab lead={lead} />}
+            {lead?.id && <InteracoesTabWrapper lead={lead} />}
           </TabsContent>
         </Tabs>
 
