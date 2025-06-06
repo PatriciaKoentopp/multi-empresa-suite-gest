@@ -216,6 +216,8 @@ export interface Orcamento {
   numero_parcelas: number;
   observacoes?: string;
   data_venda?: string;
+  codigo_projeto?: string; // Adicionada para resolver erro de build
+  valor?: number; // Adicionada para resolver erro de build (calculada dinamicamente)
   created_at: string;
   updated_at: string;
   favorecido?: Favorecido;
