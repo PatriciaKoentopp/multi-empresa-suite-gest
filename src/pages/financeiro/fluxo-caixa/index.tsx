@@ -55,10 +55,7 @@ export default function FluxoCaixaPage() {
         .eq("empresa_id", currentCompany.id);
 
       if (error) {
-        toast({
-          title: "Erro ao carregar contas correntes",
-          description: error.message,
-        });
+        toast.error(`Erro ao carregar contas correntes: ${error.message}`);
         return;
       }
 
@@ -111,10 +108,7 @@ export default function FluxoCaixaPage() {
       const { data, error } = await query;
 
       if (error) {
-        toast({
-          title: "Erro ao carregar fluxo de caixa",
-          description: error.message,
-        });
+        toast.error(`Erro ao carregar fluxo de caixa: ${error.message}`);
         return;
       }
 
