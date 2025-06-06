@@ -5,12 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { Servico } from '@/types';
-import { OrcamentoItem } from '@/types/orcamento';
+
+interface ServicoFormItem {
+  servico_id: string;
+  valor: number;
+}
 
 interface ServicosFormProps {
-  servicos: OrcamentoItem[];
+  servicos: ServicoFormItem[];
   servicosDisponiveis: Servico[];
-  onServicoChange: (idx: number, field: "servicoId" | "valor", value: string | number) => void;
+  onServicoChange: (idx: number, field: "servico_id" | "valor", value: string | number) => void;
   onAddServico: () => void;
   onRemoveServico: (idx: number) => void;
   disabled?: boolean;
@@ -32,8 +36,8 @@ export function ServicosForm({
           <div key={idx} className="flex gap-2 items-end">
             <div className="w-full">
               <Select
-                value={s.servicoId}
-                onValueChange={v => onServicoChange(idx, "servicoId", v)}
+                value={s.servico_id}
+                onValueChange={v => onServicoChange(idx, "servico_id", v)}
                 disabled={disabled}
               >
                 <SelectTrigger>

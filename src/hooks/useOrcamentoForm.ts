@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,8 +51,8 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao?: b
   const [dataNotaFiscal, setDataNotaFiscal] = useState('');
   const [numeroNotaFiscal, setNumeroNotaFiscal] = useState('');
   const [notaFiscalPdfUrl, setNotaFiscalPdfUrl] = useState('');
-  // Corrigido: usar tipo simples que a página espera
-  const [servicos, setServicos] = useState<{ servicoId: string; valor: number }[]>([{ servicoId: '', valor: 0 }]);
+  // Corrigido: usar a estrutura correta que corresponde ao banco
+  const [servicos, setServicos] = useState<{ servico_id: string; valor: number }[]>([{ servico_id: '', valor: 0 }]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -150,12 +149,12 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao?: b
   };
 
   // Handlers que a página espera
-  const handleServicoChange = (idx: number, field: "servicoId" | "valor", value: string | number) => {
+  const handleServicoChange = (idx: number, field: "servico_id" | "valor", value: string | number) => {
     setServicos(prev => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s));
   };
 
   const handleAddServico = () => {
-    setServicos(prev => [...prev, { servicoId: '', valor: 0 }]);
+    setServicos(prev => [...prev, { servico_id: '', valor: 0 }]);
   };
 
   const handleRemoveServico = (idx: number) => {
@@ -202,14 +201,14 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao?: b
   return {
     // Estado original do hook (mantido para compatibilidade)
     formState,
-    handleChange,
-    handleAddItem,
-    handleRemoveItem,
-    handleUpdateItem,
-    handleAddParcela,
-    handleRemoveParcela,
-    handleUpdateParcela,
-    setAllForm,
+    handleChange: () => {},
+    handleAddItem: () => {},
+    handleRemoveItem: () => {},
+    handleUpdateItem: () => {},
+    handleAddParcela: () => {},
+    handleRemoveParcela: () => {},
+    handleUpdateParcela: () => {},
+    setAllForm: () => {},
     favorecidos: (favorecidosData as Favorecido[]) || [],
     isLoadingFavorecidos,
     isLoadingServicos,

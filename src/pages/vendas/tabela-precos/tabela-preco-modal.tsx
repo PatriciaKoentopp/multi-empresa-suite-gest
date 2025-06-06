@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -38,6 +37,10 @@ interface TabelaPrecoModalProps {
   onSalvar: (tabela: TabelaPreco) => void;
 }
 
+interface TabelaPrecoItemComNome extends TabelaPrecoItem {
+  nome?: string;
+}
+
 export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
   open,
   onClose,
@@ -54,8 +57,8 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
   const [vigenciaInicial, setVigenciaInicial] = useState<Date | null>(null);
   const [vigenciaFinal, setVigenciaFinal] = useState<Date | null>(null);
   const [status, setStatus] = useState<"ativo" | "inativo">("ativo");
-  const [servicosTabela, setServicosTabela] = useState<TabelaPrecoItem[]>([]);
-  const [produtosTabela, setProdutosTabela] = useState<TabelaPrecoItem[]>([]);
+  const [servicosTabela, setServicosTabela] = useState<TabelaPrecoItemComNome[]>([]);
+  const [produtosTabela, setProdutosTabela] = useState<TabelaPrecoItemComNome[]>([]);
   const [tipoItem, setTipoItem] = useState<"servicos" | "produtos">("servicos");
 
   const [novoServicoId, setNovoServicoId] = useState<string>("");
@@ -68,7 +71,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
       setNome(tabela.nome);
       setVigenciaInicial(tabela.vigencia_inicial);
       setVigenciaFinal(tabela.vigencia_final);
-      setStatus(tabela.status);
+      setStatus(tabela.status as "ativo" | "inativo");
       setTabelaId(tabela.id);
       carregarItensDaTabela(tabela.id);
     } else {
@@ -93,7 +96,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
       if (errorServicos) throw errorServicos;
 
       // Transformar os dados para o formato esperado
-      const servicosConvertidos = dataServicos?.map(item => ({
+      const servicosConvertidos: TabelaPrecoItemComNome[] = dataServicos?.map(item => ({
         id: item.id,
         tabela_id: item.tabela_id,
         servico_id: item.servico_id,
@@ -121,7 +124,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
       if (errorProdutos) throw errorProdutos;
 
       // Transformar os dados para o formato esperado
-      const produtosConvertidos = dataProdutos?.map(item => ({
+      const produtosConvertidos: TabelaPrecoItemComNome[] = dataProdutos?.map(item => ({
         id: item.id,
         tabela_id: item.tabela_id,
         servico_id: null,

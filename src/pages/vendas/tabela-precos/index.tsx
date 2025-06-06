@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { TabelaPreco, Servico } from '@/types';
+import { TabelaPreco, Servico, Produto } from '@/types';
 import { useCompany } from '@/contexts/company-context';
 import { toast } from '@/hooks/use-toast';
 import { TabelaPrecoModal } from './tabela-preco-modal';
@@ -12,9 +12,11 @@ import { TabelaPrecoList } from './tabela-preco-list';
 export default function TabelaPrecosPage() {
   const [tabelas, setTabelas] = useState<TabelaPreco[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
+  const [produtos, setProdutos] = useState<Produto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTabela, setEditingTabela] = useState<TabelaPreco | null>(null);
+  const [modo, setModo] = useState<"visualizar" | "editar" | "novo">("novo");
   const { currentCompany } = useCompany();
 
   const fetchTabelas = async () => {
@@ -71,7 +73,7 @@ export default function TabelaPrecosPage() {
         ...servico,
         created_at: new Date(servico.created_at).toISOString(),
         updated_at: new Date(servico.updated_at).toISOString(),
-        status: servico.status as "ativo" | "inativo"
+        status: servico.status as string
       }));
 
       setServicos(servicosFormatados);
@@ -85,27 +87,67 @@ export default function TabelaPrecosPage() {
     }
   };
 
+  const fetchProdutos = async () => {
+    if (!currentCompany?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('produtos')
+        .select('*')
+        .eq('empresa_id', currentCompany.id)
+        .eq('status', 'ativo')
+        .order('nome');
+
+      if (error) throw error;
+
+      // Converter tipos Date corretamente
+      const produtosFormatados = (data || []).map(produto => ({
+        ...produto,
+        created_at: new Date(produto.created_at).toISOString(),
+        updated_at: new Date(produto.updated_at).toISOString(),
+        status: produto.status as string
+      }));
+
+      setProdutos(produtosFormatados);
+    } catch (error) {
+      console.error('Erro ao buscar produtos:', error);
+      toast({
+        title: "Erro ao carregar produtos",
+        description: "Não foi possível carregar a lista de produtos.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     if (currentCompany?.id) {
       fetchTabelas();
       fetchServicos();
+      fetchProdutos();
     }
   }, [currentCompany?.id]);
 
   const handleEdit = (tabela: TabelaPreco) => {
     setEditingTabela(tabela);
+    setModo("editar");
     setIsModalOpen(true);
   };
 
   const handleNewTabela = () => {
     setEditingTabela(null);
+    setModo("novo");
     setIsModalOpen(true);
   };
 
-  const handleSuccess = () => {
+  const handleSuccess = (tabela: TabelaPreco) => {
     setIsModalOpen(false);
     setEditingTabela(null);
     fetchTabelas();
+    
+    toast({
+      title: "Tabela salva com sucesso",
+      description: "A tabela de preços foi salva com sucesso.",
+    });
   };
 
   const handleCancel = () => {
@@ -162,11 +204,13 @@ export default function TabelaPrecosPage() {
       />
 
       <TabelaPrecoModal
-        isOpen={isModalOpen}
+        open={isModalOpen}
         onClose={handleCancel}
         tabela={editingTabela}
-        servicos={servicos}
-        onSuccess={handleSuccess}
+        servicosACadastrar={servicos}
+        produtosACadastrar={produtos}
+        modo={modo}
+        onSalvar={handleSuccess}
       />
     </div>
   );
