@@ -111,14 +111,18 @@ export interface Origem {
 
 export interface ModuleNavItem {
   label: string;
+  title: string;
   icon: string;
   path?: string;
+  href?: string;
   subItems?: SubNavItem[];
 }
 
 export interface SubNavItem {
   label: string;
+  title: string;
   path: string;
+  href: string;
 }
 
 export interface Orcamento {
@@ -156,6 +160,7 @@ export interface YearlyComparison {
   media_mensal: number;
   variacao_media?: number;
   num_meses: number;
+  qtde_vendas: number;
 }
 
 export interface Produto {
