@@ -301,7 +301,7 @@ export default function IncluirMovimentacaoPage() {
               onConsiderarDREChange={setConsiderarDRE}
               tiposTitulos={tiposTitulosFiltrados}
               favorecidos={favorecidos}
-              categorias={categorias}
+              categorias={categorias.map(cat => ({ id: cat.id, nome: cat.descricao }))}
               formasPagamento={formasPagamento}
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
@@ -334,7 +334,7 @@ export default function IncluirMovimentacaoPage() {
               onConsiderarDREChange={setConsiderarDRE}
               tiposTitulos={tiposTitulosFiltrados}
               favorecidos={favorecidos}
-              categorias={categorias}
+              categorias={categorias.map(cat => ({ id: cat.id, nome: cat.descricao }))}
               formasPagamento={formasPagamento}
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
