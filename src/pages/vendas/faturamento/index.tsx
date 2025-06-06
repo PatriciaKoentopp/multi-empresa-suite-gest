@@ -96,10 +96,10 @@ export default function FaturamentoPage() {
       let query = supabase
         .from('orcamentos')
         .select(`
-            *,
-            favorecido:favorecidos(nome),
-            itens:orcamentos_itens(valor)
-          `)
+          *,
+          favorecido:favorecidos(nome),
+          itens:orcamentos_itens(valor)
+        `)
         .eq('empresa_id', currentCompany?.id);
 
       // Aplica filtro de status se não for "todos"
@@ -111,23 +111,10 @@ export default function FaturamentoPage() {
 
       if (error) throw error;
 
-      // Calcular valor total somando os itens e garantir tipos corretos
+      // Calcular valor total somando os itens
       const faturamentosComValor = data?.map(fat => ({
         ...fat,
-        valor: fat.itens?.reduce((sum, item) => sum + Number(item.valor), 0) || 0,
-        tipo: fat.tipo as "orcamento" | "venda",
-        status: fat.status as "ativo" | "inativo",
-        favorecido: fat.favorecido ? {
-          id: fat.favorecido_id,
-          nome: fat.favorecido.nome,
-          empresa_id: fat.empresa_id,
-          tipo: "cliente" as const,
-          tipo_documento: "cpf" as const,
-          documento: "",
-          status: "ativo" as const,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        } : undefined
+        valor: fat.itens?.reduce((sum, item) => sum + Number(item.valor), 0) || 0
       })) || [];
 
       setFaturamentos(faturamentosComValor);
@@ -149,16 +136,7 @@ export default function FaturamentoPage() {
         .eq('status', 'ativo');
 
       if (error) throw error;
-      
-      // Garantir tipos corretos para favorecidos
-      const favorecidosFormatados = (data || []).map(fav => ({
-        ...fav,
-        tipo: fav.tipo as "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor",
-        tipo_documento: fav.tipo_documento as "cpf" | "cnpj",
-        status: fav.status as "ativo" | "inativo"
-      }));
-      
-      setFavorecidos(favorecidosFormatados);
+      setFavorecidos(data || []);
     } catch (error) {
       console.error('Erro ao carregar favorecidos:', error);
       toast({

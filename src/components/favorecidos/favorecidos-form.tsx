@@ -11,7 +11,6 @@ import { FavorecidoDadosBasicos } from "./favorecido-dados-basicos";
 import { FavorecidoEndereco } from "./favorecido-endereco";
 import { FavorecidoAniversarioStatus } from "./favorecido-aniversario-status";
 import { formSchema, FormValues } from "./favorecidos-form.schema";
-import { parseDateString, dateToISOString } from "@/lib/utils";
 
 interface FavorecidosFormProps {
   favorecido?: Favorecido;
@@ -50,7 +49,7 @@ export function FavorecidosForm({
       cidade: favorecido.cidade || "",
       estado: favorecido.estado || "",
       pais: favorecido.pais || "",
-      data_aniversario: favorecido.data_aniversario ? parseDateString(favorecido.data_aniversario) : undefined,
+      data_aniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
       status: favorecido.status as "ativo" | "inativo",
     } : {
       tipo: "fisica",
@@ -93,7 +92,7 @@ export function FavorecidosForm({
       cidade: data.cidade,
       estado: data.estado,
       pais: data.pais,
-      data_aniversario: data.data_aniversario ? dateToISOString(data.data_aniversario) : null,
+      data_aniversario: data.data_aniversario,
       status: data.status,
     };
     

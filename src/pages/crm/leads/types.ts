@@ -1,15 +1,34 @@
 
 export interface LeadInteracao {
-  id: string;
+  id: number | string;
   leadId: string;
   tipo: "email" | "ligacao" | "reuniao" | "mensagem" | "whatsapp" | "telegram" | "instagram" | "facebook" | "outro";
   descricao: string;
-  data: string | Date;
+  data: string;
   responsavelId: string;
   responsavelNome?: string;
-  status: string;
+  status: string; // Status pode ser "Aberto" ou "Realizado"
   leadNome?: string;
   leadEmpresa?: string;
+}
+
+export interface Lead {
+  id: string;
+  nome: string;
+  empresa: string;
+  email: string;
+  telefone: string;
+  etapaId: string;
+  funilId?: string; // Tornando explícito que pode existir
+  valor: number;
+  origemId: string;
+  dataCriacao: string;
+  ultimoContato: string;
+  responsavelId: string;
+  produto?: string;
+  status: "ativo" | "inativo" | "fechado";
+  origemNome?: string;
+  responsavelNome?: string;
 }
 
 export interface EtapaFunil {
@@ -17,28 +36,5 @@ export interface EtapaFunil {
   nome: string;
   cor: string;
   ordem: number;
-  funil_id: string;
-}
-
-export interface LeadFormData {
-  id?: string;
-  nome: string;
-  empresa?: string;
-  email?: string;
-  telefone?: string;
-  etapa_id: string;
-  funil_id: string;
-  valor?: number;
-  origem_id?: string;
-  data_criacao: string;
-  ultimo_contato?: string;
-  responsavel_id?: string;
-  produto?: string;
-  observacoes?: string;
-  status: "ativo" | "inativo" | "fechado" | "perdido";
-  empresa_id: string;
-  favorecido_id?: string;
-  servico_id?: string;
-  produto_id?: string;
-  motivo_perda_id?: string;
+  funil_id?: string;
 }

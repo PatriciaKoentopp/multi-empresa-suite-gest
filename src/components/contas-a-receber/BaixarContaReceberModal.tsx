@@ -154,7 +154,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
         const valorDisponivel = antecipacao.valor_disponivel;
         setAntecipacoesSelecionadas(prev => [
           ...prev,
-          { id: antecipacaoId, valor: valorDisponivel, valor_utilizado: 0 }
+          { id: antecipacaoId, valor: valorDisponivel }
         ]);
       }
     } else {

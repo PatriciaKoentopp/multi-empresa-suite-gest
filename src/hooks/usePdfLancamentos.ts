@@ -1,4 +1,3 @@
-
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrency } from '@/lib/utils';
@@ -26,10 +25,10 @@ export const usePdfLancamentos = () => {
   const gerarPdfLancamentos = (
     lancamentos: LancamentoContabil[],
     nomeEmpresa: string,
-    contaSelecionada: PlanoContas,
-    dataInicial: Date,
-    dataFinal: Date,
-    tipoLancamentoFiltro: string
+    contaSelecionada?: PlanoContas,
+    dataInicial?: Date,
+    dataFinal?: Date,
+    tipoLancamentoFiltro?: string
   ) => {
     try {
       // Criar documento PDF em formato landscape
@@ -210,8 +209,7 @@ export const usePdfLancamentos = () => {
           5: { cellWidth: 25, halign: 'right', overflow: 'ellipsize' }   // Saldo
         },
         didDrawPage: (data) => {
-          const pageInfo = (doc as any).internal;
-          const pageNumber = pageInfo.getCurrentPageInfo ? pageInfo.getCurrentPageInfo().pageNumber : 1;
+          const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
           
           // Se não é a primeira página, adicionar cabeçalho
           if (pageNumber > 1) {
@@ -223,7 +221,7 @@ export const usePdfLancamentos = () => {
           }
           
           // Adicionar rodapé
-          const totalPages = pageInfo.getNumberOfPages ? pageInfo.getNumberOfPages() : 1;
+          const totalPages = doc.internal.getNumberOfPages();
           adicionarRodape(pageNumber, totalPages);
         },
         showHead: 'everyPage',

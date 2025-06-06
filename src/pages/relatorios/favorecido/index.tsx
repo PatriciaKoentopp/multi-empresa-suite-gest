@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,8 +45,7 @@ export default function RelatorioFavorecido() {
         }
   
         if (data) {
-          // Usar type assertion para garantir que os dados estão no formato correto
-          setFavorecidos(data as Favorecido[]);
+          setFavorecidos(data);
 
           // Verificar se há um favorecido na URL
           const favorecidoId = searchParams.get('id');

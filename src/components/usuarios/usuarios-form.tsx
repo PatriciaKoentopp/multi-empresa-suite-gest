@@ -14,23 +14,10 @@ const usuarioSchema = z.object({
   id: z.string().optional(),
   nome: z.string().min(1, "O nome é obrigatório"),
   email: z.string().email("Email inválido").min(1, "O email é obrigatório"),
-  senha: z.string().optional(),
+  senha: z.string().min(6, "A senha deve ter pelo menos 6 caracteres").optional(),
   tipo: z.enum(["Administrador", "Usuário"]),
   status: z.enum(["ativo", "inativo"]),
   vendedor: z.enum(["sim", "nao"]),
-}).refine((data) => {
-  // Senha é obrigatória apenas para novos usuários
-  if (!data.id && (!data.senha || data.senha.length < 6)) {
-    return false;
-  }
-  // Para edição, senha é opcional, mas se informada deve ter pelo menos 6 caracteres
-  if (data.id && data.senha && data.senha.length < 6) {
-    return false;
-  }
-  return true;
-}, {
-  message: "A senha deve ter pelo menos 6 caracteres",
-  path: ["senha"]
 });
 
 type FormData = z.infer<typeof usuarioSchema>;
@@ -52,9 +39,9 @@ export function UsuariosForm({ usuario, onSubmit, onCancel }: UsuariosFormProps)
           nome: usuario.nome,
           email: usuario.email,
           senha: "",
-          tipo: usuario.tipo as "Administrador" | "Usuário",
-          status: usuario.status as "ativo" | "inativo",
-          vendedor: usuario.vendedor as "sim" | "nao",
+          tipo: usuario.tipo,
+          status: usuario.status,
+          vendedor: usuario.vendedor,
         }
       : {
           nome: "",
@@ -76,8 +63,8 @@ export function UsuariosForm({ usuario, onSubmit, onCancel }: UsuariosFormProps)
         tipo: data.tipo,
         status: data.status,
         vendedor: data.vendedor,
-        created_at: usuario?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: usuario?.created_at || new Date(),
+        updated_at: new Date(),
         empresa_id: usuario?.empresa_id || null
       };
       

@@ -10,13 +10,13 @@ import { CalendarPlus } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ptBR } from "date-fns/locale";
-import { ContaContabil } from "@/types/lancamentos-contabeis";
+import { PlanoConta } from "@/types/plano-contas";
 
 interface LancarDiarioModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (novo: { data: string; historico: string; debito: string; credito: string; valor: number }) => void;
-  contas: ContaContabil[];
+  contas: PlanoConta[];
   contaInicalId: string;
 }
 
@@ -134,7 +134,7 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
             <Input type="text" maxLength={64} value={historico} onChange={e => setHistorico(e.target.value)} required />
           </div>
           <DialogFooter className="mt-4">
-            <Button variant="default" type="submit" className="bg-blue-500 hover:bg-blue-600">
+            <Button variant="blue" type="submit">
               Salvar
             </Button>
             <DialogClose asChild>

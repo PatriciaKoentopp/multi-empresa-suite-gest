@@ -1,36 +1,19 @@
 
-export interface ContaContabil {
-  id: string;
-  codigo: string;
-  descricao: string;
-  tipo: "ativo" | "passivo" | "receita" | "despesa" | "patrimonio";
-  categoria: "título" | "movimentação";
-  considerar_dre: boolean;
-  classificacao_dre: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  empresa_id: string;
-}
-
 export interface LancamentoContabil {
   id: string;
-  data: string;
+  empresa_id?: string;
+  data: string | Date;
   historico: string;
-  conta_debito_id: string;
-  conta_credito_id: string;
+  conta_debito_id?: string;
+  conta_credito_id?: string;
+  conta?: string; // Campo usado na visualização (mantido para compatibilidade)
+  conta_nome?: string;
+  conta_codigo?: string;
+  tipo?: 'debito' | 'credito';
   valor: number;
-  empresa_id: string;
-  created_at: string;
-  updated_at: string;
-  // Campos opcionais para vincular com movimentações
+  saldo?: number;
   movimentacao_id?: string;
   parcela_id?: string;
-  tipo_lancamento?: "principal" | "juros" | "multa" | "desconto";
-  // Propriedades computadas para exibição
-  conta_codigo?: string;
-  conta_nome?: string;
-  favorecido?: string;
-  tipo: "debito" | "credito";
-  saldo?: number;
+  tipo_lancamento?: 'principal' | 'juros' | 'multa' | 'desconto';
+  favorecido?: string; // Nome do favorecido para exibição no histórico
 }

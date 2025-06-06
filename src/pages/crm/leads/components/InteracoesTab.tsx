@@ -24,7 +24,7 @@ interface InteracoesTabProps {
   handleInteracaoSelectChange: (name: string, value: string) => void;
   handleInteracaoDataChange: (date: Date) => void;
   adicionarInteracao: () => void;
-  excluirInteracao?: (id: string) => void;
+  excluirInteracao?: (id: string | number) => void;
   confirmarEdicaoInteracao?: (interacao: LeadInteracao) => void;
   vendedoresAtivos: Usuario[];
   getNomeResponsavel: (id: string) => string;
@@ -47,12 +47,14 @@ export function InteracoesTab({
   const [interacaoParaVisualizar, setInteracaoParaVisualizar] = useState<LeadInteracao | null>(null);
   const [interacaoParaEditar, setInteracaoParaEditar] = useState<LeadInteracao | null>(null);
   const [interacaoParaExcluir, setInteracaoParaExcluir] = useState<LeadInteracao | null>(null);
+  // Adicionar um estado para gerenciar as interações localmente
   const [interacoesLocais, setInteracoesLocais] = useState<LeadInteracao[]>(interacoes);
 
   const [openVisualizarDialog, setOpenVisualizarDialog] = useState(false);
   const [openEditarDialog, setOpenEditarDialog] = useState(false);
   const [openExcluirDialog, setOpenExcluirDialog] = useState(false);
 
+  // Atualizar o estado local quando as interações mudarem
   React.useEffect(() => {
     setInteracoesLocais(interacoes);
   }, [interacoes]);
@@ -85,7 +87,7 @@ export function InteracoesTab({
 
   const handleInteracaoEditDateChange = (date: Date) => {
     if (!interacaoParaEditar) return;
-    setInteracaoParaEditar(prev => prev ? { ...prev, data: date.toISOString().split('T')[0] } : null);
+    setInteracaoParaEditar(prev => prev ? { ...prev, data: date } : null);
   };
 
   const handleSalvarEdicao = () => {
@@ -97,6 +99,7 @@ export function InteracoesTab({
 
   const handleConfirmarExclusao = async () => {
     if (interacaoParaExcluir && interacaoParaExcluir.id) {
+      // Verificar se a interação tem status "Aberto" antes de excluir
       if (interacaoParaExcluir.status !== "Aberto") {
         toast.error("Não é possível excluir", {
           description: "Somente interações com status Aberto podem ser excluídas."
@@ -106,6 +109,7 @@ export function InteracoesTab({
       }
       
       try {
+        // Fazer a exclusão no banco de dados
         const { error } = await supabase
           .from('leads_interacoes')
           .delete()
@@ -113,8 +117,10 @@ export function InteracoesTab({
         
         if (error) throw error;
         
+        // Atualizar o estado local removendo a interação excluída
         setInteracoesLocais(atual => atual.filter(item => item.id !== interacaoParaExcluir.id));
         
+        // Se tiver a função de excluir do prop, chamar também
         if (excluirInteracao) {
           excluirInteracao(interacaoParaExcluir.id);
         }
@@ -129,10 +135,12 @@ export function InteracoesTab({
     }
   };
 
+  // Função para alternar o status da interação
   const handleToggleStatus = async (interacao: LeadInteracao) => {
     try {
       const novoStatus = interacao.status === "Realizado" ? "Aberto" : "Realizado";
       
+      // Atualizar no banco de dados
       const { error } = await supabase
         .from('leads_interacoes')
         .update({
@@ -142,6 +150,7 @@ export function InteracoesTab({
       
       if (error) throw error;
       
+      // Atualizar o estado local das interações
       setInteracoesLocais(atual => 
         atual.map(item => 
           item.id === interacao.id 
@@ -150,6 +159,7 @@ export function InteracoesTab({
         )
       );
       
+      // Notificar o usuário do sucesso
       toast.success(`Interação ${novoStatus === "Realizado" ? "concluída" : "reaberta"}`);
     } catch (error) {
       console.error('Erro ao atualizar status da interação:', error);
@@ -170,14 +180,14 @@ export function InteracoesTab({
             handleInteracaoDataChange={handleInteracaoDataChange}
             adicionarInteracao={adicionarInteracao}
             vendedoresAtivos={vendedoresAtivos}
-            leadTelefone={lead.telefone}
+            leadTelefone={lead.telefone} // Passamos o telefone do lead
           />
         )}
       </div>
       
       <div className="flex-1 overflow-y-auto p-6 pt-0">
         <InteracoesTable
-          interacoes={interacoesLocais}
+          interacoes={interacoesLocais} // Usar o estado local em vez do prop
           carregandoInteracoes={carregandoInteracoes}
           onVerInteracao={handleVerInteracao}
           onEditarInteracao={handleEditarInteracao}
@@ -187,6 +197,7 @@ export function InteracoesTab({
         />
       </div>
       
+      {/* Dialogs */}
       <InteracaoViewDialog
         open={openVisualizarDialog}
         onOpenChange={setOpenVisualizarDialog}

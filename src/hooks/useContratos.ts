@@ -25,16 +25,12 @@ export const useContratos = () => {
         .order("created_at", { ascending: false });
       
       if (error) throw error;
-      
-      // Garantir que periodicidade seja tipada corretamente
-      return (data || []).map(contrato => ({
-        ...contrato,
-        periodicidade: contrato.periodicidade as "mensal" | "trimestral" | "semestral" | "anual"
-      })) as Contrato[];
+      return data || [];
     },
     enabled: !!currentCompany?.id,
   });
 
+  // Função para calcular meses de vigência corretamente
   const calcularMesesVigencia = (dataInicio: Date, dataFim: Date): number => {
     const anoInicio = dataInicio.getFullYear();
     const mesInicio = dataInicio.getMonth();
@@ -57,6 +53,7 @@ export const useContratos = () => {
     return mesesVigencia;
   };
 
+  // Função para calcular o mês de referência baseado na vigência do contrato
   const calcularMesReferencia = (dataInicio: Date, numeroParcela: number): string => {
     // O mês de referência é sempre baseado na sequência de meses da vigência
     // Primeira parcela = mês de início da vigência, segunda = próximo mês, etc.
@@ -334,6 +331,7 @@ export const useContratos = () => {
     },
   });
 
+  // Função para gerar movimentações independentes a partir do contrato
   const gerarMovimentacoesContrato = async (contratoId: string) => {
     try {
       // Buscar dados do contrato

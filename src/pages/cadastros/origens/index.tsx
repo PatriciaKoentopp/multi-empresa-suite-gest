@@ -60,7 +60,7 @@ export default function OrigensPage() {
     try {
       const { data, error } = await supabase
         .from("origens")
-        .select("id, nome, status, empresa_id, created_at, updated_at")
+        .select("*")
         .eq("empresa_id", currentCompany.id);
 
       if (error) {
@@ -75,8 +75,8 @@ export default function OrigensPage() {
           nome: origem.nome,
           status: origem.status as "ativo" | "inativo",
           empresa_id: origem.empresa_id,
-          created_at: origem.created_at,
-          updated_at: origem.updated_at,
+          createdAt: new Date(origem.created_at),
+          updatedAt: new Date(origem.updated_at),
         }));
         setOrigens(origensFormatadas);
       }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useCompany } from "@/contexts/company-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -14,7 +13,6 @@ import { Card, CardContent, CardHeader, CardDescription, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Company } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-
 const formSchema = z.object({
   razaoSocial: z.string().min(3, {
     message: "Razão Social é obrigatória"
@@ -60,7 +58,6 @@ const formSchema = z.object({
     message: "URL da logo inválida"
   }).optional().or(z.literal(""))
 });
-
 type FormValues = z.infer<typeof formSchema>;
 
 // Adiciona as funções utilitárias para formatação
@@ -90,8 +87,8 @@ export default function EmpresasPage() {
   const {
     currentCompany,
     updateCompany,
-    createCompany,
-    loading
+    addCompany,
+    isLoading
   } = useCompany();
   const {
     user
@@ -99,11 +96,9 @@ export default function EmpresasPage() {
   const {
     toast
   } = useToast();
-  
   // Agora, se não existe empresa, mostrar o formulário em modo "criar"
   const criandoEmpresa = !currentCompany;
   const [isEditing, setIsEditing] = useState(criandoEmpresa ? true : false);
-  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -131,27 +126,26 @@ export default function EmpresasPage() {
 
   // Carregar os dados da empresa atual quando disponíveis
   useEffect(() => {
-    console.log("Current company:", currentCompany);
     if (currentCompany) {
       form.reset({
-        razaoSocial: currentCompany.razao_social || "",
-        nomeFantasia: currentCompany.nome_fantasia || "",
+        razaoSocial: currentCompany.razaoSocial || "",
+        nomeFantasia: currentCompany.nomeFantasia || "",
         cnpj: currentCompany.cnpj || "",
-        inscricaoEstadual: currentCompany.inscricao_estadual || "",
-        inscricaoMunicipal: currentCompany.inscricao_municipal || "",
+        inscricaoEstadual: currentCompany.inscricaoEstadual || "",
+        inscricaoMunicipal: currentCompany.inscricaoMunicipal || "",
         cnae: currentCompany.cnae || "",
         email: currentCompany.email || "",
         site: currentCompany.site || "",
         telefone: currentCompany.telefone || "",
-        cep: currentCompany.cep || "",
-        logradouro: currentCompany.logradouro || "",
-        numero: currentCompany.numero || "",
-        complemento: currentCompany.complemento || "",
-        bairro: currentCompany.bairro || "",
-        cidade: currentCompany.cidade || "",
-        estado: currentCompany.estado || "",
-        pais: currentCompany.pais || "Brasil",
-        regimeTributacao: currentCompany.regime_tributacao as any,
+        cep: currentCompany.endereco?.cep || "",
+        logradouro: currentCompany.endereco?.logradouro || "",
+        numero: currentCompany.endereco?.numero || "",
+        complemento: currentCompany.endereco?.complemento || "",
+        bairro: currentCompany.endereco?.bairro || "",
+        cidade: currentCompany.endereco?.cidade || "",
+        estado: currentCompany.endereco?.estado || "",
+        pais: currentCompany.endereco?.pais || "Brasil",
+        regimeTributacao: currentCompany.regimeTributacao,
         logo: currentCompany.logo || ""
       });
     } else {
@@ -182,32 +176,34 @@ export default function EmpresasPage() {
 
   const onSubmit = (values: FormValues) => {
     if (!user) return;
-    
-    const empresaObject: Partial<Company> = {
-      id: currentCompany?.id,
-      razao_social: values.razaoSocial,
-      nome_fantasia: values.nomeFantasia,
+    const empresaObject = {
+      id: currentCompany?.id || crypto.randomUUID(),
+      razaoSocial: values.razaoSocial,
+      nomeFantasia: values.nomeFantasia,
       cnpj: values.cnpj,
-      inscricao_estadual: values.inscricaoEstadual,
-      inscricao_municipal: values.inscricaoMunicipal,
+      inscricaoEstadual: values.inscricaoEstadual,
+      inscricaoMunicipal: values.inscricaoMunicipal,
       cnae: values.cnae,
       email: values.email,
       site: values.site,
       telefone: values.telefone,
-      cep: values.cep,
-      logradouro: values.logradouro,
-      numero: values.numero,
-      complemento: values.complemento,
-      bairro: values.bairro,
-      cidade: values.cidade,
-      estado: values.estado,
-      pais: values.pais || "Brasil",
-      regime_tributacao: values.regimeTributacao,
+      endereco: {
+        cep: values.cep,
+        logradouro: values.logradouro,
+        numero: values.numero,
+        complemento: values.complemento,
+        bairro: values.bairro,
+        cidade: values.cidade,
+        estado: values.estado,
+        pais: values.pais
+      },
+      regimeTributacao: values.regimeTributacao,
       logo: values.logo,
+      createdAt: currentCompany?.createdAt || new Date(),
+      updatedAt: new Date()
     };
-    
     if (criandoEmpresa || !currentCompany) {
-      createCompany(empresaObject);
+      addCompany(empresaObject as Company);
       toast({
         title: "Empresa cadastrada",
         description: "A empresa foi cadastrada com sucesso."
@@ -226,7 +222,7 @@ export default function EmpresasPage() {
     setIsEditing((editando) => !editando);
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center gap-2">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-r-transparent" />

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { GrupoProduto } from "@/types/grupo-produtos";
 import { Button } from "@/components/ui/button";
@@ -51,23 +52,13 @@ export default function GrupoProdutosPage() {
     try {
       const { data, error } = await supabase
         .from("grupo_produtos")
-        .select("id, nome, status, empresa_id, created_at, updated_at")
+        .select("*")
         .eq("empresa_id", currentCompany.id)
         .order("nome");
 
       if (error) throw error;
       
-      if (data) {
-        const gruposFormatados: GrupoProduto[] = data.map(grupo => ({
-          id: grupo.id,
-          nome: grupo.nome,
-          status: grupo.status as "ativo" | "inativo",
-          empresa_id: grupo.empresa_id,
-          created_at: grupo.created_at,
-          updated_at: grupo.updated_at
-        }));
-        setGrupos(gruposFormatados);
-      }
+      setGrupos(data || []);
     } catch (error) {
       console.error("Erro ao carregar grupos:", error);
       toast.error("Não foi possível carregar os grupos de produtos");

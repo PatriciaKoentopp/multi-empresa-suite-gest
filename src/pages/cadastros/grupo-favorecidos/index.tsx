@@ -49,7 +49,7 @@ export default function GrupoFavorecidosPage() {
       
       const { data, error } = await supabase
         .from("grupo_favorecidos")
-        .select("id, nome, status, empresa_id, created_at, updated_at")
+        .select("*")
         .eq("empresa_id", currentCompany.id)
         .order("nome");
 
@@ -64,9 +64,8 @@ export default function GrupoFavorecidosPage() {
           id: grupo.id,
           nome: grupo.nome,
           status: grupo.status as "ativo" | "inativo",
-          empresa_id: grupo.empresa_id,
-          created_at: grupo.created_at,
-          updated_at: grupo.updated_at
+          createdAt: new Date(grupo.created_at),
+          updatedAt: new Date(grupo.updated_at)
         }));
         setGrupos(gruposFormatados);
       }
@@ -117,7 +116,7 @@ export default function GrupoFavorecidosPage() {
                   ...g,
                   nome: data.nome,
                   status: data.status,
-                  updated_at: new Date().toISOString(),
+                  updatedAt: new Date(),
                 }
               : g
           )
@@ -134,7 +133,7 @@ export default function GrupoFavorecidosPage() {
               status: data.status,
             },
           ])
-          .select("id, nome, status, empresa_id, created_at, updated_at")
+          .select()
           .single();
 
         if (error) {
@@ -148,9 +147,8 @@ export default function GrupoFavorecidosPage() {
             id: newGrupo.id,
             nome: newGrupo.nome,
             status: newGrupo.status as "ativo" | "inativo",
-            empresa_id: newGrupo.empresa_id,
-            created_at: newGrupo.created_at,
-            updated_at: newGrupo.updated_at
+            createdAt: new Date(newGrupo.created_at),
+            updatedAt: new Date(newGrupo.updated_at)
           };
           setGrupos(prev => [...prev, grupoFormatado]);
           toast.success("Grupo de favorecidos criado com sucesso!");

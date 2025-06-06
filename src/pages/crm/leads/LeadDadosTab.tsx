@@ -1,185 +1,240 @@
 
 import React from "react";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { MessageCircle } from "lucide-react";
-import { LeadFormData, EtapaFunil } from "./types";
+import { useProdutosServicos } from "@/hooks/useProdutosServicos";
+import { useFavorecidos } from "@/hooks/useFavorecidos";
+import { Loader2 } from "lucide-react";
 
 interface LeadDadosTabProps {
-  formData: Partial<LeadFormData>;
-  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  handleNumberChange: (name: string, value: number | undefined) => void;
-  funis: any[];
-  etapas: EtapaFunil[];
-  origens: any[];
-  favorecidos: any[];
-  servicos: any[];
-  produtos: any[];
-  onWhatsAppClick: () => void;
+  formData: any;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleSelectChange: (name: string, value: string) => void;
+  etapas: any[];
+  origensAtivas: any[];
+  vendedoresAtivos: any[];
+  handleProdutoChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export function LeadDadosTab({
   formData,
   handleChange,
-  handleNumberChange,
-  funis,
-  etapas,
-  origens,
-  favorecidos,
-  servicos,
-  produtos,
-  onWhatsAppClick
+  handleSelectChange,
+  etapas = [],
+  origensAtivas = [],
+  vendedoresAtivos = []
 }: LeadDadosTabProps) {
-  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value ? parseFloat(e.target.value) : undefined;
-    handleNumberChange('valor', value);
+  const { items: produtosServicos = [], isLoading: isLoadingProdutos } = useProdutosServicos();
+  const { favorecidos = [], isLoading: isLoadingFavorecidos } = useFavorecidos();
+
+  // Função para lidar com a seleção de produto ou serviço
+  const handleItemSelect = (value: string) => {
+    if (!value || value === "_none_") {
+      // Se o valor for vazio, limpar todos os campos relacionados
+      handleSelectChange("produto_id", "");
+      handleSelectChange("servico_id", "");
+      handleSelectChange("produto", "");
+      return;
+    }
+
+    // O formato esperado é "tipo:id", exemplo: "produto:1234-5678"
+    const [tipo, id] = value.split(":");
+    
+    // Encontrar o item selecionado para obter o nome
+    const itemSelecionado = produtosServicos.find(item => 
+      item.tipo === tipo && item.id === id
+    );
+    
+    if (tipo === "produto") {
+      handleSelectChange("produto_id", id);
+      handleSelectChange("servico_id", ""); // Limpar o outro campo
+    } else if (tipo === "servico") {
+      handleSelectChange("servico_id", id);
+      handleSelectChange("produto_id", ""); // Limpar o outro campo
+    }
+    
+    // Atualizar o campo legado "produto" com o nome do item selecionado
+    if (itemSelecionado) {
+      handleSelectChange("produto", itemSelecionado.nome);
+    }
   };
 
-  // Filtrar dados válidos
-  const funisValidos = (funis || []).filter(f => f && f.id && f.nome);
-  const etapasValidas = (etapas || []).filter(e => e && e.id && e.nome);
-  const origensValidas = (origens || []).filter(o => o && o.id && o.nome);
+  // Função para lidar com a seleção de favorecido
+  const handleFavorecidoSelect = (value: string) => {
+    if (!value || value === "_none_") {
+      // Se o valor for vazio, limpar o campo
+      handleSelectChange("favorecido_id", "");
+      handleSelectChange("empresa", "");
+      return;
+    }
+
+    // Encontrar o favorecido selecionado para obter o nome
+    const favorecidoSelecionado = favorecidos.find(item => item.id === value);
+    
+    handleSelectChange("favorecido_id", value);
+    
+    // Atualizar o campo legado "empresa" com o nome do favorecido selecionado
+    if (favorecidoSelecionado) {
+      handleSelectChange("empresa", favorecidoSelecionado.nome);
+    }
+  };
+
+  // Determinar o valor atual para o Select de produtos
+  const getCurrentProductSelectValue = () => {
+    if (formData.produto_id) {
+      return `produto:${formData.produto_id}`;
+    }
+    if (formData.servico_id) {
+      return `servico:${formData.servico_id}`;
+    }
+    return "_none_";
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="nome">Nome do Lead *</Label>
-          <Input
-            id="nome"
-            name="nome"
-            value={formData.nome || ""}
-            onChange={handleChange}
-            placeholder="Nome completo do lead"
-            required
-          />
+          <Label>Nome</Label>
+          <Input name="nome" value={formData.nome || ""} onChange={handleChange} />
         </div>
-
         <div className="space-y-2">
-          <Label htmlFor="empresa">Empresa</Label>
-          <Input
-            id="empresa"
-            name="empresa"
-            value={formData.empresa || ""}
-            onChange={handleChange}
-            placeholder="Nome da empresa (opcional)"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="email">E-mail</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email || ""}
-            onChange={handleChange}
-            placeholder="email@exemplo.com"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="telefone">Telefone</Label>
-          <div className="flex gap-2">
-            <Input
-              id="telefone"
-              name="telefone"
-              value={formData.telefone || ""}
-              onChange={handleChange}
-              placeholder="(11) 99999-9999"
-              className="flex-1"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={onWhatsAppClick}
-              disabled={!formData.telefone}
-              title="Abrir WhatsApp"
-            >
-              <MessageCircle className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="funil_id">Funil *</Label>
-          <select
-            id="funil_id"
-            name="funil_id"
-            value={formData.funil_id || ""}
-            onChange={handleChange}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white"
-            required
+          <Label>Empresa</Label>
+          <Select
+            value={formData.favorecido_id || "_none_"}
+            onValueChange={handleFavorecidoSelect}
           >
-            <option value="">Selecione um funil</option>
-            {funisValidos.map((funil) => (
-              <option key={funil.id} value={funil.id}>
-                {funil.nome}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione um favorecido" />
+            </SelectTrigger>
+            <SelectContent className="bg-white z-50">
+              {isLoadingFavorecidos ? (
+                <div className="flex items-center justify-center py-2">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span>Carregando...</span>
+                </div>
+              ) : (
+                <>
+                  <SelectItem value="_none_">Nenhum</SelectItem>
+                  {favorecidos.map((item) => (
+                    <SelectItem 
+                      key={item.id} 
+                      value={item.id}
+                    >
+                      {item.nome}
+                    </SelectItem>
+                  ))}
+                </>
+              )}
+            </SelectContent>
+          </Select>
         </div>
-
+      </div>
+      <div className="space-y-2">
+        <Label>Produto/Serviço</Label>
+        <Select
+          value={getCurrentProductSelectValue()}
+          onValueChange={handleItemSelect}
+        >
+          <SelectTrigger className="bg-white">
+            <SelectValue placeholder="Selecione um produto ou serviço" />
+          </SelectTrigger>
+          <SelectContent className="bg-white z-50">
+            {isLoadingProdutos ? (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span>Carregando...</span>
+              </div>
+            ) : (
+              <>
+                <SelectItem value="_none_">Nenhum</SelectItem>
+                {produtosServicos.map((item) => (
+                  <SelectItem 
+                    key={`${item.tipo}-${item.id}`} 
+                    value={`${item.tipo}:${item.id}`}
+                  >
+                    {item.nome} ({item.tipo === "produto" ? "Produto" : "Serviço"})
+                  </SelectItem>
+                ))}
+              </>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="etapa_id">Etapa *</Label>
-          <select
-            id="etapa_id"
-            name="etapa_id"
-            value={formData.etapa_id || ""}
-            onChange={handleChange}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white"
-            required
+          <Label>Email</Label>
+          <Input name="email" value={formData.email || ""} onChange={handleChange} />
+        </div>
+        <div className="space-y-2">
+          <Label>Telefone</Label>
+          <Input name="telefone" value={formData.telefone || ""} onChange={handleChange} />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Etapa</Label>
+          <Select
+            value={formData.etapaId?.toString() || ""}
+            onValueChange={(value) => handleSelectChange("etapaId", value)}
           >
-            <option value="">Selecione uma etapa</option>
-            {etapasValidas.map((etapa) => (
-              <option key={etapa.id} value={etapa.id}>
-                {etapa.nome}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione a etapa" />
+            </SelectTrigger>
+            <SelectContent className="bg-white z-50">
+              {etapas.map((etapa: any) => (
+                <SelectItem key={etapa.id} value={etapa.id.toString()}>
+                  {etapa.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-
         <div className="space-y-2">
-          <Label htmlFor="valor">Valor Estimado</Label>
+          <Label>Origem</Label>
+          <Select
+            value={formData.origemId || ""}
+            onValueChange={(value) => handleSelectChange("origemId", value)}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione a origem" />
+            </SelectTrigger>
+            <SelectContent className="bg-white z-50">
+              {origensAtivas.map((origem: any) => (
+                <SelectItem key={origem.id} value={origem.id}>
+                  {origem.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Responsável</Label>
+          <Select
+            value={formData.responsavelId || ""}
+            onValueChange={(value) => handleSelectChange("responsavelId", value)}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione o responsável" />
+            </SelectTrigger>
+            <SelectContent className="bg-white z-50">
+              {vendedoresAtivos.map((u: any) => (
+                <SelectItem key={u.id} value={u.id}>
+                  {u.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Valor Estimado</Label>
           <Input
-            id="valor"
-            name="valor"
             type="number"
-            step="0.01"
+            name="valor"
             value={formData.valor || ""}
-            onChange={handleValorChange}
-            placeholder="0,00"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="origem_id">Origem</Label>
-          <select
-            id="origem_id"
-            name="origem_id"
-            value={formData.origem_id || ""}
             onChange={handleChange}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white"
-          >
-            <option value="">Selecione uma origem</option>
-            {origensValidas.map((origem) => (
-              <option key={origem.id} value={origem.id}>
-                {origem.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="produto">Produto/Serviço</Label>
-          <Input
-            id="produto"
-            name="produto"
-            value={formData.produto || ""}
-            onChange={handleChange}
-            placeholder="Produto ou serviço de interesse"
           />
         </div>
       </div>

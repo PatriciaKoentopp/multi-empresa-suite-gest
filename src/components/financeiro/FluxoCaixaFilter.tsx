@@ -3,10 +3,13 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Filter } from "lucide-react";
-import { subDays, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { CalendarIcon, Filter } from "lucide-react";
+import { format, subDays, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { FiltroFluxoCaixa, ContaCorrenteItem } from "@/types/financeiro";
-import { DateInput } from "@/components/movimentacao/DateInput";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface FluxoCaixaFilterProps {
   contas: ContaCorrenteItem[];
@@ -29,7 +32,6 @@ export const FluxoCaixaFilter = ({
       dataInicio,
       dataFim,
       contaId,
-      conta_corrente_id: contaId,
       situacao,
     });
   };
@@ -66,21 +68,8 @@ export const FluxoCaixaFilter = ({
       dataInicio: novaDataInicio,
       dataFim: novaDataFim,
       contaId,
-      conta_corrente_id: contaId,
       situacao,
     });
-  };
-
-  const handleDataInicioChange = (date?: Date | null) => {
-    if (date) {
-      setDataInicio(date);
-    }
-  };
-
-  const handleDataFimChange = (date?: Date | null) => {
-    if (date) {
-      setDataFim(date);
-    }
   };
 
   return (
@@ -116,21 +105,65 @@ export const FluxoCaixaFilter = ({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <DateInput
-                label="Data inicial"
-                value={dataInicio}
-                onChange={handleDataInicioChange}
-                placeholder="DD/MM/AAAA"
-              />
+              <label className="text-xs text-muted-foreground">Data inicial</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-8 justify-start text-left font-normal",
+                      !dataInicio && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dataInicio ? (
+                      format(dataInicio, "dd/MM/yyyy")
+                    ) : (
+                      <span>Selecione a data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={dataInicio}
+                    onSelect={(date) => date && setDataInicio(date)}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <DateInput
-                label="Data final"
-                value={dataFim}
-                onChange={handleDataFimChange}
-                placeholder="DD/MM/AAAA"
-              />
+              <label className="text-xs text-muted-foreground">Data final</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-8 justify-start text-left font-normal",
+                      !dataFim && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dataFim ? (
+                      format(dataFim, "dd/MM/yyyy")
+                    ) : (
+                      <span>Selecione a data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={dataFim}
+                    onSelect={(date) => date && setDataFim(date)}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="flex flex-col gap-1.5">

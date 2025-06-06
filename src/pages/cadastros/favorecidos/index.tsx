@@ -37,6 +37,7 @@ export default function FavorecidosPage() {
   const [editingFavorecido, setEditingFavorecido] = useState<Favorecido | undefined>(undefined);
   const [viewingFavorecido, setViewingFavorecido] = useState<Favorecido | undefined>(undefined);
   const { currentCompany } = useCompany();
+  const [isLoading, setIsLoading] = useState(true);
   
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,7 +53,7 @@ export default function FavorecidosPage() {
       try {
         const { data, error } = await supabase
           .from("grupo_favorecidos")
-          .select("id, nome, status, empresa_id, created_at, updated_at")
+          .select("*")
           .eq("empresa_id", currentCompany.id)
           .order("nome");
   
@@ -68,8 +69,8 @@ export default function FavorecidosPage() {
             nome: grupo.nome,
             status: grupo.status as "ativo" | "inativo",
             empresa_id: grupo.empresa_id,
-            created_at: grupo.created_at,
-            updated_at: grupo.updated_at
+            created_at: new Date(grupo.created_at),
+            updated_at: new Date(grupo.updated_at)
           }));
           setGrupos(gruposFormatados);
         }
@@ -90,7 +91,7 @@ export default function FavorecidosPage() {
       try {
         const { data, error } = await supabase
           .from("profissoes")
-          .select("id, nome, status, empresa_id, created_at, updated_at")
+          .select("*")
           .eq("empresa_id", currentCompany.id)
           .order("nome");
   
@@ -106,8 +107,8 @@ export default function FavorecidosPage() {
             nome: profissao.nome,
             status: profissao.status as "ativo" | "inativo",
             empresa_id: profissao.empresa_id,
-            created_at: profissao.created_at,
-            updated_at: profissao.updated_at
+            created_at: new Date(profissao.created_at),
+            updated_at: new Date(profissao.updated_at)
           }));
           setProfissoes(profissoesFormatadas);
         }
@@ -141,15 +142,20 @@ export default function FavorecidosPage() {
         if (data) {
           const favorecidosFormatados: Favorecido[] = data.map(favorecido => ({
             ...favorecido,
+            created_at: new Date(favorecido.created_at),
+            updated_at: new Date(favorecido.updated_at),
+            data_aniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
             tipo: favorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor",
             tipo_documento: favorecido.tipo_documento as "cpf" | "cnpj",
             status: favorecido.status as "ativo" | "inativo"
           }));
           setFavorecidos(favorecidosFormatados);
         }
+        setIsLoading(false);
       } catch (error) {
         console.error("Erro ao carregar favorecidos:", error);
         toast.error("Erro ao carregar favorecidos");
+        setIsLoading(false);
       }
     };
 
@@ -188,6 +194,9 @@ export default function FavorecidosPage() {
     }
 
     try {
+      // Converter a data de aniversário para o formato YYYY-MM-DD para o Supabase
+      const dataAniversarioFormatada = data.data_aniversario ? dateToISOString(data.data_aniversario) : null;
+
       // Preparar os dados para inserção/atualização no Supabase
       const favorecidoData = {
         empresa_id: currentCompany.id,
@@ -208,7 +217,7 @@ export default function FavorecidosPage() {
         cidade: data.cidade,
         estado: data.estado,
         pais: data.pais,
-        data_aniversario: data.data_aniversario,
+        data_aniversario: dataAniversarioFormatada,
         status: data.status,
       };
 
@@ -234,7 +243,9 @@ export default function FavorecidosPage() {
               return {
                 ...f,
                 ...favorecidoData,
-                updated_at: new Date().toISOString()
+                data_aniversario: data.data_aniversario,
+                created_at: f.created_at,
+                updated_at: new Date()
               };
             }
             return f;
@@ -258,6 +269,9 @@ export default function FavorecidosPage() {
         if (novoFavorecido) {
           const novoFavorecidoFormatado = {
             ...novoFavorecido,
+            created_at: new Date(novoFavorecido.created_at),
+            updated_at: new Date(novoFavorecido.updated_at),
+            data_aniversario: novoFavorecido.data_aniversario ? new Date(novoFavorecido.data_aniversario) : undefined,
             tipo: novoFavorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor",
             tipo_documento: novoFavorecido.tipo_documento as "cpf" | "cnpj",
             status: novoFavorecido.status as "ativo" | "inativo"

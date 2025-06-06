@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -139,18 +140,18 @@ export default function MovimentacaoPage() {
           // Converter movimentações para o formato esperado
           const movimentacoesFormatadas: ContaPagar[] = movimentacoesData.map((mov: any) => ({
             id: mov.id,
-            movimentacao_id: mov.id,
             favorecido: mov.favorecido?.nome || 'Não informado',
             descricao: mov.descricao || '',
+            // Usar a string direta da data, sem criar um objeto Date para evitar problemas de timezone
             dataVencimento: mov.primeiro_vencimento || undefined,
-            dataPagamento: mov.data_lancamento || undefined,
+            dataPagamento: undefined,
             status: 'em_aberto',
             valor: Number(mov.valor),
             numeroParcela: mov.numero_documento,
             tipo_operacao: mov.tipo_operacao,
+            dataLancamento: mov.data_lancamento || undefined,
             mes_referencia: mov.mes_referencia,
-            documento_pdf: mov.documento_pdf,
-            tipo_titulo_id_interno: mov.tipo_titulo_id
+            documento_pdf: mov.documento_pdf
           }));
 
           setMovimentacoes(movimentacoesFormatadas);
@@ -184,25 +185,24 @@ export default function MovimentacaoPage() {
       const textoBusca = (movimentacao.favorecido + " " + (movimentacao.descricao || "") + " " + ((movimentacao as any).mes_referencia || ""))
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
-      
-      const tipoTituloOk = tipoTituloId === "todos" || (movimentacao as any).tipo_titulo_id_interno === tipoTituloId;
+      const tipoTituloOk = tipoTituloId === "todos" || movimentacao.tipo_titulo_id === tipoTituloId;
       
       // Aplicar filtro de data de lançamento
       let dataLancamentoOk = true;
-      if (dataInicial && movimentacao.dataPagamento) {
+      if (dataInicial && movimentacao.dataLancamento) {
         // Comparar apenas as datas, ignorando as horas
         const dataInicioComparacao = new Date(dataInicial);
         dataInicioComparacao.setHours(0, 0, 0, 0);
-        const dataMovComparacao = new Date(movimentacao.dataPagamento);
+        const dataMovComparacao = new Date(movimentacao.dataLancamento);
         dataMovComparacao.setHours(0, 0, 0, 0);
         dataLancamentoOk = dataLancamentoOk && dataMovComparacao >= dataInicioComparacao;
       }
       
-      if (dataFinal && movimentacao.dataPagamento) {
+      if (dataFinal && movimentacao.dataLancamento) {
         // Comparar apenas as datas, ignorando as horas
         const dataFimComparacao = new Date(dataFinal);
         dataFimComparacao.setHours(23, 59, 59, 999); // Fim do dia
-        const dataMovComparacao = new Date(movimentacao.dataPagamento);
+        const dataMovComparacao = new Date(movimentacao.dataLancamento);
         dataMovComparacao.setHours(0, 0, 0, 0);
         dataLancamentoOk = dataLancamentoOk && dataMovComparacao <= dataFimComparacao;
       }

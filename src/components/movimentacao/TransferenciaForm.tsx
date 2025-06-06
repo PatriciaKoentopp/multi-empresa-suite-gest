@@ -17,6 +17,8 @@ interface TransferenciaFormProps {
   descricao: string;
   onDescricaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   contasCorrente: any[];
+  onSalvar: () => void;
+  onCancel: () => void;
   readOnly?: boolean;
 }
 
@@ -110,6 +112,8 @@ export function TransferenciaForm({
           />
         </div>
       </div>
+
+      {/* Removidos os botões duplicados */}
     </div>
   );
 }

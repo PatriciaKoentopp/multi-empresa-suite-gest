@@ -4,7 +4,7 @@ export interface PlanoConta {
   empresa_id: string;
   codigo: string;
   descricao: string;
-  tipo: "ativo" | "passivo" | "receita" | "despesa" | "patrimonio";
+  tipo: string;
   categoria: "título" | "movimentação";
   considerar_dre: boolean;
   classificacao_dre?: string;

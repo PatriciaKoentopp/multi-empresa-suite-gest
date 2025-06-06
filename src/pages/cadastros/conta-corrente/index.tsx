@@ -37,7 +37,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { PlanoConta } from "@/types/plano-contas";
-import { parseDateString, dateToISOString } from "@/lib/utils";
 
 export default function ContaCorrentePage() {
   const [contas, setContas] = useState<ContaCorrente[]>([]);
@@ -76,7 +75,7 @@ export default function ContaCorrentePage() {
         throw error;
       }
       
-      // Converter dados para o formato ContaCorrente usando as funções padronizadas
+      // Converter dados para o formato ContaCorrente
       const formattedData: ContaCorrente[] = data.map(item => ({
         id: item.id,
         nome: item.nome,
@@ -87,8 +86,7 @@ export default function ContaCorrentePage() {
         status: item.status as "ativo" | "inativo",
         createdAt: new Date(item.created_at),
         updatedAt: new Date(item.updated_at),
-        // Usar parseDateString para manter consistência com outras páginas
-        data: item.data ? parseDateString(item.data) : undefined,
+        data: item.data ? new Date(item.data) : undefined,
         saldoInicial: item.saldo_inicial,
         considerar_saldo: item.considerar_saldo
       }));
@@ -157,9 +155,6 @@ export default function ContaCorrentePage() {
     }
     
     try {
-      // Usar dateToISOString para converter data corretamente para o banco
-      const dataFormatted = dateToISOString(data.data);
-
       if (editingConta) {
         // Update existing conta corrente
         const { error } = await supabase
@@ -171,7 +166,7 @@ export default function ContaCorrentePage() {
             numero: data.numero,
             conta_contabil_id: data.contaContabilId,
             status: data.status,
-            data: dataFormatted,
+            data: data.data?.toISOString(),
             saldo_inicial: data.saldoInicial,
             considerar_saldo: data.considerar_saldo,
             updated_at: new Date().toISOString()
@@ -193,7 +188,7 @@ export default function ContaCorrentePage() {
             numero: data.numero,
             conta_contabil_id: data.contaContabilId,
             status: data.status,
-            data: dataFormatted,
+            data: data.data?.toISOString(),
             saldo_inicial: data.saldoInicial,
             considerar_saldo: data.considerar_saldo
           });

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import LancarDiarioModal from "./LancarDiarioModal";
 import { useLancamentosContabeis } from "@/hooks/useLancamentosContabeis";
+import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { usePdfLancamentos } from "@/hooks/usePdfLancamentos";
 
@@ -51,14 +52,15 @@ export default function LancamentosPage() {
   
   const {
     lancamentos,
-    contasContabeis,
-    fetchLancamentos,
-    criarLancamento
+    planosContas,
+    carregarDados,
+    adicionarLancamento,
+    excluirLancamento
   } = useLancamentosContabeis();
   
   console.log("📊 LancamentosPage - Estados:", {
     lancamentosCount: lancamentos?.length || 0,
-    contasContabeisCount: contasContabeis?.length || 0
+    planosContasCount: planosContas?.length || 0
   });
   
   const { gerarPdfLancamentos } = usePdfLancamentos();
@@ -151,7 +153,7 @@ export default function LancamentosPage() {
     
     return lancamentos.filter(l => {
       // Filtrar por conta
-      const isConta = contaId === "todos" || l.conta_debito_id === contaId || l.conta_credito_id === contaId;
+      const isConta = contaId === "todos" || l.conta === contaId;
 
       // Filtrar por tipo de lançamento
       const tipoLancamentoOk = tipoLancamentoFiltro === "todos" || l.tipo_lancamento === tipoLancamentoFiltro;
@@ -169,6 +171,8 @@ export default function LancamentosPage() {
           // Se for uma data ISO, converter para Date
           dataLanc = new Date(l.data);
         }
+      } else if (l.data instanceof Date) {
+        dataLanc = l.data;
       }
 
       // Filtrar por data
@@ -193,10 +197,10 @@ export default function LancamentosPage() {
     }
   }
 
-  // Função para excluir um lançamento (placeholder já que não existe no hook)
-  function excluirLancamento(id: string) {
+  // Função para excluir um lançamento
+  function handleDelete(id: string) {
     console.log("🗑️ LancamentosPage - Excluindo lançamento:", id);
-    toast.error("Função de exclusão não implementada ainda");
+    excluirLancamento(id);
   }
 
   // Função para adicionar um novo lançamento contábil
@@ -208,14 +212,10 @@ export default function LancamentosPage() {
     valor: number;
   }) {
     console.log("➕ LancamentosPage - Adicionando novo lançamento:", novo);
-    criarLancamento({
-      data: novo.data,
-      conta_debito_id: novo.debito,
-      conta_credito_id: novo.credito,
-      valor: novo.valor,
-      historico: novo.historico
-    }).then(() => {
-      setNovoModalOpen(false);
+    adicionarLancamento(novo).then(success => {
+      if (success) {
+        setNovoModalOpen(false);
+      }
     });
   }
 
@@ -232,8 +232,8 @@ export default function LancamentosPage() {
   // Função para atualizar dados
   function handleAtualizarDados() {
     console.log("🔄 LancamentosPage - Atualizando dados manualmente");
-    if (fetchLancamentos) {
-      fetchLancamentos();
+    if (carregarDados) {
+      carregarDados();
     }
   }
 
@@ -256,7 +256,7 @@ export default function LancamentosPage() {
   function handleGerarPdf() {
     console.log("📄 LancamentosPage - Gerando PDF");
     const contaSelecionada = contaId !== "todos" 
-      ? contasContabeis.find(conta => conta.id === contaId)
+      ? planosContas.find(conta => conta.id === contaId)
       : undefined;
 
     const tipoFiltro = tipoLancamentoFiltro !== "todos" ? tipoLancamentoFiltro : undefined;
@@ -288,7 +288,7 @@ export default function LancamentosPage() {
         open={novoModalOpen} 
         onClose={() => setNovoModalOpen(false)} 
         onSave={handleNovoLancamento} 
-        contas={contasContabeis} 
+        contas={planosContas} 
         contaInicalId={contaId !== "todos" ? contaId : ""} 
       />
       
@@ -316,7 +316,7 @@ export default function LancamentosPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-white border max-h-[400px] overflow-y-auto">
                   <SelectItem value="todos">Todas as Contas</SelectItem>
-                  {contasContabeis.map(cc => (
+                  {planosContas.map(cc => (
                     <SelectItem key={cc.id} value={cc.id}>
                       {cc.codigo} - {cc.descricao}
                     </SelectItem>
@@ -484,6 +484,12 @@ export default function LancamentosPage() {
                           const [ano, mes, dia] = anoMesDia.split('-');
                           dataExibicao = `${dia}/${mes}/${ano}`;
                         }
+                      } else if (lanc.data instanceof Date) {
+                        // Convertendo Date para formato brasileiro sem ajuste de timezone
+                        const dia = String(lanc.data.getDate()).padStart(2, '0');
+                        const mes = String(lanc.data.getMonth() + 1).padStart(2, '0');
+                        const ano = lanc.data.getFullYear();
+                        dataExibicao = `${dia}/${mes}/${ano}`;
                       }
 
                       return (

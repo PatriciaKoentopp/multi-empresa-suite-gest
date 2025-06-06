@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -301,7 +300,7 @@ export default function IncluirMovimentacaoPage() {
               onConsiderarDREChange={setConsiderarDRE}
               tiposTitulos={tiposTitulosFiltrados}
               favorecidos={favorecidos}
-              categorias={categorias.map(cat => ({ id: cat.id, nome: cat.descricao }))}
+              categorias={categorias}
               formasPagamento={formasPagamento}
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
@@ -312,8 +311,8 @@ export default function IncluirMovimentacaoPage() {
             />
           ) : operacao === "receber" ? (
             <RecebimentoForm
-              numeroDocumento={numDoc}
-              onNumeroDocumentoChange={(e) => setNumDoc(e.target.value)}
+              numDoc={numDoc}
+              onNumDocChange={(e) => setNumDoc(e.target.value)}
               tipoTituloId={tipoTitulo}
               onTipoTituloChange={setTipoTitulo}
               favorecido={favorecido}
@@ -334,7 +333,7 @@ export default function IncluirMovimentacaoPage() {
               onConsiderarDREChange={setConsiderarDRE}
               tiposTitulos={tiposTitulosFiltrados}
               favorecidos={favorecidos}
-              categorias={categorias.map(cat => ({ id: cat.id, nome: cat.descricao }))}
+              categorias={categorias}
               formasPagamento={formasPagamento}
               onNovoFavorecido={() => setIsModalNovoFavorecido(true)}
               onNovaCategoria={() => setIsModalNovaCategoria(true)}

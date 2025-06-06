@@ -9,7 +9,7 @@ import { DashboardCardConfigurator } from "@/components/dashboard/DashboardCardC
 import { useVendasDashboard } from "@/hooks/useVendasDashboard";
 import { useDashboardCards } from "@/hooks/useDashboardCards";
 import { useEffect, useState } from "react";
-import { subDays } from "date-fns";
+import { format, subDays } from "date-fns";
 import { CrmDateRangeFilter } from "@/components/crm/dashboard/CrmDateRangeFilter";
 
 const PainelVendasPage = () => {
@@ -52,8 +52,7 @@ const PainelVendasPage = () => {
   const handleDateChange = (start: Date, end: Date) => {
     setStartDate(start);
     setEndDate(end);
-    // Corrigido: não passar argumentos para fetchSalesData
-    fetchSalesData();
+    fetchSalesData(format(start, "yyyy-MM-dd"), format(end, "yyyy-MM-dd"));
   };
 
   const handleConfigChange = async () => {

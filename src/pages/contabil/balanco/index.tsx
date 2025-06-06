@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -37,29 +38,18 @@ const obterAnos = (): string[] => {
 
 export default function BalancoPage() {
   const { 
-    contasContabeis,
-    saldosContas,
+    contasBalanco, 
     isLoading, 
-    refetch
+    carregarDados, 
+    periodo, 
+    setPeriodo, 
+    ano, 
+    setAno, 
+    mes, 
+    setMes 
   } = useBalancoPatrimonial();
   
-  // Estados locais para filtros
-  const [periodo, setPeriodo] = useState<"acumulado" | "mensal">("acumulado");
-  const [ano, setAno] = useState(new Date().getFullYear().toString());
-  const [mes, setMes] = useState("01");
-  
   const anos = obterAnos();
-
-  // Simulação de dados do balanço (adaptação temporária)
-  const contasBalanco = {
-    contasAtivo: contasContabeis.filter(c => c.tipo === "ativo"),
-    contasPassivo: contasContabeis.filter(c => c.tipo === "passivo"),
-    contasPatrimonio: contasContabeis.filter(c => c.tipo === "patrimonio"),
-    totalAtivo: 0,
-    totalPassivo: 0,
-    totalPatrimonio: 0,
-    totalPassivoPatrimonio: 0
-  };
 
   return (
     <div className="space-y-4">
@@ -68,7 +58,7 @@ export default function BalancoPage() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={refetch}
+          onClick={carregarDados}
           className="text-blue-500 hover:bg-blue-100 h-[42px] w-[42px]"
           title="Atualizar dados"
         >
@@ -110,6 +100,7 @@ export default function BalancoPage() {
                 </SelectContent>
               </Select>
             </div>
+            {/* Só exibe filtro de mês na visualização mensal */}
             {periodo === "mensal" && (
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">Mês</label>
@@ -133,8 +124,7 @@ export default function BalancoPage() {
             </div>
           ) : (
             <div>
-              
-              
+              {/* Tabela Ativo */}
               <h3 className="font-semibold mt-0 mb-1 text-[17px] text-blue-700 flex">
                 Ativo
                 <span className="ml-2 text-gray-500 font-normal">
@@ -160,19 +150,148 @@ export default function BalancoPage() {
                       </TableCell>
                     </TableRow>
                   ) : contasBalanco.contasAtivo.map((c, index) => (
-                    <TableRow key={`${c.codigo}-${index}`}>
-                      <TableCell>{c.codigo}</TableCell>
-                      <TableCell>{c.descricao}</TableCell>
-                      <TableCell className="text-right">R$ 0,00</TableCell>
-                      <TableCell className="text-right">R$ 0,00</TableCell>
-                      <TableCell className="text-right">R$ 0,00</TableCell>
-                      <TableCell className="text-right">R$ 0,00</TableCell>
+                    <TableRow 
+                      key={`${c.codigo}-${index}`}
+                      className={cn(
+                        c.tipo === "título" ? "font-semibold bg-gray-50" : "",
+                        c.nivel && c.nivel > 0 ? "text-sm" : ""
+                      )}
+                    >
+                      <TableCell>
+                        <div style={{ paddingLeft: `${c.nivel ? c.nivel * 12 : 0}px` }}>
+                          {c.codigo}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div style={{ paddingLeft: `${c.nivel ? c.nivel * 12 : 0}px` }}>
+                          {c.descricao}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">{c.saldoInicial.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.debito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.credito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.saldoFinal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
 
+              {/* Tabela Passivo */}
+              <h3 className="font-semibold mt-6 mb-1 text-[17px] text-blue-700 flex">
+                Passivo
+                <span className="ml-2 text-gray-500 font-normal">
+                  (Total: {contasBalanco.totalPassivo.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})
+                </span>
+              </h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead className="text-right">Saldo Inicial (R$)</TableHead>
+                    <TableHead className="text-right">Débitos (R$)</TableHead>
+                    <TableHead className="text-right">Créditos (R$)</TableHead>
+                    <TableHead className="text-right">Saldo Final (R$)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contasBalanco.contasPassivo.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                        Nenhuma conta de Passivo encontrada
+                      </TableCell>
+                    </TableRow>
+                  ) : contasBalanco.contasPassivo.map((c, index) => (
+                    <TableRow 
+                      key={`${c.codigo}-${index}`}
+                      className={cn(
+                        c.tipo === "título" ? "font-semibold bg-gray-50" : "",
+                        c.nivel && c.nivel > 0 ? "text-sm" : ""
+                      )}
+                    >
+                      <TableCell>
+                        <div style={{ paddingLeft: `${c.nivel ? c.nivel * 12 : 0}px` }}>
+                          {c.codigo}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div style={{ paddingLeft: `${c.nivel ? c.nivel * 12 : 0}px` }}>
+                          {c.descricao}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">{c.saldoInicial.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.debito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.credito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.saldoFinal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Tabela Patrimônio */}
+              <h3 className="font-semibold mt-6 mb-1 text-[17px] text-blue-700 flex">
+                Patrimônio
+                <span className="ml-2 text-gray-500 font-normal">
+                  (Total: {contasBalanco.totalPatrimonio.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})
+                </span>
+              </h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead className="text-right">Saldo Inicial (R$)</TableHead>
+                    <TableHead className="text-right">Débitos (R$)</TableHead>
+                    <TableHead className="text-right">Créditos (R$)</TableHead>
+                    <TableHead className="text-right">Saldo Final (R$)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contasBalanco.contasPatrimonio.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                        Nenhuma conta de Patrimônio encontrada
+                      </TableCell>
+                    </TableRow>
+                  ) : contasBalanco.contasPatrimonio.map((c, index) => (
+                    <TableRow 
+                      key={`${c.codigo}-${index}`}
+                      className={cn(
+                        c.tipo === "título" ? "font-semibold bg-gray-50" : "",
+                        c.nivel && c.nivel > 0 ? "text-sm" : ""
+                      )}
+                    >
+                      <TableCell>
+                        <div style={{ paddingLeft: `${c.nivel ? c.nivel * 12 : 0}px` }}>
+                          {c.codigo}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div style={{ paddingLeft: `${c.nivel ? c.nivel * 12 : 0}px` }}>
+                          {c.descricao}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">{c.saldoInicial.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.debito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.credito.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                      <TableCell className="text-right">{c.saldoFinal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
               
+              {/* Totais */}
+              <div className="mt-6 text-right space-y-1">
+                <div className="text-lg font-semibold">
+                  Passivo + Patrimônio: {contasBalanco.totalPassivoPatrimonio.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </div>
+                <div className="text-lg font-semibold">
+                  Ativo: {contasBalanco.totalAtivo.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </div>
+                <div className="text-sm text-gray-500">
+                  Diferença: {Math.abs(contasBalanco.totalAtivo - contasBalanco.totalPassivoPatrimonio).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </div>
+              </div>
             </div>
           )}
         </CardContent>

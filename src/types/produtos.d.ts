@@ -2,12 +2,12 @@
 export interface Produto {
   id: string;
   empresa_id: string;
-  grupo_id?: string | null;
   nome: string;
-  descricao?: string | null;
+  descricao?: string;
+  grupo_id?: string;
   unidade: string;
-  conta_receita_id?: string | null;
-  status: string; // Mudança: aceita string do banco
+  conta_receita_id?: string;
+  status: 'ativo' | 'inativo';
   created_at: string;
   updated_at: string;
 }

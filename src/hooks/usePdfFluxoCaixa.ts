@@ -28,8 +28,8 @@ export const usePdfFluxoCaixa = () => {
     movimentacoes: FluxoCaixaItem[],
     nomeEmpresa: string,
     contaCorrenteSelecionada: any,
-    dataInicial: Date,
-    dataFinal: Date,
+    dataInicial?: Date,
+    dataFinal?: Date,
     saldoInicial: number,
     favorecidosCache: Record<string, any>,
     documentosCache: Record<string, any>,
@@ -205,8 +205,7 @@ export const usePdfFluxoCaixa = () => {
           5: { cellWidth: 25, halign: 'right', overflow: 'ellipsize' }   // Saldo (reduzida)
         },
         didDrawPage: (data) => {
-          const pageInfo = (doc as any).internal;
-          const pageNumber = pageInfo.getCurrentPageInfo ? pageInfo.getCurrentPageInfo().pageNumber : 1;
+          const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
           
           // Se não é a primeira página, adicionar cabeçalho
           if (pageNumber > 1) {
@@ -218,7 +217,7 @@ export const usePdfFluxoCaixa = () => {
           }
           
           // Adicionar rodapé
-          const totalPages = pageInfo.getNumberOfPages ? pageInfo.getNumberOfPages() : 1;
+          const totalPages = doc.internal.getNumberOfPages();
           adicionarRodape(pageNumber, totalPages);
         },
         showHead: 'everyPage',
