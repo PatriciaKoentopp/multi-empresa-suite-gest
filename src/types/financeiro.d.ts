@@ -1,3 +1,4 @@
+
 export interface FiltroFluxoCaixa {
   dataInicio: Date;
   dataFim: Date;
