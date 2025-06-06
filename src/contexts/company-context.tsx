@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Company } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +10,9 @@ interface CompanyContextProps {
   setCurrentCompany: (company: Company | null) => void;
   loading: boolean;
   refetch: () => Promise<void>;
+  fetchCompanyById: (id: string) => Promise<Company | null>;
+  createCompany: (company: Partial<Company>) => Promise<Company | null>;
+  updateCompany: (id: string, company: Partial<Company>) => Promise<Company | null>;
 }
 
 const CompanyContext = createContext<CompanyContextProps>({
@@ -16,7 +20,10 @@ const CompanyContext = createContext<CompanyContextProps>({
   currentCompany: null,
   setCurrentCompany: () => {},
   loading: false,
-  refetch: async () => {}
+  refetch: async () => {},
+  fetchCompanyById: async () => null,
+  createCompany: async () => null,
+  updateCompany: async () => null,
 });
 
 export const useCompany = () => useContext(CompanyContext);
@@ -26,6 +33,14 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
   const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  const transformCompanyData = (company: any): Company => ({
+    ...company,
+    razaoSocial: company.razao_social,
+    nomeFantasia: company.nome_fantasia,
+    inscricaoEstadual: company.inscricao_estadual,
+    inscricaoMunicipal: company.inscricao_municipal
+  });
 
   const loadCompanies = async () => {
     try {
@@ -37,15 +52,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      // Transformar dados para compatibilidade com interface Company
-      const companiesWithAliases = (data || []).map(company => ({
-        ...company,
-        razaoSocial: company.razao_social,
-        nomeFantasia: company.nome_fantasia,
-        inscricaoEstadual: company.inscricao_estadual,
-        inscricaoMunicipal: company.inscricao_municipal
-      }));
-
+      const companiesWithAliases = (data || []).map(transformCompanyData);
       setCompanies(companiesWithAliases);
     } catch (error: any) {
       console.error('Erro ao carregar empresas:', error);
@@ -56,6 +63,123 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCompanyById = async (id: string): Promise<Company | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('empresas')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data ? transformCompanyData(data) : null;
+    } catch (error: any) {
+      console.error('Erro ao buscar empresa:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao buscar empresa",
+        description: error.message
+      });
+      return null;
+    }
+  };
+
+  const createCompany = async (companyData: Partial<Company>): Promise<Company | null> => {
+    try {
+      // Converter de volta para o formato do banco
+      const dbData = {
+        ...companyData,
+        razao_social: companyData.razaoSocial || companyData.razao_social,
+        nome_fantasia: companyData.nomeFantasia || companyData.nome_fantasia,
+        inscricao_estadual: companyData.inscricaoEstadual || companyData.inscricao_estadual,
+        inscricao_municipal: companyData.inscricaoMunicipal || companyData.inscricao_municipal
+      };
+
+      // Remover propriedades aliases
+      delete dbData.razaoSocial;
+      delete dbData.nomeFantasia;
+      delete dbData.inscricaoEstadual;
+      delete dbData.inscricaoMunicipal;
+
+      const { data, error } = await supabase
+        .from('empresas')
+        .insert(dbData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newCompany = transformCompanyData(data);
+      await loadCompanies();
+      
+      toast({
+        title: "Empresa criada com sucesso",
+        description: `${newCompany.nomeFantasia} foi criada.`
+      });
+
+      return newCompany;
+    } catch (error: any) {
+      console.error('Erro ao criar empresa:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao criar empresa",
+        description: error.message
+      });
+      return null;
+    }
+  };
+
+  const updateCompany = async (id: string, companyData: Partial<Company>): Promise<Company | null> => {
+    try {
+      // Converter de volta para o formato do banco
+      const dbData = {
+        ...companyData,
+        razao_social: companyData.razaoSocial || companyData.razao_social,
+        nome_fantasia: companyData.nomeFantasia || companyData.nome_fantasia,
+        inscricao_estadual: companyData.inscricaoEstadual || companyData.inscricao_estadual,
+        inscricao_municipal: companyData.inscricaoMunicipal || companyData.inscricao_municipal
+      };
+
+      // Remover propriedades aliases
+      delete dbData.razaoSocial;
+      delete dbData.nomeFantasia;
+      delete dbData.inscricaoEstadual;
+      delete dbData.inscricaoMunicipal;
+
+      const { data, error } = await supabase
+        .from('empresas')
+        .update(dbData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedCompany = transformCompanyData(data);
+      await loadCompanies();
+      
+      // Atualizar empresa atual se for a mesma
+      if (currentCompany?.id === id) {
+        setCurrentCompany(updatedCompany);
+      }
+
+      toast({
+        title: "Empresa atualizada com sucesso",
+        description: `${updatedCompany.nomeFantasia} foi atualizada.`
+      });
+
+      return updatedCompany;
+    } catch (error: any) {
+      console.error('Erro ao atualizar empresa:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar empresa",
+        description: error.message
+      });
+      return null;
     }
   };
 
@@ -77,24 +201,8 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
       if (userError) throw userError;
 
       if (userData?.empresa_id) {
-        const { data: companyData, error: companyError } = await supabase
-          .from('empresas')
-          .select('*')
-          .eq('id', userData.empresa_id)
-          .single();
-
-        if (companyError) throw companyError;
-
-        // Transformar dados para compatibilidade com interface Company
-        const companyWithAliases = {
-          ...companyData,
-          razaoSocial: companyData.razao_social,
-          nomeFantasia: companyData.nome_fantasia,
-          inscricaoEstadual: companyData.inscricao_estadual,
-          inscricaoMunicipal: companyData.inscricao_municipal
-        };
-
-        setCurrentCompany(companyWithAliases);
+        const company = await fetchCompanyById(userData.empresa_id);
+        setCurrentCompany(company);
       } else {
         setCurrentCompany(null);
       }
@@ -118,7 +226,10 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
       currentCompany,
       setCurrentCompany,
       loading,
-      refetch: loadCompanies
+      refetch: loadCompanies,
+      fetchCompanyById,
+      createCompany,
+      updateCompany
     }}>
       {children}
     </CompanyContext.Provider>

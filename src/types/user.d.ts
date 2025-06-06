@@ -39,14 +39,5 @@ export interface Company {
   nomeFantasia?: string;
   inscricaoEstadual?: string | null;
   inscricaoMunicipal?: string | null;
-  endereco?: {
-    cep: string;
-    logradouro: string;
-    numero: string;
-    complemento?: string | null;
-    bairro: string;
-    cidade: string;
-    estado: string;
-    pais: string;
-  };
+  regimeTributacao?: string | null;
 }

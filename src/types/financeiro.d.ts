@@ -106,7 +106,7 @@ export interface ContaReceber {
   valor: number;
   data_vencimento: string;
   dataVencimento: string;
-  tipo: string;
+  tipo?: string;
   cliente: string;
   descricao: string;
   status: 'em_aberto' | 'pago' | 'vencido';

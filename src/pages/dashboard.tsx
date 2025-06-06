@@ -289,7 +289,8 @@ export function Dashboard() {
               status: 'em_aberto' as 'em_aberto',
               numeroParcela: parcela.movimentacao.numero_documento || '-',
               origem: 'Movimentação',
-              tipo: parcela.movimentacao.tipo_operacao
+              tipo: parcela.movimentacao.tipo_operacao,
+              movimentacao: parcela.movimentacao
             };
 
             // Comparar as strings de data diretamente
@@ -568,7 +569,7 @@ export function Dashboard() {
               <SalesDashboardCard 
                 title="Contas a Receber" 
                 value={formatCurrency(dashboardData.contasReceber)} 
-                description={`${dashboardData.parcelasEmAtraso.filter(p => p.movimentacao?.tipo_operacao === 'receber').length} título(s) em atraso`} 
+                description={`${dashboardData.parcelasEmAtraso.filter(p => p.tipo === 'receber').length} título(s) em atraso`} 
                 icon="users" 
               />
             )}
