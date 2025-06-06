@@ -111,10 +111,22 @@ export default function FaturamentoPage() {
 
       if (error) throw error;
 
-      // Calcular valor total somando os itens
+      // Calcular valor total somando os itens e garantir tipos corretos
       const faturamentosComValor = data?.map(fat => ({
         ...fat,
-        valor: fat.itens?.reduce((sum, item) => sum + Number(item.valor), 0) || 0
+        valor: fat.itens?.reduce((sum, item) => sum + Number(item.valor), 0) || 0,
+        tipo: fat.tipo as "orcamento" | "venda", // Garantir tipo correto
+        status: fat.status as "ativo" | "inativo", // Garantir tipo correto
+        favorecido: fat.favorecido ? {
+          ...fat.favorecido,
+          tipo: "cliente" as const, // Valor padrão para tipo
+          tipo_documento: "cpf" as const, // Valor padrão para tipo_documento
+          status: "ativo" as const, // Valor padrão para status
+          documento: fat.favorecido.documento || "",
+          created_at: fat.favorecido.created_at || new Date().toISOString(),
+          updated_at: fat.favorecido.updated_at || new Date().toISOString(),
+          empresa_id: fat.empresa_id
+        } : undefined
       })) || [];
 
       setFaturamentos(faturamentosComValor);
@@ -136,7 +148,16 @@ export default function FaturamentoPage() {
         .eq('status', 'ativo');
 
       if (error) throw error;
-      setFavorecidos(data || []);
+      
+      // Garantir tipos corretos para favorecidos
+      const favorecidosFormatados = (data || []).map(fav => ({
+        ...fav,
+        tipo: fav.tipo as "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor",
+        tipo_documento: fav.tipo_documento as "cpf" | "cnpj",
+        status: fav.status as "ativo" | "inativo"
+      }));
+      
+      setFavorecidos(favorecidosFormatados);
     } catch (error) {
       console.error('Erro ao carregar favorecidos:', error);
       toast({
