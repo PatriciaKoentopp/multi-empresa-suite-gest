@@ -474,11 +474,20 @@ export function LeadFormModal({
         return;
       }
       
-      // Adicionar o ID da empresa aos dados do lead
+      // Mapear os campos corretamente para o banco de dados
       const leadDataWithCompany = {
         ...formData,
-        empresa_id: empresaId
+        empresa_id: empresaId,
+        // Mapear os campos para os nomes corretos na tabela leads
+        etapa_id: formData.etapaId,
+        origem_id: formData.origemId,
+        responsavel_id: formData.responsavelId
       };
+      
+      // Remover os campos antigos que não existem na tabela
+      delete leadDataWithCompany.etapaId;
+      delete leadDataWithCompany.origemId;
+      delete leadDataWithCompany.responsavelId;
       
       // Chamar a função original para salvar os dados do lead
       console.log('Salvando dados do lead:', leadDataWithCompany);
