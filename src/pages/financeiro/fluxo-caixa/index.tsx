@@ -628,7 +628,10 @@ export default function FluxoCaixaPage() {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             {/* Filtro de Situação */}
             <div className="col-span-1">
-              <Select value={situacao} onValueChange={v => setSituacao(v as "todos" | "conciliado" | "nao_conciliado")}>
+              <Select 
+                value={situacao} 
+                onValueChange={(value: string) => setSituacao(value as "todos" | "conciliado" | "nao_conciliado")}
+              >
                 <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
                   <Filter className="mr-2 h-5 w-5 text-neutral-400" />
                   <SelectValue placeholder="Situação" />
