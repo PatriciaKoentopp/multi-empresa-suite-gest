@@ -105,7 +105,13 @@ export interface ContaReceber {
   id: string;
   valor: number;
   data_vencimento: string;
+  dataVencimento: string;
   tipo: string;
+  cliente: string;
+  descricao: string;
+  status: 'em_aberto' | 'pago' | 'vencido';
+  numeroParcela: string;
+  origem: string;
   movimentacao_id?: string;
   movimentacao?: {
     tipo_operacao: string;

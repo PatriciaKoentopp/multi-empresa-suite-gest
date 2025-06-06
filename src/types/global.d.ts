@@ -6,6 +6,7 @@ export interface ModuleNavItem {
   disabled?: boolean;
   external?: boolean;
   items?: SubNavItem[];
+  subItems?: SubNavItem[];
 }
 
 export interface SubNavItem {
@@ -16,10 +17,13 @@ export interface SubNavItem {
 }
 
 export interface YearlyComparison {
-  ano: number;
-  vendas: number;
-  variacao: number;
-  tipo_variacao: 'aumento' | 'reducao';
+  year: number;
+  total: number;
+  qtde_vendas: number;
+  variacao_total: number | null;
+  media_mensal: number;
+  variacao_media: number | null;
+  num_meses: number;
 }
 
 export interface SaleData {

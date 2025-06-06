@@ -3,6 +3,10 @@ export interface Orcamento {
   id: string;
   empresa_id: string;
   favorecido_id: string;
+  favorecido?: {
+    nome: string;
+    documento: string;
+  };
   codigo: string;
   data: string;
   tipo: 'orcamento' | 'venda';
@@ -23,6 +27,7 @@ export interface OrcamentoItem {
   id: string;
   orcamento_id: string;
   servico_id: string;
+  servicoId: string;
   valor: number;
   created_at: string;
   updated_at: string;
