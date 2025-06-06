@@ -209,8 +209,7 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao?: b
     handleRemoveParcela,
     handleUpdateParcela,
     setAllForm,
-    favorecidos: favorecidosData as Favorecido[],
-    servicos: servicosData as Servico[],
+    favorecidos: (favorecidosData as Favorecido[]) || [],
     isLoadingFavorecidos,
     isLoadingServicos,
 
@@ -236,8 +235,8 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao?: b
     setNumeroNotaFiscal,
     notaFiscalPdfUrl,
 
-    // Dados carregados (renomeados para o que a página espera)
-    servicosDisponiveis: servicosData as Servico[],
+    // Dados carregados com fallback para evitar undefined
+    servicosDisponiveis: (servicosData as Servico[]) || [],
 
     // Handlers que a página espera
     handleServicoChange,
