@@ -74,3 +74,29 @@ export interface FluxoMensal {
   total_recebido: number;
   total_pago: number;
 }
+
+// Novos tipos para Análise DRE
+export interface AnaliseVariacao {
+  valor: number;
+  percentual: number;
+  tipo: 'aumento' | 'reducao';
+}
+
+export interface ValorMensal {
+  mes: string;
+  valor: number;
+}
+
+export interface DetalhesMensaisConta {
+  conta: string;
+  valores: ValorMensal[];
+  total: number;
+  variacao?: AnaliseVariacao;
+}
+
+export interface FiltroAnaliseDre {
+  anoInicial: number;
+  anoFinal: number;
+  meses?: string[];
+  contasSelecionadas?: string[];
+}
