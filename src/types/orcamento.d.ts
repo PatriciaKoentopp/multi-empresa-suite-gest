@@ -21,13 +21,14 @@ export interface Orcamento {
   nota_fiscal_pdf?: string | null;
   created_at: string;
   updated_at: string;
+  // Campo calculado pelos itens
+  valor?: number;
 }
 
 export interface OrcamentoItem {
   id: string;
   orcamento_id: string;
   servico_id: string;
-  servicoId: string;
   valor: number;
   created_at: string;
   updated_at: string;

@@ -52,6 +52,7 @@ export const useOrcamentoForm = (orcamentoId?: string | null, isVisualizacao?: b
   const [dataNotaFiscal, setDataNotaFiscal] = useState('');
   const [numeroNotaFiscal, setNumeroNotaFiscal] = useState('');
   const [notaFiscalPdfUrl, setNotaFiscalPdfUrl] = useState('');
+  // Corrigido: usar tipo simples que a página espera
   const [servicos, setServicos] = useState<{ servicoId: string; valor: number }[]>([{ servicoId: '', valor: 0 }]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);

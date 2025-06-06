@@ -96,10 +96,10 @@ export default function FaturamentoPage() {
       let query = supabase
         .from('orcamentos')
         .select(`
-          *,
-          favorecido:favorecidos(nome),
-          itens:orcamentos_itens(valor)
-        `)
+            *,
+            favorecido:favorecidos(nome),
+            itens:orcamentos_itens(valor)
+          `)
         .eq('empresa_id', currentCompany?.id);
 
       // Aplica filtro de status se não for "todos"

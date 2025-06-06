@@ -1,11 +1,9 @@
 
-export interface Produto {
+export interface Servico {
   id: string;
   empresa_id: string;
-  grupo_id?: string | null;
   nome: string;
   descricao?: string | null;
-  unidade: string;
   conta_receita_id?: string | null;
   status: string; // Mudança: aceita string do banco
   created_at: string;

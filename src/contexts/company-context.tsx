@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Company } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,20 +88,28 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
 
   const createCompany = async (companyData: Partial<Company>): Promise<Company | null> => {
     try {
-      // Converter de volta para o formato do banco
+      // Converter de volta para o formato do banco - com campos obrigatórios
       const dbData = {
-        ...companyData,
-        razao_social: companyData.razaoSocial || companyData.razao_social,
-        nome_fantasia: companyData.nomeFantasia || companyData.nome_fantasia,
+        razao_social: companyData.razaoSocial || companyData.razao_social || '',
+        nome_fantasia: companyData.nomeFantasia || companyData.nome_fantasia || '',
+        cnpj: companyData.cnpj || '',
+        cep: companyData.cep || '',
+        logradouro: companyData.logradouro || '',
+        numero: companyData.numero || '',
+        bairro: companyData.bairro || '',
+        cidade: companyData.cidade || '',
+        estado: companyData.estado || '',
+        pais: companyData.pais || 'Brasil',
         inscricao_estadual: companyData.inscricaoEstadual || companyData.inscricao_estadual,
-        inscricao_municipal: companyData.inscricaoMunicipal || companyData.inscricao_municipal
+        inscricao_municipal: companyData.inscricaoMunicipal || companyData.inscricao_municipal,
+        cnae: companyData.cnae,
+        email: companyData.email,
+        telefone: companyData.telefone,
+        site: companyData.site,
+        logo: companyData.logo,
+        regime_tributacao: companyData.regimeTributacao || companyData.regime_tributacao,
+        complemento: companyData.complemento
       };
-
-      // Remover propriedades aliases
-      delete dbData.razaoSocial;
-      delete dbData.nomeFantasia;
-      delete dbData.inscricaoEstadual;
-      delete dbData.inscricaoMunicipal;
 
       const { data, error } = await supabase
         .from('empresas')
@@ -136,18 +143,33 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Converter de volta para o formato do banco
       const dbData = {
-        ...companyData,
         razao_social: companyData.razaoSocial || companyData.razao_social,
         nome_fantasia: companyData.nomeFantasia || companyData.nome_fantasia,
+        cnpj: companyData.cnpj,
+        cep: companyData.cep,
+        logradouro: companyData.logradouro,
+        numero: companyData.numero,
+        bairro: companyData.bairro,
+        cidade: companyData.cidade,
+        estado: companyData.estado,
+        pais: companyData.pais,
         inscricao_estadual: companyData.inscricaoEstadual || companyData.inscricao_estadual,
-        inscricao_municipal: companyData.inscricaoMunicipal || companyData.inscricao_municipal
+        inscricao_municipal: companyData.inscricaoMunicipal || companyData.inscricao_municipal,
+        cnae: companyData.cnae,
+        email: companyData.email,
+        telefone: companyData.telefone,
+        site: companyData.site,
+        logo: companyData.logo,
+        regime_tributacao: companyData.regimeTributacao || companyData.regime_tributacao,
+        complemento: companyData.complemento
       };
 
-      // Remover propriedades aliases
-      delete dbData.razaoSocial;
-      delete dbData.nomeFantasia;
-      delete dbData.inscricaoEstadual;
-      delete dbData.inscricaoMunicipal;
+      // Remover campos undefined
+      Object.keys(dbData).forEach(key => {
+        if (dbData[key as keyof typeof dbData] === undefined) {
+          delete dbData[key as keyof typeof dbData];
+        }
+      });
 
       const { data, error } = await supabase
         .from('empresas')

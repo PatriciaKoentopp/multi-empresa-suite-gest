@@ -11,5 +11,6 @@ export * from './tabelas';
 export * from './user';
 export * from './favorecidos';
 export * from './produtos';
+export * from './servico';
 export * from './tabela-precos';
 export * from './orcamento';
