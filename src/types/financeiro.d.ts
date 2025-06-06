@@ -1,4 +1,3 @@
-
 export interface FiltroFluxoCaixa {
   dataInicio: Date;
   dataFim: Date;
@@ -99,4 +98,34 @@ export interface FiltroAnaliseDre {
   anoFinal: number;
   meses?: string[];
   contasSelecionadas?: string[];
+}
+
+export interface ContaReceber {
+  id: string;
+  valor: number;
+  data_vencimento: string;
+  tipo: string;
+  movimentacao_id?: string;
+  movimentacao?: {
+    tipo_operacao: string;
+    favorecido_id: string;
+    empresa_id: string;
+    descricao: string;
+    numero_documento: string;
+  };
+}
+
+export interface ContaPagar {
+  id: string;
+  valor: number;
+  data_vencimento: string;
+  tipo: string;
+  movimentacao_id?: string;
+  movimentacao?: {
+    tipo_operacao: string;
+    favorecido_id: string;
+    empresa_id: string;
+    descricao: string;
+    numero_documento: string;
+  };
 }
