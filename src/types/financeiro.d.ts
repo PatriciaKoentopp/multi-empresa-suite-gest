@@ -1,5 +1,4 @@
 
-
 export interface ContaReceber {
   id: string;
   cliente: string;
@@ -127,6 +126,8 @@ export interface FluxoCaixaItem {
   entradas?: number;
   saidas?: number;
   saldo?: number;
+  favorecido?: string;
+  conta_nome?: string;
 }
 
 export interface FiltroFluxoCaixa {
@@ -143,6 +144,9 @@ export interface FluxoMensal {
   entradas: number;
   saidas: number;
   saldo: number;
+  total_recebido: number;
+  total_pago: number;
+  mes_numero: number;
 }
 
 // Interfaces para análise DRE
@@ -174,4 +178,3 @@ export interface FiltroAnaliseDre {
   contas_selecionadas: string[];
   incluir_subcategorias: boolean;
 }
-

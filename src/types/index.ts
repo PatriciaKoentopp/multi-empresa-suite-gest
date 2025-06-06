@@ -46,6 +46,118 @@ export interface CompanyUpdate {
   regime_tributacao?: string;
 }
 
+// Adicionando tipos que faltam
+export interface Favorecido {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  tipo: "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor";
+  tipo_documento: "cpf" | "cnpj";
+  documento: string;
+  email?: string;
+  telefone?: string;
+  nome_fantasia?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
+  data_aniversario?: string;
+  profissao_id?: string;
+  grupo_id?: string;
+  status: "ativo" | "inativo";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GrupoFavorecido {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  status: "ativo" | "inativo";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Profissao {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  status: "ativo" | "inativo";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MotivoPerda {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  status: "ativo" | "inativo";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Origem {
+  id: string;
+  nome: string;
+  empresa_id: string;
+  status: "ativo" | "inativo";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ModuleNavItem {
+  label: string;
+  icon: string;
+  path?: string;
+  subItems?: SubNavItem[];
+}
+
+export interface SubNavItem {
+  label: string;
+  path: string;
+}
+
+export interface Orcamento {
+  id: string;
+  codigo: string;
+  empresa_id: string;
+  favorecido_id: string;
+  favorecido?: Favorecido;
+  data: string;
+  data_venda?: string;
+  tipo: "orcamento" | "venda";
+  forma_pagamento: string;
+  numero_parcelas: number;
+  observacoes?: string;
+  codigo_projeto?: string;
+  numero_nota_fiscal?: string;
+  data_nota_fiscal?: string;
+  nota_fiscal_pdf?: string;
+  status: "ativo" | "inativo";
+  valor?: number;
+  itens?: Array<{
+    id: string;
+    orcamento_id: string;
+    servico_id: string;
+    valor: number;
+  }>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface YearlyComparison {
+  year: number;
+  total: number;
+  variacao_total?: number;
+  media_mensal: number;
+  variacao_media?: number;
+  num_meses: number;
+}
+
 export interface Produto {
   id: string;
   nome: string;
