@@ -322,7 +322,7 @@ export default function Leads() {
     try {
       console.log('handleConfirm recebendo dados:', leadData);
       
-      // Mapear corretamente os dados para salvar no banco
+      // Mapear corretamente os dados - usando os valores diretamente, não como objetos
       const dadosParaSalvar = {
         nome: leadData.nome,
         empresa: leadData.empresa,
@@ -338,10 +338,11 @@ export default function Leads() {
         responsavel_id: leadData.responsavel_id,
         data_criacao: leadData.data_criacao,
         ultimo_contato: leadData.ultimo_contato,
-        // CAMPOS IMPORTANTES que estavam faltando
-        favorecido_id: leadData.favorecido_id || null,
-        produto_id: leadData.produto_id || null,
-        servico_id: leadData.servico_id || null,
+        // Campos que estavam faltando - usar valores diretos
+        favorecido_id: leadData.favorecido_id,
+        produto_id: leadData.produto_id,
+        servico_id: leadData.servico_id,
+        status: 'ativo'
       };
 
       console.log('Dados mapeados para salvar no banco:', dadosParaSalvar);
@@ -361,7 +362,10 @@ export default function Leads() {
           throw error;
         }
 
-        toast.success("Lead atualizado com sucesso!");
+        toast({
+          title: "Lead atualizado com sucesso!",
+          description: "As alterações foram salvas.",
+        });
       } else {
         console.log('Criando novo lead');
         const { data, error } = await supabase
@@ -375,7 +379,10 @@ export default function Leads() {
         }
 
         console.log('Lead criado com sucesso:', data);
-        toast.success("Lead criado com sucesso!");
+        toast({
+          title: "Lead criado com sucesso!",
+          description: "O lead foi adicionado à lista.",
+        });
       }
 
       // Recarregar leads
@@ -387,7 +394,11 @@ export default function Leads() {
       
     } catch (error) {
       console.error('Erro ao salvar lead:', error);
-      toast.error("Erro ao salvar lead");
+      toast({
+        title: "Erro ao salvar lead!",
+        description: "Por favor, tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
