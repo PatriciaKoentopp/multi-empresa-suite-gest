@@ -200,7 +200,14 @@ export function LeadFormModal({
   };
 
   useEffect(() => {
+    console.log('useEffect executando com lead:', lead);
     if (lead) {
+      console.log('Populando formData com dados do lead:', {
+        favorecido_id: lead.favorecido_id,
+        produto_id: lead.produto_id,
+        servico_id: lead.servico_id
+      });
+      
       setFormData({
         nome: lead.nome || "",
         empresa: lead.empresa || "",
@@ -261,10 +268,12 @@ export function LeadFormModal({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    console.log(`handleChange - ${name}:`, value);
     setFormData((prev) => ({ ...prev, [name]: name === "valor" ? Number(value) : value }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
+    console.log(`handleSelectChange - ${name}:`, value);
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -463,6 +472,9 @@ export function LeadFormModal({
     
     try {
       console.log('Dados do formulário antes do mapeamento:', formData);
+      console.log('favorecido_id no formData:', formData.favorecido_id);
+      console.log('servico_id no formData:', formData.servico_id);
+      console.log('produto_id no formData:', formData.produto_id);
       
       // Obter o ID da empresa
       const empresaId = await getEmpresaId();
@@ -495,6 +507,9 @@ export function LeadFormModal({
       };
       
       console.log('Dados mapeados para salvar:', leadData);
+      console.log('favorecido_id mapeado:', leadData.favorecido_id);
+      console.log('servico_id mapeado:', leadData.servico_id);
+      console.log('produto_id mapeado:', leadData.produto_id);
       
       // Chamar a função original para salvar os dados do lead
       onConfirm(leadData);
