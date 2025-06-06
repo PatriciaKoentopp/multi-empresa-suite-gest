@@ -140,18 +140,20 @@ export default function MovimentacaoPage() {
           // Converter movimentações para o formato esperado
           const movimentacoesFormatadas: ContaPagar[] = movimentacoesData.map((mov: any) => ({
             id: mov.id,
+            movimentacao_id: mov.id, // ✅ CORREÇÃO 1: Adicionando movimentacao_id obrigatório
             favorecido: mov.favorecido?.nome || 'Não informado',
             descricao: mov.descricao || '',
-            // Usar a string direta da data, sem criar um objeto Date para evitar problemas de timezone
+            // ✅ CORREÇÃO 3-6: Usando data_lancamento do banco, mapeando para dataPagamento
             dataVencimento: mov.primeiro_vencimento || undefined,
-            dataPagamento: undefined,
+            dataPagamento: mov.data_lancamento || undefined, // Corrigido: era dataLancamento
             status: 'em_aberto',
             valor: Number(mov.valor),
             numeroParcela: mov.numero_documento,
             tipo_operacao: mov.tipo_operacao,
-            dataLancamento: mov.data_lancamento || undefined,
             mes_referencia: mov.mes_referencia,
-            documento_pdf: mov.documento_pdf
+            documento_pdf: mov.documento_pdf,
+            // Mantendo propriedades extras para uso interno (não conflitam com interface)
+            tipo_titulo_id_interno: mov.tipo_titulo_id // Para usar no filtro
           }));
 
           setMovimentacoes(movimentacoesFormatadas);
@@ -185,24 +187,27 @@ export default function MovimentacaoPage() {
       const textoBusca = (movimentacao.favorecido + " " + (movimentacao.descricao || "") + " " + ((movimentacao as any).mes_referencia || ""))
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
-      const tipoTituloOk = tipoTituloId === "todos" || movimentacao.tipo_titulo_id === tipoTituloId;
+      
+      // ✅ CORREÇÃO 2: Usando propriedade interna para filtro de tipo de título
+      const tipoTituloOk = tipoTituloId === "todos" || (movimentacao as any).tipo_titulo_id_interno === tipoTituloId;
       
       // Aplicar filtro de data de lançamento
       let dataLancamentoOk = true;
-      if (dataInicial && movimentacao.dataLancamento) {
+      // ✅ CORREÇÃO 3-6: Usando dataPagamento que agora contém data_lancamento
+      if (dataInicial && movimentacao.dataPagamento) {
         // Comparar apenas as datas, ignorando as horas
         const dataInicioComparacao = new Date(dataInicial);
         dataInicioComparacao.setHours(0, 0, 0, 0);
-        const dataMovComparacao = new Date(movimentacao.dataLancamento);
+        const dataMovComparacao = new Date(movimentacao.dataPagamento);
         dataMovComparacao.setHours(0, 0, 0, 0);
         dataLancamentoOk = dataLancamentoOk && dataMovComparacao >= dataInicioComparacao;
       }
       
-      if (dataFinal && movimentacao.dataLancamento) {
+      if (dataFinal && movimentacao.dataPagamento) {
         // Comparar apenas as datas, ignorando as horas
         const dataFimComparacao = new Date(dataFinal);
         dataFimComparacao.setHours(23, 59, 59, 999); // Fim do dia
-        const dataMovComparacao = new Date(movimentacao.dataLancamento);
+        const dataMovComparacao = new Date(movimentacao.dataPagamento);
         dataMovComparacao.setHours(0, 0, 0, 0);
         dataLancamentoOk = dataLancamentoOk && dataMovComparacao <= dataFimComparacao;
       }
@@ -473,7 +478,7 @@ export default function MovimentacaoPage() {
               {isLoading ? "Excluindo..." : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
-        </AlertDialogContent>
+        </AlertDialogFooter>
       </AlertDialog>
     </div>
   );
