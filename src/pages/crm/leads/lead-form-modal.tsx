@@ -462,7 +462,8 @@ export function LeadFormModal({
     e.preventDefault();
     
     try {
-      console.log('Salvando dados do lead...');
+      console.log('Dados do formulário antes do mapeamento:', formData);
+      
       // Obter o ID da empresa
       const empresaId = await getEmpresaId();
       
@@ -474,24 +475,29 @@ export function LeadFormModal({
         return;
       }
       
-      // Mapear os campos corretamente para o banco de dados
-      const leadDataWithCompany = {
-        ...formData,
-        empresa_id: empresaId,
-        // Mapear os campos para os nomes corretos na tabela leads
+      // Mapear TODOS os campos para os nomes corretos do banco de dados
+      const leadData = {
+        nome: formData.nome,
+        empresa: formData.empresa,
+        favorecido_id: formData.favorecido_id || null,
+        produto: formData.produto,
+        produto_id: formData.produto_id || null,
+        servico_id: formData.servico_id || null,
+        email: formData.email,
+        telefone: formData.telefone,
         etapa_id: formData.etapaId,
+        valor: formData.valor,
         origem_id: formData.origemId,
-        responsavel_id: formData.responsavelId
+        responsavel_id: formData.responsavelId,
+        empresa_id: empresaId,
+        data_criacao: formData.dataCriacao,
+        ultimo_contato: formData.ultimoContato
       };
       
-      // Remover os campos antigos que não existem na tabela
-      delete leadDataWithCompany.etapaId;
-      delete leadDataWithCompany.origemId;
-      delete leadDataWithCompany.responsavelId;
+      console.log('Dados mapeados para salvar:', leadData);
       
       // Chamar a função original para salvar os dados do lead
-      console.log('Salvando dados do lead:', leadDataWithCompany);
-      onConfirm(leadDataWithCompany);
+      onConfirm(leadData);
       
       // Fechar o modal após salvar
       onClose();
