@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,7 +25,7 @@ export function LeadDadosTab({
   vendedoresAtivos = []
 }: LeadDadosTabProps) {
   const { items: produtosServicos = [], isLoading: isLoadingProdutos } = useProdutosServicos();
-  const { favorecidos = [], isLoading: isLoadingFavorecidos } = useFavorecidos();
+  const { data: favorecidos = [], isLoading: isLoadingFavorecidos } = useFavorecidos();
 
   // Função para lidar com a seleção de produto ou serviço
   const handleItemSelect = (value: string) => {

@@ -33,7 +33,7 @@ export function useFavorecidos() {
       
       if (error) throw error;
       
-      return (data || []).filter(item => item.id && item.nome) as Favorecido[];
+      return (data || []) as Favorecido[];
     },
     enabled: !!currentCompany?.id,
   });
