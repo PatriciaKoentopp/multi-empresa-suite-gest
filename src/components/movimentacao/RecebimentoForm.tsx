@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -17,21 +18,77 @@ import { useEffect, useState } from "react";
 import { ParcelasForm } from "./ParcelasForm";
 
 interface RecebimentoFormProps {
+  numeroDocumento?: string;
+  onNumeroDocumentoChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  tipoTituloId?: string;
+  onTipoTituloChange?: (value: string) => void;
+  favorecido?: string;
+  onFavorecidoChange?: (value: string) => void;
+  categoria?: string;
+  onCategoriaChange?: (value: string) => void;
+  formaPagamento?: string;
+  onFormaPagamentoChange?: (value: string) => void;
+  descricao?: string;
+  onDescricaoChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  valor?: string;
+  onValorChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  numParcelas?: number;
+  onNumParcelasChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  dataPrimeiroVenc?: Date;
+  onDataPrimeiroVencChange?: (date: Date) => void;
+  considerarDRE?: boolean;
+  onConsiderarDREChange?: (checked: boolean) => void;
+  tiposTitulos?: { id: string; nome: string }[];
+  favorecidos?: { id: string; nome: string }[];
+  categorias?: { id: string; nome: string }[];
+  formasPagamento?: { id: string; nome: string }[];
+  onNovoFavorecido?: () => void;
+  onNovaCategoria?: () => void;
+  parcelas?: any[];
+  onParcelaValorChange?: (index: number, valor: number) => void;
+  onParcelaDataChange?: (index: number, data: Date) => void;
+  readOnly?: boolean;
   data?: any;
-  onSubmit: (values: any) => Promise<void>;
-  tiposTitulo: { id: string; nome: string }[];
-  favorecidos: { id: string; nome: string }[];
-  contasCorrente: { id: string; nome: string }[];
-  planoContas: { id: string; codigo: string; descricao: string }[];
+  onSubmit?: (values: any) => Promise<void>;
+  contasCorrente?: { id: string; nome: string }[];
+  planoContas?: { id: string; codigo: string; descricao: string }[];
 }
 
 export function RecebimentoForm({
+  numeroDocumento = "",
+  onNumeroDocumentoChange,
+  tipoTituloId = "",
+  onTipoTituloChange,
+  favorecido = "",
+  onFavorecidoChange,
+  categoria = "",
+  onCategoriaChange,
+  formaPagamento = "",
+  onFormaPagamentoChange,
+  descricao = "",
+  onDescricaoChange,
+  valor = "",
+  onValorChange,
+  numParcelas = 1,
+  onNumParcelasChange,
+  dataPrimeiroVenc,
+  onDataPrimeiroVencChange,
+  considerarDRE = true,
+  onConsiderarDREChange,
+  tiposTitulos = [],
+  favorecidos = [],
+  categorias = [],
+  formasPagamento = [],
+  onNovoFavorecido,
+  onNovaCategoria,
+  parcelas = [],
+  onParcelaValorChange,
+  onParcelaDataChange,
+  readOnly = false,
   data,
   onSubmit,
-  tiposTitulo,
-  favorecidos,
-  contasCorrente,
-  planoContas,
+  contasCorrente = [],
+  planoContas = [],
 }: RecebimentoFormProps) {
   const form: UseFormReturn<RecebimentoFormSchema> = useForm<RecebimentoFormSchema>({
     // resolver: zodResolver(RecebimentoFormSchema),
@@ -51,16 +108,16 @@ export function RecebimentoForm({
     },
   });
 
-  const [parcelas, setParcelas] = useState<any[]>([]);
+  const [parcelasLocal, setParcelasLocal] = useState<any[]>([]);
 
   useEffect(() => {
-    const numParcelas = form.watch("numero_parcelas");
+    const numParcelasValue = form.watch("numero_parcelas");
     const valorTotal = form.watch("valor");
     const primeiroVencimento = form.watch("primeiro_vencimento");
 
-    if (numParcelas && valorTotal && primeiroVencimento) {
-      const valorParcela = valorTotal / numParcelas;
-      const parcelasCalculadas = Array.from({ length: numParcelas }, (_, i) => {
+    if (numParcelasValue && valorTotal && primeiroVencimento) {
+      const valorParcela = valorTotal / numParcelasValue;
+      const parcelasCalculadas = Array.from({ length: numParcelasValue }, (_, i) => {
         const dataVencimento = new Date(primeiroVencimento);
         dataVencimento.setMonth(dataVencimento.getMonth() + i);
         return {
@@ -69,10 +126,166 @@ export function RecebimentoForm({
           data_vencimento: dataVencimento,
         };
       });
-      setParcelas(parcelasCalculadas);
+      setParcelasLocal(parcelasCalculadas);
     }
   }, [form.watch("numero_parcelas"), form.watch("valor"), form.watch("primeiro_vencimento")]);
 
+  // Se onSubmit não foi fornecido, renderizar apenas os campos de entrada
+  if (!onSubmit) {
+    return (
+      <div className="space-y-6">
+        {/* Campos de entrada simplificados para compatibilidade */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Número do Documento</label>
+            <Input
+              value={numeroDocumento}
+              onChange={onNumeroDocumentoChange}
+              className="bg-white"
+              disabled={readOnly}
+            />
+          </div>
+          
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Tipo de Título</label>
+            <Select
+              value={tipoTituloId}
+              onValueChange={onTipoTituloChange}
+              disabled={readOnly}
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Selecione o tipo de título" />
+              </SelectTrigger>
+              <SelectContent>
+                {tiposTitulos.map((tipo) => (
+                  <SelectItem key={tipo.id} value={tipo.id}>
+                    {tipo.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Favorecido</label>
+            <Select
+              value={favorecido}
+              onValueChange={onFavorecidoChange}
+              disabled={readOnly}
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Selecione o favorecido" />
+              </SelectTrigger>
+              <SelectContent>
+                {favorecidos.map((favorecido) => (
+                  <SelectItem key={favorecido.id} value={favorecido.id}>
+                    {favorecido.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Categoria</label>
+            <Select
+              value={categoria}
+              onValueChange={onCategoriaChange}
+              disabled={readOnly}
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Selecione a categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                {categorias.map((categoria) => (
+                  <SelectItem key={categoria.id} value={categoria.id}>
+                    {categoria.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Forma de Pagamento</label>
+            <Select
+              value={formaPagamento}
+              onValueChange={onFormaPagamentoChange}
+              disabled={readOnly}
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Selecione a forma" />
+              </SelectTrigger>
+              <SelectContent>
+                {formasPagamento.map((forma) => (
+                  <SelectItem key={forma.id} value={forma.id}>
+                    {forma.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Valor</label>
+            <Input
+              value={valor}
+              onChange={onValorChange}
+              className="bg-white"
+              disabled={readOnly}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Número de Parcelas</label>
+            <Input
+              type="number"
+              value={numParcelas}
+              onChange={onNumParcelasChange}
+              className="bg-white"
+              disabled={readOnly}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Primeiro Vencimento</label>
+            <DateInput
+              value={dataPrimeiroVenc}
+              onChange={onDataPrimeiroVencChange}
+              disabled={readOnly}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium">Descrição</label>
+          <Input
+            value={descricao}
+            onChange={onDescricaoChange}
+            className="bg-white"
+            disabled={readOnly}
+          />
+        </div>
+
+        {/* Exibir parcelas se numParcelas > 1 */}
+        {numParcelas > 1 && parcelas.length > 0 && (
+          <ParcelasForm 
+            parcelas={parcelas}
+            onValorChange={onParcelaValorChange}
+            onDataChange={onParcelaDataChange}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Renderização completa com Form (quando onSubmit está presente)
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -90,7 +303,7 @@ export function RecebimentoForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {tiposTitulo.map((tipo) => (
+                    {tiposTitulos.map((tipo) => (
                       <SelectItem key={tipo.id} value={tipo.id}>
                         {tipo.nome}
                       </SelectItem>
@@ -328,7 +541,7 @@ export function RecebimentoForm({
         
         {form.watch("numero_parcelas") > 1 && (
           <ParcelasForm 
-            parcelas={parcelas}
+            parcelas={parcelasLocal}
             onValorChange={(valor) => form.setValue("valor", valor)}
             onDataChange={(data) => form.setValue("primeiro_vencimento", new Date(data))}
           />

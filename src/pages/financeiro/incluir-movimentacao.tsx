@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -311,8 +312,8 @@ export default function IncluirMovimentacaoPage() {
             />
           ) : operacao === "receber" ? (
             <RecebimentoForm
-              numDoc={numDoc}
-              onNumDocChange={(e) => setNumDoc(e.target.value)}
+              numeroDocumento={numDoc}
+              onNumeroDocumentoChange={(e) => setNumDoc(e.target.value)}
               tipoTituloId={tipoTitulo}
               onTipoTituloChange={setTipoTitulo}
               favorecido={favorecido}
