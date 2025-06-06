@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Company } from '@/types';
+import { Company, CompanyUpdate } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -11,8 +11,8 @@ interface CompanyContextProps {
   loading: boolean;
   refetch: () => Promise<void>;
   fetchCompanyById: (id: string) => Promise<Company | null>;
-  createCompany: (company: Partial<Company>) => Promise<Company | null>;
-  updateCompany: (id: string, company: Partial<Company>) => Promise<Company | null>;
+  createCompany: (company: CompanyUpdate) => Promise<Company | null>;
+  updateCompany: (id: string, company: CompanyUpdate) => Promise<Company | null>;
 }
 
 const CompanyContext = createContext<CompanyContextProps>({
@@ -78,7 +78,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const createCompany = async (companyData: Partial<Company>): Promise<Company | null> => {
+  const createCompany = async (companyData: CompanyUpdate): Promise<Company | null> => {
     try {
       const { data, error } = await supabase
         .from('empresas')
@@ -107,18 +107,16 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateCompany = async (id: string, companyData: Partial<Company>): Promise<Company | null> => {
+  const updateCompany = async (id: string, companyData: CompanyUpdate): Promise<Company | null> => {
     try {
       // Remover campos undefined
-      Object.keys(companyData).forEach(key => {
-        if (companyData[key as keyof typeof companyData] === undefined) {
-          delete companyData[key as keyof typeof companyData];
-        }
-      });
+      const cleanData = Object.fromEntries(
+        Object.entries(companyData).filter(([_, value]) => value !== undefined)
+      );
 
       const { data, error } = await supabase
         .from('empresas')
-        .update(companyData)
+        .update(cleanData)
         .eq('id', id)
         .select()
         .single();
