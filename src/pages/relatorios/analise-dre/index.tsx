@@ -112,6 +112,7 @@ export default function AnaliseDrePage() {
     let impostos = 0;
 
     movimentacoes.forEach(mov => {
+      // Verificar se deve considerar no DRE
       const considerarDreMovimentacao = mov.movimentacoes?.considerar_dre !== false;
       if (!considerarDreMovimentacao) return;
 
@@ -121,12 +122,13 @@ export default function AnaliseDrePage() {
       const considerarDreConta = planoContas?.considerar_dre !== false;
       if (!considerarDreConta) return;
 
-      const valor = Number(mov.valor);
+      const valor = Number(mov.valor) || 0;
       const tipoOperacao = mov.movimentacoes?.tipo_operacao;
 
-      // CORREÇÃO: Inicializar grupoDestino
+      // Inicializar flag de processamento
       let processado = false;
       
+      // Primeiro: tentar usar classificação DRE específica
       if (planoContas && planoContas.classificacao_dre && planoContas.classificacao_dre !== 'nao_classificado') {
         switch (planoContas.classificacao_dre) {
           case 'receita_bruta':
@@ -164,7 +166,7 @@ export default function AnaliseDrePage() {
         }
       } 
       
-      // Lógica alternativa quando não há classificação DRE específica
+      // Segundo: lógica alternativa quando não há classificação DRE específica
       if (!processado && planoContas) {
         if (tipoOperacao === 'receber' && !mov.movimentacoes?.categoria_id) {
           receitaBruta += valor;
@@ -172,35 +174,27 @@ export default function AnaliseDrePage() {
           const { tipo, descricao } = planoContas;
           
           if (tipo === 'receita') {
-            if (descricao.toLowerCase().includes('financeira') || descricao.toLowerCase().includes('juros') || descricao.toLowerCase().includes('rendimento')) {
+            if (descricao && (descricao.toLowerCase().includes('financeira') || descricao.toLowerCase().includes('juros') || descricao.toLowerCase().includes('rendimento'))) {
               receitasFinanceiras += valor;
             } else {
               receitaBruta += valor;
             }
           } else if (tipo === 'despesa') {
-            switch (descricao.toLowerCase()) {
-              case 'das - simples nacional':
+            if (descricao) {
+              const desc = descricao.toLowerCase();
+              if (desc === 'das - simples nacional') {
                 deducoes += valor;
-                break;
-              case 'pró-labore':
-              case 'pro-labore':
-              case 'pró labore':
-              case 'pro labore':
-              case 'inss':
-              case 'honorários contábeis':
-              case 'honorarios contabeis':
+              } else if (desc.includes('pró-labore') || desc.includes('pro-labore') || desc.includes('pró labore') || desc.includes('pro labore') || desc === 'inss' || desc.includes('honorários contábeis') || desc.includes('honorarios contabeis')) {
                 despesasOperacionais += valor;
-                break;
-              case 'distribuição de lucros':
-              case 'distribuicao de lucros':
+              } else if (desc.includes('distribuição de lucros') || desc.includes('distribuicao de lucros')) {
                 distribuicaoLucros += valor;
-                break;
-              default:
-                if (descricao.toLowerCase().includes('financeira') || descricao.toLowerCase().includes('juros') || descricao.toLowerCase().includes('tarifas')) {
-                  despesasFinanceiras += valor;
-                } else {
-                  custos += valor;
-                }
+              } else if (desc.includes('financeira') || desc.includes('juros') || desc.includes('tarifas')) {
+                despesasFinanceiras += valor;
+              } else {
+                custos += valor;
+              }
+            } else {
+              custos += valor;
             }
           }
         }
