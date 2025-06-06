@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -140,20 +139,18 @@ export default function MovimentacaoPage() {
           // Converter movimentações para o formato esperado
           const movimentacoesFormatadas: ContaPagar[] = movimentacoesData.map((mov: any) => ({
             id: mov.id,
-            movimentacao_id: mov.id, // ✅ CORREÇÃO 1: Adicionando movimentacao_id obrigatório
+            movimentacao_id: mov.id,
             favorecido: mov.favorecido?.nome || 'Não informado',
             descricao: mov.descricao || '',
-            // ✅ CORREÇÃO 3-6: Usando data_lancamento do banco, mapeando para dataPagamento
             dataVencimento: mov.primeiro_vencimento || undefined,
-            dataPagamento: mov.data_lancamento || undefined, // Corrigido: era dataLancamento
+            dataPagamento: mov.data_lancamento || undefined,
             status: 'em_aberto',
             valor: Number(mov.valor),
             numeroParcela: mov.numero_documento,
             tipo_operacao: mov.tipo_operacao,
             mes_referencia: mov.mes_referencia,
             documento_pdf: mov.documento_pdf,
-            // Mantendo propriedades extras para uso interno (não conflitam com interface)
-            tipo_titulo_id_interno: mov.tipo_titulo_id // Para usar no filtro
+            tipo_titulo_id_interno: mov.tipo_titulo_id
           }));
 
           setMovimentacoes(movimentacoesFormatadas);
@@ -188,12 +185,10 @@ export default function MovimentacaoPage() {
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       
-      // ✅ CORREÇÃO 2: Usando propriedade interna para filtro de tipo de título
       const tipoTituloOk = tipoTituloId === "todos" || (movimentacao as any).tipo_titulo_id_interno === tipoTituloId;
       
       // Aplicar filtro de data de lançamento
       let dataLancamentoOk = true;
-      // ✅ CORREÇÃO 3-6: Usando dataPagamento que agora contém data_lancamento
       if (dataInicial && movimentacao.dataPagamento) {
         // Comparar apenas as datas, ignorando as horas
         const dataInicioComparacao = new Date(dataInicial);
@@ -478,7 +473,7 @@ export default function MovimentacaoPage() {
               {isLoading ? "Excluindo..." : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
-        </AlertDialogFooter>
+        </AlertDialogContent>
       </AlertDialog>
     </div>
   );
