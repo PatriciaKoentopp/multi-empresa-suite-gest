@@ -115,17 +115,18 @@ export default function FaturamentoPage() {
       const faturamentosComValor = data?.map(fat => ({
         ...fat,
         valor: fat.itens?.reduce((sum, item) => sum + Number(item.valor), 0) || 0,
-        tipo: fat.tipo as "orcamento" | "venda", // Garantir tipo correto
-        status: fat.status as "ativo" | "inativo", // Garantir tipo correto
+        tipo: fat.tipo as "orcamento" | "venda",
+        status: fat.status as "ativo" | "inativo",
         favorecido: fat.favorecido ? {
-          ...fat.favorecido,
-          tipo: "cliente" as const, // Valor padrão para tipo
-          tipo_documento: "cpf" as const, // Valor padrão para tipo_documento
-          status: "ativo" as const, // Valor padrão para status
-          documento: fat.favorecido.documento || "",
-          created_at: fat.favorecido.created_at || new Date().toISOString(),
-          updated_at: fat.favorecido.updated_at || new Date().toISOString(),
-          empresa_id: fat.empresa_id
+          id: fat.favorecido_id,
+          nome: fat.favorecido.nome,
+          empresa_id: fat.empresa_id,
+          tipo: "cliente" as const,
+          tipo_documento: "cpf" as const,
+          documento: "",
+          status: "ativo" as const,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         } : undefined
       })) || [];
 
