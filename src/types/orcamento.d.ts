@@ -25,3 +25,11 @@ export interface OrcamentoFormData {
   servicos: OrcamentoItem[];
   parcelas: Parcela[];
 }
+
+// Interface específica para orçamentos no contexto do fluxo de caixa
+export interface OrcamentoFluxoCaixa {
+  id: string;
+  codigo: string;
+  numero_nota_fiscal: string;
+  tipo: 'venda' | 'compra';
+}
