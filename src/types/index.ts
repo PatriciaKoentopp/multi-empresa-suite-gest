@@ -43,9 +43,9 @@ export interface Favorecido {
   pais?: string;
   cep?: string;
   tipo_documento: string;
-  data_aniversario?: string;
-  created_at: string;
-  updated_at: string;
+  data_aniversario?: string | Date; // Permitir tanto string quanto Date
+  created_at: string | Date; // Permitir tanto string quanto Date
+  updated_at: string | Date; // Permitir tanto string quanto Date
 }
 
 export interface GrupoFavorecido {
@@ -88,12 +88,12 @@ export interface Usuario {
   id: string;
   nome: string;
   email: string;
-  empresa_id: string;
+  empresa_id: string | null;
   tipo: 'Administrador' | 'Usuário';
   vendedor: 'sim' | 'nao';
   status: 'ativo' | 'inativo';
-  created_at: string;
-  updated_at: string;
+  created_at: string | Date; // Permitir tanto string quanto Date
+  updated_at: string | Date; // Permitir tanto string quanto Date
 }
 
 // Interfaces para vendas
@@ -122,6 +122,11 @@ export interface Orcamento {
   codigo_projeto?: string;
   created_at: string;
   updated_at: string;
+  favorecido?: { // Adicionar propriedade favorecido
+    nome: string;
+    [key: string]: any;
+  };
+  [key: string]: any; // Permitir propriedades adicionais flexíveis
 }
 
 export interface TabelaPreco {
@@ -161,7 +166,7 @@ export interface SaleData {
   faturado: number;
 }
 
-// Interface para empresa
+// Interface para empresa - mais flexível
 export interface Company {
   id: string;
   nome_fantasia: string;
@@ -177,8 +182,22 @@ export interface Company {
   estado: string;
   cep: string;
   pais: string;
-  created_at: string;
-  updated_at: string;
+  created_at: string | Date; // Permitir tanto string quanto Date
+  updated_at: string | Date; // Permitir tanto string quanto Date
+  // Propriedades adicionais opcionais para flexibilidade
+  inscricao_estadual?: string;
+  inscricao_municipal?: string;
+  site?: string;
+  cnae?: string;
+  regime_tributacao?: string;
+  logo?: string;
+  endereco?: any;
+  razaoSocial?: string;
+  nomeFantasia?: string;
+  inscricaoEstadual?: string;
+  inscricaoMunicipal?: string;
+  regimeTributacao?: string;
+  [key: string]: any; // Permitir qualquer propriedade adicional
 }
 
 // Re-export das interfaces do arquivo financeiro

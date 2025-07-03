@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,7 +23,7 @@ export const FluxoCaixaFilter = ({
 }: FluxoCaixaFilterProps) => {
   const [dataInicio, setDataInicio] = useState<Date>(filtro.dataInicio);
   const [dataFim, setDataFim] = useState<Date>(filtro.dataFim);
-  const [contaId, setContaId] = useState<string | null>(filtro.contaId);
+  const [contaId, setContaId] = useState<string | null>(filtro.contaId || filtro.conta_corrente_id || null);
   const [situacao, setSituacao] = useState<string | null>(filtro.situacao || "todos");
 
   const aplicarFiltro = () => {
@@ -32,8 +31,9 @@ export const FluxoCaixaFilter = ({
       dataInicio,
       dataFim,
       contaId,
+      conta_corrente_id: contaId || "",
       situacao,
-    });
+    } as any);
   };
 
   const aplicarFiltroPreDefinido = (tipo: string) => {
@@ -68,8 +68,9 @@ export const FluxoCaixaFilter = ({
       dataInicio: novaDataInicio,
       dataFim: novaDataFim,
       contaId,
+      conta_corrente_id: contaId || "",
       situacao,
-    });
+    } as any);
   };
 
   return (

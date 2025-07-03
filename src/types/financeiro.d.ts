@@ -17,9 +17,9 @@ export interface FluxoCaixaItem {
 export interface FiltroFluxoCaixa {
   dataInicio: Date | undefined;
   dataFim: Date | undefined;
-  conta_corrente_id: string;
-  situacao: string;
-  contaId: string;
+  conta_corrente_id?: string;
+  situacao?: string;
+  contaId?: string;
 }
 
 // Interfaces para dados financeiros
@@ -62,8 +62,9 @@ export interface Antecipacao {
 
 export interface AntecipacaoSelecionada {
   id: string;
-  valor_utilizado: number;
-  valor?: number; // Adicionada propriedade opcional para compatibilidade
+  valor_utilizado?: number;
+  valor?: number;
+  [key: string]: any; // Permitir propriedades adicionais
 }
 
 // Interface para conta corrente
@@ -71,6 +72,6 @@ export interface ContaCorrenteItem {
   id: string;
   nome: string;
   banco: string;
-  agencia: string;
+  agencia: string;  
   numero: string;
 }

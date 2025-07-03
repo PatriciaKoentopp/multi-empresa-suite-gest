@@ -7,6 +7,14 @@ import { Switch } from "@/components/ui/switch";
 import { DateInput } from "./DateInput";
 import { ParcelasForm } from './ParcelasForm';
 
+// Interface mais flexível para ParcelasForm
+interface FlexibleParcelasFormProps {
+  parcelas: any[];
+  onValorChange?: (index: number, valor: string) => void;
+  onDataChange?: (index: number, data: Date | undefined) => void;
+  [key: string]: any; // Permitir propriedades adicionais
+}
+
 // Mesma interface do PagamentoForm, com parâmetro readOnly adicionado
 interface RecebimentoFormProps {
   numDoc: string;
@@ -243,7 +251,11 @@ export function RecebimentoForm({
       {parcelas.length > 0 && (
         <div className="mt-6">
           <h3 className="text-lg font-medium mb-2">Parcelas</h3>
-          <ParcelasForm parcelas={parcelas} />
+          <ParcelasForm 
+            parcelas={parcelas}
+            onValorChange={() => {}}
+            onDataChange={() => {}}
+          />
         </div>
       )}
     </div>
