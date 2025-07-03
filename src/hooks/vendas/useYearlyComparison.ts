@@ -28,6 +28,8 @@ export const useYearlyComparison = () => {
       const currentYear = currentDate.getFullYear();
       const currentMonth = currentDate.getMonth() + 1; // getMonth() retorna 0-11, então somamos 1
       
+      console.log("Data atual:", { currentYear, currentMonth });
+      
       // Buscar todos os orçamentos de venda para calcular quantidades e filtrar por período
       const { data: salesData, error: salesError } = await supabase
         .from('orcamentos')
@@ -56,8 +58,10 @@ export const useYearlyComparison = () => {
             const month = parseInt(orcamento.data_venda.substring(5, 7), 10);
             const yearMonthKey = `${year}-${month}`;
             
-            // Para o ano corrente, considerar apenas meses anteriores ao mês atual
+            // Para o ano corrente, considerar apenas meses anteriores ao mês atual (estritamente menor que)
             const shouldInclude = year < currentYear || (year === currentYear && month < currentMonth);
+            
+            console.log(`Processando venda: ${orcamento.data_venda}, year: ${year}, month: ${month}, shouldInclude: ${shouldInclude}`);
             
             if (shouldInclude) {
               // Verificar se tem itens com valor > 0 (mesmo critério usado nos dados mensais)
@@ -89,8 +93,10 @@ export const useYearlyComparison = () => {
         let adjustedNumMeses = Number(item.num_meses || 0);
         
         if (year === currentYear) {
-          // Recalcular considerando apenas meses até o mês anterior ao atual
+          // Recalcular considerando apenas meses até o mês anterior ao atual (estritamente menor que)
           const monthsToConsider = currentMonth - 1; // Meses de janeiro até o mês anterior ao atual
+          
+          console.log(`Processando ano corrente ${year}: monthsToConsider = ${monthsToConsider}`);
           
           if (monthsToConsider > 0) {
             // Buscar valor total apenas dos meses que devemos considerar
@@ -102,6 +108,7 @@ export const useYearlyComparison = () => {
                   const saleYear = parseInt(orcamento.data_venda.substring(0, 4), 10);
                   const saleMonth = parseInt(orcamento.data_venda.substring(5, 7), 10);
                   
+                  // Usar estritamente menor que (<) para excluir o mês atual
                   if (saleYear === currentYear && saleMonth < currentMonth) {
                     const temValor = orcamento.orcamentos_itens.some((item: any) => 
                       Number(item.valor) > 0
@@ -120,11 +127,15 @@ export const useYearlyComparison = () => {
             adjustedTotal = totalForFilteredMonths;
             adjustedNumMeses = monthsToConsider;
             adjustedMedia = adjustedNumMeses > 0 ? adjustedTotal / adjustedNumMeses : 0;
+            
+            console.log(`Ano corrente ajustado: total = ${adjustedTotal}, meses = ${adjustedNumMeses}, media = ${adjustedMedia}`);
           } else {
             // Se estivermos em janeiro, não há meses anteriores para mostrar
             adjustedTotal = 0;
             adjustedMedia = 0;
             adjustedNumMeses = 0;
+            
+            console.log("Janeiro ou sem meses anteriores, zerando dados");
           }
         }
         
