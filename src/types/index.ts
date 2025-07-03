@@ -138,6 +138,9 @@ export interface Orcamento {
   codigo_projeto?: string;
   observacoes?: string;
   forma_pagamento: string;
+  favorecido?: {
+    nome: string;
+  };
 }
 
 // Interface para comparação anual de vendas
@@ -148,6 +151,7 @@ export interface YearlyComparison {
   media_mensal: number;
   variacao_media?: number;
   num_meses: number;
+  qtde_vendas?: number;
 }
 
 // Interfaces para navegação
@@ -157,6 +161,7 @@ export interface ModuleNavItem {
   icon: React.ComponentType<any>;
   href?: string;
   items?: SubNavItem[];
+  subItems?: SubNavItem[];
 }
 
 export interface SubNavItem {

@@ -8,7 +8,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
-import { ModuleNavItem, SubNavItem } from "@/types";
+import { ModuleNavItem } from "@/types";
 import { 
   ChevronDown, 
   ChevronRight,
@@ -33,7 +33,7 @@ interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 // Função auxiliar para renderizar ícones a partir de strings
-const renderIcon = (icon?: React.ReactNode | string) => {
+const renderIcon = (icon?: React.ComponentType<any> | string) => {
   if (!icon) return null;
   
   if (typeof icon === 'string') {
@@ -52,7 +52,9 @@ const renderIcon = (icon?: React.ReactNode | string) => {
     }
   }
   
-  return icon;
+  // Se for um componente React, renderizar como elemento
+  const IconComponent = icon as React.ComponentType<any>;
+  return <IconComponent className="h-4 w-4" />;
 };
 
 export function SidebarNav({ items, className, isCollapsed, closeSidebar, ...props }: SidebarNavProps) {
@@ -71,10 +73,12 @@ export function SidebarNav({ items, className, isCollapsed, closeSidebar, ...pro
         // Verificar se a rota atual corresponde ao item ou aos subitens
         const isRouteActive =
           location.pathname === item.href ||
-          item.subItems?.some((subItem) => location.pathname === subItem.href);
+          (item.subItems || item.items)?.some((subItem) => location.pathname === subItem.href);
+
+        const subItems = item.subItems || item.items || [];
 
         // Se o item tem sub-items, usar Collapsible
-        if (item.subItems && item.subItems.length > 0) {
+        if (subItems.length > 0) {
           return (
             <Collapsible
               key={index}
@@ -93,7 +97,7 @@ export function SidebarNav({ items, className, isCollapsed, closeSidebar, ...pro
                     {renderIcon(item.icon)}
                     {!isCollapsed && <span>{item.title}</span>}
                   </div>
-                  {!isCollapsed && item.subItems && item.subItems.length > 0 && (
+                  {!isCollapsed && subItems.length > 0 && (
                     <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
                   )}
                 </Button>
@@ -101,7 +105,7 @@ export function SidebarNav({ items, className, isCollapsed, closeSidebar, ...pro
               {!isCollapsed && (
                 <CollapsibleContent className="pl-4">
                   <div className="grid gap-1">
-                    {item.subItems.map((subItem, subIndex) => {
+                    {subItems.map((subItem, subIndex) => {
                       const isSubRouteActive = location.pathname === subItem.href;
                       return (
                         <Link 

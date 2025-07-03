@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
@@ -14,8 +13,7 @@ import { FavorecidoDocumento } from "./favorecido-documento";
 import { FavorecidoDadosBasicos } from "./favorecido-dados-basicos";
 import { FavorecidoAniversarioStatus } from "./favorecido-aniversario-status";
 import { FavorecidoEndereco } from "./favorecido-endereco";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Favorecido } from "@/types";
+import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
 
 interface FavorecidosFormProps {
   favorecido?: Favorecido;
@@ -26,6 +24,8 @@ interface FavorecidosFormProps {
 export function FavorecidosForm({ favorecido, onClose, onSuccess }: FavorecidosFormProps) {
   const { currentCompany } = useCompany();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [grupos, setGrupos] = useState<GrupoFavorecido[]>([]);
+  const [profissoes, setProfissoes] = useState<Profissao[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -37,7 +37,7 @@ export function FavorecidosForm({ favorecido, onClose, onSuccess }: FavorecidosF
       documento: "",
       email: "",
       telefone: "",
-      data_aniversario: "",
+      data_aniversario: undefined,
       cep: "",
       logradouro: "",
       numero: "",
@@ -62,7 +62,7 @@ export function FavorecidosForm({ favorecido, onClose, onSuccess }: FavorecidosF
         documento: favorecido.documento || "",
         email: favorecido.email || "",
         telefone: favorecido.telefone || "",
-        data_aniversario: favorecido.data_aniversario || "",
+        data_aniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
         cep: favorecido.cep || "",
         logradouro: favorecido.logradouro || "",
         numero: favorecido.numero || "",
@@ -77,6 +77,34 @@ export function FavorecidosForm({ favorecido, onClose, onSuccess }: FavorecidosF
       });
     }
   }, [favorecido, form]);
+
+  useEffect(() => {
+    const fetchGruposEProfissoes = async () => {
+      if (!currentCompany?.id) return;
+
+      try {
+        const [gruposResult, profissoesResult] = await Promise.all([
+          supabase
+            .from("grupo_favorecidos")
+            .select("*")
+            .eq("empresa_id", currentCompany.id)
+            .eq("status", "ativo"),
+          supabase
+            .from("profissoes")
+            .select("*")
+            .eq("empresa_id", currentCompany.id)
+            .eq("status", "ativo")
+        ]);
+
+        if (gruposResult.data) setGrupos(gruposResult.data);
+        if (profissoesResult.data) setProfissoes(profissoesResult.data);
+      } catch (error) {
+        console.error("Erro ao buscar grupos e profissões:", error);
+      }
+    };
+
+    fetchGruposEProfissoes();
+  }, [currentCompany?.id]);
 
   const onSubmit = async (values: FormValues) => {
     if (!currentCompany?.id) {
@@ -96,7 +124,7 @@ export function FavorecidosForm({ favorecido, onClose, onSuccess }: FavorecidosF
         documento: values.documento || "",
         email: values.email || "",
         telefone: values.telefone || "",
-        data_aniversario: values.data_aniversario || null,
+        data_aniversario: values.data_aniversario ? values.data_aniversario.toISOString().split('T')[0] : null,
         cep: values.cep || "",
         logradouro: values.logradouro || "",
         numero: values.numero || "",
@@ -149,7 +177,7 @@ export function FavorecidosForm({ favorecido, onClose, onSuccess }: FavorecidosF
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FavorecidoTipoRadio form={form} />
           <FavorecidoDocumento form={form} />
-          <FavorecidoDadosBasicos form={form} />
+          <FavorecidoDadosBasicos form={form} grupos={grupos} profissoes={profissoes} />
           <FavorecidoAniversarioStatus form={form} />
           <FavorecidoEndereco form={form} />
           
