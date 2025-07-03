@@ -1,193 +1,214 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Usuario } from "@/types";
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import {
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { formSchema, FormValues } from "./usuarios-form.schema";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Usuario } from "@/types";
+
+const usuarioSchema = z.object({
+  id: z.string().optional(),
+  nome: z.string().min(1, "O nome é obrigatório"),
+  email: z.string().email("Email inválido").min(1, "O email é obrigatório"),
+  senha: z.string().min(6, "A senha deve ter pelo menos 6 caracteres").optional(),
+  tipo: z.enum(["Administrador", "Usuário"]),
+  status: z.enum(["ativo", "inativo"]),
+  vendedor: z.enum(["sim", "nao"]),
+});
+
+type FormData = z.infer<typeof usuarioSchema>;
 
 interface UsuariosFormProps {
   usuario?: Usuario;
-  onSubmit: (data: Partial<Usuario>) => void;
+  onSubmit: (data: Usuario) => void;
   onCancel: () => void;
-  readOnly?: boolean;
 }
 
-export function UsuariosForm({
-  usuario,
-  onSubmit,
-  onCancel,
-  readOnly = false,
-}: UsuariosFormProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: usuario ? {
-      nome: usuario.nome,
-      email: usuario.email,
-      tipo: usuario.tipo,
-      vendedor: usuario.vendedor === 'sim',
-      status: usuario.status === 'ativo',
-    } : {
-      nome: "",
-      email: "",
-      tipo: "Usuário",
-      vendedor: false,
-      status: true,
-    },
+export function UsuariosForm({ usuario, onSubmit, onCancel }: UsuariosFormProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const form = useForm<FormData>({
+    resolver: zodResolver(usuarioSchema),
+    defaultValues: usuario
+      ? {
+          id: usuario.id,
+          nome: usuario.nome,
+          email: usuario.email,
+          senha: "",
+          tipo: usuario.tipo,
+          status: usuario.status,
+          vendedor: usuario.vendedor,
+        }
+      : {
+          nome: "",
+          email: "",
+          senha: "",
+          tipo: "Usuário",
+          status: "ativo",
+          vendedor: "nao",
+        },
   });
 
-  const handleSubmit = async (data: FormValues) => {
+  const handleSubmit = async (data: FormData) => {
+    setIsLoading(true);
     try {
-      const userData = {
-        ...data,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+      const usuarioData: Usuario = {
+        id: usuario?.id || crypto.randomUUID(),
+        nome: data.nome,
+        email: data.email,
+        tipo: data.tipo,
+        status: data.status,
+        vendedor: data.vendedor,
+        created_at: usuario?.created_at || new Date(),
+        updated_at: new Date(),
+        empresa_id: usuario?.empresa_id || null
       };
       
-      console.log('Dados do usuário para envio:', userData);
-      onSubmit(userData);
-    } catch (error) {
-      console.error('Erro ao processar dados do usuário:', error);
+      onSubmit(usuarioData);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="nome"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Nome</FormLabel>
-              <FormDescription>
-                Este é o nome que será exibido publicamente.
-              </FormDescription>
-              <Input placeholder="Seu nome" {...field} readOnly={readOnly} />
+              <FormControl>
+                <Input {...field} placeholder="Nome do usuário" />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
-              <FormDescription>
-                Este é o seu endereço de e-mail.
-              </FormDescription>
-              <Input placeholder="seuemail@exemplo.com" {...field} type="email" readOnly={readOnly} />
+              <FormControl>
+                <Input {...field} placeholder="email@exemplo.com" type="email" />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="senha"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{usuario ? "Nova senha (opcional)" : "Senha"}</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="******" type="password" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="tipo"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tipo</FormLabel>
-              <Select disabled={readOnly} onValueChange={field.onChange} defaultValue={field.value}>
-                <FormTrigger>
-                  <FormValue placeholder="Selecione o tipo" />
-                </FormTrigger>
-                <FormContent>
-                  <SelectItem value="Administrador">Administrador</SelectItem>
-                  <SelectItem value="Usuário">Usuário</SelectItem>
-                </FormContent>
-              </Select>
+            <FormItem className="space-y-3">
+              <FormLabel>Tipo de Usuário</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Administrador" id="admin" />
+                    <Label htmlFor="admin">Administrador</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Usuário" id="user" />
+                    <Label htmlFor="user">Usuário</Label>
+                  </div>
+                </RadioGroup>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="vendedor"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel>Vendedor</FormLabel>
-                <FormDescription>
-                  Defina se este usuário é um vendedor.
-                </FormDescription>
-              </div>
-              <Switch
-                checked={field.value}
-                onCheckedChange={field.onChange}
-                disabled={readOnly}
-              />
-            </FormItem>
-          )}
-        />
+
         <FormField
           control={form.control}
           name="status"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel>Status</FormLabel>
-                <FormDescription>
-                  Defina se este usuário está ativo.
-                </FormDescription>
-              </div>
-              <Switch
-                checked={field.value}
-                onCheckedChange={field.onChange}
-                disabled={readOnly}
-              />
+            <FormItem className="space-y-3">
+              <FormLabel>Status</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="ativo" id="ativo" />
+                    <Label htmlFor="ativo">Ativo</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="inativo" id="inativo" />
+                    <Label htmlFor="inativo">Inativo</Label>
+                  </div>
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
-        {!readOnly ? (
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="blue">
-              Salvar
-            </Button>
-          </div>
-        ) : (
-          <div className="flex justify-end">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Fechar
-            </Button>
-          </div>
-        )}
+
+        <FormField
+          control={form.control}
+          name="vendedor"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>É vendedor?</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="sim" id="sim" />
+                    <Label htmlFor="sim">Sim</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="nao" id="nao" />
+                    <Label htmlFor="nao">Não</Label>
+                  </div>
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button type="submit" variant="blue" disabled={isLoading}>
+            {isLoading ? "Salvando..." : usuario ? "Atualizar" : "Criar"}
+          </Button>
+        </div>
       </form>
     </Form>
   );
 }
-
-const FormTrigger = ({ children, className }: { children: React.ReactNode, className?: string }) => {
-  return (
-    <SelectTrigger id="tipo" className={className}>
-      {children}
-    </SelectTrigger>
-  );
-};
-
-const FormValue = ({ placeholder }: { placeholder: string }) => {
-  return (
-    <SelectValue placeholder={placeholder} />
-  );
-};
-
-const FormContent = ({ children, className }: { children: React.ReactNode, className?: string }) => {
-  return (
-    <SelectContent className={className}>
-      {children}
-    </SelectContent>
-  );
-};

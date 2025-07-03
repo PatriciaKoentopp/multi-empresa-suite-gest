@@ -228,7 +228,7 @@ export default function DrePage() {
     }
   });
 
-  // Função para processar movimentações e calcular totais - CORRIGIDA
+  // Função para processar movimentações e calcular totais
   function processarMovimentacoes(movimentacoes: any[]) {
     const grupos: {
       [key: string]: MovimentacaoDetalhe[];
@@ -264,7 +264,6 @@ export default function DrePage() {
     let despesasFinanceiras = 0;
     let distribuicaoLucros = 0;
     let impostos = 0;
-    
     movimentacoes.forEach(mov => {
       const considerarDreMovimentacao = mov.movimentacoes?.considerar_dre !== false;
       if (!considerarDreMovimentacao) return;
@@ -288,11 +287,8 @@ export default function DrePage() {
         conta_id: contaId,
         conta_descricao: descricaoCategoria
       };
-      
-      // CORREÇÃO: Inicializar grupoDestino como string vazia
-      let grupoDestino = "";
-      
       if (planoContas && planoContas.classificacao_dre && planoContas.classificacao_dre !== 'nao_classificado') {
+        let grupoDestino = "";
         switch (planoContas.classificacao_dre) {
           case 'receita_bruta':
             receitaBruta += valor;
@@ -326,21 +322,28 @@ export default function DrePage() {
             impostos += valor;
             grupoDestino = "IRPJ/CSLL";
             break;
-          default:
-            // Caso não encontre classificação válida, manter grupoDestino vazio
-            grupoDestino = "";
+        }
+        if (grupoDestino) {
+          grupos[grupoDestino].push(detalhe);
+          if (!contasAgrupamento[grupoDestino][contaId]) {
+            contasAgrupamento[grupoDestino][contaId] = [];
+          }
+          contasAgrupamento[grupoDestino][contaId].push(detalhe);
         }
       } else {
-        // Lógica alternativa quando não há classificação DRE específica
         if (tipoOperacao === 'receber' && (!mov.movimentacoes?.categoria_id || !planoContas)) {
           receitaBruta += valor;
-          grupoDestino = "Receita Bruta";
+          grupos["Receita Bruta"].push(detalhe);
+          if (!contasAgrupamento["Receita Bruta"][contaId]) {
+            contasAgrupamento["Receita Bruta"][contaId] = [];
+          }
+          contasAgrupamento["Receita Bruta"][contaId].push(detalhe);
         } else if (planoContas) {
           const {
             tipo,
             descricao
           } = planoContas;
-          
+          let grupoDestino = "";
           if (tipo === 'receita') {
             if (descricao.toLowerCase().includes('financeira') || descricao.toLowerCase().includes('juros') || descricao.toLowerCase().includes('rendimento')) {
               receitasFinanceiras += valor;
@@ -380,16 +383,14 @@ export default function DrePage() {
                 }
             }
           }
+          if (grupoDestino) {
+            grupos[grupoDestino].push(detalhe);
+            if (!contasAgrupamento[grupoDestino][contaId]) {
+              contasAgrupamento[grupoDestino][contaId] = [];
+            }
+            contasAgrupamento[grupoDestino][contaId].push(detalhe);
+          }
         }
-      }
-      
-      // Só adicionar aos grupos se grupoDestino foi definido
-      if (grupoDestino) {
-        grupos[grupoDestino].push(detalhe);
-        if (!contasAgrupamento[grupoDestino][contaId]) {
-          contasAgrupamento[grupoDestino][contaId] = [];
-        }
-        contasAgrupamento[grupoDestino][contaId].push(detalhe);
       }
     });
     const receitaLiquida = receitaBruta + deducoes;

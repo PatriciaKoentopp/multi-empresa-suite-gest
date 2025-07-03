@@ -92,7 +92,7 @@ export function FavorecidosForm({
       cidade: data.cidade,
       estado: data.estado,
       pais: data.pais,
-      data_aniversario: data.data_aniversario ? data.data_aniversario.toISOString().split('T')[0] : undefined,
+      data_aniversario: data.data_aniversario,
       status: data.status,
     };
     

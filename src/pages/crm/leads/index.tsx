@@ -1,462 +1,754 @@
 import { useState, useEffect } from "react";
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { MoreHorizontal, Edit, Trash2, ArrowDown, ArrowUp } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Plus, Filter, Search } from "lucide-react";
+import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
+import { Origem, Usuario, Funil, EtapaFunil } from "@/types"; 
+import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { EtapaFunil, Origem, Usuario, MotivoPerda } from "@/types";
-import { useToast } from "@/components/ui/use-toast";
-import { confirm } from "@/components/ui/confirm-dialog";
-import { useRouter } from "next/navigation";
-import { useFunil } from "@/hooks/useFunil";
+import { formatCurrency } from "./utils/leadUtils";
+import { StageFilterCheckbox } from "@/components/crm/leads/StageFilterCheckbox";
+import { useAuth } from "@/contexts/auth-context";
 
-interface Lead {
-  id: string;
-  nome: string;
-  empresa: string;
-  email: string;
-  telefone: string;
-  valor: number;
-  dataCriacao: string;
-  ultimoContato: string;
-  origemNome: string;
-  responsavelNome: string;
-  etapaNome: string;
-  produto: string;
-  status: string;
-  produto_id: string | null;
-  servico_id: string | null;
-  favorecido_id: string | null;
-}
-
-export default function Leads() {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  const [search, setSearch] = useState("");
-  const [etapas, setEtapas] = useState<EtapaFunil[]>([]);
+export default function LeadsPage() {
+  const { user, userData, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [filteredLeads, setFilteredLeads] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedEtapas, setSelectedEtapas] = useState<string[]>([]);
+  const [allStagesSelected, setAllStagesSelected] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>("ativo");
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<any | null>(null);
   const [origens, setOrigens] = useState<Origem[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [motivosPerda, setMotivosPerda] = useState<MotivoPerda[]>([]);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const { toast } = useToast();
-	const { currentFunil: funnelId } = useFunil();
+  const [funis, setFunis] = useState<Funil[]>([]);
+  const [motivosPerda, setMotivosPerda] = useState<any[]>([]);
+  const [selectedFunilId, setSelectedFunilId] = useState<string>("");
+  const [empresaId, setEmpresaId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  // Obter o funil selecionado
+  const selectedFunil = funis.find(funil => funil.id === selectedFunilId) || (funis.length > 0 ? funis[0] : null);
+
+  // Esperar que a autenticação seja carregada antes de buscar dados
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      console.log('Auth carregada, usuário autenticado:', userData);
+      fetchAllData();
+    } else if (!authLoading && !isAuthenticated) {
+      console.log('Usuário não está autenticado');
+      setLoadError("Usuário não autenticado");
+      setLoading(false);
+    }
+  }, [authLoading, isAuthenticated, userData]);
+
+  // Função para buscar todos os dados necessários
+  const fetchAllData = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
-      // Buscar leads
-      let { data: leadsData, error: leadsError } = await supabase
-        .from('leads')
-        .select(`
-          id, nome, empresa, email, telefone, valor, data_criacao, ultimo_contato, produto, status, produto_id, servico_id, favorecido_id,
-          origens ( nome ),
-          usuarios ( nome ),
-          etapas_funil ( nome )
-        `)
-				.eq('funil_id', funnelId);
-
-      if (leadsError) {
-        console.error("Erro ao buscar leads:", leadsError);
-        throw leadsError;
+      console.log('Iniciando fetchAllData com userData:', userData);
+      
+      // Obter empresa_id do contexto de autenticação
+      let empresaIdToUse = userData?.empresa_id;
+      
+      // Se o usuário não tem empresa_id, buscar da tabela empresas
+      if (!empresaIdToUse) {
+        console.log('Buscando empresa_id da tabela empresas');
+        const { data: empresaData, error: empresaError } = await supabase
+          .from('empresas')
+          .select('id')
+          .limit(1)
+          .single();
+          
+        if (empresaError) {
+          console.error('Erro ao buscar empresa:', empresaError);
+          throw empresaError;
+        }
+        
+        empresaIdToUse = empresaData?.id;
+        console.log('Empresa ID obtido:', empresaIdToUse);
+      } else {
+        console.log('Usando empresa_id do usuário:', empresaIdToUse);
       }
-
-      // Mapear os dados para o formato esperado
-      const leadsFormatados = leadsData?.map(lead => ({
-        id: lead.id,
-        nome: lead.nome,
-        empresa: lead.empresa,
-        email: lead.email,
-        telefone: lead.telefone,
-        valor: lead.valor,
-        dataCriacao: lead.data_criacao,
-        ultimoContato: lead.ultimo_contato,
-        origemNome: lead.origens?.nome || 'N/A',
-        responsavelNome: lead.usuarios?.nome || 'N/A',
-        etapaNome: lead.etapas_funil?.nome || 'N/A',
-        produto: lead.produto || 'N/A',
-        status: lead.status,
-        produto_id: lead.produto_id,
-        servico_id: lead.servico_id,
-        favorecido_id: lead.favorecido_id,
-      })) || [];
-      setLeads(leadsFormatados);
-
-      // Buscar etapas do funil
-      let { data: etapasData, error: etapasError } = await supabase
-        .from('etapas_funil')
-        .select('*')
-        .order('posicao', { ascending: true })
-				.eq('funil_id', funnelId);
-
-      if (etapasError) {
-        console.error("Erro ao buscar etapas do funil:", etapasError);
-        throw etapasError;
+      
+      if (!empresaIdToUse) {
+        throw new Error('Não foi possível obter o ID da empresa');
       }
-      setEtapas(etapasData || []);
+      
+      setEmpresaId(empresaIdToUse);
+      
+      // Buscar funis
+      const { data: funisData, error: funisError } = await supabase
+        .from('funis')
+        .select('*, etapas:funil_etapas(id, nome, cor, ordem)')
+        .eq('ativo', true)
+        .eq('empresa_id', empresaIdToUse)
+        .order('nome');
+
+      if (funisError) {
+        console.error('Erro ao buscar funis:', funisError);
+        throw funisError;
+      }
+      
+      console.log('Funis obtidos:', funisData?.length);
+      
+      // Transformar dados dos funis para o formato esperado
+      const funisFormatados = (funisData || []).map(funil => ({
+        id: funil.id,
+        nome: funil.nome,
+        descricao: funil.descricao,
+        ativo: funil.ativo,
+        empresa_id: funil.empresa_id,
+        data_criacao: funil.data_criacao,
+        etapas: (funil.etapas || []).sort((a: any, b: any) => a.ordem - b.ordem),
+        created_at: funil.created_at ? new Date(funil.created_at) : undefined,
+        updated_at: funil.updated_at ? new Date(funil.updated_at) : undefined
+      }));
+      
+      console.log('Funis formatados:', funisFormatados?.length);
+      setFunis(funisFormatados);
+      
+      // Definir o funil padrão como o primeiro da lista
+      if (funisFormatados.length > 0) {
+        console.log('Definindo funil padrão:', funisFormatados[0].id);
+        setSelectedFunilId(funisFormatados[0].id);
+      } else {
+        console.log('Nenhum funil encontrado');
+      }
 
       // Buscar origens
-      let { data: origensData, error: origensError } = await supabase
+      const { data: origensData, error: origensError } = await supabase
         .from('origens')
-        .select('*');
+        .select('*')
+        .eq('empresa_id', empresaIdToUse)
+        .order('nome');
 
       if (origensError) {
-        console.error("Erro ao buscar origens:", origensError);
+        console.error('Erro ao buscar origens:', origensError);
         throw origensError;
       }
+      
+      console.log('Origens obtidas:', origensData?.length);
       setOrigens(origensData || []);
 
-      // Buscar usuários
-      let { data: usuariosData, error: usuariosError } = await supabase
+      // Buscar usuários vendedores
+      const { data: usuariosData, error: usuariosError } = await supabase
         .from('usuarios')
-        .select('*');
+        .select('*')
+        .eq('empresa_id', empresaIdToUse)
+        .order('nome');
 
       if (usuariosError) {
-        console.error("Erro ao buscar usuários:", usuariosError);
+        console.error('Erro ao buscar vendedores:', usuariosError);
         throw usuariosError;
       }
-      setUsuarios(usuariosData || []);
+      
+      console.log('Usuários obtidos:', usuariosData?.length);
+      
+      const usuariosFormatados = (usuariosData || []).map(usuario => ({
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        tipo: usuario.tipo,
+        status: usuario.status,
+        vendedor: usuario.vendedor || 'nao',
+        empresa_id: usuario.empresa_id,
+        created_at: usuario.created_at ? new Date(usuario.created_at) : undefined,
+        updated_at: usuario.updated_at ? new Date(usuario.updated_at) : undefined
+      }));
+      
+      setUsuarios(usuariosFormatados);
 
       // Buscar motivos de perda
-      let { data: motivosPerdaData, error: motivosPerdaError } = await supabase
+      const { data: motivosPerdaData, error: motivosPerdaError } = await supabase
         .from('motivos_perda')
-        .select('*');
+        .select('*')
+        .eq('status', 'ativo')
+        .eq('empresa_id', empresaIdToUse)
+        .order('nome');
 
       if (motivosPerdaError) {
-        console.error("Erro ao buscar motivos de perda:", motivosPerdaError);
+        console.error('Erro ao buscar motivos de perda:', motivosPerdaError);
         throw motivosPerdaError;
       }
+      
+      console.log('Motivos de perda obtidos:', motivosPerdaData?.length);
       setMotivosPerda(motivosPerdaData || []);
-
-    } catch (error) {
-      console.error("Erro ao buscar dados:", error);
-      toast({
-        title: "Erro ao carregar os dados!",
-        description: "Por favor, tente novamente mais tarde.",
-        variant: "destructive",
+      
+      // Buscar leads após ter os dados de funis
+      if (funisFormatados.length > 0) {
+        await fetchLeads(empresaIdToUse, funisFormatados[0].id);
+      } else {
+        setLeads([]);
+        toast.error("Nenhum funil encontrado", {
+          description: "Cadastre um funil para gerenciar seus leads."
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('Erro ao carregar dados:', error);
+      setLoadError(`Erro ao carregar dados: ${error.message}`);
+      toast.error("Erro ao carregar dados", {
+        description: "Não foi possível buscar os dados necessários."
       });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (funnelId) {
-      fetchData();
-    }
-  }, [funnelId, router]);
-
-  const refetch = () => {
-    fetchData();
-  };
-
-  const columns: ColumnDef<Lead>[] = [
-    {
-      accessorKey: "nome",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Nome
-            <ArrowDown className="ml-2 h-4 w-4" />
-          </Button>
-        )
-      },
-    },
-    {
-      accessorKey: "empresa",
-      header: "Empresa",
-    },
-    {
-      accessorKey: "email",
-      header: "Email",
-    },
-    {
-      accessorKey: "telefone",
-      header: "Telefone",
-    },
-    {
-      accessorKey: "valor",
-      header: "Valor",
-    },
-    {
-      accessorKey: "dataCriacao",
-      header: "Data Criação",
-    },
-    {
-      accessorKey: "ultimoContato",
-      header: "Último Contato",
-    },
-    {
-      accessorKey: "origemNome",
-      header: "Origem",
-    },
-    {
-      accessorKey: "responsavelNome",
-      header: "Responsável",
-    },
-    {
-      accessorKey: "etapaNome",
-      header: "Etapa",
-    },
-    {
-      accessorKey: "produto",
-      header: "Produto",
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-    },
-    {
-      id: "actions",
-      cell: ({ row }) => {
-        const lead = row.original;
-
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => {
-                  setEditingLead(lead);
-                  setModalOpen(true);
-                }}
-              >
-                <Edit className="mr-2 h-4 w-4" /> Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={async () => {
-                  const confirmed = await confirm({
-                    title: "Você tem certeza?",
-                    description: "Esta ação irá deletar o lead permanentemente.",
-                  });
-
-                  if (!confirmed) {
-                    return;
-                  }
-
-                  try {
-                    const { error } = await supabase
-                      .from('leads')
-                      .delete()
-                      .eq('id', lead.id);
-
-                    if (error) {
-                      console.error("Erro ao deletar lead:", error);
-                      toast({
-                        title: "Erro ao deletar lead!",
-                        description: "Por favor, tente novamente.",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-
-                    setLeads(leads.filter((l) => l.id !== lead.id));
-                    toast({
-                      title: "Lead deletado!",
-                      description: "O lead foi deletado com sucesso.",
-                    });
-                  } catch (error) {
-                    console.error("Erro ao deletar lead:", error);
-                    toast({
-                      title: "Erro ao deletar lead!",
-                      description: "Por favor, tente novamente.",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-              >
-                <Trash2 className="mr-2 h-4 w-4" /> Deletar
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <a href={`/crm/leads/${lead.id}`} target="_blank" rel="noopener noreferrer">
-                  Visualizar Detalhes
-                </a>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
-    },
-  ];
-
-  const table = useReactTable({
-    data: leads,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
-  const handleConfirm = async (leadData: any) => {
+  // Função para buscar leads baseado no funil selecionado
+  const fetchLeads = async (empId: string | null = null, funilId: string | null = null) => {
     try {
-      console.log('handleConfirm recebendo dados:', leadData);
-      
-      // Mapear corretamente os dados - usando os valores diretamente, não como objetos
-      const dadosParaSalvar = {
-        nome: leadData.nome,
-        empresa: leadData.empresa,
-        email: leadData.email,
-        telefone: leadData.telefone,
-        valor: leadData.valor,
-        observacoes: leadData.observacoes,
-        produto: leadData.produto,
-        empresa_id: leadData.empresa_id,
-        funil_id: funnelId,
-        etapa_id: leadData.etapa_id,
-        origem_id: leadData.origem_id,
-        responsavel_id: leadData.responsavel_id,
-        data_criacao: leadData.data_criacao,
-        ultimo_contato: leadData.ultimo_contato,
-        // Campos que estavam faltando - usar valores diretos
-        favorecido_id: leadData.favorecido_id,
-        produto_id: leadData.produto_id,
-        servico_id: leadData.servico_id,
-        status: 'ativo'
-      };
-
-      console.log('Dados mapeados para salvar no banco:', dadosParaSalvar);
-      console.log('favorecido_id final:', dadosParaSalvar.favorecido_id);
-      console.log('produto_id final:', dadosParaSalvar.produto_id);
-      console.log('servico_id final:', dadosParaSalvar.servico_id);
-
-      if (editingLead) {
-        console.log('Atualizando lead existente:', editingLead.id);
-        const { error } = await supabase
-          .from('leads')
-          .update(dadosParaSalvar)
-          .eq('id', editingLead.id);
-
-        if (error) {
-          console.error('Erro ao atualizar lead:', error);
-          throw error;
-        }
-
-        toast({
-          title: "Lead atualizado com sucesso!",
-          description: "As alterações foram salvas.",
-        });
-      } else {
-        console.log('Criando novo lead');
-        const { data, error } = await supabase
-          .from('leads')
-          .insert([dadosParaSalvar])
-          .select();
-
-        if (error) {
-          console.error('Erro ao criar lead:', error);
-          throw error;
-        }
-
-        console.log('Lead criado com sucesso:', data);
-        toast({
-          title: "Lead criado com sucesso!",
-          description: "O lead foi adicionado à lista.",
-        });
+      // Se não temos funil selecionado ainda, retorna
+      const empresaIdToUse = empId || empresaId;
+      if (!empresaIdToUse) {
+        console.log('Sem empresa ID, não é possível buscar leads');
+        return;
       }
+      
+      const funilIdToFetch = funilId || selectedFunilId || (funis.length > 0 ? funis[0].id : null);
+      
+      if (!funilIdToFetch) {
+        console.log('Sem funil ID, não é possível buscar leads');
+        setLeads([]);
+        return;
+      }
+      
+      console.log('Buscando leads para o funil:', funilIdToFetch);
+      
+      // Modificar a consulta para não usar o join implícito em responsavel_id
+      const { data: leadsData, error: leadsError } = await supabase
+        .from('leads')
+        .select(`
+          id, 
+          nome, 
+          empresa, 
+          email, 
+          telefone, 
+          etapa_id, 
+          funil_id,
+          valor, 
+          origem_id, 
+          origens:origem_id (nome), 
+          data_criacao, 
+          ultimo_contato, 
+          responsavel_id,
+          produto,
+          status
+        `)
+        .eq('funil_id', funilIdToFetch)
+        .eq('empresa_id', empresaIdToUse)
+        .eq('status', statusFilter);
 
-      // Recarregar leads
-      refetch();
+      if (leadsError) {
+        console.error('Erro ao buscar leads:', leadsError);
+        throw leadsError;
+      }
       
-      // Fechar modal
-      setModalOpen(false);
-      setEditingLead(null);
+      console.log('Leads encontrados:', leadsData?.length);
       
+      if (!leadsData || leadsData.length === 0) {
+        console.log('Nenhum lead encontrado');
+        setLeads([]);
+        return;
+      }
+      
+      // Buscar informações dos responsáveis após obter os leads
+      const responsaveisIds = leadsData
+        .filter(lead => lead.responsavel_id)
+        .map(lead => lead.responsavel_id);
+      
+      // Só busca usuários se houver IDs de responsáveis
+      let responsaveisMap = new Map();
+      
+      if (responsaveisIds.length > 0) {
+        const { data: responsaveisData, error: responsaveisError } = await supabase
+          .from('usuarios')
+          .select('id, nome')
+          .in('id', responsaveisIds);
+        
+        if (responsaveisError) {
+          console.error('Erro ao buscar responsáveis:', responsaveisError);
+        } else if (responsaveisData) {
+          // Criar mapa de ID -> nome para fácil acesso
+          responsaveisData.forEach(resp => {
+            responsaveisMap.set(resp.id, resp.nome);
+          });
+        }
+      }
+      
+      // Transformar os dados para o formato esperado pelo componente
+      const leadsFormatados = leadsData.map(lead => ({
+        id: lead.id,
+        nome: lead.nome,
+        empresa: lead.empresa,
+        email: lead.email || '',
+        telefone: lead.telefone || '',
+        etapaId: lead.etapa_id,
+        funilId: lead.funil_id,
+        valor: Number(lead.valor || 0),
+        origemId: lead.origem_id || '',
+        origemNome: lead.origens?.nome || 'Desconhecida',
+        dataCriacao: lead.data_criacao ? new Date(lead.data_criacao).toLocaleDateString('pt-BR') : '',
+        ultimoContato: lead.ultimo_contato ? new Date(lead.ultimo_contato).toLocaleDateString('pt-BR') : null,
+        responsavelId: lead.responsavel_id || '',
+        responsavelNome: lead.responsavel_id ? responsaveisMap.get(lead.responsavel_id) || 'Não atribuído' : 'Não atribuído',
+        produto: lead.produto || '',
+        status: lead.status || 'ativo'
+      }));
+
+      console.log('Leads formatados:', leadsFormatados.length);
+      setLeads(leadsFormatados);
     } catch (error) {
-      console.error('Erro ao salvar lead:', error);
-      toast({
-        title: "Erro ao salvar lead!",
-        description: "Por favor, tente novamente.",
-        variant: "destructive",
+      console.error('Erro ao buscar leads:', error);
+      toast.error("Erro ao buscar leads", {
+        description: "Não foi possível buscar os dados dos leads."
       });
     }
   };
 
-  if (loading) {
-    return <div>Carregando...</div>;
+  // Função para filtrar leads com base no funil selecionado e outros filtros
+  useEffect(() => {
+    if (!selectedFunil) return;
+    
+    console.log('Chamando fetchLeads devido à alteração em selectedFunilId ou statusFilter');
+    fetchLeads();
+  }, [selectedFunilId, statusFilter]);
+
+  // Filtrar leads baseado no termo de busca e etapas selecionadas
+  useEffect(() => {
+    let filtered = [...(leads || [])];
+
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (lead) =>
+          lead.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          lead.empresa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    // Aplicar filtro de etapas
+    if (!allStagesSelected && selectedEtapas.length > 0) {
+      filtered = filtered.filter(
+        (lead) => selectedEtapas.includes(lead.etapaId)
+      );
+    }
+
+    console.log('Leads filtrados:', filtered.length);
+    setFilteredLeads(filtered);
+  }, [leads, searchTerm, selectedEtapas, allStagesSelected]);
+
+  const handleOpenFormModal = (lead = null) => {
+    setEditingLead(lead);
+    setIsFormModalOpen(true);
+  };
+
+  const handleCloseFormModal = () => {
+    setEditingLead(null);
+    setIsFormModalOpen(false);
+  };
+
+  const handleSaveLead = async (leadData: any) => {
+    try {
+      if (!leadData.empresa_id && !empresaId) {
+        toast.error("Erro ao salvar lead", {
+          description: "ID da empresa não encontrado."
+        });
+        return;
+      }
+      
+      const leadToSave = {
+        nome: leadData.nome,
+        empresa: leadData.empresa,
+        email: leadData.email,
+        telefone: leadData.telefone,
+        etapa_id: leadData.etapaId,
+        funil_id: selectedFunilId,
+        valor: leadData.valor,
+        origem_id: leadData.origemId,
+        responsavel_id: leadData.responsavelId,
+        produto: leadData.produto,
+        empresa_id: leadData.empresa_id || empresaId,
+        status: leadData.status || 'ativo'
+      };
+
+      console.log('Dados a serem salvos:', leadToSave);
+
+      if (editingLead) {
+        const { error } = await supabase
+          .from('leads')
+          .update(leadToSave)
+          .eq('id', editingLead.id);
+
+        if (error) throw error;
+        
+        toast.success("Lead atualizado com sucesso!");
+      } else {
+        const { error } = await supabase
+          .from('leads')
+          .insert([leadToSave]);
+
+        if (error) throw error;
+        
+        toast.success("Lead criado com sucesso!");
+      }
+      
+      fetchLeads();
+      handleCloseFormModal();
+    } catch (error: any) {
+      console.error('Erro ao salvar lead:', error);
+      toast.error("Erro ao salvar lead", {
+        description: "Não foi possível salvar as alterações. Detalhes: " + error.message
+      });
+    }
+  };
+
+  const handleDeleteLead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ status: 'inativo' })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setLeads(leads.filter((lead) => lead.id !== id));
+      toast.success("Lead removido com sucesso!");
+    } catch (error) {
+      console.error('Erro ao remover lead:', error);
+      toast.error("Erro ao remover lead", {
+        description: "Não foi possível remover o lead."
+      });
+    }
+  };
+
+  const handleMoveLead = async (leadId: string, newEtapaId: string) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ etapa_id: newEtapaId })
+        .eq('id', leadId);
+
+      if (error) throw error;
+      
+      const updatedLeads = leads.map(lead => 
+        lead.id === leadId ? { ...lead, etapaId: newEtapaId } : lead
+      );
+      setLeads(updatedLeads);
+      
+      toast.success("Lead movido com sucesso!");
+    } catch (error) {
+      console.error('Erro ao mover lead:', error);
+      toast.error("Erro ao mover lead", {
+        description: "Não foi possível mover o lead para a etapa selecionada."
+      });
+    }
+  };
+
+  const onDragEnd = (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination || 
+        (destination.droppableId === source.droppableId && 
+         destination.index === source.index)) {
+      return;
+    }
+
+    const targetEtapaId = destination.droppableId;
+    const leadId = draggableId;
+
+    handleMoveLead(leadId, targetEtapaId);
+  };
+
+  const handleFunilChange = (funilId: string) => {
+    console.log('Alterando funil para:', funilId);
+    setSelectedFunilId(funilId);
+    setAllStagesSelected(true);
+    setSelectedEtapas([]);
+  };
+
+  const handleStatusChange = (status: string) => {
+    console.log('Alterando status para:', status);
+    setStatusFilter(status);
+  };
+  
+  const handleAllStagesToggle = (checked: boolean) => {
+    console.log('Alterando seleção "todas as etapas" para:', checked);
+    setAllStagesSelected(checked);
+    if (checked) {
+      setSelectedEtapas([]);
+    }
+  };
+  
+  const handleStageToggle = (etapaId: string, checked: boolean) => {
+    console.log('Alterando seleção da etapa', etapaId, 'para:', checked);
+    if (checked) {
+      setSelectedEtapas(prev => [...prev, etapaId]);
+      setAllStagesSelected(false);
+    } else {
+      setSelectedEtapas(prev => prev.filter(id => id !== etapaId));
+      if (selectedEtapas.filter(id => id !== etapaId).length === 0) {
+        setAllStagesSelected(true);
+      }
+    }
+  };
+
+  // Obter apenas etapas do funil selecionado para o filtro
+  const etapasFunilSelecionado = selectedFunil ? (selectedFunil.etapas || []) : [];
+
+  // Agrupar leads por etapa do funil
+  const leadsByStage = (selectedFunil?.etapas || []).map(etapa => {
+    const stageLeads = (filteredLeads || []).filter(lead => lead.etapaId === etapa.id);
+    const totalValor = stageLeads.reduce((total, lead) => total + (lead.valor || 0), 0);
+    
+    return {
+      etapa,
+      leads: stageLeads,
+      totalValor
+    };
+  });
+
+  // Filtrar as etapas que devem ser exibidas com base na seleção do usuário
+  const filteredStages = allStagesSelected
+    ? leadsByStage
+    : leadsByStage.filter(stage => selectedEtapas.includes(stage.etapa.id));
+
+  if (authLoading || loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <span className="ml-3">Carregando...</span>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex justify-center items-center h-64 flex-col">
+        <div className="text-red-500 mb-4">{loadError}</div>
+        <Button onClick={fetchAllData} variant="outline">
+          Tentar novamente
+        </Button>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex items-center justify-between mb-4">
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Leads</h1>
-        <Button onClick={() => setModalOpen(true)}>Adicionar Lead</Button>
+        <Button 
+          onClick={() => handleOpenFormModal()} 
+          variant="blue"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Novo Lead
+        </Button>
       </div>
-      <Input
-        type="search"
-        placeholder="Buscar leads..."
-        className="mb-4"
-        onChange={(e) => setSearch(e.target.value)}
-      />
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            {/* Seletor de Funil */}
+            <div className="w-full md:w-[250px]">
+              <Select
+                value={selectedFunilId || ""}
+                onValueChange={handleFunilChange}
+              >
+                <SelectTrigger className="w-full bg-white">
+                  <SelectValue placeholder="Selecionar funil" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {funis.map((funil) => (
+                    <SelectItem key={funil.id} value={funil.id}>
+                      {funil.nome}
+                      {!funil.ativo && (
+                        <Badge variant="secondary" className="ml-2">
+                          Inativo
+                        </Badge>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Seletor de Status */}
+            <div className="w-full md:w-[180px]">
+              <Select
+                value={statusFilter}
+                onValueChange={handleStatusChange}
+              >
+                <SelectTrigger className="w-full bg-white">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="ativo">Ativos</SelectItem>
+                  <SelectItem value="fechado">Fechados</SelectItem>
+                  <SelectItem value="inativo">Inativos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, empresa ou email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            
+            {/* Filtro de Etapas com Checkboxes */}
+            <div className="w-full md:w-[200px]">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between"
+                  >
+                    <div className="flex items-center">
+                      <Filter className="mr-2 h-4 w-4" />
+                      <span>Filtrar por etapa</span>
+                    </div>
+                    <Badge className="ml-2">
+                      {allStagesSelected ? "Todas" : selectedEtapas.length}
+                    </Badge>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-4 bg-white" align="start">
+                  <div className="space-y-2">
+                    <h4 className="font-medium mb-3">Etapas</h4>
+                    
+                    {/* Opção "Todas as etapas" */}
+                    <StageFilterCheckbox
+                      id="all-stages"
+                      label="Todas as etapas"
+                      checked={allStagesSelected}
+                      onCheckedChange={handleAllStagesToggle}
+                    />
+                    
+                    <div className="border-t my-2"></div>
+                    
+                    {/* Lista de etapas do funil selecionado */}
+                    {etapasFunilSelecionado.map((etapa) => (
+                      <StageFilterCheckbox
+                        key={etapa.id}
+                        id={etapa.id}
+                        label={etapa.nome}
+                        color={etapa.cor}
+                        checked={allStagesSelected || selectedEtapas.includes(etapa.id)}
+                        onCheckedChange={(checked) => handleStageToggle(etapa.id, checked)}
+                      />
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          {/* Layout Kanban com Drag and Drop */}
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {filteredStages.map(({ etapa, leads, totalValor }) => (
+                <div key={etapa.id} className="min-w-[280px] max-w-[280px] flex-shrink-0">
+                  <div 
+                    className="text-sm font-semibold mb-2 p-2 rounded-md flex justify-between items-center"
+                    style={{ backgroundColor: `${etapa.cor}20`, color: etapa.cor }}
+                  >
+                    <div>
+                      <span>{etapa.nome}</span>
+                      <div className="text-xs mt-1 opacity-90">
+                        {formatCurrency(totalValor)}
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 bg-white rounded-full text-xs">
+                      {leads.length}
+                    </span>
+                  </div>
+                  
+                  <Droppable droppableId={etapa.id.toString()}>
+                    {(provided) => (
+                      <div 
+                        className="space-y-2 min-h-[50px]" 
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
+                        {leads.length > 0 ? (
+                          leads.map((lead, index) => (
+                            <Draggable 
+                              key={lead.id} 
+                              draggableId={lead.id.toString()} 
+                              index={index}
+                            >
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className="cursor-grab"
+                                >
+                                  <LeadCard
+                                    lead={lead}
+                                    etapas={etapasFunilSelecionado}
+                                    origens={origens}
+                                    usuarios={usuarios}
+                                    onEdit={() => handleOpenFormModal(lead)}
+                                    onDelete={() => handleDeleteLead(lead.id)}
+                                    onMove={handleMoveLead}
+                                  />
+                                </div>
+                              )}
+                            </Draggable>
+                          ))
+                        ) : (
+                          <div className="text-center py-4 text-muted-foreground text-sm border border-dashed rounded-md">
+                            Nenhum lead nesta etapa
+                          </div>
+                        )}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
+              ))}
+            </div>
+          </DragDropContext>
+        </CardContent>
+      </Card>
+
+      {/* Modal de Formulário */}
       <LeadFormModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onConfirm={handleConfirm}
+        open={isFormModalOpen}
+        onClose={handleCloseFormModal}
+        onConfirm={handleSaveLead}
         lead={editingLead}
-        etapas={etapas}
+        etapas={etapasFunilSelecionado}
         origens={origens}
         usuarios={usuarios}
         motivosPerda={motivosPerda}
