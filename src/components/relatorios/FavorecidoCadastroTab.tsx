@@ -1,238 +1,182 @@
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
-import { GrupoFavorecido, Profissao, Favorecido } from "@/types";
-import { formatDate } from "@/lib/utils";
+export function FavorecidoCadastroTab() {
+  const [nomeFilter, setNomeFilter] = useState('');
+  const [tipoFilter, setTipoFilter] = useState('todos');
+  const [grupoFilter, setGrupoFilter] = useState('todos');
+  const [profissaoFilter, setProfissaoFilter] = useState('todos');
+  const [dataInicio, setDataInicio] = useState<Date | undefined>(undefined);
+  const [dataFim, setDataFim] = useState<Date | undefined>(undefined);
 
-interface FavorecidoCadastroTabProps {
-  favorecido: Favorecido;
-}
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = {
+      nome: nomeFilter,
+      tipo: tipoFilter,
+      grupo_id: grupoFilter === "todos" ? undefined : grupoFilter,
+      profissao_id: profissaoFilter === "todos" ? undefined : profissaoFilter,
+      data_inicio: dataInicio ? dataInicio.toISOString().split('T')[0] : undefined,
+      data_fim: dataFim ? dataFim.toISOString().split('T')[0] : undefined,
+    };
+    console.log('Filtros aplicados:', formData);
+  };
 
-export function FavorecidoCadastroTab({ favorecido }: FavorecidoCadastroTabProps) {
-  const [grupo, setGrupo] = useState<GrupoFavorecido | null>(null);
-  const [profissao, setProfissao] = useState<Profissao | null>(null);
-  
-  useEffect(() => {
-    const fetchRelacionamentos = async () => {
-      if (favorecido.grupo_id) {
-        const { data: grupoData } = await supabase
-          .from('grupo_favorecidos')
-          .select('*')
-          .eq('id', favorecido.grupo_id)
-          .single();
-          
-        if (grupoData) {
-          setGrupo({
-            id: grupoData.id,
-            nome: grupoData.nome,
-            status: grupoData.status as "ativo" | "inativo",
-            empresa_id: grupoData.empresa_id,
-            created_at: new Date(grupoData.created_at),
-            updated_at: new Date(grupoData.updated_at)
-          });
-        }
-      }
-      
-      if (favorecido.profissao_id) {
-        const { data: profissaoData } = await supabase
-          .from('profissoes')
-          .select('*')
-          .eq('id', favorecido.profissao_id)
-          .single();
-          
-        if (profissaoData) {
-          setProfissao({
-            id: profissaoData.id,
-            nome: profissaoData.nome,
-            status: profissaoData.status as "ativo" | "inativo",
-            empresa_id: profissaoData.empresa_id,
-            created_at: new Date(profissaoData.created_at),
-            updated_at: new Date(profissaoData.updated_at)
-          });
-        }
+  const handleExport = () => {
+    const exportData = {
+      filtros: {
+        nome: nomeFilter,
+        tipo: tipoFilter,
+        grupo_id: grupoFilter === "todos" ? undefined : grupoFilter,
+        profissao_id: profissaoFilter === "todos" ? undefined : profissaoFilter,
+        data_inicio: dataInicio ? dataInicio.toISOString().split('T')[0] : undefined,
+        data_fim: dataFim ? dataFim.toISOString().split('T')[0] : undefined,
       }
     };
-    
-    fetchRelacionamentos();
-  }, [favorecido.grupo_id, favorecido.profissao_id]);
-
-  const getTipoFavorecidoLabel = (tipo: string) => {
-    switch (tipo) {
-      case "fisica":
-        return "Pessoa Física";
-      case "juridica":
-        return "Pessoa Jurídica";
-      case "cliente":
-        return "Cliente";
-      case "fornecedor":
-        return "Fornecedor";
-      case "publico":
-        return "Órgão Público";
-      case "funcionario":
-        return "Funcionário";
-      default:
-        return tipo;
-    }
-  };
-
-  // Função atualizada para formatar corretamente CPF e CNPJ independente do tipo de favorecido
-  const formatarDocumento = (documento: string, tipoDocumento: string): string => {
-    if (!documento) return "Não informado";
-    
-    // Remove caracteres não numéricos
-    const numeros = documento.replace(/\D/g, '');
-    
-    if (tipoDocumento === "cpf") {
-      // Formatação para CPF: 000.000.000-00
-      if (numeros.length !== 11) return documento;
-      return numeros.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-    } else if (tipoDocumento === "cnpj") {
-      // Formatação para CNPJ: 00.000.000/0000-00
-      if (numeros.length !== 14) return documento;
-      return numeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
-    }
-    
-    return documento;
-  };
-  
-  // Nova função para formatar o telefone no padrão (00) 00000-0000
-  const formatarTelefone = (telefone: string): string => {
-    if (!telefone) return "Não informado";
-    
-    // Remove caracteres não numéricos
-    const numeros = telefone.replace(/\D/g, '');
-    
-    if (numeros.length === 11) {
-      // Celular: (00) 00000-0000
-      return numeros.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
-    } else if (numeros.length === 10) {
-      // Telefone fixo: (00) 0000-0000
-      return numeros.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
-    }
-    
-    return telefone;
-  };
-  
-  // Nova função para formatar o CEP no padrão 00.000-000
-  const formatarCep = (cep: string): string => {
-    if (!cep) return "Não informado";
-    
-    // Remove caracteres não numéricos
-    const numeros = cep.replace(/\D/g, '');
-    
-    if (numeros.length === 8) {
-      return numeros.replace(/(\d{2})(\d{3})(\d{3})/, "$1.$2-$3");
-    }
-    
-    return cep;
+    console.log('Exportando dados:', exportData);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-6">
-        <Card className="md:w-1/2">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Informações Básicas</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Nome:</span>
-                <span className="font-medium">{favorecido.nome}</span>
-              </div>
-              {favorecido.nome_fantasia && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Nome Fantasia:</span>
-                  <span className="font-medium">{favorecido.nome_fantasia}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tipo:</span>
-                <Badge variant="outline">{getTipoFavorecidoLabel(favorecido.tipo)}</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Status:</span>
-                <Badge variant={favorecido.status === 'ativo' ? 'success' : 'destructive'}>
-                  {favorecido.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                </Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Documento:</span>
-                <span className="font-medium">
-                  {favorecido.tipo_documento === 'cpf' ? 'CPF: ' : 'CNPJ: '}
-                  {formatarDocumento(favorecido.documento, favorecido.tipo_documento)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Grupo:</span>
-                <span className="font-medium">{grupo?.nome || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Profissão:</span>
-                <span className="font-medium">{profissao?.nome || "Não informada"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Aniversário:</span>
-                <span className="font-medium">
-                  {favorecido.data_aniversario 
-                    ? formatDate(favorecido.data_aniversario)
-                    : "Não informado"}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {/* Filtros */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Nome */}
+        <div>
+          <Label htmlFor="nome">Nome</Label>
+          <Input
+            type="text"
+            id="nome"
+            value={nomeFilter}
+            onChange={(e) => setNomeFilter(e.target.value)}
+            placeholder="Digite o nome"
+          />
+        </div>
 
-        <Card className="md:w-1/2">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Contato</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Email:</span>
-                <span className="font-medium">{favorecido.email || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Telefone:</span>
-                <span className="font-medium">{formatarTelefone(favorecido.telefone || "")}</span>
-              </div>
-              
-              <h3 className="text-lg font-semibold mt-4 mb-2">Endereço</h3>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">CEP:</span>
-                <span className="font-medium">{formatarCep(favorecido.cep || "")}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Logradouro:</span>
-                <span className="font-medium">{favorecido.logradouro || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Número:</span>
-                <span className="font-medium">{favorecido.numero || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Complemento:</span>
-                <span className="font-medium">{favorecido.complemento || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Bairro:</span>
-                <span className="font-medium">{favorecido.bairro || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Cidade:</span>
-                <span className="font-medium">{favorecido.cidade || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Estado:</span>
-                <span className="font-medium">{favorecido.estado || "Não informado"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">País:</span>
-                <span className="font-medium">{favorecido.pais || "Brasil"}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Tipo */}
+        <div>
+          <Label htmlFor="tipo">Tipo</Label>
+          <Select value={tipoFilter} onValueChange={setTipoFilter}>
+            <SelectTrigger id="tipo">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="fisica">Física</SelectItem>
+              <SelectItem value="juridica">Jurídica</SelectItem>
+              <SelectItem value="publico">Público</SelectItem>
+              <SelectItem value="funcionario">Funcionário</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Grupo */}
+        <div>
+          <Label htmlFor="grupo">Grupo</Label>
+          <Select value={grupoFilter} onValueChange={setGrupoFilter}>
+            <SelectTrigger id="grupo">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              {/* Aqui você pode adicionar os grupos dinamicamente */}
+              <SelectItem value="grupo1">Grupo 1</SelectItem>
+              <SelectItem value="grupo2">Grupo 2</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Profissão */}
+        <div>
+          <Label htmlFor="profissao">Profissão</Label>
+          <Select value={profissaoFilter} onValueChange={setProfissaoFilter}>
+            <SelectTrigger id="profissao">
+              <SelectValue placeholder="Todas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas</SelectItem>
+              {/* Aqui você pode adicionar as profissões dinamicamente */}
+              <SelectItem value="profissao1">Profissão 1</SelectItem>
+              <SelectItem value="profissao2">Profissão 2</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Data de Início */}
+        <div>
+          <Label>Data de Início</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className="w-full justify-start text-left font-normal"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dataInicio ? (
+                  format(dataInicio, "dd/MM/yyyy", { locale: ptBR })
+                ) : (
+                  <span>Selecione a data</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={dataInicio}
+                onSelect={setDataInicio}
+                initialFocus
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Data de Fim */}
+        <div>
+          <Label>Data de Fim</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className="w-full justify-start text-left font-normal"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dataFim ? (
+                  format(dataFim, "dd/MM/yyyy", { locale: ptBR })
+                ) : (
+                  <span>Selecione a data</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={dataFim}
+                onSelect={setDataFim}
+                initialFocus
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
-    </div>
+
+      {/* Ações */}
+      <div className="flex justify-end gap-2">
+        <Button type="submit" variant="blue">
+          Aplicar Filtros
+        </Button>
+        <Button type="button" variant="outline" onClick={handleExport}>
+          Exportar
+        </Button>
+      </div>
+    </form>
   );
 }

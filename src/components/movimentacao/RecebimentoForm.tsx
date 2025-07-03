@@ -1,251 +1,187 @@
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ContaCorrenteItem } from '@/types/financeiro';
+import { Parcela } from '@/types/orcamento';
+import { ParcelaForm } from '../parcela/ParcelaForm';
+import { useToast } from '@/components/ui/use-toast';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { PlusCircle } from 'lucide-react';
+import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
-import React from 'react';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { DateInput } from "./DateInput";
-import { ParcelasForm } from './ParcelasForm';
+const formSchema = z.object({
+  data: z.date(),
+  valorTotal: z.string(),
+  contaCorrente: z.string(),
+  observacoes: z.string().optional(),
+});
 
-// Mesma interface do PagamentoForm, com parâmetro readOnly adicionado
+type FormValues = z.infer<typeof formSchema>;
+
 interface RecebimentoFormProps {
-  numDoc: string;
-  onNumDocChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  tipoTituloId: string;
-  onTipoTituloChange: (id: string) => void;
-  favorecido: string;
-  onFavorecidoChange: (id: string) => void;
-  categoria: string;
-  onCategoriaChange: (id: string) => void;
-  formaPagamento: string;
-  onFormaPagamentoChange: (id: string) => void;
-  descricao: string;
-  onDescricaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  valor: string;
-  onValorChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  numParcelas: number;
-  onNumParcelasChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  dataPrimeiroVenc?: Date;
-  onDataPrimeiroVencChange: (date?: Date) => void;
-  considerarDRE: boolean;
-  onConsiderarDREChange: (checked: boolean) => void;
-  tiposTitulos: any[];
-  favorecidos: any[];
-  categorias: any[];
-  formasPagamento: any[];
-  onNovoFavorecido: () => void;
-  onNovaCategoria: () => void;
-  parcelas: any[];
-  readOnly?: boolean;
+  onSubmit: (data: FormValues) => void;
 }
 
-export function RecebimentoForm({
-  numDoc,
-  onNumDocChange,
-  tipoTituloId,
-  onTipoTituloChange,
-  favorecido,
-  onFavorecidoChange,
-  categoria,
-  onCategoriaChange,
-  formaPagamento,
-  onFormaPagamentoChange,
-  descricao,
-  onDescricaoChange,
-  valor,
-  onValorChange,
-  numParcelas,
-  onNumParcelasChange,
-  dataPrimeiroVenc,
-  onDataPrimeiroVencChange,
-  considerarDRE,
-  onConsiderarDREChange,
-  tiposTitulos,
-  favorecidos,
-  categorias,
-  formasPagamento,
-  onNovoFavorecido,
-  onNovaCategoria,
-  parcelas,
-  readOnly = false
-}: RecebimentoFormProps) {
-  // Implementação similar ao PagamentoForm, mas com campos adaptados para recebimentos
+export const RecebimentoForm = ({ onSubmit }: RecebimentoFormProps) => {
+  const [parcelas, setParcelas] = useState<Parcela[]>([
+    {
+      valor: 0,
+      dataVencimento: new Date().toISOString().split('T')[0],
+      numeroParcela: '1',
+    },
+  ]);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      data: new Date(),
+      valorTotal: '0',
+      contaCorrente: '',
+      observacoes: '',
+    },
+  });
+
+  const contasCorrente: ContaCorrenteItem[] = [
+    {
+      id: '1',
+      nome: 'Conta Corrente 1',
+      banco: 'Banco do Brasil',
+      agencia: '1234-5',
+      numero: '12345-6',
+    },
+    {
+      id: '2',
+      nome: 'Conta Corrente 2',
+      banco: 'Caixa Econômica Federal',
+      agencia: '4321-5',
+      numero: '65432-1',
+    },
+  ];
+
+  const { toast } = useToast();
+
+  const onSubmitForm = (data: FormValues) => {
+    console.log(data);
+    toast({
+      title: 'Sucesso!',
+      description: 'Recebimento cadastrado com sucesso.',
+    });
+    onSubmit(data);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2">
-          <Label>Número do Documento</Label>
-          <Input 
-            value={numDoc} 
-            onChange={onNumDocChange}
-            className="bg-white"
-            disabled={readOnly}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label>Tipo de Título</Label>
-          <Select 
-            value={tipoTituloId} 
-            onValueChange={onTipoTituloChange}
-            disabled={readOnly}
-          >
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              {tiposTitulos.map(tipo => (
-                <SelectItem key={tipo.id} value={tipo.id}>
-                  {tipo.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between">
-            <Label>Favorecido</Label>
-            {!readOnly && (
-              <button
-                type="button"
-                onClick={onNovoFavorecido}
-                className="text-blue-500 text-sm"
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="data">Data</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={'outline'}
+                className={
+                  'w-full justify-start text-left font-normal' +
+                  (errors.data ? ' border-red-500' : '')
+                }
               >
-                + Novo
-              </button>
-            )}
-          </div>
-          <Select 
-            value={favorecido} 
-            onValueChange={onFavorecidoChange}
-            disabled={readOnly}
-          >
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              {favorecidos.map(fav => (
-                <SelectItem key={fav.id} value={fav.id}>
-                  {fav.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(new Date(), 'dd/MM/yyyy')}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                locale={ptBR}
+                onSelect={(date) => {
+                  setValue('data', date || new Date());
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          {errors.data && (
+            <p className="text-red-500 text-sm">{errors.data.message}</p>
+          )}
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between">
-            <Label>Categoria</Label>
-            {!readOnly && (
-              <button
-                type="button"
-                onClick={onNovaCategoria}
-                className="text-blue-500 text-sm"
-              >
-                + Nova
-              </button>
-            )}
-          </div>
-          <Select 
-            value={categoria} 
-            onValueChange={onCategoriaChange}
-            disabled={readOnly}
-          >
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              {categorias.map(cat => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.descricao}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+        <div>
+          <Label htmlFor="valorTotal">Valor Total</Label>
+          <Input
+            id="valorTotal"
+            type="number"
+            {...register('valorTotal')}
+            className={errors.valorTotal ? 'border-red-500' : ''}
+          />
+          {errors.valorTotal && (
+            <p className="text-red-500 text-sm">{errors.valorTotal.message}</p>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="flex flex-col gap-2">
-          <Label>Forma Pagamento</Label>
-          <Select 
-            value={formaPagamento} 
-            onValueChange={onFormaPagamentoChange}
-            disabled={readOnly}
-          >
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              {formasPagamento.map(forma => (
-                <SelectItem key={forma.id} value={forma.id}>
-                  {forma.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col col-span-2 gap-2">
-          <Label>Descrição</Label>
-          <Input 
-            value={descricao} 
-            onChange={onDescricaoChange} 
-            className="bg-white"
-            disabled={readOnly}
-          />
-        </div>
+      <div>
+        <Label htmlFor="contaCorrente">Conta Corrente</Label>
+        <Select>
+          <SelectTrigger className={errors.contaCorrente ? 'border-red-500' : ''}>
+            <SelectValue placeholder="Selecione a conta corrente" />
+          </SelectTrigger>
+          <SelectContent>
+            {contasCorrente.map((conta) => (
+              <SelectItem key={conta.id} value={conta.id}>
+                {conta.nome}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.contaCorrente && (
+          <p className="text-red-500 text-sm">{errors.contaCorrente.message}</p>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="flex flex-col gap-2">
-          <Label>Valor Total (R$)</Label>
-          <Input 
-            type="text" 
-            value={valor} 
-            onChange={onValorChange} 
-            className="bg-white"
-            disabled={readOnly}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label>Número de Parcelas</Label>
-          <Input 
-            type="number" 
-            min={1} 
-            value={numParcelas} 
-            onChange={onNumParcelasChange} 
-            className="bg-white"
-            disabled={readOnly}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label>Data Primeiro Vencimento</Label>
-          <DateInput 
-            value={dataPrimeiroVenc} 
-            onChange={onDataPrimeiroVencChange}
-            disabled={readOnly}
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Switch 
-          id="consider-dre" 
-          checked={considerarDRE} 
-          onCheckedChange={onConsiderarDREChange}
-          disabled={readOnly}
+      <div>
+        <Label htmlFor="observacoes">Observações</Label>
+        <Textarea
+          id="observacoes"
+          {...register('observacoes')}
+          className={errors.observacoes ? 'border-red-500' : ''}
         />
-        <Label htmlFor="consider-dre">Considerar para DRE</Label>
+        {errors.observacoes && (
+          <p className="text-red-500 text-sm">{errors.observacoes.message}</p>
+        )}
       </div>
+      
+      <ParcelasForm 
+        parcelas={parcelas} 
+        onValorChange={() => {}}
+        onDataChange={() => {}}
+      />
 
-      {/* Tabela de parcelas */}
-      {parcelas.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-lg font-medium mb-2">Parcelas</h3>
-          <ParcelasForm parcelas={parcelas} />
-        </div>
-      )}
+      <Button onClick={handleSubmit(onSubmitForm)}>Salvar</Button>
     </div>
   );
-}
+};

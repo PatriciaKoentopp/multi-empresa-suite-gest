@@ -63,7 +63,7 @@ export interface Antecipacao {
 export interface AntecipacaoSelecionada {
   id: string;
   valor_utilizado: number;
-  valor?: number; // Adicionada propriedade opcional para compatibilidade
+  valor?: number;
 }
 
 // Interface para conta corrente
