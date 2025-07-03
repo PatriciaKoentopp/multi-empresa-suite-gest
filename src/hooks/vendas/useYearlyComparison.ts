@@ -89,18 +89,37 @@ export const useYearlyComparison = () => {
         let adjustedNumMeses = Number(item.num_meses || 0);
         
         if (year === currentYear) {
-          // Buscar dados mensais do ano corrente para recalcular
+          // Recalcular considerando apenas meses até o mês anterior ao atual
           const monthsToConsider = currentMonth - 1; // Meses de janeiro até o mês anterior ao atual
           
           if (monthsToConsider > 0) {
-            // Recalcular proporcionalmente baseado nos meses que devemos considerar
-            const totalMonthsInOriginalData = adjustedNumMeses;
-            if (totalMonthsInOriginalData > 0) {
-              const proportionFactor = monthsToConsider / totalMonthsInOriginalData;
-              adjustedTotal = adjustedTotal * proportionFactor;
-              adjustedNumMeses = monthsToConsider;
-              adjustedMedia = adjustedTotal / adjustedNumMeses;
+            // Buscar valor total apenas dos meses que devemos considerar
+            let totalForFilteredMonths = 0;
+            
+            if (salesData) {
+              salesData.forEach(orcamento => {
+                if (orcamento.data_venda) {
+                  const saleYear = parseInt(orcamento.data_venda.substring(0, 4), 10);
+                  const saleMonth = parseInt(orcamento.data_venda.substring(5, 7), 10);
+                  
+                  if (saleYear === currentYear && saleMonth < currentMonth) {
+                    const temValor = orcamento.orcamentos_itens.some((item: any) => 
+                      Number(item.valor) > 0
+                    );
+                    
+                    if (temValor) {
+                      orcamento.orcamentos_itens.forEach((item: any) => {
+                        totalForFilteredMonths += Number(item.valor);
+                      });
+                    }
+                  }
+                }
+              });
             }
+            
+            adjustedTotal = totalForFilteredMonths;
+            adjustedNumMeses = monthsToConsider;
+            adjustedMedia = adjustedNumMeses > 0 ? adjustedTotal / adjustedNumMeses : 0;
           } else {
             // Se estivermos em janeiro, não há meses anteriores para mostrar
             adjustedTotal = 0;
