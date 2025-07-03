@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,8 +22,8 @@ import {
   TableRow,
   TableFooter,
 } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Check } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { MoreVertical, Check, Receipt } from "lucide-react";
 import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -110,6 +111,7 @@ export default function FluxoCaixaPage() {
   const [contaCorrenteSelecionada, setContaCorrenteSelecionada] = useState<any>(null);
   const [documentosCache, setDocumentosCache] = useState<Record<string, any>>({});
   const [parcelasCache, setParcelasCache] = useState<Record<string, any>>({});
+  const [orcamentosCache, setOrcamentosCache] = useState<Record<string, any>>({});
 
   // Buscar contas correntes
   const { data: contasCorrentes = [] } = useQuery({
@@ -302,6 +304,34 @@ export default function FluxoCaixaPage() {
             docsMap[mov.id] = mov;
           });
           setDocumentosCache(docsMap);
+        }
+      }
+
+      // Buscar dados dos orçamentos baseados nos números dos documentos
+      const numerosTitulos = [];
+      
+      // Coletar números de documentos das movimentações
+      data.filter(item => item.movimentacoes?.numero_documento)
+        .forEach(item => numerosTitulos.push(item.movimentacoes.numero_documento));
+      
+      // Coletar números de documentos das antecipações
+      data.filter(item => item.antecipacoes?.numero_documento)
+        .forEach(item => numerosTitulos.push(item.antecipacoes.numero_documento));
+
+      if (numerosTitulos.length > 0) {
+        const uniqueNumeros = [...new Set(numerosTitulos)];
+        const { data: orcamentosData, error: orcError } = await supabase
+          .from("orcamentos")
+          .select("codigo, numero_nota_fiscal, tipo")
+          .in("codigo", uniqueNumeros)
+          .eq("empresa_id", currentCompany?.id);
+
+        if (!orcError && orcamentosData) {
+          const orcMap: Record<string, any> = {};
+          orcamentosData.forEach(orc => {
+            orcMap[orc.codigo] = orc;
+          });
+          setOrcamentosCache(orcMap);
         }
       }
 
@@ -525,6 +555,36 @@ export default function FluxoCaixaPage() {
     }
     
     return "-";
+  }
+
+  // Função para obter o número da nota fiscal
+  function getNumeroNotaFiscal(linha: any) {
+    let numeroDocumento = "";
+    
+    // Identificar o número do documento baseado na origem
+    if (linha.origem === "antecipacao" && linha.antecipacoes?.numero_documento) {
+      numeroDocumento = linha.antecipacoes.numero_documento;
+    } else if (linha.movimentacao_parcela_id) {
+      const parcela = parcelasCache[linha.movimentacao_parcela_id];
+      if (parcela && parcela.movimentacao_id) {
+        const movPai = documentosCache[parcela.movimentacao_id];
+        numeroDocumento = movPai?.numero_documento || '';
+      }
+    } else if (linha.movimentacao_id) {
+      const movimento = documentosCache[linha.movimentacao_id];
+      numeroDocumento = movimento?.numero_documento || '';
+    }
+
+    // Buscar o orçamento pelo código (número do documento)
+    if (numeroDocumento && orcamentosCache[numeroDocumento]) {
+      const orcamento = orcamentosCache[numeroDocumento];
+      // Só mostrar se for uma venda e tiver nota fiscal
+      if (orcamento.tipo === 'venda' && orcamento.numero_nota_fiscal) {
+        return orcamento.numero_nota_fiscal;
+      }
+    }
+    
+    return null;
   }
 
   // Calcular saldo final
@@ -837,6 +897,20 @@ export default function FluxoCaixaPage() {
                                   >
                                     Desfazer Conciliação
                                   </DropdownMenuItem>
+                                )}
+                                
+                                {/* Exibir número da nota fiscal se existir */}
+                                {getNumeroNotaFiscal(linha) && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      disabled
+                                      className="text-blue-600 focus:bg-blue-50"
+                                    >
+                                      <Receipt className="mr-2 h-4 w-4" />
+                                      NF: {getNumeroNotaFiscal(linha)}
+                                    </DropdownMenuItem>
+                                  </>
                                 )}
                               </DropdownMenuContent>
                             </DropdownMenu>
