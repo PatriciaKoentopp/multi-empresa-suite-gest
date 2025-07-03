@@ -23,7 +23,12 @@ export const useYearlyComparison = () => {
       
       console.log("Dados de comparação anual brutos:", yearComparisonData);
       
-      // Buscar todos os orçamentos de venda para calcular quantidades
+      // Obter ano e mês atual
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1; // getMonth() retorna 0-11, então somamos 1
+      
+      // Buscar todos os orçamentos de venda para calcular quantidades e filtrar por período
       const { data: salesData, error: salesError } = await supabase
         .from('orcamentos')
         .select(`
@@ -39,7 +44,7 @@ export const useYearlyComparison = () => {
         throw salesError;
       }
 
-      // Processar contagem por ano e mês usando a mesma lógica
+      // Processar contagem por ano e mês usando a mesma lógica, mas filtrando o ano corrente
       const salesCountByYear: Record<number, number> = {};
       const salesCountByYearMonth: Record<string, number> = {};
       
@@ -51,36 +56,71 @@ export const useYearlyComparison = () => {
             const month = parseInt(orcamento.data_venda.substring(5, 7), 10);
             const yearMonthKey = `${year}-${month}`;
             
-            // Verificar se tem itens com valor > 0 (mesmo critério usado nos dados mensais)
-            const temValor = orcamento.orcamentos_itens.some((item: any) => 
-              Number(item.valor) > 0
-            );
+            // Para o ano corrente, considerar apenas meses anteriores ao mês atual
+            const shouldInclude = year < currentYear || (year === currentYear && month < currentMonth);
             
-            if (temValor) {
-              // Contar para o ano
-              salesCountByYear[year] = (salesCountByYear[year] || 0) + 1;
-              // Contar para o mês específico do ano
-              salesCountByYearMonth[yearMonthKey] = (salesCountByYearMonth[yearMonthKey] || 0) + 1;
+            if (shouldInclude) {
+              // Verificar se tem itens com valor > 0 (mesmo critério usado nos dados mensais)
+              const temValor = orcamento.orcamentos_itens.some((item: any) => 
+                Number(item.valor) > 0
+              );
+              
+              if (temValor) {
+                // Contar para o ano
+                salesCountByYear[year] = (salesCountByYear[year] || 0) + 1;
+                // Contar para o mês específico do ano
+                salesCountByYearMonth[yearMonthKey] = (salesCountByYearMonth[yearMonthKey] || 0) + 1;
+              }
             }
           }
         });
       }
 
-      console.log("Contagem de vendas por ano:", salesCountByYear);
-      console.log("Contagem de vendas por ano-mês:", salesCountByYearMonth);
+      console.log("Contagem de vendas por ano (filtrado):", salesCountByYear);
+      console.log("Contagem de vendas por ano-mês (filtrado):", salesCountByYearMonth);
       
       // Garantir que todos os campos numéricos sejam números e não nulos
-      const processedYearlyData = Array.isArray(yearComparisonData) ? yearComparisonData.map((item: any) => ({
-        year: Number(item.year || 0),
-        total: Number(item.total || 0),
-        qtde_vendas: salesCountByYear[Number(item.year)] || 0,
-        variacao_total: item.variacao_total !== null ? Number(item.variacao_total) : null,
-        media_mensal: Number(item.media_mensal || 0),
-        variacao_media: item.variacao_media !== null ? Number(item.variacao_media) : null,
-        num_meses: Number(item.num_meses || 0)
-      })) : [];
+      const processedYearlyData = Array.isArray(yearComparisonData) ? yearComparisonData.map((item: any) => {
+        const year = Number(item.year || 0);
+        
+        // Para o ano corrente, recalcular o total e a média considerando apenas os meses até o mês anterior
+        let adjustedTotal = Number(item.total || 0);
+        let adjustedMedia = Number(item.media_mensal || 0);
+        let adjustedNumMeses = Number(item.num_meses || 0);
+        
+        if (year === currentYear) {
+          // Buscar dados mensais do ano corrente para recalcular
+          const monthsToConsider = currentMonth - 1; // Meses de janeiro até o mês anterior ao atual
+          
+          if (monthsToConsider > 0) {
+            // Recalcular proporcionalmente baseado nos meses que devemos considerar
+            const totalMonthsInOriginalData = adjustedNumMeses;
+            if (totalMonthsInOriginalData > 0) {
+              const proportionFactor = monthsToConsider / totalMonthsInOriginalData;
+              adjustedTotal = adjustedTotal * proportionFactor;
+              adjustedNumMeses = monthsToConsider;
+              adjustedMedia = adjustedTotal / adjustedNumMeses;
+            }
+          } else {
+            // Se estivermos em janeiro, não há meses anteriores para mostrar
+            adjustedTotal = 0;
+            adjustedMedia = 0;
+            adjustedNumMeses = 0;
+          }
+        }
+        
+        return {
+          year: year,
+          total: adjustedTotal,
+          qtde_vendas: salesCountByYear[year] || 0,
+          variacao_total: item.variacao_total !== null ? Number(item.variacao_total) : null,
+          media_mensal: adjustedMedia,
+          variacao_media: item.variacao_media !== null ? Number(item.variacao_media) : null,
+          num_meses: adjustedNumMeses
+        };
+      }) : [];
 
-      console.log("Dados de comparação anual processados:", processedYearlyData);
+      console.log("Dados de comparação anual processados (com filtro de meses):", processedYearlyData);
       setYearlyComparisonData(processedYearlyData);
       
       return processedYearlyData;
