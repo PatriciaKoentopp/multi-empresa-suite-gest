@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -144,7 +145,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
   // Calcular valores
   const valorConta = conta?.valor || 0;
   const valorAcrescimos = multa + juros;
-  const valorTotalAntecipacoes = antecipacoesSelecionadas.reduce((total, ant) => total + (ant.valor || ant.valor_utilizado), 0);
+  const valorTotalAntecipacoes = antecipacoesSelecionadas.reduce((total, ant) => total + ant.valor, 0);
   const valorTotalConta = valorConta + valorAcrescimos - desconto;
   const valorAPagar = Math.max(0, valorTotalConta - valorTotalAntecipacoes);
 
@@ -157,7 +158,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
         const valorDisponivel = antecipacao.valor_disponivel;
         setAntecipacoesSelecionadas(prev => [
           ...prev,
-          { id: antecipacaoId, valor_utilizado: valorDisponivel, valor: valorDisponivel }
+          { id: antecipacaoId, valor: valorDisponivel }
         ]);
       }
     } else {
@@ -168,7 +169,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
   const handleValorAntecipacaoChange = (antecipacaoId: string, valor: number) => {
     setAntecipacoesSelecionadas(prev =>
       prev.map(ant =>
-        ant.id === antecipacaoId ? { ...ant, valor_utilizado: valor, valor } : ant
+        ant.id === antecipacaoId ? { ...ant, valor } : ant
       )
     );
   };
@@ -177,7 +178,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
     const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antecipacaoId);
     const valorJaUsado = antecipacoesSelecionadas
       .filter(ant => ant.id !== antecipacaoId)
-      .reduce((total, ant) => total + (ant.valor || ant.valor_utilizado), 0);
+      .reduce((total, ant) => total + ant.valor, 0);
     const valorRestante = Math.max(0, valorTotalConta - valorJaUsado);
     
     return Math.min(

@@ -11,9 +11,8 @@ export const usePainelFinanceiro = () => {
   const [filtroFluxoCaixa, setFiltroFluxoCaixa] = useState<FiltroFluxoCaixa>({
     dataInicio: subDays(new Date(), 30),
     dataFim: new Date(),
-    conta_corrente_id: '',
-    contaId: '',
-    situacao: '',
+    contaId: null,
+    situacao: null,
   });
   const [saldoInicialPeriodo, setSaldoInicialPeriodo] = useState<number>(0);
   
@@ -44,10 +43,11 @@ export const usePainelFinanceiro = () => {
     return new Date();
   }
 
+  // Função para calcular o saldo inicial do período para o fluxo de caixa
   const calcularSaldoInicialPeriodo = async (filtro: FiltroFluxoCaixa) => {
     try {
       // Formatar as datas para o formato do Supabase (YYYY-MM-DD)
-      const dataInicioStr = filtro.dataInicio?.toISOString().split('T')[0];
+      const dataInicioStr = filtro.dataInicio.toISOString().split('T')[0];
       
       // Criar a query base para buscar movimentações anteriores ao período do filtro
       let query = supabase
@@ -60,8 +60,8 @@ export const usePainelFinanceiro = () => {
         .lt('data_movimentacao', dataInicioStr);
       
       // Adicionar filtro por conta corrente se especificado
-      if (filtro.conta_corrente_id) {
-        query = query.eq('conta_corrente_id', filtro.conta_corrente_id);
+      if (filtro.contaId) {
+        query = query.eq('conta_corrente_id', filtro.contaId);
       }
       
       const { data: movimentacoesAnteriores, error } = await query;
@@ -75,8 +75,8 @@ export const usePainelFinanceiro = () => {
         .eq('status', 'ativo');
       
       // Se houver filtro por conta, aplicar também aqui
-      if (filtro.conta_corrente_id) {
-        queryContas = queryContas.eq('id', filtro.conta_corrente_id);
+      if (filtro.contaId) {
+        queryContas = queryContas.eq('id', filtro.contaId);
       } else {
         // Quando não filtrar por conta específica, usar apenas contas com considerar_saldo = true
         queryContas = queryContas.eq('considerar_saldo', true);
@@ -90,9 +90,9 @@ export const usePainelFinanceiro = () => {
       let saldoInicial = 0;
       
       if (contasCorrentes && contasCorrentes.length > 0) {
-        if (filtro.conta_corrente_id) {
+        if (filtro.contaId) {
           // Se tiver filtro de conta, considerar apenas o saldo inicial da conta específica
-          const contaFiltrada = contasCorrentes.find(c => c.id === filtro.conta_corrente_id);
+          const contaFiltrada = contasCorrentes.find(c => c.id === filtro.contaId);
           if (contaFiltrada) {
             saldoInicial = Number(contaFiltrada.saldo_inicial || 0);
           }
@@ -107,7 +107,7 @@ export const usePainelFinanceiro = () => {
       // Filtrar as movimentações para considerar apenas contas que devem entrar no cálculo
       if (movimentacoesAnteriores && movimentacoesAnteriores.length > 0) {
         // Se não há filtro de conta específica, precisamos verificar conta por conta
-        if (!filtro.conta_corrente_id) {
+        if (!filtro.contaId) {
           // Criar um mapa das contas que devem ser consideradas no cálculo
           const contasConsideraveis = new Map();
           contasCorrentes.forEach(conta => {
@@ -139,8 +139,8 @@ export const usePainelFinanceiro = () => {
   const fetchFluxoCaixa = async (filtro: FiltroFluxoCaixa) => {
     try {
       // Formatar as datas para o formato do Supabase (YYYY-MM-DD)
-      const dataInicioStr = filtro.dataInicio?.toISOString().split('T')[0];
-      const dataFimStr = filtro.dataFim?.toISOString().split('T')[0];
+      const dataInicioStr = filtro.dataInicio.toISOString().split('T')[0];
+      const dataFimStr = filtro.dataFim.toISOString().split('T')[0];
       
       // Calcular o saldo inicial do período
       const saldoInicial = await calcularSaldoInicialPeriodo(filtro);
@@ -175,8 +175,8 @@ export const usePainelFinanceiro = () => {
         .order('data_movimentacao', { ascending: true });
       
       // Adicionar filtro por conta corrente se especificado
-      if (filtro.conta_corrente_id) {
-        query = query.eq('conta_corrente_id', filtro.conta_corrente_id);
+      if (filtro.contaId) {
+        query = query.eq('conta_corrente_id', filtro.contaId);
       }
 
       // Adicionar filtro por situação se especificado
@@ -224,7 +224,7 @@ export const usePainelFinanceiro = () => {
       // Transformar os dados para o formato correto
       // Quando não tem filtro de conta específica, filtrar para considerar apenas contas com considerar_saldo = true
       const fluxoCaixa: FluxoCaixaItem[] = (fluxoCaixaData || [])
-        .filter(item => filtro.conta_corrente_id || item.contas_correntes?.considerar_saldo)
+        .filter(item => filtro.contaId || item.contas_correntes?.considerar_saldo)
         .map(item => {
           let favorecidoNome = '';
           
@@ -247,7 +247,6 @@ export const usePainelFinanceiro = () => {
             tipo: item.tipo_operacao === 'receber' ? 'entrada' : 'saida',
             favorecido: favorecidoNome,
             origem: item.origem || '',
-            situacao: item.situacao || '',
           };
         });
       

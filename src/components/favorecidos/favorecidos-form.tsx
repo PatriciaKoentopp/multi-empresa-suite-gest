@@ -1,43 +1,66 @@
 
-import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { supabase } from "@/integrations/supabase/client";
-import { useCompany } from "@/contexts/company-context";
-import { toast } from "sonner";
-import { formSchema, FormValues } from "./favorecidos-form.schema";
+import { useEffect } from "react";
 import { FavorecidoTipoRadio } from "./favorecido-tipo-radio";
 import { FavorecidoDocumento } from "./favorecido-documento";
 import { FavorecidoDadosBasicos } from "./favorecido-dados-basicos";
-import { FavorecidoAniversarioStatus } from "./favorecido-aniversario-status";
 import { FavorecidoEndereco } from "./favorecido-endereco";
-import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
+import { FavorecidoAniversarioStatus } from "./favorecido-aniversario-status";
+import { formSchema, FormValues } from "./favorecidos-form.schema";
 
 interface FavorecidosFormProps {
   favorecido?: Favorecido;
-  onClose: () => void;
-  onSuccess: () => void;
+  grupos: GrupoFavorecido[];
+  profissoes: Profissao[];
+  onSubmit: (data: Partial<Favorecido>) => void;
+  onCancel: () => void;
+  readOnly?: boolean;
 }
 
-export function FavorecidosForm({ favorecido, onClose, onSuccess }: FavorecidosFormProps) {
-  const { currentCompany } = useCompany();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [grupos, setGrupos] = useState<GrupoFavorecido[]>([]);
-  const [profissoes, setProfissoes] = useState<Profissao[]>([]);
-
+export function FavorecidosForm({
+  favorecido,
+  grupos,
+  profissoes,
+  onSubmit,
+  onCancel,
+  readOnly = false,
+}: FavorecidosFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    defaultValues: favorecido ? {
+      tipo: favorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario",
+      tipo_documento: favorecido.tipo_documento as "cpf" | "cnpj",
+      documento: favorecido.documento,
+      grupo_id: favorecido.grupo_id || "null",
+      profissao_id: favorecido.profissao_id || "null",
+      nome: favorecido.nome,
+      nome_fantasia: favorecido.nome_fantasia || "",
+      email: favorecido.email || "",
+      telefone: favorecido.telefone || "",
+      cep: favorecido.cep || "",
+      logradouro: favorecido.logradouro || "",
+      numero: favorecido.numero || "",
+      complemento: favorecido.complemento || "",
+      bairro: favorecido.bairro || "",
+      cidade: favorecido.cidade || "",
+      estado: favorecido.estado || "",
+      pais: favorecido.pais || "",
+      data_aniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
+      status: favorecido.status as "ativo" | "inativo",
+    } : {
       tipo: "fisica",
       tipo_documento: "cpf",
+      documento: "",
+      grupo_id: "null",
+      profissao_id: "null",
       nome: "",
       nome_fantasia: "",
-      documento: "",
       email: "",
       telefone: "",
-      data_aniversario: undefined,
       cep: "",
       logradouro: "",
       numero: "",
@@ -47,154 +70,89 @@ export function FavorecidosForm({ favorecido, onClose, onSuccess }: FavorecidosF
       estado: "",
       pais: "Brasil",
       status: "ativo",
-      grupo_id: "",
-      profissao_id: "",
     },
   });
 
-  useEffect(() => {
-    if (favorecido) {
-      form.reset({
-        tipo: favorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario",
-        tipo_documento: favorecido.tipo_documento as "cpf" | "cnpj",
-        nome: favorecido.nome || "",
-        nome_fantasia: favorecido.nome_fantasia || "",
-        documento: favorecido.documento || "",
-        email: favorecido.email || "",
-        telefone: favorecido.telefone || "",
-        data_aniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
-        cep: favorecido.cep || "",
-        logradouro: favorecido.logradouro || "",
-        numero: favorecido.numero || "",
-        complemento: favorecido.complemento || "",
-        bairro: favorecido.bairro || "",
-        cidade: favorecido.cidade || "",
-        estado: favorecido.estado || "",
-        pais: favorecido.pais || "Brasil",
-        status: favorecido.status as "ativo" | "inativo",
-        grupo_id: favorecido.grupo_id || "",
-        profissao_id: favorecido.profissao_id || "",
-      });
-    }
-  }, [favorecido, form]);
-
-  useEffect(() => {
-    const fetchGruposEProfissoes = async () => {
-      if (!currentCompany?.id) return;
-
-      try {
-        const [gruposResult, profissoesResult] = await Promise.all([
-          supabase
-            .from("grupo_favorecidos")
-            .select("*")
-            .eq("empresa_id", currentCompany.id)
-            .eq("status", "ativo"),
-          supabase
-            .from("profissoes")
-            .select("*")
-            .eq("empresa_id", currentCompany.id)
-            .eq("status", "ativo")
-        ]);
-
-        if (gruposResult.data) setGrupos(gruposResult.data);
-        if (profissoesResult.data) setProfissoes(profissoesResult.data);
-      } catch (error) {
-        console.error("Erro ao buscar grupos e profissões:", error);
-      }
+  const handleSubmit = (data: FormValues) => {
+    const formattedData: Partial<Favorecido> = {
+      tipo: data.tipo,
+      tipo_documento: data.tipo_documento,
+      documento: data.documento,
+      grupo_id: data.grupo_id === "null" ? null : data.grupo_id,
+      profissao_id: data.profissao_id === "null" ? null : data.profissao_id,
+      nome: data.nome,
+      nome_fantasia: data.nome_fantasia,
+      email: data.email,
+      telefone: data.telefone,
+      cep: data.cep,
+      logradouro: data.logradouro,
+      numero: data.numero,
+      complemento: data.complemento,
+      bairro: data.bairro,
+      cidade: data.cidade,
+      estado: data.estado,
+      pais: data.pais,
+      data_aniversario: data.data_aniversario,
+      status: data.status,
     };
-
-    fetchGruposEProfissoes();
-  }, [currentCompany?.id]);
-
-  const onSubmit = async (values: FormValues) => {
-    if (!currentCompany?.id) {
-      toast.error("Empresa não selecionada");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const favorecidoData = {
-        empresa_id: currentCompany.id,
-        tipo: values.tipo,
-        tipo_documento: values.tipo_documento,
-        nome: values.nome || "",
-        nome_fantasia: values.nome_fantasia || "",
-        documento: values.documento || "",
-        email: values.email || "",
-        telefone: values.telefone || "",
-        data_aniversario: values.data_aniversario ? values.data_aniversario.toISOString().split('T')[0] : null,
-        cep: values.cep || "",
-        logradouro: values.logradouro || "",
-        numero: values.numero || "",
-        complemento: values.complemento || "",
-        bairro: values.bairro || "",
-        cidade: values.cidade || "",
-        estado: values.estado || "",
-        pais: values.pais || "Brasil",
-        status: values.status,
-        grupo_id: values.grupo_id || null,
-        profissao_id: values.profissao_id || null,
-      };
-
-      let result;
-      if (favorecido) {
-        result = await supabase
-          .from("favorecidos")
-          .update(favorecidoData)
-          .eq("id", favorecido.id)
-          .select()
-          .single();
-      } else {
-        result = await supabase
-          .from("favorecidos")
-          .insert(favorecidoData)
-          .select()
-          .single();
-      }
-
-      if (result.error) throw result.error;
-
-      toast.success(
-        favorecido
-          ? "Favorecido atualizado com sucesso!"
-          : "Favorecido cadastrado com sucesso!"
-      );
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error("Erro ao salvar favorecido:", error);
-      toast.error("Erro ao salvar favorecido");
-    } finally {
-      setIsSubmitting(false);
-    }
+    
+    console.log('Dados formatados para envio:', formattedData);
+    onSubmit(formattedData);
   };
 
+  // Atualizar tipo de documento baseado no tipo de favorecido
+  useEffect(() => {
+    const tipoFavorecido = form.watch("tipo");
+    const tipoDocumentoAtual = form.watch("tipo_documento");
+    
+    if (tipoFavorecido === "fisica" && tipoDocumentoAtual !== "cpf") {
+      form.setValue("tipo_documento", "cpf");
+    }
+    else if (
+      (tipoFavorecido === "juridica" || 
+       tipoFavorecido === "publico" || 
+       tipoFavorecido === "funcionario") && 
+      tipoDocumentoAtual !== "cnpj"
+    ) {
+      form.setValue("tipo_documento", "cnpj");
+    }
+  }, [form.watch("tipo")]);
+
   return (
-    <div className="space-y-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FavorecidoTipoRadio form={form} />
-          <FavorecidoDocumento form={form} />
-          <FavorecidoDadosBasicos form={form} grupos={grupos} profissoes={profissoes} />
-          <FavorecidoAniversarioStatus form={form} />
-          <FavorecidoEndereco form={form} />
-          
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+              <FavorecidoTipoRadio form={form} readOnly={readOnly} />
+              <FavorecidoDocumento form={form} readOnly={readOnly} />
+            </div>
+            <FavorecidoDadosBasicos form={form} grupos={grupos} profissoes={profissoes} readOnly={readOnly} />
+          </div>
+
+          <div className="space-y-6">
+            <FavorecidoEndereco form={form} readOnly={readOnly} />
+            <FavorecidoAniversarioStatus form={form} readOnly={readOnly} />
+          </div>
+        </div>
+
+        {!readOnly ? (
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onCancel}>
               Cancelar
             </Button>
-            <Button 
-              type="submit" 
-              variant="blue" 
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Salvando..." : favorecido ? "Atualizar" : "Cadastrar"}
+            <Button type="submit" variant="blue">
+              Salvar
             </Button>
           </div>
-        </form>
-      </Form>
-    </div>
+        ) : (
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Fechar
+            </Button>
+          </div>
+        )}
+      </form>
+    </Form>
   );
 }

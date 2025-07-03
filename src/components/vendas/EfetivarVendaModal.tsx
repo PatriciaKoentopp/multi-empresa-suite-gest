@@ -1,163 +1,219 @@
+
 import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { formSchema, FormValues } from "./efetivar-venda-modal.schema";
 import { Orcamento } from "@/types";
 import { useCompany } from "@/contexts/company-context";
+import { Label } from "@/components/ui/label";
+
+interface TipoTitulo {
+  id: string;
+  nome: string;
+  tipo: string;
+  status: string;
+}
 
 interface EfetivarVendaModalProps {
-  orcamento: Orcamento;
+  open: boolean;
   onClose: () => void;
+  orcamento?: Orcamento | null;
   onSuccess: () => void;
 }
 
-export function EfetivarVendaModal({ orcamento, onClose, onSuccess }: EfetivarVendaModalProps) {
+export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: EfetivarVendaModalProps) {
   const { currentCompany } = useCompany();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dataVenda, setDataVenda] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [isLoading, setIsLoading] = useState(false);
+  const [tipoTitulos, setTipoTitulos] = useState<TipoTitulo[]>([]);
+  const [tipoTituloId, setTipoTituloId] = useState<string>("");
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      data_venda: orcamento.data_venda ? new Date(orcamento.data_venda) : undefined,
-      numero_nota_fiscal: orcamento.numero_nota_fiscal || "",
-      observacoes: orcamento.observacoes || "",
-      favorecido_id: orcamento.favorecido_id || "",
-      forma_pagamento: orcamento.forma_pagamento || "",
-    },
-  });
+  useEffect(() => {
+    if (open && currentCompany?.id) {
+      carregarTiposTitulos();
+    }
+  }, [open, currentCompany?.id]);
 
-  const onSubmit = async (values: FormValues) => {
-    if (!currentCompany?.id) {
-      toast.error("Empresa não selecionada");
+  async function carregarTiposTitulos() {
+    try {
+      const { data, error } = await supabase
+        .from('tipos_titulos')
+        .select('*')
+        .eq('empresa_id', currentCompany?.id)
+        .eq('tipo', 'receber')
+        .eq('status', 'ativo');
+
+      if (error) throw error;
+      setTipoTitulos(data || []);
+      if (data && data.length > 0) {
+        setTipoTituloId(data[0].id); // Seleciona o primeiro tipo por padrão
+      }
+    } catch (error) {
+      console.error('Erro ao carregar tipos de títulos:', error);
+      toast.error("Erro ao carregar tipos de títulos");
+    }
+  }
+
+  async function handleConfirmar() {
+    if (!orcamento || !currentCompany?.id || !tipoTituloId) {
+      toast.error("Selecione um tipo de título");
       return;
     }
 
-    setIsSubmitting(true);
-
+    setIsLoading(true);
     try {
-      const updateData = {
-        data_venda: values.data_venda ? values.data_venda.toISOString().split("T")[0] : null,
-        numero_nota_fiscal: values.numero_nota_fiscal,
-        observacoes: values.observacoes,
-        favorecido_id: values.favorecido_id,
-        forma_pagamento: values.forma_pagamento,
-        status: "finalizado",
-      };
+      // 1. Buscar todos os itens e parcelas do orçamento
+      const { data: itens, error: itensError } = await supabase
+        .from('orcamentos_itens')
+        .select('*')
+        .eq('orcamento_id', orcamento.id);
 
-      const { data, error } = await supabase
-        .from("orcamentos")
-        .update(updateData)
-        .eq("id", orcamento.id)
-        .select()
-        .single();
+      if (itensError) throw itensError;
 
-      if (error) throw error;
+      const { data: parcelas, error: parcelasError } = await supabase
+        .from('orcamentos_parcelas')
+        .select('*')
+        .eq('orcamento_id', orcamento.id);
+
+      if (parcelasError) throw parcelasError;
+
+      // 2. Criar movimentação com as novas informações
+      const valorTotal = itens.reduce((sum, item) => sum + Number(item.valor), 0);
+      
+      // Começar uma transação em JavaScript
+      try {
+        // Criar a movimentação
+        const { data: movimentacao, error: movError } = await supabase
+          .from('movimentacoes')
+          .insert({
+            empresa_id: currentCompany.id,
+            tipo_operacao: 'receber',
+            data_lancamento: dataVenda,
+            data_emissao: dataVenda,
+            favorecido_id: orcamento.favorecido_id,
+            forma_pagamento: orcamento.forma_pagamento,
+            valor: valorTotal,
+            numero_parcelas: parcelas.length,
+            primeiro_vencimento: parcelas[0]?.data_vencimento,
+            descricao: `Venda ${orcamento.codigo}`,
+            considerar_dre: true,
+            numero_documento: orcamento.codigo,
+            tipo_titulo_id: tipoTituloId
+          })
+          .select()
+          .single();
+  
+        if (movError) throw movError;
+  
+        // 3. Criar parcelas da movimentação
+        const parcelasMovimentacao = parcelas.map(parcela => ({
+          movimentacao_id: movimentacao.id,
+          numero: parseInt(parcela.numero_parcela.split('/')[1]),
+          valor: parcela.valor,
+          data_vencimento: parcela.data_vencimento
+        }));
+  
+        const { error: parcelasMovError } = await supabase
+          .from('movimentacoes_parcelas')
+          .insert(parcelasMovimentacao);
+  
+        if (parcelasMovError) throw parcelasMovError;
+  
+        // 4. Atualizar o orçamento para tipo "venda" e incluir data_venda
+        const { error: orcamentoError } = await supabase
+          .from('orcamentos')
+          .update({ 
+            tipo: 'venda',
+            data_venda: dataVenda
+          })
+          .eq('id', orcamento.id);
+  
+        if (orcamentoError) throw orcamentoError;
+      } catch (error) {
+        // Se algo falhar, rolamos de volta
+        console.error("Erro na transação:", error);
+        throw error;
+      }
 
       toast.success("Venda efetivada com sucesso!");
       onSuccess();
       onClose();
     } catch (error) {
-      console.error("Erro ao efetivar venda:", error);
+      console.error('Erro ao efetivar venda:', error);
       toast.error("Erro ao efetivar venda");
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="space-y-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Efetivar Venda</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
           <div>
-            <label htmlFor="data_venda" className="block text-sm font-medium text-gray-700">
-              Data da Venda
-            </label>
-            <input
+            <Label className="block text-sm font-medium mb-1">Data da Venda *</Label>
+            <Input
               type="date"
-              id="data_venda"
-              {...form.register("data_venda")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              value={dataVenda}
+              onChange={(e) => setDataVenda(e.target.value)}
+              required
             />
-            {form.formState.errors.data_venda && (
-              <p className="mt-1 text-sm text-red-600">{form.formState.errors.data_venda.message}</p>
-            )}
           </div>
 
           <div>
-            <label htmlFor="numero_nota_fiscal" className="block text-sm font-medium text-gray-700">
-              Número da Nota Fiscal
-            </label>
-            <input
-              type="text"
-              id="numero_nota_fiscal"
-              {...form.register("numero_nota_fiscal")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            />
-            {form.formState.errors.numero_nota_fiscal && (
-              <p className="mt-1 text-sm text-red-600">{form.formState.errors.numero_nota_fiscal.message}</p>
-            )}
+            <Label className="block text-sm font-medium mb-1">Tipo de Título *</Label>
+            <Select value={tipoTituloId} onValueChange={setTipoTituloId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo de título" />
+              </SelectTrigger>
+              <SelectContent>
+                {tipoTitulos.map((tipo) => (
+                  <SelectItem key={tipo.id} value={tipo.id}>
+                    {tipo.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div>
-            <label htmlFor="observacoes" className="block text-sm font-medium text-gray-700">
-              Observações
-            </label>
-            <textarea
-              id="observacoes"
-              {...form.register("observacoes")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              rows={3}
-            />
-            {form.formState.errors.observacoes && (
-              <p className="mt-1 text-sm text-red-600">{form.formState.errors.observacoes.message}</p>
-            )}
-          </div>
+          {orcamento && (
+            <div className="border rounded-md p-3 bg-gray-50">
+              <p className="font-medium">Orçamento: {orcamento.codigo}</p>
+              <p className="text-sm text-muted-foreground">
+                {orcamento.favorecido?.nome || "Favorecido não identificado"}
+              </p>
+            </div>
+          )}
+        </div>
 
-          <div>
-            <label htmlFor="favorecido_id" className="block text-sm font-medium text-gray-700">
-              Favorecido
-            </label>
-            <input
-              type="text"
-              id="favorecido_id"
-              {...form.register("favorecido_id")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              disabled
-            />
-            {form.formState.errors.favorecido_id && (
-              <p className="mt-1 text-sm text-red-600">{form.formState.errors.favorecido_id.message}</p>
+        <DialogFooter className="mt-6">
+          <DialogClose asChild>
+            <Button variant="outline" disabled={isLoading}>Cancelar</Button>
+          </DialogClose>
+          <Button 
+            variant="blue" 
+            onClick={handleConfirmar}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 mr-2 border-t-2 border-white" />
+                Processando...
+              </>
+            ) : (
+              "Confirmar"
             )}
-          </div>
-
-          <div>
-            <label htmlFor="forma_pagamento" className="block text-sm font-medium text-gray-700">
-              Forma de Pagamento
-            </label>
-            <input
-              type="text"
-              id="forma_pagamento"
-              {...form.register("forma_pagamento")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            />
-            {form.formState.errors.forma_pagamento && (
-              <p className="mt-1 text-sm text-red-600">{form.formState.errors.forma_pagamento.message}</p>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="blue" disabled={isSubmitting}>
-              {isSubmitting ? "Salvando..." : "Efetivar Venda"}
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

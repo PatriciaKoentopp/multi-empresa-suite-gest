@@ -1,167 +1,202 @@
-import { ModuleNavItem } from "@/types";
-import {
-  BarChart,
-  Calculator,
-  DollarSign,
-  Grid,
-  HelpCircle,
-  List,
-  Settings,
-  ShoppingBag,
-  User,
-  Users
-} from "lucide-react";
 
-export const navigationItems: ModuleNavItem[] = [
+import { ModuleNavItem } from "@/types";
+
+// Esta configuração define os itens de navegação do sistema
+export const navigationConfig: ModuleNavItem[] = [
   {
-    key: "dashboard",
     title: "Dashboard",
-    icon: Grid,
     href: "/dashboard",
+    icon: "Grid",
   },
   {
-    key: "cadastros",
-    title: "Cadastros",
-    icon: List,
-    items: [
+    title: "Administrativo",
+    icon: "Settings",
+    subItems: [
       {
-        title: "Favorecidos",
-        href: "/cadastros/favorecidos",
-        description: "Gerenciar clientes e fornecedores"
-      },
-      {
-        title: "Produtos",
-        href: "/cadastros/produtos",
-        description: "Gerenciar produtos"
-      },
-      {
-        title: "Serviços",
-        href: "/cadastros/servicos",
-        description: "Gerenciar serviços"
+        title: "Empresas",
+        href: "/admin/empresas",
       },
       {
         title: "Usuários",
-        href: "/cadastros/usuarios",
-        description: "Gerenciar usuários do sistema"
+        href: "/admin/usuarios",
+      },
+      {
+        title: "Permissões",
+        href: "/admin/permissoes",
+      },
+      {
+        title: "Parâmetros",
+        href: "/admin/parametros",
       },
     ],
   },
   {
-    key: "financeiro",
+    title: "Cadastros",
+    icon: "List",
+    subItems: [
+      {
+        title: "Grupo de Favorecidos",
+        href: "/cadastros/grupo-favorecidos",
+      },
+      {
+        title: "Grupos de Produtos/Serviços",
+        href: "/cadastros/grupo-produtos",
+      },
+      {
+        title: "Favorecidos",
+        href: "/cadastros/favorecidos",
+      },
+      {
+        title: "Profissões",
+        href: "/cadastros/profissoes",
+      },
+      {
+        title: "Origens",
+        href: "/cadastros/origens",
+      },
+      {
+        title: "Motivos de Perda",
+        href: "/cadastros/motivos-perda",
+      },
+      {
+        title: "Conta Corrente",
+        href: "/cadastros/conta-corrente",
+      },
+      {
+        title: "Tipos de Títulos",
+        href: "/cadastros/tipos-titulos",
+      },
+    ],
+  },
+  {
     title: "Financeiro",
-    icon: DollarSign,
-    items: [
+    icon: "DollarSign",
+    subItems: [
+      {
+        title: "Painel Financeiro",
+        href: "/financeiro/painel-financeiro",
+      },
       {
         title: "Fluxo de Caixa",
         href: "/financeiro/fluxo-caixa",
-        description: "Acompanhar movimentações financeiras"
+      },
+      {
+        title: "Movimentação",
+        href: "/financeiro/movimentacao",
       },
       {
         title: "Contas a Pagar",
-        href: "/financeiro/contas-pagar",
-        description: "Gerenciar contas a pagar"
+        href: "/financeiro/contas-a-pagar",
       },
       {
         title: "Contas a Receber",
         href: "/financeiro/contas-receber",
-        description: "Gerenciar contas a receber"
       },
       {
-        title: "Conciliação Bancária",
-        href: "/financeiro/conciliacao-bancaria",
-        description: "Conciliar extratos bancários"
+        title: "Antecipações",
+        href: "/financeiro/antecipacoes",
       },
     ],
   },
   {
-    key: "vendas",
+    title: "Contábil",
+    icon: "Calculator",
+    subItems: [
+      {
+        title: "Plano de Contas",
+        href: "/contabil/plano-contas",
+      },
+      {
+        title: "Lançamentos",
+        href: "/contabil/lancamentos",
+      },
+      {
+        title: "DRE",
+        href: "/contabil/dre",
+      },
+      {
+        title: "Balanço",
+        href: "/contabil/balanco",
+      },
+    ],
+  },
+  {
     title: "Vendas",
-    icon: ShoppingBag,
-    items: [
+    icon: "ShoppingBag",
+    subItems: [
+      {
+        title: "Painel de Vendas",
+        href: "/vendas/painel-vendas",
+      },
+      {
+        title: "Produtos",
+        href: "/vendas/produtos",
+      },
+      {
+        title: "Serviços",
+        href: "/vendas/servicos",
+      },
+      {
+        title: "Tabela de Preços",
+        href: "/vendas/tabela-precos",
+      },
       {
         title: "Orçamentos",
-        href: "/vendas/orcamentos",
-        description: "Gerenciar orçamentos de vendas"
+        href: "/vendas/orcamento",
+      },
+      {
+        title: "Contratos",
+        href: "/vendas/contratos",
+      },
+      {
+        title: "Faturamento",
+        href: "/vendas/faturamento",
       },
     ],
   },
   {
-    key: "crm",
     title: "CRM",
-    icon: Users,
-    items: [
+    icon: "Users",
+    subItems: [
+      {
+        title: "Painel do CRM",
+        href: "/crm/painel",
+      },
       {
         title: "Leads",
         href: "/crm/leads",
-        description: "Gerenciar leads e oportunidades"
+      },
+      {
+        title: "Conf. do Funil",
+        href: "/crm/funil-configuracao",
+      },
+      {
+        title: "Marketing",
+        href: "/crm/marketing",
       },
     ],
   },
   {
-    key: "contabil",
-    title: "Contábil",
-    icon: Calculator,
-    items: [
-      {
-        title: "Plano de Contas",
-        href: "/contabilidade/plano-contas",
-        description: "Gerenciar plano de contas"
-      },
-      {
-        title: "Lançamentos Contábeis",
-        href: "/contabilidade/lancamentos-contabeis",
-        description: "Gerenciar lançamentos contábeis"
-      },
-      {
-        title: "Balanço Patrimonial",
-        href: "/contabilidade/balanco-patrimonial",
-        description: "Visualizar balanço patrimonial"
-      },
-    ],
-  },
-  {
-    key: "relatorios",
     title: "Relatórios",
-    icon: BarChart,
-    items: [
-      {
-        title: "Relatório de Vendas",
-        href: "/relatorios/vendas",
-        description: "Análise detalhada das vendas"
-      },
-      {
-        title: "Relatório de Fluxo de Caixa",
-        href: "/relatorios/fluxo-caixa",
-        description: "Acompanhamento do fluxo de caixa"
-      },
-      {
-        title: "Relatório de Clientes",
-        href: "/relatorios/clientes",
-        description: "Informações detalhadas sobre clientes"
-      },
-    ],
+    icon: "BarChart",
+    href: "/relatorios",
+  },
+];
+
+export const userNavigation: ModuleNavItem[] = [
+  {
+    title: "Perfil",
+    href: "/perfil",
+    icon: "User",
   },
   {
-    key: "admin",
-    title: "Administração",
-    icon: Settings,
-    items: [
-      {
-        title: "Empresa",
-        href: "/admin/empresa",
-        description: "Configurações da empresa"
-      },
-      {
-        title: "Módulos e Parâmetros",
-        href: "/admin/modulos-parametros",
-        description: "Configurações dos módulos"
-      },
-    ],
+    title: "Configurações",
+    href: "/configuracoes",
+    icon: "Settings",
   },
   {
-    key: "ajuda",
     title: "Ajuda",
-    icon: HelpCircle,
-    href: "/style-guide",
+    href: "/ajuda",
+    icon: "HelpCircle",
   }
 ];

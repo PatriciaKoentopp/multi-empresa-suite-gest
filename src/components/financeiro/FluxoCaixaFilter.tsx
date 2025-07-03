@@ -1,121 +1,194 @@
 
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FiltroFluxoCaixa } from "@/types/financeiro";
-import { subDays } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon, Filter } from "lucide-react";
+import { format, subDays, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { FiltroFluxoCaixa, ContaCorrenteItem } from "@/types/financeiro";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface FluxoCaixaFilterProps {
+  contas: ContaCorrenteItem[];
   filtro: FiltroFluxoCaixa;
   onFiltroChange: (filtro: FiltroFluxoCaixa) => void;
-  contasCorrentes: { id: string; nome: string }[];
 }
 
-export function FluxoCaixaFilter({ filtro, onFiltroChange, contasCorrentes }: FluxoCaixaFilterProps) {
-  const [dataInicio, setDataInicio] = useState<Date | undefined>(filtro.dataInicio);
-  const [dataFim, setDataFim] = useState<Date | undefined>(filtro.dataFim);
-  const [contaId, setContaId] = useState<string>(filtro.contaId || '');
-  const [situacao, setSituacao] = useState<string>(filtro.situacao || '');
+export const FluxoCaixaFilter = ({
+  contas,
+  filtro,
+  onFiltroChange,
+}: FluxoCaixaFilterProps) => {
+  const [dataInicio, setDataInicio] = useState<Date>(filtro.dataInicio);
+  const [dataFim, setDataFim] = useState<Date>(filtro.dataFim);
+  const [contaId, setContaId] = useState<string | null>(filtro.contaId);
+  const [situacao, setSituacao] = useState<string | null>(filtro.situacao || "todos");
 
-  useEffect(() => {
-    setDataInicio(filtro.dataInicio);
-    setDataFim(filtro.dataFim);
-    setContaId(filtro.contaId || '');
-    setSituacao(filtro.situacao || '');
-  }, [filtro]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const aplicarFiltro = () => {
     onFiltroChange({
       dataInicio,
       dataFim,
-      conta_corrente_id: contaId,
       contaId,
-      situacao
+      situacao,
     });
   };
 
-  const handleLimpar = () => {
-    const novoFiltro = {
-      dataInicio: subDays(new Date(), 30),
-      dataFim: new Date(),
-      conta_corrente_id: '',
-      contaId: '',
-      situacao: ''
-    };
+  const aplicarFiltroPreDefinido = (tipo: string) => {
+    const hoje = new Date();
+    let novaDataInicio;
+    let novaDataFim = hoje;
+
+    switch (tipo) {
+      case "7dias":
+        novaDataInicio = subDays(hoje, 7);
+        break;
+      case "30dias":
+        novaDataInicio = subDays(hoje, 30);
+        break;
+      case "mesAtual":
+        novaDataInicio = startOfMonth(hoje);
+        novaDataFim = endOfMonth(hoje);
+        break;
+      case "mesAnterior":
+        const mesAnterior = subMonths(hoje, 1);
+        novaDataInicio = startOfMonth(mesAnterior);
+        novaDataFim = endOfMonth(mesAnterior);
+        break;
+      default:
+        novaDataInicio = dataInicio;
+    }
+
+    setDataInicio(novaDataInicio);
+    setDataFim(novaDataFim);
     
-    setDataInicio(novoFiltro.dataInicio);
-    setDataFim(novoFiltro.dataFim);
-    setContaId('');
-    setSituacao('');
-    
-    onFiltroChange(novoFiltro);
+    onFiltroChange({
+      dataInicio: novaDataInicio,
+      dataFim: novaDataFim,
+      contaId,
+      situacao,
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap gap-4 items-end">
-      <div className="flex flex-col">
-        <Label htmlFor="dataInicio">Data Início</Label>
-        <Input
-          type="date"
-          id="dataInicio"
-          value={dataInicio ? dataInicio.toISOString().split('T')[0] : ''}
-          onChange={(e) => setDataInicio(e.target.value ? new Date(e.target.value) : undefined)}
-        />
-      </div>
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <h4 className="text-sm font-medium">Filtros</h4>
+          </div>
 
-      <div className="flex flex-col">
-        <Label htmlFor="dataFim">Data Fim</Label>
-        <Input
-          type="date"
-          id="dataFim"
-          value={dataFim ? dataFim.toISOString().split('T')[0] : ''}
-          onChange={(e) => setDataFim(e.target.value ? new Date(e.target.value) : undefined)}
-        />
-      </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="conta" className="text-xs text-muted-foreground">
+                Conta
+              </label>
+              <Select
+                value={contaId || "todas"}
+                onValueChange={(valor) => setContaId(valor === "todas" ? null : valor)}
+              >
+                <SelectTrigger id="conta" className="h-8">
+                  <SelectValue placeholder="Todas as contas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as contas</SelectItem>
+                  {contas.map((conta) => (
+                    <SelectItem key={conta.id} value={conta.id}>
+                      {conta.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      <div className="flex flex-col">
-        <Label htmlFor="contaCorrente">Conta Corrente</Label>
-        <Select value={contaId} onValueChange={setContaId}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Selecione a conta" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Todas</SelectItem>
-            {contasCorrentes.map((conta) => (
-              <SelectItem key={conta.id} value={conta.id}>
-                {conta.nome}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground">Data inicial</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-8 justify-start text-left font-normal",
+                      !dataInicio && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dataInicio ? (
+                      format(dataInicio, "dd/MM/yyyy")
+                    ) : (
+                      <span>Selecione a data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={dataInicio}
+                    onSelect={(date) => date && setDataInicio(date)}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-      <div className="flex flex-col">
-        <Label htmlFor="situacao">Situação</Label>
-        <Select value={situacao} onValueChange={setSituacao}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Selecione a situação" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Todos</SelectItem>
-            <SelectItem value="pendente">Pendente</SelectItem>
-            <SelectItem value="pago">Pago</SelectItem>
-            <SelectItem value="cancelado">Cancelado</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground">Data final</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-8 justify-start text-left font-normal",
+                      !dataFim && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dataFim ? (
+                      format(dataFim, "dd/MM/yyyy")
+                    ) : (
+                      <span>Selecione a data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={dataFim}
+                    onSelect={(date) => date && setDataFim(date)}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-      <div className="flex gap-2">
-        <Button type="submit" variant="blue">
-          Filtrar
-        </Button>
-        <Button type="button" variant="outline" onClick={handleLimpar}>
-          Limpar
-        </Button>
-      </div>
-    </form>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground">Período</label>
+              <Select
+                onValueChange={aplicarFiltroPreDefinido}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7dias">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30dias">Últimos 30 dias</SelectItem>
+                  <SelectItem value="mesAtual">Mês atual</SelectItem>
+                  <SelectItem value="mesAnterior">Mês anterior</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button className="h-8 self-end" onClick={aplicarFiltro}>
+              Aplicar Filtros
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
-}
+};
