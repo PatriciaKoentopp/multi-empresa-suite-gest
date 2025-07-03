@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -141,7 +140,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
   // Calcular valores
   const valorConta = conta?.valor || 0;
   const valorAcrescimos = multa + juros;
-  const valorTotalAntecipacoes = antecipacoesSelecionadas.reduce((total, ant) => total + ant.valor, 0);
+  const valorTotalAntecipacoes = antecipacoesSelecionadas.reduce((total, ant) => total + (ant.valor || ant.valor_utilizado), 0);
   const valorTotalConta = valorConta + valorAcrescimos - desconto;
   const valorAReceber = Math.max(0, valorTotalConta - valorTotalAntecipacoes);
 
@@ -154,7 +153,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
         const valorDisponivel = antecipacao.valor_disponivel;
         setAntecipacoesSelecionadas(prev => [
           ...prev,
-          { id: antecipacaoId, valor: valorDisponivel }
+          { id: antecipacaoId, valor_utilizado: valorDisponivel, valor: valorDisponivel }
         ]);
       }
     } else {
@@ -165,7 +164,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
   const handleValorAntecipacaoChange = (antecipacaoId: string, valor: number) => {
     setAntecipacoesSelecionadas(prev =>
       prev.map(ant =>
-        ant.id === antecipacaoId ? { ...ant, valor } : ant
+        ant.id === antecipacaoId ? { ...ant, valor_utilizado: valor, valor } : ant
       )
     );
   };
@@ -174,7 +173,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antecipacaoId);
     const valorJaUsado = antecipacoesSelecionadas
       .filter(ant => ant.id !== antecipacaoId)
-      .reduce((total, ant) => total + ant.valor, 0);
+      .reduce((total, ant) => total + (ant.valor || ant.valor_utilizado), 0);
     const valorRestante = Math.max(0, valorTotalConta - valorJaUsado);
     
     return Math.min(
@@ -197,11 +196,11 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     // Validar valores das antecipações
     for (const antSel of antecipacoesSelecionadas) {
       const maxValor = getMaxValorAntecipacao(antSel.id);
-      if (antSel.valor <= 0) {
+      if ((antSel.valor || 0) <= 0) {
         toast.error("Informe valores válidos para as antecipações selecionadas.");
         return;
       }
-      if (antSel.valor > maxValor) {
+      if ((antSel.valor || 0) > maxValor) {
         toast.error("Valor da antecipação não pode exceder o disponível ou o valor da conta.");
         return;
       }
@@ -247,7 +246,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
       // 2. Inserir registros na nova tabela de relacionamento para cada antecipação
       if (usarAntecipacao && antecipacoesSelecionadas.length > 0) {
         for (const antSel of antecipacoesSelecionadas) {
-          if (antSel.valor > 0) {
+          if ((antSel.valor || 0) > 0) {
             const { error: relationError } = await supabase
               .from("movimentacoes_parcelas_antecipacoes")
               .insert({
@@ -263,8 +262,8 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
         // 3. Atualizar valor utilizado nas antecipações
         for (const antSel of antecipacoesSelecionadas) {
           const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
-          if (antecipacao && antSel.valor > 0) {
-            const novoValorUtilizado = antecipacao.valor_utilizado + antSel.valor;
+          if (antecipacao && (antSel.valor || 0) > 0) {
+            const novoValorUtilizado = antecipacao.valor_utilizado + (antSel.valor || 0);
             
             const { error: antecipacaoError } = await supabase
               .from("antecipacoes")
@@ -279,7 +278,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
 
         // 4. Inserir registros no fluxo de caixa para cada antecipação utilizada
         for (const antSel of antecipacoesSelecionadas) {
-          if (antSel.valor > 0) {
+          if ((antSel.valor || 0) > 0) {
             const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
             
             const { error: fluxoAntecipacaoError } = await supabase
@@ -287,8 +286,8 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
               .insert({
                 empresa_id: currentCompany?.id,
                 data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
-                valor: -antSel.valor, // Negativo pois é utilização de antecipação
-                saldo: -antSel.valor,
+                valor: -(antSel.valor || 0), // Negativo pois é utilização de antecipação
+                saldo: -(antSel.valor || 0),
                 tipo_operacao: "receber",
                 origem: "antecipacao",
                 movimentacao_parcela_id: conta?.id,

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -77,7 +78,7 @@ export function FluxoCaixaFilter({ filtro, onFiltroChange, contasCorrentes }: Fl
 
       <div className="flex flex-col">
         <Label htmlFor="contaCorrente">Conta Corrente</Label>
-        <Select value={contaId} onValueChange={setContaId} id="contaCorrente">
+        <Select value={contaId} onValueChange={setContaId}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Selecione a conta" />
           </SelectTrigger>
@@ -94,7 +95,7 @@ export function FluxoCaixaFilter({ filtro, onFiltroChange, contasCorrentes }: Fl
 
       <div className="flex flex-col">
         <Label htmlFor="situacao">Situação</Label>
-        <Select value={situacao} onValueChange={setSituacao} id="situacao">
+        <Select value={situacao} onValueChange={setSituacao}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Selecione a situação" />
           </SelectTrigger>
