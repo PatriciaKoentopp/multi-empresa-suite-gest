@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -14,22 +15,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ContaCorrenteItem } from '@/types/financeiro';
 import { Parcela } from '@/types/orcamento';
-import { ParcelaForm } from '../parcela/ParcelaForm';
-import { useToast } from '@/components/ui/use-toast';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { PlusCircle } from 'lucide-react';
-import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { ParcelasForm } from '../parcela/ParcelaForm';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   data: z.date(),
@@ -94,6 +81,18 @@ export const RecebimentoForm = ({ onSubmit }: RecebimentoFormProps) => {
       description: 'Recebimento cadastrado com sucesso.',
     });
     onSubmit(data);
+  };
+
+  const handleValorChange = (index: number, valor: number) => {
+    const novasParcelas = [...parcelas];
+    novasParcelas[index].valor = valor;
+    setParcelas(novasParcelas);
+  };
+
+  const handleDataChange = (index: number, data: string) => {
+    const novasParcelas = [...parcelas];
+    novasParcelas[index].dataVencimento = data;
+    setParcelas(novasParcelas);
   };
 
   return (
@@ -177,8 +176,8 @@ export const RecebimentoForm = ({ onSubmit }: RecebimentoFormProps) => {
       
       <ParcelasForm 
         parcelas={parcelas} 
-        onValorChange={() => {}}
-        onDataChange={() => {}}
+        onValorChange={handleValorChange}
+        onDataChange={handleDataChange}
       />
 
       <Button onClick={handleSubmit(onSubmitForm)}>Salvar</Button>

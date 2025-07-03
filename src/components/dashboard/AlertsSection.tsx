@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,10 +39,6 @@ export const AlertsSection = () => {
   const [currentSlide, setCurrentSlide] = useState("0");
   const navigate = useNavigate();
 
-  const handleSlideChange = (index: number) => {
-    setCurrentSlide(index.toString());
-  };
-
   const handleGoToAlert = (alertType: string) => {
     navigate(alertType);
   };
@@ -55,7 +52,6 @@ export const AlertsSection = () => {
         <Carousel
           opts={{
             loop: true,
-            onChange: handleSlideChange,
           }}
           className="relative"
         >
