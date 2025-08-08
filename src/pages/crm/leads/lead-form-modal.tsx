@@ -237,6 +237,11 @@ export function LeadFormModal({
       const primeiraEtapa = etapas.length > 0 ? etapas[0].id : "";
       const primeiraOrigem = origens.length > 0 ? origens[0].id : "";
       
+      // Verificar se temos etapas disponíveis
+      if (etapas.length === 0) {
+        console.warn("Nenhuma etapa disponível para o funil");
+      }
+      
       setFormData({
         nome: "",
         empresa: "",
@@ -497,7 +502,7 @@ export function LeadFormModal({
         servico_id: formData.servico_id || null,
         email: formData.email,
         telefone: formData.telefone,
-        etapa_id: formData.etapaId,
+        etapa_id: formData.etapaId || (etapas.length > 0 ? etapas[0].id : null),
         valor: formData.valor,
         origem_id: formData.origemId,
         responsavel_id: formData.responsavelId,

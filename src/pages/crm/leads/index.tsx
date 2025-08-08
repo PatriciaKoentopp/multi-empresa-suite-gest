@@ -380,12 +380,22 @@ export default function LeadsPage() {
         return;
       }
       
+      // Verificar se etapaId está vazio e usar a primeira etapa disponível
+      const etapaIdToUse = leadData.etapaId || (selectedFunil?.etapas?.[0]?.id);
+      
+      if (!etapaIdToUse) {
+        toast.error("Erro ao salvar lead", {
+          description: "Nenhuma etapa disponível para o funil selecionado."
+        });
+        return;
+      }
+      
       const leadToSave = {
         nome: leadData.nome,
         empresa: leadData.empresa,
         email: leadData.email,
         telefone: leadData.telefone,
-        etapa_id: leadData.etapaId,
+        etapa_id: etapaIdToUse,
         funil_id: selectedFunilId,
         valor: leadData.valor,
         origem_id: leadData.origemId,
