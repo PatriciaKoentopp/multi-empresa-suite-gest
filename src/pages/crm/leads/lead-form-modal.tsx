@@ -502,13 +502,13 @@ export function LeadFormModal({
         servico_id: formData.servico_id || null,
         email: formData.email,
         telefone: formData.telefone,
-        etapa_id: formData.etapaId || (etapas.length > 0 ? etapas[0].id : null),
+        etapaId: formData.etapaId || (etapas.length > 0 ? etapas[0].id : null),
         valor: formData.valor,
-        origem_id: formData.origemId,
-        responsavel_id: formData.responsavelId,
+        origemId: formData.origemId,
+        responsavelId: formData.responsavelId,
         empresa_id: empresaId,
-        data_criacao: formData.dataCriacao,
-        ultimo_contato: formData.ultimoContato
+        dataCriacao: formData.dataCriacao,
+        ultimoContato: formData.ultimoContato
       };
       
       console.log('Dados mapeados para salvar:', leadData);

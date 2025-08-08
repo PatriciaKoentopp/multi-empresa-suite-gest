@@ -401,6 +401,9 @@ export default function LeadsPage() {
         origem_id: leadData.origemId,
         responsavel_id: leadData.responsavelId,
         produto: leadData.produto,
+        produto_id: leadData.produto_id,
+        servico_id: leadData.servico_id,
+        favorecido_id: leadData.favorecido_id,
         empresa_id: leadData.empresa_id || empresaId,
         status: leadData.status || 'ativo'
       };
