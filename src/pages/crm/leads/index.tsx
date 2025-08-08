@@ -238,7 +238,7 @@ export default function LeadsPage() {
       
       console.log('Buscando leads para o funil:', funilIdToFetch);
       
-      // Modificar a consulta para não usar o join implícito em responsavel_id
+      // Modificar a consulta para incluir TODOS os campos necessários
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
         .select(`
@@ -256,6 +256,9 @@ export default function LeadsPage() {
           ultimo_contato, 
           responsavel_id,
           produto,
+          produto_id,
+          servico_id,
+          favorecido_id,
           status
         `)
         .eq('funil_id', funilIdToFetch)
@@ -316,6 +319,9 @@ export default function LeadsPage() {
         responsavelId: lead.responsavel_id || '',
         responsavelNome: lead.responsavel_id ? responsaveisMap.get(lead.responsavel_id) || 'Não atribuído' : 'Não atribuído',
         produto: lead.produto || '',
+        produto_id: lead.produto_id || '',
+        servico_id: lead.servico_id || '',
+        favorecido_id: lead.favorecido_id || '',
         status: lead.status || 'ativo'
       }));
 
