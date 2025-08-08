@@ -81,12 +81,21 @@ export function LeadDadosTab({
 
   // Determinar o valor atual para o Select de produtos
   const getCurrentProductSelectValue = () => {
+    console.log('getCurrentProductSelectValue - formData.produto_id:', formData.produto_id);
+    console.log('getCurrentProductSelectValue - formData.servico_id:', formData.servico_id);
+    console.log('getCurrentProductSelectValue - produtosServicos:', produtosServicos);
+    
     if (formData.produto_id) {
-      return `produto:${formData.produto_id}`;
+      const valueToReturn = `produto:${formData.produto_id}`;
+      console.log('Retornando valor para produto:', valueToReturn);
+      return valueToReturn;
     }
     if (formData.servico_id) {
-      return `servico:${formData.servico_id}`;
+      const valueToReturn = `servico:${formData.servico_id}`;
+      console.log('Retornando valor para servico:', valueToReturn);
+      return valueToReturn;
     }
+    console.log('Retornando _none_');
     return "_none_";
   };
 
