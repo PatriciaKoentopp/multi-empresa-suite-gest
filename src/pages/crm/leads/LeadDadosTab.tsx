@@ -27,6 +27,15 @@ export function LeadDadosTab({
   const { items: produtosServicos = [], isLoading: isLoadingProdutos } = useProdutosServicos();
   const { data: favorecidos = [], isLoading: isLoadingFavorecidos } = useFavorecidos();
 
+  // Log para debug quando os dados mudam
+  React.useEffect(() => {
+    console.log('Produtos/Serviços carregados:', produtosServicos);
+    console.log('FormData atual:', {
+      produto_id: formData.produto_id,
+      servico_id: formData.servico_id
+    });
+  }, [produtosServicos, formData.produto_id, formData.servico_id]);
+
   // Função para lidar com a seleção de produto ou serviço
   const handleItemSelect = (value: string) => {
     if (!value || value === "_none_") {
@@ -83,15 +92,19 @@ export function LeadDadosTab({
   const getCurrentProductSelectValue = () => {
     console.log('getCurrentProductSelectValue - formData.produto_id:', formData.produto_id);
     console.log('getCurrentProductSelectValue - formData.servico_id:', formData.servico_id);
-    console.log('getCurrentProductSelectValue - produtosServicos:', produtosServicos);
+    console.log('getCurrentProductSelectValue - produtosServicos length:', produtosServicos.length);
     
     if (formData.produto_id) {
       const valueToReturn = `produto:${formData.produto_id}`;
+      const foundItem = produtosServicos.find(item => item.tipo === "produto" && item.id === formData.produto_id);
+      console.log('Procurando produto com ID:', formData.produto_id, 'Encontrado:', foundItem);
       console.log('Retornando valor para produto:', valueToReturn);
       return valueToReturn;
     }
     if (formData.servico_id) {
       const valueToReturn = `servico:${formData.servico_id}`;
+      const foundItem = produtosServicos.find(item => item.tipo === "servico" && item.id === formData.servico_id);
+      console.log('Procurando serviço com ID:', formData.servico_id, 'Encontrado:', foundItem);
       console.log('Retornando valor para servico:', valueToReturn);
       return valueToReturn;
     }
