@@ -34,12 +34,16 @@ export function LeadDadosTab({
       produto_id: formData.produto_id,
       servico_id: formData.servico_id
     });
-  }, [produtosServicos, formData.produto_id, formData.servico_id]);
+    console.log('isLoadingProdutos:', isLoadingProdutos);
+  }, [produtosServicos, formData.produto_id, formData.servico_id, isLoadingProdutos]);
 
   // Função para lidar com a seleção de produto ou serviço
   const handleItemSelect = (value: string) => {
+    console.log('handleItemSelect chamado com valor:', value);
+    
     if (!value || value === "_none_") {
       // Se o valor for vazio, limpar todos os campos relacionados
+      console.log('Limpando campos produto/serviço');
       handleSelectChange("produto_id", "");
       handleSelectChange("servico_id", "");
       handleSelectChange("produto", "");
@@ -153,34 +157,32 @@ export function LeadDadosTab({
       </div>
       <div className="space-y-2">
         <Label>Produto/Serviço</Label>
-        <Select
-          value={getCurrentProductSelectValue()}
-          onValueChange={handleItemSelect}
-        >
-          <SelectTrigger className="bg-white">
-            <SelectValue placeholder="Selecione um produto ou serviço" />
-          </SelectTrigger>
-          <SelectContent className="bg-white z-50">
-            {isLoadingProdutos ? (
-              <div className="flex items-center justify-center py-2">
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span>Carregando...</span>
-              </div>
-            ) : (
-              <>
-                <SelectItem value="_none_">Nenhum</SelectItem>
-                {produtosServicos.map((item) => (
-                  <SelectItem 
-                    key={`${item.tipo}-${item.id}`} 
-                    value={`${item.tipo}:${item.id}`}
-                  >
-                    {item.nome} ({item.tipo === "produto" ? "Produto" : "Serviço"})
-                  </SelectItem>
-                ))}
-              </>
-            )}
-          </SelectContent>
-        </Select>
+        {isLoadingProdutos ? (
+          <div className="flex items-center justify-center py-8 border rounded">
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            <span>Carregando produtos e serviços...</span>
+          </div>
+        ) : (
+          <Select
+            value={getCurrentProductSelectValue()}
+            onValueChange={handleItemSelect}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Selecione um produto ou serviço" />
+            </SelectTrigger>
+            <SelectContent className="bg-white z-50">
+              <SelectItem value="_none_">Nenhum</SelectItem>
+              {produtosServicos.map((item) => (
+                <SelectItem 
+                  key={`${item.tipo}-${item.id}`} 
+                  value={`${item.tipo}:${item.id}`}
+                >
+                  {item.nome} ({item.tipo === "produto" ? "Produto" : "Serviço"})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
