@@ -16,7 +16,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
   const [categoria, setCategoria] = useState(movimentacaoEditando?.categoria_id || "");
   const [formaPagamento, setFormaPagamento] = useState(movimentacaoEditando?.forma_pagamento || "1");
   const [descricao, setDescricao] = useState(movimentacaoEditando?.descricao || "");
-  const [valor, setValor] = useState(movimentacaoEditando?.valor ? movimentacaoEditando.valor.toString() : "0");
+  const [valor, setValor] = useState(movimentacaoEditando?.valor ? movimentacaoEditando.valor.toFixed(2).replace('.', ',') : "0");
   const [numParcelas, setNumParcelas] = useState(movimentacaoEditando?.numero_parcelas || 1);
   const [dataPrimeiroVenc, setDataPrimeiroVenc] = useState(movimentacaoEditando?.primeiro_vencimento ? parseDateString(formatDate(movimentacaoEditando.primeiro_vencimento)) : new Date());
   const [considerarDRE, setConsiderarDRE] = useState(movimentacaoEditando?.considerar_dre ?? true);

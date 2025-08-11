@@ -49,13 +49,15 @@ export function ParcelasForm({
           <div className="w-full md:w-1/3">
             <label className="block text-xs mb-1">Valor</label>
             <Input
-              type="number"
-              value={parcela.valor}
-              onChange={(e) => onValorChange(index, parseFloat(e.target.value) || 0)}
+              type="text"
+              value={parcela.valor.toFixed(2).replace('.', ',')}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9,]/g, '');
+                const numericValue = parseFloat(value.replace(',', '.')) || 0;
+                onValorChange(index, numericValue);
+              }}
               className={readOnly ? "bg-gray-100" : ""}
               disabled={readOnly}
-              min={0}
-              step={0.01}
             />
           </div>
           
