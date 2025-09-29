@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Filter, X, ChevronDown, ChevronUp, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ContasAPagarTable, ContaPagar } from "@/components/contas-a-pagar/contas-a-pagar-table";
@@ -35,6 +35,7 @@ import { formatDate } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ContaCorrente } from "@/types/conta-corrente";
 import { AntecipacaoSelecionada } from "@/types/financeiro";
+import { useExcelContasPagar } from "@/hooks/useExcelContasPagar";
 
 export default function ContasAPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>([]);
@@ -68,6 +69,7 @@ export default function ContasAPagarPage() {
   const [contaCorrenteNome, setContaCorrenteNome] = useState<string>("");
 
   const { currentCompany } = useCompany();
+  const { exportToExcel, isGenerating } = useExcelContasPagar();
 
   // Buscar contas correntes
   useEffect(() => {
@@ -651,12 +653,27 @@ export default function ContasAPagarPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Contas a Pagar</h1>
-        <Button
-          variant="blue"
-          onClick={() => navigate("/financeiro/incluir-movimentacao")}
-        >
-          Nova Conta a Pagar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(filteredContas, {
+              searchTerm,
+              statusFilter,
+              dataVencInicio,
+              dataVencFim
+            })}
+            disabled={isGenerating}
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            {isGenerating ? "Gerando..." : "Exportar Excel"}
+          </Button>
+          <Button
+            variant="blue"
+            onClick={() => navigate("/financeiro/incluir-movimentacao")}
+          >
+            Nova Conta a Pagar
+          </Button>
+        </div>
       </div>
       <Card>
         <CardContent className="pt-6">
