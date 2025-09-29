@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, Search, Filter, X } from "lucide-react";
+import { Calendar, Search, Filter, X, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ContaPagar } from "@/components/contas-a-pagar/contas-a-pagar-table";
@@ -30,11 +30,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMovimentacaoDados } from "@/hooks/useMovimentacaoDados";
 import { formatDate } from "@/lib/utils";
 import { DateInput } from "@/components/movimentacao/DateInput";
+import { useExcelMovimentacao } from "@/hooks/useExcelMovimentacao";
 
 export default function MovimentacaoPage() {
   const [movimentacoes, setMovimentacoes] = useState<ContaPagar[]>([]);
   const navigate = useNavigate();
   const { tiposTitulos } = useMovimentacaoDados();
+  const { exportToExcel } = useExcelMovimentacao();
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
@@ -326,12 +328,22 @@ export default function MovimentacaoPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Movimentação</h1>
-        <Button
-          variant="blue"
-          onClick={() => navigate("/financeiro/incluir-movimentacao")}
-        >
-          Nova Movimentação
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(filteredMovimentacoes, searchTerm, periodo)}
+            className="flex items-center gap-2"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            Exportar Excel
+          </Button>
+          <Button
+            variant="blue"
+            onClick={() => navigate("/financeiro/incluir-movimentacao")}
+          >
+            Nova Movimentação
+          </Button>
+        </div>
       </div>
       
       <Card>
