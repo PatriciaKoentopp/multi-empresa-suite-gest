@@ -35,12 +35,13 @@ import { useExcelMovimentacao } from "@/hooks/useExcelMovimentacao";
 export default function MovimentacaoPage() {
   const [movimentacoes, setMovimentacoes] = useState<ContaPagar[]>([]);
   const navigate = useNavigate();
-  const { tiposTitulos } = useMovimentacaoDados();
+  const { tiposTitulos, categorias } = useMovimentacaoDados();
   const { exportToExcel } = useExcelMovimentacao();
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [tipoTituloId, setTipoTituloId] = useState<string>("todos");
+  const [categoriaId, setCategoriaId] = useState<string>("todos");
   const [periodo, setPeriodo] = useState<"mes_atual" | "mes_anterior" | "personalizado">("mes_atual");
   const [dataInicial, setDataInicial] = useState<Date | undefined>();
   const [dataFinal, setDataFinal] = useState<Date | undefined>();
@@ -133,7 +134,8 @@ export default function MovimentacaoPage() {
           .from('movimentacoes')
           .select(`
             *,
-            favorecido:favorecidos(nome)
+            favorecido:favorecidos(nome),
+            categoria:plano_contas(id, descricao)
           `);
 
         if (error) throw error;
@@ -154,7 +156,8 @@ export default function MovimentacaoPage() {
             dataLancamento: mov.data_lancamento || undefined,
             mes_referencia: mov.mes_referencia,
             documento_pdf: mov.documento_pdf,
-            tipo_titulo_id: mov.tipo_titulo_id
+            tipo_titulo_id: mov.tipo_titulo_id,
+            categoria_id: mov.categoria_id
           }));
 
           setMovimentacoes(movimentacoesFormatadas);
@@ -172,6 +175,7 @@ export default function MovimentacaoPage() {
   const limparFiltros = () => {
     setSearchTerm("");
     setTipoTituloId("todos");
+    setCategoriaId("todos");
     setPeriodo("mes_atual");
     
     // Resetar para o mês atual
@@ -189,6 +193,7 @@ export default function MovimentacaoPage() {
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const tipoTituloOk = tipoTituloId === "todos" || movimentacao.tipo_titulo_id === tipoTituloId;
+      const categoriaOk = categoriaId === "todos" || (movimentacao as any).categoria_id === categoriaId;
       
       // Aplicar filtro de data de lançamento
       let dataLancamentoOk = true;
@@ -210,9 +215,9 @@ export default function MovimentacaoPage() {
         dataLancamentoOk = dataLancamentoOk && dataMovComparacao <= dataFimComparacao;
       }
 
-      return textoBusca && tipoTituloOk && dataLancamentoOk;
+      return textoBusca && tipoTituloOk && categoriaOk && dataLancamentoOk;
     });
-  }, [movimentacoes, searchTerm, tipoTituloId, dataInicial, dataFinal]);
+  }, [movimentacoes, searchTerm, tipoTituloId, categoriaId, dataInicial, dataFinal]);
 
   // Prepara a exclusão abrindo o modal de confirmação
   const prepararExclusao = (id: string) => {
@@ -351,7 +356,7 @@ export default function MovimentacaoPage() {
         <CardContent className="pt-6">
           <div className="space-y-4">
             {/* Primeira linha de filtros */}
-            <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-10 gap-4 items-end">
               {/* Busca por texto */}
               <div className="md:col-span-3 relative">
                 <button
@@ -394,6 +399,27 @@ export default function MovimentacaoPage() {
                     {tiposTitulos.map((tipo) => (
                       <SelectItem key={tipo.id} value={tipo.id}>
                         {tipo.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Filtro por categoria */}
+              <div className="md:col-span-2">
+                <Select
+                  value={categoriaId}
+                  onValueChange={setCategoriaId}
+                >
+                  <SelectTrigger className="w-full bg-white dark:bg-gray-900">
+                    <Filter className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-200">
+                    <SelectItem value="todos">Todas as Categorias</SelectItem>
+                    {categorias.map((categoria) => (
+                      <SelectItem key={categoria.id} value={categoria.id}>
+                        {categoria.descricao}
                       </SelectItem>
                     ))}
                   </SelectContent>
