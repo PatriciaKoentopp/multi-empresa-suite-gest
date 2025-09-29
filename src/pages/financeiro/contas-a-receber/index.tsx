@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Filter, X, ChevronDown, ChevronUp, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { ContasAReceberTable, ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table.tsx";
 import {
@@ -31,9 +31,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { formatDate } from "@/lib/utils";
+import { useExcelContasReceber } from "@/hooks/useExcelContasReceber";
 
 export default function ContasAReceberPage() {
   const { currentCompany } = useCompany();
+  const { exportToExcel, isGenerating } = useExcelContasReceber();
   const [contas, setContas] = useState<ContaReceber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -599,12 +601,27 @@ export default function ContasAReceberPage() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Contas a Receber</h1>
-        <Button
-          variant="blue"
-          onClick={() => navigate("/financeiro/incluir-movimentacao")}
-        >
-          Nova Conta a Receber
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(filteredContas, {
+              searchTerm,
+              statusFilter,
+              dataVencInicio,
+              dataVencFim
+            })}
+            disabled={isGenerating}
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            {isGenerating ? "Gerando..." : "Exportar Excel"}
+          </Button>
+          <Button
+            variant="blue"
+            onClick={() => navigate("/financeiro/incluir-movimentacao")}
+          >
+            Nova Conta a Receber
+          </Button>
+        </div>
       </div>
       <Card>
         <CardContent className="pt-6">
