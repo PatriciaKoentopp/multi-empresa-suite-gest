@@ -153,7 +153,8 @@ export default function MovimentacaoPage() {
             tipo_operacao: mov.tipo_operacao,
             dataLancamento: mov.data_lancamento || undefined,
             mes_referencia: mov.mes_referencia,
-            documento_pdf: mov.documento_pdf
+            documento_pdf: mov.documento_pdf,
+            tipo_titulo_id: mov.tipo_titulo_id
           }));
 
           setMovimentacoes(movimentacoesFormatadas);
