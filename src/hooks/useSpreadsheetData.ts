@@ -42,10 +42,13 @@ export const useSpreadsheetData = () => {
       setIsLoading(true);
       let query = supabase
         .from("spreadsheet_data")
-        .select("*")
-        .eq("upload_file_id", uploadId)
-        .order("linha_numero")
-        .limit(10000);
+      .select("*")
+      .eq("upload_file_id", uploadId)
+      .limit(10000);
+
+    console.log('[DEBUG fetchDataByUpload] Upload ID:', uploadId);
+    console.log('[DEBUG fetchDataByUpload] Filtros aplicados:', filtros);
+    console.log('[DEBUG fetchDataByUpload] Total de registros retornados:', data?.length || 0);
 
       if (filtros?.dataInicio) {
         query = query.gte("dados->>data_inicio", filtros.dataInicio);

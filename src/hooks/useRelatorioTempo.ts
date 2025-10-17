@@ -42,6 +42,9 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
     return data.map((item) => item.dados as HoraTrabalhadaData);
   }, [data]);
 
+  console.log('[DEBUG useRelatorioTempo] Total de registros recebidos:', data.length);
+  console.log('[DEBUG useRelatorioTempo] Horas processadas:', horasData.length);
+
   const metrics: TempoMetrics = useMemo(() => {
     const totalHoras = horasData.reduce((sum, h) => sum + h.duracao_decimal, 0);
     const horasFaturaveis = horasData
@@ -51,7 +54,7 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
     const projetos = new Set(horasData.map((h) => extractProjectNumber(h.projeto))).size;
     const usuarios = new Set(horasData.map((h) => h.usuario)).size;
 
-    return {
+    const result = {
       totalHoras,
       horasFaturaveis,
       horasNaoFaturaveis: totalHoras - horasFaturaveis,
@@ -61,6 +64,10 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
       totalUsuarios: usuarios,
       mediaHorasPorProjeto: projetos > 0 ? totalHoras / projetos : 0,
     };
+    
+    console.log('[DEBUG metrics] Total de horas calculado:', totalHoras);
+    console.log('[DEBUG metrics] Total de registros processados:', horasData.length);
+    return result;
   }, [horasData]);
 
   const projetosAgrupados: ProjetoAgrupado[] = useMemo(() => {

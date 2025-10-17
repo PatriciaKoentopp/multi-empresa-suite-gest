@@ -45,8 +45,12 @@ export default function RelatorioTempoPage() {
           allData.push(...data);
         }
         setConsolidatedData(allData);
+        console.log('[DEBUG] Total de registros consolidados:', allData.length);
+        console.log('[DEBUG] Primeiros 3 registros:', allData.slice(0, 3));
+        console.log('[DEBUG] Últimos 3 registros:', allData.slice(-3));
       } else {
         setConsolidatedData([]);
+        console.log('[DEBUG] Nenhum upload selecionado');
       }
     };
     fetchAllSelectedData();
