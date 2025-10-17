@@ -23,20 +23,13 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
                   <p className="text-sm text-muted-foreground">{projeto.cliente}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className="text-sm font-medium">
-                    {formatHoursMinutes(projeto.totalHoras)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {projeto.percentualTotal.toFixed(1)}% do total • {projeto.tarefasAgrupadas.length} tipos de tarefas
-                  </p>
-                </div>
-                {projeto.valorFaturavel > 0 && (
-                  <Badge variant="default">
-                    R$ {projeto.valorFaturavel.toFixed(2)}
-                  </Badge>
-                )}
+              <div className="text-right">
+                <p className="text-sm font-medium">
+                  {formatHoursMinutes(projeto.totalHoras)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {projeto.percentualTotal.toFixed(1)}% do total • {projeto.tarefasAgrupadas.length} tipos de tarefas
+                </p>
               </div>
             </div>
           </AccordionTrigger>
@@ -73,13 +66,8 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <span className="text-sm font-medium">{formatHoursMinutes(tarefa.totalHoras)}</span>
-                          </div>
-                          <Badge variant={tarefa.faturavel ? "default" : "secondary"} className="text-xs">
-                            {tarefa.faturavel ? "Faturável" : "Não faturável"}
-                          </Badge>
+                        <div className="text-right">
+                          <span className="text-sm font-medium">{formatHoursMinutes(tarefa.totalHoras)}</span>
                         </div>
                       </div>
                       
