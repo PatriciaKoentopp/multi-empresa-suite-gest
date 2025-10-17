@@ -40,48 +40,73 @@ export const useSpreadsheetData = () => {
   const fetchDataByUpload = async (uploadId: string, filtros?: any) => {
     try {
       setIsLoading(true);
-      let query = supabase
-        .from("spreadsheet_data")
-        .select("*", { count: 'exact' })
-        .eq("upload_file_id", uploadId)
-        .range(0, 10000);
+      const allData: SpreadsheetData[] = [];
+      const PAGE_SIZE = 1000;
+      let from = 0;
+      let hasMore = true;
 
-      if (filtros?.dataInicio) {
-        query = query.gte("dados->>data_inicio", filtros.dataInicio);
-      }
-      if (filtros?.dataFim) {
-        query = query.lte("dados->>data_final", filtros.dataFim);
-      }
-      if (filtros?.projeto) {
-        query = query.ilike("dados->>projeto", `%${filtros.projeto}%`);
-      }
-      if (filtros?.cliente) {
-        query = query.ilike("dados->>cliente", `%${filtros.cliente}%`);
-      }
-      if (filtros?.usuario) {
-        query = query.ilike("dados->>usuario", `%${filtros.usuario}%`);
-      }
-      if (filtros?.tarefa) {
-        query = query.ilike("dados->>tarefa", `%${filtros.tarefa}%`);
-      }
-      if (filtros?.faturavel !== undefined && filtros?.faturavel !== "todos") {
-        query = query.eq("dados->>faturavel", filtros.faturavel === "sim" ? "true" : "false");
-      }
-
-      console.log('[DEBUG fetchDataByUpload] Iniciando query para Upload ID:', uploadId);
+      console.log('[DEBUG fetchDataByUpload] Iniciando busca paginada para Upload ID:', uploadId);
       console.log('[DEBUG fetchDataByUpload] Filtros aplicados:', filtros);
 
-      const { data: result, error, count } = await query;
+      while (hasMore) {
+        let query = supabase
+          .from("spreadsheet_data")
+          .select("*", { count: 'exact' })
+          .eq("upload_file_id", uploadId)
+          .range(from, from + PAGE_SIZE - 1);
 
-      console.log('[DEBUG fetchDataByUpload] Count total no banco:', count);
-      console.log('[DEBUG fetchDataByUpload] Total de registros retornados:', result?.length || 0);
-      
-      if (error) {
-        console.error('[DEBUG fetchDataByUpload] Erro na query:', error);
-        throw error;
+        if (filtros?.dataInicio) {
+          query = query.gte("dados->>data_inicio", filtros.dataInicio);
+        }
+        if (filtros?.dataFim) {
+          query = query.lte("dados->>data_final", filtros.dataFim);
+        }
+        if (filtros?.projeto) {
+          query = query.ilike("dados->>projeto", `%${filtros.projeto}%`);
+        }
+        if (filtros?.cliente) {
+          query = query.ilike("dados->>cliente", `%${filtros.cliente}%`);
+        }
+        if (filtros?.usuario) {
+          query = query.ilike("dados->>usuario", `%${filtros.usuario}%`);
+        }
+        if (filtros?.tarefa) {
+          query = query.ilike("dados->>tarefa", `%${filtros.tarefa}%`);
+        }
+        if (filtros?.faturavel !== undefined && filtros?.faturavel !== "todos") {
+          query = query.eq("dados->>faturavel", filtros.faturavel === "sim" ? "true" : "false");
+        }
+
+        const { data: result, error, count } = await query;
+
+        if (error) {
+          console.error('[DEBUG fetchDataByUpload] Erro na query:', error);
+          throw error;
+        }
+
+        if (from === 0) {
+          console.log('[DEBUG fetchDataByUpload] Count total no banco:', count);
+        }
+
+        console.log(`[DEBUG fetchDataByUpload] Página ${Math.floor(from / PAGE_SIZE) + 1}: ${result?.length || 0} registros`);
+
+        if (!result || result.length === 0) {
+          hasMore = false;
+        } else {
+          allData.push(...result);
+          
+          if (result.length < PAGE_SIZE) {
+            hasMore = false;
+          } else {
+            from += PAGE_SIZE;
+          }
+        }
       }
-      setData(result || []);
-      return result || [];
+
+      console.log('[DEBUG fetchDataByUpload] Total de registros carregados:', allData.length);
+      
+      setData(allData);
+      return allData;
     } catch (error: any) {
       toast({
         title: "Erro ao carregar dados",
