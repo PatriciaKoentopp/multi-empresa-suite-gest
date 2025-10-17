@@ -29,7 +29,7 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
                     {formatHoursDisplay(projeto.totalHoras)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {projeto.percentualTotal.toFixed(1)}% do total • {projeto.tarefas.length} tarefas
+                    {projeto.percentualTotal.toFixed(1)}% do total • {projeto.tarefasAgrupadas.length} tipos de tarefas
                   </p>
                 </div>
                 {projeto.valorFaturavel > 0 && (
@@ -45,54 +45,64 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
               <p className="text-sm font-semibold mb-2">Projetos incluídos:</p>
               <div className="space-y-1">
                 {projeto.projetos.map((nomeCompleto, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">• {nomeCompleto}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {projeto.tarefas.filter(t => t.projetoCompleto === nomeCompleto).length} tarefas
-                    </Badge>
+                  <div key={idx} className="text-sm text-muted-foreground">
+                    <span>• {nomeCompleto}</span>
                   </div>
                 ))}
               </div>
             </div>
             
-            <div className="space-y-3">
-              {projeto.projetos.map((nomeCompleto) => {
-                const tarefasProjeto = projeto.tarefas.filter(t => t.projetoCompleto === nomeCompleto);
-                if (tarefasProjeto.length === 0) return null;
-                
-                return (
-                  <div key={nomeCompleto} className="space-y-2">
-                    <div className="text-xs font-semibold text-muted-foreground px-2 py-1 bg-muted/50 rounded">
-                      📁 {nomeCompleto}
-                    </div>
-                    {tarefasProjeto.map((tarefa, tIndex) => (
-                      <Card key={tIndex} className="bg-background ml-4">
-                        <CardContent className="p-3 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="text-sm font-medium">{tarefa.tarefa}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <User className="h-3 w-3 text-muted-foreground" />
-                                <p className="text-xs text-muted-foreground">{tarefa.usuario}</p>
-                              </div>
+            <div>
+              <h4 className="font-semibold mb-3 text-sm text-muted-foreground">
+                Tarefas Agrupadas ({projeto.tarefasAgrupadas.length} tipos)
+              </h4>
+              <div className="space-y-2">
+                {projeto.tarefasAgrupadas.map((tarefa, idx) => (
+                  <Card key={idx} className="bg-background">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">{tarefa.tarefa}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <User className="h-3 w-3 text-muted-foreground" />
+                              <p className="text-xs text-muted-foreground">
+                                {tarefa.usuarios.length} usuário(s): {tarefa.usuarios.join(", ")}
+                              </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <div className="text-right">
-                              <span className="text-sm font-medium">{tarefa.horas.toFixed(2)}h</span>
-                              <p className="text-xs text-muted-foreground font-mono">{decimalToHHMMSS(tarefa.horas)}</p>
-                            </div>
-                            <Badge variant={tarefa.faturavel ? "default" : "secondary"} className="text-xs">
-                              {tarefa.faturavel ? "Faturável" : "Não faturável"}
-                            </Badge>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <span className="text-sm font-medium">{tarefa.totalHoras.toFixed(2)}h</span>
+                            <p className="text-xs text-muted-foreground font-mono">{decimalToHHMMSS(tarefa.totalHoras)}</p>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                );
-              })}
+                          <Badge variant={tarefa.faturavel ? "default" : "secondary"} className="text-xs">
+                            {tarefa.faturavel ? "Faturável" : "Não faturável"}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {tarefa.detalhes.length > 1 && (
+                        <div className="mt-3 pt-3 border-t space-y-1">
+                          <p className="text-xs font-semibold text-muted-foreground mb-2">Detalhamento:</p>
+                          {tarefa.detalhes.map((detalhe, dIdx) => (
+                            <div key={dIdx} className="flex items-center justify-between text-xs pl-4">
+                              <span className="text-muted-foreground">
+                                👤 {detalhe.usuario} • {detalhe.projetoCompleto}
+                              </span>
+                              <span className="font-mono text-muted-foreground">
+                                {detalhe.horas.toFixed(2)}h ({decimalToHHMMSS(detalhe.horas)})
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           </AccordionContent>
         </AccordionItem>

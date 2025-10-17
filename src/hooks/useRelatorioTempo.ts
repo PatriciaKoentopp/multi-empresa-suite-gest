@@ -13,6 +13,18 @@ export interface TempoMetrics {
   mediaHorasPorProjeto: number;
 }
 
+export interface TarefaAgrupada {
+  tarefa: string;
+  totalHoras: number;
+  usuarios: string[];
+  faturavel: boolean;
+  detalhes: {
+    usuario: string;
+    horas: number;
+    projetoCompleto: string;
+  }[];
+}
+
 export interface ProjetoAgrupado {
   numeroProjeto: string;
   projeto: string;
@@ -21,13 +33,7 @@ export interface ProjetoAgrupado {
   totalHoras: number;
   valorFaturavel: number;
   percentualTotal: number;
-  tarefas: {
-    tarefa: string;
-    usuario: string;
-    horas: number;
-    faturavel: boolean;
-    projetoCompleto: string;
-  }[];
+  tarefasAgrupadas: TarefaAgrupada[];
 }
 
 export const useRelatorioTempo = (data: SpreadsheetData[]) => {
@@ -71,7 +77,7 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
           totalHoras: 0,
           valorFaturavel: 0,
           percentualTotal: 0,
-          tarefas: [],
+          tarefasAgrupadas: [],
         });
       }
 
@@ -83,13 +89,42 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
       
       projeto.totalHoras += hora.duracao_decimal;
       projeto.valorFaturavel += hora.valor_faturavel;
-      projeto.tarefas.push({
-        tarefa: hora.tarefa,
-        usuario: hora.usuario,
-        horas: hora.duracao_decimal,
-        faturavel: hora.faturavel,
-        projetoCompleto: hora.projeto,
-      });
+    });
+
+    // Agrupar tarefas por tipo
+    projetosMap.forEach((projeto) => {
+      const tarefasMap = new Map<string, TarefaAgrupada>();
+      
+      horasData
+        .filter((hora) => extractProjectNumber(hora.projeto) === projeto.numeroProjeto)
+        .forEach((hora) => {
+          if (!tarefasMap.has(hora.tarefa)) {
+            tarefasMap.set(hora.tarefa, {
+              tarefa: hora.tarefa,
+              totalHoras: 0,
+              usuarios: [],
+              faturavel: hora.faturavel,
+              detalhes: [],
+            });
+          }
+
+          const tarefaAgrupada = tarefasMap.get(hora.tarefa)!;
+          tarefaAgrupada.totalHoras += hora.duracao_decimal;
+          
+          if (!tarefaAgrupada.usuarios.includes(hora.usuario)) {
+            tarefaAgrupada.usuarios.push(hora.usuario);
+          }
+          
+          tarefaAgrupada.detalhes.push({
+            usuario: hora.usuario,
+            horas: hora.duracao_decimal,
+            projetoCompleto: hora.projeto,
+          });
+        });
+
+      projeto.tarefasAgrupadas = Array.from(tarefasMap.values()).sort(
+        (a, b) => b.totalHoras - a.totalHoras
+      );
     });
 
     const totalGeral = metrics.totalHoras;
