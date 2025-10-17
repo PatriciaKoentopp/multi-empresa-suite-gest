@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Users, Calculator, BarChart, Award, TrendingUp } from "lucide-react";
+import { FileText, Users, Calculator, BarChart, Award, TrendingUp, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DashboardCardConfigurator } from "@/components/dashboard/DashboardCardConfigurator";
 import { useDashboardCards } from "@/hooks/useDashboardCards";
@@ -40,6 +40,13 @@ export default function Relatorios() {
       description: "Análise comparativa das contas do DRE com alertas de variações significativas",
       icon: <TrendingUp className="h-8 w-8 text-purple-500" />,
       route: "/relatorios/analise-dre"
+    },
+    {
+      id: "tempo",
+      title: "Relatório de Tempo",
+      description: "Análise de tempo de atendimento, duração de projetos e produtividade",
+      icon: <Clock className="h-8 w-8 text-cyan-500" />,
+      route: "/relatorios/tempo"
     },
     {
       id: "financeiro",
