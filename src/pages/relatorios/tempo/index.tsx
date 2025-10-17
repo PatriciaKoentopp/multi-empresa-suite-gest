@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Download, Clock, DollarSign, FileText, Users, TrendingUp } from "lucide-react";
+import { Upload, Clock, FileText } from "lucide-react";
 import { useUploadFiles } from "@/hooks/useUploadFiles";
 import { useSpreadsheetData } from "@/hooks/useSpreadsheetData";
 import { useRelatorioTempo } from "@/hooks/useRelatorioTempo";
@@ -11,6 +11,7 @@ import { ProjetoAccordion } from "@/components/relatorios/tempo/ProjetoAccordion
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { formatHoursDisplay } from "@/utils/timeUtils";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 export default function RelatorioTempoPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedUploadId, setSelectedUploadId] = useState<string | null>(null);
@@ -26,7 +27,8 @@ export default function RelatorioTempoPage() {
   } = useSpreadsheetData();
   const {
     metrics,
-    projetosAgrupados
+    projetosAgrupados,
+    tarefasDistribuicao
   } = useRelatorioTempo(spreadsheetData);
   useEffect(() => {
     fetchUploadsByTipo("tempo");
@@ -119,6 +121,47 @@ export default function RelatorioTempoPage() {
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Distribuição de Horas por Tarefa</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <PieChart>
+                  <Pie
+                    data={tarefasDistribuicao.map((item, index) => ({
+                      name: item.tarefa,
+                      value: parseFloat(item.horas.toFixed(2)),
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={80}
+                    outerRadius={140}
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={(entry) => `${entry.name}: ${entry.value}h`}
+                  >
+                    {tarefasDistribuicao.map((_, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={`hsl(${(index * 360) / tarefasDistribuicao.length}, 70%, 60%)`}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number) => `${value}h`}
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "6px",
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
           <Tabs defaultValue="projetos" className="space-y-4">
             <TabsList>
