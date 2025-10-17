@@ -46,13 +46,14 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
   console.log('[DEBUG useRelatorioTempo] Horas processadas:', horasData.length);
 
   const metrics: TempoMetrics = useMemo(() => {
-    const totalHoras = horasData.reduce((sum, h) => sum + h.duracao_decimal, 0);
-    const horasFaturaveis = horasData
+    const horasFiltradas = horasData.filter((h) => h.tarefa && h.tarefa.trim() !== '');
+    const totalHoras = horasFiltradas.reduce((sum, h) => sum + h.duracao_decimal, 0);
+    const horasFaturaveis = horasFiltradas
       .filter((h) => h.faturavel)
       .reduce((sum, h) => sum + h.duracao_decimal, 0);
-    const valorTotalFaturavel = horasData.reduce((sum, h) => sum + h.valor_faturavel, 0);
-    const projetos = new Set(horasData.map((h) => extractProjectNumber(h.projeto))).size;
-    const usuarios = new Set(horasData.map((h) => h.usuario)).size;
+    const valorTotalFaturavel = horasFiltradas.reduce((sum, h) => sum + h.valor_faturavel, 0);
+    const projetos = new Set(horasFiltradas.map((h) => extractProjectNumber(h.projeto))).size;
+    const usuarios = new Set(horasFiltradas.map((h) => h.usuario)).size;
 
     const result = {
       totalHoras,
@@ -60,7 +61,7 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
       horasNaoFaturaveis: totalHoras - horasFaturaveis,
       valorTotalFaturavel,
       totalProjetos: projetos,
-      totalTarefas: horasData.length,
+      totalTarefas: horasFiltradas.length,
       totalUsuarios: usuarios,
       mediaHorasPorProjeto: projetos > 0 ? totalHoras / projetos : 0,
     };
@@ -187,10 +188,12 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
 
   const tarefasDistribuicao = useMemo(() => {
     const tarefasMap = new Map<string, number>();
-    horasData.forEach((hora) => {
-      const key = hora.tarefa;
-      tarefasMap.set(key, (tarefasMap.get(key) || 0) + hora.duracao_decimal);
-    });
+    horasData
+      .filter((hora) => hora.tarefa && hora.tarefa.trim() !== '')
+      .forEach((hora) => {
+        const key = hora.tarefa;
+        tarefasMap.set(key, (tarefasMap.get(key) || 0) + hora.duracao_decimal);
+      });
 
     return Array.from(tarefasMap.entries())
       .map(([tarefa, horas]) => ({ tarefa, horas }))
