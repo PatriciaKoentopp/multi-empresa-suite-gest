@@ -98,7 +98,7 @@ export default function RelatorioTempoPage() {
       </Card>
 
       {selectedUploadId && !dataLoading && <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total de Horas</CardTitle>
@@ -111,19 +111,6 @@ export default function RelatorioTempoPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Horas Faturáveis</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatHoursDisplay(metrics.horasFaturaveis)}</div>
-                <p className="text-xs text-muted-foreground">
-                  {metrics.totalHoras > 0 ? (metrics.horasFaturaveis / metrics.totalHoras * 100).toFixed(1) : 0}% do total
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Projetos</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
@@ -131,8 +118,6 @@ export default function RelatorioTempoPage() {
                 <div className="text-2xl font-bold">{metrics.totalProjetos}</div>
               </CardContent>
             </Card>
-
-            
           </div>
 
           <Tabs defaultValue="projetos" className="space-y-4">
