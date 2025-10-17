@@ -264,6 +264,7 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
         ano: ano.toString(),
         totalHoras: parseFloat(dados.totalHoras.toFixed(2)),
         totalProjetos: dados.projetos.size,
+        horasPorProjeto: parseFloat((dados.totalHoras / dados.projetos.size).toFixed(2)),
       }))
       .sort((a, b) => parseInt(a.ano) - parseInt(b.ano));
   }, [horasData]);

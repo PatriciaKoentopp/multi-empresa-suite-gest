@@ -226,12 +226,12 @@ export default function RelatorioTempoPage() {
                       borderRadius: "6px",
                     }}
                     formatter={(value: number, name: string) => {
-                      if (name === 'Total de Horas') {
+                      if (name === 'Total de Horas' || name === 'Horas por Projeto') {
                         const hours = Math.floor(value);
                         const minutes = Math.round((value - hours) * 60);
-                        return [`${hours}h ${minutes}m`, 'Total de Horas'];
+                        return [`${hours}h ${minutes}m`, name];
                       }
-                      return [value, 'Total de Projetos'];
+                      return [value, name];
                     }}
                   />
                   <Legend />
@@ -253,6 +253,16 @@ export default function RelatorioTempoPage() {
                     stroke="hsl(var(--primary))"
                     strokeWidth={3}
                     dot={{ fill: 'hsl(var(--primary))', r: 5 }}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="horasPorProjeto"
+                    name="Horas por Projeto"
+                    stroke="hsl(var(--chart-3))"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={{ fill: 'hsl(var(--chart-3))', r: 4 }}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
