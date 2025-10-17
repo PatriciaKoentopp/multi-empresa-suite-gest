@@ -22,6 +22,7 @@ export interface TarefaAgrupada {
     usuario: string;
     horas: number;
     projetoCompleto: string;
+    data: string;
   }[];
 }
 
@@ -119,12 +120,22 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
             usuario: hora.usuario,
             horas: hora.duracao_decimal,
             projetoCompleto: hora.projeto,
+            data: hora.data_inicio,
           });
         });
 
       projeto.tarefasAgrupadas = Array.from(tarefasMap.values()).sort(
         (a, b) => b.totalHoras - a.totalHoras
       );
+
+      // Ordenar os detalhes de cada tarefa por data
+      projeto.tarefasAgrupadas.forEach(tarefa => {
+        tarefa.detalhes.sort((a, b) => {
+          const dateA = new Date(a.data.split('/').reverse().join('-'));
+          const dateB = new Date(b.data.split('/').reverse().join('-'));
+          return dateA.getTime() - dateB.getTime();
+        });
+      });
     });
 
     const totalGeral = metrics.totalHoras;

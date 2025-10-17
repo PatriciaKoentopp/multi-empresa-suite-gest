@@ -90,7 +90,7 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
                           {tarefa.detalhes.map((detalhe, dIdx) => (
                             <div key={dIdx} className="flex items-center justify-between text-xs pl-4">
                               <span className="text-muted-foreground">
-                                👤 {detalhe.usuario} • {detalhe.projetoCompleto}
+                                📅 {detalhe.data} • 👤 {detalhe.usuario} • {detalhe.projetoCompleto}
                               </span>
                               <span className="font-mono text-muted-foreground">
                                 {detalhe.horas.toFixed(2)}h ({decimalToHHMMSS(detalhe.horas)})
