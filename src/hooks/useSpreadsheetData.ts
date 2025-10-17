@@ -44,8 +44,7 @@ export const useSpreadsheetData = () => {
         .from("spreadsheet_data")
         .select("*", { count: 'exact' })
         .eq("upload_file_id", uploadId)
-        .range(0, 10000)
-        .limit(10000);
+        .range(0, 10000);
 
       if (filtros?.dataInicio) {
         query = query.gte("dados->>data_inicio", filtros.dataInicio);
