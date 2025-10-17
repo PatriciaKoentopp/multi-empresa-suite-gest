@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Clock, FileText, Trash2 } from "lucide-react";
 import { useUploadFiles } from "@/hooks/useUploadFiles";
-import { useSpreadsheetData } from "@/hooks/useSpreadsheetData";
+import { useSpreadsheetData, SpreadsheetData } from "@/hooks/useSpreadsheetData";
 import { useRelatorioTempo } from "@/hooks/useRelatorioTempo";
 import { UploadModal } from "@/components/relatorios/tempo/UploadModal";
 import { ProjetoAccordion } from "@/components/relatorios/tempo/ProjetoAccordion";
@@ -17,6 +17,7 @@ export default function RelatorioTempoPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedUploadIds, setSelectedUploadIds] = useState<string[]>([]);
   const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
+  const [consolidatedData, setConsolidatedData] = useState<SpreadsheetData[]>([]);
   const {
     uploads,
     isLoading: uploadsLoading,
@@ -24,7 +25,6 @@ export default function RelatorioTempoPage() {
     deleteUpload
   } = useUploadFiles();
   const {
-    data: spreadsheetData,
     isLoading: dataLoading,
     fetchDataByUpload
   } = useSpreadsheetData();
@@ -32,7 +32,7 @@ export default function RelatorioTempoPage() {
     metrics,
     projetosAgrupados,
     tarefasDistribuicao
-  } = useRelatorioTempo(spreadsheetData);
+  } = useRelatorioTempo(consolidatedData);
   useEffect(() => {
     fetchUploadsByTipo("tempo");
   }, []);
@@ -44,6 +44,9 @@ export default function RelatorioTempoPage() {
           const data = await fetchDataByUpload(uploadId);
           allData.push(...data);
         }
+        setConsolidatedData(allData);
+      } else {
+        setConsolidatedData([]);
       }
     };
     fetchAllSelectedData();
