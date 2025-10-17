@@ -11,7 +11,7 @@ import { ProjetoAccordion } from "@/components/relatorios/tempo/ProjetoAccordion
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { formatHoursMinutes } from "@/utils/timeUtils";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Line, ComposedChart } from "recharts";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 export default function RelatorioTempoPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -199,7 +199,7 @@ export default function RelatorioTempoPage() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={dadosPorAno}>
+                <ComposedChart data={dadosPorAno}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="ano" 
@@ -226,7 +226,7 @@ export default function RelatorioTempoPage() {
                       borderRadius: "6px",
                     }}
                     formatter={(value: number, name: string) => {
-                      if (name === 'totalHoras') {
+                      if (name === 'Total de Horas') {
                         const hours = Math.floor(value);
                         const minutes = Math.round((value - hours) * 60);
                         return [`${hours}h ${minutes}m`, 'Total de Horas'];
@@ -239,17 +239,22 @@ export default function RelatorioTempoPage() {
                     yAxisId="left"
                     dataKey="totalHoras" 
                     name="Total de Horas"
-                    fill="hsl(var(--primary))" 
                     radius={[4, 4, 0, 0]}
-                  />
-                  <Bar 
+                  >
+                    {dadosPorAno.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={`hsl(${(index * 360) / dadosPorAno.length}, 70%, 60%)`} />
+                    ))}
+                  </Bar>
+                  <Line
                     yAxisId="right"
-                    dataKey="totalProjetos" 
+                    type="monotone"
+                    dataKey="totalProjetos"
                     name="Total de Projetos"
-                    fill="hsl(var(--chart-2))" 
-                    radius={[4, 4, 0, 0]}
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={3}
+                    dot={{ fill: 'hsl(var(--primary))', r: 5 }}
                   />
-                </BarChart>
+                </ComposedChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
