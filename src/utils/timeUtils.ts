@@ -40,3 +40,26 @@ export const extractProjectNumber = (projectName: string): string => {
   const match = projectName.match(/^(\d+)\s*-/);
   return match ? match[1] : projectName;
 };
+
+/**
+ * Converte número serial do Excel para data formatada dd/mm/yyyy
+ * @param serial - Número serial do Excel (dias desde 01/01/1900)
+ * @returns String no formato dd/mm/yyyy
+ */
+export const excelSerialToDate = (serial: number | string): string => {
+  // Se já for uma string no formato dd/mm/yyyy, retorna direto
+  if (typeof serial === 'string' && serial.includes('/')) {
+    return serial;
+  }
+  
+  // Converte número serial do Excel para data
+  const excelEpoch = new Date(1899, 11, 30); // Excel conta a partir de 30/12/1899
+  const days = typeof serial === 'string' ? parseFloat(serial) : serial;
+  const date = new Date(excelEpoch.getTime() + days * 24 * 60 * 60 * 1000);
+  
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  
+  return `${day}/${month}/${year}`;
+};
