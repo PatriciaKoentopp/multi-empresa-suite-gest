@@ -2,23 +2,26 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Clock, FileText } from "lucide-react";
+import { Upload, Clock, FileText, Trash2 } from "lucide-react";
 import { useUploadFiles } from "@/hooks/useUploadFiles";
 import { useSpreadsheetData } from "@/hooks/useSpreadsheetData";
 import { useRelatorioTempo } from "@/hooks/useRelatorioTempo";
 import { UploadModal } from "@/components/relatorios/tempo/UploadModal";
 import { ProjetoAccordion } from "@/components/relatorios/tempo/ProjetoAccordion";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { formatHoursDisplay } from "@/utils/timeUtils";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 export default function RelatorioTempoPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedUploadId, setSelectedUploadId] = useState<string | null>(null);
+  const [selectedUploadIds, setSelectedUploadIds] = useState<string[]>([]);
+  const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
   const {
     uploads,
     isLoading: uploadsLoading,
-    fetchUploadsByTipo
+    fetchUploadsByTipo,
+    deleteUpload
   } = useUploadFiles();
   const {
     data: spreadsheetData,
@@ -34,13 +37,42 @@ export default function RelatorioTempoPage() {
     fetchUploadsByTipo("tempo");
   }, []);
   useEffect(() => {
-    if (selectedUploadId) {
-      fetchDataByUpload(selectedUploadId);
-    }
-  }, [selectedUploadId]);
+    const fetchAllSelectedData = async () => {
+      if (selectedUploadIds.length > 0) {
+        const allData = [];
+        for (const uploadId of selectedUploadIds) {
+          const data = await fetchDataByUpload(uploadId);
+          allData.push(...data);
+        }
+      }
+    };
+    fetchAllSelectedData();
+  }, [selectedUploadIds]);
   const handleUploadComplete = () => {
     fetchUploadsByTipo("tempo");
   };
+
+  const handleToggleUpload = (uploadId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedUploadIds([...selectedUploadIds, uploadId]);
+    } else {
+      setSelectedUploadIds(selectedUploadIds.filter(id => id !== uploadId));
+    }
+  };
+
+  const handleDeleteUpload = async () => {
+    if (uploadToDelete) {
+      const success = await deleteUpload(uploadToDelete);
+      if (success) {
+        setSelectedUploadIds(selectedUploadIds.filter(id => id !== uploadToDelete));
+        setUploadToDelete(null);
+      }
+    }
+  };
+
+  const totalLinhasSelecionadas = uploads
+    .filter(u => selectedUploadIds.includes(u.id))
+    .reduce((sum, u) => sum + u.total_linhas, 0);
   if (uploadsLoading) {
     return <div className="container mx-auto p-6">
         <p>Carregando...</p>
@@ -78,28 +110,49 @@ export default function RelatorioTempoPage() {
       </div>
 
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">
-                Selecione a planilha
-              </label>
-              <Select value={selectedUploadId || ""} onValueChange={setSelectedUploadId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Escolha uma planilha..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {uploads.map(upload => <SelectItem key={upload.id} value={upload.id}>
-                      {upload.nome_arquivo} - {format(new Date(upload.data_upload), "dd/MM/yyyy HH:mm")}
-                    </SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+        <CardHeader>
+          <CardTitle>Selecione as planilhas</CardTitle>
+          {selectedUploadIds.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {selectedUploadIds.length} planilha(s) selecionada(s) • {totalLinhasSelecionadas} linhas no total
+            </p>
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {uploads.map(upload => (
+              <div key={upload.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+                <div className="flex items-center gap-3 flex-1">
+                  <Checkbox
+                    id={upload.id}
+                    checked={selectedUploadIds.includes(upload.id)}
+                    onCheckedChange={(checked) => handleToggleUpload(upload.id, checked as boolean)}
+                  />
+                  <label
+                    htmlFor={upload.id}
+                    className="flex-1 cursor-pointer"
+                  >
+                    <div className="font-medium">{upload.nome_arquivo}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {format(new Date(upload.data_upload), "dd/MM/yyyy HH:mm")} • {upload.total_linhas} linhas
+                    </div>
+                  </label>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setUploadToDelete(upload.id)}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      {selectedUploadId && !dataLoading && <>
+      {selectedUploadIds.length > 0 && !dataLoading && <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -190,6 +243,23 @@ export default function RelatorioTempoPage() {
         </>}
 
       <UploadModal open={showUploadModal} onOpenChange={setShowUploadModal} onUploadComplete={handleUploadComplete} />
+
+      <AlertDialog open={!!uploadToDelete} onOpenChange={() => setUploadToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta planilha? Esta ação não pode ser desfeita e todos os dados importados serão removidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUpload} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>;
 }
 ;
