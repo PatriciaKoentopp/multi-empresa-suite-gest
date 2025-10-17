@@ -11,7 +11,7 @@ import { ProjetoAccordion } from "@/components/relatorios/tempo/ProjetoAccordion
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { formatHoursMinutes } from "@/utils/timeUtils";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 export default function RelatorioTempoPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -31,7 +31,8 @@ export default function RelatorioTempoPage() {
   const {
     metrics,
     projetosAgrupados,
-    tarefasDistribuicao
+    tarefasDistribuicao,
+    dadosPorAno
   } = useRelatorioTempo(consolidatedData);
   useEffect(() => {
     fetchUploadsByTipo("tempo");
@@ -191,6 +192,67 @@ export default function RelatorioTempoPage() {
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Evolução Anual</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={dadosPorAno}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="ano" 
+                    stroke="hsl(var(--foreground))"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis 
+                    yAxisId="left"
+                    stroke="hsl(var(--foreground))"
+                    style={{ fontSize: '12px' }}
+                    label={{ value: 'Total de Horas', angle: -90, position: 'insideLeft' }}
+                  />
+                  <YAxis 
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="hsl(var(--foreground))"
+                    style={{ fontSize: '12px' }}
+                    label={{ value: 'Número de Projetos', angle: 90, position: 'insideRight' }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "6px",
+                    }}
+                    formatter={(value: number, name: string) => {
+                      if (name === 'totalHoras') {
+                        const hours = Math.floor(value);
+                        const minutes = Math.round((value - hours) * 60);
+                        return [`${hours}h ${minutes}m`, 'Total de Horas'];
+                      }
+                      return [value, 'Total de Projetos'];
+                    }}
+                  />
+                  <Legend />
+                  <Bar 
+                    yAxisId="left"
+                    dataKey="totalHoras" 
+                    name="Total de Horas"
+                    fill="hsl(var(--primary))" 
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar 
+                    yAxisId="right"
+                    dataKey="totalProjetos" 
+                    name="Total de Projetos"
+                    fill="hsl(var(--chart-2))" 
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>

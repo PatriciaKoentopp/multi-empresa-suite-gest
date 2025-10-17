@@ -227,11 +227,53 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
       .sort((a, b) => b.horas - a.horas);
   }, [horasData]);
 
+  const dadosPorAno = useMemo(() => {
+    const anosMap = new Map<number, { totalHoras: number; projetos: Set<string> }>();
+    
+    horasData
+      .filter((hora) => hora.tarefa && hora.tarefa.trim() !== '')
+      .forEach((hora) => {
+        // Extrair ano da data_inicio
+        let ano: number;
+        const dataInicio = hora.data_inicio;
+        
+        if (typeof dataInicio === 'number') {
+          // Serial do Excel
+          const excelEpoch = new Date(1899, 11, 30);
+          const date = new Date(excelEpoch.getTime() + dataInicio * 24 * 60 * 60 * 1000);
+          ano = date.getFullYear();
+        } else if (typeof dataInicio === 'string' && dataInicio.includes('/')) {
+          // Formato dd/mm/yyyy
+          const parts = dataInicio.split('/');
+          ano = parseInt(parts[2]);
+        } else {
+          return; // Ignorar se não conseguir extrair o ano
+        }
+        
+        if (!anosMap.has(ano)) {
+          anosMap.set(ano, { totalHoras: 0, projetos: new Set() });
+        }
+        
+        const dadosAno = anosMap.get(ano)!;
+        dadosAno.totalHoras += hora.duracao_decimal;
+        dadosAno.projetos.add(extractProjectNumber(hora.projeto));
+      });
+    
+    return Array.from(anosMap.entries())
+      .map(([ano, dados]) => ({
+        ano: ano.toString(),
+        totalHoras: parseFloat(dados.totalHoras.toFixed(2)),
+        totalProjetos: dados.projetos.size,
+      }))
+      .sort((a, b) => parseInt(a.ano) - parseInt(b.ano));
+  }, [horasData]);
+
   return {
     horasData,
     metrics,
     projetosAgrupados,
     tarefasDistribuicao,
     usuariosDistribuicao,
+    dadosPorAno,
   };
 };
