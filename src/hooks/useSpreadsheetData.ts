@@ -42,8 +42,9 @@ export const useSpreadsheetData = () => {
       setIsLoading(true);
       let query = supabase
         .from("spreadsheet_data")
-        .select("*")
+        .select("*", { count: 'exact' })
         .eq("upload_file_id", uploadId)
+        .range(0, 10000)
         .limit(10000);
 
       if (filtros?.dataInicio) {
@@ -71,8 +72,9 @@ export const useSpreadsheetData = () => {
       console.log('[DEBUG fetchDataByUpload] Iniciando query para Upload ID:', uploadId);
       console.log('[DEBUG fetchDataByUpload] Filtros aplicados:', filtros);
 
-      const { data: result, error } = await query;
+      const { data: result, error, count } = await query;
 
+      console.log('[DEBUG fetchDataByUpload] Count total no banco:', count);
       console.log('[DEBUG fetchDataByUpload] Total de registros retornados:', result?.length || 0);
       
       if (error) {
