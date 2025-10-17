@@ -131,13 +131,36 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
       // Ordenar os detalhes de cada tarefa por data
       projeto.tarefasAgrupadas.forEach(tarefa => {
         tarefa.detalhes.sort((a, b) => {
-          // Validar se as datas existem e são strings
-          if (!a.data || typeof a.data !== 'string') return 1;
-          if (!b.data || typeof b.data !== 'string') return -1;
+          // Função auxiliar para converter data para número comparável
+          const getNumericDate = (date: any): number => {
+            if (!date) return 0;
+            
+            // Se for número (serial do Excel), usar diretamente
+            if (typeof date === 'number') return date;
+            
+            // Se for string numérica (serial do Excel como string)
+            if (typeof date === 'string' && !date.includes('/')) {
+              const num = parseFloat(date);
+              return isNaN(num) ? 0 : num;
+            }
+            
+            // Se for string no formato dd/mm/yyyy, converter para serial do Excel
+            if (typeof date === 'string' && date.includes('/')) {
+              const parts = date.split('/');
+              if (parts.length !== 3) return 0;
+              
+              const [day, month, year] = parts.map(Number);
+              if (isNaN(day) || isNaN(month) || isNaN(year)) return 0;
+              
+              const dateObj = new Date(year, month - 1, day);
+              const excelEpoch = new Date(1899, 11, 30);
+              return (dateObj.getTime() - excelEpoch.getTime()) / (24 * 60 * 60 * 1000);
+            }
+            
+            return 0;
+          };
           
-          const dateA = new Date(a.data.split('/').reverse().join('-'));
-          const dateB = new Date(b.data.split('/').reverse().join('-'));
-          return dateA.getTime() - dateB.getTime();
+          return getNumericDate(a.data) - getNumericDate(b.data);
         });
       });
     });
