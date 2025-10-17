@@ -104,7 +104,7 @@ export default function Relatorios() {
           return (
             <Card 
               key={relatorio.id} 
-              className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' ? '' : 'opacity-60'}`}
+              className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' ? '' : 'opacity-60'}`}
               onClick={() => handleCardClick(relatorio.route)}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -120,7 +120,7 @@ export default function Relatorios() {
               </CardHeader>
               <CardContent>
                 <Button 
-                  variant={relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' ? "default" : "outline"} 
+                  variant={relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' ? "default" : "outline"} 
                   className="w-full"
                   onClick={() => handleCardClick(relatorio.route)}
                 >
