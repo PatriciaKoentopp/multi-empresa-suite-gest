@@ -42,13 +42,9 @@ export const useSpreadsheetData = () => {
       setIsLoading(true);
       let query = supabase
         .from("spreadsheet_data")
-      .select("*")
-      .eq("upload_file_id", uploadId)
-      .limit(10000);
-
-    console.log('[DEBUG fetchDataByUpload] Upload ID:', uploadId);
-    console.log('[DEBUG fetchDataByUpload] Filtros aplicados:', filtros);
-    console.log('[DEBUG fetchDataByUpload] Total de registros retornados:', data?.length || 0);
+        .select("*")
+        .eq("upload_file_id", uploadId)
+        .limit(10000);
 
       if (filtros?.dataInicio) {
         query = query.gte("dados->>data_inicio", filtros.dataInicio);
@@ -72,9 +68,17 @@ export const useSpreadsheetData = () => {
         query = query.eq("dados->>faturavel", filtros.faturavel === "sim" ? "true" : "false");
       }
 
+      console.log('[DEBUG fetchDataByUpload] Iniciando query para Upload ID:', uploadId);
+      console.log('[DEBUG fetchDataByUpload] Filtros aplicados:', filtros);
+
       const { data: result, error } = await query;
 
-      if (error) throw error;
+      console.log('[DEBUG fetchDataByUpload] Total de registros retornados:', result?.length || 0);
+      
+      if (error) {
+        console.error('[DEBUG fetchDataByUpload] Erro na query:', error);
+        throw error;
+      }
       setData(result || []);
       return result || [];
     } catch (error: any) {

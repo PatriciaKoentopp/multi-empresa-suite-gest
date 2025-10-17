@@ -44,7 +44,7 @@ export default function RelatorioTempoPage() {
           const data = await fetchDataByUpload(uploadId);
           allData.push(...data);
         }
-        setConsolidatedData(allData);
+        setConsolidatedData([...allData]); // Spread operator força nova referência
         console.log('[DEBUG] Total de registros consolidados:', allData.length);
         console.log('[DEBUG] Primeiros 3 registros:', allData.slice(0, 3));
         console.log('[DEBUG] Últimos 3 registros:', allData.slice(-3));
