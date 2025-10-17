@@ -30,3 +30,13 @@ export const formatHoursDisplay = (decimal: number): string => {
   const minutes = Math.round((decimal - hours) * 60);
   return `${decimal.toFixed(2)}h (${hours}h${minutes}m)`;
 };
+
+/**
+ * Extrai o número do projeto antes do separador "-"
+ * @param projectName - Nome completo do projeto (ex: "50 - Sperka e Valentini Advogados")
+ * @returns Número do projeto (ex: "50")
+ */
+export const extractProjectNumber = (projectName: string): string => {
+  const match = projectName.match(/^(\d+)\s*-/);
+  return match ? match[1] : projectName;
+};

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { HoraTrabalhadaData, SpreadsheetData } from "./useSpreadsheetData";
+import { extractProjectNumber } from "@/utils/timeUtils";
 
 export interface TempoMetrics {
   totalHoras: number;
@@ -13,7 +14,9 @@ export interface TempoMetrics {
 }
 
 export interface ProjetoAgrupado {
+  numeroProjeto: string;
   projeto: string;
+  projetos: string[];
   cliente: string;
   totalHoras: number;
   valorFaturavel: number;
@@ -23,6 +26,7 @@ export interface ProjetoAgrupado {
     usuario: string;
     horas: number;
     faturavel: boolean;
+    projetoCompleto: string;
   }[];
 }
 
@@ -37,7 +41,7 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
       .filter((h) => h.faturavel)
       .reduce((sum, h) => sum + h.duracao_decimal, 0);
     const valorTotalFaturavel = horasData.reduce((sum, h) => sum + h.valor_faturavel, 0);
-    const projetos = new Set(horasData.map((h) => h.projeto)).size;
+    const projetos = new Set(horasData.map((h) => extractProjectNumber(h.projeto))).size;
     const usuarios = new Set(horasData.map((h) => h.usuario)).size;
 
     return {
@@ -56,10 +60,13 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
     const projetosMap = new Map<string, ProjetoAgrupado>();
 
     horasData.forEach((hora) => {
-      const key = hora.projeto;
-      if (!projetosMap.has(key)) {
-        projetosMap.set(key, {
-          projeto: hora.projeto,
+      const numeroProjeto = extractProjectNumber(hora.projeto);
+      
+      if (!projetosMap.has(numeroProjeto)) {
+        projetosMap.set(numeroProjeto, {
+          numeroProjeto,
+          projeto: `Projeto ${numeroProjeto}`,
+          projetos: [],
           cliente: hora.cliente,
           totalHoras: 0,
           valorFaturavel: 0,
@@ -68,7 +75,12 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
         });
       }
 
-      const projeto = projetosMap.get(key)!;
+      const projeto = projetosMap.get(numeroProjeto)!;
+      
+      if (!projeto.projetos.includes(hora.projeto)) {
+        projeto.projetos.push(hora.projeto);
+      }
+      
       projeto.totalHoras += hora.duracao_decimal;
       projeto.valorFaturavel += hora.valor_faturavel;
       projeto.tarefas.push({
@@ -76,10 +88,10 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
         usuario: hora.usuario,
         horas: hora.duracao_decimal,
         faturavel: hora.faturavel,
+        projetoCompleto: hora.projeto,
       });
     });
 
-    // Calcular percentuais
     const totalGeral = metrics.totalHoras;
     const projetos = Array.from(projetosMap.values());
     projetos.forEach((p) => {
