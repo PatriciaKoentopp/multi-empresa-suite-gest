@@ -130,7 +130,7 @@ export default function RelatorioTempoPage() {
               <ResponsiveContainer width="100%" height={400}>
                 <PieChart>
                   <Pie
-                    data={tarefasDistribuicao.map((item, index) => ({
+                    data={tarefasDistribuicao.map((item) => ({
                       name: item.tarefa,
                       value: parseFloat(item.horas.toFixed(2)),
                     }))}
@@ -140,7 +140,11 @@ export default function RelatorioTempoPage() {
                     outerRadius={140}
                     paddingAngle={2}
                     dataKey="value"
-                    label={(entry) => `${entry.name}: ${entry.value}h`}
+                    label={(entry) => {
+                      const total = tarefasDistribuicao.reduce((sum, t) => sum + t.horas, 0);
+                      const percent = ((entry.value / total) * 100).toFixed(1);
+                      return `${entry.name}: ${entry.value}h (${percent}%)`;
+                    }}
                   >
                     {tarefasDistribuicao.map((_, index) => (
                       <Cell
@@ -150,7 +154,11 @@ export default function RelatorioTempoPage() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number) => `${value}h`}
+                    formatter={(value: number) => {
+                      const total = tarefasDistribuicao.reduce((sum, t) => sum + t.horas, 0);
+                      const percent = ((value / total) * 100).toFixed(1);
+                      return `${value}h (${percent}%)`;
+                    }}
                     contentStyle={{
                       backgroundColor: "hsl(var(--background))",
                       border: "1px solid hsl(var(--border))",
