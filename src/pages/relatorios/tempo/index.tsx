@@ -10,6 +10,7 @@ import { UploadModal } from "@/components/relatorios/tempo/UploadModal";
 import { ProjetoAccordion } from "@/components/relatorios/tempo/ProjetoAccordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+import { formatHoursDisplay } from "@/utils/timeUtils";
 
 export default function RelatorioTempoPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -113,7 +114,7 @@ export default function RelatorioTempoPage() {
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{metrics.totalHoras.toFixed(2)}h</div>
+                <div className="text-2xl font-bold">{formatHoursDisplay(metrics.totalHoras)}</div>
               </CardContent>
             </Card>
 
@@ -123,7 +124,7 @@ export default function RelatorioTempoPage() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{metrics.horasFaturaveis.toFixed(2)}h</div>
+                <div className="text-2xl font-bold">{formatHoursDisplay(metrics.horasFaturaveis)}</div>
                 <p className="text-xs text-muted-foreground">
                   {metrics.totalHoras > 0
                     ? ((metrics.horasFaturaveis / metrics.totalHoras) * 100).toFixed(1)

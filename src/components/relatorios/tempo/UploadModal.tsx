@@ -115,13 +115,17 @@ export const UploadModal = ({ open, onOpenChange, onUploadComplete }: UploadModa
               Formato esperado da planilha:
             </p>
             <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
-              <li>• Projeto, Cliente, Descrição, Tarefa</li>
-              <li>• Usuário, Grupo, E-mail, Etiqueta</li>
-              <li>• Faturável (Sim/Não)</li>
+              <li>• <strong>Projeto</strong>, <strong>Cliente</strong>, Descrição, <strong>Tarefa</strong></li>
+              <li>• <strong>Usuário</strong>, Grupo, E-mail, Etiqueta</li>
+              <li>• <strong>Faturável</strong> (Sim/Não)</li>
               <li>• Data de início, Hora de início</li>
               <li>• Data final, Hora de término</li>
-              <li>• Duração (h), Duração (decimal), Valor faturável</li>
+              <li>• <strong>Duração (h)</strong> (HH:MM:SS) ou <strong>Duração (decimal)</strong> (ex: 5.54)</li>
+              <li>• <strong>Valor faturável</strong></li>
             </ul>
+            <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+              <strong>Nota:</strong> Se "Duração (decimal)" não estiver presente, será calculada automaticamente.
+            </p>
           </div>
 
           <div className="flex justify-end gap-2">

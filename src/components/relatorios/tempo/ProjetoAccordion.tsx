@@ -3,6 +3,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { ProjetoAgrupado } from "@/hooks/useRelatorioTempo";
 import { FileText, User, Clock } from "lucide-react";
+import { formatHoursDisplay, decimalToHHMMSS } from "@/utils/timeUtils";
 
 interface ProjetoAccordionProps {
   projetos: ProjetoAgrupado[];
@@ -25,7 +26,7 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="text-sm font-medium">
-                    {projeto.totalHoras.toFixed(2)}h
+                    {formatHoursDisplay(projeto.totalHoras)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {projeto.percentualTotal.toFixed(1)}% do total
@@ -54,8 +55,11 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{tarefa.horas.toFixed(2)}h</span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className="text-sm font-medium">{tarefa.horas.toFixed(2)}h</span>
+                        <p className="text-xs text-muted-foreground font-mono">{decimalToHHMMSS(tarefa.horas)}</p>
+                      </div>
                       <Badge variant={tarefa.faturavel ? "default" : "secondary"} className="text-xs">
                         {tarefa.faturavel ? "Faturável" : "Não faturável"}
                       </Badge>

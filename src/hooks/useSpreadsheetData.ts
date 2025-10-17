@@ -181,6 +181,19 @@ export const useSpreadsheetData = () => {
 
   const normalizeRowData = (row: any, tipoRelatorio: string): any => {
     if (tipoRelatorio === "tempo") {
+      let duracaoDecimal = parseFloat(row["Duração (decimal)"] || 0);
+      const duracaoHoras = row["Duração (h)"] || "";
+      
+      // Se duracao_decimal não existir ou for 0, tentar calcular a partir de duracao_horas
+      if (duracaoDecimal === 0 && duracaoHoras) {
+        try {
+          const [hours, minutes, seconds] = duracaoHoras.split(':').map(Number);
+          duracaoDecimal = hours + (minutes / 60) + (seconds / 3600);
+        } catch (error) {
+          console.error("Erro ao converter duração:", error);
+        }
+      }
+      
       return {
         projeto: row["Projeto"] || "",
         cliente: row["Cliente"] || "",
@@ -195,8 +208,8 @@ export const useSpreadsheetData = () => {
         hora_inicio: row["Hora de início"] || "",
         data_final: row["Data final"] || "",
         hora_termino: row["Hora de término"] || "",
-        duracao_horas: row["Duração (h)"] || "",
-        duracao_decimal: parseFloat(row["Duração (decimal)"] || 0),
+        duracao_horas: duracaoHoras,
+        duracao_decimal: duracaoDecimal,
         valor_faturavel: parseFloat(row["Valor faturável"] || 0),
       };
     }
