@@ -133,7 +133,11 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
       p.percentualTotal = totalGeral > 0 ? (p.totalHoras / totalGeral) * 100 : 0;
     });
 
-    return projetos.sort((a, b) => b.totalHoras - a.totalHoras);
+    return projetos.sort((a, b) => {
+      const numA = parseInt(a.numeroProjeto) || 0;
+      const numB = parseInt(b.numeroProjeto) || 0;
+      return numA - numB;
+    });
   }, [horasData, metrics.totalHoras]);
 
   const tarefasDistribuicao = useMemo(() => {
