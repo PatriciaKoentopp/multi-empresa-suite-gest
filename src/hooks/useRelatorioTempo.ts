@@ -131,6 +131,10 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
       // Ordenar os detalhes de cada tarefa por data
       projeto.tarefasAgrupadas.forEach(tarefa => {
         tarefa.detalhes.sort((a, b) => {
+          // Validar se as datas existem e são strings
+          if (!a.data || typeof a.data !== 'string') return 1;
+          if (!b.data || typeof b.data !== 'string') return -1;
+          
           const dateA = new Date(a.data.split('/').reverse().join('-'));
           const dateB = new Date(b.data.split('/').reverse().join('-'));
           return dateA.getTime() - dateB.getTime();
