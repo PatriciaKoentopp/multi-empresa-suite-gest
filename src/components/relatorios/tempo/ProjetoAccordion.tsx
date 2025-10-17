@@ -3,7 +3,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { ProjetoAgrupado } from "@/hooks/useRelatorioTempo";
 import { FileText, User, Clock } from "lucide-react";
-import { formatHoursDisplay, decimalToHHMMSS, excelSerialToDate } from "@/utils/timeUtils";
+import { formatHoursMinutes, excelSerialToDate } from "@/utils/timeUtils";
 
 interface ProjetoAccordionProps {
   projetos: ProjetoAgrupado[];
@@ -26,7 +26,7 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="text-sm font-medium">
-                    {formatHoursDisplay(projeto.totalHoras)}
+                    {formatHoursMinutes(projeto.totalHoras)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {projeto.percentualTotal.toFixed(1)}% do total • {projeto.tarefasAgrupadas.length} tipos de tarefas
@@ -75,8 +75,7 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <span className="text-sm font-medium">{tarefa.totalHoras.toFixed(2)}h</span>
-                            <p className="text-xs text-muted-foreground font-mono">{decimalToHHMMSS(tarefa.totalHoras)}</p>
+                            <span className="text-sm font-medium">{formatHoursMinutes(tarefa.totalHoras)}</span>
                           </div>
                           <Badge variant={tarefa.faturavel ? "default" : "secondary"} className="text-xs">
                             {tarefa.faturavel ? "Faturável" : "Não faturável"}
@@ -93,7 +92,7 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
                                 📅 {excelSerialToDate(detalhe.data)} • 👤 {detalhe.usuario} • {detalhe.projetoCompleto}
                               </span>
                               <span className="font-mono text-muted-foreground">
-                                {detalhe.horas.toFixed(2)}h ({decimalToHHMMSS(detalhe.horas)})
+                                {formatHoursMinutes(detalhe.horas)}
                               </span>
                             </div>
                           ))}

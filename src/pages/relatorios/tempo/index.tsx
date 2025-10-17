@@ -10,7 +10,7 @@ import { UploadModal } from "@/components/relatorios/tempo/UploadModal";
 import { ProjetoAccordion } from "@/components/relatorios/tempo/ProjetoAccordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
-import { formatHoursDisplay } from "@/utils/timeUtils";
+import { formatHoursMinutes } from "@/utils/timeUtils";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 export default function RelatorioTempoPage() {
@@ -167,7 +167,7 @@ export default function RelatorioTempoPage() {
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatHoursDisplay(metrics.totalHoras)}</div>
+                <div className="text-2xl font-bold">{formatHoursMinutes(metrics.totalHoras)}</div>
               </CardContent>
             </Card>
 
@@ -203,7 +203,9 @@ export default function RelatorioTempoPage() {
                     label={(entry) => {
                       const total = tarefasDistribuicao.reduce((sum, t) => sum + t.horas, 0);
                       const percent = ((entry.value / total) * 100).toFixed(1);
-                      return `${entry.name}: ${entry.value}h (${percent}%)`;
+                      const hours = Math.floor(entry.value);
+                      const minutes = Math.round((entry.value - hours) * 60);
+                      return `${entry.name}: ${hours}h ${minutes}m (${percent}%)`;
                     }}
                   >
                     {tarefasDistribuicao.map((_, index) => (
@@ -217,7 +219,9 @@ export default function RelatorioTempoPage() {
                     formatter={(value: number) => {
                       const total = tarefasDistribuicao.reduce((sum, t) => sum + t.horas, 0);
                       const percent = ((value / total) * 100).toFixed(1);
-                      return `${value}h (${percent}%)`;
+                      const hours = Math.floor(value);
+                      const minutes = Math.round((value - hours) * 60);
+                      return `${hours}h ${minutes}m (${percent}%)`;
                     }}
                     contentStyle={{
                       backgroundColor: "hsl(var(--background))",

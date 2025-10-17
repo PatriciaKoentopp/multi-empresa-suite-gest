@@ -32,6 +32,17 @@ export const formatHoursDisplay = (decimal: number): string => {
 };
 
 /**
+ * Formata horas em decimal para exibição apenas em horas e minutos
+ * @param decimal - Número de horas em decimal
+ * @returns String formatada "Xh Ym"
+ */
+export const formatHoursMinutes = (decimal: number): string => {
+  const hours = Math.floor(decimal);
+  const minutes = Math.round((decimal - hours) * 60);
+  return `${hours}h ${minutes}m`;
+};
+
+/**
  * Extrai o número do projeto antes do separador "-"
  * @param projectName - Nome completo do projeto (ex: "50 - Sperka e Valentini Advogados")
  * @returns Número do projeto (ex: "50")
