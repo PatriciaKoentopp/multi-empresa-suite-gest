@@ -24,6 +24,7 @@ import {
 import {
   ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -266,18 +267,44 @@ const RelatorioFotosPage = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Evolução por Status</CardTitle>
+              <CardTitle>Evolução de Fotos por Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={350}>
                 <ComposedChart data={dadosPorStatus}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="status" />
-                  <YAxis />
-                  <Tooltip />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => {
+                      if (name === "% Vendidas/Enviadas") {
+                        return `${value.toFixed(1)}%`;
+                      }
+                      return value;
+                    }}
+                  />
                   <Legend />
-                  <Bar dataKey="totalHoras" fill="hsl(var(--chart-1))" name="Total de Horas" />
-                  <Bar dataKey="totalProjetos" fill="hsl(var(--chart-2))" name="Total de Projetos" />
+                  <Bar 
+                    yAxisId="left"
+                    dataKey="fotosTiradas" 
+                    fill="hsl(var(--chart-1))" 
+                    name="Fotos Tiradas" 
+                  />
+                  <Bar 
+                    yAxisId="left"
+                    dataKey="fotosEnviadas" 
+                    fill="hsl(var(--chart-2))" 
+                    name="Fotos Enviadas" 
+                  />
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="percentualVendidas" 
+                    stroke="hsl(var(--chart-3))" 
+                    strokeWidth={2}
+                    name="% Vendidas/Enviadas" 
+                  />
                 </ComposedChart>
               </ResponsiveContainer>
             </CardContent>
@@ -346,16 +373,12 @@ const RelatorioFotosPage = () => {
                 </TabsContent>
                 <TabsContent value="ativo">
                   <Accordion type="single" collapsible className="w-full">
-                    <ProjetoAccordion
-                      projetos={projetosAgrupados.filter((p) => p.status === "Ativo")}
-                    />
+                    <ProjetoAccordion projetos={projetosAgrupados} />
                   </Accordion>
                 </TabsContent>
                 <TabsContent value="arquivado">
                   <Accordion type="single" collapsible className="w-full">
-                    <ProjetoAccordion
-                      projetos={projetosAgrupados.filter((p) => p.status === "Arquivado")}
-                    />
+                    <ProjetoAccordion projetos={projetosAgrupados} />
                   </Accordion>
                 </TabsContent>
               </Tabs>
