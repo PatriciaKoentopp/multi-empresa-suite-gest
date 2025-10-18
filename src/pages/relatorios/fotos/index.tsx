@@ -314,51 +314,6 @@ const RelatorioFotosPage = () => {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Distribuição de Horas por Tarefa (Top 10)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={tarefasDistribuicao}
-                      dataKey="totalHoras"
-                      nameKey="nome"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      label={(entry) => `${entry.nome}: ${formatHoursMinutes(entry.totalHoras)}`}
-                    >
-                      {tarefasDistribuicao.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number) => formatHoursMinutes(value)} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Top 10 Clientes por Horas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={clientesDistribuicao} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="nome" type="category" width={100} />
-                    <Tooltip formatter={(value: number) => formatHoursMinutes(value)} />
-                    <Bar dataKey="totalHoras" fill="hsl(var(--chart-3))" name="Total de Horas" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
           <Card>
             <CardHeader>
               <CardTitle>Visão por Projeto</CardTitle>
