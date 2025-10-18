@@ -297,13 +297,20 @@ const RelatorioFotosPage = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="flex flex-col justify-center space-y-6">
+                <div className="flex flex-col justify-center space-y-4">
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-1">Fotos Vendidas</p>
                     <p className="text-3xl font-bold">{totalFotos.fotosVendidas}</p>
                   </div>
                   <div className="p-4 bg-muted/30 rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-1">Percentual de Conversão</p>
+                    <p className="text-sm text-muted-foreground mb-1">% Enviadas / Tiradas</p>
+                    <p className="text-3xl font-bold">{totalFotos.percentualEnviadas.toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      (Enviadas / Tiradas)
+                    </p>
+                  </div>
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-1">% Vendidas / Enviadas</p>
                     <p className="text-3xl font-bold">{totalFotos.percentualVendidas.toFixed(1)}%</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       (Vendidas / Enviadas)

@@ -270,6 +270,9 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
       percentualVendidas: fotosEnviadas > 0 
         ? (fotosVendidas / fotosEnviadas) * 100 
         : 0,
+      percentualEnviadas: fotosTiradas > 0
+        ? (fotosEnviadas / fotosTiradas) * 100
+        : 0,
     };
   }, [fotosData]);
 
