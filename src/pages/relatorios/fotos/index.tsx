@@ -314,6 +314,13 @@ const RelatorioFotosPage = () => {
                       (Vendidas / Enviadas)
                     </p>
                   </div>
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-1">% Vendidas / Tiradas</p>
+                    <p className="text-3xl font-bold">{totalFotos.percentualVendidasTiradas.toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      (Vendidas / Tiradas)
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
