@@ -22,21 +22,17 @@ interface ProjetoFotosAgrupado {
   nome: string;
   projetos: string[];
   cliente: string;
-  status: string;
-  visibilidade: string;
   totalHoras: number;
-  horasEstimadas: number;
-  horasRemanescentes: number;
-  horasExcesso: number;
-  progresso: number;
   horasFaturaveis: number;
   horasNaoFaturaveis: number;
   valorFaturavel: number;
   membros: string;
   gerente: string;
   observacao: string;
-  tarefas: TarefaFotosAgrupada[];
   percentualTotal: number;
+  fotosVendidas: number;
+  fotosEnviadas: number;
+  fotosTiradas: number;
 }
 
 interface ClienteFotosAgrupado {
@@ -99,89 +95,69 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
       const numeroProjeto = extractProjectNumber(projetoCompleto);
 
       if (!projetosMap.has(numeroProjeto)) {
-        const [numero, ...nomePartes] = projetoCompleto.split(" - ");
-        const nome = nomePartes.join(" - ");
-        
         projetosMap.set(numeroProjeto, {
           numeroProjeto,
           numero: numeroProjeto,
           nome: `Projeto ${numeroProjeto}`,
           projetos: [],
           cliente: item.cliente || "",
-          status: item.status || "",
-          visibilidade: item.visibilidade || "",
           totalHoras: 0,
-          horasEstimadas: 0,
-          horasRemanescentes: 0,
-          horasExcesso: 0,
-          progresso: 0,
           horasFaturaveis: 0,
           horasNaoFaturaveis: 0,
           valorFaturavel: 0,
           membros: item.membros || "",
           gerente: item.gerente || "",
           observacao: item.observacao || "",
-          tarefas: [],
           percentualTotal: 0,
+          fotosVendidas: 0,
+          fotosEnviadas: 0,
+          fotosTiradas: 0,
         });
       }
 
       const projeto = projetosMap.get(numeroProjeto)!;
       
-      // Adicionar projeto completo à lista
+      // Adicionar projeto completo à lista e extrair valores de fotos
       if (!projeto.projetos.includes(projetoCompleto)) {
         projeto.projetos.push(projetoCompleto);
+        
+        // Extrair fotos vendidas (valor entre parênteses)
+        const vendidasMatch = projetoCompleto.match(/\((\d+)\)/);
+        if (vendidasMatch) {
+          projeto.fotosVendidas += parseInt(vendidasMatch[1]) || 0;
+        }
+        
+        // Extrair fotos enviadas (valor entre colchetes)
+        const enviadasMatch = projetoCompleto.match(/\[(\d+)\]/);
+        if (enviadasMatch) {
+          projeto.fotosEnviadas += parseInt(enviadasMatch[1]) || 0;
+        }
+        
+        // Extrair fotos tiradas (valor entre chaves)
+        const tiradasMatch = projetoCompleto.match(/\{(\d+)\}/);
+        if (tiradasMatch) {
+          projeto.fotosTiradas += parseInt(tiradasMatch[1]) || 0;
+        }
       }
 
       const rastreado = parseFloat(item.rastreado_h) || 0;
       projeto.totalHoras += rastreado;
 
       // Usar os valores máximos para as outras métricas
-      const estimado = parseFloat(item.estimado_h) || 0;
-      const remanescente = parseFloat(item.remanescente_h) || 0;
-      const excesso = parseFloat(item.excesso_h) || 0;
       const faturavel = parseFloat(item.faturavel_h) || 0;
       const naoFaturavel = parseFloat(item.nao_faturavel_h) || 0;
       const valorFat = parseFloat(item.valor_faturavel) || 0;
 
-      if (estimado > projeto.horasEstimadas) projeto.horasEstimadas = estimado;
-      if (remanescente > projeto.horasRemanescentes) projeto.horasRemanescentes = remanescente;
-      if (excesso > projeto.horasExcesso) projeto.horasExcesso = excesso;
       if (faturavel > projeto.horasFaturaveis) projeto.horasFaturaveis = faturavel;
       if (naoFaturavel > projeto.horasNaoFaturaveis) projeto.horasNaoFaturaveis = naoFaturavel;
       if (valorFat > projeto.valorFaturavel) projeto.valorFaturavel = valorFat;
-
-      const tarefasStr = item.tarefa || "";
-      const tarefas = tarefasStr.split(",").map((t: string) => t.trim()).filter((t: string) => t);
-
-      tarefas.forEach((tarefaNome: string) => {
-        const tarefaExistente = projeto.tarefas.find((t) => t.nome === tarefaNome);
-        if (tarefaExistente) {
-          tarefaExistente.totalHoras += rastreado / tarefas.length;
-        } else {
-          projeto.tarefas.push({
-            nome: tarefaNome,
-            totalHoras: rastreado / tarefas.length,
-            percentual: 0,
-          });
-        }
-      });
     });
 
     const projetos = Array.from(projetosMap.values());
     const totalHorasGeral = metrics.totalHoras;
 
     projetos.forEach((projeto) => {
-      // Recalcular progresso com base nas horas totais agrupadas
-      projeto.progresso = projeto.horasEstimadas > 0 
-        ? (projeto.totalHoras / projeto.horasEstimadas) * 100 
-        : 0;
-      
       projeto.percentualTotal = totalHorasGeral > 0 ? (projeto.totalHoras / totalHorasGeral) * 100 : 0;
-      projeto.tarefas.forEach((tarefa) => {
-        tarefa.percentual = projeto.totalHoras > 0 ? (tarefa.totalHoras / projeto.totalHoras) * 100 : 0;
-      });
-      projeto.tarefas.sort((a, b) => b.totalHoras - a.totalHoras);
     });
 
     return projetos.sort((a, b) => {
