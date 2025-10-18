@@ -44,7 +44,7 @@ const RelatorioFotosPage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
 
-  const { uploads, isLoading: uploadsLoading, fetchUploads, deleteUpload } = useUploadFiles("fotos");
+  const { uploads, isLoading: uploadsLoading, fetchUploadsByTipo, deleteUpload } = useUploadFiles();
   const { data: spreadsheetData, isLoading: dataLoading, fetchDataByUpload } = useSpreadsheetData();
 
   const {
@@ -56,7 +56,7 @@ const RelatorioFotosPage = () => {
   } = useRelatorioFotos(consolidatedData);
 
   useEffect(() => {
-    fetchUploads();
+    fetchUploadsByTipo("fotos");
   }, []);
 
   useEffect(() => {
@@ -78,7 +78,7 @@ const RelatorioFotosPage = () => {
   }, [selectedUploads]);
 
   const handleUploadSuccess = () => {
-    fetchUploads();
+    fetchUploadsByTipo("fotos");
     setIsModalOpen(false);
   };
 
@@ -101,7 +101,7 @@ const RelatorioFotosPage = () => {
       if (success) {
         toast.success("Upload deletado com sucesso");
         setSelectedUploads(selectedUploads.filter((id) => id !== uploadToDelete));
-        fetchUploads();
+        fetchUploadsByTipo("fotos");
       }
     }
     setDeleteDialogOpen(false);
