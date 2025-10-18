@@ -61,7 +61,13 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
     let projetosAtivos = 0;
     let projetosArquivados = 0;
 
-    fotosData.forEach((item) => {
+    // Filtrar apenas itens com cliente não vazio
+    const fotosDataComCliente = fotosData.filter((item) => {
+      const cliente = item.cliente || "";
+      return cliente.trim() !== "";
+    });
+
+    fotosDataComCliente.forEach((item) => {
       const projeto = item.projeto || "";
       const cliente = item.cliente || "";
       const rastreado = parseFloat(item.rastreado_h) || 0;
