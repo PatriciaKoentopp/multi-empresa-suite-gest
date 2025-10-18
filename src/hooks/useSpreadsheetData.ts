@@ -247,6 +247,30 @@ export const useSpreadsheetData = () => {
         valor_faturavel: parseFloat(row["Valor faturável"] || 0),
       };
     }
+
+    if (tipoRelatorio === "fotos") {
+      return {
+        projeto: row["Projeto"] || "",
+        cliente: row["Cliente"] || "",
+        status: row["Status"] || "",
+        visibilidade: row["Visibilidade"] || "",
+        faturabilidade: row["Faturabilidade"] || "",
+        tarefa: row["Tarefa"] || "",
+        rastreado_h: parseFloat(row["Rastreado (h)"]) || 0,
+        estimado_h: parseFloat(row["Estimado (h)"]) || 0,
+        remanescente_h: parseFloat(row["Remanescente (h)"]) || 0,
+        excesso_h: parseFloat(row["Excesso (h)"]) || 0,
+        progresso_pct: parseFloat(row["Progresso(%)"]) || 0,
+        faturavel_h: parseFloat(row["Faturável (h)"]) || 0,
+        nao_faturavel_h: parseFloat(row["Não faturável (h)"]) || 0,
+        valor_faturavel: parseFloat(row["Valor faturável (Real)"]) || 0,
+        valor_total: parseFloat(row["Valor (Real)"]) || 0,
+        membros: row["Projeto membros"] || "",
+        gerente: row["Projeto gerente"] || "",
+        observacao: row["Observação"] || "",
+      };
+    }
+
     return row;
   };
 

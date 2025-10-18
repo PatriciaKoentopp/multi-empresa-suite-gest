@@ -60,6 +60,7 @@ import RelatorioFavorecido from "./pages/relatorios/favorecido";
 import ClassificacaoABC from "./pages/relatorios/classificacao-abc";
 import AnaliseDrePage from "./pages/relatorios/analise-dre";
 import RelatorioTempoPage from "./pages/relatorios/tempo";
+import RelatorioFotosPage from "./pages/relatorios/fotos";
 
 // Authentication wrapper
 interface PrivateRouteProps {
@@ -474,6 +475,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <RelatorioTempoPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/relatorios/fotos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <RelatorioFotosPage />
                   </MainLayout>
                 </PrivateRoute>
               }
