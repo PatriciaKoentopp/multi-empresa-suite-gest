@@ -277,6 +277,7 @@ const RelatorioFotosPage = () => {
                     <BarChart data={[
                       { tipo: 'Tiradas', quantidade: totalFotos.fotosTiradas, fill: 'hsl(217, 91%, 60%)' },
                       { tipo: 'Enviadas', quantidade: totalFotos.fotosEnviadas, fill: 'hsl(142, 71%, 45%)' },
+                      { tipo: 'Vendidas', quantidade: totalFotos.fotosVendidas, fill: 'hsl(262, 83%, 58%)' },
                     ]}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="tipo" />
@@ -287,6 +288,7 @@ const RelatorioFotosPage = () => {
                         {[
                           { tipo: 'Tiradas', fill: 'hsl(217, 91%, 60%)' },
                           { tipo: 'Enviadas', fill: 'hsl(142, 71%, 45%)' },
+                          { tipo: 'Vendidas', fill: 'hsl(262, 83%, 58%)' },
                         ].map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
@@ -298,10 +300,6 @@ const RelatorioFotosPage = () => {
                   </ResponsiveContainer>
                 </div>
                 <div className="flex flex-col justify-center space-y-4">
-                  <div className="p-4 bg-muted/30 rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-1">Fotos Vendidas</p>
-                    <p className="text-3xl font-bold">{totalFotos.fotosVendidas}</p>
-                  </div>
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-1">% Enviadas / Tiradas</p>
                     <p className="text-3xl font-bold">{totalFotos.percentualEnviadas.toFixed(1)}%</p>
