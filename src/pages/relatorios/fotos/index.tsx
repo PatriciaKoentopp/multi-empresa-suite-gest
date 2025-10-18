@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useUploadFiles } from "@/hooks/useUploadFiles";
 import { useSpreadsheetData } from "@/hooks/useSpreadsheetData";
 import { useRelatorioFotos } from "@/hooks/useRelatorioFotos";
-import { UploadModal } from "@/components/relatorios/tempo/UploadModal";
+import { UploadModal } from "@/components/relatorios/fotos/UploadModal";
 import { ProjetoAccordion } from "@/components/relatorios/fotos/ProjetoAccordion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -77,9 +77,8 @@ const RelatorioFotosPage = () => {
     }
   }, [selectedUploads]);
 
-  const handleUploadSuccess = () => {
+  const handleUploadComplete = () => {
     fetchUploadsByTipo("fotos");
-    setIsModalOpen(false);
   };
 
   const handleCheckboxChange = (uploadId: string, checked: boolean) => {
@@ -148,9 +147,8 @@ const RelatorioFotosPage = () => {
         </Card>
         <UploadModal
           open={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSuccess={handleUploadSuccess}
-          tipoRelatorio="fotos"
+          onOpenChange={setIsModalOpen}
+          onUploadComplete={handleUploadComplete}
         />
       </div>
     );
@@ -368,9 +366,8 @@ const RelatorioFotosPage = () => {
 
       <UploadModal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={handleUploadSuccess}
-        tipoRelatorio="fotos"
+        onOpenChange={setIsModalOpen}
+        onUploadComplete={handleUploadComplete}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
