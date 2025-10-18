@@ -9,8 +9,10 @@ interface TarefaFotosAgrupada {
 }
 
 interface ProjetoFotosAgrupado {
+  numeroProjeto: string;
   numero: string;
   nome: string;
+  projetos: string[];
   cliente: string;
   status: string;
   visibilidade: string;
@@ -43,13 +45,13 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
   return (
     <>
       {projetos.map((projeto) => (
-        <AccordionItem key={`${projeto.numero}-${projeto.nome}`} value={`${projeto.numero}-${projeto.nome}`}>
+        <AccordionItem key={projeto.numeroProjeto} value={projeto.numeroProjeto}>
           <AccordionTrigger className="hover:no-underline">
             <div className="flex items-center justify-between w-full pr-4">
               <div className="flex items-center gap-3">
                 <Camera className="h-5 w-5 text-pink-500" />
                 <div className="text-left">
-                  <p className="font-semibold">{projeto.numero} - {projeto.nome}</p>
+                  <p className="font-semibold">📊 Projeto {projeto.numeroProjeto}</p>
                   <p className="text-sm text-muted-foreground">{projeto.cliente}</p>
                 </div>
               </div>
@@ -70,7 +72,18 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
           </AccordionTrigger>
           <AccordionContent>
             <div className="space-y-4 pl-11 pt-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="mb-4 p-3 bg-muted/30 rounded-lg">
+                <p className="text-sm font-semibold mb-2">Projetos incluídos:</p>
+                <div className="space-y-1">
+                  {projeto.projetos.map((nomeCompleto, idx) => (
+                    <div key={idx} className="text-sm text-muted-foreground">
+                      <span>• {nomeCompleto}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm mt-4">
                 <div>
                   <span className="text-muted-foreground">Status:</span>
                   <span className="ml-2 font-medium">{projeto.status}</span>

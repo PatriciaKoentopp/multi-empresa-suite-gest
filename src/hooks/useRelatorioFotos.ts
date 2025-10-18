@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { extractProjectNumber } from "@/utils/timeUtils";
 
 interface FotosMetrics {
   totalHoras: number;
@@ -16,8 +17,10 @@ interface TarefaFotosAgrupada {
 }
 
 interface ProjetoFotosAgrupado {
+  numeroProjeto: string;
   numero: string;
   nome: string;
+  projetos: string[];
   cliente: string;
   status: string;
   visibilidade: string;
@@ -90,27 +93,31 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
     const projetosMap = new Map<string, ProjetoFotosAgrupado>();
 
     fotosData.forEach((item) => {
-      const projetoKey = item.projeto || "";
-      if (!projetoKey) return;
+      const projetoCompleto = item.projeto || "";
+      if (!projetoCompleto) return;
 
-      const [numero, ...nomePartes] = projetoKey.split(" - ");
-      const nome = nomePartes.join(" - ");
+      const numeroProjeto = extractProjectNumber(projetoCompleto);
 
-      if (!projetosMap.has(projetoKey)) {
-        projetosMap.set(projetoKey, {
-          numero: numero || "",
-          nome: nome || projetoKey,
+      if (!projetosMap.has(numeroProjeto)) {
+        const [numero, ...nomePartes] = projetoCompleto.split(" - ");
+        const nome = nomePartes.join(" - ");
+        
+        projetosMap.set(numeroProjeto, {
+          numeroProjeto,
+          numero: numeroProjeto,
+          nome: `Projeto ${numeroProjeto}`,
+          projetos: [],
           cliente: item.cliente || "",
           status: item.status || "",
           visibilidade: item.visibilidade || "",
           totalHoras: 0,
-          horasEstimadas: parseFloat(item.estimado_h) || 0,
-          horasRemanescentes: parseFloat(item.remanescente_h) || 0,
-          horasExcesso: parseFloat(item.excesso_h) || 0,
-          progresso: parseFloat(item.progresso_pct) || 0,
-          horasFaturaveis: parseFloat(item.faturavel_h) || 0,
-          horasNaoFaturaveis: parseFloat(item.nao_faturavel_h) || 0,
-          valorFaturavel: parseFloat(item.valor_faturavel) || 0,
+          horasEstimadas: 0,
+          horasRemanescentes: 0,
+          horasExcesso: 0,
+          progresso: 0,
+          horasFaturaveis: 0,
+          horasNaoFaturaveis: 0,
+          valorFaturavel: 0,
           membros: item.membros || "",
           gerente: item.gerente || "",
           observacao: item.observacao || "",
@@ -119,9 +126,30 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
         });
       }
 
-      const projeto = projetosMap.get(projetoKey)!;
+      const projeto = projetosMap.get(numeroProjeto)!;
+      
+      // Adicionar projeto completo à lista
+      if (!projeto.projetos.includes(projetoCompleto)) {
+        projeto.projetos.push(projetoCompleto);
+      }
+
       const rastreado = parseFloat(item.rastreado_h) || 0;
       projeto.totalHoras += rastreado;
+
+      // Usar os valores máximos para as outras métricas
+      const estimado = parseFloat(item.estimado_h) || 0;
+      const remanescente = parseFloat(item.remanescente_h) || 0;
+      const excesso = parseFloat(item.excesso_h) || 0;
+      const faturavel = parseFloat(item.faturavel_h) || 0;
+      const naoFaturavel = parseFloat(item.nao_faturavel_h) || 0;
+      const valorFat = parseFloat(item.valor_faturavel) || 0;
+
+      if (estimado > projeto.horasEstimadas) projeto.horasEstimadas = estimado;
+      if (remanescente > projeto.horasRemanescentes) projeto.horasRemanescentes = remanescente;
+      if (excesso > projeto.horasExcesso) projeto.horasExcesso = excesso;
+      if (faturavel > projeto.horasFaturaveis) projeto.horasFaturaveis = faturavel;
+      if (naoFaturavel > projeto.horasNaoFaturaveis) projeto.horasNaoFaturaveis = naoFaturavel;
+      if (valorFat > projeto.valorFaturavel) projeto.valorFaturavel = valorFat;
 
       const tarefasStr = item.tarefa || "";
       const tarefas = tarefasStr.split(",").map((t: string) => t.trim()).filter((t: string) => t);
@@ -144,6 +172,11 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
     const totalHorasGeral = metrics.totalHoras;
 
     projetos.forEach((projeto) => {
+      // Recalcular progresso com base nas horas totais agrupadas
+      projeto.progresso = projeto.horasEstimadas > 0 
+        ? (projeto.totalHoras / projeto.horasEstimadas) * 100 
+        : 0;
+      
       projeto.percentualTotal = totalHorasGeral > 0 ? (projeto.totalHoras / totalHorasGeral) * 100 : 0;
       projeto.tarefas.forEach((tarefa) => {
         tarefa.percentual = projeto.totalHoras > 0 ? (tarefa.totalHoras / projeto.totalHoras) * 100 : 0;
@@ -151,7 +184,11 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
       projeto.tarefas.sort((a, b) => b.totalHoras - a.totalHoras);
     });
 
-    return projetos.sort((a, b) => a.numero.localeCompare(b.numero));
+    return projetos.sort((a, b) => {
+      const numA = parseInt(a.numeroProjeto) || 0;
+      const numB = parseInt(b.numeroProjeto) || 0;
+      return numA - numB;
+    });
   }, [fotosData, metrics.totalHoras]);
 
   const tarefasDistribuicao = useMemo((): TarefaFotosAgrupada[] => {
