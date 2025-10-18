@@ -275,22 +275,22 @@ const RelatorioFotosPage = () => {
                 <div>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={[
-                      { tipo: 'Tiradas', quantidade: totalFotos.fotosTiradas },
-                      { tipo: 'Enviadas', quantidade: totalFotos.fotosEnviadas },
+                      { tipo: 'Tiradas', quantidade: totalFotos.fotosTiradas, fill: 'hsl(217, 91%, 60%)' },
+                      { tipo: 'Enviadas', quantidade: totalFotos.fotosEnviadas, fill: 'hsl(142, 71%, 45%)' },
                     ]}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="tipo" />
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="quantidade" name="Quantidade de Fotos">
+                      <Bar dataKey="quantidade" name="Quantidade de Fotos" fill="fill">
                         {[
-                          { tipo: 'Tiradas', quantidade: totalFotos.fotosTiradas },
-                          { tipo: 'Enviadas', quantidade: totalFotos.fotosEnviadas },
+                          { tipo: 'Tiradas', fill: 'hsl(217, 91%, 60%)' },
+                          { tipo: 'Enviadas', fill: 'hsl(142, 71%, 45%)' },
                         ].map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
-                            fill={index === 0 ? 'hsl(var(--chart-1))' : 'hsl(var(--chart-2))'} 
+                            fill={entry.fill} 
                           />
                         ))}
                       </Bar>
