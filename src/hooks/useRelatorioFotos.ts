@@ -225,13 +225,52 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
     return clientes;
   }, [fotosData, metrics.totalHoras]);
 
+  const totalFotos = useMemo(() => {
+    let fotosVendidas = 0;
+    let fotosEnviadas = 0;
+    let fotosTiradas = 0;
+    const projetosProcessados = new Set<string>();
+
+    fotosData.forEach((item) => {
+      const projetoCompleto = item.projeto || "";
+      
+      if (projetoCompleto && !projetosProcessados.has(projetoCompleto)) {
+        projetosProcessados.add(projetoCompleto);
+        
+        // Extrair fotos vendidas (valor entre parênteses)
+        const vendidasMatch = projetoCompleto.match(/\((\d+)\)/);
+        if (vendidasMatch) {
+          fotosVendidas += parseInt(vendidasMatch[1]) || 0;
+        }
+        
+        // Extrair fotos enviadas (valor entre colchetes)
+        const enviadasMatch = projetoCompleto.match(/\[(\d+)\]/);
+        if (enviadasMatch) {
+          fotosEnviadas += parseInt(enviadasMatch[1]) || 0;
+        }
+        
+        // Extrair fotos tiradas (valor entre chaves)
+        const tiradasMatch = projetoCompleto.match(/\{(\d+)\}/);
+        if (tiradasMatch) {
+          fotosTiradas += parseInt(tiradasMatch[1]) || 0;
+        }
+      }
+    });
+
+    return {
+      fotosVendidas,
+      fotosEnviadas,
+      fotosTiradas,
+      percentualVendidas: fotosEnviadas > 0 
+        ? (fotosVendidas / fotosEnviadas) * 100 
+        : 0,
+    };
+  }, [fotosData]);
+
   const dadosPorStatus = useMemo(() => {
     const statusMap = new Map<string, { 
       horas: number; 
       projetos: Set<string>;
-      fotosVendidas: number;
-      fotosEnviadas: number;
-      fotosTiradas: number;
     }>();
 
     fotosData.forEach((item) => {
@@ -243,9 +282,6 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
         statusMap.set(status, { 
           horas: 0, 
           projetos: new Set(),
-          fotosVendidas: 0,
-          fotosEnviadas: 0,
-          fotosTiradas: 0,
         });
       }
 
@@ -253,24 +289,6 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
       statusData.horas += rastreado;
       if (projetoCompleto) {
         statusData.projetos.add(projetoCompleto);
-        
-        // Extrair fotos vendidas (valor entre parênteses)
-        const vendidasMatch = projetoCompleto.match(/\((\d+)\)/);
-        if (vendidasMatch) {
-          statusData.fotosVendidas += parseInt(vendidasMatch[1]) || 0;
-        }
-        
-        // Extrair fotos enviadas (valor entre colchetes)
-        const enviadasMatch = projetoCompleto.match(/\[(\d+)\]/);
-        if (enviadasMatch) {
-          statusData.fotosEnviadas += parseInt(enviadasMatch[1]) || 0;
-        }
-        
-        // Extrair fotos tiradas (valor entre chaves)
-        const tiradasMatch = projetoCompleto.match(/\{(\d+)\}/);
-        if (tiradasMatch) {
-          statusData.fotosTiradas += parseInt(tiradasMatch[1]) || 0;
-        }
       }
     });
 
@@ -278,11 +296,6 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
       status,
       totalHoras: data.horas,
       totalProjetos: data.projetos.size,
-      fotosTiradas: data.fotosTiradas,
-      fotosEnviadas: data.fotosEnviadas,
-      percentualVendidas: data.fotosEnviadas > 0 
-        ? (data.fotosVendidas / data.fotosEnviadas) * 100 
-        : 0,
     }));
   }, [fotosData]);
 
@@ -292,5 +305,6 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
     tarefasDistribuicao,
     clientesDistribuicao,
     dadosPorStatus,
+    totalFotos,
   };
 };

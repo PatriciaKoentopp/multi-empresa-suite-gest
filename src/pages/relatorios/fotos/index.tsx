@@ -54,6 +54,7 @@ const RelatorioFotosPage = () => {
     tarefasDistribuicao,
     clientesDistribuicao,
     dadosPorStatus,
+    totalFotos,
   } = useRelatorioFotos(consolidatedData);
 
   useEffect(() => {
@@ -267,46 +268,49 @@ const RelatorioFotosPage = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Evolução de Fotos por Status</CardTitle>
+              <CardTitle>Resumo de Fotos</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={350}>
-                <ComposedChart data={dadosPorStatus}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="status" />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip 
-                    formatter={(value: number, name: string) => {
-                      if (name === "% Vendidas/Enviadas") {
-                        return `${value.toFixed(1)}%`;
-                      }
-                      return value;
-                    }}
-                  />
-                  <Legend />
-                  <Bar 
-                    yAxisId="left"
-                    dataKey="fotosTiradas" 
-                    fill="hsl(var(--chart-1))" 
-                    name="Fotos Tiradas" 
-                  />
-                  <Bar 
-                    yAxisId="left"
-                    dataKey="fotosEnviadas" 
-                    fill="hsl(var(--chart-2))" 
-                    name="Fotos Enviadas" 
-                  />
-                  <Line 
-                    yAxisId="right"
-                    type="monotone" 
-                    dataKey="percentualVendidas" 
-                    stroke="hsl(var(--chart-3))" 
-                    strokeWidth={2}
-                    name="% Vendidas/Enviadas" 
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={[
+                      { tipo: 'Tiradas', quantidade: totalFotos.fotosTiradas },
+                      { tipo: 'Enviadas', quantidade: totalFotos.fotosEnviadas },
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="tipo" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="quantidade" name="Quantidade de Fotos">
+                        {[
+                          { tipo: 'Tiradas', quantidade: totalFotos.fotosTiradas },
+                          { tipo: 'Enviadas', quantidade: totalFotos.fotosEnviadas },
+                        ].map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={index === 0 ? 'hsl(var(--chart-1))' : 'hsl(var(--chart-2))'} 
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-col justify-center space-y-6">
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-1">Fotos Vendidas</p>
+                    <p className="text-3xl font-bold">{totalFotos.fotosVendidas}</p>
+                  </div>
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-1">Percentual de Conversão</p>
+                    <p className="text-3xl font-bold">{totalFotos.percentualVendidas.toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      (Vendidas / Enviadas)
+                    </p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
