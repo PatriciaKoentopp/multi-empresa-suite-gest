@@ -91,7 +91,7 @@ export default function RelatorioTempoPage() {
   const anosDisponiveis = useMemo(() => {
     const anos = new Set<string>();
     consolidatedData.forEach(item => {
-      const dataInicio = item.data_inicio;
+      const dataInicio = item.dados?.data_inicio;
       if (dataInicio) {
         let ano: string;
         if (typeof dataInicio === 'number') {
@@ -113,7 +113,7 @@ export default function RelatorioTempoPage() {
   const mesesDisponiveis = useMemo(() => {
     const meses = new Set<string>();
     consolidatedData.forEach(item => {
-      const dataInicio = item.data_inicio;
+      const dataInicio = item.dados?.data_inicio;
       if (dataInicio) {
         let mes: string;
         if (typeof dataInicio === 'number') {
