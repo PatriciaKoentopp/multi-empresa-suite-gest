@@ -112,6 +112,7 @@ export default function Relatorios() {
             <Card 
               key={relatorio.id} 
               className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' ? '' : 'opacity-60'}`}
+              onClick={() => handleCardClick(relatorio.route)}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="space-y-1">
@@ -128,10 +129,7 @@ export default function Relatorios() {
                 <Button 
                   variant={relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' ? "default" : "outline"} 
                   className="w-full"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCardClick(relatorio.route);
-                  }}
+                  onClick={() => handleCardClick(relatorio.route)}
                 >
                   Acessar Relatório
                 </Button>
