@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Clock, FileText, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUploadFiles } from "@/hooks/useUploadFiles";
 import { useSpreadsheetData, SpreadsheetData } from "@/hooks/useSpreadsheetData";
 import { useRelatorioTempo } from "@/hooks/useRelatorioTempo";
@@ -19,6 +20,8 @@ export default function RelatorioTempoPage() {
   const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
   const [consolidatedData, setConsolidatedData] = useState<SpreadsheetData[]>([]);
   const [expandedYears, setExpandedYears] = useState<Set<string>>(new Set());
+  const [filtroAno, setFiltroAno] = useState<string>("todos");
+  const [filtroMes, setFiltroMes] = useState<string>("todos");
   const {
     uploads,
     isLoading: uploadsLoading,
@@ -83,6 +86,90 @@ export default function RelatorioTempoPage() {
   const totalLinhasSelecionadas = uploads
     .filter(u => selectedUploadIds.includes(u.id))
     .reduce((sum, u) => sum + u.total_linhas, 0);
+
+  // Obter anos e meses únicos dos dados consolidados
+  const anosDisponiveis = useMemo(() => {
+    const anos = new Set<string>();
+    consolidatedData.forEach(item => {
+      const dataInicio = item.data_inicio;
+      if (dataInicio) {
+        let ano: string;
+        if (typeof dataInicio === 'number') {
+          const date = new Date((dataInicio - 25569) * 86400 * 1000);
+          ano = date.getFullYear().toString();
+        } else if (typeof dataInicio === 'string' && dataInicio.includes('/')) {
+          const parts = dataInicio.split('/');
+          ano = parts[2];
+        } else {
+          const date = new Date(dataInicio);
+          ano = date.getFullYear().toString();
+        }
+        anos.add(ano);
+      }
+    });
+    return Array.from(anos).sort();
+  }, [consolidatedData]);
+
+  const mesesDisponiveis = useMemo(() => {
+    const meses = new Set<string>();
+    consolidatedData.forEach(item => {
+      const dataInicio = item.data_inicio;
+      if (dataInicio) {
+        let mes: string;
+        if (typeof dataInicio === 'number') {
+          const date = new Date((dataInicio - 25569) * 86400 * 1000);
+          mes = (date.getMonth() + 1).toString().padStart(2, '0');
+        } else if (typeof dataInicio === 'string' && dataInicio.includes('/')) {
+          const parts = dataInicio.split('/');
+          mes = parts[1];
+        } else {
+          const date = new Date(dataInicio);
+          mes = (date.getMonth() + 1).toString().padStart(2, '0');
+        }
+        meses.add(mes);
+      }
+    });
+    return Array.from(meses).sort();
+  }, [consolidatedData]);
+
+  // Filtrar projetos agrupados baseado nos filtros selecionados
+  const projetosAgrupadosFiltrados = useMemo(() => {
+    return projetosAgrupados.filter(projeto => {
+      // Filtrar por ano e mês baseado nas tarefas do projeto
+      const temTarefasNoFiltro = projeto.tarefas.some(tarefa => {
+        return tarefa.detalhes.some(detalhe => {
+          const dataInicio = detalhe.data_inicio;
+          if (!dataInicio) return false;
+
+          let ano: string;
+          let mes: string;
+
+          if (typeof dataInicio === 'number') {
+            const date = new Date((dataInicio - 25569) * 86400 * 1000);
+            ano = date.getFullYear().toString();
+            mes = (date.getMonth() + 1).toString().padStart(2, '0');
+          } else if (typeof dataInicio === 'string' && dataInicio.includes('/')) {
+            const parts = dataInicio.split('/');
+            ano = parts[2];
+            mes = parts[1];
+          } else {
+            const date = new Date(dataInicio);
+            ano = date.getFullYear().toString();
+            mes = (date.getMonth() + 1).toString().padStart(2, '0');
+          }
+
+          const anoMatch = filtroAno === 'todos' || ano === filtroAno;
+          const mesMatch = filtroMes === 'todos' || mes === filtroMes;
+
+          return anoMatch && mesMatch;
+        });
+      });
+
+      return temTarefasNoFiltro;
+    });
+  }, [projetosAgrupados, filtroAno, filtroMes]);
+
+  const mesesNomes = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   if (uploadsLoading) {
     return <div className="container mx-auto p-6">
         <p>Carregando...</p>
@@ -382,9 +469,47 @@ export default function RelatorioTempoPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Projetos Agrupados</CardTitle>
+                  <div className="flex gap-4 mt-4">
+                    <div className="flex-1">
+                      <label className="text-sm font-medium mb-2 block">Ano</label>
+                      <Select value={filtroAno} onValueChange={setFiltroAno}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o ano" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos os Anos</SelectItem>
+                          {anosDisponiveis.map(ano => (
+                            <SelectItem key={ano} value={ano}>{ano}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-sm font-medium mb-2 block">Mês</label>
+                      <Select value={filtroMes} onValueChange={setFiltroMes}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o mês" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos os Meses</SelectItem>
+                          {mesesDisponiveis.map(mes => (
+                            <SelectItem key={mes} value={mes}>
+                              {mesesNomes[parseInt(mes) - 1]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <ProjetoAccordion projetos={projetosAgrupados} />
+                  {projetosAgrupadosFiltrados.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">
+                      Nenhum projeto encontrado para os filtros selecionados.
+                    </p>
+                  ) : (
+                    <ProjetoAccordion projetos={projetosAgrupadosFiltrados} />
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
