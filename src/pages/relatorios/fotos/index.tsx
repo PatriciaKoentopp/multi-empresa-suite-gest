@@ -301,6 +301,17 @@ const RelatorioFotosPage = () => {
                 </div>
                 <div className="flex flex-col justify-center space-y-4">
                   <div className="p-4 bg-muted/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-1">Tempo por Foto Vendida</p>
+                    <p className="text-3xl font-bold">
+                      {totalFotos.tempoPorFotoVendida > 0 
+                        ? formatHoursMinutes(totalFotos.tempoPorFotoVendida) 
+                        : '-'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      (Total Horas / Fotos Vendidas)
+                    </p>
+                  </div>
+                  <div className="p-4 bg-muted/30 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-1">% Enviadas / Tiradas</p>
                     <p className="text-3xl font-bold">{totalFotos.percentualEnviadas.toFixed(1)}%</p>
                     <p className="text-xs text-muted-foreground mt-1">

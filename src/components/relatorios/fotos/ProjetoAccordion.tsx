@@ -19,6 +19,7 @@ interface ProjetoFotosAgrupado {
   fotosVendidas: number;
   fotosEnviadas: number;
   fotosTiradas: number;
+  tempoPorFotoVendida: number;
 }
 
 interface ProjetoAccordionProps {
@@ -70,7 +71,7 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 text-sm mt-4 mb-4">
+              <div className="grid grid-cols-4 gap-4 text-sm mt-4 mb-4">
                 <div className="p-3 bg-muted/30 rounded-lg">
                   <span className="text-muted-foreground text-xs">Fotos Vendidas</span>
                   <p className="text-2xl font-bold mt-1">{projeto.fotosVendidas}</p>
@@ -82,6 +83,14 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
                 <div className="p-3 bg-muted/30 rounded-lg">
                   <span className="text-muted-foreground text-xs">Fotos Tiradas</span>
                   <p className="text-2xl font-bold mt-1">{projeto.fotosTiradas}</p>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <span className="text-muted-foreground text-xs">Tempo/Foto Vendida</span>
+                  <p className="text-2xl font-bold mt-1">
+                    {projeto.tempoPorFotoVendida > 0 
+                      ? formatHoursMinutes(projeto.tempoPorFotoVendida)
+                      : '-'}
+                  </p>
                 </div>
               </div>
 

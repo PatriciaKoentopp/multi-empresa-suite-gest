@@ -33,6 +33,7 @@ interface ProjetoFotosAgrupado {
   fotosVendidas: number;
   fotosEnviadas: number;
   fotosTiradas: number;
+  tempoPorFotoVendida: number;
 }
 
 interface ClienteFotosAgrupado {
@@ -118,6 +119,7 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
           fotosVendidas: 0,
           fotosEnviadas: 0,
           fotosTiradas: 0,
+          tempoPorFotoVendida: 0,
         });
       }
 
@@ -164,6 +166,7 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
 
     projetos.forEach((projeto) => {
       projeto.percentualTotal = totalHorasGeral > 0 ? (projeto.totalHoras / totalHorasGeral) * 100 : 0;
+      projeto.tempoPorFotoVendida = projeto.fotosVendidas > 0 ? projeto.totalHoras / projeto.fotosVendidas : 0;
     });
 
     return projetos.sort((a, b) => {
@@ -276,6 +279,7 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
       percentualVendidasTiradas: fotosTiradas > 0
         ? (fotosVendidas / fotosTiradas) * 100
         : 0,
+      tempoPorFotoVendida: fotosVendidas > 0 ? metrics.totalHoras / fotosVendidas : 0,
     };
   }, [fotosData]);
 
