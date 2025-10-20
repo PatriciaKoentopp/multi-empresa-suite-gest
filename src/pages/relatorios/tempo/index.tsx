@@ -134,16 +134,21 @@ export default function RelatorioTempoPage() {
 
   // Filtrar projetos agrupados baseado nos filtros selecionados
   const projetosAgrupadosFiltrados = useMemo(() => {
+    // Se ambos os filtros estão em "todos", retornar todos os projetos
+    if (filtroAno === 'todos' && filtroMes === 'todos') {
+      return projetosAgrupados;
+    }
+
     return projetosAgrupados.filter(projeto => {
       // Verificar se o projeto tem tarefas
-      if (!projeto.tarefas || !Array.isArray(projeto.tarefas)) {
+      if (!projeto.tarefas || !Array.isArray(projeto.tarefas) || projeto.tarefas.length === 0) {
         return false;
       }
 
       // Filtrar por ano e mês baseado nas tarefas do projeto
       const temTarefasNoFiltro = projeto.tarefas.some(tarefa => {
         // Verificar se a tarefa tem detalhes
-        if (!tarefa.detalhes || !Array.isArray(tarefa.detalhes)) {
+        if (!tarefa.detalhes || !Array.isArray(tarefa.detalhes) || tarefa.detalhes.length === 0) {
           return false;
         }
 
