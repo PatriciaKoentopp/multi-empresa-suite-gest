@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useUploadFiles } from "@/hooks/useUploadFiles";
 import { useSpreadsheetData } from "@/hooks/useSpreadsheetData";
 import { useRelatorioFotos } from "@/hooks/useRelatorioFotos";
@@ -44,6 +46,7 @@ const RelatorioFotosPage = () => {
   const [consolidatedData, setConsolidatedData] = useState<any[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
+  const [filtroPercentual, setFiltroPercentual] = useState<number>(5);
 
   const { uploads, isLoading: uploadsLoading, fetchUploadsByTipo, deleteUpload } = useUploadFiles();
   const { data: spreadsheetData, isLoading: dataLoading, fetchDataByUpload } = useSpreadsheetData();
@@ -161,6 +164,24 @@ const RelatorioFotosPage = () => {
     const m = Math.round((hours - h) * 60);
     return `${h}h ${m}m`;
   };
+
+  const projetosAcimaMedia = useMemo(() => {
+    const mediaGeral = totalFotos.tempoPorFotoVendida;
+    if (mediaGeral === 0) return [];
+    
+    const threshold = mediaGeral * (1 + filtroPercentual / 100);
+    
+    return projetosAgrupados
+      .filter(projeto => 
+        projeto.tempoPorFotoVendida > 0 && 
+        projeto.tempoPorFotoVendida > threshold
+      )
+      .sort((a, b) => {
+        const numA = parseInt(a.numeroProjeto) || 0;
+        const numB = parseInt(b.numeroProjeto) || 0;
+        return numB - numA; // Ordem decrescente
+      });
+  }, [projetosAgrupados, totalFotos.tempoPorFotoVendida, filtroPercentual]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -333,6 +354,68 @@ const RelatorioFotosPage = () => {
                     </p>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Projetos Acima do Padrão</span>
+                <Badge variant="secondary">
+                  {projetosAcimaMedia.length} projeto{projetosAcimaMedia.length !== 1 ? 's' : ''}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      Média Geral: <span className="font-semibold text-foreground">
+                        {totalFotos.tempoPorFotoVendida > 0 
+                          ? formatHoursMinutes(totalFotos.tempoPorFotoVendida) 
+                          : '-'}
+                      </span>
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Filtro Atual: <span className="font-semibold text-foreground">
+                        {totalFotos.tempoPorFotoVendida > 0 
+                          ? formatHoursMinutes(totalFotos.tempoPorFotoVendida * (1 + filtroPercentual / 100))
+                          : '-'}
+                      </span> (+{filtroPercentual}%)
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Filtrar por:</span>
+                    <ToggleGroup 
+                      type="single" 
+                      value={filtroPercentual.toString()}
+                      onValueChange={(value) => {
+                        if (value) setFiltroPercentual(Number(value));
+                      }}
+                    >
+                      <ToggleGroupItem value="5" aria-label="5%">
+                        &gt;5%
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="10" aria-label="10%">
+                        &gt;10%
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="15" aria-label="15%">
+                        &gt;15%
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </div>
+                </div>
+                {projetosAcimaMedia.length > 0 ? (
+                  <Accordion type="single" collapsible className="w-full">
+                    <ProjetoAccordion projetos={projetosAcimaMedia} />
+                  </Accordion>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Nenhum projeto encontrado com tempo por foto vendida acima de {filtroPercentual}% da média.</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
