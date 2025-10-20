@@ -112,6 +112,30 @@ const RelatorioFotosPage = () => {
     setUploadToDelete(null);
   };
 
+  const formatHoursMinutes = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h}h ${m}m`;
+  };
+
+  const projetosAcimaMedia = useMemo(() => {
+    const mediaGeral = totalFotos.tempoPorFotoVendida;
+    if (mediaGeral === 0) return [];
+    
+    const threshold = mediaGeral * (1 + filtroPercentual / 100);
+    
+    return projetosAgrupados
+      .filter(projeto => 
+        projeto.tempoPorFotoVendida > 0 && 
+        projeto.tempoPorFotoVendida > threshold
+      )
+      .sort((a, b) => {
+        const numA = parseInt(a.numeroProjeto) || 0;
+        const numB = parseInt(b.numeroProjeto) || 0;
+        return numB - numA; // Ordem decrescente
+      });
+  }, [projetosAgrupados, totalFotos.tempoPorFotoVendida, filtroPercentual]);
+
   const COLORS = [
     "hsl(var(--chart-1))",
     "hsl(var(--chart-2))",
@@ -158,30 +182,6 @@ const RelatorioFotosPage = () => {
       </div>
     );
   }
-
-  const formatHoursMinutes = (hours: number) => {
-    const h = Math.floor(hours);
-    const m = Math.round((hours - h) * 60);
-    return `${h}h ${m}m`;
-  };
-
-  const projetosAcimaMedia = useMemo(() => {
-    const mediaGeral = totalFotos.tempoPorFotoVendida;
-    if (mediaGeral === 0) return [];
-    
-    const threshold = mediaGeral * (1 + filtroPercentual / 100);
-    
-    return projetosAgrupados
-      .filter(projeto => 
-        projeto.tempoPorFotoVendida > 0 && 
-        projeto.tempoPorFotoVendida > threshold
-      )
-      .sort((a, b) => {
-        const numA = parseInt(a.numeroProjeto) || 0;
-        const numB = parseInt(b.numeroProjeto) || 0;
-        return numB - numA; // Ordem decrescente
-      });
-  }, [projetosAgrupados, totalFotos.tempoPorFotoVendida, filtroPercentual]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
