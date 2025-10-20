@@ -46,7 +46,7 @@ const RelatorioFotosPage = () => {
   const [consolidatedData, setConsolidatedData] = useState<any[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
-  const [filtroPercentual, setFiltroPercentual] = useState<number>(5);
+  const [filtroPercentual, setFiltroPercentual] = useState<number>(10);
 
   const { uploads, isLoading: uploadsLoading, fetchUploadsByTipo, deleteUpload } = useUploadFiles();
   const { data: spreadsheetData, isLoading: dataLoading, fetchDataByUpload } = useSpreadsheetData();
@@ -395,14 +395,14 @@ const RelatorioFotosPage = () => {
                         if (value) setFiltroPercentual(Number(value));
                       }}
                     >
-                      <ToggleGroupItem value="5" aria-label="5%">
-                        &gt;5%
-                      </ToggleGroupItem>
                       <ToggleGroupItem value="10" aria-label="10%">
                         &gt;10%
                       </ToggleGroupItem>
-                      <ToggleGroupItem value="15" aria-label="15%">
-                        &gt;15%
+                      <ToggleGroupItem value="30" aria-label="30%">
+                        &gt;30%
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="50" aria-label="50%">
+                        &gt;50%
                       </ToggleGroupItem>
                     </ToggleGroup>
                   </div>
