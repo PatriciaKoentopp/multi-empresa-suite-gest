@@ -269,6 +269,59 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
       .sort((a, b) => parseInt(a.ano) - parseInt(b.ano));
   }, [horasData]);
 
+  const dadosPorMesAno = useMemo(() => {
+    const mesesMap = new Map<string, { totalHoras: number; projetos: Set<string> }>();
+    
+    horasData
+      .filter((hora) => hora.tarefa && hora.tarefa.trim() !== '')
+      .forEach((hora) => {
+        let ano: number;
+        let mes: number;
+        const dataInicio = hora.data_inicio;
+        
+        if (typeof dataInicio === 'number') {
+          // Serial do Excel
+          const excelEpoch = new Date(1899, 11, 30);
+          const date = new Date(excelEpoch.getTime() + dataInicio * 24 * 60 * 60 * 1000);
+          ano = date.getFullYear();
+          mes = date.getMonth() + 1;
+        } else if (typeof dataInicio === 'string' && dataInicio.includes('/')) {
+          // Formato dd/mm/yyyy
+          const parts = dataInicio.split('/');
+          mes = parseInt(parts[1]);
+          ano = parseInt(parts[2]);
+        } else {
+          return;
+        }
+        
+        const chave = `${ano}-${mes.toString().padStart(2, '0')}`;
+        
+        if (!mesesMap.has(chave)) {
+          mesesMap.set(chave, { totalHoras: 0, projetos: new Set() });
+        }
+        
+        const dadosMes = mesesMap.get(chave)!;
+        dadosMes.totalHoras += hora.duracao_decimal;
+        dadosMes.projetos.add(extractProjectNumber(hora.projeto));
+      });
+    
+    return Array.from(mesesMap.entries())
+      .map(([chave, dados]) => {
+        const [ano, mes] = chave.split('-');
+        const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        return {
+          ano,
+          mes,
+          mesNome: mesesNomes[parseInt(mes) - 1],
+          chave,
+          totalHoras: parseFloat(dados.totalHoras.toFixed(2)),
+          totalProjetos: dados.projetos.size,
+          horasPorProjeto: parseFloat((dados.totalHoras / dados.projetos.size).toFixed(2)),
+        };
+      })
+      .sort((a, b) => a.chave.localeCompare(b.chave));
+  }, [horasData]);
+
   return {
     horasData,
     metrics,
@@ -276,5 +329,6 @@ export const useRelatorioTempo = (data: SpreadsheetData[]) => {
     tarefasDistribuicao,
     usuariosDistribuicao,
     dadosPorAno,
+    dadosPorMesAno,
   };
 };

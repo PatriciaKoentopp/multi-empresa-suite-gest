@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Clock, FileText, Trash2 } from "lucide-react";
+import { Upload, Clock, FileText, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { useUploadFiles } from "@/hooks/useUploadFiles";
 import { useSpreadsheetData, SpreadsheetData } from "@/hooks/useSpreadsheetData";
 import { useRelatorioTempo } from "@/hooks/useRelatorioTempo";
@@ -18,6 +18,7 @@ export default function RelatorioTempoPage() {
   const [selectedUploadIds, setSelectedUploadIds] = useState<string[]>([]);
   const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
   const [consolidatedData, setConsolidatedData] = useState<SpreadsheetData[]>([]);
+  const [expandedYears, setExpandedYears] = useState<Set<string>>(new Set());
   const {
     uploads,
     isLoading: uploadsLoading,
@@ -32,7 +33,8 @@ export default function RelatorioTempoPage() {
     metrics,
     projetosAgrupados,
     tarefasDistribuicao,
-    dadosPorAno
+    dadosPorAno,
+    dadosPorMesAno
   } = useRelatorioTempo(consolidatedData);
   useEffect(() => {
     fetchUploadsByTipo("tempo");
@@ -196,72 +198,125 @@ export default function RelatorioTempoPage() {
           <Card>
             <CardHeader>
               <CardTitle>Evolução Anual</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Clique nos anos para expandir e visualizar dados mensais
+              </p>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart data={dadosPorAno}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="ano" 
-                    stroke="hsl(var(--foreground))"
-                    style={{ fontSize: '12px' }}
-                  />
-                  <YAxis 
-                    yAxisId="left"
-                    stroke="hsl(var(--foreground))"
-                    style={{ fontSize: '12px' }}
-                    label={{ value: 'Total de Horas', angle: -90, position: 'insideLeft' }}
-                  />
-                  <YAxis 
-                    yAxisId="right"
-                    orientation="right"
-                    stroke="hsl(var(--foreground))"
-                    style={{ fontSize: '12px' }}
-                    label={{ value: 'Número de Projetos', angle: 90, position: 'insideRight' }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--background))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "6px",
-                    }}
-                    formatter={(value: number, name: string, props: any) => {
-                      if (name === 'Total de Horas') {
-                        const hours = Math.floor(value);
-                        const minutes = Math.round((value - hours) * 60);
-                        const horasPorProjeto = props.payload?.horasPorProjeto;
-                        if (horasPorProjeto) {
-                          const hppHours = Math.floor(horasPorProjeto);
-                          const hppMinutes = Math.round((horasPorProjeto - hppHours) * 60);
-                          return [`${hours}h ${minutes}m (${hppHours}h ${hppMinutes}m por projeto)`, name];
+            <CardContent className="space-y-4">
+              {dadosPorAno.map((anoData) => {
+                const isExpanded = expandedYears.has(anoData.ano);
+                const mesesDoAno = dadosPorMesAno.filter(m => m.ano === anoData.ano);
+                
+                return (
+                  <div key={anoData.ano} className="border rounded-lg overflow-hidden">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between p-4 hover:bg-accent/50"
+                      onClick={() => {
+                        const newExpanded = new Set(expandedYears);
+                        if (isExpanded) {
+                          newExpanded.delete(anoData.ano);
+                        } else {
+                          newExpanded.add(anoData.ano);
                         }
-                        return [`${hours}h ${minutes}m`, name];
-                      }
-                      return [value, name];
-                    }}
-                  />
-                  <Legend />
-                  <Bar 
-                    yAxisId="left"
-                    dataKey="totalHoras" 
-                    name="Total de Horas"
-                    radius={[4, 4, 0, 0]}
-                  >
-                    {dadosPorAno.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={`hsl(${(index * 360) / dadosPorAno.length}, 70%, 60%)`} />
-                    ))}
-                  </Bar>
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="totalProjetos"
-                    name="Total de Projetos"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={3}
-                    dot={{ fill: 'hsl(var(--primary))', r: 5 }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
+                        setExpandedYears(newExpanded);
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        {isExpanded ? (
+                          <ChevronDown className="h-5 w-5" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5" />
+                        )}
+                        <span className="text-lg font-semibold">{anoData.ano}</span>
+                      </div>
+                      <div className="flex items-center gap-6 text-sm">
+                        <div className="text-right">
+                          <div className="font-medium">{formatHoursMinutes(anoData.totalHoras)}</div>
+                          <div className="text-muted-foreground">Total de Horas</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">{anoData.totalProjetos}</div>
+                          <div className="text-muted-foreground">Projetos</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">{formatHoursMinutes(anoData.horasPorProjeto)}</div>
+                          <div className="text-muted-foreground">Horas/Projeto</div>
+                        </div>
+                      </div>
+                    </Button>
+                    
+                    {isExpanded && mesesDoAno.length > 0 && (
+                      <div className="border-t bg-muted/20 p-4">
+                        <ResponsiveContainer width="100%" height={300}>
+                          <ComposedChart data={mesesDoAno}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                            <XAxis 
+                              dataKey="mesNome" 
+                              stroke="hsl(var(--foreground))"
+                              style={{ fontSize: '12px' }}
+                            />
+                            <YAxis 
+                              yAxisId="left"
+                              stroke="hsl(var(--foreground))"
+                              style={{ fontSize: '12px' }}
+                              label={{ value: 'Total de Horas', angle: -90, position: 'insideLeft' }}
+                            />
+                            <YAxis 
+                              yAxisId="right"
+                              orientation="right"
+                              stroke="hsl(var(--foreground))"
+                              style={{ fontSize: '12px' }}
+                              label={{ value: 'Número de Projetos', angle: 90, position: 'insideRight' }}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--background))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: "6px",
+                              }}
+                              formatter={(value: number, name: string, props: any) => {
+                                if (name === 'Total de Horas') {
+                                  const hours = Math.floor(value);
+                                  const minutes = Math.round((value - hours) * 60);
+                                  const horasPorProjeto = props.payload?.horasPorProjeto;
+                                  if (horasPorProjeto) {
+                                    const hppHours = Math.floor(horasPorProjeto);
+                                    const hppMinutes = Math.round((horasPorProjeto - hppHours) * 60);
+                                    return [`${hours}h ${minutes}m (${hppHours}h ${hppMinutes}m por projeto)`, name];
+                                  }
+                                  return [`${hours}h ${minutes}m`, name];
+                                }
+                                return [value, name];
+                              }}
+                            />
+                            <Legend />
+                            <Bar 
+                              yAxisId="left"
+                              dataKey="totalHoras" 
+                              name="Total de Horas"
+                              radius={[4, 4, 0, 0]}
+                            >
+                              {mesesDoAno.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={`hsl(${(index * 360) / 12}, 70%, 60%)`} />
+                              ))}
+                            </Bar>
+                            <Line
+                              yAxisId="right"
+                              type="monotone"
+                              dataKey="totalProjetos"
+                              name="Total de Projetos"
+                              stroke="hsl(var(--primary))"
+                              strokeWidth={3}
+                              dot={{ fill: 'hsl(var(--primary))', r: 5 }}
+                            />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
 
