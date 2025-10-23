@@ -139,48 +139,58 @@ export default function RelatorioTempoPage() {
       return projetosAgrupados;
     }
 
+    // Função helper para converter diferentes formatos de data para timestamp
+    const converterParaTimestamp = (dataInicio: any): number | null => {
+      if (!dataInicio) return null;
+
+      if (typeof dataInicio === 'number') {
+        return (dataInicio - 25569) * 86400 * 1000;
+      } else if (typeof dataInicio === 'string' && dataInicio.includes('/')) {
+        const parts = dataInicio.split('/');
+        const date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        return date.getTime();
+      } else {
+        const date = new Date(dataInicio);
+        return date.getTime();
+      }
+    };
+
     return projetosAgrupados.filter(projeto => {
       // Verificar se o projeto tem tarefas
       if (!projeto.tarefas || !Array.isArray(projeto.tarefas) || projeto.tarefas.length === 0) {
         return false;
       }
 
-      // Filtrar por ano e mês baseado nas tarefas do projeto
-      const temTarefasNoFiltro = projeto.tarefas.some(tarefa => {
-        // Verificar se a tarefa tem detalhes
-        if (!tarefa.detalhes || !Array.isArray(tarefa.detalhes) || tarefa.detalhes.length === 0) {
-          return false;
+      // Coletar todas as datas do projeto
+      const todasAsDatas: number[] = [];
+      
+      projeto.tarefas.forEach(tarefa => {
+        if (tarefa.detalhes && Array.isArray(tarefa.detalhes)) {
+          tarefa.detalhes.forEach(detalhe => {
+            const timestamp = converterParaTimestamp(detalhe.data_inicio);
+            if (timestamp !== null) {
+              todasAsDatas.push(timestamp);
+            }
+          });
         }
-
-        return tarefa.detalhes.some(detalhe => {
-          const dataInicio = detalhe.data_inicio;
-          if (!dataInicio) return false;
-
-          let ano: string;
-          let mes: string;
-
-          if (typeof dataInicio === 'number') {
-            const date = new Date((dataInicio - 25569) * 86400 * 1000);
-            ano = date.getFullYear().toString();
-            mes = (date.getMonth() + 1).toString().padStart(2, '0');
-          } else if (typeof dataInicio === 'string' && dataInicio.includes('/')) {
-            const parts = dataInicio.split('/');
-            ano = parts[2];
-            mes = parts[1];
-          } else {
-            const date = new Date(dataInicio);
-            ano = date.getFullYear().toString();
-            mes = (date.getMonth() + 1).toString().padStart(2, '0');
-          }
-
-          const anoMatch = filtroAno === 'todos' || ano === filtroAno;
-          const mesMatch = filtroMes === 'todos' || mes === filtroMes;
-
-          return anoMatch && mesMatch;
-        });
       });
 
-      return temTarefasNoFiltro;
+      // Se não há datas, não incluir o projeto
+      if (todasAsDatas.length === 0) {
+        return false;
+      }
+
+      // Encontrar a primeira data (menor timestamp)
+      const primeiraDataTimestamp = Math.min(...todasAsDatas);
+      const primeiraData = new Date(primeiraDataTimestamp);
+      
+      const ano = primeiraData.getFullYear().toString();
+      const mes = (primeiraData.getMonth() + 1).toString().padStart(2, '0');
+
+      const anoMatch = filtroAno === 'todos' || ano === filtroAno;
+      const mesMatch = filtroMes === 'todos' || mes === filtroMes;
+
+      return anoMatch && mesMatch;
     });
   }, [projetosAgrupados, filtroAno, filtroMes]);
 
