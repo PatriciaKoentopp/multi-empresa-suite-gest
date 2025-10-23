@@ -32,13 +32,48 @@ export default function RelatorioTempoPage() {
     isLoading: dataLoading,
     fetchDataByUpload
   } = useSpreadsheetData();
+
+  // Filtrar dados consolidados antes de passar para o hook
+  const dadosFiltrados = useMemo(() => {
+    if (filtroAno === 'todos' && filtroMes === 'todos') {
+      return consolidatedData;
+    }
+
+    return consolidatedData.filter(item => {
+      const dataInicio = item.dados?.data_inicio;
+      if (!dataInicio) return false;
+
+      let ano: string;
+      let mes: string;
+
+      if (typeof dataInicio === 'number') {
+        const date = new Date((dataInicio - 25569) * 86400 * 1000);
+        ano = date.getFullYear().toString();
+        mes = (date.getMonth() + 1).toString().padStart(2, '0');
+      } else if (typeof dataInicio === 'string' && dataInicio.includes('/')) {
+        const parts = dataInicio.split('/');
+        mes = parts[1].padStart(2, '0');
+        ano = parts[2];
+      } else {
+        const date = new Date(dataInicio);
+        ano = date.getFullYear().toString();
+        mes = (date.getMonth() + 1).toString().padStart(2, '0');
+      }
+
+      const anoMatch = filtroAno === 'todos' || ano === filtroAno;
+      const mesMatch = filtroMes === 'todos' || mes === mesMatch;
+
+      return anoMatch && mesMatch;
+    });
+  }, [consolidatedData, filtroAno, filtroMes]);
+
   const {
     metrics,
     projetosAgrupados,
     tarefasDistribuicao,
     dadosPorAno,
     dadosPorMesAno
-  } = useRelatorioTempo(consolidatedData);
+  } = useRelatorioTempo(dadosFiltrados);
   useEffect(() => {
     fetchUploadsByTipo("tempo");
   }, []);
@@ -132,67 +167,6 @@ export default function RelatorioTempoPage() {
     return Array.from(meses).sort();
   }, [consolidatedData]);
 
-  // Filtrar projetos agrupados baseado nos filtros selecionados
-  const projetosAgrupadosFiltrados = useMemo(() => {
-    // Se ambos os filtros estão em "todos", retornar todos os projetos
-    if (filtroAno === 'todos' && filtroMes === 'todos') {
-      return projetosAgrupados;
-    }
-
-    // Função helper para converter diferentes formatos de data para timestamp
-    const converterParaTimestamp = (dataInicio: any): number | null => {
-      if (!dataInicio) return null;
-
-      if (typeof dataInicio === 'number') {
-        return (dataInicio - 25569) * 86400 * 1000;
-      } else if (typeof dataInicio === 'string' && dataInicio.includes('/')) {
-        const parts = dataInicio.split('/');
-        const date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-        return date.getTime();
-      } else {
-        const date = new Date(dataInicio);
-        return date.getTime();
-      }
-    };
-
-    return projetosAgrupados.filter(projeto => {
-      // Verificar se o projeto tem tarefas
-      if (!projeto.tarefas || !Array.isArray(projeto.tarefas) || projeto.tarefas.length === 0) {
-        return false;
-      }
-
-      // Coletar todas as datas do projeto
-      const todasAsDatas: number[] = [];
-      
-      projeto.tarefas.forEach(tarefa => {
-        if (tarefa.detalhes && Array.isArray(tarefa.detalhes)) {
-          tarefa.detalhes.forEach(detalhe => {
-            const timestamp = converterParaTimestamp(detalhe.data);
-            if (timestamp !== null) {
-              todasAsDatas.push(timestamp);
-            }
-          });
-        }
-      });
-
-      // Se não há datas, não incluir o projeto
-      if (todasAsDatas.length === 0) {
-        return false;
-      }
-
-      // Encontrar a primeira data (menor timestamp)
-      const primeiraDataTimestamp = Math.min(...todasAsDatas);
-      const primeiraData = new Date(primeiraDataTimestamp);
-      
-      const ano = primeiraData.getFullYear().toString();
-      const mes = (primeiraData.getMonth() + 1).toString().padStart(2, '0');
-
-      const anoMatch = filtroAno === 'todos' || ano === filtroAno;
-      const mesMatch = filtroMes === 'todos' || mes === filtroMes;
-
-      return anoMatch && mesMatch;
-    });
-  }, [projetosAgrupados, filtroAno, filtroMes]);
 
   const mesesNomes = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   if (uploadsLoading) {
@@ -528,12 +502,12 @@ export default function RelatorioTempoPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {projetosAgrupadosFiltrados.length === 0 ? (
+                  {projetosAgrupados.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">
                       Nenhum projeto encontrado para os filtros selecionados.
                     </p>
                   ) : (
-                    <ProjetoAccordion projetos={projetosAgrupadosFiltrados} />
+                    <ProjetoAccordion projetos={projetosAgrupados} />
                   )}
                 </CardContent>
               </Card>
