@@ -167,7 +167,7 @@ export default function RelatorioTempoPage() {
       projeto.tarefas.forEach(tarefa => {
         if (tarefa.detalhes && Array.isArray(tarefa.detalhes)) {
           tarefa.detalhes.forEach(detalhe => {
-            const timestamp = converterParaTimestamp(detalhe.data_inicio);
+            const timestamp = converterParaTimestamp(detalhe.data);
             if (timestamp !== null) {
               todasAsDatas.push(timestamp);
             }
