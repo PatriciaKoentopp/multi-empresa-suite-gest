@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Clock, FileText, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { useUploadFiles } from "@/hooks/useUploadFiles";
 import { useSpreadsheetData, SpreadsheetData } from "@/hooks/useSpreadsheetData";
 import { useRelatorioTempo } from "@/hooks/useRelatorioTempo";
@@ -22,6 +23,8 @@ export default function RelatorioTempoPage() {
   const [expandedYears, setExpandedYears] = useState<Set<string>>(new Set());
   const [filtroAno, setFiltroAno] = useState<string>("todos");
   const [filtroMes, setFiltroMes] = useState<string>("todos");
+  const [filtroCodigo, setFiltroCodigo] = useState<string>("");
+  const [filtroCliente, setFiltroCliente] = useState<string>("");
   const {
     uploads,
     isLoading: uploadsLoading,
@@ -74,6 +77,23 @@ export default function RelatorioTempoPage() {
     dadosPorAno,
     dadosPorMesAno
   } = useRelatorioTempo(dadosFiltrados);
+
+  // Filtrar projetos agrupados por código e nome do cliente
+  const projetosAgrupadosFiltrados = useMemo(() => {
+    if (!filtroCodigo && !filtroCliente) {
+      return projetosAgrupados;
+    }
+
+    return projetosAgrupados.filter(projeto => {
+      const codigoMatch = !filtroCodigo || 
+        projeto.numero?.toLowerCase().includes(filtroCodigo.toLowerCase());
+      
+      const clienteMatch = !filtroCliente || 
+        projeto.cliente?.toLowerCase().includes(filtroCliente.toLowerCase());
+
+      return codigoMatch && clienteMatch;
+    });
+  }, [projetosAgrupados, filtroCodigo, filtroCliente]);
   useEffect(() => {
     fetchUploadsByTipo("tempo");
   }, []);
@@ -468,46 +488,66 @@ export default function RelatorioTempoPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Projetos Agrupados</CardTitle>
-                  <div className="flex gap-4 mt-4">
-                    <div className="flex-1">
-                      <label className="text-sm font-medium mb-2 block">Ano</label>
-                      <Select value={filtroAno} onValueChange={setFiltroAno}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o ano" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">Todos os Anos</SelectItem>
-                          {anosDisponiveis.map(ano => (
-                            <SelectItem key={ano} value={ano}>{ano}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  <div className="space-y-4 mt-4">
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label className="text-sm font-medium mb-2 block">Ano</label>
+                        <Select value={filtroAno} onValueChange={setFiltroAno}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o ano" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="todos">Todos os Anos</SelectItem>
+                            {anosDisponiveis.map(ano => (
+                              <SelectItem key={ano} value={ano}>{ano}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-sm font-medium mb-2 block">Mês</label>
+                        <Select value={filtroMes} onValueChange={setFiltroMes}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o mês" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="todos">Todos os Meses</SelectItem>
+                            {mesesDisponiveis.map(mes => (
+                              <SelectItem key={mes} value={mes}>
+                                {mesesNomes[parseInt(mes) - 1]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <label className="text-sm font-medium mb-2 block">Mês</label>
-                      <Select value={filtroMes} onValueChange={setFiltroMes}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o mês" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">Todos os Meses</SelectItem>
-                          {mesesDisponiveis.map(mes => (
-                            <SelectItem key={mes} value={mes}>
-                              {mesesNomes[parseInt(mes) - 1]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label className="text-sm font-medium mb-2 block">Código do Projeto</label>
+                        <Input
+                          placeholder="Buscar por código..."
+                          value={filtroCodigo}
+                          onChange={(e) => setFiltroCodigo(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-sm font-medium mb-2 block">Nome do Cliente</label>
+                        <Input
+                          placeholder="Buscar por cliente..."
+                          value={filtroCliente}
+                          onChange={(e) => setFiltroCliente(e.target.value)}
+                        />
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {projetosAgrupados.length === 0 ? (
+                  {projetosAgrupadosFiltrados.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">
                       Nenhum projeto encontrado para os filtros selecionados.
                     </p>
                   ) : (
-                    <ProjetoAccordion projetos={projetosAgrupados} />
+                    <ProjetoAccordion projetos={projetosAgrupadosFiltrados} />
                   )}
                 </CardContent>
               </Card>
