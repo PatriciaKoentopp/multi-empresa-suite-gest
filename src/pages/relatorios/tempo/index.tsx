@@ -61,7 +61,7 @@ export default function RelatorioTempoPage() {
       }
 
       const anoMatch = filtroAno === 'todos' || ano === filtroAno;
-      const mesMatch = filtroMes === 'todos' || mes === mesMatch;
+      const mesMatch = filtroMes === 'todos' || mes === filtroMes;
 
       return anoMatch && mesMatch;
     });
