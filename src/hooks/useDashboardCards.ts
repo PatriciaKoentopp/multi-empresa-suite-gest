@@ -64,8 +64,10 @@ export const useDashboardCards = (pageId: string = 'dashboard') => {
       { card_id: 'classificacaoABC', name: 'Classificação ABC de Clientes', order_position: 3, is_visible: true },
       { card_id: 'analiseDRE', name: 'Análise do DRE', order_position: 4, is_visible: true },
       { card_id: 'tempo', name: 'Relatório de Tempo', order_position: 5, is_visible: true },
-      { card_id: 'financeiro', name: 'Relatório Financeiro', order_position: 6, is_visible: true },
-      { card_id: 'geral', name: 'Relatório Geral', order_position: 7, is_visible: true },
+      { card_id: 'fotos', name: 'Relatório de Fotos', order_position: 6, is_visible: true },
+      { card_id: 'projetos', name: 'Relatório de Projetos', order_position: 7, is_visible: true },
+      { card_id: 'financeiro', name: 'Relatório Financeiro', order_position: 8, is_visible: true },
+      { card_id: 'geral', name: 'Relatório Geral', order_position: 9, is_visible: true },
     ]
   };
 
