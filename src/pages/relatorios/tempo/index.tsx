@@ -43,27 +43,27 @@ export default function RelatorioTempoPage() {
       const dataInicio = item.dados?.data_inicio;
       if (!dataInicio) return false;
 
-      let ano: string;
-      let mes: string;
+      let anoItem: string = '';
+      let mesItem: string = '';
 
       if (typeof dataInicio === 'number') {
         const date = new Date((dataInicio - 25569) * 86400 * 1000);
-        ano = date.getFullYear().toString();
-        mes = (date.getMonth() + 1).toString().padStart(2, '0');
+        anoItem = date.getFullYear().toString();
+        mesItem = (date.getMonth() + 1).toString().padStart(2, '0');
       } else if (typeof dataInicio === 'string' && dataInicio.includes('/')) {
         const parts = dataInicio.split('/');
-        mes = parts[1].padStart(2, '0');
-        ano = parts[2];
+        mesItem = parts[1].padStart(2, '0');
+        anoItem = parts[2];
       } else {
         const date = new Date(dataInicio);
-        ano = date.getFullYear().toString();
-        mes = (date.getMonth() + 1).toString().padStart(2, '0');
+        anoItem = date.getFullYear().toString();
+        mesItem = (date.getMonth() + 1).toString().padStart(2, '0');
       }
 
-      const anoMatch = filtroAno === 'todos' || ano === filtroAno;
-      const mesMatch = filtroMes === 'todos' || mes === filtroMes;
+      const matchAno = filtroAno === 'todos' || anoItem === filtroAno;
+      const matchMes = filtroMes === 'todos' || mesItem === filtroMes;
 
-      return anoMatch && mesMatch;
+      return matchAno && matchMes;
     });
   }, [consolidatedData, filtroAno, filtroMes]);
 
