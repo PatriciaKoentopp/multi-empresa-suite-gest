@@ -86,7 +86,7 @@ export default function RelatorioTempoPage() {
 
     return projetosAgrupados.filter(projeto => {
       const codigoMatch = !filtroCodigo || 
-        projeto.numero?.toLowerCase().includes(filtroCodigo.toLowerCase());
+        projeto.numeroProjeto?.toLowerCase().includes(filtroCodigo.toLowerCase());
       
       const clienteMatch = !filtroCliente || 
         projeto.cliente?.toLowerCase().includes(filtroCliente.toLowerCase());
