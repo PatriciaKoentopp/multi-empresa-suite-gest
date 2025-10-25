@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProjetoCompleto } from "@/hooks/useRelatorioProjetos";
 import { formatDate } from "@/lib/utils";
 import { formatHoursMinutes } from "@/utils/timeUtils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
   projetos: ProjetoCompleto[];
@@ -37,7 +38,7 @@ export function ProjetosTable({ projetos }: Props) {
         </TableHeader>
         <TableBody>
           {projetos.map(projeto => (
-            <TableRow key={`${projeto.numeroProjeto}-${projeto.codigoVenda}`}>
+            <TableRow key={`${projeto.numeroProjeto}-${projeto.codigosVenda.join('-')}`}>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{projeto.numeroProjeto}</span>
@@ -53,7 +54,35 @@ export function ProjetosTable({ projetos }: Props) {
                 </div>
               </TableCell>
               <TableCell>{projeto.cliente || '-'}</TableCell>
-              <TableCell>{projeto.codigoVenda}</TableCell>
+              <TableCell>
+                {projeto.codigosVenda.length === 0 ? (
+                  '-'
+                ) : projeto.codigosVenda.length === 1 ? (
+                  projeto.codigosVenda[0]
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex gap-1 flex-wrap">
+                          <Badge variant="outline" className="text-xs">
+                            {projeto.codigosVenda[0]}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            +{projeto.codigosVenda.length - 1}
+                          </Badge>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="space-y-1">
+                          {projeto.codigosVenda.map(codigo => (
+                            <div key={codigo}>{codigo}</div>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </TableCell>
               <TableCell>
                 {projeto.dataVenda ? formatDate(projeto.dataVenda) : '-'}
               </TableCell>

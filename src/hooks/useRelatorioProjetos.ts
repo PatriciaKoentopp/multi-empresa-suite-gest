@@ -5,7 +5,7 @@ import { useRelatorioFotos } from "./useRelatorioFotos";
 export interface ProjetoCompleto {
   numeroProjeto: string;
   cliente: string;
-  codigoVenda: string;
+  codigosVenda: string[];
   dataVenda: Date | null;
   receita: number;
   fotosVendidas: number;
@@ -39,18 +39,45 @@ interface VendaData {
   receita: number;
 }
 
+interface ProjetoVendas {
+  codigos: string[];
+  clientes: string[];
+  dataVenda: Date | null;
+  receitaTotal: number;
+}
+
 export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: any[]) {
-  // Processar vendas em um Map
+  // Processar vendas agrupando por projeto
   const vendasMap = useMemo(() => {
-    const map = new Map<string, VendaData>();
+    const map = new Map<string, ProjetoVendas>();
     vendasData.forEach(venda => {
       if (venda.codigo_projeto) {
-        map.set(venda.codigo_projeto, {
+        const existing = map.get(venda.codigo_projeto);
+        const vendaData = {
           codigo: venda.codigo,
           dataVenda: venda.data_venda ? new Date(venda.data_venda) : null,
           cliente: venda.cliente || '',
           receita: Number(venda.valor_total) || 0
-        });
+        };
+        
+        if (existing) {
+          existing.codigos.push(vendaData.codigo);
+          if (!existing.clientes.includes(vendaData.cliente)) {
+            existing.clientes.push(vendaData.cliente);
+          }
+          existing.receitaTotal += vendaData.receita;
+          // Manter a data da venda mais recente
+          if (vendaData.dataVenda && (!existing.dataVenda || vendaData.dataVenda > existing.dataVenda)) {
+            existing.dataVenda = vendaData.dataVenda;
+          }
+        } else {
+          map.set(venda.codigo_projeto, {
+            codigos: [vendaData.codigo],
+            clientes: [vendaData.cliente],
+            dataVenda: vendaData.dataVenda,
+            receitaTotal: vendaData.receita
+          });
+        }
       }
     });
     return map;
@@ -66,23 +93,23 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
 
     // Processar projetos que têm fotos
     fotosProjetos.forEach(fotoProjeto => {
-      const venda = vendasMap.get(fotoProjeto.numeroProjeto);
+      const vendas = vendasMap.get(fotoProjeto.numeroProjeto);
       
       projetosCombinados.push({
         numeroProjeto: fotoProjeto.numeroProjeto,
-        cliente: venda?.cliente || fotoProjeto.cliente,
-        codigoVenda: venda?.codigo || '-',
-        dataVenda: venda?.dataVenda || null,
-        receita: venda?.receita || 0,
+        cliente: vendas ? vendas.clientes.join(', ') : fotoProjeto.cliente,
+        codigosVenda: vendas ? vendas.codigos : [],
+        dataVenda: vendas?.dataVenda || null,
+        receita: vendas?.receitaTotal || 0,
         fotosVendidas: fotoProjeto.fotosVendidas,
         fotosEnviadas: fotoProjeto.fotosEnviadas,
         fotosTiradas: fotoProjeto.fotosTiradas,
         totalHoras: fotoProjeto.totalHoras,
-        valorPorFoto: fotoProjeto.fotosVendidas > 0 && venda 
-          ? venda.receita / fotoProjeto.fotosVendidas 
+        valorPorFoto: fotoProjeto.fotosVendidas > 0 && vendas 
+          ? vendas.receitaTotal / fotoProjeto.fotosVendidas 
           : 0,
-        valorPorHora: fotoProjeto.totalHoras > 0 && venda
-          ? venda.receita / fotoProjeto.totalHoras
+        valorPorHora: fotoProjeto.totalHoras > 0 && vendas
+          ? vendas.receitaTotal / fotoProjeto.totalHoras
           : 0,
         fotosPorHora: fotoProjeto.totalHoras > 0
           ? fotoProjeto.fotosVendidas / fotoProjeto.totalHoras
@@ -93,7 +120,7 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
         eficienciaFotos: fotoProjeto.fotosEnviadas > 0
           ? (fotoProjeto.fotosVendidas / fotoProjeto.fotosEnviadas) * 100
           : 0,
-        temVenda: !!venda,
+        temVenda: !!vendas,
         temDadosFotos: true
       });
       
@@ -101,14 +128,14 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
     });
 
     // Adicionar vendas que não têm dados de fotos
-    vendasMap.forEach((venda, numeroProjeto) => {
+    vendasMap.forEach((vendas, numeroProjeto) => {
       if (!numerosProcessados.has(numeroProjeto)) {
         projetosCombinados.push({
           numeroProjeto,
-          cliente: venda.cliente,
-          codigoVenda: venda.codigo,
-          dataVenda: venda.dataVenda,
-          receita: venda.receita,
+          cliente: vendas.clientes.join(', '),
+          codigosVenda: vendas.codigos,
+          dataVenda: vendas.dataVenda,
+          receita: vendas.receitaTotal,
           fotosVendidas: 0,
           fotosEnviadas: 0,
           fotosTiradas: 0,
