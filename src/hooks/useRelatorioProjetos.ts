@@ -50,9 +50,16 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
   // Processar vendas agrupando por projeto
   const vendasMap = useMemo(() => {
     const map = new Map<string, ProjetoVendas>();
+    
+    console.log('=== DEBUG VENDAS ===');
+    console.log('Total de vendas:', vendasData.length);
+    
     vendasData.forEach(venda => {
       if (venda.codigo_projeto) {
-        const existing = map.get(venda.codigo_projeto);
+        const numeroProjeto = String(venda.codigo_projeto).trim();
+        console.log('Venda:', venda.codigo, 'Projeto:', numeroProjeto, 'Valor:', venda.valor_total);
+        
+        const existing = map.get(numeroProjeto);
         const vendaData = {
           codigo: venda.codigo,
           dataVenda: venda.data_venda ? new Date(venda.data_venda) : null,
@@ -71,7 +78,7 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
             existing.dataVenda = vendaData.dataVenda;
           }
         } else {
-          map.set(venda.codigo_projeto, {
+          map.set(numeroProjeto, {
             codigos: [vendaData.codigo],
             clientes: [vendaData.cliente],
             dataVenda: vendaData.dataVenda,
@@ -80,6 +87,8 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
         }
       }
     });
+    
+    console.log('Vendas agrupadas:', Array.from(map.keys()));
     return map;
   }, [vendasData]);
 
@@ -88,15 +97,22 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
 
   // Combinar dados
   const projetos = useMemo(() => {
+    console.log('=== DEBUG FOTOS ===');
+    console.log('Total de projetos com fotos:', fotosProjetos.length);
+    
     const projetosCombinados: ProjetoCompleto[] = [];
     const numerosProcessados = new Set<string>();
 
     // Processar projetos que têm fotos
     fotosProjetos.forEach(fotoProjeto => {
-      const vendas = vendasMap.get(fotoProjeto.numeroProjeto);
+      const numeroProjeto = String(fotoProjeto.numeroProjeto).trim();
+      console.log('Projeto fotos:', numeroProjeto, 'Fotos vendidas:', fotoProjeto.fotosVendidas, 'Horas:', fotoProjeto.totalHoras);
+      
+      const vendas = vendasMap.get(numeroProjeto);
+      console.log('Venda encontrada para projeto', numeroProjeto, ':', vendas ? 'SIM' : 'NÃO');
       
       projetosCombinados.push({
-        numeroProjeto: fotoProjeto.numeroProjeto,
+        numeroProjeto,
         cliente: vendas ? vendas.clientes.join(', ') : fotoProjeto.cliente,
         codigosVenda: vendas ? vendas.codigos : [],
         dataVenda: vendas?.dataVenda || null,
@@ -124,7 +140,7 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
         temDadosFotos: true
       });
       
-      numerosProcessados.add(fotoProjeto.numeroProjeto);
+      numerosProcessados.add(numeroProjeto);
     });
 
     // Adicionar vendas que não têm dados de fotos
