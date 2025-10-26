@@ -28,7 +28,7 @@ export function ProjetosTable({ projetos }: Props) {
             <TableHead>Cód. Venda</TableHead>
             <TableHead>Data Venda</TableHead>
             <TableHead className="text-right">Receita</TableHead>
-            <TableHead className="text-center">Fotos (V/E/T)</TableHead>
+            <TableHead className="text-center">Fotos (V)</TableHead>
             <TableHead className="text-right">Horas</TableHead>
             <TableHead className="text-right">R$/Foto</TableHead>
             <TableHead className="text-right">R$/Hora</TableHead>
@@ -95,9 +95,9 @@ export function ProjetosTable({ projetos }: Props) {
                   : '-'}
               </TableCell>
               <TableCell className="text-center">
-                <div className="text-xs">
-                  {projeto.temDadosFotos 
-                    ? `${projeto.fotosVendidas}/${projeto.fotosEnviadas}/${projeto.fotosTiradas}`
+                <div className="text-sm font-medium">
+                  {projeto.temDadosFotos && projeto.fotosVendidas > 0
+                    ? projeto.fotosVendidas
                     : '-'}
                 </div>
               </TableCell>
