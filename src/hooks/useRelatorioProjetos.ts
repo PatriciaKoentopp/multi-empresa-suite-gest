@@ -51,14 +51,9 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
   const vendasMap = useMemo(() => {
     const map = new Map<string, ProjetoVendas>();
     
-    console.log('=== DEBUG VENDAS ===');
-    console.log('Total de vendas:', vendasData.length);
-    
     vendasData.forEach(venda => {
       if (venda.codigo_projeto) {
         const numeroProjeto = String(venda.codigo_projeto).trim();
-        console.log('Venda:', venda.codigo, 'Projeto:', numeroProjeto, 'Valor:', venda.valor_total);
-        
         const existing = map.get(numeroProjeto);
         const vendaData = {
           codigo: venda.codigo,
@@ -88,7 +83,6 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
       }
     });
     
-    console.log('Vendas agrupadas:', Array.from(map.keys()));
     return map;
   }, [vendasData]);
 
@@ -97,19 +91,13 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
 
   // Combinar dados
   const projetos = useMemo(() => {
-    console.log('=== DEBUG FOTOS ===');
-    console.log('Total de projetos com fotos:', fotosProjetos.length);
-    
     const projetosCombinados: ProjetoCompleto[] = [];
     const numerosProcessados = new Set<string>();
 
     // Processar projetos que têm fotos
     fotosProjetos.forEach(fotoProjeto => {
       const numeroProjeto = String(fotoProjeto.numeroProjeto).trim();
-      console.log('Projeto fotos:', numeroProjeto, 'Fotos vendidas:', fotoProjeto.fotosVendidas, 'Horas:', fotoProjeto.totalHoras);
-      
       const vendas = vendasMap.get(numeroProjeto);
-      console.log('Venda encontrada para projeto', numeroProjeto, ':', vendas ? 'SIM' : 'NÃO');
       
       projetosCombinados.push({
         numeroProjeto,
