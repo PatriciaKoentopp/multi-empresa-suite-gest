@@ -13,7 +13,6 @@ import { useUploadFiles } from "@/hooks/useUploadFiles";
 import { useRelatorioProjetos } from "@/hooks/useRelatorioProjetos";
 import { ProjetosMetricsCards } from "@/components/relatorios/projetos/ProjetosMetricsCards";
 import { ProjetosTable } from "@/components/relatorios/projetos/ProjetosTable";
-import { ProjetosCharts } from "@/components/relatorios/projetos/ProjetosCharts";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UploadModal } from "@/components/relatorios/fotos/UploadModal";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -308,9 +307,6 @@ export default function RelatorioProjetosPage() {
             projetosSemVenda={projetosSemVenda.length}
             projetosSemFotos={projetosSemFotos.length}
           />
-
-          {/* Gráficos */}
-          <ProjetosCharts projetos={projetosFiltrados} />
 
           {/* Tabela de Projetos */}
           <Card>
