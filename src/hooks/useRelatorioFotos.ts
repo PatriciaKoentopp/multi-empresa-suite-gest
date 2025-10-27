@@ -50,18 +50,9 @@ interface SpreadsheetData {
 
 export const useRelatorioFotos = (data: SpreadsheetData[]) => {
   const fotosData = useMemo(() => {
-    console.log('=== DEBUG useRelatorioFotos ===');
-    console.log('Total de registros recebidos:', data.length);
-    console.log('Primeiros 3 registros:', data.slice(0, 3));
-    
-    const processed = data
+    return data
       .map((item) => item.dados)
       .filter((dados) => dados && typeof dados === "object");
-    
-    console.log('Total após processar:', processed.length);
-    console.log('Primeiros 3 processados:', processed.slice(0, 3));
-    
-    return processed;
   }, [data]);
 
   const metrics = useMemo((): FotosMetrics => {

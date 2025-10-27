@@ -51,14 +51,6 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
   const vendasMap = useMemo(() => {
     const map = new Map<string, ProjetoVendas>();
     
-    console.log('=== DEBUG VENDAS ===');
-    console.log('Total de vendas:', vendasData.length);
-    console.log('Primeiras 3 vendas:', vendasData.slice(0, 3).map(v => ({
-      codigo: v.codigo,
-      codigo_projeto: v.codigo_projeto,
-      valor: v.valor_total
-    })));
-    
     vendasData.forEach(venda => {
       if (venda.codigo_projeto) {
         // Normalizar: remover espaços e zeros à esquerda
@@ -92,10 +84,6 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
       }
     });
     
-    console.log('=== VENDAS AGRUPADAS ===');
-    console.log('Números de projeto com vendas:', Array.from(map.keys()));
-    console.log('Total de projetos com vendas:', map.size);
-    
     return map;
   }, [vendasData]);
 
@@ -104,15 +92,6 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
 
   // Combinar dados
   const projetos = useMemo(() => {
-    console.log('=== DEBUG FOTOS ===');
-    console.log('Total de projetos com fotos:', fotosProjetos.length);
-    console.log('Primeiros 3 projetos:', fotosProjetos.slice(0, 3).map(p => ({
-      numero: p.numeroProjeto,
-      cliente: p.cliente,
-      fotos: p.fotosVendidas,
-      horas: p.totalHoras
-    })));
-    
     const projetosCombinados: ProjetoCompleto[] = [];
     const numerosProcessados = new Set<string>();
 
@@ -121,16 +100,6 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
       // Normalizar: remover espaços e zeros à esquerda
       const numeroProjeto = String(fotoProjeto.numeroProjeto).trim().replace(/^0+/, '') || String(fotoProjeto.numeroProjeto).trim();
       const vendas = vendasMap.get(numeroProjeto);
-      
-      console.log(`Projeto ${numeroProjeto}:`, {
-        cliente: fotoProjeto.cliente,
-        temVenda: !!vendas,
-        fotosVendidas: fotoProjeto.fotosVendidas,
-        fotosEnviadas: fotoProjeto.fotosEnviadas,
-        fotosTiradas: fotoProjeto.fotosTiradas,
-        horas: fotoProjeto.totalHoras,
-        receita: vendas?.receitaTotal || 0
-      });
       
       projetosCombinados.push({
         numeroProjeto,

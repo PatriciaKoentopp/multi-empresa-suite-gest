@@ -34,7 +34,7 @@ export interface HoraTrabalhadaData {
 
 export const useSpreadsheetData = () => {
   const { toast } = useToast();
-  const [data, setData] = useState<SpreadsheetData[]>([]);
+  const [data, setData] = useState<Record<string, SpreadsheetData[]>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchDataByUpload = async (uploadId: string, filtros?: any) => {
@@ -44,9 +44,6 @@ export const useSpreadsheetData = () => {
       const PAGE_SIZE = 1000;
       let from = 0;
       let hasMore = true;
-
-      console.log('[DEBUG fetchDataByUpload] Iniciando busca paginada para Upload ID:', uploadId);
-      console.log('[DEBUG fetchDataByUpload] Filtros aplicados:', filtros);
 
       while (hasMore) {
         let query = supabase
@@ -80,15 +77,8 @@ export const useSpreadsheetData = () => {
         const { data: result, error, count } = await query;
 
         if (error) {
-          console.error('[DEBUG fetchDataByUpload] Erro na query:', error);
           throw error;
         }
-
-        if (from === 0) {
-          console.log('[DEBUG fetchDataByUpload] Count total no banco:', count);
-        }
-
-        console.log(`[DEBUG fetchDataByUpload] Página ${Math.floor(from / PAGE_SIZE) + 1}: ${result?.length || 0} registros`);
 
         if (!result || result.length === 0) {
           hasMore = false;
@@ -102,10 +92,11 @@ export const useSpreadsheetData = () => {
           }
         }
       }
-
-      console.log('[DEBUG fetchDataByUpload] Total de registros carregados:', allData.length);
       
-      setData(allData);
+      setData(prev => ({
+        ...prev,
+        [uploadId]: allData
+      }));
       return allData;
     } catch (error: any) {
       toast({
