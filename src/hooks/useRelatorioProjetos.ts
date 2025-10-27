@@ -164,14 +164,16 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
 
   // Calcular métricas
   const metrics = useMemo(() => {
-    const projetosCompletos = projetos.filter(p => p.temVenda && p.temDadosFotos);
+    // Considerar apenas projetos com vendas para as métricas
+    const projetosComVenda = projetos.filter(p => p.temVenda);
+    const projetosCompletosComVenda = projetosComVenda.filter(p => p.temDadosFotos);
     
-    const totalReceita = projetos.reduce((sum, p) => sum + p.receita, 0);
-    const totalFotos = projetos.reduce((sum, p) => sum + p.fotosVendidas, 0);
-    const totalHoras = projetos.reduce((sum, p) => sum + p.totalHoras, 0);
+    const totalReceita = projetosComVenda.reduce((sum, p) => sum + p.receita, 0);
+    const totalFotos = projetosComVenda.reduce((sum, p) => sum + p.fotosVendidas, 0);
+    const totalHoras = projetosComVenda.reduce((sum, p) => sum + p.totalHoras, 0);
 
     const metrics: MetricasProjetos = {
-      totalProjetos: projetos.length,
+      totalProjetos: projetosComVenda.length,
       totalReceita,
       totalFotos,
       totalHoras,
@@ -181,11 +183,11 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
       horasMediasPorFoto: 0
     };
 
-    if (projetosCompletos.length > 0) {
-      metrics.receitaMedia = projetosCompletos.reduce((sum, p) => sum + p.receita, 0) / projetosCompletos.length;
-      metrics.valorMedioPorFoto = projetosCompletos.reduce((sum, p) => sum + p.valorPorFoto, 0) / projetosCompletos.length;
-      metrics.valorMedioPorHora = projetosCompletos.reduce((sum, p) => sum + p.valorPorHora, 0) / projetosCompletos.length;
-      metrics.horasMediasPorFoto = projetosCompletos.reduce((sum, p) => sum + p.horasPorFoto, 0) / projetosCompletos.length;
+    if (projetosCompletosComVenda.length > 0) {
+      metrics.receitaMedia = projetosCompletosComVenda.reduce((sum, p) => sum + p.receita, 0) / projetosCompletosComVenda.length;
+      metrics.valorMedioPorFoto = projetosCompletosComVenda.reduce((sum, p) => sum + p.valorPorFoto, 0) / projetosCompletosComVenda.length;
+      metrics.valorMedioPorHora = projetosCompletosComVenda.reduce((sum, p) => sum + p.valorPorHora, 0) / projetosCompletosComVenda.length;
+      metrics.horasMediasPorFoto = projetosCompletosComVenda.reduce((sum, p) => sum + p.horasPorFoto, 0) / projetosCompletosComVenda.length;
     }
 
     return metrics;

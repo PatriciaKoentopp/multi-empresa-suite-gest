@@ -116,7 +116,10 @@ export default function RelatorioProjetosPage() {
 
   // Filtrar projetos
   const projetosFiltrados = useMemo(() => {
-    let lista = projetos;
+    // Por padrão, mostrar apenas projetos com vendas
+    let lista = filtroStatus === "todos" 
+      ? projetos.filter(p => p.temVenda)
+      : projetos;
 
     // Filtro por status
     if (filtroStatus === "completos") {
