@@ -158,7 +158,7 @@ export default function RelatorioProjetosPage() {
     }
 
     return lista;
-  }, [projetos, projetosCompletos, projetosSemVenda, projetosSemFotos, filtroStatus, filtroCliente, filtroProjeto]);
+  }, [projetos, projetosCompletos, projetosSemVenda, projetosSemFotos, filtroStatus, filtroCliente, filtroProjeto, dataInicial, dataFinal]);
   const handleUploadSuccess = () => {
     fetchUploadsByTipo("fotos");
     setShowUploadModal(false);
