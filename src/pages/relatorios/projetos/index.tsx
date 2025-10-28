@@ -159,6 +159,27 @@ export default function RelatorioProjetosPage() {
 
     return lista;
   }, [projetos, projetosCompletos, projetosSemVenda, projetosSemFotos, filtroStatus, filtroCliente, filtroProjeto, dataInicial, dataFinal]);
+
+  // Calcular métricas dos projetos filtrados
+  const metricasFiltradas = useMemo(() => {
+    const projetosComVenda = projetosFiltrados.filter(p => p.temVenda);
+    const totalReceita = projetosComVenda.reduce((sum, p) => sum + p.valorTotal, 0);
+    const totalFotos = projetosComVenda.reduce((sum, p) => sum + p.fotosVendidas, 0);
+    const totalHoras = projetosComVenda.reduce((sum, p) => sum + p.horasGastas, 0);
+
+    return {
+      totalProjetos: projetosComVenda.length,
+      receitaTotal: totalReceita,
+      totalFotosVendidas: totalFotos,
+      totalHoras: totalHoras,
+      mediaPorFoto: totalFotos > 0 ? totalReceita / totalFotos : 0,
+      mediaHorasPorFoto: totalFotos > 0 ? totalHoras / totalFotos : 0,
+      mediaPorHora: totalHoras > 0 ? totalReceita / totalHoras : 0,
+      eficienciaMedia: projetosComVenda.length > 0 
+        ? projetosComVenda.reduce((sum, p) => sum + p.eficiencia, 0) / projetosComVenda.length 
+        : 0
+    };
+  }, [projetosFiltrados]);
   const handleUploadSuccess = () => {
     fetchUploadsByTipo("fotos");
     setShowUploadModal(false);
@@ -274,7 +295,7 @@ export default function RelatorioProjetosPage() {
           </Card>
 
           {/* Cards de Métricas */}
-          <ProjetosMetricsCards metrics={metrics} projetosCompletos={projetosCompletos.length} projetosSemVenda={projetosSemVenda.length} projetosSemFotos={projetosSemFotos.length} />
+          <ProjetosMetricsCards metrics={metricasFiltradas} projetosCompletos={projetosCompletos.length} projetosSemVenda={projetosSemVenda.length} projetosSemFotos={projetosSemFotos.length} />
 
           {/* Tabela de Projetos */}
           <Card>
