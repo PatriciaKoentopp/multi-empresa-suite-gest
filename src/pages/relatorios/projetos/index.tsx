@@ -26,6 +26,8 @@ export default function RelatorioProjetosPage() {
   const [filtroCliente, setFiltroCliente] = useState("");
   const [filtroProjeto, setFiltroProjeto] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<"todos" | "completos" | "sem-venda" | "sem-fotos">("todos");
+  const [dataInicial, setDataInicial] = useState("");
+  const [dataFinal, setDataFinal] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
   const [isLoadingVendas, setIsLoadingVendas] = useState(false);
@@ -134,6 +136,27 @@ export default function RelatorioProjetosPage() {
     if (filtroProjeto) {
       lista = lista.filter(p => p.numeroProjeto.includes(filtroProjeto));
     }
+
+    // Filtro por data inicial
+    if (dataInicial) {
+      lista = lista.filter(p => {
+        if (!p.dataVenda) return false;
+        const dataVenda = new Date(p.dataVenda);
+        const dataIni = new Date(dataInicial);
+        return dataVenda >= dataIni;
+      });
+    }
+
+    // Filtro por data final
+    if (dataFinal) {
+      lista = lista.filter(p => {
+        if (!p.dataVenda) return false;
+        const dataVenda = new Date(p.dataVenda);
+        const dataFim = new Date(dataFinal);
+        return dataVenda <= dataFim;
+      });
+    }
+
     return lista;
   }, [projetos, projetosCompletos, projetosSemVenda, projetosSemFotos, filtroStatus, filtroCliente, filtroProjeto]);
   const handleUploadSuccess = () => {
@@ -159,6 +182,8 @@ export default function RelatorioProjetosPage() {
     setFiltroCliente("");
     setFiltroProjeto("");
     setFiltroStatus("todos");
+    setDataInicial("");
+    setDataFinal("");
   };
   const isLoading = isLoadingUploads || isLoadingVendas;
   return <div className="space-y-6">
@@ -219,9 +244,7 @@ export default function RelatorioProjetosPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
-
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label>Cliente</Label>
                   <Input placeholder="Filtrar por cliente..." value={filtroCliente} onChange={e => setFiltroCliente(e.target.value)} />
@@ -231,9 +254,19 @@ export default function RelatorioProjetosPage() {
                   <Label>Número do Projeto</Label>
                   <Input placeholder="Filtrar por número..." value={filtroProjeto} onChange={e => setFiltroProjeto(e.target.value)} />
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Data Inicial</Label>
+                  <Input type="date" value={dataInicial} onChange={e => setDataInicial(e.target.value)} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Data Final</Label>
+                  <Input type="date" value={dataFinal} onChange={e => setDataFinal(e.target.value)} />
+                </div>
               </div>
 
-              {(filtroCliente || filtroProjeto || filtroStatus !== "todos") && <Button variant="outline" size="sm" onClick={limparFiltros}>
+              {(filtroCliente || filtroProjeto || filtroStatus !== "todos" || dataInicial || dataFinal) && <Button variant="outline" size="sm" onClick={limparFiltros}>
                   <X className="h-4 w-4 mr-2" />
                   Limpar Filtros
                 </Button>}
