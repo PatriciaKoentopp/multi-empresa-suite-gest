@@ -163,21 +163,19 @@ export default function RelatorioProjetosPage() {
   // Calcular métricas dos projetos filtrados
   const metricasFiltradas = useMemo(() => {
     const projetosComVenda = projetosFiltrados.filter(p => p.temVenda);
-    const totalReceita = projetosComVenda.reduce((sum, p) => sum + p.valorTotal, 0);
+    const totalReceita = projetosComVenda.reduce((sum, p) => sum + p.receita, 0);
     const totalFotos = projetosComVenda.reduce((sum, p) => sum + p.fotosVendidas, 0);
-    const totalHoras = projetosComVenda.reduce((sum, p) => sum + p.horasGastas, 0);
+    const totalHoras = projetosComVenda.reduce((sum, p) => sum + p.totalHoras, 0);
 
     return {
       totalProjetos: projetosComVenda.length,
-      receitaTotal: totalReceita,
-      totalFotosVendidas: totalFotos,
+      totalReceita: totalReceita,
+      totalFotos: totalFotos,
       totalHoras: totalHoras,
-      mediaPorFoto: totalFotos > 0 ? totalReceita / totalFotos : 0,
-      mediaHorasPorFoto: totalFotos > 0 ? totalHoras / totalFotos : 0,
-      mediaPorHora: totalHoras > 0 ? totalReceita / totalHoras : 0,
-      eficienciaMedia: projetosComVenda.length > 0 
-        ? projetosComVenda.reduce((sum, p) => sum + p.eficiencia, 0) / projetosComVenda.length 
-        : 0
+      receitaMedia: projetosComVenda.length > 0 ? totalReceita / projetosComVenda.length : 0,
+      valorMedioPorFoto: totalFotos > 0 ? totalReceita / totalFotos : 0,
+      valorMedioPorHora: totalHoras > 0 ? totalReceita / totalHoras : 0,
+      horasMediasPorFoto: totalFotos > 0 ? totalHoras / totalFotos : 0,
     };
   }, [projetosFiltrados]);
   const handleUploadSuccess = () => {
