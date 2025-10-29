@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Layers, Upload, Trash2, Filter, X } from "lucide-react";
+import { Layers, Upload, Trash2, Filter, X, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useSpreadsheetData } from "@/hooks/useSpreadsheetData";
 import { useUploadFiles } from "@/hooks/useUploadFiles";
 import { useRelatorioProjetos } from "@/hooks/useRelatorioProjetos";
+import { useExcelProjetos } from "@/hooks/useExcelProjetos";
 import { ProjetosMetricsCards } from "@/components/relatorios/projetos/ProjetosMetricsCards";
 import { ProjetosTable } from "@/components/relatorios/projetos/ProjetosTable";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -41,6 +42,7 @@ export default function RelatorioProjetosPage() {
     data: spreadsheetData,
     fetchDataByUpload
   } = useSpreadsheetData();
+  const { exportToExcel, isGenerating } = useExcelProjetos();
 
   // Carregar uploads de fotos ao montar
   useEffect(() => {
@@ -217,10 +219,20 @@ export default function RelatorioProjetosPage() {
             <p className="text-muted-foreground">Análise integrada de vendas e produção fotográfica</p>
           </div>
         </div>
-        <Button onClick={() => setShowUploadModal(true)}>
-          <Upload className="h-4 w-4 mr-2" />
-          Nova Planilha
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => exportToExcel(projetosFiltrados)}
+            disabled={isGenerating || projetosFiltrados.length === 0}
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            {isGenerating ? "Gerando..." : "Exportar Excel"}
+          </Button>
+          <Button onClick={() => setShowUploadModal(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Nova Planilha
+          </Button>
+        </div>
       </div>
 
       {/* Seleção de Planilhas */}
