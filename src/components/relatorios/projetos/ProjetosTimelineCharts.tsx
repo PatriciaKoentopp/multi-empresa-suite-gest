@@ -61,23 +61,18 @@ export function ProjetosTimelineCharts({ projetos }: Props) {
     // Calcular médias mensais
     const dados: DadosMensais[] = Array.from(projetosPorMes.entries())
       .map(([chaveMes, projetosMes]) => {
-        const totalValorPorFoto = projetosMes.reduce((acc, p) => {
-          const valorPorFoto = p.receita / p.fotosTiradas;
-          return acc + valorPorFoto;
-        }, 0);
-
-        const totalHorasPorFoto = projetosMes.reduce((acc, p) => {
-          const horasPorFoto = p.totalHoras / p.fotosTiradas;
-          return acc + horasPorFoto;
-        }, 0);
+        // Somar totais do mês
+        const totalReceita = projetosMes.reduce((acc, p) => acc + p.receita, 0);
+        const totalFotos = projetosMes.reduce((acc, p) => acc + p.fotosTiradas, 0);
+        const totalHoras = projetosMes.reduce((acc, p) => acc + p.totalHoras, 0);
 
         const data = parseISO(chaveMes + "-01");
 
         return {
           mes: format(data, "MMM/yyyy", { locale: ptBR }),
           mesOrdenacao: chaveMes,
-          valorPorFoto: totalValorPorFoto / projetosMes.length,
-          horasPorFoto: totalHorasPorFoto / projetosMes.length,
+          valorPorFoto: totalFotos > 0 ? totalReceita / totalFotos : 0,
+          horasPorFoto: totalFotos > 0 ? totalHoras / totalFotos : 0,
           qtdProjetos: projetosMes.length,
         };
       })
