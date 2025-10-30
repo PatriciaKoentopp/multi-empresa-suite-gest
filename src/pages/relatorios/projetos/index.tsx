@@ -14,6 +14,7 @@ import { useRelatorioProjetos } from "@/hooks/useRelatorioProjetos";
 import { useExcelProjetos } from "@/hooks/useExcelProjetos";
 import { ProjetosMetricsCards } from "@/components/relatorios/projetos/ProjetosMetricsCards";
 import { ProjetosTable } from "@/components/relatorios/projetos/ProjetosTable";
+import { ProjetosTimelineCharts } from "@/components/relatorios/projetos/ProjetosTimelineCharts";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UploadModal } from "@/components/relatorios/fotos/UploadModal";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -306,6 +307,21 @@ export default function RelatorioProjetosPage() {
 
           {/* Cards de Métricas */}
           <ProjetosMetricsCards metrics={metricasFiltradas} projetosCompletos={projetosCompletos.length} projetosSemVenda={projetosSemVenda.length} projetosSemFotos={projetosSemFotos.length} />
+
+          {/* Gráficos de Evolução Temporal */}
+          {projetosFiltrados.length >= 2 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Evolução de Desempenho ao Longo do Tempo</CardTitle>
+                <CardDescription>
+                  Análise temporal do valor por foto e eficiência de produção
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ProjetosTimelineCharts projetos={projetosFiltrados} />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Tabela de Projetos */}
           <Card>
