@@ -144,6 +144,9 @@ const RelatorioFotosPage = () => {
   const projetosFiltrados = useMemo(() => {
     let filtrados = [...projetosAgrupados];
 
+    // Filtrar apenas projetos com cliente
+    filtrados = filtrados.filter(projeto => projeto.cliente && projeto.cliente.trim() !== '');
+
     // Filtro por nome do projeto ou cliente
     if (filtroProjeto.trim()) {
       const termoBusca = filtroProjeto.toLowerCase();
