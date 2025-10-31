@@ -15,6 +15,7 @@ import { useExcelProjetos } from "@/hooks/useExcelProjetos";
 import { ProjetosMetricsCards } from "@/components/relatorios/projetos/ProjetosMetricsCards";
 import { ProjetosTable } from "@/components/relatorios/projetos/ProjetosTable";
 import { ProjetosTimelineCharts } from "@/components/relatorios/projetos/ProjetosTimelineCharts";
+import { ProjetosTimelineVendidasCharts } from "@/components/relatorios/projetos/ProjetosTimelineVendidasCharts";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UploadModal } from "@/components/relatorios/fotos/UploadModal";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -308,17 +309,32 @@ export default function RelatorioProjetosPage() {
           {/* Cards de Métricas */}
           <ProjetosMetricsCards metrics={metricasFiltradas} projetosCompletos={projetosCompletos.length} projetosSemVenda={projetosSemVenda.length} projetosSemFotos={projetosSemFotos.length} />
 
-          {/* Gráficos de Evolução Temporal */}
+          {/* Gráfico de Evolução de Desempenho - Fotos Tiradas */}
           {projetosFiltrados.length >= 2 && (
             <Card>
               <CardHeader>
-                <CardTitle>Evolução de Desempenho ao Longo do Tempo</CardTitle>
+                <CardTitle>Evolução de Desempenho - Fotos Tiradas</CardTitle>
                 <CardDescription>
-                  Análise temporal do valor por foto e eficiência de produção
+                  Análise temporal do valor por foto tirada e eficiência de produção
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <ProjetosTimelineCharts projetos={projetosFiltrados} />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Gráfico de Evolução de Desempenho - Fotos Vendidas */}
+          {projetosFiltrados.length >= 2 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Evolução de Desempenho - Fotos Vendidas</CardTitle>
+                <CardDescription>
+                  Análise temporal do valor por foto vendida e eficiência de produção
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ProjetosTimelineVendidasCharts projetos={projetosFiltrados} />
               </CardContent>
             </Card>
           )}
