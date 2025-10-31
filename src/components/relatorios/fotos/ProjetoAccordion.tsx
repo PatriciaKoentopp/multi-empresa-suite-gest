@@ -47,15 +47,9 @@ export const ProjetoAccordion = ({ projetos }: ProjetoAccordionProps) => {
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <div className="text-right space-y-0.5">
+                <div className="text-right">
                   <p className="text-xs text-muted-foreground">
-                    Enviadas/Tiradas: {projeto.fotosTiradas > 0 ? ((projeto.fotosEnviadas / projeto.fotosTiradas) * 100).toFixed(1) : '0'}%
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Vendidas/Enviadas: {projeto.fotosEnviadas > 0 ? ((projeto.fotosVendidas / projeto.fotosEnviadas) * 100).toFixed(1) : '0'}%
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Vendidas/Tiradas: {projeto.fotosTiradas > 0 ? ((projeto.fotosVendidas / projeto.fotosTiradas) * 100).toFixed(1) : '0'}%
+                    Env/Tir: {projeto.fotosTiradas > 0 ? ((projeto.fotosEnviadas / projeto.fotosTiradas) * 100).toFixed(1) : '0'}% | Vend/Env: {projeto.fotosEnviadas > 0 ? ((projeto.fotosVendidas / projeto.fotosEnviadas) * 100).toFixed(1) : '0'}% | Vend/Tir: {projeto.fotosTiradas > 0 ? ((projeto.fotosVendidas / projeto.fotosTiradas) * 100).toFixed(1) : '0'}%
                   </p>
                 </div>
                 <div className="text-right">
