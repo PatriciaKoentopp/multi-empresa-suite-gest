@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Camera, Upload, Trash2, Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -47,6 +49,9 @@ const RelatorioFotosPage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
   const [filtroPercentual, setFiltroPercentual] = useState<number>(10);
+  const [filtroProjeto, setFiltroProjeto] = useState<string>("");
+  const [filtroPercentualMin, setFiltroPercentualMin] = useState<string>("");
+  const [filtroPercentualMax, setFiltroPercentualMax] = useState<string>("");
 
   const { uploads, isLoading: uploadsLoading, fetchUploadsByTipo, deleteUpload } = useUploadFiles();
   const { data: spreadsheetData, isLoading: dataLoading, fetchDataByUpload } = useSpreadsheetData();
@@ -135,6 +140,42 @@ const RelatorioFotosPage = () => {
         return numB - numA; // Ordem decrescente
       });
   }, [projetosAgrupados, totalFotos.tempoPorFotoVendida, filtroPercentual]);
+
+  const projetosFiltrados = useMemo(() => {
+    let filtrados = [...projetosAgrupados];
+
+    // Filtro por nome do projeto ou cliente
+    if (filtroProjeto.trim()) {
+      const termoBusca = filtroProjeto.toLowerCase();
+      filtrados = filtrados.filter(projeto => 
+        projeto.numeroProjeto.toLowerCase().includes(termoBusca) ||
+        projeto.cliente.toLowerCase().includes(termoBusca) ||
+        projeto.projetos.some(p => p.toLowerCase().includes(termoBusca))
+      );
+    }
+
+    // Filtro por percentual de fotos vendidas/tiradas
+    const percMin = filtroPercentualMin ? parseFloat(filtroPercentualMin) : null;
+    const percMax = filtroPercentualMax ? parseFloat(filtroPercentualMax) : null;
+    
+    if (percMin !== null || percMax !== null) {
+      filtrados = filtrados.filter(projeto => {
+        if (projeto.fotosTiradas === 0) return false;
+        const percentual = (projeto.fotosVendidas / projeto.fotosTiradas) * 100;
+        
+        if (percMin !== null && percentual < percMin) return false;
+        if (percMax !== null && percentual > percMax) return false;
+        
+        return true;
+      });
+    }
+
+    return filtrados.sort((a, b) => {
+      const numA = parseInt(a.numeroProjeto) || 0;
+      const numB = parseInt(b.numeroProjeto) || 0;
+      return numB - numA; // Ordem decrescente
+    });
+  }, [projetosAgrupados, filtroProjeto, filtroPercentualMin, filtroPercentualMax]);
 
   const COLORS = [
     "hsl(var(--chart-1))",
@@ -425,6 +466,76 @@ const RelatorioFotosPage = () => {
               <CardTitle>Visão por Projeto</CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="space-y-4 mb-6 pb-6 border-b">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-1">
+                    <Label htmlFor="filtro-projeto" className="text-sm text-muted-foreground mb-2 block">
+                      Buscar por projeto ou cliente
+                    </Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="filtro-projeto"
+                        type="text"
+                        placeholder="Digite para buscar..."
+                        value={filtroProjeto}
+                        onChange={(e) => setFiltroProjeto(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                  <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="filtro-perc-min" className="text-sm text-muted-foreground mb-2 block">
+                        % Vendidas/Tiradas (mín)
+                      </Label>
+                      <Input
+                        id="filtro-perc-min"
+                        type="number"
+                        placeholder="Ex: 2"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={filtroPercentualMin}
+                        onChange={(e) => setFiltroPercentualMin(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="filtro-perc-max" className="text-sm text-muted-foreground mb-2 block">
+                        % Vendidas/Tiradas (máx)
+                      </Label>
+                      <Input
+                        id="filtro-perc-max"
+                        type="number"
+                        placeholder="Ex: 3"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={filtroPercentualMax}
+                        onChange={(e) => setFiltroPercentualMax(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                {(filtroProjeto || filtroPercentualMin || filtroPercentualMax) && (
+                  <div className="flex items-center justify-between pt-2">
+                    <p className="text-sm text-muted-foreground">
+                      {projetosFiltrados.length} projeto{projetosFiltrados.length !== 1 ? 's' : ''} encontrado{projetosFiltrados.length !== 1 ? 's' : ''}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setFiltroProjeto("");
+                        setFiltroPercentualMin("");
+                        setFiltroPercentualMax("");
+                      }}
+                    >
+                      Limpar filtros
+                    </Button>
+                  </div>
+                )}
+              </div>
               <Tabs defaultValue="todos">
                 <TabsList>
                   <TabsTrigger value="todos">Todos</TabsTrigger>
@@ -432,19 +543,37 @@ const RelatorioFotosPage = () => {
                   <TabsTrigger value="arquivado">Arquivados</TabsTrigger>
                 </TabsList>
                 <TabsContent value="todos">
-                  <Accordion type="single" collapsible className="w-full">
-                    <ProjetoAccordion projetos={projetosAgrupados} />
-                  </Accordion>
+                  {projetosFiltrados.length > 0 ? (
+                    <Accordion type="single" collapsible className="w-full">
+                      <ProjetoAccordion projetos={projetosFiltrados} />
+                    </Accordion>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Nenhum projeto encontrado com os filtros aplicados.</p>
+                    </div>
+                  )}
                 </TabsContent>
                 <TabsContent value="ativo">
-                  <Accordion type="single" collapsible className="w-full">
-                    <ProjetoAccordion projetos={projetosAgrupados} />
-                  </Accordion>
+                  {projetosFiltrados.length > 0 ? (
+                    <Accordion type="single" collapsible className="w-full">
+                      <ProjetoAccordion projetos={projetosFiltrados} />
+                    </Accordion>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Nenhum projeto encontrado com os filtros aplicados.</p>
+                    </div>
+                  )}
                 </TabsContent>
                 <TabsContent value="arquivado">
-                  <Accordion type="single" collapsible className="w-full">
-                    <ProjetoAccordion projetos={projetosAgrupados} />
-                  </Accordion>
+                  {projetosFiltrados.length > 0 ? (
+                    <Accordion type="single" collapsible className="w-full">
+                      <ProjetoAccordion projetos={projetosFiltrados} />
+                    </Accordion>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Nenhum projeto encontrado com os filtros aplicados.</p>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>
