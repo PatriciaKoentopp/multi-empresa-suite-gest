@@ -49,11 +49,94 @@ interface SpreadsheetData {
 }
 
 export const useRelatorioFotos = (data: SpreadsheetData[]) => {
+  // Primeiro, processar os dados básicos
   const fotosData = useMemo(() => {
     return data
       .map((item) => item.dados)
       .filter((dados) => dados && typeof dados === "object");
   }, [data]);
+
+  // Filtrar apenas projetos completos (com cliente e todas as fotos > 0)
+  const fotosDataCompletos = useMemo(() => {
+    // Primeiro, agrupar por número de projeto para somar as fotos
+    const projetosMap = new Map<string, {
+      fotosVendidas: number;
+      fotosEnviadas: number;
+      fotosTiradas: number;
+      cliente: string;
+      projetos: Set<string>;
+    }>();
+    
+    fotosData.forEach((item) => {
+      const projetoCompleto = item.projeto || "";
+      const cliente = item.cliente || "";
+      
+      if (!projetoCompleto) return;
+      
+      const numeroProjeto = extractProjectNumber(projetoCompleto);
+      if (!numeroProjeto) return;
+      
+      if (!projetosMap.has(numeroProjeto)) {
+        projetosMap.set(numeroProjeto, {
+          fotosVendidas: 0,
+          fotosEnviadas: 0,
+          fotosTiradas: 0,
+          cliente: cliente,
+          projetos: new Set()
+        });
+      }
+      
+      const projeto = projetosMap.get(numeroProjeto)!;
+      
+      // Adicionar projeto completo à lista se ainda não foi processado
+      if (!projeto.projetos.has(projetoCompleto)) {
+        projeto.projetos.add(projetoCompleto);
+        
+        // Extrair fotos vendidas (valor entre parênteses)
+        const vendidasMatch = projetoCompleto.match(/\((\d+)\)/);
+        if (vendidasMatch) {
+          projeto.fotosVendidas += parseInt(vendidasMatch[1]) || 0;
+        }
+        
+        // Extrair fotos enviadas (valor entre colchetes)
+        const enviadasMatch = projetoCompleto.match(/\[(\d+)\]/);
+        if (enviadasMatch) {
+          projeto.fotosEnviadas += parseInt(enviadasMatch[1]) || 0;
+        }
+        
+        // Extrair fotos tiradas (valor entre chaves)
+        const tiradasMatch = projetoCompleto.match(/\{(\d+)\}/);
+        if (tiradasMatch) {
+          projeto.fotosTiradas += parseInt(tiradasMatch[1]) || 0;
+        }
+      }
+      
+      // Atualizar cliente se estiver vazio
+      if (!projeto.cliente && cliente) {
+        projeto.cliente = cliente;
+      }
+    });
+    
+    // Criar um Set de números de projetos completos
+    const projetosCompletos = new Set<string>();
+    projetosMap.forEach((dados, numeroProjeto) => {
+      if (dados.cliente && dados.cliente.trim() !== "" &&
+          dados.fotosVendidas > 0 &&
+          dados.fotosEnviadas > 0 &&
+          dados.fotosTiradas > 0) {
+        projetosCompletos.add(numeroProjeto);
+      }
+    });
+    
+    // Filtrar apenas dados de projetos completos
+    return fotosData.filter((item) => {
+      const projetoCompleto = item.projeto || "";
+      if (!projetoCompleto) return false;
+      
+      const numeroProjeto = extractProjectNumber(projetoCompleto);
+      return numeroProjeto && projetosCompletos.has(numeroProjeto);
+    });
+  }, [fotosData]);
 
   const metrics = useMemo((): FotosMetrics => {
     const projetos = new Set<string>();
@@ -62,13 +145,7 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
     let projetosAtivos = 0;
     let projetosArquivados = 0;
 
-    // Filtrar apenas itens com cliente não vazio
-    const fotosDataComCliente = fotosData.filter((item) => {
-      const cliente = item.cliente || "";
-      return cliente.trim() !== "";
-    });
-
-    fotosDataComCliente.forEach((item) => {
+    fotosDataCompletos.forEach((item) => {
       const projeto = item.projeto || "";
       const cliente = item.cliente || "";
       const rastreado = parseFloat(item.rastreado_h) || 0;
@@ -90,12 +167,12 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
       projetosAtivos,
       projetosArquivados,
     };
-  }, [fotosData]);
+  }, [fotosDataCompletos]);
 
   const projetosAgrupados = useMemo((): ProjetoFotosAgrupado[] => {
     const projetosMap = new Map<string, ProjetoFotosAgrupado>();
 
-    fotosData.forEach((item) => {
+    fotosDataCompletos.forEach((item) => {
       const projetoCompleto = item.projeto || "";
       if (!projetoCompleto) return;
 
@@ -174,12 +251,12 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
       const numB = parseInt(b.numeroProjeto) || 0;
       return numA - numB;
     });
-  }, [fotosData, metrics.totalHoras]);
+  }, [fotosDataCompletos, metrics.totalHoras]);
 
   const tarefasDistribuicao = useMemo((): TarefaFotosAgrupada[] => {
     const tarefasMap = new Map<string, number>();
 
-    fotosData.forEach((item) => {
+    fotosDataCompletos.forEach((item) => {
       const tarefasStr = item.tarefa || "";
       const tarefas = tarefasStr.split(",").map((t: string) => t.trim()).filter((t: string) => t);
       const rastreado = parseFloat(item.rastreado_h) || 0;
@@ -201,12 +278,12 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
       .slice(0, 10);
 
     return tarefas;
-  }, [fotosData, metrics.totalHoras]);
+  }, [fotosDataCompletos, metrics.totalHoras]);
 
   const clientesDistribuicao = useMemo((): ClienteFotosAgrupado[] => {
     const clientesMap = new Map<string, { horas: number; projetos: Set<string> }>();
 
-    fotosData.forEach((item) => {
+    fotosDataCompletos.forEach((item) => {
       const cliente = item.cliente || "Sem cliente";
       const projeto = item.projeto || "";
       const rastreado = parseFloat(item.rastreado_h) || 0;
@@ -232,7 +309,7 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
       .slice(0, 10);
 
     return clientes;
-  }, [fotosData, metrics.totalHoras]);
+  }, [fotosDataCompletos, metrics.totalHoras]);
 
   const totalFotos = useMemo(() => {
     let fotosVendidas = 0;
@@ -240,7 +317,7 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
     let fotosTiradas = 0;
     const projetosProcessados = new Set<string>();
 
-    fotosData.forEach((item) => {
+    fotosDataCompletos.forEach((item) => {
       const projetoCompleto = item.projeto || "";
       
       if (projetoCompleto && !projetosProcessados.has(projetoCompleto)) {
@@ -281,7 +358,7 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
         : 0,
       tempoPorFotoVendida: fotosVendidas > 0 ? metrics.totalHoras / fotosVendidas : 0,
     };
-  }, [fotosData]);
+  }, [fotosDataCompletos, metrics.totalHoras]);
 
   const dadosPorStatus = useMemo(() => {
     const statusMap = new Map<string, { 
@@ -289,7 +366,7 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
       projetos: Set<string>;
     }>();
 
-    fotosData.forEach((item) => {
+    fotosDataCompletos.forEach((item) => {
       const status = item.status || "Sem status";
       const projetoCompleto = item.projeto || "";
       const rastreado = parseFloat(item.rastreado_h) || 0;
@@ -313,7 +390,7 @@ export const useRelatorioFotos = (data: SpreadsheetData[]) => {
       totalHoras: data.horas,
       totalProjetos: data.projetos.size,
     }));
-  }, [fotosData]);
+  }, [fotosDataCompletos]);
 
   return {
     metrics,
