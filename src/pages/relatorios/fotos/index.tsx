@@ -48,7 +48,6 @@ const RelatorioFotosPage = () => {
   const [consolidatedData, setConsolidatedData] = useState<any[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
-  const [filtroPercentual, setFiltroPercentual] = useState<number>(10);
   const [filtroProjeto, setFiltroProjeto] = useState<string>("");
   const [filtroPercentualMin, setFiltroPercentualMin] = useState<string>("");
   const [filtroPercentualMax, setFiltroPercentualMax] = useState<string>("");
@@ -122,24 +121,6 @@ const RelatorioFotosPage = () => {
     const m = Math.round((hours - h) * 60);
     return `${h}h ${m}m`;
   };
-
-  const projetosAcimaMedia = useMemo(() => {
-    const mediaGeral = totalFotos.tempoPorFotoVendida;
-    if (mediaGeral === 0) return [];
-    
-    const threshold = mediaGeral * (1 + filtroPercentual / 100);
-    
-    return projetosAgrupados
-      .filter(projeto => 
-        projeto.tempoPorFotoVendida > 0 && 
-        projeto.tempoPorFotoVendida > threshold
-      )
-      .sort((a, b) => {
-        const numA = parseInt(a.numeroProjeto) || 0;
-        const numB = parseInt(b.numeroProjeto) || 0;
-        return numB - numA; // Ordem decrescente
-      });
-  }, [projetosAgrupados, totalFotos.tempoPorFotoVendida, filtroPercentual]);
 
   const projetosFiltrados = useMemo(() => {
     let filtrados = [...projetosAgrupados];
@@ -398,68 +379,6 @@ const RelatorioFotosPage = () => {
                     </p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Projetos Acima do Padrão</span>
-                <Badge variant="secondary">
-                  {projetosAcimaMedia.length} projeto{projetosAcimaMedia.length !== 1 ? 's' : ''}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b">
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">
-                      Média Geral: <span className="font-semibold text-foreground">
-                        {totalFotos.tempoPorFotoVendida > 0 
-                          ? formatHoursMinutes(totalFotos.tempoPorFotoVendida) 
-                          : '-'}
-                      </span>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Filtro Atual: <span className="font-semibold text-foreground">
-                        {totalFotos.tempoPorFotoVendida > 0 
-                          ? formatHoursMinutes(totalFotos.tempoPorFotoVendida * (1 + filtroPercentual / 100))
-                          : '-'}
-                      </span> (+{filtroPercentual}%)
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Filtrar por:</span>
-                    <ToggleGroup 
-                      type="single" 
-                      value={filtroPercentual.toString()}
-                      onValueChange={(value) => {
-                        if (value) setFiltroPercentual(Number(value));
-                      }}
-                    >
-                      <ToggleGroupItem value="10" aria-label="10%">
-                        &gt;10%
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="30" aria-label="30%">
-                        &gt;30%
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="50" aria-label="50%">
-                        &gt;50%
-                      </ToggleGroupItem>
-                    </ToggleGroup>
-                  </div>
-                </div>
-                {projetosAcimaMedia.length > 0 ? (
-                  <Accordion type="single" collapsible className="w-full">
-                    <ProjetoAccordion projetos={projetosAcimaMedia} />
-                  </Accordion>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Nenhum projeto encontrado com tempo por foto vendida acima de {filtroPercentual}% da média.</p>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
