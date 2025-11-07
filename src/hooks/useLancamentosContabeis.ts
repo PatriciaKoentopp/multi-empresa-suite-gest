@@ -101,7 +101,7 @@ export function useLancamentosContabeis() {
       // Carregar lançamentos da tabela lancamentos_contabeis
       const { data, error } = await supabase
         .from("lancamentos_contabeis")
-        .select("*")
+        .select("id, empresa_id, data, historico, conta_debito_id, conta_credito_id, valor, movimentacao_id, parcela_id, tipo_lancamento, created_at, updated_at")
         .eq("empresa_id", currentCompany.id)
         .order("data", { ascending: true });
         

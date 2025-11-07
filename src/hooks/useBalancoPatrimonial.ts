@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useLancamentosContabeis } from './useLancamentosContabeis';
 import { PlanoConta } from '@/types/plano-contas';
-import { LancamentoContabil } from '@/types/movimentacoes';
+import { LancamentoContabil } from '@/types/lancamentos-contabeis';
 
 export interface ContaBalanco {
   codigo: string;
