@@ -732,35 +732,44 @@ export type Database = {
       }
       lancamentos_contabeis: {
         Row: {
-          conta_credito_id: string
-          conta_debito_id: string
+          conta_credito_id: string | null
+          conta_debito_id: string | null
           created_at: string
           data: string
           empresa_id: string
           historico: string
           id: string
+          movimentacao_id: string | null
+          parcela_id: string | null
+          tipo_lancamento: string
           updated_at: string
           valor: number
         }
         Insert: {
-          conta_credito_id: string
-          conta_debito_id: string
+          conta_credito_id?: string | null
+          conta_debito_id?: string | null
           created_at?: string
           data: string
           empresa_id: string
           historico: string
           id?: string
+          movimentacao_id?: string | null
+          parcela_id?: string | null
+          tipo_lancamento?: string
           updated_at?: string
           valor?: number
         }
         Update: {
-          conta_credito_id?: string
-          conta_debito_id?: string
+          conta_credito_id?: string | null
+          conta_debito_id?: string | null
           created_at?: string
           data?: string
           empresa_id?: string
           historico?: string
           id?: string
+          movimentacao_id?: string | null
+          parcela_id?: string | null
+          tipo_lancamento?: string
           updated_at?: string
           valor?: number
         }
@@ -784,6 +793,20 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_contabeis_movimentacao_id_fkey"
+            columns: ["movimentacao_id"]
+            isOneToOne: false
+            referencedRelation: "movimentacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_contabeis_parcela_id_fkey"
+            columns: ["parcela_id"]
+            isOneToOne: false
+            referencedRelation: "movimentacoes_parcelas"
             referencedColumns: ["id"]
           },
         ]
@@ -2044,12 +2067,9 @@ export type Database = {
           name: string
         }[]
       }
-      get_user_company_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_user_company_id: { Args: never; Returns: string }
       get_yearly_sales_comparison: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           media_mensal: number
           num_meses: number
@@ -2060,7 +2080,7 @@ export type Database = {
         }[]
       }
       get_yearly_sales_data: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           faturado: number
           name: string

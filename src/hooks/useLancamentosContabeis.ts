@@ -22,7 +22,7 @@ export function useLancamentosContabeis() {
     try {
       const { data, error } = await supabase
         .from("plano_contas")
-        .select("id, codigo, descricao, tipo, categoria, considerar_dre, classificacao_dre, status")
+        .select("id, codigo, descricao, tipo, categoria, considerar_dre, classificacao_dre, status, created_at, updated_at")
         .eq("empresa_id", currentCompany.id)
         .eq("status", "ativo")
         .order("codigo", { ascending: true });
@@ -128,7 +128,7 @@ export function useLancamentosContabeis() {
             saldo: 0, // Será calculado depois
             movimentacao_id: lanc.movimentacao_id,
             parcela_id: lanc.parcela_id,
-            tipo_lancamento: lanc.tipo_lancamento || 'principal'
+            tipo_lancamento: (lanc.tipo_lancamento || 'principal') as 'principal' | 'juros' | 'multa' | 'desconto'
           };
           lancamentosProcessados.push(lancamentoDebito);
         }
@@ -147,7 +147,7 @@ export function useLancamentosContabeis() {
             saldo: 0, // Será calculado depois
             movimentacao_id: lanc.movimentacao_id,
             parcela_id: lanc.parcela_id,
-            tipo_lancamento: lanc.tipo_lancamento || 'principal'
+            tipo_lancamento: (lanc.tipo_lancamento || 'principal') as 'principal' | 'juros' | 'multa' | 'desconto'
           };
           lancamentosProcessados.push(lancamentoCredito);
         }
