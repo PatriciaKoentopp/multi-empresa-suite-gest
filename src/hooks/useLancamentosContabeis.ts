@@ -889,11 +889,26 @@ export function useLancamentosContabeis() {
         
       if (movError) throw movError;
       
-      // 5. Carregar parcelas
-      const { data: parcelas, error: parcError } = await supabase
-        .from("movimentacoes_parcelas")
-        .select("*")
-        .in("movimentacao_id", movimentacoes?.map(m => m.id) || []);
+      // 5. Carregar parcelas - fazer em lotes para evitar URL muito longa
+      let parcelas: any[] = [];
+      const movimentacoesIds = movimentacoes?.map(m => m.id) || [];
+      
+      if (movimentacoesIds.length > 0) {
+        // Processar em lotes de 50 IDs por vez
+        const batchSize = 50;
+        for (let i = 0; i < movimentacoesIds.length; i += batchSize) {
+          const batch = movimentacoesIds.slice(i, i + batchSize);
+          const { data: batchParcelas, error: batchError } = await supabase
+            .from("movimentacoes_parcelas")
+            .select("*")
+            .in("movimentacao_id", batch);
+          
+          if (batchError) throw batchError;
+          if (batchParcelas) parcelas.push(...batchParcelas);
+        }
+      }
+      
+      const parcError = null;
         
       if (parcError) throw parcError;
       
