@@ -563,6 +563,8 @@ export default function AnaliseDrePage() {
         }
       } else {
         // Classificação por inferência
+        let grupoDestino = "";
+        
         if (tipoOperacao === 'receber' && (!mov.movimentacoes?.categoria_id || !planoContas)) {
           receitaBruta += valor;
           grupoDestino = "Receita Bruta";
@@ -575,7 +577,6 @@ export default function AnaliseDrePage() {
         } 
         else if (planoContas) {
           const { tipo, descricao } = planoContas;
-          let grupoDestino = "";
           
           // Receitas
           if (tipo === 'receita') {
