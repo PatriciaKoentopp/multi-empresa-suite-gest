@@ -146,12 +146,12 @@ export default function AnaliseDrePage() {
           .from('fluxo_caixa')
           .select(`
             *,
-            movimentacoes (
+            movimentacoes!movimentacao_id (
               categoria_id,
               tipo_operacao,
-              considerar_dre
-            ),
-            plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
+              considerar_dre,
+              plano_contas:categoria_id(id, tipo, descricao, classificacao_dre)
+            )
           `)
           .eq('empresa_id', currentCompany.id)
           .gte('data_movimentacao', dataAtualInicioStr)
@@ -164,12 +164,12 @@ export default function AnaliseDrePage() {
           .from('fluxo_caixa')
           .select(`
             *,
-            movimentacoes (
+            movimentacoes!movimentacao_id (
               categoria_id,
               tipo_operacao,
-              considerar_dre
-            ),
-            plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
+              considerar_dre,
+              plano_contas:categoria_id(id, tipo, descricao, classificacao_dre)
+            )
           `)
           .eq('empresa_id', currentCompany.id)
           .gte('data_movimentacao', dataCompInicioStr)
@@ -228,12 +228,12 @@ export default function AnaliseDrePage() {
       .from('fluxo_caixa')
       .select(`
         *,
-        movimentacoes (
+        movimentacoes!movimentacao_id (
           categoria_id,
           tipo_operacao,
-          considerar_dre
-        ),
-        plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
+          considerar_dre,
+          plano_contas:categoria_id(id, tipo, descricao, classificacao_dre)
+        )
       `)
       .eq('empresa_id', empresaId)
       .gte('data_movimentacao', dataInicioStr)
@@ -251,7 +251,7 @@ export default function AnaliseDrePage() {
       const considerarDre = mov.movimentacoes?.considerar_dre !== false;
       if (!considerarDre) return;
       
-      const planoContas = mov.plano_contas?.plano_contas;
+      const planoContas = mov.movimentacoes?.plano_contas;
       if (!planoContas) return;
       
       const contaId = planoContas.id;
@@ -370,12 +370,12 @@ export default function AnaliseDrePage() {
         .from('fluxo_caixa')
         .select(`
           *,
-          movimentacoes (
+          movimentacoes!movimentacao_id (
             categoria_id,
             tipo_operacao,
-            considerar_dre
-          ),
-          plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre))
+            considerar_dre,
+            plano_contas:categoria_id(id, tipo, descricao, classificacao_dre)
+          )
         `)
         .eq('empresa_id', currentCompany.id)
         .gte('data_movimentacao', dataCompInicioStr)
@@ -385,7 +385,7 @@ export default function AnaliseDrePage() {
       
       // Filtrar apenas movimentações da conta especificada
       const movConta = movimentacoes?.filter(mov => {
-        const planoContas = mov.plano_contas?.plano_contas;
+        const planoContas = mov.movimentacoes?.plano_contas;
         return planoContas?.descricao === nomeConta;
       }) || [];
       
@@ -494,7 +494,7 @@ export default function AnaliseDrePage() {
       
       const valor = Number(mov.valor);
       const tipoOperacao = mov.movimentacoes?.tipo_operacao;
-      const planoContas = mov.plano_contas?.plano_contas;
+      const planoContas = mov.movimentacoes?.plano_contas;
       const descricaoCategoria = planoContas?.descricao || 'Sem categoria';
       const contaId = planoContas?.id || 'sem_conta';
 

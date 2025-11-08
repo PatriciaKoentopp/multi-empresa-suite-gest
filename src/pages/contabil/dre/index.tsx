@@ -128,12 +128,12 @@ export default function DrePage() {
             error
           } = await supabase.from('fluxo_caixa').select(`
               *,
-              movimentacoes (
+              movimentacoes!movimentacao_id (
                 categoria_id,
                 tipo_operacao,
-                considerar_dre
-              ),
-              plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre, considerar_dre))
+                considerar_dre,
+                plano_contas:categoria_id(id, tipo, descricao, classificacao_dre, considerar_dre)
+              )
             `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate);
           if (error) throw error;
           dadosAgrupados = processarMovimentacoes(movimentacoes || []);
@@ -145,12 +145,12 @@ export default function DrePage() {
             error
           } = await supabase.from('fluxo_caixa').select(`
               *,
-              movimentacoes (
+              movimentacoes!movimentacao_id (
                 categoria_id,
                 tipo_operacao,
-                considerar_dre
-              ),
-              plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre, considerar_dre))
+                considerar_dre,
+                plano_contas:categoria_id(id, tipo, descricao, classificacao_dre, considerar_dre)
+              )
             `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate);
           if (error) throw error;
 
@@ -190,12 +190,12 @@ export default function DrePage() {
               error
             } = await supabase.from('fluxo_caixa').select(`
                 *,
-                movimentacoes (
+                movimentacoes!movimentacao_id (
                   categoria_id,
                   tipo_operacao,
-                  considerar_dre
-                ),
-                plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre, considerar_dre))
+                  considerar_dre,
+                  plano_contas:categoria_id(id, tipo, descricao, classificacao_dre, considerar_dre)
+                )
               `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate);
             if (error) throw error;
             dadosPorAno[anoSelecionado] = processarMovimentacoes(movimentacoes || []);
@@ -209,12 +209,12 @@ export default function DrePage() {
             error
           } = await supabase.from('fluxo_caixa').select(`
               *,
-              movimentacoes (
+              movimentacoes!movimentacao_id (
                 categoria_id,
                 tipo_operacao,
-                considerar_dre
-              ),
-              plano_contas:movimentacoes(plano_contas(id, tipo, descricao, classificacao_dre, considerar_dre))
+                considerar_dre,
+                plano_contas:categoria_id(id, tipo, descricao, classificacao_dre, considerar_dre)
+              )
             `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate);
           if (error) throw error;
           dadosAgrupados = processarMovimentacoes(movimentacoes || []);
@@ -268,7 +268,7 @@ export default function DrePage() {
       const considerarDreMovimentacao = mov.movimentacoes?.considerar_dre !== false;
       if (!considerarDreMovimentacao) return;
 
-      const planoContas = mov.plano_contas?.plano_contas;
+      const planoContas = mov.movimentacoes?.plano_contas;
       
       // Novo filtro: verificar se a conta deve ser considerada no DRE
       const considerarDreConta = planoContas?.considerar_dre !== false;
