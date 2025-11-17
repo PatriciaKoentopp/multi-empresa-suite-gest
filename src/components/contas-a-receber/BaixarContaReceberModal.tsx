@@ -36,7 +36,8 @@ const formasPagamento = [
   { id: "1", nome: "Dinheiro" },
   { id: "2", nome: "Cartão" },
   { id: "3", nome: "Boleto" },
-  { id: "4", nome: "Transferência" }
+  { id: "4", nome: "Transferência" },
+  { id: "5", nome: "Desconto" }
 ];
 
 export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: BaixarContaReceberModalProps) {
