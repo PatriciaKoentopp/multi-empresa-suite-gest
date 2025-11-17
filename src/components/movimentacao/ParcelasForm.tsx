@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { formatCurrency } from "@/lib/utils";
@@ -29,9 +29,33 @@ export function ParcelasForm({
   readOnly = false,
   mostrarAlertaDiferenca = true
 }: ParcelasFormProps) {
+  const [valoresEmEdicao, setValoresEmEdicao] = useState<{ [key: number]: string }>({});
+
   // Verificar se há diferença entre o valor total e a soma das parcelas
   const temDiferenca = mostrarAlertaDiferenca && 
     Math.abs((valorTotal || 0) - (somaParcelas || 0)) > 0.01;
+
+  const handleValorInputChange = (index: number, value: string) => {
+    setValoresEmEdicao(prev => ({ ...prev, [index]: value }));
+  };
+
+  const handleValorBlur = (index: number) => {
+    const valorEmEdicao = valoresEmEdicao[index];
+    if (valorEmEdicao !== undefined) {
+      const value = valorEmEdicao.replace(/[^0-9,]/g, '');
+      const numericValue = parseFloat(value.replace(',', '.'));
+      
+      if (!isNaN(numericValue) && numericValue > 0) {
+        onValorChange(index, numericValue);
+      }
+      
+      setValoresEmEdicao(prev => {
+        const novo = { ...prev };
+        delete novo[index];
+        return novo;
+      });
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -50,12 +74,12 @@ export function ParcelasForm({
             <label className="block text-xs mb-1">Valor</label>
             <Input
               type="text"
-              value={parcela.valor.toFixed(2).replace('.', ',')}
-              onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9,]/g, '');
-                const numericValue = parseFloat(value.replace(',', '.')) || 0;
-                onValorChange(index, numericValue);
-              }}
+              value={valoresEmEdicao[index] !== undefined 
+                ? valoresEmEdicao[index] 
+                : parcela.valor.toFixed(2).replace('.', ',')
+              }
+              onChange={(e) => handleValorInputChange(index, e.target.value)}
+              onBlur={() => handleValorBlur(index)}
               className={readOnly ? "bg-gray-100" : ""}
               disabled={readOnly}
             />
