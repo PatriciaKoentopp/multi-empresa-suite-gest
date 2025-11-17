@@ -40,7 +40,8 @@ const formasPagamento = [
   { id: "transferencia", nome: "Transferência" },
   { id: "cartao_debito", nome: "Cartão de Débito" },
   { id: "cartao_credito", nome: "Cartão de Crédito" },
-  { id: "cheque", nome: "Cheque" }
+  { id: "cheque", nome: "Cheque" },
+  { id: "desconto", nome: "Desconto" }
 ];
 
 export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: BaixarContaPagarModalProps) {
