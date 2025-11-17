@@ -31,6 +31,7 @@ export function RenegociarParcelasModal({
 }: RenegociarParcelasModalProps) {
   const [numeroParcelas, setNumeroParcelas] = useState(1);
   const [parcelas, setParcelas] = useState<Parcela[]>([]);
+  const [valoresEmEdicao, setValoresEmEdicao] = useState<{ [key: number]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
@@ -57,6 +58,7 @@ export function RenegociarParcelasModal({
         valor: conta.valor
       }
     ]);
+    setValoresEmEdicao({});
   };
   
   const handleNumeroParcelasChange = (incremento: number) => {
@@ -113,11 +115,29 @@ export function RenegociarParcelasModal({
   };
   
   const handleValorChange = (index: number, valor: string) => {
-    const valorNumerico = parseFloat(valor.replace(/\./g, '').replace(',', '.'));
-    if (!isNaN(valorNumerico)) {
-      const novasParcelas = [...parcelas];
-      novasParcelas[index].valor = valorNumerico;
-      setParcelas(novasParcelas);
+    // Atualizar o valor em edição imediatamente (permite digitação livre)
+    setValoresEmEdicao(prev => ({ ...prev, [index]: valor }));
+  };
+
+  const handleValorBlur = (index: number) => {
+    const valorEmEdicao = valoresEmEdicao[index];
+    if (valorEmEdicao !== undefined) {
+      // Tentar converter o valor digitado
+      const valorNumerico = parseFloat(valorEmEdicao.replace(/\./g, '').replace(',', '.'));
+      
+      if (!isNaN(valorNumerico) && valorNumerico > 0) {
+        // Valor válido: atualizar o estado das parcelas
+        const novasParcelas = [...parcelas];
+        novasParcelas[index].valor = valorNumerico;
+        setParcelas(novasParcelas);
+      }
+      
+      // Limpar o valor em edição
+      setValoresEmEdicao(prev => {
+        const novo = { ...prev };
+        delete novo[index];
+        return novo;
+      });
     }
   };
   
@@ -314,9 +334,14 @@ export function RenegociarParcelasModal({
                       </div>
                       <div className="col-span-5">
                         <Input
+                          type="text"
                           className="bg-white text-right font-mono"
-                          value={formatValorInput(parcela.valor)}
+                          value={valoresEmEdicao[index] !== undefined 
+                            ? valoresEmEdicao[index] 
+                            : formatValorInput(parcela.valor)
+                          }
                           onChange={(e) => handleValorChange(index, e.target.value)}
+                          onBlur={() => handleValorBlur(index)}
                           required
                         />
                       </div>
