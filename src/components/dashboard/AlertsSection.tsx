@@ -50,13 +50,13 @@ export function AlertsSection({ parcelasVencidas, parcelasHoje, interacoesPenden
   // Função para marcar interação como concluída
   const marcarInteracaoConcluida = async (interacao: LeadInteracao) => {
     try {
-      setAtualizandoStatus(interacao.id);
+      setAtualizandoStatus(String(interacao.id));
       
       // Atualizar no banco de dados
       const { error } = await supabase
         .from('leads_interacoes')
         .update({ status: "Realizado" })
-        .eq('id', interacao.id);
+        .eq('id', String(interacao.id));
       
       if (error) {
         throw error;

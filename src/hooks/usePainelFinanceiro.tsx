@@ -247,6 +247,7 @@ export const usePainelFinanceiro = () => {
             tipo: item.tipo_operacao === 'receber' ? 'entrada' : 'saida',
             favorecido: favorecidoNome,
             origem: item.origem || '',
+            situacao: item.situacao || 'confirmado',
           };
         });
       

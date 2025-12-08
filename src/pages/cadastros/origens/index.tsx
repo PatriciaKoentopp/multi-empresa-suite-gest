@@ -75,8 +75,8 @@ export default function OrigensPage() {
           nome: origem.nome,
           status: origem.status as "ativo" | "inativo",
           empresa_id: origem.empresa_id,
-          createdAt: new Date(origem.created_at),
-          updatedAt: new Date(origem.updated_at),
+          created_at: origem.created_at,
+          updated_at: origem.updated_at,
         }));
         setOrigens(origensFormatadas);
       }

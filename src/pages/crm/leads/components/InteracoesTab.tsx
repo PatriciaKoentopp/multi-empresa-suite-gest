@@ -87,7 +87,7 @@ export function InteracoesTab({
 
   const handleInteracaoEditDateChange = (date: Date) => {
     if (!interacaoParaEditar) return;
-    setInteracaoParaEditar(prev => prev ? { ...prev, data: date } : null);
+    setInteracaoParaEditar(prev => prev ? { ...prev, data: date.toISOString().split('T')[0] } : null);
   };
 
   const handleSalvarEdicao = () => {
@@ -113,7 +113,7 @@ export function InteracoesTab({
         const { error } = await supabase
           .from('leads_interacoes')
           .delete()
-          .eq('id', interacaoParaExcluir.id);
+          .eq('id', String(interacaoParaExcluir.id));
         
         if (error) throw error;
         
@@ -146,7 +146,7 @@ export function InteracoesTab({
         .update({
           status: novoStatus
         })
-        .eq('id', interacao.id);
+        .eq('id', String(interacao.id));
       
       if (error) throw error;
       
