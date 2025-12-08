@@ -44,8 +44,9 @@ export default function ProfissoesPage() {
             id: profissao.id,
             nome: profissao.nome,
             status: profissao.status as "ativo" | "inativo",
-            createdAt: new Date(profissao.created_at),
-            updatedAt: new Date(profissao.updated_at)
+            empresa_id: profissao.empresa_id,
+            created_at: profissao.created_at,
+            updated_at: profissao.updated_at
           }));
           setProfissoes(profissoesFormatadas);
         }
@@ -115,8 +116,9 @@ export default function ProfissoesPage() {
             id: novaProfissao.id,
             nome: novaProfissao.nome,
             status: novaProfissao.status as "ativo" | "inativo",
-            createdAt: new Date(novaProfissao.created_at),
-            updatedAt: new Date(novaProfissao.updated_at)
+            empresa_id: novaProfissao.empresa_id,
+            created_at: novaProfissao.created_at,
+            updated_at: novaProfissao.updated_at
           };
           setProfissoes(prev => [...prev, profissaoFormatada]);
           toast.success("Profissão criada com sucesso!");

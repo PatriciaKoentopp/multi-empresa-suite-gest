@@ -38,3 +38,12 @@ export interface EtapaFunil {
   ordem: number;
   funil_id?: string;
 }
+
+export interface Funil {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+  empresa_id: string;
+  etapas?: EtapaFunil[];
+}

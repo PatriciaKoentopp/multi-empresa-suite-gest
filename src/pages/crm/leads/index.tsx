@@ -21,7 +21,8 @@ import {
 import { Plus, Filter, Search } from "lucide-react";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
-import { Origem, Usuario, Funil, EtapaFunil } from "@/types"; 
+import { Origem, Usuario } from "@/types"; 
+import { EtapaFunil, Funil } from "./types";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";

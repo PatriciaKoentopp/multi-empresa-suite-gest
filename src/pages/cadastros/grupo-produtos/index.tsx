@@ -58,7 +58,10 @@ export default function GrupoProdutosPage() {
 
       if (error) throw error;
       
-      setGrupos(data || []);
+      setGrupos((data || []).map(g => ({
+        ...g,
+        status: g.status as 'ativo' | 'inativo'
+      })));
     } catch (error) {
       console.error("Erro ao carregar grupos:", error);
       toast.error("Não foi possível carregar os grupos de produtos");

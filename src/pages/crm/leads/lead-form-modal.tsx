@@ -148,10 +148,10 @@ export function LeadFormModal({
     }
     
     // Formatar as interações com nomes de responsáveis, mas sem converter as datas
-    const interacoesFormatadas = data.map(item => ({
+    const interacoesFormatadas: LeadInteracao[] = data.map(item => ({
       id: item.id,
       leadId: item.lead_id,
-      tipo: item.tipo,
+      tipo: item.tipo as LeadInteracao['tipo'],
       descricao: item.descricao,
       data: item.data,  // Usar a data exatamente como vem do banco
       responsavelId: item.responsavel_id,
@@ -185,7 +185,7 @@ export function LeadFormModal({
       if (data) {
         console.log('Fechamento encontrado:', data);
         setFechamento({
-          status: data.status,
+          status: data.status as 'perda' | 'sucesso',
           motivoPerdaId: data.motivo_perda_id,
           descricao: data.descricao || '',
           data: new Date(data.data)
@@ -338,10 +338,10 @@ export function LeadFormModal({
       
       // Atualizar a lista local
       if (data && data[0]) {
-        const novaInteracaoCompleta = {
+        const novaInteracaoCompleta: LeadInteracao = {
           id: data[0].id,
           leadId: data[0].lead_id,
-          tipo: data[0].tipo,
+          tipo: data[0].tipo as LeadInteracao['tipo'],
           descricao: data[0].descricao,
           data: formatDate(data[0].data),
           responsavelId: data[0].responsavel_id,
@@ -387,7 +387,7 @@ export function LeadFormModal({
       const { error } = await supabase
         .from('leads_interacoes')
         .delete()
-        .eq('id', interacaoId);
+        .eq('id', String(interacaoId));
       
       if (error) throw error;
       
@@ -410,11 +410,11 @@ export function LeadFormModal({
   
   try {
     // Verificar o tipo de dado da data
-    let dataFormatada = interacaoEditada.data;
+    let dataFormatada: string = interacaoEditada.data;
     
-    // Se for um objeto Date, formatar para string (formato ISO) antes de enviar para o banco
-    if (interacaoEditada.data instanceof Date) {
-      dataFormatada = format(interacaoEditada.data, "yyyy-MM-dd");
+    // Se for um objeto Date (ou string que pode ser convertida), formatar
+    if (typeof interacaoEditada.data !== 'string') {
+      dataFormatada = format(new Date(interacaoEditada.data), "yyyy-MM-dd");
     }
     
     const { error } = await supabase
@@ -426,7 +426,7 @@ export function LeadFormModal({
         responsavel_id: interacaoEditada.responsavelId,
         status: interacaoEditada.status || 'Aberto'
       })
-      .eq('id', interacaoEditada.id);
+      .eq('id', String(interacaoEditada.id));
     
     if (error) throw error;
     

@@ -77,8 +77,9 @@ export default function MotivosPerdaPage() {
         id: item.id,
         nome: item.nome,
         status: item.status as "ativo" | "inativo",
-        createdAt: new Date(item.created_at),
-        updatedAt: new Date(item.updated_at)
+        empresa_id: item.empresa_id,
+        created_at: item.created_at,
+        updated_at: item.updated_at
       }));
       
       setMotivosPerda(formattedData);

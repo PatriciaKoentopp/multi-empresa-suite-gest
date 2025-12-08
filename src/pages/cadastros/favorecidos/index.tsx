@@ -69,8 +69,8 @@ export default function FavorecidosPage() {
             nome: grupo.nome,
             status: grupo.status as "ativo" | "inativo",
             empresa_id: grupo.empresa_id,
-            created_at: new Date(grupo.created_at),
-            updated_at: new Date(grupo.updated_at)
+            created_at: grupo.created_at,
+            updated_at: grupo.updated_at
           }));
           setGrupos(gruposFormatados);
         }
@@ -107,8 +107,8 @@ export default function FavorecidosPage() {
             nome: profissao.nome,
             status: profissao.status as "ativo" | "inativo",
             empresa_id: profissao.empresa_id,
-            created_at: new Date(profissao.created_at),
-            updated_at: new Date(profissao.updated_at)
+            created_at: profissao.created_at,
+            updated_at: profissao.updated_at
           }));
           setProfissoes(profissoesFormatadas);
         }

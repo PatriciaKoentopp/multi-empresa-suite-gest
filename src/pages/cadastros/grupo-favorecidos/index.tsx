@@ -64,8 +64,9 @@ export default function GrupoFavorecidosPage() {
           id: grupo.id,
           nome: grupo.nome,
           status: grupo.status as "ativo" | "inativo",
-          createdAt: new Date(grupo.created_at),
-          updatedAt: new Date(grupo.updated_at)
+          empresa_id: grupo.empresa_id,
+          created_at: grupo.created_at,
+          updated_at: grupo.updated_at
         }));
         setGrupos(gruposFormatados);
       }
@@ -147,8 +148,9 @@ export default function GrupoFavorecidosPage() {
             id: newGrupo.id,
             nome: newGrupo.nome,
             status: newGrupo.status as "ativo" | "inativo",
-            createdAt: new Date(newGrupo.created_at),
-            updatedAt: new Date(newGrupo.updated_at)
+            empresa_id: newGrupo.empresa_id,
+            created_at: newGrupo.created_at,
+            updated_at: newGrupo.updated_at
           };
           setGrupos(prev => [...prev, grupoFormatado]);
           toast.success("Grupo de favorecidos criado com sucesso!");
