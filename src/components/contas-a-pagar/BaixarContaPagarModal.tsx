@@ -266,10 +266,25 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
         }
 
         // 3. Atualizar valor utilizado nas antecipações
+        // Buscar dados atualizados diretamente do banco para evitar duplicação
         for (const antSel of antecipacoesSelecionadas) {
-          const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
-          if (antecipacao && antSel.valor > 0) {
-            const novoValorUtilizado = antecipacao.valor_utilizado + antSel.valor;
+          if (antSel.valor > 0) {
+            // Buscar valor atual da antecipação no banco
+            const { data: antAtual, error: fetchError } = await supabase
+              .from("antecipacoes")
+              .select("valor_total, valor_utilizado")
+              .eq("id", antSel.id)
+              .single();
+
+            if (fetchError) throw fetchError;
+            
+            const novoValorUtilizado = (antAtual?.valor_utilizado || 0) + antSel.valor;
+            
+            // Validar que não excede o valor total
+            if (novoValorUtilizado > (antAtual?.valor_total || 0)) {
+              toast.error(`Valor utilizado excede o valor total da antecipação.`);
+              return;
+            }
             
             const { error: antecipacaoError } = await supabase
               .from("antecipacoes")

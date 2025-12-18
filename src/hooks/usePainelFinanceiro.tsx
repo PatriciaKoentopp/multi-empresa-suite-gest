@@ -197,7 +197,6 @@ export const usePainelFinanceiro = () => {
       
       if (antecipacaoIds.length > 0) {
         // Buscar as antecipações que correspondem aos registros do fluxo de caixa
-        // Usamos a descrição para extrair o ID da antecipação ou fazemos uma busca por data e valor
         const { data: antecipacoes, error: antecipacaoError } = await supabase
           .from('antecipacoes')
           .select(`
@@ -205,18 +204,38 @@ export const usePainelFinanceiro = () => {
             data_lancamento,
             valor_total,
             conta_corrente_id,
-            favorecidos:favorecido_id (
-              nome
-            )
+            favorecido_id
           `)
           .gte('data_lancamento', dataInicioStr)
           .lte('data_lancamento', dataFimStr);
         
         if (!antecipacaoError && antecipacoes) {
+          // Buscar os nomes dos favorecidos separadamente
+          const favorecidoIds = antecipacoes
+            .map(ant => ant.favorecido_id)
+            .filter((id): id is string => id !== null);
+          
+          let favorecidosMap: Record<string, string> = {};
+          
+          if (favorecidoIds.length > 0) {
+            const { data: favorecidos } = await supabase
+              .from('favorecidos')
+              .select('id, nome')
+              .in('id', favorecidoIds);
+            
+            if (favorecidos) {
+              favorecidos.forEach(fav => {
+                favorecidosMap[fav.id] = fav.nome;
+              });
+            }
+          }
+          
           // Criar um mapa das antecipações por data, valor e conta para fazer o match
           antecipacoes.forEach(antecipacao => {
             const chave = `${antecipacao.data_lancamento}_${antecipacao.valor_total}_${antecipacao.conta_corrente_id}`;
-            antecipacoesFavorecidos[chave] = antecipacao.favorecidos?.nome || '';
+            antecipacoesFavorecidos[chave] = antecipacao.favorecido_id 
+              ? favorecidosMap[antecipacao.favorecido_id] || '' 
+              : '';
           });
         }
       }
