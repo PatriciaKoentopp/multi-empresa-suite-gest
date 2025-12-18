@@ -151,29 +151,6 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
 
       console.log("Iniciando transação de antecipação...");
 
-      // Buscar saldo atual da conta corrente
-      const { data: contaData, error: contaError } = await supabase
-        .from("contas_correntes")
-        .select("saldo_inicial")
-        .eq("id", contaCorrente)
-        .single();
-
-      if (contaError) {
-        console.error("Erro ao buscar dados da conta corrente:", contaError);
-        throw contaError;
-      }
-
-      const saldoAtual = Number(contaData?.saldo_inicial || 0);
-
-      // Calcular novo saldo baseado no tipo de operação
-      // Para antecipação de recebimento, o valor entra na conta (crédito)
-      // Para antecipação de pagamento, o valor sai da conta (débito)
-      const novoSaldo = operacao === "receber" 
-        ? saldoAtual + valorNumerico 
-        : saldoAtual - valorNumerico;
-
-      console.log("Saldo atual:", saldoAtual, "Valor:", valorNumerico, "Novo saldo:", novoSaldo);
-
       // Preparar dados para inserção na antecipação
       const antecipacaoData = {
         empresa_id: currentCompany.id,
@@ -207,21 +184,21 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
 
       console.log("Antecipação inserida:", antecipacaoInserida);
 
-      // Preparar dados para inserção no fluxo de caixa com valores corretos
-      // MUDANÇA: situacao agora é "nao_conciliado" para permitir conciliação manual
+      // Preparar dados para inserção no fluxo de caixa
+      // A antecipação é registrada apenas como movimentação, sem alterar saldo_inicial
       const fluxoCaixaData = {
         empresa_id: currentCompany.id,
         data_movimentacao: dataLancamento.toISOString().split('T')[0],
         tipo_operacao: operacao,
         valor: operacao === "receber" ? valorNumerico : -valorNumerico,
-        saldo: novoSaldo,
+        saldo: 0, // O saldo será calculado dinamicamente pela soma das movimentações
         descricao: `Antecipação: ${descricao || `${operacao === "receber" ? "Recebimento" : "Pagamento"} - ${antecipacaoInserida.id}`}`,
         origem: "antecipacao",
         conta_corrente_id: contaCorrente,
         movimentacao_id: null,
         movimentacao_parcela_id: null,
         antecipacao_id: antecipacaoInserida.id,
-        situacao: "nao_conciliado", // ALTERADO: agora registra como não conciliado
+        situacao: "nao_conciliado",
         forma_pagamento: formasPagamento.find(f => f.id === formaPagamento)?.nome || "Dinheiro"
       };
 
@@ -241,19 +218,6 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
       }
 
       console.log("Fluxo de caixa inserido com sucesso:", fluxoInserido);
-
-      // Atualizar saldo da conta corrente
-      const { error: saldoError } = await supabase
-        .from("contas_correntes")
-        .update({ saldo_inicial: novoSaldo })
-        .eq("id", contaCorrente);
-
-      if (saldoError) {
-        console.error("Erro ao atualizar saldo da conta corrente:", saldoError);
-        throw saldoError;
-      }
-
-      console.log("Saldo da conta corrente atualizado");
 
       toast.success("Antecipação registrada com sucesso!");
       resetForm();
