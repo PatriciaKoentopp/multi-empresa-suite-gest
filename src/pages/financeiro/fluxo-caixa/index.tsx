@@ -602,11 +602,6 @@ export default function FluxoCaixaPage() {
       return;
     }
 
-    if (filteredMovimentacoes.length === 0) {
-      toast.error("Não há movimentações para gerar o relatório");
-      return;
-    }
-
     const sucesso = gerarPdfFluxoCaixa(
       filteredMovimentacoes,
       currentCompany?.nome_fantasia || currentCompany?.razao_social || "Empresa",
@@ -636,7 +631,7 @@ export default function FluxoCaixaPage() {
             variant="outline"
             className="rounded-md px-6 py-2 text-base font-semibold text-blue-600 border-blue-600 hover:bg-blue-50"
             onClick={handleGerarPdf}
-            disabled={!contaCorrenteId || filteredMovimentacoes.length === 0}
+            disabled={!contaCorrenteId}
           >
             <FileText className="mr-2 h-4 w-4" />
             Gerar PDF
