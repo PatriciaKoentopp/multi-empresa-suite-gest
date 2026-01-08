@@ -611,12 +611,12 @@ export default function FluxoCaixaPage() {
       filteredMovimentacoes,
       currentCompany?.nome_fantasia || currentCompany?.razao_social || "Empresa",
       contaCorrenteSelecionada,
-      dataInicial,
-      dataFinal,
       saldoInicial,
       favorecidosCache,
       documentosCache,
-      parcelasCache
+      parcelasCache,
+      dataInicial,
+      dataFinal
     );
 
     if (sucesso) {
