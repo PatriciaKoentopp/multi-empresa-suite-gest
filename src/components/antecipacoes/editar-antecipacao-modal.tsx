@@ -194,8 +194,9 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
         throw antecipacaoError;
       }
 
-      // Atualizar também no fluxo de caixa
+      // Atualizar também no fluxo de caixa (apenas o registro original, não a devolução)
       const valorOperacao = antecipacao.tipoOperacao === "receber" ? novoValor : -novoValor;
+      const tipoOperacaoFluxo = antecipacao.tipoOperacao === "receber" ? "entrada" : "saida";
       
       const { error: fluxoCaixaError } = await supabase
         .from("fluxo_caixa")
@@ -207,7 +208,8 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
           descricao: descricao || `Antecipação - ${antecipacao.tipoOperacao === "receber" ? "Recebimento" : "Pagamento"}`,
           updated_at: new Date().toISOString()
         })
-        .eq("antecipacao_id", antecipacao.id);
+        .eq("antecipacao_id", antecipacao.id)
+        .eq("tipo_operacao", tipoOperacaoFluxo);
 
       if (fluxoCaixaError) {
         console.error("Erro ao atualizar fluxo de caixa:", fluxoCaixaError);
@@ -231,8 +233,8 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
 
   if (!antecipacao) return null;
 
-  // Verificar se está conciliada ou tem valor utilizado para desabilitar campos
-  const isReadOnly = antecipacao.conciliada || antecipacao.valorUtilizado > 0;
+  // Verificar se está conciliada, tem valor utilizado ou foi devolvida para desabilitar campos
+  const isReadOnly = antecipacao.conciliada || antecipacao.valorUtilizado > 0 || antecipacao.status === 'devolvida';
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -249,10 +251,18 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
           </div>
         )}
 
-        {!antecipacao.conciliada && antecipacao.valorUtilizado > 0 && (
+        {!antecipacao.conciliada && antecipacao.valorUtilizado > 0 && antecipacao.status !== 'devolvida' && (
           <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
             <p className="text-yellow-800 text-sm">
               Esta antecipação possui valor utilizado e não pode ser editada.
+            </p>
+          </div>
+        )}
+
+        {antecipacao.status === 'devolvida' && (
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
+            <p className="text-yellow-800 text-sm">
+              Esta antecipação foi devolvida e não pode ser editada.
             </p>
           </div>
         )}
