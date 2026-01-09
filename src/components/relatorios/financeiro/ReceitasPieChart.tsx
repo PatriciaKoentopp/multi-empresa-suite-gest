@@ -1,5 +1,6 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { CategoriaFinanceira } from "@/hooks/useRelatorioFinanceiro";
 import { TrendingUp } from "lucide-react";
 
@@ -131,26 +132,28 @@ export function ReceitasPieChart({ categorias, loading }: ReceitasPieChartProps)
           </div>
 
           {/* Legenda com valores */}
-          <div className="flex flex-col justify-center space-y-2 max-h-[260px] overflow-y-auto pr-2">
-            {data.map((item, index) => (
-              <div 
-                key={index} 
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <div
-                    className="h-3 w-3 rounded-full shrink-0"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-sm truncate">{item.name}</span>
+          <ScrollArea className="h-[260px]">
+            <div className="flex flex-col space-y-2 pr-4">
+              {data.map((item, index) => (
+                <div 
+                  key={index} 
+                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div
+                      className="h-3 w-3 rounded-full shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-sm truncate">{item.name}</span>
+                  </div>
+                  <div className="text-right shrink-0 ml-2">
+                    <p className="text-sm font-medium">{formatCurrency(item.value)}</p>
+                    <p className="text-xs text-muted-foreground">{item.percentual.toFixed(1)}%</p>
+                  </div>
                 </div>
-                <div className="text-right shrink-0 ml-2">
-                  <p className="text-sm font-medium">{formatCurrency(item.value)}</p>
-                  <p className="text-xs text-muted-foreground">{item.percentual.toFixed(1)}%</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
       </CardContent>
     </Card>
