@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
-import { startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, format, parseISO, differenceInDays, subDays } from "date-fns";
+import { startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subYears, format, parseISO } from "date-fns";
 
 export interface CategoriaFinanceira {
   categoria_id: string;
@@ -115,10 +115,9 @@ export function useRelatorioFinanceiro() {
       const dataInicioStr = format(filtro.dataInicio, "yyyy-MM-dd");
       const dataFimStr = format(filtro.dataFim, "yyyy-MM-dd");
 
-      // Calcular período anterior
-      const diffDias = differenceInDays(filtro.dataFim, filtro.dataInicio);
-      const dataFimAnterior = subDays(filtro.dataInicio, 1);
-      const dataInicioAnterior = subDays(dataFimAnterior, diffDias);
+      // Calcular período anterior (mesmo período do ano anterior)
+      const dataInicioAnterior = subYears(filtro.dataInicio, 1);
+      const dataFimAnterior = subYears(filtro.dataFim, 1);
       const dataInicioAnteriorStr = format(dataInicioAnterior, "yyyy-MM-dd");
       const dataFimAnteriorStr = format(dataFimAnterior, "yyyy-MM-dd");
 
