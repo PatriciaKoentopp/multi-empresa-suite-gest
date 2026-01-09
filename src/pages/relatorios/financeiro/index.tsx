@@ -135,10 +135,10 @@ export default function RelatorioFinanceiro() {
       {/* Cards de Resumo */}
       <FinanceiroSummaryCards resumo={resumo} loading={loading} />
 
-      {/* Gráficos de Pizza */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <DespesasPieChart categorias={categoriasDespesas} loading={loading} />
+      {/* Gráficos de Pizza - Largura Total Empilhados */}
+      <div className="space-y-6">
         <ReceitasPieChart categorias={categoriasReceitas} loading={loading} />
+        <DespesasPieChart categorias={categoriasDespesas} loading={loading} />
       </div>
 
       {/* Gráfico de Barras */}
