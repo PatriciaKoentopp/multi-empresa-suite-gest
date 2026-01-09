@@ -27,6 +27,7 @@ import { AntecipacaoTable, Antecipacao } from "@/components/antecipacoes/antecip
 import { AntecipacaoModal } from "@/components/antecipacoes/antecipacao-modal";
 import { VisualizarAntecipacaoModal } from "@/components/antecipacoes/visualizar-antecipacao-modal";
 import { EditarAntecipacaoModal } from "@/components/antecipacoes/editar-antecipacao-modal";
+import { DevolverAntecipacaoModal } from "@/components/antecipacoes/devolver-antecipacao-modal";
 
 export default function AntecipacoesPage() {
   const { currentCompany } = useCompany();
@@ -35,10 +36,11 @@ export default function AntecipacoesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isVisualizarModalOpen, setIsVisualizarModalOpen] = useState(false);
   const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
+  const [isDevolverModalOpen, setIsDevolverModalOpen] = useState(false);
   const [antecipacaoSelecionada, setAntecipacaoSelecionada] = useState<Antecipacao | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"todas" | "ativa" | "utilizada">("ativa");
+  const [statusFilter, setStatusFilter] = useState<"todas" | "ativa" | "utilizada" | "devolvida">("ativa");
   const [tipoFilter, setTipoFilter] = useState<"todas" | "receber" | "pagar">("todas");
   const [dataInicio, setDataInicio] = useState<string>("");
   const [dataFim, setDataFim] = useState<string>("");
@@ -251,7 +253,7 @@ export default function AntecipacoesPage() {
         const valorDisponivel = valorTotal - valorUtilizado;
         
         // Usar o status atualizado do banco de dados após a verificação automática
-        const status = item.status as "ativa" | "utilizada";
+        const status = item.status as "ativa" | "utilizada" | "devolvida";
 
         return {
           id: item.id,
@@ -354,6 +356,11 @@ export default function AntecipacoesPage() {
   const handleVisualizar = (antecipacao: Antecipacao) => {
     setAntecipacaoSelecionada(antecipacao);
     setIsVisualizarModalOpen(true);
+  };
+
+  const handleDevolver = (antecipacao: Antecipacao) => {
+    setAntecipacaoSelecionada(antecipacao);
+    setIsDevolverModalOpen(true);
   };
 
   const handleNovaAntecipacao = () => {
@@ -483,6 +490,7 @@ export default function AntecipacoesPage() {
                     <SelectItem value="todas">Todos Status</SelectItem>
                     <SelectItem value="ativa" className="text-blue-600">Ativa</SelectItem>
                     <SelectItem value="utilizada" className="text-green-600">Utilizada</SelectItem>
+                    <SelectItem value="devolvida" className="text-orange-600">Devolvida</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -565,6 +573,7 @@ export default function AntecipacoesPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onVisualizar={handleVisualizar}
+                onDevolver={handleDevolver}
               />
             </div>
           </div>
@@ -590,6 +599,16 @@ export default function AntecipacoesPage() {
         open={isEditarModalOpen}
         onClose={() => {
           setIsEditarModalOpen(false);
+          setAntecipacaoSelecionada(null);
+        }}
+        onSave={handleSalvarAntecipacao}
+        antecipacao={antecipacaoSelecionada}
+      />
+
+      <DevolverAntecipacaoModal
+        open={isDevolverModalOpen}
+        onClose={() => {
+          setIsDevolverModalOpen(false);
           setAntecipacaoSelecionada(null);
         }}
         onSave={handleSalvarAntecipacao}
