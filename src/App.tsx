@@ -62,6 +62,7 @@ import AnaliseDrePage from "./pages/relatorios/analise-dre";
 import RelatorioTempoPage from "./pages/relatorios/tempo";
 import RelatorioFotosPage from "./pages/relatorios/fotos";
 import RelatorioProjetosPage from "./pages/relatorios/projetos";
+import RelatorioFinanceiro from "./pages/relatorios/financeiro";
 
 // Authentication wrapper
 interface PrivateRouteProps {
@@ -496,6 +497,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <RelatorioProjetosPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/relatorios/financeiro"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <RelatorioFinanceiro />
                   </MainLayout>
                 </PrivateRoute>
               }
