@@ -13,7 +13,7 @@ import { FinanceiroSummaryCards } from "@/components/relatorios/financeiro/Finan
 import { DespesasPieChart } from "@/components/relatorios/financeiro/DespesasPieChart";
 import { ReceitasPieChart } from "@/components/relatorios/financeiro/ReceitasPieChart";
 import { ReceitasDespesasBarChart } from "@/components/relatorios/financeiro/ReceitasDespesasBarChart";
-import { CategoriasTable } from "@/components/relatorios/financeiro/CategoriasTable";
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function RelatorioFinanceiro() {
@@ -144,12 +144,6 @@ export default function RelatorioFinanceiro() {
       {/* Gráfico de Barras */}
       <ReceitasDespesasBarChart fluxoMensal={fluxoMensal} loading={loading} />
 
-      {/* Tabela Detalhada */}
-      <CategoriasTable 
-        categoriasDespesas={categoriasDespesas} 
-        categoriasReceitas={categoriasReceitas} 
-        loading={loading} 
-      />
     </div>
   );
 }
