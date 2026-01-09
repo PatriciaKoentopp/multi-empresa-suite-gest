@@ -1,7 +1,7 @@
-
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CategoriaFinanceira } from "@/hooks/useRelatorioFinanceiro";
+import { TrendingDown } from "lucide-react";
 
 interface DespesasPieChartProps {
   categorias: CategoriaFinanceira[];
@@ -12,14 +12,14 @@ interface DespesasPieChartProps {
 const CORES_DESPESAS = [
   "#ef4444", // vermelho
   "#f97316", // laranja
+  "#fb923c", // laranja claro
   "#eab308", // amarelo
-  "#8b5cf6", // roxo
-  "#06b6d4", // ciano
+  "#f59e0b", // amber
   "#ec4899", // rosa
-  "#10b981", // verde
-  "#6366f1", // indigo
   "#f43f5e", // rosa escuro
-  "#14b8a6", // teal
+  "#8b5cf6", // roxo
+  "#a855f7", // roxo claro
+  "#6366f1", // indigo
 ];
 
 export function DespesasPieChart({ categorias, loading }: DespesasPieChartProps) {
@@ -30,14 +30,19 @@ export function DespesasPieChart({ categorias, loading }: DespesasPieChartProps)
     }).format(value);
   };
 
+  const totalDespesas = categorias?.reduce((acc, cat) => acc + cat.total, 0) || 0;
+
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Despesas por Categoria</CardTitle>
+      <Card className="border-l-4 border-l-red-500">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <TrendingDown className="h-5 w-5 text-red-500" />
+            <CardTitle>Despesas por Categoria</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="h-[350px] flex items-center justify-center">
-          <div className="animate-pulse h-[200px] w-[200px] rounded-full bg-muted"></div>
+        <CardContent className="h-[280px] flex items-center justify-center">
+          <div className="animate-pulse h-[180px] w-[180px] rounded-full bg-muted"></div>
         </CardContent>
       </Card>
     );
@@ -45,11 +50,14 @@ export function DespesasPieChart({ categorias, loading }: DespesasPieChartProps)
 
   if (!categorias || categorias.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Despesas por Categoria</CardTitle>
+      <Card className="border-l-4 border-l-red-500">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <TrendingDown className="h-5 w-5 text-red-500" />
+            <CardTitle>Despesas por Categoria</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="h-[350px] flex items-center justify-center">
+        <CardContent className="h-[280px] flex items-center justify-center">
           <p className="text-muted-foreground">Nenhuma despesa no período</p>
         </CardContent>
       </Card>
@@ -64,48 +72,85 @@ export function DespesasPieChart({ categorias, loading }: DespesasPieChartProps)
   }));
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Despesas por Categoria</CardTitle>
+    <Card className="border-l-4 border-l-red-500">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TrendingDown className="h-5 w-5 text-red-500" />
+            <CardTitle>Despesas por Categoria</CardTitle>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-red-600">{formatCurrency(totalDespesas)}</p>
+            <p className="text-xs text-muted-foreground">{categorias.length} categorias</p>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={100}
-                innerRadius={40}
-                fill="#8884d8"
-                dataKey="value"
-                label={({ name, percentual }) => `${name}: ${percentual.toFixed(1)}%`}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Gráfico */}
+          <div className="h-[260px] flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={100}
+                  innerRadius={50}
+                  fill="#8884d8"
+                  dataKey="value"
+                  paddingAngle={2}
+                >
+                  {data.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.color}
+                      stroke="hsl(var(--background))"
+                      strokeWidth={2}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const item = payload[0].payload;
+                      return (
+                        <div className="bg-popover border rounded-lg shadow-lg p-3">
+                          <p className="font-medium text-foreground">{item.name}</p>
+                          <p className="text-red-600 font-semibold">{formatCurrency(item.value)}</p>
+                          <p className="text-xs text-muted-foreground">{item.percentual.toFixed(1)}% do total</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Legenda com valores */}
+          <div className="flex flex-col justify-center space-y-2 max-h-[260px] overflow-y-auto pr-2">
+            {data.map((item, index) => (
+              <div 
+                key={index} 
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
               >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
-                labelFormatter={(name) => `Categoria: ${name}`}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="mt-4 flex flex-wrap justify-center gap-3">
-          {data.slice(0, 6).map((item, index) => (
-            <div key={index} className="flex items-center">
-              <div
-                className="h-3 w-3 rounded-full mr-2"
-                style={{ backgroundColor: item.color }}
-              />
-              <span className="text-xs text-muted-foreground">
-                {item.name}
-              </span>
-            </div>
-          ))}
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div
+                    className="h-3 w-3 rounded-full shrink-0"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-sm truncate">{item.name}</span>
+                </div>
+                <div className="text-right shrink-0 ml-2">
+                  <p className="text-sm font-medium">{formatCurrency(item.value)}</p>
+                  <p className="text-xs text-muted-foreground">{item.percentual.toFixed(1)}%</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>
