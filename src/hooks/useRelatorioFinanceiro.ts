@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
-import { startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, format, parseISO } from "date-fns";
+import { startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, format, parseISO, differenceInDays, subDays } from "date-fns";
 
 export interface CategoriaFinanceira {
   categoria_id: string;
@@ -26,6 +26,14 @@ export interface ResumoFinanceiro {
   totalReceitas: number;
   totalDespesas: number;
   resultadoLiquido: number;
+  totalReceitasAnterior: number;
+  totalDespesasAnterior: number;
+  resultadoLiquidoAnterior: number;
+  variacaoReceitas: number | null;
+  variacaoDespesas: number | null;
+  variacaoResultado: number | null;
+  periodoAnteriorInicio: Date | null;
+  periodoAnteriorFim: Date | null;
 }
 
 export type PeriodoFiltro = "mes_atual" | "trimestre" | "ano" | "personalizado";
@@ -35,6 +43,11 @@ export interface FiltroFinanceiro {
   dataInicio: Date;
   dataFim: Date;
 }
+
+const calcularVariacao = (atual: number, anterior: number): number | null => {
+  if (anterior === 0) return null;
+  return ((atual - anterior) / anterior) * 100;
+};
 
 export function useRelatorioFinanceiro() {
   const { currentCompany } = useCompany();
@@ -46,6 +59,14 @@ export function useRelatorioFinanceiro() {
     totalReceitas: 0,
     totalDespesas: 0,
     resultadoLiquido: 0,
+    totalReceitasAnterior: 0,
+    totalDespesasAnterior: 0,
+    resultadoLiquidoAnterior: 0,
+    variacaoReceitas: null,
+    variacaoDespesas: null,
+    variacaoResultado: null,
+    periodoAnteriorInicio: null,
+    periodoAnteriorFim: null,
   });
   const [filtro, setFiltro] = useState<FiltroFinanceiro>({
     periodo: "ano",
@@ -94,6 +115,13 @@ export function useRelatorioFinanceiro() {
       const dataInicioStr = format(filtro.dataInicio, "yyyy-MM-dd");
       const dataFimStr = format(filtro.dataFim, "yyyy-MM-dd");
 
+      // Calcular período anterior
+      const diffDias = differenceInDays(filtro.dataFim, filtro.dataInicio);
+      const dataFimAnterior = subDays(filtro.dataInicio, 1);
+      const dataInicioAnterior = subDays(dataFimAnterior, diffDias);
+      const dataInicioAnteriorStr = format(dataInicioAnterior, "yyyy-MM-dd");
+      const dataFimAnteriorStr = format(dataFimAnterior, "yyyy-MM-dd");
+
       // Buscar parcelas pagas com join nas movimentações e plano_contas (regime de caixa)
       const { data: parcelas, error } = await supabase
         .from("movimentacoes_parcelas")
@@ -120,6 +148,26 @@ export function useRelatorioFinanceiro() {
         .gte("data_pagamento", dataInicioStr)
         .lte("data_pagamento", dataFimStr);
 
+      // Buscar parcelas do período anterior
+      const { data: parcelasAnterior, error: errorAnterior } = await supabase
+        .from("movimentacoes_parcelas")
+        .select(`
+          id,
+          valor,
+          data_pagamento,
+          juros,
+          multa,
+          desconto,
+          movimentacoes:movimentacao_id (
+            id,
+            tipo_operacao,
+            empresa_id
+          )
+        `)
+        .not("data_pagamento", "is", null)
+        .gte("data_pagamento", dataInicioAnteriorStr)
+        .lte("data_pagamento", dataFimAnteriorStr);
+
       if (error) {
         console.error("Erro ao buscar parcelas:", error);
         return;
@@ -129,6 +177,32 @@ export function useRelatorioFinanceiro() {
       const parcelasFiltradas = parcelas?.filter(
         (p: any) => p.movimentacoes?.empresa_id === currentCompany.id
       ) || [];
+
+      // Filtrar parcelas anteriores da empresa atual
+      const parcelasAnteriorFiltradas = parcelasAnterior?.filter(
+        (p: any) => p.movimentacoes?.empresa_id === currentCompany.id
+      ) || [];
+
+      // Calcular totais do período anterior
+      let totalReceitasAnterior = 0;
+      let totalDespesasAnterior = 0;
+
+      parcelasAnteriorFiltradas.forEach((parcela: any) => {
+        const mov = parcela.movimentacoes;
+        if (!mov) return;
+
+        const valorEfetivo = 
+          Number(parcela.valor || 0) + 
+          Number(parcela.juros || 0) + 
+          Number(parcela.multa || 0) - 
+          Number(parcela.desconto || 0);
+
+        if (mov.tipo_operacao === "receber") {
+          totalReceitasAnterior += valorEfetivo;
+        } else {
+          totalDespesasAnterior += valorEfetivo;
+        }
+      });
 
       // Agrupar por categoria
       const categoriasDespesasMap = new Map<string, CategoriaFinanceira>();
@@ -226,13 +300,25 @@ export function useRelatorioFinanceiro() {
         return a.mes_numero - b.mes_numero;
       });
 
+      // Calcular variações
+      const resultadoLiquido = totalReceitas - totalDespesas;
+      const resultadoLiquidoAnterior = totalReceitasAnterior - totalDespesasAnterior;
+
       setCategoriasDespesas(despesasArray);
       setCategoriasReceitas(receitasArray);
       setFluxoMensal(fluxoArray);
       setResumo({
         totalReceitas,
         totalDespesas,
-        resultadoLiquido: totalReceitas - totalDespesas,
+        resultadoLiquido,
+        totalReceitasAnterior,
+        totalDespesasAnterior,
+        resultadoLiquidoAnterior,
+        variacaoReceitas: calcularVariacao(totalReceitas, totalReceitasAnterior),
+        variacaoDespesas: calcularVariacao(totalDespesas, totalDespesasAnterior),
+        variacaoResultado: calcularVariacao(resultadoLiquido, resultadoLiquidoAnterior),
+        periodoAnteriorInicio: dataInicioAnterior,
+        periodoAnteriorFim: dataFimAnterior,
       });
     } catch (error) {
       console.error("Erro ao buscar dados financeiros:", error);

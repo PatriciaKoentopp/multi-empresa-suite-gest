@@ -2,6 +2,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { ResumoFinanceiro } from "@/hooks/useRelatorioFinanceiro";
+import { VariationDisplay } from "@/components/vendas/VariationDisplay";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface FinanceiroSummaryCardsProps {
   resumo: ResumoFinanceiro;
@@ -14,6 +17,13 @@ export function FinanceiroSummaryCards({ resumo, loading }: FinanceiroSummaryCar
       style: "currency",
       currency: "BRL",
     }).format(value);
+  };
+
+  const formatPeriodoAnterior = () => {
+    if (!resumo.periodoAnteriorInicio || !resumo.periodoAnteriorFim) return "";
+    const inicio = format(resumo.periodoAnteriorInicio, "dd/MM/yyyy", { locale: ptBR });
+    const fim = format(resumo.periodoAnteriorFim, "dd/MM/yyyy", { locale: ptBR });
+    return `${inicio} - ${fim}`;
   };
 
   if (loading) {
@@ -34,6 +44,8 @@ export function FinanceiroSummaryCards({ resumo, loading }: FinanceiroSummaryCar
     );
   }
 
+  const periodoAnteriorLabel = formatPeriodoAnterior();
+
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <Card>
@@ -46,6 +58,13 @@ export function FinanceiroSummaryCards({ resumo, loading }: FinanceiroSummaryCar
         <CardContent>
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             {formatCurrency(resumo.totalReceitas)}
+          </div>
+          <div className="mt-1">
+            <VariationDisplay 
+              value={resumo.variacaoReceitas} 
+              tipoConta="receita"
+              tooltip={periodoAnteriorLabel ? `Período anterior: ${periodoAnteriorLabel} | Valor: ${formatCurrency(resumo.totalReceitasAnterior)}` : undefined}
+            />
           </div>
         </CardContent>
       </Card>
@@ -61,6 +80,13 @@ export function FinanceiroSummaryCards({ resumo, loading }: FinanceiroSummaryCar
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">
             {formatCurrency(resumo.totalDespesas)}
           </div>
+          <div className="mt-1">
+            <VariationDisplay 
+              value={resumo.variacaoDespesas} 
+              tipoConta="despesa"
+              tooltip={periodoAnteriorLabel ? `Período anterior: ${periodoAnteriorLabel} | Valor: ${formatCurrency(resumo.totalDespesasAnterior)}` : undefined}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -74,6 +100,13 @@ export function FinanceiroSummaryCards({ resumo, loading }: FinanceiroSummaryCar
         <CardContent>
           <div className={`text-2xl font-bold ${resumo.resultadoLiquido >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>
             {formatCurrency(resumo.resultadoLiquido)}
+          </div>
+          <div className="mt-1">
+            <VariationDisplay 
+              value={resumo.variacaoResultado} 
+              tipoConta="receita"
+              tooltip={periodoAnteriorLabel ? `Período anterior: ${periodoAnteriorLabel} | Valor: ${formatCurrency(resumo.resultadoLiquidoAnterior)}` : undefined}
+            />
           </div>
         </CardContent>
       </Card>
