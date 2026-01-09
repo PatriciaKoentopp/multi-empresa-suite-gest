@@ -31,6 +31,7 @@ export type Database = {
           tipo_operacao: string
           tipo_titulo_id: string | null
           updated_at: string
+          valor_devolvido: number | null
           valor_disponivel: number | null
           valor_total: number
           valor_utilizado: number
@@ -51,6 +52,7 @@ export type Database = {
           tipo_operacao: string
           tipo_titulo_id?: string | null
           updated_at?: string
+          valor_devolvido?: number | null
           valor_disponivel?: number | null
           valor_total?: number
           valor_utilizado?: number
@@ -71,6 +73,7 @@ export type Database = {
           tipo_operacao?: string
           tipo_titulo_id?: string | null
           updated_at?: string
+          valor_devolvido?: number | null
           valor_disponivel?: number | null
           valor_total?: number
           valor_utilizado?: number

@@ -3,7 +3,7 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import { MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Trash2, Undo2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -20,7 +20,7 @@ export interface Antecipacao {
   valorUtilizado: number;
   valorDisponivel: number;
   descricao?: string;
-  status: "ativa" | "utilizada";
+  status: "ativa" | "utilizada" | "devolvida";
   numeroDocumento?: string;
   conciliada?: boolean;
 }
@@ -30,13 +30,15 @@ interface AntecipacaoTableProps {
   onEdit: (antecipacao: Antecipacao) => void;
   onDelete: (id: string) => void;
   onVisualizar: (antecipacao: Antecipacao) => void;
+  onDevolver?: (antecipacao: Antecipacao) => void;
 }
 
 export function AntecipacaoTable({ 
   antecipacoes, 
   onEdit, 
   onDelete,
-  onVisualizar
+  onVisualizar,
+  onDevolver
 }: AntecipacaoTableProps) {
   function formatData(data: Date) {
     const dia = String(data.getDate()).padStart(2, '0');
@@ -62,6 +64,12 @@ export function AntecipacaoTable({
         return (
           <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
             Utilizada
+          </span>
+        );
+      case "devolvida":
+        return (
+          <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-600/20">
+            Devolvida
           </span>
         );
       default:
@@ -157,11 +165,22 @@ export function AntecipacaoTable({
                       <DropdownMenuItem
                         onClick={() => onDelete(antecipacao.id)}
                         className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
-                        disabled={antecipacao.conciliada === true || antecipacao.status === 'utilizada'}
+                        disabled={antecipacao.conciliada === true || antecipacao.status === 'utilizada' || antecipacao.status === 'devolvida'}
                       >
                         <Trash2 className="h-4 w-4" />
                         Excluir
                       </DropdownMenuItem>
+
+                      {onDevolver && (
+                        <DropdownMenuItem
+                          onClick={() => onDevolver(antecipacao)}
+                          className="flex items-center gap-2 text-orange-500 focus:bg-orange-100 focus:text-orange-700"
+                          disabled={antecipacao.valorDisponivel <= 0 || antecipacao.status === 'devolvida'}
+                        >
+                          <Undo2 className="h-4 w-4" />
+                          Devolver
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
