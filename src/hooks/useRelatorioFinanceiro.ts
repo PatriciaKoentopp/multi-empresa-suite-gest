@@ -94,30 +94,41 @@ export function useRelatorioFinanceiro() {
       const dataInicioStr = format(filtro.dataInicio, "yyyy-MM-dd");
       const dataFimStr = format(filtro.dataFim, "yyyy-MM-dd");
 
-      // Buscar movimentações com join no plano_contas
-      const { data: movimentacoes, error } = await supabase
-        .from("movimentacoes")
+      // Buscar parcelas pagas com join nas movimentações e plano_contas (regime de caixa)
+      const { data: parcelas, error } = await supabase
+        .from("movimentacoes_parcelas")
         .select(`
           id,
-          tipo_operacao,
           valor,
-          data_lancamento,
-          categoria_id,
-          plano_contas:categoria_id (
+          data_pagamento,
+          juros,
+          multa,
+          desconto,
+          movimentacoes:movimentacao_id (
             id,
-            descricao,
-            classificacao_dre
+            tipo_operacao,
+            categoria_id,
+            empresa_id,
+            plano_contas:categoria_id (
+              id,
+              descricao,
+              classificacao_dre
+            )
           )
         `)
-        .eq("empresa_id", currentCompany.id)
-        .gte("data_lancamento", dataInicioStr)
-        .lte("data_lancamento", dataFimStr)
-        .in("tipo_operacao", ["pagar", "receber"]);
+        .not("data_pagamento", "is", null)
+        .gte("data_pagamento", dataInicioStr)
+        .lte("data_pagamento", dataFimStr);
 
       if (error) {
-        console.error("Erro ao buscar movimentações:", error);
+        console.error("Erro ao buscar parcelas:", error);
         return;
       }
+
+      // Filtrar apenas parcelas da empresa atual
+      const parcelasFiltradas = parcelas?.filter(
+        (p: any) => p.movimentacoes?.empresa_id === currentCompany.id
+      ) || [];
 
       // Agrupar por categoria
       const categoriasDespesasMap = new Map<string, CategoriaFinanceira>();
@@ -127,8 +138,17 @@ export function useRelatorioFinanceiro() {
       let totalReceitas = 0;
       let totalDespesas = 0;
 
-      movimentacoes?.forEach((mov: any) => {
-        const valor = Number(mov.valor) || 0;
+      parcelasFiltradas.forEach((parcela: any) => {
+        const mov = parcela.movimentacoes;
+        if (!mov) return;
+
+        // Calcular valor efetivo da parcela (incluindo juros, multa e desconto)
+        const valorEfetivo = 
+          Number(parcela.valor || 0) + 
+          Number(parcela.juros || 0) + 
+          Number(parcela.multa || 0) - 
+          Number(parcela.desconto || 0);
+
         const tipoOperacao = mov.tipo_operacao as "pagar" | "receber";
         const categoriaId = mov.categoria_id || "sem_categoria";
         const categoriaNome = mov.plano_contas?.descricao || "Sem Categoria";
@@ -136,9 +156,9 @@ export function useRelatorioFinanceiro() {
 
         // Acumular totais
         if (tipoOperacao === "receber") {
-          totalReceitas += valor;
+          totalReceitas += valorEfetivo;
         } else {
-          totalDespesas += valor;
+          totalDespesas += valorEfetivo;
         }
 
         // Agrupar por categoria
@@ -146,31 +166,31 @@ export function useRelatorioFinanceiro() {
         const existente = mapAlvo.get(categoriaId);
 
         if (existente) {
-          existente.total += valor;
+          existente.total += valorEfetivo;
         } else {
           mapAlvo.set(categoriaId, {
             categoria_id: categoriaId,
             categoria_nome: categoriaNome,
             classificacao_dre: classificacaoDre,
             tipo_operacao: tipoOperacao,
-            total: valor,
+            total: valorEfetivo,
             percentual: 0,
           });
         }
 
-        // Agrupar por mês
-        const dataLancamento = parseISO(mov.data_lancamento);
-        const mesAno = format(dataLancamento, "yyyy-MM");
-        const mesNome = format(dataLancamento, "MMM/yyyy");
-        const mesNumero = dataLancamento.getMonth() + 1;
-        const ano = dataLancamento.getFullYear();
+        // Agrupar por mês (usando data_pagamento)
+        const dataPagamento = parseISO(parcela.data_pagamento);
+        const mesAno = format(dataPagamento, "yyyy-MM");
+        const mesNome = format(dataPagamento, "MMM/yyyy");
+        const mesNumero = dataPagamento.getMonth() + 1;
+        const ano = dataPagamento.getFullYear();
 
         const fluxoExistente = fluxoMensalMap.get(mesAno);
         if (fluxoExistente) {
           if (tipoOperacao === "receber") {
-            fluxoExistente.receitas += valor;
+            fluxoExistente.receitas += valorEfetivo;
           } else {
-            fluxoExistente.despesas += valor;
+            fluxoExistente.despesas += valorEfetivo;
           }
           fluxoExistente.saldo = fluxoExistente.receitas - fluxoExistente.despesas;
         } else {
@@ -178,9 +198,9 @@ export function useRelatorioFinanceiro() {
             mes: mesNome,
             mes_numero: mesNumero,
             ano: ano,
-            receitas: tipoOperacao === "receber" ? valor : 0,
-            despesas: tipoOperacao === "pagar" ? valor : 0,
-            saldo: tipoOperacao === "receber" ? valor : -valor,
+            receitas: tipoOperacao === "receber" ? valorEfetivo : 0,
+            despesas: tipoOperacao === "pagar" ? valorEfetivo : 0,
+            saldo: tipoOperacao === "receber" ? valorEfetivo : -valorEfetivo,
           });
         }
       });
