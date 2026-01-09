@@ -65,7 +65,7 @@ export default function Relatorios() {
     {
       id: "financeiro",
       title: "Relatório Financeiro",
-      description: "Fluxo de caixa e análise de receitas e despesas",
+      description: "Análise de receitas e despesas",
       icon: <Calculator className="h-8 w-8 text-purple-500" />,
       route: "/relatorios/financeiro"
     },
