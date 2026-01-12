@@ -98,8 +98,30 @@ export function parseDateString(dateString: string | Date): Date | undefined {
 }
 
 // Função para converter Date para formato YYYY-MM-DD para banco de dados
-export function dateToISOString(date: Date | undefined | null): string | null {
+export function dateToISOString(date: Date | string | undefined | null): string | null {
   if (!date) return null;
+  
+  // Se já for string, trata os diferentes formatos
+  if (typeof date === 'string') {
+    // Se já estiver no formato YYYY-MM-DD, retorna como está
+    if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return date;
+    }
+    // Se for string DD/MM/YYYY, converte para YYYY-MM-DD
+    if (date.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      const [day, month, year] = date.split('/');
+      return `${year}-${month}-${day}`;
+    }
+    // Tenta criar um Date a partir da string
+    const parsedDate = new Date(date);
+    if (!isNaN(parsedDate.getTime())) {
+      const year = parsedDate.getFullYear();
+      const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(parsedDate.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    return null;
+  }
   
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
