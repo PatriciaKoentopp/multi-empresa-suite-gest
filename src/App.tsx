@@ -53,6 +53,7 @@ import Faturamento from "./pages/vendas/faturamento";
 import FunilConfiguracao from "./pages/crm/funil-configuracao";
 import Leads from "./pages/crm/leads";
 import CrmPainelPage from "./pages/crm/painel";
+import CrmAgenda from "./pages/crm/agenda";
 
 // Relatórios
 import Relatorios from "./pages/relatorios";
@@ -426,6 +427,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <Leads />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/crm/agenda"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <CrmAgenda />
                   </MainLayout>
                 </PrivateRoute>
               }

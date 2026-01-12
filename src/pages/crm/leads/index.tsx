@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ import { useAuth } from "@/contexts/auth-context";
 
 export default function LeadsPage() {
   const { user, userData, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [leads, setLeads] = useState<any[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<any[]>([]);
@@ -49,6 +51,21 @@ export default function LeadsPage() {
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [gerandoLeadsAniversarios, setGerandoLeadsAniversarios] = useState(false);
+
+  // Abrir lead automaticamente se vier da agenda
+  const leadIdFromUrl = searchParams.get("leadId");
+
+  useEffect(() => {
+    if (leadIdFromUrl && leads.length > 0 && !loading) {
+      const leadToOpen = leads.find((l) => l.id === leadIdFromUrl);
+      if (leadToOpen) {
+        setEditingLead(leadToOpen);
+        setIsFormModalOpen(true);
+        // Limpar o parâmetro da URL
+        setSearchParams({});
+      }
+    }
+  }, [leadIdFromUrl, leads, loading]);
 
   // Obter o funil selecionado
   const selectedFunil = funis.find(funil => funil.id === selectedFunilId) || (funis.length > 0 ? funis[0] : null);
