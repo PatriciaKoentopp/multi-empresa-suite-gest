@@ -1,17 +1,24 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ExternalLink, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/auth-context";
 import { getIconForInteraction } from "../leads/utils/leadUtils";
-import { parseDateString, formatDate } from "@/lib/utils";
-import { format, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
+import { cn } from "@/lib/utils";
+import { 
+  format, 
+  startOfMonth, 
+  endOfMonth, 
+  startOfWeek, 
+  endOfWeek, 
+  addDays, 
+  isSameMonth, 
+  isToday,
+  addMonths, 
+  subMonths 
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface Interacao {
@@ -25,13 +32,99 @@ interface Interacao {
   lead_empresa: string | null;
 }
 
+// Componente Chip da Interação
+const InteracaoChip = ({ 
+  interacao, 
+  onClick 
+}: { 
+  interacao: Interacao; 
+  onClick: (leadId: string) => void;
+}) => {
+  const isRealizado = interacao.status === "Realizado";
+  
+  return (
+    <div
+      className={cn(
+        "text-xs px-1.5 py-0.5 rounded cursor-pointer truncate flex items-center gap-1 transition-colors",
+        isRealizado 
+          ? "bg-green-100 text-green-800 hover:bg-green-200" 
+          : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+      )}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick(interacao.lead_id);
+      }}
+      title={`${interacao.descricao} - ${interacao.lead_nome}`}
+    >
+      <span className="shrink-0 [&>svg]:h-3 [&>svg]:w-3">
+        {getIconForInteraction(interacao.tipo)}
+      </span>
+      <span className="truncate">{interacao.lead_nome}</span>
+    </div>
+  );
+};
+
+// Componente Célula do Dia
+const DayCell = ({ 
+  date, 
+  isCurrentMonth, 
+  isTodayDate, 
+  interacoes, 
+  onInteracaoClick 
+}: { 
+  date: Date;
+  isCurrentMonth: boolean;
+  isTodayDate: boolean;
+  interacoes: Interacao[];
+  onInteracaoClick: (leadId: string) => void;
+}) => {
+  const maxVisible = 3;
+  const hasMore = interacoes.length > maxVisible;
+  const visibleInteracoes = interacoes.slice(0, maxVisible);
+  const remaining = interacoes.length - maxVisible;
+
+  return (
+    <div 
+      className={cn(
+        "min-h-[100px] md:min-h-[120px] border-r border-b p-1 transition-colors",
+        !isCurrentMonth && "bg-muted/30 text-muted-foreground",
+        isTodayDate && "bg-blue-50/50"
+      )}
+    >
+      <div className="flex items-start justify-between mb-1">
+        <div 
+          className={cn(
+            "text-sm font-medium",
+            isTodayDate && "bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center"
+          )}
+        >
+          {format(date, "d")}
+        </div>
+      </div>
+      <div className="space-y-1 overflow-hidden">
+        {visibleInteracoes.map((interacao) => (
+          <InteracaoChip 
+            key={interacao.id} 
+            interacao={interacao} 
+            onClick={onInteracaoClick} 
+          />
+        ))}
+        {hasMore && (
+          <span className="text-xs text-muted-foreground pl-1">
+            +{remaining} mais
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function CrmAgenda() {
   const navigate = useNavigate();
   const { userData, isAuthenticated, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [interacoes, setInteracoes] = useState<Interacao[]>([]);
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [empresaId, setEmpresaId] = useState<string | null>(null);
 
   // Buscar empresa_id do usuário
@@ -126,32 +219,18 @@ export default function CrmAgenda() {
     return grouped;
   }, [interacoes]);
 
-  // Datas que têm interações pendentes
-  const datasComPendentes = useMemo(() => {
-    return Object.keys(interacoesPorData)
-      .filter((data) =>
-        interacoesPorData[data].some((i) => i.status !== "Realizado")
-      )
-      .map((data) => parseDateString(data))
-      .filter((d): d is Date => d !== undefined);
-  }, [interacoesPorData]);
-
-  // Datas que têm apenas interações realizadas
-  const datasRealizadas = useMemo(() => {
-    return Object.keys(interacoesPorData)
-      .filter((data) =>
-        interacoesPorData[data].every((i) => i.status === "Realizado")
-      )
-      .map((data) => parseDateString(data))
-      .filter((d): d is Date => d !== undefined);
-  }, [interacoesPorData]);
-
-  // Interações do dia selecionado
-  const interacoesDoDia = useMemo(() => {
-    if (!selectedDate) return [];
-    const dataKey = format(selectedDate, "yyyy-MM-dd");
-    return interacoesPorData[dataKey] || [];
-  }, [selectedDate, interacoesPorData]);
+  // Gerar dias do calendário com padding para semanas completas
+  const calendarDays = useMemo(() => {
+    const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 0 });
+    const end = endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 0 });
+    const days: Date[] = [];
+    let current = start;
+    while (current <= end) {
+      days.push(current);
+      current = addDays(current, 1);
+    }
+    return days;
+  }, [currentMonth]);
 
   const handleNavigateToLead = (leadId: string) => {
     navigate(`/crm/leads?leadId=${leadId}`);
@@ -165,11 +244,8 @@ export default function CrmAgenda() {
     setCurrentMonth(addMonths(currentMonth, 1));
   };
 
-  const getStatusBadge = (status: string) => {
-    if (status === "Realizado") {
-      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Realizado</Badge>;
-    }
-    return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Pendente</Badge>;
+  const handleGoToToday = () => {
+    setCurrentMonth(new Date());
   };
 
   if (authLoading) {
@@ -180,15 +256,20 @@ export default function CrmAgenda() {
     );
   }
 
+  const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <CalendarIcon className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold text-foreground">Agenda de Interações</h1>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleGoToToday}>
+            Hoje
+          </Button>
           <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -201,101 +282,45 @@ export default function CrmAgenda() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendário */}
-        <Card className="lg:col-span-2">
-          <CardContent className="p-4">
-            {loading ? (
-              <div className="flex items-center justify-center h-80">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      {/* Calendário Grid */}
+      {loading ? (
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-hidden bg-card">
+          {/* Header com dias da semana */}
+          <div className="grid grid-cols-7 bg-muted/50">
+            {weekDays.map((dia) => (
+              <div 
+                key={dia} 
+                className="text-center text-sm font-medium py-3 border-r border-b last:border-r-0"
+              >
+                {dia}
               </div>
-            ) : (
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                month={currentMonth}
-                onMonthChange={setCurrentMonth}
-                className="w-full"
-                modifiers={{
-                  pendente: datasComPendentes,
-                  realizado: datasRealizadas,
-                }}
-                modifiersStyles={{
-                  pendente: {
-                    backgroundColor: "hsl(221 83% 95%)",
-                    color: "hsl(221 83% 53%)",
-                    fontWeight: "bold",
-                  },
-                  realizado: {
-                    backgroundColor: "hsl(142 76% 93%)",
-                    color: "hsl(142 76% 36%)",
-                    fontWeight: "bold",
-                  },
-                }}
-              />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Lista de interações do dia */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">
-              Interações de {selectedDate ? formatDate(selectedDate) : "-"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[400px] pr-3">
-              {interacoesDoDia.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-8">
-                  Nenhuma interação agendada para este dia.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {interacoesDoDia.map((interacao) => (
-                    <div
-                      key={interacao.id}
-                      className="p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-                      onClick={() => handleNavigateToLead(interacao.lead_id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 text-muted-foreground">
-                          {getIconForInteraction(interacao.tipo)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">
-                            {interacao.descricao}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1 truncate">
-                            Lead: {interacao.lead_nome}
-                            {interacao.lead_empresa && ` - ${interacao.lead_empresa}`}
-                          </p>
-                          <div className="flex items-center justify-between mt-2">
-                            {getStatusBadge(interacao.status)}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-blue-600 hover:text-blue-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleNavigateToLead(interacao.lead_id);
-                              }}
-                            >
-                              <ExternalLink className="h-3 w-3 mr-1" />
-                              Ver Lead
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </div>
+            ))}
+          </div>
+          
+          {/* Grid dos dias */}
+          <div className="grid grid-cols-7">
+            {calendarDays.map((day) => {
+              const dataKey = format(day, "yyyy-MM-dd");
+              const interacoesDoDia = interacoesPorData[dataKey] || [];
+              
+              return (
+                <DayCell
+                  key={day.toISOString()}
+                  date={day}
+                  isCurrentMonth={isSameMonth(day, currentMonth)}
+                  isTodayDate={isToday(day)}
+                  interacoes={interacoesDoDia}
+                  onInteracaoClick={handleNavigateToLead}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Legenda */}
       <div className="flex items-center gap-6 text-sm text-muted-foreground">
