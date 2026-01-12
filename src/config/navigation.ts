@@ -167,6 +167,10 @@ export const navigationConfig: ModuleNavItem[] = [
         href: "/crm/leads",
       },
       {
+        title: "Agenda",
+        href: "/crm/agenda",
+      },
+      {
         title: "Conf. do Funil",
         href: "/crm/funil-configuracao",
       },
