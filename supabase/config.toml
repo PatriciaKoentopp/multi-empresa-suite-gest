@@ -1,1 +1,7 @@
 project_id = "vbbfmmjohdmocnaxgmmd"
+
+[functions.criar-usuario-auth]
+verify_jwt = false
+
+[functions.gerar-leads-aniversarios]
+verify_jwt = false
