@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Favorecido, GrupoFavorecido, Profissao } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
+import { useAuth } from "@/contexts/auth-context";
 import { dateToISOString, parseDateString } from "@/lib/utils";
 
 export default function FavorecidosPage() {
@@ -37,7 +37,130 @@ export default function FavorecidosPage() {
   const [editingFavorecido, setEditingFavorecido] = useState<Favorecido | undefined>(undefined);
   const [viewingFavorecido, setViewingFavorecido] = useState<Favorecido | undefined>(undefined);
   const { currentCompany } = useCompany();
+  const { userData } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+
+  // Função para gerar lead de aniversário automaticamente
+  const gerarLeadAniversario = async (
+    favorecido: { id: string; nome: string; email?: string | null; telefone?: string | null },
+    dataAniversario: string, // formato YYYY-MM-DD
+    empresaId: string,
+    userId?: string
+  ) => {
+    try {
+      // 1. Buscar funil de aniversários ativo
+      const { data: funil } = await supabase
+        .from("funis")
+        .select("id")
+        .eq("empresa_id", empresaId)
+        .ilike("nome", "%aniversário%")
+        .eq("ativo", true)
+        .limit(1)
+        .single();
+
+      if (!funil) {
+        console.log("Nenhum funil de aniversários encontrado");
+        return;
+      }
+
+      // 2. Buscar primeira etapa do funil
+      const { data: etapa } = await supabase
+        .from("funil_etapas")
+        .select("id")
+        .eq("funil_id", funil.id)
+        .order("ordem", { ascending: true })
+        .limit(1)
+        .single();
+
+      if (!etapa) {
+        console.log("Funil sem etapas configuradas");
+        return;
+      }
+
+      // 3. Buscar origem "Já é Cliente"
+      const { data: origem } = await supabase
+        .from("origens")
+        .select("id")
+        .eq("empresa_id", empresaId)
+        .ilike("nome", "Já é Cliente")
+        .eq("status", "ativo")
+        .limit(1)
+        .single();
+
+      // 4. Verificar se o aniversário é >= hoje (mesmo critério do botão)
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const anoAtual = hoje.getFullYear();
+      const [ano, mes, dia] = dataAniversario.split("-").map(Number);
+      const aniversarioEsteAno = new Date(anoAtual, mes - 1, dia);
+      aniversarioEsteAno.setHours(0, 0, 0, 0);
+
+      if (aniversarioEsteAno < hoje) {
+        console.log("Aniversário já passou este ano, não será criado lead");
+        return;
+      }
+
+      const dataAniversarioAnoAtual = `${anoAtual}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+
+      // 5. Verificar se já existe lead para este favorecido/funil/ano
+      const { data: leadExistente } = await supabase
+        .from("leads")
+        .select("id")
+        .eq("favorecido_id", favorecido.id)
+        .eq("funil_id", funil.id)
+        .gte("data_criacao", `${anoAtual}-01-01`)
+        .lte("data_criacao", `${anoAtual}-12-31`)
+        .limit(1)
+        .single();
+
+      if (leadExistente) {
+        console.log("Lead de aniversário já existe para este ano");
+        return;
+      }
+
+      // 6. Criar o lead
+      const { data: novoLead, error: leadError } = await supabase
+        .from("leads")
+        .insert({
+          empresa_id: empresaId,
+          funil_id: funil.id,
+          etapa_id: etapa.id,
+          favorecido_id: favorecido.id,
+          nome: favorecido.nome,
+          email: favorecido.email || null,
+          telefone: favorecido.telefone || null,
+          status: "ativo",
+          data_criacao: hoje.toISOString().split("T")[0],
+          data_aniversario: dataAniversarioAnoAtual,
+          origem_id: origem?.id || null,
+          responsavel_id: userId || null,
+          observacoes: `🎂 Lead de aniversário gerado automaticamente`,
+        })
+        .select()
+        .single();
+
+      if (leadError) {
+        console.error("Erro ao criar lead de aniversário:", leadError);
+        return;
+      }
+
+      // 7. Criar interação automática
+      if (novoLead) {
+        await supabase.from("leads_interacoes").insert({
+          lead_id: novoLead.id,
+          tipo: "mensagem",
+          descricao: "Parabenizar pelo aniversário",
+          data: dataAniversarioAnoAtual,
+          responsavel_id: userId || null,
+          status: "pendente",
+        });
+
+        toast.success(`Lead de aniversário criado para ${favorecido.nome}`);
+      }
+    } catch (error) {
+      console.error("Erro ao gerar lead de aniversário:", error);
+    }
+  };
   
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
@@ -252,6 +375,27 @@ export default function FavorecidosPage() {
           })
         );
         toast.success("Favorecido atualizado com sucesso!");
+
+        // Se data de aniversário foi modificada na edição, verificar se deve gerar lead
+        if (dataAniversarioFormatada) {
+          const dataAnterior = editingFavorecido.data_aniversario 
+            ? dateToISOString(editingFavorecido.data_aniversario) 
+            : null;
+          
+          if (dataAniversarioFormatada !== dataAnterior) {
+            await gerarLeadAniversario(
+              {
+                id: editingFavorecido.id,
+                nome: data.nome!,
+                email: data.email,
+                telefone: data.telefone,
+              },
+              dataAniversarioFormatada,
+              currentCompany.id,
+              userData?.id
+            );
+          }
+        }
       } else {
         // Criar novo favorecido
         const { data: novoFavorecido, error } = await supabase
@@ -278,6 +422,21 @@ export default function FavorecidosPage() {
           };
           setFavorecidos(prev => [...prev, novoFavorecidoFormatado]);
           toast.success("Favorecido criado com sucesso!");
+
+          // Gerar lead de aniversário para novo favorecido (se tiver data)
+          if (dataAniversarioFormatada) {
+            await gerarLeadAniversario(
+              {
+                id: novoFavorecido.id,
+                nome: data.nome!,
+                email: data.email,
+                telefone: data.telefone,
+              },
+              dataAniversarioFormatada,
+              currentCompany.id,
+              userData?.id
+            );
+          }
         }
       }
       handleCloseDialog();
