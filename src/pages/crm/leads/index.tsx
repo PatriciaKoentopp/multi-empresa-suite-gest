@@ -57,24 +57,85 @@ export default function LeadsPage() {
 
   // Abrir lead automaticamente se vier da agenda
   const leadIdFromUrl = searchParams.get("leadId");
+  const fromParam = searchParams.get("from");
 
   useEffect(() => {
-    if (leadIdFromUrl && leads.length > 0 && !loading) {
-      const leadToOpen = leads.find((l) => l.id === leadIdFromUrl);
-      if (leadToOpen) {
+    const fetchLeadFromUrl = async () => {
+      if (!leadIdFromUrl || !isAuthenticated || authLoading) return;
+      
+      try {
+        // Buscar o lead diretamente do banco pelo ID
+        const { data: leadData, error } = await supabase
+          .from('leads')
+          .select(`
+            id, 
+            nome, 
+            empresa, 
+            email, 
+            telefone, 
+            etapa_id, 
+            funil_id,
+            valor, 
+            origem_id, 
+            origens:origem_id (nome), 
+            data_criacao, 
+            ultimo_contato, 
+            responsavel_id,
+            produto,
+            produto_id,
+            servico_id,
+            favorecido_id,
+            status
+          `)
+          .eq('id', leadIdFromUrl)
+          .single();
+
+        if (error || !leadData) {
+          console.error('Lead não encontrado:', error);
+          setSearchParams({});
+          return;
+        }
+
+        // Formatar o lead para o formato esperado
+        const leadFormatado = {
+          id: leadData.id,
+          nome: leadData.nome,
+          empresa: leadData.empresa,
+          email: leadData.email || '',
+          telefone: leadData.telefone || '',
+          etapaId: leadData.etapa_id,
+          funilId: leadData.funil_id,
+          valor: Number(leadData.valor || 0),
+          origemId: leadData.origem_id || '',
+          origemNome: leadData.origens?.nome || 'Desconhecida',
+          dataCriacao: leadData.data_criacao ? new Date(leadData.data_criacao).toLocaleDateString('pt-BR') : '',
+          ultimoContato: leadData.ultimo_contato ? new Date(leadData.ultimo_contato).toLocaleDateString('pt-BR') : null,
+          responsavelId: leadData.responsavel_id || '',
+          produto: leadData.produto || '',
+          produto_id: leadData.produto_id || '',
+          servico_id: leadData.servico_id || '',
+          favorecido_id: leadData.favorecido_id || '',
+          status: leadData.status || 'ativo'
+        };
+
         // Verificar se veio da agenda
-        const fromParam = searchParams.get("from");
         if (fromParam === "agenda") {
           setCameFromAgenda(true);
         }
-        
-        setEditingLead(leadToOpen);
+
+        setEditingLead(leadFormatado);
         setIsFormModalOpen(true);
         // Limpar os parâmetros da URL
         setSearchParams({});
+        
+      } catch (err) {
+        console.error('Erro ao buscar lead:', err);
+        setSearchParams({});
       }
-    }
-  }, [leadIdFromUrl, leads, loading]);
+    };
+
+    fetchLeadFromUrl();
+  }, [leadIdFromUrl, isAuthenticated, authLoading]);
 
   // Obter o funil selecionado
   const selectedFunil = funis.find(funil => funil.id === selectedFunilId) || (funis.length > 0 ? funis[0] : null);
