@@ -411,6 +411,9 @@ export default function LeadsPage() {
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            user_id: userData?.id
+          })
         }
       );
 
