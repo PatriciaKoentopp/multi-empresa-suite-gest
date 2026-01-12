@@ -817,6 +817,7 @@ export type Database = {
       leads: {
         Row: {
           created_at: string
+          data_aniversario: string | null
           data_criacao: string
           email: string | null
           empresa: string | null
@@ -840,6 +841,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          data_aniversario?: string | null
           data_criacao?: string
           email?: string | null
           empresa?: string | null
@@ -863,6 +865,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          data_aniversario?: string | null
           data_criacao?: string
           email?: string | null
           empresa?: string | null
