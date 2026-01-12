@@ -267,7 +267,7 @@ export default function FavorecidosPage() {
             ...favorecido,
             created_at: new Date(favorecido.created_at),
             updated_at: new Date(favorecido.updated_at),
-            data_aniversario: favorecido.data_aniversario ? new Date(favorecido.data_aniversario) : undefined,
+            data_aniversario: favorecido.data_aniversario ? parseDateString(favorecido.data_aniversario) : undefined,
             tipo: favorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor",
             tipo_documento: favorecido.tipo_documento as "cpf" | "cnpj",
             status: favorecido.status as "ativo" | "inativo"
@@ -415,7 +415,7 @@ export default function FavorecidosPage() {
             ...novoFavorecido,
             created_at: new Date(novoFavorecido.created_at),
             updated_at: new Date(novoFavorecido.updated_at),
-            data_aniversario: novoFavorecido.data_aniversario ? new Date(novoFavorecido.data_aniversario) : undefined,
+            data_aniversario: novoFavorecido.data_aniversario ? parseDateString(novoFavorecido.data_aniversario) : undefined,
             tipo: novoFavorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor",
             tipo_documento: novoFavorecido.tipo_documento as "cpf" | "cnpj",
             status: novoFavorecido.status as "ativo" | "inativo"
