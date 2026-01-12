@@ -17,6 +17,10 @@ serve(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
+    // Receber user_id do body da requisição
+    const { user_id } = await req.json().catch(() => ({}));
+    console.log("User ID recebido:", user_id);
+
     const hoje = new Date();
     const dia = hoje.getDate();
     const mes = hoje.getMonth() + 1;
@@ -74,7 +78,20 @@ serve(async (req: Request) => {
 
       const primeiraEtapaId = etapas[0].id;
 
-      // 3. Buscar favorecidos ativos com data de aniversário
+      // 3. Buscar a origem "Já é Cliente" para esta empresa
+      const { data: origemJaCliente } = await supabase
+        .from("origens")
+        .select("id")
+        .eq("empresa_id", funil.empresa_id)
+        .ilike("nome", "Já é Cliente")
+        .eq("status", "ativo")
+        .limit(1)
+        .single();
+
+      const origemId = origemJaCliente?.id || null;
+      console.log(`Origem "Já é Cliente" para empresa ${funil.empresa_id}:`, origemId);
+
+      // 4. Buscar favorecidos ativos com data de aniversário
       const { data: favorecidos, error: favError } = await supabase
         .from("favorecidos")
         .select("id, nome, email, telefone, tipo, data_aniversario")
@@ -140,20 +157,26 @@ serve(async (req: Request) => {
         const mesAniv = dataAniversario.getUTCMonth() + 1;
         const dataAniversarioAnoAtual = `${anoAtual}-${mesAniv.toString().padStart(2, "0")}-${diaAniv.toString().padStart(2, "0")}`;
 
-        // 6. Criar novo lead com data_aniversario preenchida
-        const { error: insertError } = await supabase.from("leads").insert({
-          empresa_id: funil.empresa_id,
-          funil_id: funil.id,
-          etapa_id: primeiraEtapaId,
-          favorecido_id: fav.id,
-          nome: fav.nome,
-          email: fav.email,
-          telefone: fav.telefone,
-          status: "ativo",
-          data_criacao: hoje.toISOString().split("T")[0],
-          data_aniversario: dataAniversarioAnoAtual,
-          observacoes: `🎂 Lead de aniversário gerado automaticamente - Aniversário: ${diaAniv.toString().padStart(2, "0")}/${mesAniv.toString().padStart(2, "0")}/${anoAtual}`,
-        });
+        // 7. Criar novo lead com data_aniversario, origem e responsável preenchidos
+        const { data: novoLead, error: insertError } = await supabase
+          .from("leads")
+          .insert({
+            empresa_id: funil.empresa_id,
+            funil_id: funil.id,
+            etapa_id: primeiraEtapaId,
+            favorecido_id: fav.id,
+            nome: fav.nome,
+            email: fav.email,
+            telefone: fav.telefone,
+            status: "ativo",
+            data_criacao: hoje.toISOString().split("T")[0],
+            data_aniversario: dataAniversarioAnoAtual,
+            origem_id: origemId,
+            responsavel_id: user_id || null,
+            observacoes: `🎂 Lead de aniversário gerado automaticamente - Aniversário: ${diaAniv.toString().padStart(2, "0")}/${mesAniv.toString().padStart(2, "0")}/${anoAtual}`,
+          })
+          .select()
+          .single();
 
         if (insertError) {
           console.error(`Erro ao criar lead para ${fav.nome}:`, insertError);
@@ -161,6 +184,26 @@ serve(async (req: Request) => {
         }
 
         console.log(`Lead criado com sucesso para ${fav.nome} (aniversário: ${dataAniversarioAnoAtual})`);
+
+        // 8. Criar interação automática para o lead
+        if (novoLead) {
+          const { error: interacaoError } = await supabase
+            .from("leads_interacoes")
+            .insert({
+              lead_id: novoLead.id,
+              tipo: "mensagem",
+              descricao: "Parabenizar pelo aniversário",
+              data: dataAniversarioAnoAtual,
+              responsavel_id: user_id || null,
+              status: "pendente"
+            });
+
+          if (interacaoError) {
+            console.error(`Erro ao criar interação para ${fav.nome}:`, interacaoError);
+          } else {
+            console.log(`Interação criada para ${fav.nome} na data ${dataAniversarioAnoAtual}`);
+          }
+        }
         leadsGeradosNesteFunil++;
         totalLeadsCriados++;
       }
