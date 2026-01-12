@@ -233,7 +233,7 @@ export default function CrmAgenda() {
   }, [currentMonth]);
 
   const handleNavigateToLead = (leadId: string) => {
-    navigate(`/crm/leads?leadId=${leadId}`);
+    navigate(`/crm/leads?leadId=${leadId}&from=agenda`);
   };
 
   const handlePreviousMonth = () => {

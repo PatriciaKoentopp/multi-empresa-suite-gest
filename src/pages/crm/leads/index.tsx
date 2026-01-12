@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +51,9 @@ export default function LeadsPage() {
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [gerandoLeadsAniversarios, setGerandoLeadsAniversarios] = useState(false);
+  const [cameFromAgenda, setCameFromAgenda] = useState(false);
+  
+  const navigate = useNavigate();
 
   // Abrir lead automaticamente se vier da agenda
   const leadIdFromUrl = searchParams.get("leadId");
@@ -59,9 +62,15 @@ export default function LeadsPage() {
     if (leadIdFromUrl && leads.length > 0 && !loading) {
       const leadToOpen = leads.find((l) => l.id === leadIdFromUrl);
       if (leadToOpen) {
+        // Verificar se veio da agenda
+        const fromParam = searchParams.get("from");
+        if (fromParam === "agenda") {
+          setCameFromAgenda(true);
+        }
+        
         setEditingLead(leadToOpen);
         setIsFormModalOpen(true);
-        // Limpar o parâmetro da URL
+        // Limpar os parâmetros da URL
         setSearchParams({});
       }
     }
@@ -463,6 +472,12 @@ export default function LeadsPage() {
   const handleCloseFormModal = () => {
     setEditingLead(null);
     setIsFormModalOpen(false);
+    
+    // Se veio da agenda, voltar para a agenda
+    if (cameFromAgenda) {
+      setCameFromAgenda(false);
+      navigate("/crm/agenda");
+    }
   };
 
   const handleSaveLead = async (leadData: any) => {
