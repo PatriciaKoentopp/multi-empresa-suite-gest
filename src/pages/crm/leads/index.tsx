@@ -18,7 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Filter, Search } from "lucide-react";
+import { Plus, Filter, Search, Cake, Loader2 } from "lucide-react";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
 import { Origem, Usuario } from "@/types"; 
@@ -48,9 +48,12 @@ export default function LeadsPage() {
   const [selectedFunilId, setSelectedFunilId] = useState<string>("");
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [gerandoLeadsAniversarios, setGerandoLeadsAniversarios] = useState(false);
 
   // Obter o funil selecionado
   const selectedFunil = funis.find(funil => funil.id === selectedFunilId) || (funis.length > 0 ? funis[0] : null);
+  const isFunilAniversarios = selectedFunil?.nome?.toLowerCase().includes("aniversário") || 
+                              selectedFunil?.nome?.toLowerCase().includes("aniversario");
 
   // Esperar que a autenticação seja carregada antes de buscar dados
   useEffect(() => {
@@ -368,6 +371,48 @@ export default function LeadsPage() {
     setFilteredLeads(filtered);
   }, [leads, searchTerm, selectedEtapas, allStagesSelected]);
 
+  const handleGerarLeadsAniversarios = async () => {
+    if (!empresaId) {
+      toast.error("Erro ao gerar leads", {
+        description: "ID da empresa não encontrado."
+      });
+      return;
+    }
+
+    setGerandoLeadsAniversarios(true);
+    
+    try {
+      const response = await fetch(
+        "https://vbbfmmjohdmocnaxgmmd.supabase.co/functions/v1/gerar-leads-aniversarios",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(`Leads de aniversário gerados!`, {
+          description: `${data.leadsGerados} lead(s) criado(s) com sucesso.`
+        });
+        
+        await fetchLeads();
+      } else {
+        throw new Error(data.error || "Erro desconhecido");
+      }
+    } catch (error: any) {
+      console.error("Erro ao gerar leads de aniversários:", error);
+      toast.error("Erro ao gerar leads", {
+        description: error.message
+      });
+    } finally {
+      setGerandoLeadsAniversarios(false);
+    }
+  };
+
   const handleOpenFormModal = (lead = null) => {
     setEditingLead(lead);
     setIsFormModalOpen(true);
@@ -578,16 +623,33 @@ export default function LeadsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Leads</h1>
-        <Button 
-          onClick={() => handleOpenFormModal()} 
-          variant="blue"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Lead
-        </Button>
-      </div>
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Leads</h1>
+          <div className="flex gap-2">
+            {isFunilAniversarios && (
+              <Button 
+                onClick={handleGerarLeadsAniversarios}
+                variant="outline"
+                disabled={gerandoLeadsAniversarios}
+                className="border-rose-300 text-rose-600 hover:bg-rose-50"
+              >
+                {gerandoLeadsAniversarios ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Cake className="mr-2 h-4 w-4" />
+                )}
+                Gerar Leads de Aniversários
+              </Button>
+            )}
+            <Button 
+              onClick={() => handleOpenFormModal()} 
+              variant="blue"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Lead
+            </Button>
+          </div>
+        </div>
 
       {/* Filtros */}
       <Card>
