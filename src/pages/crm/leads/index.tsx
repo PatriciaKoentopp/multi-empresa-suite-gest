@@ -242,8 +242,13 @@ export default function LeadsPage() {
       
       console.log('Buscando leads para o funil:', funilIdToFetch);
       
+      // Verificar se é funil de aniversários para aplicar filtro especial
+      const funilParaFiltro = funis.find(f => f.id === funilIdToFetch);
+      const isFunilAniversariosLocal = funilParaFiltro?.nome?.toLowerCase().includes("aniversário") || 
+                                       funilParaFiltro?.nome?.toLowerCase().includes("aniversario");
+
       // Modificar a consulta para incluir TODOS os campos necessários
-      const { data: leadsData, error: leadsError } = await supabase
+      let query = supabase
         .from('leads')
         .select(`
           id, 
@@ -263,11 +268,21 @@ export default function LeadsPage() {
           produto_id,
           servico_id,
           favorecido_id,
-          status
+          status,
+          data_aniversario
         `)
         .eq('funil_id', funilIdToFetch)
         .eq('empresa_id', empresaIdToUse)
         .eq('status', statusFilter);
+
+      // Se for funil de aniversários, filtrar por data_aniversario <= hoje
+      if (isFunilAniversariosLocal) {
+        const hojeFormatado = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        query = query.lte('data_aniversario', hojeFormatado);
+        console.log('Aplicando filtro de aniversário: data_aniversario <=', hojeFormatado);
+      }
+
+      const { data: leadsData, error: leadsError } = await query;
 
       if (leadsError) {
         console.error('Erro ao buscar leads:', leadsError);

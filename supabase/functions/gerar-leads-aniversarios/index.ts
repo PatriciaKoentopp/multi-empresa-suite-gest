@@ -23,6 +23,7 @@ serve(async (req: Request) => {
     const anoAtual = hoje.getFullYear();
 
     console.log(`Executando geração de leads de aniversários - ${dia}/${mes}/${anoAtual}`);
+    console.log(`Gerando leads de ${dia}/${mes}/${anoAtual} até 31/12/${anoAtual}`);
 
     // 1. Buscar todos os funis "Aniversários" ativos
     const { data: funis, error: funisError } = await supabase
@@ -91,23 +92,30 @@ serve(async (req: Request) => {
         continue;
       }
 
-      // 4. Filtrar aniversariantes do dia
-      const aniversariantesHoje = favorecidos.filter((fav) => {
+      // 4. Filtrar aniversariantes de HOJE até 31/12 do ano atual
+      const aniversariantesRestantes = favorecidos.filter((fav) => {
         if (!fav.data_aniversario) return false;
         
         const dataAniversario = new Date(fav.data_aniversario);
-        const diaAniversario = dataAniversario.getUTCDate();
-        const mesAniversario = dataAniversario.getUTCMonth() + 1;
+        const diaAniv = dataAniversario.getUTCDate();
+        const mesAniv = dataAniversario.getUTCMonth() + 1;
         
-        return diaAniversario === dia && mesAniversario === mes;
+        // Criar data de aniversário no ano atual para comparação
+        const aniversarioEsteAno = new Date(anoAtual, mesAniv - 1, diaAniv);
+        const hojeData = new Date(anoAtual, mes - 1, dia);
+        hojeData.setHours(0, 0, 0, 0);
+        aniversarioEsteAno.setHours(0, 0, 0, 0);
+        
+        // Incluir se aniversário for >= hoje
+        return aniversarioEsteAno >= hojeData;
       });
 
-      console.log(`Empresa ${funil.empresa_id}: ${aniversariantesHoje.length} aniversariantes hoje`);
+      console.log(`Empresa ${funil.empresa_id}: ${aniversariantesRestantes.length} aniversariantes de hoje até 31/12`);
 
       let leadsGeradosNesteFunil = 0;
 
-      // 5. Para cada aniversariante, verificar se já existe lead no ano atual
-      for (const fav of aniversariantesHoje) {
+      // 5. Para cada aniversariante restante, verificar se já existe lead no ano atual
+      for (const fav of aniversariantesRestantes) {
         const { data: leadsExistentes, error: leadsError } = await supabase
           .from("leads")
           .select("id")
@@ -126,7 +134,13 @@ serve(async (req: Request) => {
           continue;
         }
 
-        // 6. Criar novo lead
+        // Calcular a data de aniversário no ano atual
+        const dataAniversario = new Date(fav.data_aniversario);
+        const diaAniv = dataAniversario.getUTCDate();
+        const mesAniv = dataAniversario.getUTCMonth() + 1;
+        const dataAniversarioAnoAtual = `${anoAtual}-${mesAniv.toString().padStart(2, "0")}-${diaAniv.toString().padStart(2, "0")}`;
+
+        // 6. Criar novo lead com data_aniversario preenchida
         const { error: insertError } = await supabase.from("leads").insert({
           empresa_id: funil.empresa_id,
           funil_id: funil.id,
@@ -137,7 +151,8 @@ serve(async (req: Request) => {
           telefone: fav.telefone,
           status: "ativo",
           data_criacao: hoje.toISOString().split("T")[0],
-          observacoes: `🎂 Lead de aniversário gerado automaticamente em ${dia.toString().padStart(2, "0")}/${mes.toString().padStart(2, "0")}/${anoAtual}`,
+          data_aniversario: dataAniversarioAnoAtual,
+          observacoes: `🎂 Lead de aniversário gerado automaticamente - Aniversário: ${diaAniv.toString().padStart(2, "0")}/${mesAniv.toString().padStart(2, "0")}/${anoAtual}`,
         });
 
         if (insertError) {
@@ -145,7 +160,7 @@ serve(async (req: Request) => {
           continue;
         }
 
-        console.log(`Lead criado com sucesso para ${fav.nome}`);
+        console.log(`Lead criado com sucesso para ${fav.nome} (aniversário: ${dataAniversarioAnoAtual})`);
         leadsGeradosNesteFunil++;
         totalLeadsCriados++;
       }
@@ -154,7 +169,7 @@ serve(async (req: Request) => {
         funil: funil.nome,
         empresa_id: funil.empresa_id,
         leadsGerados: leadsGeradosNesteFunil,
-        aniversariantesEncontrados: aniversariantesHoje.length,
+        aniversariantesEncontrados: aniversariantesRestantes.length,
       });
     }
 
@@ -165,6 +180,7 @@ serve(async (req: Request) => {
         success: true,
         leadsGerados: totalLeadsCriados,
         dataExecucao: hoje.toISOString(),
+        periodo: `${dia.toString().padStart(2, "0")}/${mes.toString().padStart(2, "0")}/${anoAtual} até 31/12/${anoAtual}`,
         detalhes: resultados,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
