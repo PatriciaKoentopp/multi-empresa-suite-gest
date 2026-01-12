@@ -62,6 +62,7 @@ import AnaliseDrePage from "./pages/relatorios/analise-dre";
 import RelatorioTempoPage from "./pages/relatorios/tempo";
 import RelatorioFotosPage from "./pages/relatorios/fotos";
 import RelatorioProjetosPage from "./pages/relatorios/projetos";
+import RelatorioAniversariantes from "./pages/relatorios/aniversariantes";
 import RelatorioFinanceiro from "./pages/relatorios/financeiro";
 
 // Authentication wrapper
@@ -497,6 +498,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <RelatorioProjetosPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/relatorios/aniversariantes"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <RelatorioAniversariantes />
                   </MainLayout>
                 </PrivateRoute>
               }
