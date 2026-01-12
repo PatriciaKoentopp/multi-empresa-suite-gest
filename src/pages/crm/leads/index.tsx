@@ -203,7 +203,7 @@ export default function LeadsPage() {
       
       // Buscar leads após ter os dados de funis
       if (funisFormatados.length > 0) {
-        await fetchLeads(empresaIdToUse, funisFormatados[0].id);
+        await fetchLeads(empresaIdToUse, funisFormatados[0].id, funisFormatados);
       } else {
         setLeads([]);
         toast.error("Nenhum funil encontrado", {
@@ -223,7 +223,11 @@ export default function LeadsPage() {
   };
 
   // Função para buscar leads baseado no funil selecionado
-  const fetchLeads = async (empId: string | null = null, funilId: string | null = null) => {
+  const fetchLeads = async (
+    empId: string | null = null, 
+    funilId: string | null = null,
+    funisData: Funil[] | null = null
+  ) => {
     try {
       // Se não temos funil selecionado ainda, retorna
       const empresaIdToUse = empId || empresaId;
@@ -232,7 +236,10 @@ export default function LeadsPage() {
         return;
       }
       
-      const funilIdToFetch = funilId || selectedFunilId || (funis.length > 0 ? funis[0].id : null);
+      // Usar funisData se passado, senão usar o estado funis
+      const funisParaBusca = funisData || funis;
+      
+      const funilIdToFetch = funilId || selectedFunilId || (funisParaBusca.length > 0 ? funisParaBusca[0].id : null);
       
       if (!funilIdToFetch) {
         console.log('Sem funil ID, não é possível buscar leads');
@@ -243,7 +250,7 @@ export default function LeadsPage() {
       console.log('Buscando leads para o funil:', funilIdToFetch);
       
       // Verificar se é funil de aniversários para aplicar filtro especial
-      const funilParaFiltro = funis.find(f => f.id === funilIdToFetch);
+      const funilParaFiltro = funisParaBusca.find(f => f.id === funilIdToFetch);
       const isFunilAniversariosLocal = funilParaFiltro?.nome?.toLowerCase().includes("aniversário") || 
                                        funilParaFiltro?.nome?.toLowerCase().includes("aniversario");
 
