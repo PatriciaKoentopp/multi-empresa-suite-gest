@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Users, Calculator, BarChart, Award, TrendingUp, Clock, Camera, Layers } from "lucide-react";
+import { FileText, Users, Calculator, BarChart, Award, TrendingUp, Clock, Camera, Layers, Cake } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DashboardCardConfigurator } from "@/components/dashboard/DashboardCardConfigurator";
 import { useDashboardCards } from "@/hooks/useDashboardCards";
@@ -63,6 +63,13 @@ export default function Relatorios() {
       route: "/relatorios/projetos"
     },
     {
+      id: "aniversariantes",
+      title: "Relatório de Aniversariantes",
+      description: "Consulta de favorecidos com aniversário no período selecionado",
+      icon: <Cake className="h-8 w-8 text-rose-500" />,
+      route: "/relatorios/aniversariantes"
+    },
+    {
       id: "financeiro",
       title: "Relatório Financeiro",
       description: "Análise de receitas e despesas",
@@ -118,7 +125,7 @@ export default function Relatorios() {
           return (
             <Card 
               key={relatorio.id} 
-              className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' || relatorio.id === 'projetos' || relatorio.id === 'financeiro' ? '' : 'opacity-60'}`}
+              className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' || relatorio.id === 'projetos' || relatorio.id === 'aniversariantes' || relatorio.id === 'financeiro' ? '' : 'opacity-60'}`}
               onClick={() => handleCardClick(relatorio.route)}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -134,7 +141,7 @@ export default function Relatorios() {
               </CardHeader>
               <CardContent>
                 <Button 
-                  variant={relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' || relatorio.id === 'projetos' || relatorio.id === 'financeiro' ? "default" : "outline"} 
+                  variant={relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' || relatorio.id === 'projetos' || relatorio.id === 'aniversariantes' || relatorio.id === 'financeiro' ? "default" : "outline"} 
                   className="w-full"
                   onClick={() => handleCardClick(relatorio.route)}
                 >
