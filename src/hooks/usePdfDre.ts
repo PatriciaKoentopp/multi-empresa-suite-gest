@@ -174,8 +174,13 @@ export const usePdfDre = () => {
         if (!isResultado && grupo.contas && grupo.contas.length > 0) {
           grupo.contas.forEach((conta) => {
             const valorConta = conta.valor || 0;
+            // Remover símbolo "%" do início da descrição, se existir
+            let descricaoLimpa = conta.descricao;
+            if (descricaoLimpa.startsWith('%')) {
+              descricaoLimpa = descricaoLimpa.substring(1).trim();
+            }
             dadosTabela.push({
-              conta: `  └ ${conta.descricao}`,
+              conta: `  └ ${descricaoLimpa}`,
               valor: formatCurrency(valorConta),
               isGrupo: false,
               isResultado: false,
@@ -616,7 +621,12 @@ export const usePdfDre = () => {
         if (!isResultado) {
           const subcontas = Array.from(subcontasPorConta[conta]);
           subcontas.forEach(descricao => {
-            const linhaSub: string[] = [`  └ ${descricao}`];
+            // Remover símbolo "%" do início da descrição, se existir
+            let descricaoLimpa = descricao;
+            if (descricaoLimpa.startsWith('%')) {
+              descricaoLimpa = descricaoLimpa.substring(1).trim();
+            }
+            const linhaSub: string[] = [`  └ ${descricaoLimpa}`];
             let acumuladoSub = 0;
             let temValorSubNegativo = false;
 
