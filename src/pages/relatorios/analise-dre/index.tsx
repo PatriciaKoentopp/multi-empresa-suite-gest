@@ -650,7 +650,7 @@ export default function AnaliseDrePage() {
         
         contas.push({
           conta_id: contaId,
-          descricao: detalhes[0].conta_descricao || "Conta sem descrição",
+          descricao: (detalhes[0].conta_descricao || "Conta sem descrição").replace(/^[\s%％]+/, '').trim(),
           valor: valorTotal,
           detalhes: detalhes
         });
