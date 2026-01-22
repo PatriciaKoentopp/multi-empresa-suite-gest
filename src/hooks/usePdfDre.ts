@@ -177,7 +177,7 @@ export const usePdfDre = () => {
             // Remover símbolo "%" do início da descrição (incluindo variações Unicode)
             const descricaoLimpa = conta.descricao.replace(/^[\s%％]+/, '').trim();
             dadosTabela.push({
-              conta: `  └ ${descricaoLimpa}`,
+              conta: `    - ${descricaoLimpa}`,
               valor: formatCurrency(valorConta),
               isGrupo: false,
               isResultado: false,
@@ -382,7 +382,7 @@ export const usePdfDre = () => {
           subcontas.forEach(descricao => {
             // Remover símbolo "%" do início da descrição (incluindo variações Unicode)
             const descricaoLimpa = descricao.replace(/^[\s%％]+/, '').trim();
-            const linhaSub: string[] = [`  └ ${descricaoLimpa}`];
+            const linhaSub: string[] = [`    - ${descricaoLimpa}`];
             const valoresSub: number[] = [];
 
             anosOrdenados.forEach(ano => {
@@ -617,7 +617,7 @@ export const usePdfDre = () => {
           subcontas.forEach(descricao => {
             // Remover símbolo "%" do início da descrição (incluindo variações Unicode)
             const descricaoLimpa = descricao.replace(/^[\s%％]+/, '').trim();
-            const linhaSub: string[] = [`  └ ${descricaoLimpa}`];
+            const linhaSub: string[] = [`    - ${descricaoLimpa}`];
             let acumuladoSub = 0;
             let temValorSubNegativo = false;
 
