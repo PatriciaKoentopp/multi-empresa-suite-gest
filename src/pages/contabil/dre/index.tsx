@@ -10,9 +10,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, endOfMonth } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, FileText } from "lucide-react";
 import "../../../styles/collapsible.css";
 import { VariationDisplay } from "@/components/vendas/VariationDisplay";
+import { usePdfDre } from "@/hooks/usePdfDre";
 
 // Arrays de meses e anos
 const meses = [{
@@ -109,6 +110,7 @@ export default function DrePage() {
   const [contaExpandida, setContaExpandida] = useState<string | null>(null);
   const [contasExpandidasTodosMeses, setContasExpandidasTodosMeses] = useState<Record<string, boolean>>({});
   const [contasExpandidasComparacao, setContasExpandidasComparacao] = useState<Record<string, boolean>>({});
+  const { gerarPdfDre } = usePdfDre();
 
   // Query para buscar dados do DRE
   const {
@@ -596,6 +598,92 @@ export default function DrePage() {
     return totaisAcumuladosSubcontas;
   }
 
+  // Função para gerar PDF do DRE
+  const handleGerarPdf = () => {
+    if (!currentCompany) {
+      toast.error("Selecione uma empresa");
+      return;
+    }
+
+    if (!dadosDRE || (Array.isArray(dadosDRE) && dadosDRE.length === 0)) {
+      toast.error("Não há dados para gerar o PDF");
+      return;
+    }
+
+    // Não permitir PDF para visualização de comparar anos (layout diferente)
+    if (visualizacao === "comparar_anos") {
+      toast.error("A impressão em PDF não está disponível para a visualização 'Comparar Anos'");
+      return;
+    }
+
+    let dadosParaPdf: GrupoMovimentacao[] = [];
+    let periodoTexto = "";
+
+    if (visualizacao === "acumulado") {
+      dadosParaPdf = dadosDRE as GrupoMovimentacao[];
+      periodoTexto = `Ano ${ano}`;
+    } else if (visualizacao === "mensal" && mes !== "todos") {
+      dadosParaPdf = dadosDRE as GrupoMovimentacao[];
+      const nomeMes = meses.find(m => m.value === mes)?.label || mes;
+      periodoTexto = `${nomeMes}/${anoMensal}`;
+    } else if (visualizacao === "mensal" && mes === "todos") {
+      // Para todos os meses, consolidar os dados de todos os meses
+      const resultadosMensais = dadosDRE as ResultadoMensal[];
+      
+      // Consolidar todos os meses em um único array
+      const consolidado: Record<string, { valor: number; contas: Record<string, { valor: number; descricao: string }> }> = {};
+      
+      resultadosMensais.forEach(resultado => {
+        resultado.dados.forEach(grupo => {
+          if (!consolidado[grupo.tipo]) {
+            consolidado[grupo.tipo] = { valor: 0, contas: {} };
+          }
+          consolidado[grupo.tipo].valor += grupo.valor || 0;
+          
+          // Consolidar subcontas
+          if (grupo.contas) {
+            grupo.contas.forEach(conta => {
+              if (!consolidado[grupo.tipo].contas[conta.conta_id]) {
+                consolidado[grupo.tipo].contas[conta.conta_id] = { valor: 0, descricao: conta.descricao };
+              }
+              consolidado[grupo.tipo].contas[conta.conta_id].valor += conta.valor || 0;
+            });
+          }
+        });
+      });
+      
+      // Converter para o formato esperado
+      dadosParaPdf = contasDRE.map(tipo => {
+        const dados = consolidado[tipo] || { valor: 0, contas: {} };
+        return {
+          tipo,
+          valor: dados.valor,
+          detalhes: [],
+          contas: Object.entries(dados.contas).map(([contaId, contaData]) => ({
+            conta_id: contaId,
+            descricao: contaData.descricao,
+            valor: contaData.valor,
+            detalhes: []
+          }))
+        };
+      });
+      
+      periodoTexto = `Ano ${anoMensal} (Consolidado)`;
+    }
+
+    const sucesso = gerarPdfDre(
+      dadosParaPdf,
+      currentCompany.nome_fantasia || currentCompany.razao_social || "Empresa",
+      periodoTexto
+    );
+
+    if (sucesso) {
+      toast.success("PDF gerado com sucesso!");
+    } else {
+      toast.error("Erro ao gerar PDF");
+    }
+  };
+
   return <div className="w-full">
       <Card className="w-full">
         <CardHeader>
@@ -663,6 +751,18 @@ export default function DrePage() {
                   </Select>
                 </div>
               </>}
+            
+            {/* Botão Imprimir PDF */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGerarPdf}
+              disabled={isLoading || !dadosDRE || (Array.isArray(dadosDRE) && dadosDRE.length === 0) || visualizacao === "comparar_anos"}
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Imprimir PDF
+            </Button>
           </form>
 
           {/* Estado de carregamento */}
