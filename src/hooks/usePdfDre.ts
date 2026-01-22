@@ -378,7 +378,12 @@ export const usePdfDre = () => {
         if (!isResultado) {
           const subcontas = Array.from(subcontasPorConta[conta]);
           subcontas.forEach(descricao => {
-            const linhaSub: string[] = [`  └ ${descricao}`];
+            // Remover símbolo "%" do início da descrição, se existir
+            let descricaoLimpa = descricao;
+            if (descricaoLimpa.startsWith('%')) {
+              descricaoLimpa = descricaoLimpa.substring(1).trim();
+            }
+            const linhaSub: string[] = [`  └ ${descricaoLimpa}`];
             const valoresSub: number[] = [];
 
             anosOrdenados.forEach(ano => {
