@@ -412,7 +412,7 @@ export default function DrePage() {
         if (detalhes.length === 0 || contaId === "sem_conta") return;
         contas.push({
           conta_id: contaId,
-          descricao: detalhes[0].conta_descricao || "Conta sem descrição",
+          descricao: (detalhes[0].conta_descricao || "Conta sem descrição").replace(/^[\s%％]+/, '').trim(),
           valor: valorTotal,
           detalhes: detalhes
         });
