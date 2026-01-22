@@ -751,7 +751,7 @@ export default function DrePage() {
                               <CollapsibleTrigger className="flex justify-between w-full hover:underline">
                                 <div className="flex items-center gap-2">
                                   <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 collapsible-icon" />
-                                  <span className="font-medium">{conta.descricao}</span>
+                                  <span className="font-medium">{conta.descricao.startsWith('%') ? conta.descricao.substring(1).trim() : conta.descricao}</span>
                                 </div>
                                 <span>{formatCurrency(conta.valor)}</span>
                               </CollapsibleTrigger>
@@ -872,7 +872,7 @@ export default function DrePage() {
                       return grupo?.contas?.map(c => c.descricao) || [];
                     }))).sort().map(descricaoConta => <TableRow key={`${conta}-${descricaoConta}`} className="bg-muted/20">
                                   <TableCell className="pl-10 text-sm font-normal">
-                                    {descricaoConta}
+                                    {descricaoConta.startsWith('%') ? descricaoConta.substring(1).trim() : descricaoConta}
                                   </TableCell>
                                   {anosComparar.map(anoComp => {
                         const dadosAno = (dadosDRE as Record<string, GrupoMovimentacao[]>)[anoComp] || [];
@@ -904,7 +904,7 @@ export default function DrePage() {
                               <CollapsibleTrigger className="flex justify-between w-full hover:underline">
                                 <div className="flex items-center gap-2">
                                   <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 collapsible-icon" />
-                                  <span className="font-medium">{conta.descricao}</span>
+                                  <span className="font-medium">{conta.descricao.startsWith('%') ? conta.descricao.substring(1).trim() : conta.descricao}</span>
                                 </div>
                                 <span>{formatCurrency(conta.valor)}</span>
                               </CollapsibleTrigger>
@@ -1004,7 +1004,7 @@ export default function DrePage() {
                         return grupo?.contas?.map(c => c.descricao) || [];
                       }))).sort().map(descricaoConta => <TableRow key={`${conta}-${descricaoConta}`} className="bg-muted/20">
                                   <TableCell className="pl-10 text-sm font-normal">
-                                    {descricaoConta}
+                                    {descricaoConta.startsWith('%') ? descricaoConta.substring(1).trim() : descricaoConta}
                                   </TableCell>
                                   {meses.map(m => {
                           const resultadoMensal = (dadosDRE as ResultadoMensal[]).find(x => x.mes === m.value);
