@@ -74,7 +74,17 @@ export const useMonthlySalesData = () => {
 
         // Calcular variação percentual em relação ao mês anterior
         let variacao_percentual = null;
-        if (index > 0 && currentYearData[index - 1]) {
+        
+        if (index === 0) {
+          // Para Janeiro, comparar com Dezembro do ano anterior
+          const dezembroAnterior = previousYearMap.get('Dezembro') || 0;
+          if (dezembroAnterior > 0) {
+            variacao_percentual = ((currentValue - dezembroAnterior) / dezembroAnterior) * 100;
+          } else if (currentValue > 0) {
+            variacao_percentual = 100; // Se não havia venda em dezembro e agora há em janeiro
+          }
+        } else if (currentYearData[index - 1]) {
+          // Para os demais meses, comparar com o mês anterior do mesmo ano
           const previousValue = currentYearData[index - 1].faturado || 0;
           if (previousValue > 0) {
             variacao_percentual = ((currentValue - previousValue) / previousValue) * 100;
