@@ -69,10 +69,21 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
       // 1. Buscar todos os itens e parcelas do orçamento
       const { data: itens, error: itensError } = await supabase
         .from('orcamentos_itens')
-        .select('*')
+        .select('*, servico:servicos(conta_receita_id)')
         .eq('orcamento_id', orcamento.id);
 
       if (itensError) throw itensError;
+
+      // 1.1 Buscar a categoria (conta_receita_id) do primeiro serviço que tenha conta definida
+      let categoriaId: string | null = null;
+      if (itens && itens.length > 0) {
+        for (const item of itens) {
+          if (item.servico?.conta_receita_id) {
+            categoriaId = item.servico.conta_receita_id;
+            break;
+          }
+        }
+      }
 
       const { data: parcelas, error: parcelasError } = await supabase
         .from('orcamentos_parcelas')
@@ -102,7 +113,8 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
             descricao: `Venda ${orcamento.codigo}`,
             considerar_dre: true,
             numero_documento: orcamento.codigo,
-            tipo_titulo_id: tipoTituloId
+            tipo_titulo_id: tipoTituloId,
+            categoria_id: categoriaId
           })
           .select()
           .single();
