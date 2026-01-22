@@ -110,7 +110,7 @@ export default function DrePage() {
   const [contaExpandida, setContaExpandida] = useState<string | null>(null);
   const [contasExpandidasTodosMeses, setContasExpandidasTodosMeses] = useState<Record<string, boolean>>({});
   const [contasExpandidasComparacao, setContasExpandidasComparacao] = useState<Record<string, boolean>>({});
-  const { gerarPdfDre } = usePdfDre();
+  const { gerarPdfDre, gerarPdfDreComparacaoAnos, gerarPdfDreMensal } = usePdfDre();
 
   // Query para buscar dados do DRE
   const {
@@ -610,72 +610,39 @@ export default function DrePage() {
       return;
     }
 
-    // Não permitir PDF para visualização de comparar anos (layout diferente)
+    const nomeEmpresa = currentCompany.nome_fantasia || currentCompany.razao_social || "Empresa";
+    let sucesso = false;
+
     if (visualizacao === "comparar_anos") {
-      toast.error("A impressão em PDF não está disponível para a visualização 'Comparar Anos'");
-      return;
-    }
-
-    let dadosParaPdf: GrupoMovimentacao[] = [];
-    let periodoTexto = "";
-
-    if (visualizacao === "acumulado") {
-      dadosParaPdf = dadosDRE as GrupoMovimentacao[];
-      periodoTexto = `Ano ${ano}`;
-    } else if (visualizacao === "mensal" && mes !== "todos") {
-      dadosParaPdf = dadosDRE as GrupoMovimentacao[];
-      const nomeMes = meses.find(m => m.value === mes)?.label || mes;
-      periodoTexto = `${nomeMes}/${anoMensal}`;
+      // PDF comparativo de anos
+      sucesso = gerarPdfDreComparacaoAnos(
+        dadosDRE as Record<string, GrupoMovimentacao[]>,
+        anosComparar,
+        nomeEmpresa
+      );
     } else if (visualizacao === "mensal" && mes === "todos") {
-      // Para todos os meses, consolidar os dados de todos os meses
-      const resultadosMensais = dadosDRE as ResultadoMensal[];
-      
-      // Consolidar todos os meses em um único array
-      const consolidado: Record<string, { valor: number; contas: Record<string, { valor: number; descricao: string }> }> = {};
-      
-      resultadosMensais.forEach(resultado => {
-        resultado.dados.forEach(grupo => {
-          if (!consolidado[grupo.tipo]) {
-            consolidado[grupo.tipo] = { valor: 0, contas: {} };
-          }
-          consolidado[grupo.tipo].valor += grupo.valor || 0;
-          
-          // Consolidar subcontas
-          if (grupo.contas) {
-            grupo.contas.forEach(conta => {
-              if (!consolidado[grupo.tipo].contas[conta.conta_id]) {
-                consolidado[grupo.tipo].contas[conta.conta_id] = { valor: 0, descricao: conta.descricao };
-              }
-              consolidado[grupo.tipo].contas[conta.conta_id].valor += conta.valor || 0;
-            });
-          }
-        });
-      });
-      
-      // Converter para o formato esperado
-      dadosParaPdf = contasDRE.map(tipo => {
-        const dados = consolidado[tipo] || { valor: 0, contas: {} };
-        return {
-          tipo,
-          valor: dados.valor,
-          detalhes: [],
-          contas: Object.entries(dados.contas).map(([contaId, contaData]) => ({
-            conta_id: contaId,
-            descricao: contaData.descricao,
-            valor: contaData.valor,
-            detalhes: []
-          }))
-        };
-      });
-      
-      periodoTexto = `Ano ${anoMensal} (Consolidado)`;
+      // PDF mensal com todos os meses em colunas
+      sucesso = gerarPdfDreMensal(
+        dadosDRE as ResultadoMensal[],
+        anoMensal,
+        nomeEmpresa
+      );
+    } else if (visualizacao === "mensal" && mes !== "todos") {
+      // PDF de um mês específico
+      const nomeMes = meses.find(m => m.value === mes)?.label || mes;
+      sucesso = gerarPdfDre(
+        dadosDRE as GrupoMovimentacao[],
+        nomeEmpresa,
+        `${nomeMes}/${anoMensal}`
+      );
+    } else {
+      // Acumulado
+      sucesso = gerarPdfDre(
+        dadosDRE as GrupoMovimentacao[],
+        nomeEmpresa,
+        `Ano ${ano}`
+      );
     }
-
-    const sucesso = gerarPdfDre(
-      dadosParaPdf,
-      currentCompany.nome_fantasia || currentCompany.razao_social || "Empresa",
-      periodoTexto
-    );
 
     if (sucesso) {
       toast.success("PDF gerado com sucesso!");
@@ -757,7 +724,7 @@ export default function DrePage() {
               type="button"
               variant="outline"
               onClick={handleGerarPdf}
-              disabled={isLoading || !dadosDRE || (Array.isArray(dadosDRE) && dadosDRE.length === 0) || visualizacao === "comparar_anos"}
+              disabled={isLoading || !dadosDRE || (Array.isArray(dadosDRE) && dadosDRE.length === 0)}
               className="flex items-center gap-2"
             >
               <FileText className="h-4 w-4" />
