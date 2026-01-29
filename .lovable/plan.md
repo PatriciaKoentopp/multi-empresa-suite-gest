@@ -1,33 +1,21 @@
 
 
-## Plano: Corrigir Configuração de Relatórios
+## Plano: Persistir Filtro de Etapas na Página de Leads
 
-### Problemas Identificados
+### Objetivo
 
-1. **Relatórios faltando no `defaultCards`**: O hook `useDashboardCards.ts` não inclui os relatórios `contasPagar`, `contasReceber` e `antecipacoes` na configuração padrão de relatórios.
-
-2. **Registros ausentes no banco de dados**: Os relatórios `tempo`, `fotos`, `projetos`, `aniversariantes`, `contasPagar`, `contasReceber` e `antecipacoes` não foram criados no banco para as empresas existentes.
-
-3. **Botão desmarcar não funciona**: Quando o código tenta atualizar a visibilidade de um relatório que não existe no banco, o update não afeta nenhum registro (não há registro para atualizar).
+Manter gravada a escolha do usuário para o filtro de etapas na página `/crm/leads`, para que ao atualizar a página ou acessá-la novamente, as etapas selecionadas sejam mantidas.
 
 ---
 
-### Solução
+### Solução Proposta
 
-#### 1. Atualizar o hook `useDashboardCards.ts`
+Utilizar o **localStorage** do navegador para salvar a preferência do usuário. Esta é a abordagem mais adequada porque:
 
-Adicionar os relatórios que estão faltando no objeto `defaultCards` para a página `relatorios`:
-
-**Relatórios a adicionar:**
-- `contasPagar` - Relatório de Contas a Pagar
-- `contasReceber` - Relatório de Contas a Receber  
-- `antecipacoes` - Relatório de Antecipações
-
-#### 2. Adicionar lógica para criar registros faltantes
-
-Modificar a função `fetchCardsConfig` para verificar se há relatórios novos que não existem no banco e criá-los automaticamente. Isso garantirá que:
-- Relatórios novos sejam adicionados ao banco automaticamente
-- O switch funcionará para todos os relatórios
+1. Não requer alterações no banco de dados
+2. A escolha é salva por funil (cada funil pode ter uma configuração diferente)
+3. Os dados persistem mesmo após recarregar a página
+4. Segue o padrão já utilizado no projeto (veja `auth-context.tsx` e `company-context.tsx`)
 
 ---
 
@@ -35,139 +23,157 @@ Modificar a função `fetchCardsConfig` para verificar se há relatórios novos 
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/hooks/useDashboardCards.ts` | Adicionar os 3 relatórios faltantes no `defaultCards` e implementar lógica para sincronizar registros faltantes |
+| `src/pages/crm/leads/index.tsx` | Adicionar lógica para salvar e recuperar filtros de etapas do localStorage |
 
 ---
 
 ### Detalhes Técnicos
 
-#### Alteração no defaultCards (linhas 61-72)
+#### 1. Estrutura de Armazenamento
 
-**Código Atual:**
-```typescript
-'relatorios': [
-  { card_id: 'favorecido', name: 'Relatório de Favorecido', order_position: 1, is_visible: true },
-  { card_id: 'vendas', name: 'Relatório de Vendas', order_position: 2, is_visible: true },
-  { card_id: 'classificacaoABC', name: 'Classificação ABC de Clientes', order_position: 3, is_visible: true },
-  { card_id: 'analiseDRE', name: 'Análise do DRE', order_position: 4, is_visible: true },
-  { card_id: 'tempo', name: 'Relatório de Tempo', order_position: 5, is_visible: true },
-  { card_id: 'fotos', name: 'Relatório de Fotos', order_position: 6, is_visible: true },
-  { card_id: 'projetos', name: 'Relatório de Projetos', order_position: 7, is_visible: true },
-  { card_id: 'aniversariantes', name: 'Relatório de Aniversariantes', order_position: 8, is_visible: true },
-  { card_id: 'financeiro', name: 'Relatório Financeiro', order_position: 9, is_visible: true },
-  { card_id: 'geral', name: 'Relatório Geral', order_position: 10, is_visible: true },
-]
+A chave do localStorage será dinâmica por funil:
+```
+crm_leads_etapas_filter_{funilId}
 ```
 
-**Novo Código:**
+O valor armazenado será um objeto JSON:
 ```typescript
-'relatorios': [
-  { card_id: 'favorecido', name: 'Relatório de Favorecido', order_position: 1, is_visible: true },
-  { card_id: 'vendas', name: 'Relatório de Vendas', order_position: 2, is_visible: true },
-  { card_id: 'classificacaoABC', name: 'Classificação ABC de Clientes', order_position: 3, is_visible: true },
-  { card_id: 'analiseDRE', name: 'Análise do DRE', order_position: 4, is_visible: true },
-  { card_id: 'tempo', name: 'Relatório de Tempo', order_position: 5, is_visible: true },
-  { card_id: 'fotos', name: 'Relatório de Fotos', order_position: 6, is_visible: true },
-  { card_id: 'projetos', name: 'Relatório de Projetos', order_position: 7, is_visible: true },
-  { card_id: 'aniversariantes', name: 'Relatório de Aniversariantes', order_position: 8, is_visible: true },
-  { card_id: 'financeiro', name: 'Relatório Financeiro', order_position: 9, is_visible: true },
-  { card_id: 'contasPagar', name: 'Relatório de Contas a Pagar', order_position: 10, is_visible: true },
-  { card_id: 'contasReceber', name: 'Relatório de Contas a Receber', order_position: 11, is_visible: true },
-  { card_id: 'antecipacoes', name: 'Relatório de Antecipações', order_position: 12, is_visible: true },
-  { card_id: 'geral', name: 'Relatório Geral', order_position: 13, is_visible: true },
-]
+{
+  allStagesSelected: boolean,
+  selectedEtapas: string[]
+}
 ```
 
-#### Nova função para sincronizar registros faltantes
-
-Adicionar uma função `syncMissingCards` que será chamada após buscar a configuração existente:
+#### 2. Função para Salvar Filtros
 
 ```typescript
-const syncMissingCards = async (existingCards: DashboardCardConfig[]) => {
-  if (!currentCompany?.id) return existingCards;
-
-  const cards = defaultCards[pageId as keyof typeof defaultCards] || [];
-  const existingCardIds = existingCards.map(c => c.card_id);
+const saveStageFiltersToStorage = (funilId: string, allSelected: boolean, etapas: string[]) => {
+  if (!funilId) return;
   
-  // Encontrar cards que não existem no banco
-  const missingCards = cards.filter(card => !existingCardIds.includes(card.card_id));
-  
-  if (missingCards.length === 0) {
-    return existingCards;
-  }
-
-  // Inserir cards faltantes
-  const configsToInsert = missingCards.map(card => ({
-    empresa_id: currentCompany.id,
-    page_id: pageId,
-    card_id: card.card_id,
-    is_visible: card.is_visible,
-    order_position: card.order_position
-  }));
-
-  const { data: insertedCards, error } = await supabase
-    .from('dashboard_cards_config')
-    .insert(configsToInsert)
-    .select();
-
-  if (error) {
-    console.error('Erro ao sincronizar cards faltantes:', error);
-    return existingCards;
-  }
-
-  // Retornar todos os cards (existentes + novos)
-  return [...existingCards, ...(insertedCards || [])];
+  const key = `crm_leads_etapas_filter_${funilId}`;
+  const value = JSON.stringify({
+    allStagesSelected: allSelected,
+    selectedEtapas: etapas
+  });
+  localStorage.setItem(key, value);
 };
 ```
 
-#### Modificar fetchCardsConfig para usar a nova função
+#### 3. Função para Carregar Filtros
 
 ```typescript
-const fetchCardsConfig = async () => {
-  if (!currentCompany?.id) return;
-
+const loadStageFiltersFromStorage = (funilId: string): { allStagesSelected: boolean; selectedEtapas: string[] } | null => {
+  if (!funilId) return null;
+  
+  const key = `crm_leads_etapas_filter_${funilId}`;
+  const stored = localStorage.getItem(key);
+  
+  if (!stored) return null;
+  
   try {
-    setIsLoading(true);
-    
-    const { data, error } = await supabase
-      .from('dashboard_cards_config')
-      .select('*')
-      .eq('empresa_id', currentCompany.id)
-      .eq('page_id', pageId)
-      .order('order_position');
-
-    if (error) throw error;
-
-    // Se não há configuração salva, criar configurações padrão
-    if (!data || data.length === 0) {
-      await createDefaultConfig();
-      return;
-    }
-
-    // Sincronizar cards faltantes (novos relatórios adicionados)
-    const allCards = await syncMissingCards(data);
-    setCardsConfig(allCards);
-  } catch (error: any) {
-    console.error('Erro ao buscar configuração dos cards:', error);
-    toast({
-      variant: "destructive",
-      title: "Erro",
-      description: "Não foi possível carregar a configuração dos cards"
-    });
-  } finally {
-    setIsLoading(false);
+    return JSON.parse(stored);
+  } catch {
+    return null;
   }
 };
 ```
+
+#### 4. Alterações Necessárias
+
+**a) Carregar filtros ao mudar de funil (`handleFunilChange`):**
+
+Ao invés de sempre resetar para "todas as etapas", verificar se existe filtro salvo:
+
+```typescript
+const handleFunilChange = (funilId: string) => {
+  console.log('Alterando funil para:', funilId);
+  setSelectedFunilId(funilId);
+  
+  // Tentar carregar filtros salvos para este funil
+  const savedFilters = loadStageFiltersFromStorage(funilId);
+  
+  if (savedFilters) {
+    setAllStagesSelected(savedFilters.allStagesSelected);
+    setSelectedEtapas(savedFilters.selectedEtapas);
+  } else {
+    // Se não há filtros salvos, usar padrão (todas selecionadas)
+    setAllStagesSelected(true);
+    setSelectedEtapas([]);
+  }
+};
+```
+
+**b) Salvar ao alterar seleção de "Todas as etapas" (`handleAllStagesToggle`):**
+
+```typescript
+const handleAllStagesToggle = (checked: boolean) => {
+  console.log('Alterando seleção "todas as etapas" para:', checked);
+  setAllStagesSelected(checked);
+  if (checked) {
+    setSelectedEtapas([]);
+  }
+  // Salvar no localStorage
+  saveStageFiltersToStorage(selectedFunilId, checked, checked ? [] : selectedEtapas);
+};
+```
+
+**c) Salvar ao alterar seleção de etapa individual (`handleStageToggle`):**
+
+```typescript
+const handleStageToggle = (etapaId: string, checked: boolean) => {
+  console.log('Alterando seleção da etapa', etapaId, 'para:', checked);
+  
+  let newSelectedEtapas: string[];
+  let newAllStagesSelected: boolean;
+  
+  if (checked) {
+    newSelectedEtapas = [...selectedEtapas, etapaId];
+    newAllStagesSelected = false;
+  } else {
+    newSelectedEtapas = selectedEtapas.filter(id => id !== etapaId);
+    newAllStagesSelected = newSelectedEtapas.length === 0;
+  }
+  
+  setSelectedEtapas(newSelectedEtapas);
+  setAllStagesSelected(newAllStagesSelected);
+  
+  // Salvar no localStorage
+  saveStageFiltersToStorage(selectedFunilId, newAllStagesSelected, newSelectedEtapas);
+};
+```
+
+**d) Carregar filtros na inicialização:**
+
+Adicionar um `useEffect` para carregar os filtros quando o funil for definido pela primeira vez:
+
+```typescript
+useEffect(() => {
+  if (selectedFunilId) {
+    const savedFilters = loadStageFiltersFromStorage(selectedFunilId);
+    
+    if (savedFilters) {
+      setAllStagesSelected(savedFilters.allStagesSelected);
+      setSelectedEtapas(savedFilters.selectedEtapas);
+    }
+  }
+}, [selectedFunilId]);
+```
+
+---
+
+### Fluxo Esperado
+
+1. **Usuário acessa a página** → Sistema carrega os filtros salvos do localStorage (se existirem)
+2. **Usuário altera filtro de etapa** → Sistema salva a nova configuração no localStorage
+3. **Usuário atualiza a página (F5)** → Sistema restaura os filtros salvos
+4. **Usuário muda de funil** → Sistema carrega os filtros específicos daquele funil (ou padrão se não existir)
 
 ---
 
 ### Resultado Esperado
 
-Após a implementação:
-
-1. **Todos os 13 relatórios aparecerão** na lista de configuração
-2. **O switch funcionará** para todos os relatórios, incluindo tempo, fotos, projetos e aniversariantes
-3. **Relatórios novos** (contasPagar, contasReceber, antecipacoes) serão criados automaticamente no banco
-4. **Empresas existentes** terão os registros faltantes criados na próxima vez que acessarem a página
+- A escolha do usuário será mantida após atualizar a página
+- Cada funil terá sua própria configuração de filtros
+- O comportamento padrão (todas as etapas selecionadas) continua funcionando para novos funis
+- Não há impacto no banco de dados ou performance
 
