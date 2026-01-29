@@ -66,6 +66,7 @@ import RelatorioProjetosPage from "./pages/relatorios/projetos";
 import RelatorioAniversariantes from "./pages/relatorios/aniversariantes";
 import RelatorioFinanceiro from "./pages/relatorios/financeiro";
 import RelatorioContasPagar from "./pages/relatorios/contas-a-pagar";
+import RelatorioContasReceber from "./pages/relatorios/contas-a-receber";
 
 // Authentication wrapper
 interface PrivateRouteProps {
@@ -540,6 +541,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <RelatorioContasPagar />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/relatorios/contas-a-receber"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <RelatorioContasReceber />
                   </MainLayout>
                 </PrivateRoute>
               }
