@@ -68,8 +68,50 @@ export const useDashboardCards = (pageId: string = 'dashboard') => {
       { card_id: 'projetos', name: 'Relatório de Projetos', order_position: 7, is_visible: true },
       { card_id: 'aniversariantes', name: 'Relatório de Aniversariantes', order_position: 8, is_visible: true },
       { card_id: 'financeiro', name: 'Relatório Financeiro', order_position: 9, is_visible: true },
-      { card_id: 'geral', name: 'Relatório Geral', order_position: 10, is_visible: true },
+      { card_id: 'contasPagar', name: 'Relatório de Contas a Pagar', order_position: 10, is_visible: true },
+      { card_id: 'contasReceber', name: 'Relatório de Contas a Receber', order_position: 11, is_visible: true },
+      { card_id: 'antecipacoes', name: 'Relatório de Antecipações', order_position: 12, is_visible: true },
+      { card_id: 'geral', name: 'Relatório Geral', order_position: 13, is_visible: true },
     ]
+  };
+
+  // Função para sincronizar cards faltantes (novos relatórios adicionados)
+  const syncMissingCards = async (existingCards: DashboardCardConfig[]): Promise<DashboardCardConfig[]> => {
+    if (!currentCompany?.id) return existingCards;
+
+    const cards = defaultCards[pageId as keyof typeof defaultCards] || [];
+    const existingCardIds = existingCards.map(c => c.card_id);
+    
+    // Encontrar cards que não existem no banco
+    const missingCards = cards.filter(card => !existingCardIds.includes(card.card_id));
+    
+    if (missingCards.length === 0) {
+      return existingCards;
+    }
+
+    console.log('Sincronizando cards faltantes:', missingCards.map(c => c.card_id));
+
+    // Inserir cards faltantes
+    const configsToInsert = missingCards.map(card => ({
+      empresa_id: currentCompany.id,
+      page_id: pageId,
+      card_id: card.card_id,
+      is_visible: card.is_visible,
+      order_position: card.order_position
+    }));
+
+    const { data: insertedCards, error } = await supabase
+      .from('dashboard_cards_config')
+      .insert(configsToInsert)
+      .select();
+
+    if (error) {
+      console.error('Erro ao sincronizar cards faltantes:', error);
+      return existingCards;
+    }
+
+    // Retornar todos os cards (existentes + novos)
+    return [...existingCards, ...(insertedCards || [])];
   };
 
   const fetchCardsConfig = async () => {
@@ -93,7 +135,9 @@ export const useDashboardCards = (pageId: string = 'dashboard') => {
         return;
       }
 
-      setCardsConfig(data);
+      // Sincronizar cards faltantes (novos relatórios adicionados)
+      const allCards = await syncMissingCards(data);
+      setCardsConfig(allCards);
     } catch (error: any) {
       console.error('Erro ao buscar configuração dos cards:', error);
       toast({
