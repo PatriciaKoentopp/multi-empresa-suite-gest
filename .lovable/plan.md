@@ -1,75 +1,27 @@
 
-
-## Plano: Corrigir Reversão de Antecipações ao Desfazer Baixa
+## Plano: Correção Robusta da Reversão de Antecipações ao Desfazer Baixa
 
 ### Problema Identificado
 
-Após análise detalhada, identifiquei **dois problemas**:
+Após análise detalhada do banco de dados e do código, identifiquei que:
 
-#### 1. Tabela sem RLS habilitado
-A tabela `movimentacoes_parcelas_antecipacoes` **não tem RLS habilitado** (`rls_enabled: false`). Quando o cliente Supabase tenta consultar esta tabela, a query falha silenciosamente ou retorna vazio, impedindo que os relacionamentos sejam encontrados durante o processo de desfazer baixa.
+1. **Os registros na tabela `movimentacoes_parcelas_antecipacoes` não estão sendo encontrados** durante o processo de desfazer baixa
+2. A antecipação fica com `valor_utilizado` incorreto e `status: utilizada` mesmo quando deveria ser revertida
+3. O RLS foi habilitado corretamente, mas há uma dependência do registro existir na tabela de relacionamento
 
-#### 2. Dados inconsistentes no banco
-Os dados atuais mostram antecipações com `valor_utilizado` maior que `valor_total`:
-- Antecipação `4af5a1df...`: valor_total = 957.64, valor_utilizado = **1915.28** (dobro!)
-- Antecipação `572e6b7b...`: valor_total = 6970.96, valor_utilizado = **13941.92** (dobro!)
+### Causa Raiz
 
-Isso indica que o valor está sendo incrementado duas vezes durante a baixa.
+O código atual do `handleDesfazerBaixa` depende exclusivamente da tabela `movimentacoes_parcelas_antecipacoes` para encontrar quais antecipações reverter. Se esse registro não existir (por qualquer razão), a antecipação não é revertida.
 
 ---
 
-### Solução
+### Solução Proposta
 
-#### 1. Migração SQL - Habilitar RLS e criar políticas
+Modificar a função `handleDesfazerBaixa` para usar uma **estratégia de fallback**:
+1. **Primeiro**: Tentar buscar na tabela `movimentacoes_parcelas_antecipacoes` (método atual)
+2. **Fallback**: Se não encontrar, buscar no `fluxo_caixa` por registros com `origem = 'antecipacao_baixa'` e `movimentacao_parcela_id` correspondente
 
-```sql
--- 1. Habilitar RLS na tabela
-ALTER TABLE movimentacoes_parcelas_antecipacoes ENABLE ROW LEVEL SECURITY;
-
--- 2. Criar políticas de acesso baseadas na parcela (que está vinculada à movimentação → empresa)
-CREATE POLICY "Users can view relacionamentos from their company" 
-  ON movimentacoes_parcelas_antecipacoes 
-  FOR SELECT 
-  USING (
-    movimentacao_parcela_id IN (
-      SELECT mp.id FROM movimentacoes_parcelas mp
-      JOIN movimentacoes m ON m.id = mp.movimentacao_id
-      WHERE m.empresa_id = get_user_company_id()
-    )
-  );
-
-CREATE POLICY "Users can insert relacionamentos for their company" 
-  ON movimentacoes_parcelas_antecipacoes 
-  FOR INSERT 
-  WITH CHECK (
-    movimentacao_parcela_id IN (
-      SELECT mp.id FROM movimentacoes_parcelas mp
-      JOIN movimentacoes m ON m.id = mp.movimentacao_id
-      WHERE m.empresa_id = get_user_company_id()
-    )
-  );
-
-CREATE POLICY "Users can delete relacionamentos from their company" 
-  ON movimentacoes_parcelas_antecipacoes 
-  FOR DELETE 
-  USING (
-    movimentacao_parcela_id IN (
-      SELECT mp.id FROM movimentacoes_parcelas mp
-      JOIN movimentacoes m ON m.id = mp.movimentacao_id
-      WHERE m.empresa_id = get_user_company_id()
-    )
-  );
-```
-
-#### 2. Correção dos dados inconsistentes
-
-```sql
--- Corrigir antecipações com valor_utilizado duplicado
-UPDATE antecipacoes 
-SET valor_utilizado = valor_total,
-    status = 'utilizada'
-WHERE valor_utilizado > valor_total;
-```
+Isso garante que mesmo se o registro de relacionamento não existir, ainda conseguimos identificar e reverter a antecipação através dos registros do fluxo de caixa.
 
 ---
 
@@ -77,16 +29,72 @@ WHERE valor_utilizado > valor_total;
 
 | Arquivo | Alteração |
 |---------|-----------|
-| Migração SQL | Habilitar RLS e criar políticas na tabela `movimentacoes_parcelas_antecipacoes` |
-| Migração SQL | Corrigir dados inconsistentes de antecipações |
+| `src/pages/financeiro/contas-a-pagar/index.tsx` | Adicionar fallback para buscar antecipações no fluxo de caixa |
+| `src/pages/financeiro/contas-a-receber/index.tsx` | Mesma alteração para contas a receber |
+
+---
+
+### Detalhes Técnicos
+
+#### Lógica do handleDesfazerBaixa (ambos os arquivos)
+
+**Nova lógica:**
+
+```typescript
+// 2. Buscar as antecipações utilizadas na nova tabela de relacionamento
+const { data: relacionamentos, error: relError } = await supabase
+  .from("movimentacoes_parcelas_antecipacoes")
+  .select("antecipacao_id, valor_utilizado")
+  .eq("movimentacao_parcela_id", conta.id);
+
+if (relError) {
+  console.error("Erro ao buscar relacionamentos de antecipação:", relError);
+}
+
+// Fallback: Se não encontrou na tabela de relacionamento, buscar no fluxo de caixa
+let antecipacoesParaReverter: { antecipacao_id: string; valor_utilizado: number }[] = [];
+
+if (relacionamentos && relacionamentos.length > 0) {
+  antecipacoesParaReverter = relacionamentos;
+} else {
+  // Buscar no fluxo de caixa por registros de antecipação
+  const { data: fluxoAntecipacoes, error: fluxoError } = await supabase
+    .from("fluxo_caixa")
+    .select("antecipacao_id, valor")
+    .eq("movimentacao_parcela_id", conta.id)
+    .eq("origem", "antecipacao_baixa")
+    .not("antecipacao_id", "is", null);
+
+  if (!fluxoError && fluxoAntecipacoes && fluxoAntecipacoes.length > 0) {
+    antecipacoesParaReverter = fluxoAntecipacoes.map(f => ({
+      antecipacao_id: f.antecipacao_id!,
+      valor_utilizado: Math.abs(f.valor) // O valor no fluxo pode ser positivo
+    }));
+  }
+}
+
+// 3. Reverter valores das antecipações utilizadas e atualizar status
+if (antecipacoesParaReverter.length > 0) {
+  for (const rel of antecipacoesParaReverter) {
+    // ... lógica de reversão existente
+  }
+}
+```
+
+---
+
+### Resumo das Alterações
+
+1. **Adicionar fallback no fluxo de caixa** - Buscar registros com `origem = 'antecipacao_baixa'`
+2. **Usar valor absoluto** - O valor no fluxo de caixa é positivo para entrada
+3. **Manter compatibilidade** - A tabela `movimentacoes_parcelas_antecipacoes` ainda é a fonte principal
 
 ---
 
 ### Resultado Esperado
 
-Após a migração:
-1. A query do `handleDesfazerBaixa` conseguirá buscar os relacionamentos corretamente
-2. O valor utilizado da antecipação será revertido
-3. O status da antecipação voltará para "ativa" quando apropriado
-4. Os dados corrompidos serão corrigidos
-
+Após a implementação:
+1. O desfazer baixa funcionará mesmo se a tabela de relacionamento estiver vazia
+2. O `valor_utilizado` da antecipação será corretamente revertido
+3. O `status` da antecipação voltará para "ativa" imediatamente
+4. Não há dependência da página de antecipações ser acessada para corrigir o status
