@@ -1,21 +1,27 @@
 
-
-## Plano: Persistir Filtro de Etapas na Página de Leads
+## Plano: Funil Prioritário ao Abrir Página de Leads
 
 ### Objetivo
 
-Manter gravada a escolha do usuário para o filtro de etapas na página `/crm/leads`, para que ao atualizar a página ou acessá-la novamente, as etapas selecionadas sejam mantidas.
+Permitir que o usuário defina qual funil deve aparecer como padrão ao abrir a página `/crm/leads`, ao invés de usar a ordem alfabética.
+
+---
+
+### Situação Atual
+
+1. Os funis são ordenados por nome (`ORDER BY nome`) na query do banco de dados
+2. O primeiro funil da lista ordenada é automaticamente selecionado como padrão
+3. Não há nenhuma preferência salva do usuário
 
 ---
 
 ### Solução Proposta
 
-Utilizar o **localStorage** do navegador para salvar a preferência do usuário. Esta é a abordagem mais adequada porque:
+Usar o **localStorage** para salvar a preferência do usuário, seguindo o mesmo padrão já implementado para os filtros de etapas. Esta é a abordagem mais adequada porque:
 
 1. Não requer alterações no banco de dados
-2. A escolha é salva por funil (cada funil pode ter uma configuração diferente)
-3. Os dados persistem mesmo após recarregar a página
-4. Segue o padrão já utilizado no projeto (veja `auth-context.tsx` e `company-context.tsx`)
+2. A preferência é salva por empresa (cada empresa pode ter um funil prioritário diferente)
+3. Segue o padrão já utilizado no projeto
 
 ---
 
@@ -23,7 +29,7 @@ Utilizar o **localStorage** do navegador para salvar a preferência do usuário.
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/pages/crm/leads/index.tsx` | Adicionar lógica para salvar e recuperar filtros de etapas do localStorage |
+| `src/pages/crm/leads/index.tsx` | Adicionar lógica para salvar/carregar funil prioritário e botão para definir prioridade |
 
 ---
 
@@ -31,149 +37,154 @@ Utilizar o **localStorage** do navegador para salvar a preferência do usuário.
 
 #### 1. Estrutura de Armazenamento
 
-A chave do localStorage será dinâmica por funil:
+A chave do localStorage será:
 ```
-crm_leads_etapas_filter_{funilId}
+crm_leads_funil_prioritario_{empresaId}
 ```
 
-O valor armazenado será um objeto JSON:
+O valor será o ID do funil prioritário (string).
+
+#### 2. Funções para Salvar e Carregar Funil Prioritário
+
 ```typescript
-{
-  allStagesSelected: boolean,
-  selectedEtapas: string[]
+const savePriorityFunilToStorage = (empresaId: string, funilId: string) => {
+  if (!empresaId || !funilId) return;
+  const key = `crm_leads_funil_prioritario_${empresaId}`;
+  localStorage.setItem(key, funilId);
+};
+
+const loadPriorityFunilFromStorage = (empresaId: string): string | null => {
+  if (!empresaId) return null;
+  const key = `crm_leads_funil_prioritario_${empresaId}`;
+  return localStorage.getItem(key);
+};
+```
+
+#### 3. Modificar a Lógica de Seleção do Funil Padrão
+
+Na função `fetchAllData`, após carregar os funis, verificar se há um funil prioritário salvo:
+
+```typescript
+// Definir o funil padrão: prioritário ou primeiro da lista
+if (funisFormatados.length > 0) {
+  const funilPrioritarioId = loadPriorityFunilFromStorage(empresaIdToUse);
+  const funilPrioritario = funilPrioritarioId 
+    ? funisFormatados.find(f => f.id === funilPrioritarioId)
+    : null;
+  
+  if (funilPrioritario) {
+    console.log('Usando funil prioritário:', funilPrioritario.id);
+    setSelectedFunilId(funilPrioritario.id);
+  } else {
+    console.log('Usando primeiro funil da lista:', funisFormatados[0].id);
+    setSelectedFunilId(funisFormatados[0].id);
+  }
 }
 ```
 
-#### 2. Função para Salvar Filtros
+#### 4. Adicionar Opção para Definir Funil Prioritário
 
-```typescript
-const saveStageFiltersToStorage = (funilId: string, allSelected: boolean, etapas: string[]) => {
-  if (!funilId) return;
+Adicionar um ícone de estrela ao lado do seletor de funil para que o usuário possa definir o funil atual como prioritário:
+
+```tsx
+{/* Seletor de Funil com opção de definir prioritário */}
+<div className="w-full md:w-[250px] flex gap-2">
+  <Select
+    value={selectedFunilId || ""}
+    onValueChange={handleFunilChange}
+  >
+    <SelectTrigger className="w-full bg-white">
+      <SelectValue placeholder="Selecionar funil" />
+    </SelectTrigger>
+    <SelectContent className="bg-white">
+      {funis.map((funil) => (
+        <SelectItem key={funil.id} value={funil.id}>
+          {funil.nome}
+          {loadPriorityFunilFromStorage(empresaId || '') === funil.id && (
+            <Star className="h-3 w-3 ml-1 inline fill-amber-400 text-amber-400" />
+          )}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
   
-  const key = `crm_leads_etapas_filter_${funilId}`;
-  const value = JSON.stringify({
-    allStagesSelected: allSelected,
-    selectedEtapas: etapas
-  });
-  localStorage.setItem(key, value);
-};
+  <Button
+    variant="ghost"
+    size="icon"
+    onClick={handleSetPriorityFunil}
+    title={isPriorityFunil ? "Remover como funil padrão" : "Definir como funil padrão"}
+  >
+    <Star className={cn(
+      "h-4 w-4",
+      isPriorityFunil ? "fill-amber-400 text-amber-400" : "text-gray-400"
+    )} />
+  </Button>
+</div>
 ```
 
-#### 3. Função para Carregar Filtros
+#### 5. Função para Definir/Remover Funil Prioritário
 
 ```typescript
-const loadStageFiltersFromStorage = (funilId: string): { allStagesSelected: boolean; selectedEtapas: string[] } | null => {
-  if (!funilId) return null;
-  
-  const key = `crm_leads_etapas_filter_${funilId}`;
-  const stored = localStorage.getItem(key);
-  
-  if (!stored) return null;
-  
-  try {
-    return JSON.parse(stored);
-  } catch {
-    return null;
-  }
-};
-```
+const [priorityFunilId, setPriorityFunilId] = useState<string | null>(null);
 
-#### 4. Alterações Necessárias
+const isPriorityFunil = selectedFunilId === priorityFunilId;
 
-**a) Carregar filtros ao mudar de funil (`handleFunilChange`):**
-
-Ao invés de sempre resetar para "todas as etapas", verificar se existe filtro salvo:
-
-```typescript
-const handleFunilChange = (funilId: string) => {
-  console.log('Alterando funil para:', funilId);
-  setSelectedFunilId(funilId);
+const handleSetPriorityFunil = () => {
+  if (!empresaId || !selectedFunilId) return;
   
-  // Tentar carregar filtros salvos para este funil
-  const savedFilters = loadStageFiltersFromStorage(funilId);
-  
-  if (savedFilters) {
-    setAllStagesSelected(savedFilters.allStagesSelected);
-    setSelectedEtapas(savedFilters.selectedEtapas);
+  if (isPriorityFunil) {
+    // Remover prioridade
+    localStorage.removeItem(`crm_leads_funil_prioritario_${empresaId}`);
+    setPriorityFunilId(null);
+    toast.success("Funil padrão removido");
   } else {
-    // Se não há filtros salvos, usar padrão (todas selecionadas)
-    setAllStagesSelected(true);
-    setSelectedEtapas([]);
+    // Definir como prioritário
+    savePriorityFunilToStorage(empresaId, selectedFunilId);
+    setPriorityFunilId(selectedFunilId);
+    toast.success("Funil definido como padrão", {
+      description: "Este funil será aberto automaticamente ao acessar a página."
+    });
   }
 };
 ```
 
-**b) Salvar ao alterar seleção de "Todas as etapas" (`handleAllStagesToggle`):**
+#### 6. Carregar Funil Prioritário na Inicialização
 
-```typescript
-const handleAllStagesToggle = (checked: boolean) => {
-  console.log('Alterando seleção "todas as etapas" para:', checked);
-  setAllStagesSelected(checked);
-  if (checked) {
-    setSelectedEtapas([]);
-  }
-  // Salvar no localStorage
-  saveStageFiltersToStorage(selectedFunilId, checked, checked ? [] : selectedEtapas);
-};
-```
-
-**c) Salvar ao alterar seleção de etapa individual (`handleStageToggle`):**
-
-```typescript
-const handleStageToggle = (etapaId: string, checked: boolean) => {
-  console.log('Alterando seleção da etapa', etapaId, 'para:', checked);
-  
-  let newSelectedEtapas: string[];
-  let newAllStagesSelected: boolean;
-  
-  if (checked) {
-    newSelectedEtapas = [...selectedEtapas, etapaId];
-    newAllStagesSelected = false;
-  } else {
-    newSelectedEtapas = selectedEtapas.filter(id => id !== etapaId);
-    newAllStagesSelected = newSelectedEtapas.length === 0;
-  }
-  
-  setSelectedEtapas(newSelectedEtapas);
-  setAllStagesSelected(newAllStagesSelected);
-  
-  // Salvar no localStorage
-  saveStageFiltersToStorage(selectedFunilId, newAllStagesSelected, newSelectedEtapas);
-};
-```
-
-**d) Carregar filtros na inicialização:**
-
-Adicionar um `useEffect` para carregar os filtros quando o funil for definido pela primeira vez:
+Adicionar um `useEffect` para carregar o funil prioritário salvo quando o empresaId for definido:
 
 ```typescript
 useEffect(() => {
-  if (selectedFunilId) {
-    const savedFilters = loadStageFiltersFromStorage(selectedFunilId);
-    
-    if (savedFilters) {
-      setAllStagesSelected(savedFilters.allStagesSelected);
-      setSelectedEtapas(savedFilters.selectedEtapas);
-    }
+  if (empresaId) {
+    const savedPriorityFunil = loadPriorityFunilFromStorage(empresaId);
+    setPriorityFunilId(savedPriorityFunil);
   }
-}, [selectedFunilId]);
+}, [empresaId]);
 ```
+
+---
+
+### Interface do Usuário
+
+O botão de estrela ficará ao lado do seletor de funil:
+- **Estrela vazia (cinza)**: Clique para definir o funil atual como padrão
+- **Estrela preenchida (amarela)**: O funil atual é o padrão; clique para remover
+
+Os itens no dropdown também mostrarão uma pequena estrela ao lado do funil que está definido como padrão.
 
 ---
 
 ### Fluxo Esperado
 
-1. **Usuário acessa a página** → Sistema carrega os filtros salvos do localStorage (se existirem)
-2. **Usuário altera filtro de etapa** → Sistema salva a nova configuração no localStorage
-3. **Usuário atualiza a página (F5)** → Sistema restaura os filtros salvos
-4. **Usuário muda de funil** → Sistema carrega os filtros específicos daquele funil (ou padrão se não existir)
+1. **Usuário acessa a página** → Sistema verifica se há funil prioritário salvo → Seleciona o funil prioritário ou o primeiro da lista
+2. **Usuário clica na estrela** → Funil atual é definido como prioritário → Toast de confirmação
+3. **Usuário atualiza a página (F5)** → Sistema carrega o funil prioritário automaticamente
+4. **Usuário clica na estrela novamente** → Prioridade é removida → Volta ao comportamento padrão (primeiro da lista)
 
 ---
 
 ### Resultado Esperado
 
-- A escolha do usuário será mantida após atualizar a página
-- Cada funil terá sua própria configuração de filtros
-- O comportamento padrão (todas as etapas selecionadas) continua funcionando para novos funis
-- Não há impacto no banco de dados ou performance
-
+- O usuário pode definir qual funil abre por padrão
+- A preferência é mantida após atualizar a página
+- Visual intuitivo com ícone de estrela
+- Cada empresa pode ter sua própria configuração de funil prioritário
