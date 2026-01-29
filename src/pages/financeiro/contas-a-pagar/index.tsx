@@ -439,9 +439,31 @@ export default function ContasAPagarPage() {
         console.error("Erro ao buscar relacionamentos de antecipação:", relError);
       }
 
-      // 3. Reverter valores das antecipações utilizadas e atualizar status
+      // Fallback: Se não encontrou na tabela de relacionamento, buscar no fluxo de caixa
+      let antecipacoesParaReverter: { antecipacao_id: string; valor_utilizado: number }[] = [];
+
       if (relacionamentos && relacionamentos.length > 0) {
-        for (const rel of relacionamentos) {
+        antecipacoesParaReverter = relacionamentos;
+      } else {
+        // Buscar no fluxo de caixa por registros de antecipação (fallback)
+        const { data: fluxoAntecipacoes, error: fluxoAntError } = await supabase
+          .from("fluxo_caixa")
+          .select("antecipacao_id, valor")
+          .eq("movimentacao_parcela_id", conta.id)
+          .eq("origem", "antecipacao_baixa")
+          .not("antecipacao_id", "is", null);
+
+        if (!fluxoAntError && fluxoAntecipacoes && fluxoAntecipacoes.length > 0) {
+          antecipacoesParaReverter = fluxoAntecipacoes.map(f => ({
+            antecipacao_id: f.antecipacao_id!,
+            valor_utilizado: Math.abs(f.valor)
+          }));
+        }
+      }
+
+      // 3. Reverter valores das antecipações utilizadas e atualizar status
+      if (antecipacoesParaReverter.length > 0) {
+        for (const rel of antecipacoesParaReverter) {
           // Buscar valores atuais da antecipação
           const { data: antecipacao, error: antError } = await supabase
             .from("antecipacoes")
@@ -474,7 +496,7 @@ export default function ContasAPagarPage() {
           }
         }
 
-        // 4. Excluir os relacionamentos da nova tabela
+        // 4. Excluir os relacionamentos da nova tabela (se existirem)
         const { error: deleteRelError } = await supabase
           .from("movimentacoes_parcelas_antecipacoes")
           .delete()
