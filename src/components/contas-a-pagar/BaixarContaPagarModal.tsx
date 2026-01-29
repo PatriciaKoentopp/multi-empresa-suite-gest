@@ -189,7 +189,8 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
   };
 
   async function handleConfirmar() {
-    if (!dataPagamento || (!contaCorrenteId && valorAPagar > 0) || !formaPagamento) {
+    // Conta corrente obrigatória quando há valor a pagar OU quando usar antecipação
+    if (!dataPagamento || !formaPagamento || (!contaCorrenteId && (valorAPagar > 0 || usarAntecipacao))) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
@@ -298,28 +299,54 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
         }
 
         // 4. Inserir registros no fluxo de caixa para cada antecipação utilizada
+        // Gerar PAR de lançamentos: entrada (baixa antecipação) + saída (pagamento)
         for (const antSel of antecipacoesSelecionadas) {
           if (antSel.valor > 0) {
             const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
             
-            const { error: fluxoAntecipacaoError } = await supabase
+            // 4.1 - Lançamento de ENTRADA: Baixa da Antecipação (valor positivo)
+            // Representa o "resgate" do valor antecipado
+            const { error: fluxoBaixaAntecipacaoError } = await supabase
               .from("fluxo_caixa")
               .insert({
                 empresa_id: currentCompany?.id,
+                conta_corrente_id: contaCorrenteId, // AGORA COM CONTA CORRENTE
                 data_movimentacao: format(dataPagamento, "yyyy-MM-dd"),
-                valor: -antSel.valor, // Negativo pois é utilização de antecipação
-                saldo: -antSel.valor,
-                tipo_operacao: "pagar",
-                origem: "antecipacao",
+                valor: antSel.valor, // POSITIVO - entrada de caixa
+                saldo: antSel.valor,
+                tipo_operacao: "pagar", // Mantém o contexto da operação
+                origem: "antecipacao_baixa",
                 movimentacao_parcela_id: conta?.id,
                 movimentacao_id: conta?.movimentacao_id,
                 antecipacao_id: antSel.id,
                 situacao: "nao_conciliado",
-                descricao: `Utilização ${antecipacao?.descricao || 'Antecipação'} - ${conta?.favorecido}`,
+                descricao: `Baixa Antecipação - ${antecipacao?.descricao || 'Antecipação'} - ${conta?.favorecido}`,
                 forma_pagamento: formaPagamento
               });
 
-            if (fluxoAntecipacaoError) throw fluxoAntecipacaoError;
+            if (fluxoBaixaAntecipacaoError) throw fluxoBaixaAntecipacaoError;
+
+            // 4.2 - Lançamento de SAÍDA: Pagamento com Antecipação (valor negativo)
+            // Representa o pagamento efetivo da conta
+            const { error: fluxoPagamentoAntecipacaoError } = await supabase
+              .from("fluxo_caixa")
+              .insert({
+                empresa_id: currentCompany?.id,
+                conta_corrente_id: contaCorrenteId, // COM CONTA CORRENTE
+                data_movimentacao: format(dataPagamento, "yyyy-MM-dd"),
+                valor: -antSel.valor, // NEGATIVO - saída de caixa
+                saldo: -antSel.valor,
+                tipo_operacao: "pagar",
+                origem: "movimentacao",
+                movimentacao_parcela_id: conta?.id,
+                movimentacao_id: conta?.movimentacao_id,
+                antecipacao_id: antSel.id, // Vincula à antecipação
+                situacao: "nao_conciliado",
+                descricao: `Pagamento (Antecipação) - ${descricao || conta?.descricao || conta?.favorecido}`,
+                forma_pagamento: formaPagamento
+              });
+
+            if (fluxoPagamentoAntecipacaoError) throw fluxoPagamentoAntecipacaoError;
           }
         }
       }
@@ -449,7 +476,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
             </div>
           )}
 
-          {valorAPagar > 0 && (
+          {(valorAPagar > 0 || usarAntecipacao) && (
             <div>
               <label className="block text-sm font-medium mb-1">Conta Corrente *</label>
               <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
