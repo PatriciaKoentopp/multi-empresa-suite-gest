@@ -1,198 +1,289 @@
 
 
-## Plano: Criar Relatório de Antecipações em Aberto por Data de Referência
+## Plano: Implementar Lançamentos Contábeis Complementares para Baixa com Antecipações
 
-### Resumo
-Criar um novo relatório em `/relatorios/antecipacoes` que mostra a posição das antecipações em aberto considerando uma data de referência informada pelo usuário. Segue a mesma estrutura visual dos relatórios de Contas a Pagar e Contas a Receber.
+### Resumo do Problema
 
-### Lógica do Relatório
+Atualmente, ao baixar um contas a pagar ou contas a receber utilizando uma antecipação, o sistema:
 
-A consulta considera uma antecipação como "em aberto na data de referência" quando:
+1. Registra a utilização da antecipação no `fluxo_caixa` **sem** `conta_corrente_id`
+2. Registra o pagamento/recebimento efetivo (se houver valor restante) com `conta_corrente_id`
 
-1. A antecipação foi lançada (`data_lancamento`) até a data de referência
-2. A antecipação tinha valor disponível (`valor_total - valor_utilizado > 0`)
-3. O status é diferente de `devolvida`
+Isso cria uma lacuna contábil: a movimentação da antecipação não aparece no extrato da conta corrente, impossibilitando a conciliação bancária completa.
 
-**Importante:** Diferente das contas a pagar/receber, as antecipações não possuem um histórico de quando o valor foi utilizado. O relatório mostrará o saldo disponível atual das antecipações lançadas até a data de referência.
+### Solução Proposta
 
-**Classificação de situação:**
-- **Recebimento**: Antecipações do tipo `receber` (cliente pagou adiantado)
-- **Pagamento**: Antecipações do tipo `pagar` (pagamento adiantado a fornecedor)
+Ao utilizar uma antecipação para baixar contas, gerar **dois lançamentos complementares** que se anulam no saldo, mas documentam a movimentação contábil:
+
+#### Para Contas a Pagar com Antecipação:
+| Lançamento | Tipo | Valor | Descrição |
+|------------|------|-------|-----------|
+| 1 - Baixa da Antecipação | Entrada (+) | +R$ 1.000 | "Baixa Antecipação - Fornecedor X" |
+| 2 - Pagamento da Conta | Saída (-) | -R$ 1.000 | "Pagamento Fornecedor X" |
+
+**Resultado no saldo:** R$ 0,00 (entrada e saída se anulam)
+
+#### Para Contas a Receber com Antecipação:
+| Lançamento | Tipo | Valor | Descrição |
+|------------|------|-------|-----------|
+| 1 - Baixa da Antecipação | Saída (-) | -R$ 1.000 | "Baixa Antecipação - Cliente Y" |
+| 2 - Recebimento da Conta | Entrada (+) | +R$ 1.000 | "Recebimento Cliente Y" |
+
+**Resultado no saldo:** R$ 0,00 (saída e entrada se anulam)
 
 ---
-
-### Arquivos a Criar
-
-| Arquivo | Descrição |
-|---------|-----------|
-| `src/pages/relatorios/antecipacoes/index.tsx` | Página principal do relatório |
-| `src/hooks/useRelatorioAntecipacoes.ts` | Hook para buscar e processar os dados |
 
 ### Arquivos a Alterar
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/pages/relatorios/index.tsx` | Adicionar card do novo relatório |
-| `src/App.tsx` | Adicionar rota `/relatorios/antecipacoes` |
-
----
-
-### Estrutura da Página
-
-**Filtros:**
-- Campo de data: "Data de Referência" (datepicker, padrão = hoje)
-- Botão "Gerar Relatório"
-
-**Cards de Resumo:**
-- Total de Antecipações em Aberto (quantidade)
-- Valor Total Disponível
-- Antecipações de Recebimento (clientes)
-- Antecipações de Pagamento (fornecedores)
-
-**Tabela:**
-| Data | Tipo | Favorecido | Descrição | Valor Total | Valor Utilizado | Valor Disponível | Status |
-|------|------|------------|-----------|-------------|-----------------|------------------|--------|
-| 15/12/2025 | Recebimento | Cliente X | Adiantamento projeto | R$ 5.000 | R$ 2.000 | R$ 3.000 | Ativa |
-| 10/12/2025 | Pagamento | Fornecedor Y | Adiantamento serviço | R$ 1.000 | R$ 0 | R$ 1.000 | Ativa |
-
-**Opções:**
-- Exportar para Excel
+| Arquivo | Descrição da Alteração |
+|---------|------------------------|
+| `src/components/contas-a-pagar/BaixarContaPagarModal.tsx` | Modificar lógica de inserção no fluxo_caixa para gerar par de lançamentos |
+| `src/components/contas-a-receber/BaixarContaReceberModal.tsx` | Modificar lógica de inserção no fluxo_caixa para gerar par de lançamentos |
 
 ---
 
 ### Detalhes Técnicos
 
-**Interface do Hook:**
+#### Alteração no BaixarContaPagarModal.tsx (linhas 300-324)
 
+**Código Atual:**
 ```typescript
-export interface AntecipacaoRelatorio {
-  id: string;
-  favorecido: string;
-  descricao: string;
-  dataLancamento: Date;
-  tipoOperacao: 'receber' | 'pagar';
-  valorTotal: number;
-  valorUtilizado: number;
-  valorDisponivel: number;
-  status: 'ativa' | 'utilizada';
-  numeroDocumento: string;
-}
-
-export interface ResumoAntecipacoes {
-  totalAntecipacoes: number;
-  valorTotalDisponivel: number;
-  antecipacoesRecebimento: number;
-  valorRecebimento: number;
-  antecipacoesPagamento: number;
-  valorPagamento: number;
-}
-```
-
-**Query principal:**
-
-```typescript
-// Buscar antecipações lançadas até a data de referência
-const { data: antecipacoes, error } = await supabase
-  .from('antecipacoes')
-  .select(`
-    id,
-    data_lancamento,
-    tipo_operacao,
-    valor_total,
-    valor_utilizado,
-    descricao,
-    numero_documento,
-    status,
-    favorecido_id
-  `)
-  .eq('empresa_id', currentCompany.id)
-  .lte('data_lancamento', dataReferenciaStr)
-  .neq('status', 'devolvida'); // Excluir devolvidas
-
-// Filtrar apenas as que têm valor disponível
-const antecipacoesEmAberto = antecipacoes.filter(ant => {
-  const valorDisponivel = Number(ant.valor_total) - Number(ant.valor_utilizado);
-  return valorDisponivel > 0;
-});
-```
-
-**Página index.tsx:**
-
-Mesma estrutura visual dos relatórios de Contas a Pagar/Receber:
-- Header com título e botão voltar
-- Card de filtros com datepicker
-- Cards de resumo (azul para recebimento, vermelho para pagamento)
-- Tabela com os dados e badges coloridos
-- Exportação para Excel
-
----
-
-### Alterações no relatorios/index.tsx
-
-Adicionar novo card após "contasReceber":
-
-```typescript
-{
-  id: "antecipacoes",
-  title: "Relatório de Antecipações",
-  description: "Posição das antecipações em aberto em uma data específica",
-  icon: <Wallet className="h-8 w-8 text-purple-500" />,
-  route: "/relatorios/antecipacoes"
+// 4. Inserir registros no fluxo de caixa para cada antecipação utilizada
+for (const antSel of antecipacoesSelecionadas) {
+  if (antSel.valor > 0) {
+    const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
+    
+    const { error: fluxoAntecipacaoError } = await supabase
+      .from("fluxo_caixa")
+      .insert({
+        empresa_id: currentCompany?.id,
+        data_movimentacao: format(dataPagamento, "yyyy-MM-dd"),
+        valor: -antSel.valor, // Negativo pois é utilização de antecipação
+        saldo: -antSel.valor,
+        tipo_operacao: "pagar",
+        origem: "antecipacao",
+        movimentacao_parcela_id: conta?.id,
+        movimentacao_id: conta?.movimentacao_id,
+        antecipacao_id: antSel.id,
+        situacao: "nao_conciliado",
+        descricao: `Utilização ${antecipacao?.descricao || 'Antecipação'} - ${conta?.favorecido}`,
+        forma_pagamento: formaPagamento
+        // SEM conta_corrente_id
+      });
+  }
 }
 ```
 
-Atualizar a condição de cards ativos para incluir `antecipacoes`.
+**Novo Código (substituir):**
+```typescript
+// 4. Inserir registros no fluxo de caixa para cada antecipação utilizada
+// Gerar PAR de lançamentos: entrada (baixa antecipação) + saída (pagamento)
+for (const antSel of antecipacoesSelecionadas) {
+  if (antSel.valor > 0) {
+    const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
+    
+    // 4.1 - Lançamento de ENTRADA: Baixa da Antecipação (valor positivo)
+    // Representa o "resgate" do valor antecipado
+    const { error: fluxoBaixaAntecipacaoError } = await supabase
+      .from("fluxo_caixa")
+      .insert({
+        empresa_id: currentCompany?.id,
+        conta_corrente_id: contaCorrenteId, // AGORA COM CONTA CORRENTE
+        data_movimentacao: format(dataPagamento, "yyyy-MM-dd"),
+        valor: antSel.valor, // POSITIVO - entrada de caixa
+        saldo: antSel.valor,
+        tipo_operacao: "pagar", // Mantém o contexto da operação
+        origem: "antecipacao_baixa",
+        movimentacao_parcela_id: conta?.id,
+        movimentacao_id: conta?.movimentacao_id,
+        antecipacao_id: antSel.id,
+        situacao: "nao_conciliado",
+        descricao: `Baixa Antecipação - ${antecipacao?.descricao || 'Antecipação'} - ${conta?.favorecido}`,
+        forma_pagamento: formaPagamento
+      });
+
+    if (fluxoBaixaAntecipacaoError) throw fluxoBaixaAntecipacaoError;
+
+    // 4.2 - Lançamento de SAÍDA: Pagamento com Antecipação (valor negativo)
+    // Representa o pagamento efetivo da conta
+    const { error: fluxoPagamentoAntecipacaoError } = await supabase
+      .from("fluxo_caixa")
+      .insert({
+        empresa_id: currentCompany?.id,
+        conta_corrente_id: contaCorrenteId, // COM CONTA CORRENTE
+        data_movimentacao: format(dataPagamento, "yyyy-MM-dd"),
+        valor: -antSel.valor, // NEGATIVO - saída de caixa
+        saldo: -antSel.valor,
+        tipo_operacao: "pagar",
+        origem: "movimentacao",
+        movimentacao_parcela_id: conta?.id,
+        movimentacao_id: conta?.movimentacao_id,
+        antecipacao_id: antSel.id, // Vincula à antecipação
+        situacao: "nao_conciliado",
+        descricao: `Pagamento (Antecipação) - ${descricao || conta?.descricao || conta?.favorecido}`,
+        forma_pagamento: formaPagamento
+      });
+
+    if (fluxoPagamentoAntecipacaoError) throw fluxoPagamentoAntecipacaoError;
+  }
+}
+```
+
+#### Alteração no BaixarContaReceberModal.tsx (linhas 296-320)
+
+**Código Atual:**
+```typescript
+// 4. Inserir registros no fluxo de caixa para cada antecipação utilizada
+for (const antSel of antecipacoesSelecionadas) {
+  if (antSel.valor > 0) {
+    const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
+    
+    const { error: fluxoAntecipacaoError } = await supabase
+      .from("fluxo_caixa")
+      .insert({
+        empresa_id: currentCompany?.id,
+        data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
+        valor: -antSel.valor, // Negativo pois é utilização de antecipação
+        saldo: -antSel.valor,
+        tipo_operacao: "receber",
+        origem: "antecipacao",
+        movimentacao_parcela_id: conta?.id,
+        movimentacao_id: conta?.movimentacao_id,
+        antecipacao_id: antSel.id,
+        situacao: "nao_conciliado",
+        descricao: `Utilização ${antecipacao?.descricao || 'Antecipação'} - ${conta?.cliente}`,
+        forma_pagamento: formaPagamento
+        // SEM conta_corrente_id
+      });
+  }
+}
+```
+
+**Novo Código (substituir):**
+```typescript
+// 4. Inserir registros no fluxo de caixa para cada antecipação utilizada
+// Gerar PAR de lançamentos: saída (baixa antecipação) + entrada (recebimento)
+for (const antSel of antecipacoesSelecionadas) {
+  if (antSel.valor > 0) {
+    const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
+    
+    // 4.1 - Lançamento de SAÍDA: Baixa da Antecipação (valor negativo)
+    // Representa a "devolução" do valor antecipado ao cliente
+    const { error: fluxoBaixaAntecipacaoError } = await supabase
+      .from("fluxo_caixa")
+      .insert({
+        empresa_id: currentCompany?.id,
+        conta_corrente_id: contaCorrenteId, // AGORA COM CONTA CORRENTE
+        data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
+        valor: -antSel.valor, // NEGATIVO - saída de caixa
+        saldo: -antSel.valor,
+        tipo_operacao: "receber", // Mantém o contexto da operação
+        origem: "antecipacao_baixa",
+        movimentacao_parcela_id: conta?.id,
+        movimentacao_id: conta?.movimentacao_id,
+        antecipacao_id: antSel.id,
+        situacao: "nao_conciliado",
+        descricao: `Baixa Antecipação - ${antecipacao?.descricao || 'Antecipação'} - ${conta?.cliente}`,
+        forma_pagamento: formaPagamento
+      });
+
+    if (fluxoBaixaAntecipacaoError) throw fluxoBaixaAntecipacaoError;
+
+    // 4.2 - Lançamento de ENTRADA: Recebimento com Antecipação (valor positivo)
+    // Representa o recebimento efetivo da conta
+    const { error: fluxoRecebimentoAntecipacaoError } = await supabase
+      .from("fluxo_caixa")
+      .insert({
+        empresa_id: currentCompany?.id,
+        conta_corrente_id: contaCorrenteId, // COM CONTA CORRENTE
+        data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
+        valor: antSel.valor, // POSITIVO - entrada de caixa
+        saldo: antSel.valor,
+        tipo_operacao: "receber",
+        origem: "movimentacao",
+        movimentacao_parcela_id: conta?.id,
+        movimentacao_id: conta?.movimentacao_id,
+        antecipacao_id: antSel.id, // Vincula à antecipação
+        situacao: "nao_conciliado",
+        descricao: `Recebimento (Antecipação) - ${descricao || conta?.descricao || conta?.cliente}`,
+        forma_pagamento: formaPagamento
+      });
+
+    if (fluxoRecebimentoAntecipacaoError) throw fluxoRecebimentoAntecipacaoError;
+  }
+}
+```
 
 ---
 
-### Alterações no App.tsx
+### Validação: Conta Corrente Obrigatória
 
-Adicionar nova rota:
+**Alteração adicional necessária:** Quando usar antecipação, a conta corrente deve ser obrigatória para gerar os lançamentos corretamente.
+
+#### BaixarContaPagarModal.tsx - Ajuste na validação:
 
 ```typescript
-<Route path="/relatorios/antecipacoes" element={<RelatorioAntecipacoes />} />
+// Atual
+if (!dataPagamento || (!contaCorrenteId && valorAPagar > 0) || !formaPagamento) {
+
+// Novo - conta corrente obrigatória quando usar antecipação
+if (!dataPagamento || !formaPagamento || (!contaCorrenteId && (valorAPagar > 0 || usarAntecipacao))) {
 ```
 
-Com o import correspondente:
+#### BaixarContaReceberModal.tsx - Ajuste na validação:
 
 ```typescript
-import RelatorioAntecipacoes from "./pages/relatorios/antecipacoes";
+// Atual  
+if (!dataRecebimento || (!contaCorrenteId && valorAReceber > 0) || !formaPagamento) {
+
+// Novo - conta corrente obrigatória quando usar antecipação
+if (!dataRecebimento || !formaPagamento || (!contaCorrenteId && (valorAReceber > 0 || usarAntecipacao))) {
+```
+
+#### UI: Mostrar campo conta corrente quando usar antecipação:
+
+```typescript
+// Alterar a condição de exibição do campo Conta Corrente
+// De: {valorAPagar > 0 && (
+// Para: {(valorAPagar > 0 || usarAntecipacao) && (
 ```
 
 ---
 
-### Estrutura de Pastas Final
+### Exemplo Prático de Resultado
 
-```
-src/
-├── pages/
-│   └── relatorios/
-│       ├── contas-a-pagar/
-│       │   └── index.tsx
-│       ├── contas-a-receber/
-│       │   └── index.tsx
-│       └── antecipacoes/
-│           └── index.tsx
-├── hooks/
-│   ├── useRelatorioContasPagar.ts
-│   ├── useRelatorioContasReceber.ts
-│   └── useRelatorioAntecipacoes.ts
-```
+**Cenário:** Baixar conta a pagar de R$ 1.500,00 usando R$ 1.000,00 de antecipação
+
+**Lançamentos gerados no fluxo_caixa:**
+
+| Data | Descrição | Valor | Conta Corrente |
+|------|-----------|-------|----------------|
+| 29/01/2026 | Baixa Antecipação - Adiantamento Fornecedor X | +R$ 1.000,00 | Banco ABC |
+| 29/01/2026 | Pagamento (Antecipação) - Compra materiais | -R$ 1.000,00 | Banco ABC |
+| 29/01/2026 | Pagamento Fornecedor X - Compra materiais | -R$ 500,00 | Banco ABC |
+
+**Efeito no saldo:** -R$ 500,00 (apenas o valor efetivamente pago)
 
 ---
 
-### Interface Visual
+### Benefícios da Implementação
 
-A página seguirá o padrão visual dos outros relatórios:
-- Header com título "Relatório de Antecipações" e botão voltar
-- Card de filtros com datepicker para a data de referência
-- 4 cards de resumo:
-  - Total em Aberto (quantidade)
-  - Valor Total Disponível
-  - Recebimentos (verde)
-  - Pagamentos (azul)
-- Tabela com colunas: Data, Tipo, Favorecido, Descrição, Valor Total, Valor Utilizado, Valor Disponível, Status
-- Badges coloridos para tipo (Recebimento = verde, Pagamento = azul) e status (Ativa = azul, Utilizada = verde)
-- Botão para exportar Excel
-- Rodapé com totalizadores
+1. **Rastreabilidade completa**: Todas as movimentações aparecem no extrato da conta corrente
+2. **Conciliação bancária**: Possibilita reconciliar lançamentos com extratos bancários
+3. **Auditoria contábil**: Documentação clara do fluxo de recursos
+4. **Saldo correto**: Os lançamentos se anulam, não afetando o saldo real
+5. **Consistência**: Mantém a integridade do fluxo de caixa
+
+---
+
+### Resumo das Alterações
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `BaixarContaPagarModal.tsx` | Substituir lógica de inserção única por par de lançamentos (entrada/saída) |
+| `BaixarContaPagarModal.tsx` | Tornar conta corrente obrigatória quando usar antecipação |
+| `BaixarContaPagarModal.tsx` | Mostrar campo conta corrente quando usar antecipação |
+| `BaixarContaReceberModal.tsx` | Substituir lógica de inserção única por par de lançamentos (saída/entrada) |
+| `BaixarContaReceberModal.tsx` | Tornar conta corrente obrigatória quando usar antecipação |
+| `BaixarContaReceberModal.tsx` | Mostrar campo conta corrente quando usar antecipação |
 
