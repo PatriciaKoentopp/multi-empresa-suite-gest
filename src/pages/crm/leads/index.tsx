@@ -19,7 +19,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Filter, Search, Cake, Loader2 } from "lucide-react";
+import { Plus, Filter, Search, Cake, Loader2, Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { LeadCard } from "./lead-card";
 import { LeadFormModal } from "./lead-form-modal";
 import { Origem, Usuario } from "@/types"; 
@@ -52,6 +53,7 @@ export default function LeadsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [gerandoLeadsAniversarios, setGerandoLeadsAniversarios] = useState(false);
   const [cameFromAgenda, setCameFromAgenda] = useState(false);
+  const [priorityFunilId, setPriorityFunilId] = useState<string | null>(null);
   
   const navigate = useNavigate();
 
@@ -221,10 +223,21 @@ export default function LeadsPage() {
       console.log('Funis formatados:', funisFormatados?.length);
       setFunis(funisFormatados);
       
-      // Definir o funil padrão como o primeiro da lista
+      // Definir o funil padrão: prioritário ou primeiro da lista
       if (funisFormatados.length > 0) {
-        console.log('Definindo funil padrão:', funisFormatados[0].id);
-        setSelectedFunilId(funisFormatados[0].id);
+        const funilPrioritarioId = loadPriorityFunilFromStorage(empresaIdToUse);
+        const funilPrioritario = funilPrioritarioId 
+          ? funisFormatados.find(f => f.id === funilPrioritarioId)
+          : null;
+        
+        if (funilPrioritario) {
+          console.log('Usando funil prioritário:', funilPrioritario.id);
+          setSelectedFunilId(funilPrioritario.id);
+          setPriorityFunilId(funilPrioritarioId);
+        } else {
+          console.log('Usando primeiro funil da lista:', funisFormatados[0].id);
+          setSelectedFunilId(funisFormatados[0].id);
+        }
       } else {
         console.log('Nenhum funil encontrado');
       }
@@ -693,6 +706,47 @@ export default function LeadsPage() {
     }
   };
 
+  // Funções para salvar e carregar funil prioritário do localStorage
+  const savePriorityFunilToStorage = (empresaIdValue: string, funilId: string) => {
+    if (!empresaIdValue || !funilId) return;
+    const key = `crm_leads_funil_prioritario_${empresaIdValue}`;
+    localStorage.setItem(key, funilId);
+  };
+
+  const loadPriorityFunilFromStorage = (empresaIdValue: string): string | null => {
+    if (!empresaIdValue) return null;
+    const key = `crm_leads_funil_prioritario_${empresaIdValue}`;
+    return localStorage.getItem(key);
+  };
+
+  const isPriorityFunil = selectedFunilId === priorityFunilId;
+
+  const handleSetPriorityFunil = () => {
+    if (!empresaId || !selectedFunilId) return;
+    
+    if (isPriorityFunil) {
+      // Remover prioridade
+      localStorage.removeItem(`crm_leads_funil_prioritario_${empresaId}`);
+      setPriorityFunilId(null);
+      toast.success("Funil padrão removido");
+    } else {
+      // Definir como prioritário
+      savePriorityFunilToStorage(empresaId, selectedFunilId);
+      setPriorityFunilId(selectedFunilId);
+      toast.success("Funil definido como padrão", {
+        description: "Este funil será aberto automaticamente ao acessar a página."
+      });
+    }
+  };
+
+  // Carregar funil prioritário quando empresaId for definido
+  useEffect(() => {
+    if (empresaId) {
+      const savedPriorityFunil = loadPriorityFunilFromStorage(empresaId);
+      setPriorityFunilId(savedPriorityFunil);
+    }
+  }, [empresaId]);
+
   // Carregar filtros salvos quando o funil é selecionado pela primeira vez
   useEffect(() => {
     if (selectedFunilId) {
@@ -832,8 +886,8 @@ export default function LeadsPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            {/* Seletor de Funil */}
-            <div className="w-full md:w-[250px]">
+            {/* Seletor de Funil com opção de definir prioritário */}
+            <div className="w-full md:w-[250px] flex gap-2">
               <Select
                 value={selectedFunilId || ""}
                 onValueChange={handleFunilChange}
@@ -844,16 +898,34 @@ export default function LeadsPage() {
                 <SelectContent className="bg-white">
                   {funis.map((funil) => (
                     <SelectItem key={funil.id} value={funil.id}>
-                      {funil.nome}
-                      {!funil.ativo && (
-                        <Badge variant="secondary" className="ml-2">
-                          Inativo
-                        </Badge>
-                      )}
+                      <span className="flex items-center">
+                        {funil.nome}
+                        {priorityFunilId === funil.id && (
+                          <Star className="h-3 w-3 ml-1 fill-amber-400 text-amber-400" />
+                        )}
+                        {!funil.ativo && (
+                          <Badge variant="secondary" className="ml-2">
+                            Inativo
+                          </Badge>
+                        )}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSetPriorityFunil}
+                title={isPriorityFunil ? "Remover como funil padrão" : "Definir como funil padrão"}
+                className="shrink-0"
+              >
+                <Star className={cn(
+                  "h-4 w-4",
+                  isPriorityFunil ? "fill-amber-400 text-amber-400" : "text-gray-400"
+                )} />
+              </Button>
             </div>
 
             {/* Seletor de Status */}
