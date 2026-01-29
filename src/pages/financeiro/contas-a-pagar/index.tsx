@@ -439,23 +439,33 @@ export default function ContasAPagarPage() {
         console.error("Erro ao buscar relacionamentos de antecipação:", relError);
       }
 
-      // 3. Reverter valores das antecipações utilizadas
+      // 3. Reverter valores das antecipações utilizadas e atualizar status
       if (relacionamentos && relacionamentos.length > 0) {
         for (const rel of relacionamentos) {
-          // Buscar valor atual utilizado da antecipação
+          // Buscar valores atuais da antecipação
           const { data: antecipacao, error: antError } = await supabase
             .from("antecipacoes")
-            .select("valor_utilizado")
+            .select("valor_total, valor_utilizado, status")
             .eq("id", rel.antecipacao_id)
             .single();
 
           if (!antError && antecipacao) {
             // Subtrair o valor que estava sendo utilizado
-            const novoValorUtilizado = antecipacao.valor_utilizado - rel.valor_utilizado;
+            const novoValorUtilizado = Math.max(0, antecipacao.valor_utilizado - rel.valor_utilizado);
+            const novoValorDisponivel = antecipacao.valor_total - novoValorUtilizado;
+            
+            // Determinar novo status: se tem saldo disponível, deve ser "ativa"
+            // Só muda para "ativa" se estava "utilizada" (não mexe em "devolvida" ou "cancelada")
+            const novoStatus = (novoValorDisponivel > 0 && antecipacao.status === 'utilizada') 
+              ? 'ativa' 
+              : antecipacao.status;
             
             const { error: updateAntError } = await supabase
               .from("antecipacoes")
-              .update({ valor_utilizado: Math.max(0, novoValorUtilizado) })
+              .update({ 
+                valor_utilizado: novoValorUtilizado,
+                status: novoStatus
+              })
               .eq("id", rel.antecipacao_id);
 
             if (updateAntError) {
