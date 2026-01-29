@@ -666,11 +666,60 @@ export default function LeadsPage() {
     handleMoveLead(leadId, targetEtapaId);
   };
 
+  // Funções para salvar e carregar filtros de etapas do localStorage
+  const saveStageFiltersToStorage = (funilId: string, allSelected: boolean, etapas: string[]) => {
+    if (!funilId) return;
+    
+    const key = `crm_leads_etapas_filter_${funilId}`;
+    const value = JSON.stringify({
+      allStagesSelected: allSelected,
+      selectedEtapas: etapas
+    });
+    localStorage.setItem(key, value);
+  };
+
+  const loadStageFiltersFromStorage = (funilId: string): { allStagesSelected: boolean; selectedEtapas: string[] } | null => {
+    if (!funilId) return null;
+    
+    const key = `crm_leads_etapas_filter_${funilId}`;
+    const stored = localStorage.getItem(key);
+    
+    if (!stored) return null;
+    
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return null;
+    }
+  };
+
+  // Carregar filtros salvos quando o funil é selecionado pela primeira vez
+  useEffect(() => {
+    if (selectedFunilId) {
+      const savedFilters = loadStageFiltersFromStorage(selectedFunilId);
+      
+      if (savedFilters) {
+        setAllStagesSelected(savedFilters.allStagesSelected);
+        setSelectedEtapas(savedFilters.selectedEtapas);
+      }
+    }
+  }, [selectedFunilId]);
+
   const handleFunilChange = (funilId: string) => {
     console.log('Alterando funil para:', funilId);
     setSelectedFunilId(funilId);
-    setAllStagesSelected(true);
-    setSelectedEtapas([]);
+    
+    // Tentar carregar filtros salvos para este funil
+    const savedFilters = loadStageFiltersFromStorage(funilId);
+    
+    if (savedFilters) {
+      setAllStagesSelected(savedFilters.allStagesSelected);
+      setSelectedEtapas(savedFilters.selectedEtapas);
+    } else {
+      // Se não há filtros salvos, usar padrão (todas selecionadas)
+      setAllStagesSelected(true);
+      setSelectedEtapas([]);
+    }
   };
 
   const handleStatusChange = (status: string) => {
@@ -684,19 +733,29 @@ export default function LeadsPage() {
     if (checked) {
       setSelectedEtapas([]);
     }
+    // Salvar no localStorage
+    saveStageFiltersToStorage(selectedFunilId, checked, checked ? [] : selectedEtapas);
   };
   
   const handleStageToggle = (etapaId: string, checked: boolean) => {
     console.log('Alterando seleção da etapa', etapaId, 'para:', checked);
+    
+    let newSelectedEtapas: string[];
+    let newAllStagesSelected: boolean;
+    
     if (checked) {
-      setSelectedEtapas(prev => [...prev, etapaId]);
-      setAllStagesSelected(false);
+      newSelectedEtapas = [...selectedEtapas, etapaId];
+      newAllStagesSelected = false;
     } else {
-      setSelectedEtapas(prev => prev.filter(id => id !== etapaId));
-      if (selectedEtapas.filter(id => id !== etapaId).length === 0) {
-        setAllStagesSelected(true);
-      }
+      newSelectedEtapas = selectedEtapas.filter(id => id !== etapaId);
+      newAllStagesSelected = newSelectedEtapas.length === 0;
     }
+    
+    setSelectedEtapas(newSelectedEtapas);
+    setAllStagesSelected(newAllStagesSelected);
+    
+    // Salvar no localStorage
+    saveStageFiltersToStorage(selectedFunilId, newAllStagesSelected, newSelectedEtapas);
   };
 
   // Obter apenas etapas do funil selecionado para o filtro
