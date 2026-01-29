@@ -1,24 +1,75 @@
 
 
-## Plano: Corrigir Reversão do Status da Antecipação ao Desfazer Baixa
+## Plano: Corrigir Reversão de Antecipações ao Desfazer Baixa
 
 ### Problema Identificado
 
-Ao desfazer a baixa de um contas a pagar ou receber que utilizou antecipação:
-- O `valor_utilizado` da antecipação é corretamente reduzido
-- Porém o `status` permanece como "utilizada" quando deveria voltar para "ativa"
+Após análise detalhada, identifiquei **dois problemas**:
 
-### Causa Raiz
+#### 1. Tabela sem RLS habilitado
+A tabela `movimentacoes_parcelas_antecipacoes` **não tem RLS habilitado** (`rls_enabled: false`). Quando o cliente Supabase tenta consultar esta tabela, a query falha silenciosamente ou retorna vazio, impedindo que os relacionamentos sejam encontrados durante o processo de desfazer baixa.
 
-O código atual em `handleDesfazerBaixa` reverte apenas o `valor_utilizado`, mas não verifica/atualiza o status da antecipação. A lógica de atualização automática de status existe na página de antecipações, mas não é chamada após desfazer a baixa.
+#### 2. Dados inconsistentes no banco
+Os dados atuais mostram antecipações com `valor_utilizado` maior que `valor_total`:
+- Antecipação `4af5a1df...`: valor_total = 957.64, valor_utilizado = **1915.28** (dobro!)
+- Antecipação `572e6b7b...`: valor_total = 6970.96, valor_utilizado = **13941.92** (dobro!)
+
+Isso indica que o valor está sendo incrementado duas vezes durante a baixa.
 
 ---
 
-### Solução Proposta
+### Solução
 
-Modificar a função `handleDesfazerBaixa` em ambos os arquivos para:
-1. Após reverter o `valor_utilizado`, verificar se a antecipação deve voltar para status "ativa"
-2. Atualizar o status da antecipação quando `valor_disponivel > 0`
+#### 1. Migração SQL - Habilitar RLS e criar políticas
+
+```sql
+-- 1. Habilitar RLS na tabela
+ALTER TABLE movimentacoes_parcelas_antecipacoes ENABLE ROW LEVEL SECURITY;
+
+-- 2. Criar políticas de acesso baseadas na parcela (que está vinculada à movimentação → empresa)
+CREATE POLICY "Users can view relacionamentos from their company" 
+  ON movimentacoes_parcelas_antecipacoes 
+  FOR SELECT 
+  USING (
+    movimentacao_parcela_id IN (
+      SELECT mp.id FROM movimentacoes_parcelas mp
+      JOIN movimentacoes m ON m.id = mp.movimentacao_id
+      WHERE m.empresa_id = get_user_company_id()
+    )
+  );
+
+CREATE POLICY "Users can insert relacionamentos for their company" 
+  ON movimentacoes_parcelas_antecipacoes 
+  FOR INSERT 
+  WITH CHECK (
+    movimentacao_parcela_id IN (
+      SELECT mp.id FROM movimentacoes_parcelas mp
+      JOIN movimentacoes m ON m.id = mp.movimentacao_id
+      WHERE m.empresa_id = get_user_company_id()
+    )
+  );
+
+CREATE POLICY "Users can delete relacionamentos from their company" 
+  ON movimentacoes_parcelas_antecipacoes 
+  FOR DELETE 
+  USING (
+    movimentacao_parcela_id IN (
+      SELECT mp.id FROM movimentacoes_parcelas mp
+      JOIN movimentacoes m ON m.id = mp.movimentacao_id
+      WHERE m.empresa_id = get_user_company_id()
+    )
+  );
+```
+
+#### 2. Correção dos dados inconsistentes
+
+```sql
+-- Corrigir antecipações com valor_utilizado duplicado
+UPDATE antecipacoes 
+SET valor_utilizado = valor_total,
+    status = 'utilizada'
+WHERE valor_utilizado > valor_total;
+```
 
 ---
 
@@ -26,124 +77,16 @@ Modificar a função `handleDesfazerBaixa` em ambos os arquivos para:
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/pages/financeiro/contas-a-pagar/index.tsx` | Adicionar lógica para reverter status da antecipação para "ativa" |
-| `src/pages/financeiro/contas-a-receber/index.tsx` | Adicionar lógica para reverter status da antecipação para "ativa" |
+| Migração SQL | Habilitar RLS e criar políticas na tabela `movimentacoes_parcelas_antecipacoes` |
+| Migração SQL | Corrigir dados inconsistentes de antecipações |
 
 ---
 
-### Detalhes Técnicos
+### Resultado Esperado
 
-#### Alteração no contas-a-pagar/index.tsx (linhas 442-465)
-
-**Código Atual:**
-```typescript
-// 3. Reverter valores das antecipações utilizadas
-if (relacionamentos && relacionamentos.length > 0) {
-  for (const rel of relacionamentos) {
-    // Buscar valor atual utilizado da antecipação
-    const { data: antecipacao, error: antError } = await supabase
-      .from("antecipacoes")
-      .select("valor_utilizado")
-      .eq("id", rel.antecipacao_id)
-      .single();
-
-    if (!antError && antecipacao) {
-      // Subtrair o valor que estava sendo utilizado
-      const novoValorUtilizado = antecipacao.valor_utilizado - rel.valor_utilizado;
-      
-      const { error: updateAntError } = await supabase
-        .from("antecipacoes")
-        .update({ valor_utilizado: Math.max(0, novoValorUtilizado) })
-        .eq("id", rel.antecipacao_id);
-
-      if (updateAntError) {
-        console.error("Erro ao reverter antecipação:", updateAntError);
-      }
-    }
-  }
-  // ... resto do código
-}
-```
-
-**Novo Código (substituir):**
-```typescript
-// 3. Reverter valores das antecipações utilizadas e atualizar status
-if (relacionamentos && relacionamentos.length > 0) {
-  for (const rel of relacionamentos) {
-    // Buscar valores atuais da antecipação
-    const { data: antecipacao, error: antError } = await supabase
-      .from("antecipacoes")
-      .select("valor_total, valor_utilizado, status")
-      .eq("id", rel.antecipacao_id)
-      .single();
-
-    if (!antError && antecipacao) {
-      // Subtrair o valor que estava sendo utilizado
-      const novoValorUtilizado = Math.max(0, antecipacao.valor_utilizado - rel.valor_utilizado);
-      const novoValorDisponivel = antecipacao.valor_total - novoValorUtilizado;
-      
-      // Determinar novo status: se tem saldo disponível, deve ser "ativa"
-      // Só muda para "ativa" se estava "utilizada" (não mexe em "devolvida" ou "cancelada")
-      const novoStatus = (novoValorDisponivel > 0 && antecipacao.status === 'utilizada') 
-        ? 'ativa' 
-        : antecipacao.status;
-      
-      const { error: updateAntError } = await supabase
-        .from("antecipacoes")
-        .update({ 
-          valor_utilizado: novoValorUtilizado,
-          status: novoStatus
-        })
-        .eq("id", rel.antecipacao_id);
-
-      if (updateAntError) {
-        console.error("Erro ao reverter antecipação:", updateAntError);
-      }
-    }
-  }
-  // ... resto do código continua igual
-}
-```
-
-#### Alteração no contas-a-receber/index.tsx (linhas 420-443)
-
-Aplicar a mesma lógica descrita acima para o arquivo de contas a receber.
-
----
-
-### Lógica da Correção
-
-1. **Buscar dados completos**: Agora buscamos `valor_total`, `valor_utilizado` e `status`
-2. **Calcular novo valor disponível**: `novoValorDisponivel = valor_total - novoValorUtilizado`
-3. **Determinar novo status**: 
-   - Se `novoValorDisponivel > 0` E status atual é "utilizada" → muda para "ativa"
-   - Caso contrário → mantém status atual (não mexe em "devolvida" ou "cancelada")
-4. **Atualizar em única operação**: Atualiza `valor_utilizado` e `status` juntos
-
----
-
-### Exemplo Prático
-
-**Cenário:** Antecipação de R$ 1.000,00 que foi 100% utilizada (status "utilizada")
-
-**Antes de desfazer:**
-- `valor_total`: R$ 1.000,00
-- `valor_utilizado`: R$ 1.000,00
-- `valor_disponivel`: R$ 0,00
-- `status`: "utilizada"
-
-**Após desfazer baixa que usou R$ 1.000,00:**
-- `valor_total`: R$ 1.000,00
-- `valor_utilizado`: R$ 0,00
-- `valor_disponivel`: R$ 1.000,00
-- `status`: "ativa" ✓
-
----
-
-### Resumo das Alterações
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `contas-a-pagar/index.tsx` | Buscar `valor_total` e `status`, calcular `novoValorDisponivel`, atualizar status para "ativa" quando aplicável |
-| `contas-a-receber/index.tsx` | Mesma alteração aplicada para contas a receber |
+Após a migração:
+1. A query do `handleDesfazerBaixa` conseguirá buscar os relacionamentos corretamente
+2. O valor utilizado da antecipação será revertido
+3. O status da antecipação voltará para "ativa" quando apropriado
+4. Os dados corrompidos serão corrigidos
 
