@@ -1,145 +1,162 @@
 
 
-## Plano: Criar Relatorio de Contas a Receber em Aberto por Data de Referencia
+## Plano: Criar Relatório de Antecipações em Aberto por Data de Referência
 
 ### Resumo
-Criar um novo relatorio em `/relatorios/contas-a-receber` que mostra a posicao das contas a receber em aberto considerando uma data de referencia informada pelo usuario. Segue a mesma logica do Relatorio de Contas a Pagar.
+Criar um novo relatório em `/relatorios/antecipacoes` que mostra a posição das antecipações em aberto considerando uma data de referência informada pelo usuário. Segue a mesma estrutura visual dos relatórios de Contas a Pagar e Contas a Receber.
 
-### Logica do Relatorio
+### Lógica do Relatório
 
-A consulta considera uma conta como "em aberto na data de referencia" quando:
+A consulta considera uma antecipação como "em aberto na data de referência" quando:
 
-1. A movimentacao foi lancada (`data_lancamento`) ate a data de referencia
-2. A parcela NAO foi recebida ate a data de referencia:
-   - `data_pagamento IS NULL` (nunca foi recebida)
-   - OU `data_pagamento > data_referencia` (foi recebida depois)
+1. A antecipação foi lançada (`data_lancamento`) até a data de referência
+2. A antecipação tinha valor disponível (`valor_total - valor_utilizado > 0`)
+3. O status é diferente de `devolvida`
+
+**Importante:** Diferente das contas a pagar/receber, as antecipações não possuem um histórico de quando o valor foi utilizado. O relatório mostrará o saldo disponível atual das antecipações lançadas até a data de referência.
+
+**Classificação de situação:**
+- **Recebimento**: Antecipações do tipo `receber` (cliente pagou adiantado)
+- **Pagamento**: Antecipações do tipo `pagar` (pagamento adiantado a fornecedor)
 
 ---
 
 ### Arquivos a Criar
 
-| Arquivo | Descricao |
+| Arquivo | Descrição |
 |---------|-----------|
-| `src/pages/relatorios/contas-a-receber/index.tsx` | Pagina principal do relatorio |
-| `src/hooks/useRelatorioContasReceber.ts` | Hook para buscar e processar os dados |
+| `src/pages/relatorios/antecipacoes/index.tsx` | Página principal do relatório |
+| `src/hooks/useRelatorioAntecipacoes.ts` | Hook para buscar e processar os dados |
 
 ### Arquivos a Alterar
 
-| Arquivo | Alteracao |
+| Arquivo | Alteração |
 |---------|-----------|
-| `src/pages/relatorios/index.tsx` | Adicionar card do novo relatorio |
-| `src/App.tsx` | Adicionar rota `/relatorios/contas-a-receber` |
+| `src/pages/relatorios/index.tsx` | Adicionar card do novo relatório |
+| `src/App.tsx` | Adicionar rota `/relatorios/antecipacoes` |
 
 ---
 
-### Estrutura da Pagina
+### Estrutura da Página
 
 **Filtros:**
-- Campo de data: "Data de Referencia" (datepicker, padrao = hoje)
-- Botao "Gerar Relatorio"
+- Campo de data: "Data de Referência" (datepicker, padrão = hoje)
+- Botão "Gerar Relatório"
 
 **Cards de Resumo:**
-- Total de Contas em Aberto (quantidade)
-- Valor Total em Aberto
-- Contas Vencidas (vencimento < data referencia)
-- Contas a Vencer (vencimento >= data referencia)
+- Total de Antecipações em Aberto (quantidade)
+- Valor Total Disponível
+- Antecipações de Recebimento (clientes)
+- Antecipações de Pagamento (fornecedores)
 
 **Tabela:**
-| Vencimento | Parcela | Cliente | Descricao | Situacao | Valor |
-|------------|---------|---------|-----------|----------|-------|
-| 15/12/2025 | 001/01 | Cliente X | Venda 001 | Vencida | R$ 500,00 |
-| 10/01/2026 | 002/01 | Cliente Y | Venda 002 | A Vencer | R$ 1.200,00 |
+| Data | Tipo | Favorecido | Descrição | Valor Total | Valor Utilizado | Valor Disponível | Status |
+|------|------|------------|-----------|-------------|-----------------|------------------|--------|
+| 15/12/2025 | Recebimento | Cliente X | Adiantamento projeto | R$ 5.000 | R$ 2.000 | R$ 3.000 | Ativa |
+| 10/12/2025 | Pagamento | Fornecedor Y | Adiantamento serviço | R$ 1.000 | R$ 0 | R$ 1.000 | Ativa |
 
-**Opcoes:**
+**Opções:**
 - Exportar para Excel
 
 ---
 
-### Detalhes Tecnicos
+### Detalhes Técnicos
 
-**Hook useRelatorioContasReceber.ts:**
+**Interface do Hook:**
 
 ```typescript
-// Interfaces
-export interface ContaReceberRelatorio {
+export interface AntecipacaoRelatorio {
   id: string;
-  movimentacao_id: string;
-  cliente: string;           // Mudanca: "favorecido" -> "cliente"
+  favorecido: string;
   descricao: string;
-  dataVencimento: Date;
-  numeroParcela: string;
-  valor: number;
-  situacao: 'vencida' | 'a_vencer';
-}
-
-export interface ResumoContasReceber {
-  totalContas: number;
+  dataLancamento: Date;
+  tipoOperacao: 'receber' | 'pagar';
   valorTotal: number;
-  contasVencidas: number;
-  valorVencido: number;
-  contasAVencer: number;
-  valorAVencer: number;
+  valorUtilizado: number;
+  valorDisponivel: number;
+  status: 'ativa' | 'utilizada';
+  numeroDocumento: string;
 }
 
-// Query principal - muda apenas o tipo_operacao
-const { data: movimentacoes } = await supabase
-  .from('movimentacoes')
-  .select(`
-    id,
-    descricao,
-    data_lancamento,
-    numero_documento,
-    favorecido:favorecidos(id, nome),
-    movimentacoes_parcelas(
-      id, numero, valor, data_vencimento, data_pagamento
-    )
-  `)
-  .eq('tipo_operacao', 'receber')  // DIFERENCA: 'receber' em vez de 'pagar'
-  .eq('empresa_id', currentCompany.id)
-  .lte('data_lancamento', dataReferenciaStr);
+export interface ResumoAntecipacoes {
+  totalAntecipacoes: number;
+  valorTotalDisponivel: number;
+  antecipacoesRecebimento: number;
+  valorRecebimento: number;
+  antecipacoesPagamento: number;
+  valorPagamento: number;
+}
 ```
 
-**Pagina index.tsx:**
+**Query principal:**
 
-Mesma estrutura do Contas a Pagar, com as seguintes diferencas:
-- Titulo: "Relatorio de Contas a Receber"
-- Descricao: "Posicao das contas a receber em aberto em uma data especifica"
-- Coluna "Favorecido" -> "Cliente"
-- Cores: usar verde (green) para cards de valores positivos
-- Nome do arquivo Excel: `contas-a-receber-{data}.xlsx`
+```typescript
+// Buscar antecipações lançadas até a data de referência
+const { data: antecipacoes, error } = await supabase
+  .from('antecipacoes')
+  .select(`
+    id,
+    data_lancamento,
+    tipo_operacao,
+    valor_total,
+    valor_utilizado,
+    descricao,
+    numero_documento,
+    status,
+    favorecido_id
+  `)
+  .eq('empresa_id', currentCompany.id)
+  .lte('data_lancamento', dataReferenciaStr)
+  .neq('status', 'devolvida'); // Excluir devolvidas
+
+// Filtrar apenas as que têm valor disponível
+const antecipacoesEmAberto = antecipacoes.filter(ant => {
+  const valorDisponivel = Number(ant.valor_total) - Number(ant.valor_utilizado);
+  return valorDisponivel > 0;
+});
+```
+
+**Página index.tsx:**
+
+Mesma estrutura visual dos relatórios de Contas a Pagar/Receber:
+- Header com título e botão voltar
+- Card de filtros com datepicker
+- Cards de resumo (azul para recebimento, vermelho para pagamento)
+- Tabela com os dados e badges coloridos
+- Exportação para Excel
 
 ---
 
-### Alteracoes no relatorios/index.tsx
+### Alterações no relatorios/index.tsx
 
-Adicionar novo card apos "contasPagar":
+Adicionar novo card após "contasReceber":
 
 ```typescript
 {
-  id: "contasReceber",
-  title: "Relatorio de Contas a Receber",
-  description: "Posicao das contas a receber em aberto em uma data especifica",
-  icon: <CreditCard className="h-8 w-8 text-green-500" />,  // Verde para receber
-  route: "/relatorios/contas-a-receber"
+  id: "antecipacoes",
+  title: "Relatório de Antecipações",
+  description: "Posição das antecipações em aberto em uma data específica",
+  icon: <Wallet className="h-8 w-8 text-purple-500" />,
+  route: "/relatorios/antecipacoes"
 }
 ```
 
-Atualizar a condicao de cards ativos para incluir `contasReceber`.
+Atualizar a condição de cards ativos para incluir `antecipacoes`.
 
 ---
 
-### Alteracoes no App.tsx
+### Alterações no App.tsx
 
 Adicionar nova rota:
 
 ```typescript
-<Route path="/relatorios/contas-a-receber" element={<RelatorioContasReceber />} />
+<Route path="/relatorios/antecipacoes" element={<RelatorioAntecipacoes />} />
 ```
 
 Com o import correspondente:
 
 ```typescript
-import RelatorioContasReceber from "./pages/relatorios/contas-a-receber";
+import RelatorioAntecipacoes from "./pages/relatorios/antecipacoes";
 ```
 
 ---
@@ -152,10 +169,30 @@ src/
 │   └── relatorios/
 │       ├── contas-a-pagar/
 │       │   └── index.tsx
-│       └── contas-a-receber/
+│       ├── contas-a-receber/
+│       │   └── index.tsx
+│       └── antecipacoes/
 │           └── index.tsx
 ├── hooks/
 │   ├── useRelatorioContasPagar.ts
-│   └── useRelatorioContasReceber.ts
+│   ├── useRelatorioContasReceber.ts
+│   └── useRelatorioAntecipacoes.ts
 ```
+
+---
+
+### Interface Visual
+
+A página seguirá o padrão visual dos outros relatórios:
+- Header com título "Relatório de Antecipações" e botão voltar
+- Card de filtros com datepicker para a data de referência
+- 4 cards de resumo:
+  - Total em Aberto (quantidade)
+  - Valor Total Disponível
+  - Recebimentos (verde)
+  - Pagamentos (azul)
+- Tabela com colunas: Data, Tipo, Favorecido, Descrição, Valor Total, Valor Utilizado, Valor Disponível, Status
+- Badges coloridos para tipo (Recebimento = verde, Pagamento = azul) e status (Ativa = azul, Utilizada = verde)
+- Botão para exportar Excel
+- Rodapé com totalizadores
 
