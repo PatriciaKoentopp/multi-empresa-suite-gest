@@ -16,6 +16,7 @@ import {
   Calculator, 
   Circle, 
   DollarSign, 
+  Download,
   Grid, 
   HelpCircle, 
   List, 
@@ -48,6 +49,7 @@ const renderIcon = (icon?: React.ReactNode | string) => {
       case "BarChart": return <BarChart className="h-4 w-4" />;
       case "User": return <User className="h-4 w-4" />;
       case "HelpCircle": return <HelpCircle className="h-4 w-4" />;
+      case "Download": return <Download className="h-4 w-4" />;
       default: return <Circle className="h-4 w-4" />;
     }
   }
