@@ -1,190 +1,192 @@
 
-## Plano: Funil Prioritário ao Abrir Página de Leads
+## Plano: Rotina de Backup dos Dados da Empresa
 
 ### Objetivo
 
-Permitir que o usuário defina qual funil deve aparecer como padrão ao abrir a página `/crm/leads`, ao invés de usar a ordem alfabética.
+Criar uma funcionalidade de backup que permita ao usuário baixar todos os dados da empresa logada em formato Excel, com uma aba para cada tabela do sistema.
 
 ---
 
-### Situação Atual
+### Estrutura da Solução
 
-1. Os funis são ordenados por nome (`ORDER BY nome`) na query do banco de dados
-2. O primeiro funil da lista ordenada é automaticamente selecionado como padrão
-3. Não há nenhuma preferência salva do usuário
+#### 1. Nova Página de Backup
+
+Criar uma página dedicada em `/backup` que permitirá:
+- Visualizar as tabelas disponíveis para backup
+- Selecionar quais tabelas incluir no backup
+- Gerar e baixar o arquivo Excel com os dados
+
+#### 2. Adicionar ao Menu Lateral
+
+Adicionar um novo item de navegação após "Relatórios":
+- Título: "Backup"
+- Ícone: Download ou Database
+- Rota: `/backup`
 
 ---
 
-### Solução Proposta
+### Tabelas a Incluir no Backup
 
-Usar o **localStorage** para salvar a preferência do usuário, seguindo o mesmo padrão já implementado para os filtros de etapas. Esta é a abordagem mais adequada porque:
+Com base na análise do banco de dados, as seguintes tabelas serão incluídas (filtradas pela empresa logada):
 
-1. Não requer alterações no banco de dados
-2. A preferência é salva por empresa (cada empresa pode ter um funil prioritário diferente)
-3. Segue o padrão já utilizado no projeto
+| Tabela | Descrição |
+|--------|-----------|
+| `empresas` | Dados da empresa |
+| `favorecidos` | Clientes e fornecedores |
+| `grupo_favorecidos` | Grupos de favorecidos |
+| `profissoes` | Profissões cadastradas |
+| `origens` | Origens dos leads |
+| `motivos_perda` | Motivos de perda de leads |
+| `contas_correntes` | Contas bancárias |
+| `tipos_titulos` | Tipos de títulos |
+| `plano_contas` | Plano de contas |
+| `produtos` | Produtos cadastrados |
+| `grupo_produtos` | Grupos de produtos |
+| `movimentacoes` | Movimentações financeiras |
+| `movimentacoes_parcelas` | Parcelas das movimentações |
+| `fluxo_caixa` | Fluxo de caixa |
+| `antecipacoes` | Antecipações |
+| `lancamentos_contabeis` | Lançamentos contábeis |
+| `funis` | Funis do CRM |
+| `funil_etapas` | Etapas dos funis |
+| `leads` | Leads do CRM |
+| `leads_interacoes` | Interações dos leads |
+| `leads_fechamento` | Fechamentos dos leads |
+| `orcamentos` | Orçamentos/Vendas |
+| `orcamentos_itens` | Itens dos orçamentos |
+| `orcamentos_parcelas` | Parcelas dos orçamentos |
+| `contratos` | Contratos |
+| `contratos_parcelas` | Parcelas dos contratos |
+| `dashboard_cards_config` | Configuração dos cards |
+| `modulos_parametros` | Parâmetros dos módulos |
 
 ---
 
-### Arquivos a Alterar
+### Arquivos a Criar/Alterar
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/pages/crm/leads/index.tsx` | Adicionar lógica para salvar/carregar funil prioritário e botão para definir prioridade |
+| Arquivo | Ação | Descrição |
+|---------|------|-----------|
+| `src/pages/backup/index.tsx` | Criar | Página principal do backup |
+| `src/hooks/useBackup.ts` | Criar | Hook para gerenciar a lógica de backup |
+| `src/config/navigation.ts` | Alterar | Adicionar item "Backup" ao menu |
+| `src/components/layout/sidebar-nav.tsx` | Alterar | Adicionar ícone "Download" |
+| `src/App.tsx` | Alterar | Adicionar rota `/backup` |
 
 ---
 
 ### Detalhes Técnicos
 
-#### 1. Estrutura de Armazenamento
-
-A chave do localStorage será:
-```
-crm_leads_funil_prioritario_{empresaId}
-```
-
-O valor será o ID do funil prioritário (string).
-
-#### 2. Funções para Salvar e Carregar Funil Prioritário
+#### 1. Hook `useBackup.ts`
 
 ```typescript
-const savePriorityFunilToStorage = (empresaId: string, funilId: string) => {
-  if (!empresaId || !funilId) return;
-  const key = `crm_leads_funil_prioritario_${empresaId}`;
-  localStorage.setItem(key, funilId);
-};
+// Estrutura do hook
+export function useBackup() {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const { currentCompany } = useCompany();
 
-const loadPriorityFunilFromStorage = (empresaId: string): string | null => {
-  if (!empresaId) return null;
-  const key = `crm_leads_funil_prioritario_${empresaId}`;
-  return localStorage.getItem(key);
-};
-```
+  // Lista de tabelas para backup
+  const tables = [
+    { id: 'empresas', name: 'Empresa', query: () => ... },
+    { id: 'favorecidos', name: 'Favorecidos', query: () => ... },
+    // ... demais tabelas
+  ];
 
-#### 3. Modificar a Lógica de Seleção do Funil Padrão
+  // Função para gerar backup
+  const generateBackup = async (selectedTables: string[]) => {
+    // Buscar dados de cada tabela selecionada
+    // Criar workbook Excel com uma aba por tabela
+    // Baixar arquivo
+  };
 
-Na função `fetchAllData`, após carregar os funis, verificar se há um funil prioritário salvo:
-
-```typescript
-// Definir o funil padrão: prioritário ou primeiro da lista
-if (funisFormatados.length > 0) {
-  const funilPrioritarioId = loadPriorityFunilFromStorage(empresaIdToUse);
-  const funilPrioritario = funilPrioritarioId 
-    ? funisFormatados.find(f => f.id === funilPrioritarioId)
-    : null;
-  
-  if (funilPrioritario) {
-    console.log('Usando funil prioritário:', funilPrioritario.id);
-    setSelectedFunilId(funilPrioritario.id);
-  } else {
-    console.log('Usando primeiro funil da lista:', funisFormatados[0].id);
-    setSelectedFunilId(funisFormatados[0].id);
-  }
+  return { tables, generateBackup, isGenerating, progress };
 }
 ```
 
-#### 4. Adicionar Opção para Definir Funil Prioritário
+#### 2. Página de Backup
 
-Adicionar um ícone de estrela ao lado do seletor de funil para que o usuário possa definir o funil atual como prioritário:
+Interface simples com:
+- Lista de checkboxes para selecionar tabelas
+- Botão "Selecionar Todas" / "Desmarcar Todas"
+- Botão "Gerar Backup" com indicador de progresso
+- Nome do arquivo: `backup-{nome_empresa}-{data}.xlsx`
 
-```tsx
-{/* Seletor de Funil com opção de definir prioritário */}
-<div className="w-full md:w-[250px] flex gap-2">
-  <Select
-    value={selectedFunilId || ""}
-    onValueChange={handleFunilChange}
-  >
-    <SelectTrigger className="w-full bg-white">
-      <SelectValue placeholder="Selecionar funil" />
-    </SelectTrigger>
-    <SelectContent className="bg-white">
-      {funis.map((funil) => (
-        <SelectItem key={funil.id} value={funil.id}>
-          {funil.nome}
-          {loadPriorityFunilFromStorage(empresaId || '') === funil.id && (
-            <Star className="h-3 w-3 ml-1 inline fill-amber-400 text-amber-400" />
-          )}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-  
-  <Button
-    variant="ghost"
-    size="icon"
-    onClick={handleSetPriorityFunil}
-    title={isPriorityFunil ? "Remover como funil padrão" : "Definir como funil padrão"}
-  >
-    <Star className={cn(
-      "h-4 w-4",
-      isPriorityFunil ? "fill-amber-400 text-amber-400" : "text-gray-400"
-    )} />
-  </Button>
-</div>
-```
-
-#### 5. Função para Definir/Remover Funil Prioritário
+#### 3. Navegação
 
 ```typescript
-const [priorityFunilId, setPriorityFunilId] = useState<string | null>(null);
-
-const isPriorityFunil = selectedFunilId === priorityFunilId;
-
-const handleSetPriorityFunil = () => {
-  if (!empresaId || !selectedFunilId) return;
-  
-  if (isPriorityFunil) {
-    // Remover prioridade
-    localStorage.removeItem(`crm_leads_funil_prioritario_${empresaId}`);
-    setPriorityFunilId(null);
-    toast.success("Funil padrão removido");
-  } else {
-    // Definir como prioritário
-    savePriorityFunilToStorage(empresaId, selectedFunilId);
-    setPriorityFunilId(selectedFunilId);
-    toast.success("Funil definido como padrão", {
-      description: "Este funil será aberto automaticamente ao acessar a página."
-    });
-  }
-};
+// Em navigation.ts, após Relatórios:
+{
+  title: "Backup",
+  href: "/backup",
+  icon: "Download",
+},
 ```
 
-#### 6. Carregar Funil Prioritário na Inicialização
+#### 4. Ícone no Sidebar
 
-Adicionar um `useEffect` para carregar o funil prioritário salvo quando o empresaId for definido:
+Adicionar mapeamento do ícone `Download` na função `renderIcon`:
 
 ```typescript
-useEffect(() => {
-  if (empresaId) {
-    const savedPriorityFunil = loadPriorityFunilFromStorage(empresaId);
-    setPriorityFunilId(savedPriorityFunil);
-  }
-}, [empresaId]);
+case "Download": return <Download className="h-4 w-4" />;
 ```
 
 ---
 
 ### Interface do Usuário
 
-O botão de estrela ficará ao lado do seletor de funil:
-- **Estrela vazia (cinza)**: Clique para definir o funil atual como padrão
-- **Estrela preenchida (amarela)**: O funil atual é o padrão; clique para remover
+A página terá um layout simples:
 
-Os itens no dropdown também mostrarão uma pequena estrela ao lado do funil que está definido como padrão.
+```
+┌─────────────────────────────────────────────────┐
+│  Backup de Dados                                │
+│  Gere um backup completo dos dados da empresa   │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  ☑ Selecionar Todas    ☐ Desmarcar Todas       │
+│                                                 │
+│  ┌─────────────────────────────────────────┐   │
+│  │ ☑ Empresa                               │   │
+│  │ ☑ Favorecidos                           │   │
+│  │ ☑ Grupos de Favorecidos                 │   │
+│  │ ☑ Profissões                            │   │
+│  │ ☑ Origens                               │   │
+│  │ ... (demais tabelas)                    │   │
+│  └─────────────────────────────────────────┘   │
+│                                                 │
+│  ┌─────────────────────────────────────────┐   │
+│  │        [Gerar Backup]                   │   │
+│  └─────────────────────────────────────────┘   │
+│                                                 │
+│  Último backup: Nunca realizado                │
+│                                                 │
+└─────────────────────────────────────────────────┘
+```
 
 ---
 
 ### Fluxo Esperado
 
-1. **Usuário acessa a página** → Sistema verifica se há funil prioritário salvo → Seleciona o funil prioritário ou o primeiro da lista
-2. **Usuário clica na estrela** → Funil atual é definido como prioritário → Toast de confirmação
-3. **Usuário atualiza a página (F5)** → Sistema carrega o funil prioritário automaticamente
-4. **Usuário clica na estrela novamente** → Prioridade é removida → Volta ao comportamento padrão (primeiro da lista)
+1. **Usuário acessa a página de Backup** no menu lateral
+2. **Seleciona as tabelas** que deseja incluir no backup (todas selecionadas por padrão)
+3. **Clica em "Gerar Backup"** → Sistema busca os dados de cada tabela
+4. **Progresso é exibido** enquanto o backup é gerado
+5. **Arquivo Excel é baixado** automaticamente com todos os dados
 
 ---
 
-### Resultado Esperado
+### Segurança
 
-- O usuário pode definir qual funil abre por padrão
-- A preferência é mantida após atualizar a página
-- Visual intuitivo com ícone de estrela
-- Cada empresa pode ter sua própria configuração de funil prioritário
+- O backup inclui **apenas dados da empresa logada** (filtro por `empresa_id`)
+- Utiliza as mesmas políticas RLS já existentes no banco de dados
+- Não expõe dados de outras empresas
+
+---
+
+### Formato do Arquivo
+
+O arquivo Excel terá:
+- **Nome**: `backup-{nome_fantasia}-{YYYY-MM-DD}.xlsx`
+- **Abas**: Uma aba para cada tabela selecionada
+- **Colunas**: Todas as colunas da tabela com nomes formatados
+- **Datas**: Formato DD/MM/YYYY
+- **Valores**: Formato monetário brasileiro (R$)
