@@ -185,6 +185,11 @@ export const navigationConfig: ModuleNavItem[] = [
     icon: "BarChart",
     href: "/relatorios",
   },
+  {
+    title: "Backup",
+    href: "/backup",
+    icon: "Download",
+  },
 ];
 
 export const userNavigation: ModuleNavItem[] = [

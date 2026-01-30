@@ -69,6 +69,9 @@ import RelatorioContasPagar from "./pages/relatorios/contas-a-pagar";
 import RelatorioContasReceber from "./pages/relatorios/contas-a-receber";
 import RelatorioAntecipacoes from "./pages/relatorios/antecipacoes";
 
+// Backup
+import BackupPage from "./pages/backup";
+
 // Authentication wrapper
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -567,7 +570,18 @@ function App() {
               }
             />
 
-            {/* Style Guide */}
+            {/* Backup */}
+            <Route
+              path="/backup"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <BackupPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
             <Route
               path="/style-guide"
               element={
