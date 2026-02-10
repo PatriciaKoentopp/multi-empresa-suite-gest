@@ -286,11 +286,15 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
               toast.error(`Valor utilizado excede o valor total da antecipação.`);
               return;
             }
+
+            // Determinar status: 'utilizada' se totalmente consumida, 'ativa' se parcial
+            const novoStatus = novoValorUtilizado >= (antAtual?.valor_total || 0) ? 'utilizada' : 'ativa';
             
             const { error: antecipacaoError } = await supabase
               .from("antecipacoes")
               .update({
-                valor_utilizado: novoValorUtilizado
+                valor_utilizado: novoValorUtilizado,
+                status: novoStatus
               })
               .eq("id", antSel.id);
 
