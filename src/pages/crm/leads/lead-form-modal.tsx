@@ -594,6 +594,8 @@ export function LeadFormModal({
                     handleInteracaoSelectChange={handleInteracaoSelectChange}
                     handleInteracaoDataChange={handleInteracaoDataChange}
                     adicionarInteracao={adicionarInteracao}
+                    excluirInteracao={excluirInteracao}
+                    confirmarEdicaoInteracao={confirmarEdicaoInteracao}
                     vendedoresAtivos={vendedoresAtivos}
                     getNomeResponsavel={getNomeResponsavel}
                   />
