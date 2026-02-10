@@ -130,117 +130,24 @@ export default function ContasAPagarPage() {
     setModalVisualizarBaixaAberto(true);
   };
 
-  function realizarBaixa({ dataPagamento, contaCorrenteId, multa, juros, desconto, formaPagamento, antecipacoesSelecionadas }: {
-    dataPagamento: Date;
-    contaCorrenteId: string;
-    multa: number;
-    juros: number;
-    desconto: number;
-    formaPagamento: string;
-    antecipacoesSelecionadas?: AntecipacaoSelecionada[];
-  }) {
+  function realizarBaixa() {
     if (!contaParaBaixar || !currentCompany) return;
 
-    const atualizarMovimentacao = async () => {
+    const recarregar = async () => {
       try {
-        // Formatar data para YYYY-MM-DD (sem timezone)
-        const dia = String(dataPagamento.getDate()).padStart(2, '0');
-        const mes = String(dataPagamento.getMonth() + 1).padStart(2, '0');
-        const ano = dataPagamento.getFullYear();
-        const dataFormated = `${ano}-${mes}-${dia}`;
-
-        // Atualiza a parcela com os dados do pagamento
-        const { error: errorParcela } = await supabase
-          .from('movimentacoes_parcelas')
-          .update({
-            data_pagamento: dataFormated,
-            multa,
-            juros,
-            desconto,
-            conta_corrente_id: contaCorrenteId || null,
-            forma_pagamento: formaPagamento
-          })
-          .eq('id', contaParaBaixar.id);
-
-        if (errorParcela) throw errorParcela;
-
-        // Se utilizar antecipações, processar cada uma
-        if (antecipacoesSelecionadas && antecipacoesSelecionadas.length > 0) {
-          for (const antecipacao of antecipacoesSelecionadas) {
-            if (antecipacao.valor > 0) {
-              // Atualizar o valor utilizado da antecipação
-              const { data: antecipacaoAtual, error: antecipacaoError } = await supabase
-                .from('antecipacoes')
-                .select('valor_utilizado')
-                .eq('id', antecipacao.id)
-                .single();
-
-              if (antecipacaoError) throw antecipacaoError;
-
-              const novoValorUtilizado = Number(antecipacaoAtual.valor_utilizado) + antecipacao.valor;
-
-              const { error: updateAntecipacaoError } = await supabase
-                .from('antecipacoes')
-                .update({ valor_utilizado: novoValorUtilizado })
-                .eq('id', antecipacao.id);
-
-              if (updateAntecipacaoError) throw updateAntecipacaoError;
-
-              // Criar registro na tabela de relacionamento
-              const { error: relacionamentoError } = await supabase
-                .from('movimentacoes_parcelas_antecipacoes')
-                .insert({
-                  movimentacao_parcela_id: contaParaBaixar.id,
-                  antecipacao_id: antecipacao.id,
-                  valor_utilizado: antecipacao.valor
-                });
-
-              if (relacionamentoError) throw relacionamentoError;
-
-              // Criar entrada no fluxo de caixa para a antecipação
-              const { error: fluxoAntecipacaoError } = await supabase
-                .from('fluxo_caixa')
-                .insert({
-                  empresa_id: currentCompany.id,
-                  data_movimentacao: dataFormated,
-                  valor: -antecipacao.valor,
-                  origem: 'antecipacao',
-                  tipo_operacao: 'pagar',
-                  movimentacao_parcela_id: contaParaBaixar.id,
-                  antecipacao_id: antecipacao.id,
-                  situacao: 'nao_conciliado',
-                  descricao: `Antecipação utilizada: ${contaParaBaixar.descricao}`,
-                  saldo: 0
-                });
-
-              if (fluxoAntecipacaoError) throw fluxoAntecipacaoError;
-            }
-          }
-        }
-
-        // Recarregar as contas após a baixa
         await carregarContasAPagar();
-
         toast({
           title: "Sucesso",
           description: "Título baixado com sucesso!"
         });
-
-        // Fecha o modal
         setModalBaixarAberto(false);
         setContaParaBaixar(null);
-
       } catch (error) {
-        console.error("Erro ao baixar título:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Erro ao baixar o título"
-        });
+        console.error("Erro ao recarregar dados:", error);
       }
     };
 
-    atualizarMovimentacao();
+    recarregar();
   }
 
   const handleRenegociar = (conta: ContaPagar) => {
