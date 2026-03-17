@@ -286,7 +286,7 @@ export function Dashboard() {
               id: parcela.id,
               cliente: favorecidoNome,
               descricao: parcela.movimentacao.descricao || 'Sem descrição',
-              dataVencimento: dataVencimento, // Mantido como string
+              dataVencimento: new Date(dataVencimento),
               valor: Number(parcela.valor),
               status: 'em_aberto' as 'em_aberto',
               numeroParcela: parcela.movimentacao.numero_documento || '-',
