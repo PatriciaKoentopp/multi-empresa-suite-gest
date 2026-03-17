@@ -28,6 +28,7 @@ interface EfetivarVendaModalProps {
 
 export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: EfetivarVendaModalProps) {
   const { currentCompany } = useCompany();
+  const { registrarLog } = useLogTransacao();
   const [dataVenda, setDataVenda] = useState(format(new Date(), "yyyy-MM-dd"));
   const [isLoading, setIsLoading] = useState(false);
   const [tipoTitulos, setTipoTitulos] = useState<TipoTitulo[]>([]);
