@@ -32,6 +32,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { formatDate } from "@/lib/utils";
 import { useExcelContasReceber } from "@/hooks/useExcelContasReceber";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 export default function ContasAReceberPage() {
   const { currentCompany } = useCompany();
