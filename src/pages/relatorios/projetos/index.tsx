@@ -354,7 +354,7 @@ export default function RelatorioProjetosPage() {
         </>}
 
       {/* Upload Modal */}
-      <UploadModal open={showUploadModal} onOpenChange={setShowUploadModal} onUploadSuccess={handleUploadSuccess} />
+      <UploadModal open={showUploadModal} onOpenChange={setShowUploadModal} onUploadComplete={handleUploadSuccess} />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!uploadToDelete} onOpenChange={() => setUploadToDelete(null)}>

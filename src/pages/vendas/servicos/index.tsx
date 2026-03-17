@@ -75,7 +75,7 @@ export default function ServicosPage() {
         .order('nome');
 
       if (error) throw error;
-      setServicos(data || []);
+      setServicos((data || []) as any);
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
       toast("Erro ao carregar serviços");

@@ -328,7 +328,7 @@ export default function TabelaPrecosPage() {
                       : "-"}
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(tab.status)}
+                    {getStatusBadge(tab.status as "ativo" | "inativo")}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

@@ -33,7 +33,7 @@ import { DateInput } from "@/components/movimentacao/DateInput";
 import { useExcelMovimentacao } from "@/hooks/useExcelMovimentacao";
 
 export default function MovimentacaoPage() {
-  const [movimentacoes, setMovimentacoes] = useState<ContaPagar[]>([]);
+  const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
   const navigate = useNavigate();
   const { tiposTitulos, categorias } = useMovimentacaoDados();
   const { exportToExcel } = useExcelMovimentacao();
