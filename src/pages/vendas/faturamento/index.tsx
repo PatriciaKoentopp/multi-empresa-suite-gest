@@ -80,6 +80,8 @@ export default function FaturamentoPage() {
   const [excluirItem, setExcluirItem] = useState<Orcamento | null>(null);
   const [statusFilter, setStatusFilter] = useState<"ativo" | "inativo" | "todos">("ativo");
   const [efetivarVendaItem, setEfetivarVendaItem] = useState<Orcamento | null>(null);
+  const [desfazerVendaItem, setDesfazerVendaItem] = useState<Orcamento | null>(null);
+  const [showDesfazerConfirm, setShowDesfazerConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
