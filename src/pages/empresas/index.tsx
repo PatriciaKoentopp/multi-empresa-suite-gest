@@ -203,7 +203,7 @@ export default function EmpresasPage() {
       updatedAt: new Date()
     };
     if (criandoEmpresa || !currentCompany) {
-      addCompany(empresaObject as Company);
+      createCompany(empresaObject as unknown as Partial<Company>);
       toast({
         title: "Empresa cadastrada",
         description: "A empresa foi cadastrada com sucesso."

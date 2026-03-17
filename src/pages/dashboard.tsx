@@ -478,8 +478,8 @@ export function Dashboard() {
           saldoContas,
           totalSaldo,
           interacoesPendentes,
-          topClientesAnoAtual,
-          topClientesAnoAnterior
+          topClientesAnoAtual: topClientesAnoAtual as DashboardData['topClientesAnoAtual'],
+          topClientesAnoAnterior: topClientesAnoAnterior as DashboardData['topClientesAnoAnterior']
         });
         
         console.log("[Dashboard] Dados carregados com sucesso");

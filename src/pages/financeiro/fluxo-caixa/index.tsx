@@ -885,7 +885,7 @@ export default function FluxoCaixaPage() {
                             {formatCurrency(linha.saldo_calculado)}
                           </TableCell>
                           <TableCell>
-                            {getStatusBadge(linha.situacao)}
+                            {getStatusBadge(linha.situacao as "conciliado" | "nao_conciliado")}
                           </TableCell>
                           <TableCell className="text-center">
                             <DropdownMenu>

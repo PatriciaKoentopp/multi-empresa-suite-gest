@@ -559,7 +559,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
         const { data: orcamento, error: orcamentoError } = await supabase
           .from('orcamentos')
           .insert({
-            empresa_id: currentCompany?.id,
+            empresa_id: currentCompany?.id as string,
             favorecido_id: favorecidoId,
             // Remover codigo do INSERT - será gerado automaticamente
             tipo: 'orcamento', // Tipo fixo como "orcamento"

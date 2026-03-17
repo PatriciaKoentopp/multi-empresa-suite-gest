@@ -255,7 +255,7 @@ export default function PlanoContasPage() {
           <PlanoContasForm
             onSubmit={handleSubmit}
             onCancel={handleCloseDialog}
-            initialData={editingConta}
+            initialData={editingConta as any}
           />
         </DialogContent>
       </Dialog>

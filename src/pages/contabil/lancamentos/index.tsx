@@ -262,7 +262,7 @@ export default function LancamentosPage() {
     const tipoFiltro = tipoLancamentoFiltro !== "todos" ? tipoLancamentoFiltro : undefined;
 
     const sucesso = gerarPdfLancamentos(
-      filteredLancamentos,
+      filteredLancamentos as any,
       "Nome da Empresa", // Pode ser obtido do contexto da empresa
       contaSelecionada,
       dataInicial,

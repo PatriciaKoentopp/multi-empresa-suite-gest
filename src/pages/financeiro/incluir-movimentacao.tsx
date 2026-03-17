@@ -275,6 +275,8 @@ export default function IncluirMovimentacaoPage() {
               onDescricaoChange={(e) => setDescricao(e.target.value)}
               contasCorrente={contasCorrente}
               readOnly={modoVisualizacao}
+              onSalvar={() => {}}
+              onCancel={() => {}}
             />
           ) : operacao === "pagar" ? (
             <PagamentoForm
