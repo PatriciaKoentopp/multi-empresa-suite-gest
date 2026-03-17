@@ -42,6 +42,7 @@ export default function ContasAPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { registrarLog } = useLogTransacao();
 
   // Filtros com valor padrão definido para "em_aberto"
   const [searchTerm, setSearchTerm] = useState("");
