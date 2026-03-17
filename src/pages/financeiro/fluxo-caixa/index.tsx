@@ -29,6 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { usePdfFluxoCaixa } from "@/hooks/usePdfFluxoCaixa";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 // Função para formatar datas (DD/MM/YYYY)
 function formatDateBR(dateStr: string) {
