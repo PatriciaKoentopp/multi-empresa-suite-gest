@@ -199,6 +199,12 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       }
     }
 
+    // Verificar período fechado
+    if (verificarPeriodoFechado(dataLancamento)) {
+      toast.error("Não é possível realizar lançamentos em um período já fechado.");
+      return;
+    }
+
     try {
       setIsLoading(true);
       

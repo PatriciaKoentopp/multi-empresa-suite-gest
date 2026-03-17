@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { Antecipacao, AntecipacaoSelecionada } from "@/types/financeiro";
+import { useFechamentoMensal } from "@/hooks/useFechamentoMensal";
 
 interface BaixarContaPagarModalProps {
   conta?: ContaPagar | null;
