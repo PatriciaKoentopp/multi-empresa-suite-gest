@@ -526,6 +526,18 @@ export default function FaturamentoPage() {
                             Efetivar Venda
                           </DropdownMenuItem>
                         )}
+                        {item.tipo === "venda" && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setDesfazerVendaItem(item);
+                              setShowDesfazerConfirm(true);
+                            }}
+                            className="flex items-center gap-2 text-orange-500 focus:bg-orange-100 focus:text-orange-700"
+                          >
+                            <Undo2 className="w-4 h-4" />
+                            Desfazer Venda
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           onClick={() => prepararExclusao(item)}
                           className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
