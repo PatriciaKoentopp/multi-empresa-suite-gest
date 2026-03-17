@@ -29,6 +29,7 @@ const formasPagamento = [
 
 export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProps) {
   const { currentCompany } = useCompany();
+  const { registrarLog } = useLogTransacao();
   const { favorecidos, tiposTitulos } = useMovimentacaoDados();
 
   const [operacao, setOperacao] = useState<"receber" | "pagar">("receber");
