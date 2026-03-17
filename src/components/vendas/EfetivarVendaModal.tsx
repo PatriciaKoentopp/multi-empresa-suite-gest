@@ -11,6 +11,7 @@ import { Orcamento } from "@/types";
 import { useCompany } from "@/contexts/company-context";
 import { Label } from "@/components/ui/label";
 import { useLogTransacao } from "@/hooks/useLogTransacao";
+import { useFechamentoMensal } from "@/hooks/useFechamentoMensal";
 
 interface TipoTitulo {
   id: string;
