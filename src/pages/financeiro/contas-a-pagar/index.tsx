@@ -467,6 +467,15 @@ export default function ContasAPagarPage() {
           : c
       ));
 
+      await registrarLog({
+        acao: 'desfazer',
+        modulo: 'financeiro',
+        entidade: 'conta_pagar',
+        entidade_id: conta.id,
+        descricao: `Baixa desfeita - ${conta.descricao || ''} - Favorecido: ${conta.favorecido} - Valor: R$ ${conta.valor?.toFixed(2)}`,
+        dados_anteriores: { favorecido: conta.favorecido, valor: conta.valor, status: conta.status },
+      });
+
       toast({
         title: "Sucesso",
         description: "Baixa desfeita com sucesso!"

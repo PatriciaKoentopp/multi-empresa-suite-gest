@@ -539,6 +539,15 @@ export default function ContasAReceberPage() {
           : c
       ));
 
+      await registrarLog({
+        acao: 'desfazer',
+        modulo: 'financeiro',
+        entidade: 'conta_receber',
+        entidade_id: conta.id,
+        descricao: `Baixa desfeita - ${conta.descricao || ''} - Cliente: ${conta.cliente} - Valor: R$ ${conta.valor?.toFixed(2)}`,
+        dados_anteriores: { cliente: conta.cliente, valor: conta.valor, status: conta.status },
+      });
+
       toast.success("Baixa desfeita com sucesso!");
 
     } catch (error) {

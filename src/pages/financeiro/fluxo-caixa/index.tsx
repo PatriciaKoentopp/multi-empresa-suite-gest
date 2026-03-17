@@ -506,6 +506,14 @@ export default function FluxoCaixaPage() {
 
       if (error) throw error;
 
+      await registrarLog({
+        acao: 'desfazer',
+        modulo: 'financeiro',
+        entidade: 'fluxo_caixa',
+        entidade_id: id,
+        descricao: `Conciliação desfeita no fluxo de caixa`,
+      });
+
       toast.success("Conciliação desfeita com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["fluxo-caixa-periodo"] });
       queryClient.invalidateQueries({ queryKey: ["fluxo-caixa-todas"] });

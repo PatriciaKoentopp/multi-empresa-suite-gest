@@ -345,6 +345,16 @@ export default function AntecipacoesPage() {
       console.log("Antecipação excluída com sucesso");
 
       // Atualizar a lista local
+      const antExcluida = antecipacoes.find(a => a.id === antecipacaoParaExcluir);
+      await registrarLog({
+        acao: 'excluir',
+        modulo: 'financeiro',
+        entidade: 'antecipacao',
+        entidade_id: antecipacaoParaExcluir,
+        descricao: `Antecipação excluída - ${antExcluida?.favorecido || ''} - Valor: R$ ${antExcluida?.valorTotal?.toFixed(2) || '0'}`,
+        dados_anteriores: antExcluida ? { favorecido: antExcluida.favorecido, valor_total: antExcluida.valorTotal, tipo_operacao: antExcluida.tipoOperacao } : undefined,
+      });
+
       setAntecipacoes(prev => prev.filter(a => a.id !== antecipacaoParaExcluir));
       toast.success("Antecipação excluída com sucesso");
       setAntecipacaoParaExcluir(null);

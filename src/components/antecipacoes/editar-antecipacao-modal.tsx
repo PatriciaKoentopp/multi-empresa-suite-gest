@@ -217,6 +217,15 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
         throw fluxoCaixaError;
       }
 
+      await registrarLog({
+        acao: 'editar',
+        modulo: 'financeiro',
+        entidade: 'antecipacao',
+        entidade_id: antecipacao.id,
+        descricao: `Antecipação editada - Valor: R$ ${novoValor.toFixed(2)}`,
+        dados_novos: { valor_total: novoValor, descricao: descricao },
+      });
+
       toast.success("Antecipação atualizada com sucesso!");
       onSave();
       onClose();

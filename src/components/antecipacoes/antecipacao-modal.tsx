@@ -221,6 +221,15 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
 
       console.log("Fluxo de caixa inserido com sucesso:", fluxoInserido);
 
+      await registrarLog({
+        acao: 'criar',
+        modulo: 'financeiro',
+        entidade: 'antecipacao',
+        entidade_id: antecipacaoInserida.id,
+        descricao: `Antecipação criada - ${operacao === 'receber' ? 'Recebimento' : 'Pagamento'} - Valor: R$ ${valorNumerico.toFixed(2)}`,
+        dados_novos: { tipo_operacao: operacao, valor_total: valorNumerico, descricao: descricao },
+      });
+
       toast.success("Antecipação registrada com sucesso!");
       resetForm();
       onSave();

@@ -198,6 +198,15 @@ export function RenegociarParcelasModal({
         await renegociarMultiplasParcelas();
       }
       
+      await registrarLog({
+        acao: 'renegociar',
+        modulo: 'financeiro',
+        entidade: 'conta_pagar',
+        entidade_id: conta.id,
+        descricao: `Parcela renegociada - ${conta.favorecido} - Valor: R$ ${conta.valor.toFixed(2)} em ${parcelas.length} parcela(s)`,
+        dados_novos: { num_parcelas: parcelas.length, parcelas: parcelas.map(p => ({ valor: p.valor, vencimento: p.dataVencimento })) },
+      });
+
       toast({
         title: "Sucesso",
         description: "Parcela(s) renegociada(s) com sucesso!"

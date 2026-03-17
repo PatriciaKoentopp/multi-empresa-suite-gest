@@ -223,6 +223,15 @@ export function DevolverAntecipacaoModal({
         throw updateError;
       }
 
+      await registrarLog({
+        acao: 'devolver',
+        modulo: 'financeiro',
+        entidade: 'antecipacao',
+        entidade_id: antecipacao.id,
+        descricao: `Devolução de antecipação - Valor devolvido: R$ ${valorNumerico.toFixed(2)} - ${antecipacao.favorecido}`,
+        dados_novos: { valor_devolvido: valorNumerico, observacao },
+      });
+
       toast.success("Devolução registrada com sucesso");
       onSave();
       onClose();

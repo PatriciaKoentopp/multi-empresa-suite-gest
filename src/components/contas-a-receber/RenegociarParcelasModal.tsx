@@ -184,6 +184,15 @@ export function RenegociarParcelasModal({
         
       if (updateError) throw updateError;
       
+      await registrarLog({
+        acao: 'renegociar',
+        modulo: 'financeiro',
+        entidade: 'conta_receber',
+        entidade_id: parcela.id,
+        descricao: `Parcela renegociada - ${parcela.cliente} - Valor: R$ ${parcela.valor.toFixed(2)} em ${novasParcelas.length} parcela(s)`,
+        dados_novos: { num_parcelas: novasParcelas.length },
+      });
+
       toast.success("Renegociação realizada com sucesso!");
       onConfirmar();
       onClose();
