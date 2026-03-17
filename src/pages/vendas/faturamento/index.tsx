@@ -69,6 +69,7 @@ function dateToDBFormat(date: Date | undefined): string | null {
 
 export default function FaturamentoPage() {
   const { currentCompany } = useCompany();
+  const { registrarLog } = useLogTransacao();
   const [busca, setBusca] = useState("");
   const [tipo, setTipo] = useState("");
   const [favorecido, setFavorecido] = useState("");
