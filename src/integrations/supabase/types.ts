@@ -1031,6 +1031,59 @@ export type Database = {
           },
         ]
       }
+      logs_transacoes: {
+        Row: {
+          acao: string
+          created_at: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          descricao: string
+          empresa_id: string
+          entidade: string
+          entidade_id: string | null
+          id: string
+          modulo: string
+          usuario_id: string | null
+          usuario_nome: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          descricao: string
+          empresa_id: string
+          entidade: string
+          entidade_id?: string | null
+          id?: string
+          modulo: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          descricao?: string
+          empresa_id?: string
+          entidade?: string
+          entidade_id?: string | null
+          id?: string
+          modulo?: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logs_transacoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modulos_parametros: {
         Row: {
           ativo: boolean
