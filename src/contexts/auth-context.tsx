@@ -233,8 +233,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     setIsLoading(true);
+    
+    // Capturar dados antes de limpar
+    const logoutEmail = user?.email || userData?.email || "desconhecido";
+    const logoutUserId = user?.id || null;
+    const logoutEmpresaId = userData?.empresa_id || localStorage.getItem("userCompanyId");
+    
     try {
       console.log("[AuthContext] Iniciando logout");
+      
+      // Registrar log de logout antes de limpar sessão
+      if (logoutEmpresaId && logoutUserId) {
+        try {
+          await supabase.from("logs_transacoes" as any).insert({
+            empresa_id: logoutEmpresaId,
+            usuario_id: logoutUserId,
+            usuario_nome: logoutEmail,
+            acao: "logout",
+            modulo: "autenticacao",
+            entidade: "usuario",
+            entidade_id: logoutUserId,
+            descricao: `Logout realizado: ${logoutEmail}`,
+          });
+        } catch (logErr) {
+          console.error("[AuthContext] Erro ao registrar log de logout:", logErr);
+        }
+      }
       
       // Limpar estado de autenticação primeiro
       cleanupAuthState();
