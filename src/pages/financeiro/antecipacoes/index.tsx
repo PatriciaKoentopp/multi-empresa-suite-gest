@@ -28,6 +28,7 @@ import { AntecipacaoModal } from "@/components/antecipacoes/antecipacao-modal";
 import { VisualizarAntecipacaoModal } from "@/components/antecipacoes/visualizar-antecipacao-modal";
 import { EditarAntecipacaoModal } from "@/components/antecipacoes/editar-antecipacao-modal";
 import { DevolverAntecipacaoModal } from "@/components/antecipacoes/devolver-antecipacao-modal";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 export default function AntecipacoesPage() {
   const { currentCompany } = useCompany();
