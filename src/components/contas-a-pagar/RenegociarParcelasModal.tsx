@@ -9,6 +9,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { ContaPagar } from "./contas-a-pagar-table";
 import { X } from "lucide-react";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 interface RenegociarParcelasModalProps {
   open: boolean;
