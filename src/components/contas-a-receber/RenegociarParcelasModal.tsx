@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 interface RenegociarParcelasModalProps {
   parcela?: ContaReceber | null;
