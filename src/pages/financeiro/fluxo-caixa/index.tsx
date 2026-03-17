@@ -514,6 +514,18 @@ export default function FluxoCaixaPage() {
 
   async function handleDesfazerConciliacao(id: string) {
     try {
+      // Buscar data do movimento para validar período fechado
+      const { data: mov } = await supabase
+        .from("fluxo_caixa")
+        .select("data_movimentacao")
+        .eq("id", id)
+        .single();
+
+      if (mov && verificarPeriodoFechado(new Date(mov.data_movimentacao + "T12:00:00"))) {
+        toast.error("Não é possível desfazer a conciliação de movimentos em um período já fechado.");
+        return;
+      }
+
       const { error } = await supabase
         .from("fluxo_caixa")
         .update({ situacao: "nao_conciliado" })
