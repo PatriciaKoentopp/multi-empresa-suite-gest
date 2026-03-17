@@ -1,34 +1,103 @@
 
+## Correção: Baixa com Antecipação Parcial e Desfazer Baixa
 
-## Plano: Incluir Logs de Autenticação (Login/Logout)
+### Problemas Identificados
 
-### Problema
-O relatório de logs do sistema não registra eventos de autenticação (login e logout dos usuários).
+#### 1. Processamento DUPLICADO das antecipações
+O `BaixarContaPagarModal` (handleConfirmar) já executa todas as operações no banco de dados:
+- Atualiza a parcela
+- Insere na tabela `movimentacoes_parcelas_antecipacoes`
+- Incrementa `valor_utilizado` na antecipação
+- Insere registros no `fluxo_caixa`
+
+Depois, chama `onBaixar()` que dispara `realizarBaixa()` em `index.tsx`, que repete as mesmas operações:
+- Atualiza a parcela NOVAMENTE
+- Incrementa `valor_utilizado` NOVAMENTE (duplicando o valor)
+- Insere na tabela de relacionamento NOVAMENTE
+- Insere no `fluxo_caixa` NOVAMENTE
+
+**Exemplo:** Antecipação de R$1.000, uso parcial de R$500:
+- Modal: valor_utilizado = 0 + 500 = **500** (correto)
+- realizarBaixa: valor_utilizado = 500 + 500 = **1.000** (errado - aparece como totalmente utilizada)
+
+#### 2. Status da antecipação não atualizado corretamente
+O modal atualiza `valor_utilizado` mas nunca atualiza o campo `status`. A antecipação deveria manter status "ativa" quando ainda tem saldo disponível, e mudar para "utilizada" somente quando totalmente consumida.
+
+#### 3. Desfazer baixa com valor duplicado
+Ao desfazer a baixa, o sistema subtrai o valor uma vez (correto), mas como foi duplicado, o `valor_utilizado` fica com saldo residual incorreto. Além disso, existem registros duplicados na tabela `movimentacoes_parcelas_antecipacoes`.
+
+---
 
 ### Solução
-Registrar logs de login e logout diretamente no `auth-context.tsx`, inserindo na tabela `logs_transacoes` após login/logout bem-sucedido.
 
-**Nota:** Não podemos usar o hook `useLogTransacao` dentro do `auth-context` porque ele depende de `useCompany` e `useAuth` (dependência circular). Usaremos inserção direta via Supabase.
+#### Arquivo 1: `src/pages/financeiro/contas-a-pagar/index.tsx`
 
-### Arquivos a alterar
+**Remover toda a lógica duplicada de `realizarBaixa`**. A função deve apenas recarregar os dados e exibir o toast, já que o modal faz todo o trabalho.
 
-| Arquivo | Alteração |
+Antes (linhas 133-243):
+```typescript
+function realizarBaixa({ ... }) {
+  // Atualiza parcela DUPLICADO
+  // Atualiza antecipação DUPLICADO
+  // Insere relacionamento DUPLICADO
+  // Insere fluxo de caixa DUPLICADO
+  // Recarrega dados
+}
+```
+
+Depois:
+```typescript
+function realizarBaixa() {
+  if (!contaParaBaixar || !currentCompany) return;
+
+  const recarregar = async () => {
+    try {
+      await carregarContasAPagar();
+      toast({
+        title: "Sucesso",
+        description: "Título baixado com sucesso!"
+      });
+      setModalBaixarAberto(false);
+      setContaParaBaixar(null);
+    } catch (error) {
+      console.error("Erro ao recarregar dados:", error);
+    }
+  };
+
+  recarregar();
+}
+```
+
+#### Arquivo 2: `src/components/contas-a-pagar/BaixarContaPagarModal.tsx`
+
+**Adicionar atualização do status da antecipação** ao atualizar `valor_utilizado`:
+
+```typescript
+const novoValorUtilizado = (antAtual?.valor_utilizado || 0) + antSel.valor;
+const novoStatus = novoValorUtilizado >= (antAtual?.valor_total || 0) ? 'utilizada' : 'ativa';
+
+const { error: antecipacaoError } = await supabase
+  .from("antecipacoes")
+  .update({
+    valor_utilizado: novoValorUtilizado,
+    status: novoStatus
+  })
+  .eq("id", antSel.id);
+```
+
+---
+
+### Arquivos a Alterar
+
+| Arquivo | Alteracao |
 |---------|-----------|
-| `src/contexts/auth-context.tsx` | Inserir log após login e logout bem-sucedidos |
+| `src/pages/financeiro/contas-a-pagar/index.tsx` | Simplificar `realizarBaixa` removendo lógica duplicada |
+| `src/components/contas-a-pagar/BaixarContaPagarModal.tsx` | Adicionar atualização de status ao usar antecipação parcial |
 
-### Detalhes
+---
 
-Na função `login`, após sucesso e `fetchUserData`, inserir log com:
-- acao: `login`
-- modulo: `autenticacao`
-- entidade: `usuario`
-- descricao: `Login realizado: {email}`
+### Resultado Esperado
 
-Na função `logout`, antes do redirect, inserir log com:
-- acao: `logout`
-- modulo: `autenticacao`
-- entidade: `usuario`
-- descricao: `Logout realizado: {email}`
-
-Para o logout, precisamos capturar os dados do usuário antes de limpar o estado, e buscar o `empresa_id` do `userData` antes de limpar.
-
+1. Uso parcial de antecipação: `valor_utilizado` incrementa corretamente (uma vez só), status permanece "ativa"
+2. Uso total de antecipação: `valor_utilizado` = `valor_total`, status muda para "utilizada"
+3. Desfazer baixa: reverte `valor_utilizado` corretamente e restaura status para "ativa" (esta lógica já está implementada corretamente em `handleDesfazerBaixa`)

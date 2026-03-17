@@ -152,6 +152,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Após o login bem-sucedido, buscamos os dados do usuário
       if (data.user) {
         await fetchUserData(data.user.id);
+        
+        // Registrar log de login
+        try {
+          const empresaId = localStorage.getItem("userCompanyId");
+          if (empresaId) {
+            await supabase.from("logs_transacoes" as any).insert({
+              empresa_id: empresaId,
+              usuario_id: data.user.id,
+              usuario_nome: email,
+              acao: "login",
+              modulo: "autenticacao",
+              entidade: "usuario",
+              entidade_id: data.user.id,
+              descricao: `Login realizado: ${email}`,
+            });
+          }
+        } catch (logErr) {
+          console.error("[AuthContext] Erro ao registrar log de login:", logErr);
+        }
       }
     } catch (error: any) {
       console.error("[AuthContext] Erro no processo de login:", error);
@@ -214,8 +233,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     setIsLoading(true);
+    
+    // Capturar dados antes de limpar
+    const logoutEmail = user?.email || userData?.email || "desconhecido";
+    const logoutUserId = user?.id || null;
+    const logoutEmpresaId = userData?.empresa_id || localStorage.getItem("userCompanyId");
+    
     try {
       console.log("[AuthContext] Iniciando logout");
+      
+      // Registrar log de logout antes de limpar sessão
+      if (logoutEmpresaId && logoutUserId) {
+        try {
+          await supabase.from("logs_transacoes" as any).insert({
+            empresa_id: logoutEmpresaId,
+            usuario_id: logoutUserId,
+            usuario_nome: logoutEmail,
+            acao: "logout",
+            modulo: "autenticacao",
+            entidade: "usuario",
+            entidade_id: logoutUserId,
+            descricao: `Logout realizado: ${logoutEmail}`,
+          });
+        } catch (logErr) {
+          console.error("[AuthContext] Erro ao registrar log de logout:", logErr);
+        }
+      }
       
       // Limpar estado de autenticação primeiro
       cleanupAuthState();
