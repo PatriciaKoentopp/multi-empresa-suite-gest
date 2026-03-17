@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 import { formatDate, parseDateString } from "@/lib/utils";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 export const useMovimentacaoForm = (movimentacaoEditando) => {
   const { currentCompany } = useCompany();
