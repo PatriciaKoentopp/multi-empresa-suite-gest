@@ -154,6 +154,16 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
       }
 
       toast.success("Venda efetivada com sucesso!");
+      
+      await registrarLog({
+        acao: 'efetivar',
+        modulo: 'vendas',
+        entidade: 'orcamento',
+        entidade_id: orcamento.id,
+        descricao: `Venda efetivada - Código: ${orcamento.codigo}, Cliente: ${orcamento.favorecido?.nome || 'N/A'}, Valor: R$ ${valorTotal.toFixed(2).replace('.', ',')}`,
+        dados_novos: { codigo: orcamento.codigo, data_venda: dataVenda, valor_total: valorTotal },
+      });
+
       onSuccess();
       onClose();
     } catch (error) {

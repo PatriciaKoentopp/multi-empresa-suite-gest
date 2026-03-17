@@ -35,6 +35,7 @@ import { EfetivarVendaModal } from "@/components/vendas/EfetivarVendaModal";
 import { formatDate } from "@/lib/utils";
 import { SalesCard } from "@/components/vendas/SalesCard";
 import { DateInput } from "@/components/movimentacao/DateInput";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 // Opções de tipo
 const tipos = ["Todos", "Orçamento", "Venda"];
