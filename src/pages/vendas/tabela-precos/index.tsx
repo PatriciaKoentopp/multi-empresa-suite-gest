@@ -102,8 +102,6 @@ export default function TabelaPrecosPage() {
       // Converter datas de string para objetos Date
       const servicosConvertidos = data?.map(serv => ({
         ...serv,
-        created_at: new Date(serv.created_at),
-        updated_at: new Date(serv.updated_at),
         status: serv.status as "ativo" | "inativo"
       })) as Servico[];
       
