@@ -570,6 +570,16 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/relatorios/logs"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <LogsTransacoes />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
 
             {/* Backup */}
             <Route

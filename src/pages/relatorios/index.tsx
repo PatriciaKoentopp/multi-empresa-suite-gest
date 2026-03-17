@@ -169,7 +169,7 @@ export default function Relatorios() {
               </CardHeader>
               <CardContent>
                 <Button 
-                  variant={relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' || relatorio.id === 'projetos' || relatorio.id === 'aniversariantes' || relatorio.id === 'financeiro' || relatorio.id === 'contasPagar' || relatorio.id === 'contasReceber' || relatorio.id === 'antecipacoes' ? "default" : "outline"} 
+                  variant={relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' || relatorio.id === 'projetos' || relatorio.id === 'aniversariantes' || relatorio.id === 'financeiro' || relatorio.id === 'contasPagar' || relatorio.id === 'contasReceber' || relatorio.id === 'antecipacoes' || relatorio.id === 'logs' ? "default" : "outline"} 
                   className="w-full"
                   onClick={() => handleCardClick(relatorio.route)}
                 >

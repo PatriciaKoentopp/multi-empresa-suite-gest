@@ -72,6 +72,7 @@ export const useDashboardCards = (pageId: string = 'dashboard') => {
       { card_id: 'contasReceber', name: 'Relatório de Contas a Receber', order_position: 11, is_visible: true },
       { card_id: 'antecipacoes', name: 'Relatório de Antecipações', order_position: 12, is_visible: true },
       { card_id: 'geral', name: 'Relatório Geral', order_position: 13, is_visible: true },
+      { card_id: 'logs', name: 'Logs do Sistema', order_position: 14, is_visible: true },
     ]
   };
 
