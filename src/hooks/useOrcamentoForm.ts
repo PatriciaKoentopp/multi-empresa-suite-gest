@@ -556,22 +556,24 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
       } else {
         // Inserir novo orçamento (sempre como tipo "orcamento")
         // O código será gerado automaticamente pelo trigger
+        const insertData: any = {
+          empresa_id: currentCompany?.id,
+          favorecido_id: favorecidoId,
+          tipo: 'orcamento',
+          data: data ? new Date(data).toISOString() : new Date().toISOString(),
+          codigo_projeto: codigoProjeto || null,
+          observacoes: observacoes || null,
+          forma_pagamento: formaPagamento,
+          numero_parcelas: numeroParcelas,
+          data_nota_fiscal: dataNotaFiscal || null,
+          numero_nota_fiscal: numeroNotaFiscal || null,
+          status: 'ativo',
+          nota_fiscal_pdf: notaFiscalPdfUrl || null,
+        };
+        
         const { data: orcamento, error: orcamentoError } = await supabase
           .from('orcamentos')
-          .insert([{
-            empresa_id: currentCompany?.id as string,
-            favorecido_id: favorecidoId,
-            tipo: 'orcamento',
-            data: data ? new Date(data).toISOString() : new Date().toISOString(),
-            codigo_projeto: codigoProjeto || null,
-            observacoes: observacoes || null,
-            forma_pagamento: formaPagamento,
-            numero_parcelas: numeroParcelas,
-            data_nota_fiscal: dataNotaFiscal || null,
-            numero_nota_fiscal: numeroNotaFiscal || null,
-            status: 'ativo',
-            nota_fiscal_pdf: notaFiscalPdfUrl || null,
-          }])
+          .insert(insertData)
           .select()
           .single();
 
