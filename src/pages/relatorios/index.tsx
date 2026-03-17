@@ -104,6 +104,13 @@ export default function Relatorios() {
       icon: <FileText className="h-8 w-8 text-amber-500" />,
       route: "/relatorios/geral"
     },
+    {
+      id: "logs",
+      title: "Logs do Sistema",
+      description: "Histórico de transações e operações realizadas no sistema",
+      icon: <ScrollText className="h-8 w-8 text-slate-500" />,
+      route: "/relatorios/logs"
+    },
   ];
 
   const handleCardClick = (route: string) => {
