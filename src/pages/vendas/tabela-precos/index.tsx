@@ -72,7 +72,7 @@ export default function TabelaPrecosPage() {
   }
 
   // Função para converter string YYYY-MM-DD para objeto Date sem considerar timezone
-  function parseDateString(dateStr: string): Date {
+  function parseDateString(dateStr: any): Date {
     // Se já for um objeto Date, retorna ele mesmo
     if (dateStr instanceof Date) return dateStr;
     
