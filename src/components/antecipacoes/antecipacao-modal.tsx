@@ -150,6 +150,13 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
     try {
       setIsLoading(true);
 
+      // Verificar período fechado
+      if (verificarPeriodoFechado(dataLancamento)) {
+        toast.error("Não é possível criar antecipação em um período já fechado.");
+        setIsLoading(false);
+        return;
+      }
+
       // Converter valor para número
       const valorNumerico = Number(valor.replace(/\./g, '').replace(',', '.'));
 

@@ -68,6 +68,12 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
       return;
     }
 
+    // Verificar período fechado
+    if (verificarPeriodoFechado(new Date(dataVenda + "T12:00:00"))) {
+      toast.error("Não é possível efetivar venda em um período já fechado.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       // 1. Buscar todos os itens e parcelas do orçamento
