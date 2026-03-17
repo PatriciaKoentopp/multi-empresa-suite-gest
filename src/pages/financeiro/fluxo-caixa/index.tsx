@@ -30,6 +30,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { usePdfFluxoCaixa } from "@/hooks/usePdfFluxoCaixa";
 import { useLogTransacao } from "@/hooks/useLogTransacao";
+import { useFechamentoMensal } from "@/hooks/useFechamentoMensal";
 
 // Função para formatar datas (DD/MM/YYYY)
 function formatDateBR(dateStr: string) {
