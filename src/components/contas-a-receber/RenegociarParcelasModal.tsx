@@ -33,6 +33,7 @@ export function RenegociarParcelasModal({
   const [novasParcelas, setNovasParcelas] = useState<NovaParcela[]>([]);
   const [numParcelas, setNumParcelas] = useState(1);
   const [valorTotal, setValorTotal] = useState(0);
+  const { registrarLog } = useLogTransacao();
 
   // Inicializar quando o modal abrir
   useEffect(() => {
