@@ -399,15 +399,15 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
       return;
     }
 
-    const tabelaParaSalvar: TabelaPreco = {
+    const tabelaParaSalvar: any = {
       id: tabela?.id || '',
       empresa_id: currentCompany?.id || '',
       nome,
       vigencia_inicial: vigenciaInicial,
       vigencia_final: vigenciaFinal,
       status,
-      created_at: tabela?.created_at || new Date(),
-      updated_at: new Date()
+      created_at: tabela?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     onSalvar(tabelaParaSalvar);
