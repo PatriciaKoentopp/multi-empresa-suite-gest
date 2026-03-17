@@ -36,6 +36,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ContaCorrente } from "@/types/conta-corrente";
 import { AntecipacaoSelecionada } from "@/types/financeiro";
 import { useExcelContasPagar } from "@/hooks/useExcelContasPagar";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 export default function ContasAPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>([]);
