@@ -37,6 +37,7 @@ import { useLogTransacao } from "@/hooks/useLogTransacao";
 export default function ContasAReceberPage() {
   const { currentCompany } = useCompany();
   const { exportToExcel, isGenerating } = useExcelContasReceber();
+  const { registrarLog } = useLogTransacao();
   const [contas, setContas] = useState<ContaReceber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
