@@ -1,53 +1,103 @@
 
-Objetivo: resolver definitivamente o erro de deploy no Vercel (`Could not resolve "./pages/relatorios/logs"`) e te dar um roteiro de teste.
+## Correção: Baixa com Antecipação Parcial e Desfazer Baixa
 
-Diagnóstico confirmado
-- A página existe em `src/pages/relatorios/logs/index.tsx`.
-- O problema provável é o `.gitignore`: ele contém a regra `logs` (linha 2), que ignora qualquer pasta chamada `logs` (inclusive `src/pages/relatorios/logs`), então o arquivo não sobe para o repositório/deploy.
+### Problemas Identificados
 
-Plano de correção
-1) Ajustar `.gitignore`
-- Trocar:
-  - `logs`
-- Por uma opção segura:
-  - `/logs`
-- Assim, só ignora pasta `logs` na raiz (se existir), e não a pasta de página React.
+#### 1. Processamento DUPLICADO das antecipações
+O `BaixarContaPagarModal` (handleConfirmar) já executa todas as operações no banco de dados:
+- Atualiza a parcela
+- Insere na tabela `movimentacoes_parcelas_antecipacoes`
+- Incrementa `valor_utilizado` na antecipação
+- Insere registros no `fluxo_caixa`
 
-2) Garantir que a página de logs seja versionada
-- Confirmar que `src/pages/relatorios/logs/index.tsx` está sendo incluído no commit.
-- Se necessário, forçar inclusão (caso já tenha sido ignorado antes).
+Depois, chama `onBaixar()` que dispara `realizarBaixa()` em `index.tsx`, que repete as mesmas operações:
+- Atualiza a parcela NOVAMENTE
+- Incrementa `valor_utilizado` NOVAMENTE (duplicando o valor)
+- Insere na tabela de relacionamento NOVAMENTE
+- Insere no `fluxo_caixa` NOVAMENTE
 
-3) Validar import e rota
-- Manter (ou confirmar) no `src/App.tsx`:
-  - `import LogsTransacoes from "./pages/relatorios/logs";`
-  - rota `/relatorios/logs` apontando para `<LogsTransacoes />`.
+**Exemplo:** Antecipação de R$1.000, uso parcial de R$500:
+- Modal: valor_utilizado = 0 + 500 = **500** (correto)
+- realizarBaixa: valor_utilizado = 500 + 500 = **1.000** (errado - aparece como totalmente utilizada)
 
-Passo a passo para você testar no Vercel
-1. Faça a alteração no `.gitignore` (`logs` -> `/logs`).
-2. Rode localmente:
-   - `git check-ignore -v src/pages/relatorios/logs/index.tsx`
-   - Resultado esperado: não aparecer como ignorado.
-3. Adicione arquivos:
-   - `git add .gitignore src/pages/relatorios/logs/index.tsx src/App.tsx`
-4. Confira:
-   - `git status`
-   - Deve mostrar `.gitignore` e a página `logs/index.tsx` staged.
-5. Commit e push:
-   - `git commit -m "fix: include relatorios/logs page in repo and deploy"`
-   - `git push`
-6. No Vercel:
-   - Abra o projeto -> Deployments -> selecione o último commit -> `Redeploy` (marcando “Use existing Build Cache” desativado, se disponível).
-7. Valide no log de build:
-   - Não deve mais aparecer `Could not resolve "./pages/relatorios/logs"`.
-8. Valide na aplicação:
-   - Acesse `/relatorios/logs` e confirme carregamento da página.
+#### 2. Status da antecipação não atualizado corretamente
+O modal atualiza `valor_utilizado` mas nunca atualiza o campo `status`. A antecipação deveria manter status "ativa" quando ainda tem saldo disponível, e mudar para "utilizada" somente quando totalmente consumida.
 
-Fallback (se ainda falhar)
-- Trocar import para explícito:
-  - `import LogsTransacoes from "./pages/relatorios/logs/index";`
-- Commit/push/redeploy novamente.
-- Isso elimina qualquer variação de resolução por diretório no bundler.
+#### 3. Desfazer baixa com valor duplicado
+Ao desfazer a baixa, o sistema subtrai o valor uma vez (correto), mas como foi duplicado, o `valor_utilizado` fica com saldo residual incorreto. Além disso, existem registros duplicados na tabela `movimentacoes_parcelas_antecipacoes`.
 
-Detalhes técnicos
-- O aviso `Browserslist: caniuse-lite is 17 months old` não quebra build; é apenas aviso.
-- O erro fatal é de resolução de módulo, consistente com arquivo ausente no deploy por regra de ignore.
+---
+
+### Solução
+
+#### Arquivo 1: `src/pages/financeiro/contas-a-pagar/index.tsx`
+
+**Remover toda a lógica duplicada de `realizarBaixa`**. A função deve apenas recarregar os dados e exibir o toast, já que o modal faz todo o trabalho.
+
+Antes (linhas 133-243):
+```typescript
+function realizarBaixa({ ... }) {
+  // Atualiza parcela DUPLICADO
+  // Atualiza antecipação DUPLICADO
+  // Insere relacionamento DUPLICADO
+  // Insere fluxo de caixa DUPLICADO
+  // Recarrega dados
+}
+```
+
+Depois:
+```typescript
+function realizarBaixa() {
+  if (!contaParaBaixar || !currentCompany) return;
+
+  const recarregar = async () => {
+    try {
+      await carregarContasAPagar();
+      toast({
+        title: "Sucesso",
+        description: "Título baixado com sucesso!"
+      });
+      setModalBaixarAberto(false);
+      setContaParaBaixar(null);
+    } catch (error) {
+      console.error("Erro ao recarregar dados:", error);
+    }
+  };
+
+  recarregar();
+}
+```
+
+#### Arquivo 2: `src/components/contas-a-pagar/BaixarContaPagarModal.tsx`
+
+**Adicionar atualização do status da antecipação** ao atualizar `valor_utilizado`:
+
+```typescript
+const novoValorUtilizado = (antAtual?.valor_utilizado || 0) + antSel.valor;
+const novoStatus = novoValorUtilizado >= (antAtual?.valor_total || 0) ? 'utilizada' : 'ativa';
+
+const { error: antecipacaoError } = await supabase
+  .from("antecipacoes")
+  .update({
+    valor_utilizado: novoValorUtilizado,
+    status: novoStatus
+  })
+  .eq("id", antSel.id);
+```
+
+---
+
+### Arquivos a Alterar
+
+| Arquivo | Alteracao |
+|---------|-----------|
+| `src/pages/financeiro/contas-a-pagar/index.tsx` | Simplificar `realizarBaixa` removendo lógica duplicada |
+| `src/components/contas-a-pagar/BaixarContaPagarModal.tsx` | Adicionar atualização de status ao usar antecipação parcial |
+
+---
+
+### Resultado Esperado
+
+1. Uso parcial de antecipação: `valor_utilizado` incrementa corretamente (uma vez só), status permanece "ativa"
+2. Uso total de antecipação: `valor_utilizado` = `valor_total`, status muda para "utilizada"
+3. Desfazer baixa: reverte `valor_utilizado` corretamente e restaura status para "ativa" (esta lógica já está implementada corretamente em `handleDesfazerBaixa`)
