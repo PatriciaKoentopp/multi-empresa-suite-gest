@@ -28,9 +28,11 @@ import { AntecipacaoModal } from "@/components/antecipacoes/antecipacao-modal";
 import { VisualizarAntecipacaoModal } from "@/components/antecipacoes/visualizar-antecipacao-modal";
 import { EditarAntecipacaoModal } from "@/components/antecipacoes/editar-antecipacao-modal";
 import { DevolverAntecipacaoModal } from "@/components/antecipacoes/devolver-antecipacao-modal";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 export default function AntecipacoesPage() {
   const { currentCompany } = useCompany();
+  const { registrarLog } = useLogTransacao();
   const [antecipacoes, setAntecipacoes] = useState<Antecipacao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -343,6 +345,16 @@ export default function AntecipacoesPage() {
       console.log("Antecipação excluída com sucesso");
 
       // Atualizar a lista local
+      const antExcluida = antecipacoes.find(a => a.id === antecipacaoParaExcluir);
+      await registrarLog({
+        acao: 'excluir',
+        modulo: 'financeiro',
+        entidade: 'antecipacao',
+        entidade_id: antecipacaoParaExcluir,
+        descricao: `Antecipação excluída - ${antExcluida?.favorecido || ''} - Valor: R$ ${antExcluida?.valorTotal?.toFixed(2) || '0'}`,
+        dados_anteriores: antExcluida ? { favorecido: antExcluida.favorecido, valor_total: antExcluida.valorTotal, tipo_operacao: antExcluida.tipoOperacao } : undefined,
+      });
+
       setAntecipacoes(prev => prev.filter(a => a.id !== antecipacaoParaExcluir));
       toast.success("Antecipação excluída com sucesso");
       setAntecipacaoParaExcluir(null);

@@ -23,6 +23,7 @@ import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 import { AlertCircle } from "lucide-react";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 interface Antecipacao {
   id: string;
@@ -62,6 +63,7 @@ export function DevolverAntecipacaoModal({
   antecipacao,
 }: DevolverAntecipacaoModalProps) {
   const { currentCompany } = useCompany();
+  const { registrarLog } = useLogTransacao();
   const [dataDevolucao, setDataDevolucao] = useState<Date>(new Date());
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("");
   const [formaPagamento, setFormaPagamento] = useState<string>("");
@@ -221,6 +223,15 @@ export function DevolverAntecipacaoModal({
         console.error("Erro ao atualizar antecipação:", updateError);
         throw updateError;
       }
+
+      await registrarLog({
+        acao: 'devolver',
+        modulo: 'financeiro',
+        entidade: 'antecipacao',
+        entidade_id: antecipacao.id,
+        descricao: `Devolução de antecipação - Valor devolvido: R$ ${valorNumerico.toFixed(2)} - ${antecipacao.favorecido}`,
+        dados_novos: { valor_devolvido: valorNumerico, observacao },
+      });
 
       toast.success("Devolução registrada com sucesso");
       onSave();

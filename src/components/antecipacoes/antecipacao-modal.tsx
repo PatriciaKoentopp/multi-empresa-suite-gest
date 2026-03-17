@@ -11,6 +11,7 @@ import { useMovimentacaoDados } from "@/hooks/useMovimentacaoDados";
 import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 interface AntecipacaoModalProps {
   open: boolean;
@@ -28,6 +29,7 @@ const formasPagamento = [
 
 export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProps) {
   const { currentCompany } = useCompany();
+  const { registrarLog } = useLogTransacao();
   const { favorecidos, tiposTitulos } = useMovimentacaoDados();
 
   const [operacao, setOperacao] = useState<"receber" | "pagar">("receber");
@@ -218,6 +220,15 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
       }
 
       console.log("Fluxo de caixa inserido com sucesso:", fluxoInserido);
+
+      await registrarLog({
+        acao: 'criar',
+        modulo: 'financeiro',
+        entidade: 'antecipacao',
+        entidade_id: antecipacaoInserida.id,
+        descricao: `Antecipação criada - ${operacao === 'receber' ? 'Recebimento' : 'Pagamento'} - Valor: R$ ${valorNumerico.toFixed(2)}`,
+        dados_novos: { tipo_operacao: operacao, valor_total: valorNumerico, descricao: descricao },
+      });
 
       toast.success("Antecipação registrada com sucesso!");
       resetForm();

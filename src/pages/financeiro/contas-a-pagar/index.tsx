@@ -227,6 +227,17 @@ export default function ContasAPagarPage() {
 
       // Recarregar as contas após a exclusão
       await carregarContasAPagar();
+
+      // Encontrar dados da conta excluída para o log
+      const contaExcluida = contas.find(c => c.movimentacao_id === contaParaExcluir);
+      await registrarLog({
+        acao: 'excluir',
+        modulo: 'financeiro',
+        entidade: 'conta_pagar',
+        entidade_id: contaParaExcluir,
+        descricao: `Conta a pagar excluída - ${contaExcluida?.descricao || ''} - Valor: R$ ${contaExcluida?.valor?.toFixed(2) || '0'}`,
+        dados_anteriores: contaExcluida ? { favorecido: contaExcluida.favorecido, valor: contaExcluida.valor, descricao: contaExcluida.descricao } : undefined,
+      });
       
       toast({
         title: "Sucesso",
@@ -455,6 +466,15 @@ export default function ContasAPagarPage() {
           ? { ...c, dataPagamento: undefined, status: "em_aberto" as const, formaPagamento: null, multa: null, juros: null, desconto: null, contaCorrenteId: null }
           : c
       ));
+
+      await registrarLog({
+        acao: 'desfazer',
+        modulo: 'financeiro',
+        entidade: 'conta_pagar',
+        entidade_id: conta.id,
+        descricao: `Baixa desfeita - ${conta.descricao || ''} - Favorecido: ${conta.favorecido} - Valor: R$ ${conta.valor?.toFixed(2)}`,
+        dados_anteriores: { favorecido: conta.favorecido, valor: conta.valor, status: conta.status },
+      });
 
       toast({
         title: "Sucesso",

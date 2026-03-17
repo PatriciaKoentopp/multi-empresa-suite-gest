@@ -29,6 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { usePdfFluxoCaixa } from "@/hooks/usePdfFluxoCaixa";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 // Função para formatar datas (DD/MM/YYYY)
 function formatDateBR(dateStr: string) {
@@ -107,6 +108,7 @@ export default function FluxoCaixaPage() {
   const navigate = useNavigate();
   const { currentCompany } = useCompany();
   const queryClient = useQueryClient();
+  const { registrarLog } = useLogTransacao();
   const [favorecidosCache, setFavorecidosCache] = useState<Record<string, any>>({});
   const [contaCorrenteSelecionada, setContaCorrenteSelecionada] = useState<any>(null);
   const [documentosCache, setDocumentosCache] = useState<Record<string, any>>({});
@@ -479,6 +481,14 @@ export default function FluxoCaixaPage() {
 
       if (error) throw error;
 
+      await registrarLog({
+        acao: 'conciliar',
+        modulo: 'financeiro',
+        entidade: 'fluxo_caixa',
+        entidade_id: id,
+        descricao: `Movimento conciliado no fluxo de caixa`,
+      });
+
       toast.success("Movimento conciliado com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["fluxo-caixa-periodo"] });
       queryClient.invalidateQueries({ queryKey: ["fluxo-caixa-todas"] });
@@ -496,6 +506,14 @@ export default function FluxoCaixaPage() {
         .eq("id", id);
 
       if (error) throw error;
+
+      await registrarLog({
+        acao: 'desfazer',
+        modulo: 'financeiro',
+        entidade: 'fluxo_caixa',
+        entidade_id: id,
+        descricao: `Conciliação desfeita no fluxo de caixa`,
+      });
 
       toast.success("Conciliação desfeita com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["fluxo-caixa-periodo"] });

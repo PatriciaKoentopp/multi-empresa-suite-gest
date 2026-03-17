@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 interface RenegociarParcelasModalProps {
   parcela?: ContaReceber | null;
@@ -32,6 +33,7 @@ export function RenegociarParcelasModal({
   const [novasParcelas, setNovasParcelas] = useState<NovaParcela[]>([]);
   const [numParcelas, setNumParcelas] = useState(1);
   const [valorTotal, setValorTotal] = useState(0);
+  const { registrarLog } = useLogTransacao();
 
   // Inicializar quando o modal abrir
   useEffect(() => {
@@ -182,6 +184,15 @@ export function RenegociarParcelasModal({
         
       if (updateError) throw updateError;
       
+      await registrarLog({
+        acao: 'renegociar',
+        modulo: 'financeiro',
+        entidade: 'conta_receber',
+        entidade_id: parcela.id,
+        descricao: `Parcela renegociada - ${parcela.cliente} - Valor: R$ ${parcela.valor.toFixed(2)} em ${novasParcelas.length} parcela(s)`,
+        dados_novos: { num_parcelas: novasParcelas.length },
+      });
+
       toast.success("Renegociação realizada com sucesso!");
       onConfirmar();
       onClose();

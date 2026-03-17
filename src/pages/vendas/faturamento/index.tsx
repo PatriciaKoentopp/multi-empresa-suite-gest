@@ -219,12 +219,21 @@ export default function FaturamentoPage() {
 
       if (error) throw error;
 
+      await registrarLog({
+        acao: 'excluir',
+        modulo: 'vendas',
+        entidade: 'orcamento',
+        entidade_id: excluirItem.id,
+        descricao: `${excluirItem.tipo === 'venda' ? 'Venda' : 'Orçamento'} excluído - Código: ${excluirItem.codigo}`,
+        dados_anteriores: { codigo: excluirItem.codigo, tipo: excluirItem.tipo, favorecido: excluirItem.favorecido?.nome },
+      });
+
       toast({ 
         title: "Sucesso", 
         description: `${excluirItem.tipo === 'venda' ? 'Venda' : 'Orçamento'} excluído com sucesso!` 
       });
       
-      carregarFaturamentos(); // Recarrega a lista
+      carregarFaturamentos();
       setExcluirItem(null);
       setShowToastConfirm(false);
 

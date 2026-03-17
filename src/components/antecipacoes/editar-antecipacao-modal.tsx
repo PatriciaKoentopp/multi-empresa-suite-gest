@@ -11,6 +11,7 @@ import { useMovimentacaoDados } from "@/hooks/useMovimentacaoDados";
 import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 import { Antecipacao } from "./antecipacao-table";
 
 interface EditarAntecipacaoModalProps {
@@ -31,6 +32,7 @@ const formasPagamento = [
 export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: EditarAntecipacaoModalProps) {
   const { currentCompany } = useCompany();
   const { favorecidos, tiposTitulos } = useMovimentacaoDados();
+  const { registrarLog } = useLogTransacao();
 
   const [dataEmissao, setDataEmissao] = useState<Date>(new Date());
   const [dataLancamento, setDataLancamento] = useState<Date>(new Date());
@@ -215,6 +217,15 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
         console.error("Erro ao atualizar fluxo de caixa:", fluxoCaixaError);
         throw fluxoCaixaError;
       }
+
+      await registrarLog({
+        acao: 'editar',
+        modulo: 'financeiro',
+        entidade: 'antecipacao',
+        entidade_id: antecipacao.id,
+        descricao: `Antecipação editada - Valor: R$ ${novoValor.toFixed(2)}`,
+        dados_novos: { valor_total: novoValor, descricao: descricao },
+      });
 
       toast.success("Antecipação atualizada com sucesso!");
       onSave();
