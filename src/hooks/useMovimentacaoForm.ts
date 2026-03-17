@@ -323,6 +323,17 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
         );
       }
 
+      const valorNumericoFinal = parseFloat(valor.replace(/\./g, '').replace(',', '.')) || 0;
+      
+      await registrarLog({
+        acao: movimentacaoEditando?.id ? 'editar' : 'criar',
+        modulo: 'financeiro',
+        entidade: 'movimentacao',
+        entidade_id: movimentacaoId,
+        descricao: `${movimentacaoEditando?.id ? 'Edição' : 'Criação'} de movimentação - Tipo: ${operacao}, Valor: R$ ${valorNumericoFinal.toFixed(2).replace('.', ',')}${descricao ? `, ${descricao}` : ''}`,
+        dados_novos: { tipo_operacao: operacao, valor: valorNumericoFinal, descricao },
+      });
+
       toast.success(movimentacaoEditando?.id ? "Movimentação atualizada com sucesso!" : "Movimentação registrada com sucesso!");
       setTimeout(() => window.history.back(), 1000);
     } catch (error) {

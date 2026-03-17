@@ -378,6 +378,16 @@ export default function ContasAReceberPage() {
         );
         
         toast.success("Recebimento registrado com sucesso!");
+        
+        registrarLog({
+          acao: 'baixar',
+          modulo: 'financeiro',
+          entidade: 'conta_receber',
+          entidade_id: contaParaBaixar.id,
+          descricao: `Baixa de conta a receber - ${contaParaBaixar.descricao || ''}, Valor: R$ ${Number(contaParaBaixar.valor).toFixed(2).replace('.', ',')}`,
+          dados_novos: { cliente: contaParaBaixar.cliente, valor: contaParaBaixar.valor },
+        });
+
         setModalBaixarAberto(false);
       });
   }
