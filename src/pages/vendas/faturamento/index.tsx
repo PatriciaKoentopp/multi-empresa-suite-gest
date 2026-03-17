@@ -320,6 +320,16 @@ export default function FaturamentoPage() {
         description: "Venda desfeita com sucesso! O registro voltou a ser um orçamento."
       });
 
+      await registrarLog({
+        acao: 'desfazer',
+        modulo: 'vendas',
+        entidade: 'orcamento',
+        entidade_id: desfazerVendaItem.id,
+        descricao: `Venda desfeita - Código: ${desfazerVendaItem.codigo}, Cliente: ${desfazerVendaItem.favorecido?.nome || 'N/A'}`,
+        dados_anteriores: { codigo: desfazerVendaItem.codigo, tipo: 'venda', data_venda: desfazerVendaItem.data_venda },
+        dados_novos: { tipo: 'orcamento', data_venda: null },
+      });
+
       carregarFaturamentos();
       setDesfazerVendaItem(null);
       setShowDesfazerConfirm(false);
