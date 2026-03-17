@@ -43,6 +43,7 @@ const formasPagamento = [
 
 export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: BaixarContaReceberModalProps) {
   const { currentCompany } = useCompany();
+  const { verificarPeriodoFechado } = useFechamentoMensal();
   const [dataRecebimento, setDataRecebimento] = useState<Date | undefined>(conta?.dataVencimento);
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("");
   const [formaPagamento, setFormaPagamento] = useState<string>("");
