@@ -105,7 +105,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
         nome: item.servicos?.nome // Campo adicional não persistido
       })) || [];
 
-      setServicosTabela(servicosConvertidos);
+      setServicosTabela(servicosConvertidos as any);
 
       // Carregar produtos
       const { data: dataProdutos, error: errorProdutos } = await supabase
