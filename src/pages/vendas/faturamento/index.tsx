@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, X, MoreHorizontal } from "lucide-react";
+import { Search, X, MoreHorizontal, Undo2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -80,6 +80,8 @@ export default function FaturamentoPage() {
   const [excluirItem, setExcluirItem] = useState<Orcamento | null>(null);
   const [statusFilter, setStatusFilter] = useState<"ativo" | "inativo" | "todos">("ativo");
   const [efetivarVendaItem, setEfetivarVendaItem] = useState<Orcamento | null>(null);
+  const [desfazerVendaItem, setDesfazerVendaItem] = useState<Orcamento | null>(null);
+  const [showDesfazerConfirm, setShowDesfazerConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -239,6 +241,97 @@ export default function FaturamentoPage() {
   function handleCancelarExclusao() {
     setExcluirItem(null);
     setShowToastConfirm(false);
+  }
+
+  async function confirmarDesfazerVenda() {
+    if (!desfazerVendaItem || !currentCompany) return;
+
+    try {
+      setIsLoading(true);
+
+      // 1. Buscar movimentação pelo numero_documento = codigo do orçamento
+      const { data: movimentacao, error: movError } = await supabase
+        .from('movimentacoes')
+        .select('id')
+        .eq('numero_documento', desfazerVendaItem.codigo)
+        .eq('empresa_id', currentCompany.id)
+        .single();
+
+      if (movError && movError.code !== 'PGRST116') throw movError;
+
+      if (movimentacao) {
+        // 2. Verificar se alguma parcela foi recebida
+        const { data: parcelas, error: parcelasError } = await supabase
+          .from('movimentacoes_parcelas')
+          .select('data_pagamento')
+          .eq('movimentacao_id', movimentacao.id);
+
+        if (parcelasError) throw parcelasError;
+
+        const temParcelasRecebidas = parcelas?.some(p => p.data_pagamento !== null);
+
+        if (temParcelasRecebidas) {
+          toast({
+            title: "Não é possível desfazer",
+            description: "Esta venda já possui parcelas recebidas. Desfaça as baixas primeiro.",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // 3. Excluir registros de fluxo_caixa vinculados à movimentação
+        const { error: fluxoError } = await supabase
+          .from('fluxo_caixa')
+          .delete()
+          .eq('movimentacao_id', movimentacao.id);
+
+        if (fluxoError) throw fluxoError;
+
+        // 4. Excluir parcelas da movimentação
+        const { error: deleteParcelasError } = await supabase
+          .from('movimentacoes_parcelas')
+          .delete()
+          .eq('movimentacao_id', movimentacao.id);
+
+        if (deleteParcelasError) throw deleteParcelasError;
+
+        // 5. Excluir a movimentação
+        const { error: deleteMovError } = await supabase
+          .from('movimentacoes')
+          .delete()
+          .eq('id', movimentacao.id);
+
+        if (deleteMovError) throw deleteMovError;
+      }
+
+      // 6. Reverter o orçamento: tipo = 'orcamento', data_venda = null
+      const { error: updateError } = await supabase
+        .from('orcamentos')
+        .update({ tipo: 'orcamento', data_venda: null })
+        .eq('id', desfazerVendaItem.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Sucesso",
+        description: "Venda desfeita com sucesso! O registro voltou a ser um orçamento."
+      });
+
+      carregarFaturamentos();
+      setDesfazerVendaItem(null);
+      setShowDesfazerConfirm(false);
+
+    } catch (error) {
+      console.error('Erro ao desfazer venda:', error);
+      toast({
+        title: "Erro ao desfazer venda",
+        description: "Ocorreu um erro ao tentar desfazer a venda.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   // Função para limpar todos os filtros
@@ -524,6 +617,18 @@ export default function FaturamentoPage() {
                             Efetivar Venda
                           </DropdownMenuItem>
                         )}
+                        {item.tipo === "venda" && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setDesfazerVendaItem(item);
+                              setShowDesfazerConfirm(true);
+                            }}
+                            className="flex items-center gap-2 text-orange-500 focus:bg-orange-100 focus:text-orange-700"
+                          >
+                            <Undo2 className="w-4 h-4" />
+                            Desfazer Venda
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           onClick={() => prepararExclusao(item)}
                           className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
@@ -596,6 +701,56 @@ export default function FaturamentoPage() {
               className="flex-1 sm:flex-none"
             >
               {isLoading ? "Excluindo..." : "Excluir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de confirmação de desfazer venda */}
+      <Dialog open={showDesfazerConfirm} onOpenChange={setShowDesfazerConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar desfazer venda</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja desfazer esta venda? A movimentação financeira e suas parcelas serão excluídas, e o registro voltará a ser um orçamento.
+            </DialogDescription>
+          </DialogHeader>
+
+          {desfazerVendaItem && (
+            <div className="border rounded-md p-3 bg-gray-50 my-4">
+              <p className="font-medium">
+                Venda: {desfazerVendaItem.codigo}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {formatDateBR(desfazerVendaItem.data_venda)} - {desfazerVendaItem.favorecido?.nome}
+              </p>
+              <p className="text-sm font-medium mt-1">
+                Valor: {Number(desfazerVendaItem.valor).toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL"
+                })}
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDesfazerVendaItem(null);
+                setShowDesfazerConfirm(false);
+              }}
+              className="flex-1 sm:flex-none"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmarDesfazerVenda}
+              disabled={isLoading}
+              className="flex-1 sm:flex-none"
+            >
+              {isLoading ? "Desfazendo..." : "Desfazer Venda"}
             </Button>
           </DialogFooter>
         </DialogContent>
