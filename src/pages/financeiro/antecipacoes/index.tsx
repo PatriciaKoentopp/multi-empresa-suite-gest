@@ -32,6 +32,7 @@ import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 export default function AntecipacoesPage() {
   const { currentCompany } = useCompany();
+  const { registrarLog } = useLogTransacao();
   const [antecipacoes, setAntecipacoes] = useState<Antecipacao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
