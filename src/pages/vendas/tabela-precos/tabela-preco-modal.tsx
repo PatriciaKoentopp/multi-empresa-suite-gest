@@ -269,7 +269,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
 
         // Se inseriu com sucesso, adiciona ao estado local
         if (data && data.length > 0) {
-          setProdutosTabela(prev => [
+          setProdutosTabela((prev: any[]) => [
             ...prev,
             {
               id: data[0].id,
