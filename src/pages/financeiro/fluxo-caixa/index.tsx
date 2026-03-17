@@ -110,6 +110,7 @@ export default function FluxoCaixaPage() {
   const { currentCompany } = useCompany();
   const queryClient = useQueryClient();
   const { registrarLog } = useLogTransacao();
+  const { verificarPeriodoFechado } = useFechamentoMensal();
   const [favorecidosCache, setFavorecidosCache] = useState<Record<string, any>>({});
   const [contaCorrenteSelecionada, setContaCorrenteSelecionada] = useState<any>(null);
   const [documentosCache, setDocumentosCache] = useState<Record<string, any>>({});
