@@ -52,7 +52,7 @@ const PainelVendasPage = () => {
   const handleDateChange = (start: Date, end: Date) => {
     setStartDate(start);
     setEndDate(end);
-    fetchSalesData(format(start, "yyyy-MM-dd"), format(end, "yyyy-MM-dd"));
+    fetchSalesData();
   };
 
   const handleConfigChange = async () => {

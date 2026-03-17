@@ -353,7 +353,7 @@ export function LeadFormModal({
       }
 
       // Se o tipo de interação for WhatsApp, abrir o WhatsApp com a mensagem
-      if (novaInteracao.tipo === "whatsapp" && lead.telefone) {
+      if ((novaInteracao.tipo as string) === "whatsapp" && lead.telefone) {
         abrirWhatsApp(lead.telefone, novaInteracao.descricao);
       }
 

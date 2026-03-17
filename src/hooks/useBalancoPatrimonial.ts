@@ -54,7 +54,7 @@ export function useBalancoPatrimonial() {
     lancamentos.forEach(lancamento => {
       if (!lancamento.data) return;
       
-      const dataLanc = converterData(lancamento.data);
+      const dataLanc = converterData(String(lancamento.data));
       
       // Filtrar por data limite
       if (dataLanc < dataLimite) {

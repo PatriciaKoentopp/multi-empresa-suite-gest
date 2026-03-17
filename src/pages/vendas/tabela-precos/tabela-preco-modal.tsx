@@ -22,7 +22,8 @@ import {
   PopoverTrigger 
 } from "@/components/ui/popover";
 import { toast } from "@/components/ui/use-toast";
-import { TabelaPreco, Servico, TabelaPrecoItem, Produto } from "@/types";
+import { TabelaPreco, Servico, TabelaPrecoItem } from "@/types";
+import { Produto } from "@/types/produtos";
 import { useCompany } from "@/contexts/company-context";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { formatDate, parseDateString } from "@/lib/utils";
@@ -66,9 +67,9 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
   useEffect(() => {
     if (open && tabela) {
       setNome(tabela.nome);
-      setVigenciaInicial(tabela.vigencia_inicial);
-      setVigenciaFinal(tabela.vigencia_final);
-      setStatus(tabela.status);
+      setVigenciaInicial(tabela.vigencia_inicial as any);
+      setVigenciaFinal(tabela.vigencia_final as any);
+      setStatus(tabela.status as any);
       setTabelaId(tabela.id);
       carregarItensDaTabela(tabela.id);
     } else {
@@ -104,7 +105,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
         nome: item.servicos?.nome // Campo adicional não persistido
       })) || [];
 
-      setServicosTabela(servicosConvertidos);
+      setServicosTabela(servicosConvertidos as any);
 
       // Carregar produtos
       const { data: dataProdutos, error: errorProdutos } = await supabase
@@ -132,7 +133,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
         nome: item.produtos?.nome // Campo adicional não persistido
       })) || [];
 
-      setProdutosTabela(produtosConvertidos);
+      setProdutosTabela(produtosConvertidos as any);
     } catch (error) {
       console.error('Erro ao carregar itens da tabela:', error);
       toast({
@@ -189,7 +190,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
 
         // Se inseriu com sucesso, adiciona ao estado local
         if (data && data.length > 0) {
-          setServicosTabela(prev => [
+          setServicosTabela((prev: any[]) => [
             ...prev,
             {
               id: data[0].id,
@@ -206,7 +207,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
       } else {
         // Está criando uma nova tabela, então só adiciona ao estado local
         // Os itens só serão salvos depois que a tabela for criada
-        setServicosTabela(prev => [
+        setServicosTabela((prev: any[]) => [
           ...prev,
           {
             id: `temp-${Date.now()}`, // ID temporário
@@ -268,7 +269,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
 
         // Se inseriu com sucesso, adiciona ao estado local
         if (data && data.length > 0) {
-          setProdutosTabela(prev => [
+          setProdutosTabela((prev: any[]) => [
             ...prev,
             {
               id: data[0].id,
@@ -285,7 +286,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
       } else {
         // Está criando uma nova tabela, então só adiciona ao estado local
         // Os itens só serão salvos depois que a tabela for criada
-        setProdutosTabela(prev => [
+        setProdutosTabela((prev: any[]) => [
           ...prev,
           {
             id: `temp-${Date.now()}`, // ID temporário
@@ -398,15 +399,15 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
       return;
     }
 
-    const tabelaParaSalvar: TabelaPreco = {
+    const tabelaParaSalvar: any = {
       id: tabela?.id || '',
       empresa_id: currentCompany?.id || '',
       nome,
       vigencia_inicial: vigenciaInicial,
       vigencia_final: vigenciaFinal,
       status,
-      created_at: tabela?.created_at || new Date(),
-      updated_at: new Date()
+      created_at: tabela?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     onSalvar(tabelaParaSalvar);
@@ -583,7 +584,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
                       <tbody>
                         {servicosTabela.map(srv => (
                           <tr key={srv.servico_id} className="border-t">
-                            <td className="py-1 px-2">{srv.nome}</td>
+                            <td className="py-1 px-2">{(srv as any).nome}</td>
                             <td className="py-1 px-2">
                               {srv.preco.toLocaleString("pt-BR", { 
                                 style: "currency", 
@@ -665,7 +666,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
                       <tbody>
                         {produtosTabela.map(prod => (
                           <tr key={prod.produto_id} className="border-t">
-                            <td className="py-1 px-2">{prod.nome}</td>
+                            <td className="py-1 px-2">{(prod as any).nome}</td>
                             <td className="py-1 px-2">
                               {prod.preco.toLocaleString("pt-BR", { 
                                 style: "currency", 

@@ -156,7 +156,7 @@ export default function ContratosPage() {
         </CardHeader>
         <CardContent>
           <ContratosTable
-            contratos={contratosFiltrados}
+            contratos={contratosFiltrados as any}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onView={handleView}

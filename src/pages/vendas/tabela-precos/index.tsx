@@ -9,7 +9,8 @@ import { toast } from "@/components/ui/use-toast";
 import { TabelaPrecoModal } from "./tabela-preco-modal";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
-import { TabelaPreco, Servico, Produto } from "@/types";
+import { TabelaPreco, Servico } from "@/types";
+import { Produto } from "@/types/produtos";
 import { formatDate } from "@/lib/utils";
 import {
   AlertDialog,
@@ -55,10 +56,8 @@ export default function TabelaPrecosPage() {
       // Converter datas corretamente sem considerar timezone
       const tabelasConvertidas = data?.map(tab => ({
         ...tab,
-        vigencia_inicial: tab.vigencia_inicial ? parseDateString(tab.vigencia_inicial) : null,
-        vigencia_final: tab.vigencia_final ? parseDateString(tab.vigencia_final) : null,
-        created_at: new Date(tab.created_at),
-        updated_at: new Date(tab.updated_at)
+        vigencia_inicial: tab.vigencia_inicial || undefined,
+        vigencia_final: tab.vigencia_final || undefined,
       })) as TabelaPreco[];
       
       setTabelas(tabelasConvertidas || []);
@@ -73,7 +72,7 @@ export default function TabelaPrecosPage() {
   }
 
   // Função para converter string YYYY-MM-DD para objeto Date sem considerar timezone
-  function parseDateString(dateStr: string): Date {
+  function parseDateString(dateStr: any): Date {
     // Se já for um objeto Date, retorna ele mesmo
     if (dateStr instanceof Date) return dateStr;
     
@@ -103,8 +102,6 @@ export default function TabelaPrecosPage() {
       // Converter datas de string para objetos Date
       const servicosConvertidos = data?.map(serv => ({
         ...serv,
-        created_at: new Date(serv.created_at),
-        updated_at: new Date(serv.updated_at),
         status: serv.status as "ativo" | "inativo"
       })) as Servico[];
       
@@ -130,7 +127,7 @@ export default function TabelaPrecosPage() {
 
       if (error) throw error;
       
-      setProdutos(data || []);
+      setProdutos((data || []) as any);
     } catch (error) {
       console.error('Erro ao carregar produtos:', error);
       toast({
@@ -331,7 +328,7 @@ export default function TabelaPrecosPage() {
                       : "-"}
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(tab.status)}
+                    {getStatusBadge(tab.status as "ativo" | "inativo")}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

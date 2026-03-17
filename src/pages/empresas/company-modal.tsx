@@ -62,7 +62,7 @@ interface CompanyModalProps {
 // O formulário agora trabalha com o formato "achatado" igual ao banco/existing page
 export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
   const { toast } = useToast();
-  const { addCompany, updateCompany } = useCompany();
+  const { createCompany, updateCompany } = useCompany();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -109,7 +109,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
         cidade: company.endereco?.cidade || "",
         estado: company.endereco?.estado || "",
         pais: company.endereco?.pais || "Brasil",
-        regimeTributacao: company.regimeTributacao || undefined,
+        regimeTributacao: (company.regimeTributacao as any) || undefined,
         logo: company.logo || "",
       });
     } else {
@@ -139,17 +139,29 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
 
   const onSubmit = (values: FormValues) => {
     // Prepara objeto Company com endereço corretamente montado
-    const companyObj: Company = {
+    const companyObj: Partial<Company> = {
       id: company?.id ?? crypto.randomUUID(),
-      razaoSocial: values.razaoSocial,
-      nomeFantasia: values.nomeFantasia,
+      razao_social: values.razaoSocial,
+      nome_fantasia: values.nomeFantasia,
       cnpj: values.cnpj,
-      inscricaoEstadual: values.inscricaoEstadual,
-      inscricaoMunicipal: values.inscricaoMunicipal,
+      inscricao_estadual: values.inscricaoEstadual,
+      inscricao_municipal: values.inscricaoMunicipal,
       cnae: values.cnae,
       email: values.email,
       site: values.site,
       telefone: values.telefone,
+      cep: values.cep,
+      logradouro: values.logradouro,
+      numero: values.numero,
+      complemento: values.complemento,
+      bairro: values.bairro,
+      cidade: values.cidade,
+      estado: values.estado,
+      pais: values.pais,
+      regime_tributacao: values.regimeTributacao,
+      logo: values.logo,
+      razaoSocial: values.razaoSocial,
+      nomeFantasia: values.nomeFantasia,
       endereco: {
         cep: values.cep,
         logradouro: values.logradouro,
@@ -161,10 +173,6 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
         pais: values.pais,
       },
       regimeTributacao: values.regimeTributacao,
-      logo: values.logo,
-      createdAt: company?.createdAt || new Date(),
-      updatedAt: new Date(),
-      name: values.nomeFantasia || values.razaoSocial // garantir compatibilidade com a tipagem
     };
 
     if (company) {
@@ -174,7 +182,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
         description: "As informações da empresa foram atualizadas com sucesso.",
       });
     } else {
-      addCompany(companyObj);
+      createCompany(companyObj);
       toast({
         title: "Empresa cadastrada",
         description: "A empresa foi cadastrada com sucesso.",

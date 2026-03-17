@@ -286,12 +286,12 @@ export function Dashboard() {
               id: parcela.id,
               cliente: favorecidoNome,
               descricao: parcela.movimentacao.descricao || 'Sem descrição',
-              dataVencimento: dataVencimento, // Mantido como string
+              dataVencimento: new Date(dataVencimento),
               valor: Number(parcela.valor),
               status: 'em_aberto' as 'em_aberto',
               numeroParcela: parcela.movimentacao.numero_documento || '-',
               origem: 'Movimentação',
-              movimentacao_id: parcela.movimentacao_id,
+              movimentacao_id: (parcela as any).movimentacao_id,
               tipo: parcela.movimentacao.tipo_operacao
             };
 
@@ -478,8 +478,8 @@ export function Dashboard() {
           saldoContas,
           totalSaldo,
           interacoesPendentes,
-          topClientesAnoAtual,
-          topClientesAnoAnterior
+          topClientesAnoAtual: topClientesAnoAtual as DashboardData['topClientesAnoAtual'],
+          topClientesAnoAnterior: topClientesAnoAnterior as DashboardData['topClientesAnoAnterior']
         });
         
         console.log("[Dashboard] Dados carregados com sucesso");

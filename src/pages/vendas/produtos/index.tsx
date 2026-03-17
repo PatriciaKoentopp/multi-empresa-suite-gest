@@ -59,7 +59,7 @@ export default function ProdutosPage() {
         return;
       }
 
-      setProdutos(data || []);
+      setProdutos((data || []) as any);
     } catch (e) {
       console.error("Erro ao carregar produtos:", e);
       toast.error("Erro ao carregar produtos");

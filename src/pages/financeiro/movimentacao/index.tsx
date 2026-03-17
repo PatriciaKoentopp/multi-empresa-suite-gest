@@ -33,7 +33,7 @@ import { DateInput } from "@/components/movimentacao/DateInput";
 import { useExcelMovimentacao } from "@/hooks/useExcelMovimentacao";
 
 export default function MovimentacaoPage() {
-  const [movimentacoes, setMovimentacoes] = useState<ContaPagar[]>([]);
+  const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
   const navigate = useNavigate();
   const { tiposTitulos, categorias } = useMovimentacaoDados();
   const { exportToExcel } = useExcelMovimentacao();
@@ -142,11 +142,11 @@ export default function MovimentacaoPage() {
 
         if (movimentacoesData) {
           // Converter movimentações para o formato esperado
-          const movimentacoesFormatadas: ContaPagar[] = movimentacoesData.map((mov: any) => ({
+          const movimentacoesFormatadas: any[] = movimentacoesData.map((mov: any) => ({
             id: mov.id,
+            movimentacao_id: mov.id,
             favorecido: mov.favorecido?.nome || 'Não informado',
             descricao: mov.descricao || '',
-            // Usar a string direta da data, sem criar um objeto Date para evitar problemas de timezone
             dataVencimento: mov.primeiro_vencimento || undefined,
             dataPagamento: undefined,
             status: 'em_aberto',

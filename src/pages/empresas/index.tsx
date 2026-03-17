@@ -87,8 +87,8 @@ export default function EmpresasPage() {
   const {
     currentCompany,
     updateCompany,
-    addCompany,
-    isLoading
+    createCompany,
+    loading: isLoading
   } = useCompany();
   const {
     user
@@ -145,7 +145,7 @@ export default function EmpresasPage() {
         cidade: currentCompany.endereco?.cidade || "",
         estado: currentCompany.endereco?.estado || "",
         pais: currentCompany.endereco?.pais || "Brasil",
-        regimeTributacao: currentCompany.regimeTributacao,
+        regimeTributacao: (currentCompany.regimeTributacao as any),
         logo: currentCompany.logo || ""
       });
     } else {
@@ -203,7 +203,7 @@ export default function EmpresasPage() {
       updatedAt: new Date()
     };
     if (criandoEmpresa || !currentCompany) {
-      addCompany(empresaObject as Company);
+      createCompany(empresaObject as unknown as Partial<Company>);
       toast({
         title: "Empresa cadastrada",
         description: "A empresa foi cadastrada com sucesso."
