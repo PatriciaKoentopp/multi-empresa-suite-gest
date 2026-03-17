@@ -67,9 +67,9 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
   useEffect(() => {
     if (open && tabela) {
       setNome(tabela.nome);
-      setVigenciaInicial(tabela.vigencia_inicial);
-      setVigenciaFinal(tabela.vigencia_final);
-      setStatus(tabela.status);
+      setVigenciaInicial(tabela.vigencia_inicial as any);
+      setVigenciaFinal(tabela.vigencia_final as any);
+      setStatus(tabela.status as any);
       setTabelaId(tabela.id);
       carregarItensDaTabela(tabela.id);
     } else {
