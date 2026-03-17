@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Users, Calculator, BarChart, Award, TrendingUp, Clock, Camera, Layers, Cake, CreditCard, Wallet } from "lucide-react";
+import { FileText, Users, Calculator, BarChart, Award, TrendingUp, Clock, Camera, Layers, Cake, CreditCard, Wallet, ScrollText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DashboardCardConfigurator } from "@/components/dashboard/DashboardCardConfigurator";
 import { useDashboardCards } from "@/hooks/useDashboardCards";
