@@ -8,6 +8,7 @@ import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 export const useMovimentacaoForm = (movimentacaoEditando) => {
   const { currentCompany } = useCompany();
+  const { registrarLog } = useLogTransacao();
   const [operacao, setOperacao] = useState(movimentacaoEditando?.tipo_operacao || "pagar");
   const [dataEmissao, setDataEmissao] = useState(movimentacaoEditando?.data_emissao ? parseDateString(formatDate(movimentacaoEditando.data_emissao)) : new Date());
   const [dataLancamento, setDataLancamento] = useState(movimentacaoEditando?.data_lancamento ? parseDateString(formatDate(movimentacaoEditando.data_lancamento)) : new Date());
