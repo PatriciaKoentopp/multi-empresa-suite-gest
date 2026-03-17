@@ -87,8 +87,8 @@ export default function EmpresasPage() {
   const {
     currentCompany,
     updateCompany,
-    addCompany,
-    isLoading
+    createCompany,
+    loading: isLoading
   } = useCompany();
   const {
     user
