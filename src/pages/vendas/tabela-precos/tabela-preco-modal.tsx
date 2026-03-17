@@ -133,7 +133,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
         nome: item.produtos?.nome // Campo adicional não persistido
       })) || [];
 
-      setProdutosTabela(produtosConvertidos);
+      setProdutosTabela(produtosConvertidos as any);
     } catch (error) {
       console.error('Erro ao carregar itens da tabela:', error);
       toast({
