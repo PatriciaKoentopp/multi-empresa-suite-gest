@@ -584,7 +584,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
                       <tbody>
                         {servicosTabela.map(srv => (
                           <tr key={srv.servico_id} className="border-t">
-                            <td className="py-1 px-2">{srv.nome}</td>
+                            <td className="py-1 px-2">{(srv as any).nome}</td>
                             <td className="py-1 px-2">
                               {srv.preco.toLocaleString("pt-BR", { 
                                 style: "currency", 
