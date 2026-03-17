@@ -249,7 +249,7 @@ export default function AnaliseDrePage() {
     }
     
     // Agrupar por conta e mês
-    const contas: Record<string, Record<string, number>> = {};
+    const contas: Record<string, Record<string, any>> = {};
     
     movimentacoes?.forEach(mov => {
       const considerarDre = mov.movimentacoes?.considerar_dre !== false;
