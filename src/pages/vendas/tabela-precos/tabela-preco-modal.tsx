@@ -286,7 +286,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
       } else {
         // Está criando uma nova tabela, então só adiciona ao estado local
         // Os itens só serão salvos depois que a tabela for criada
-        setProdutosTabela(prev => [
+        setProdutosTabela((prev: any[]) => [
           ...prev,
           {
             id: `temp-${Date.now()}`, // ID temporário
