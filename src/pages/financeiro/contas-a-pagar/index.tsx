@@ -138,6 +138,16 @@ export default function ContasAPagarPage() {
     const recarregar = async () => {
       try {
         await carregarContasAPagar();
+        
+        await registrarLog({
+          acao: 'baixar',
+          modulo: 'financeiro',
+          entidade: 'conta_pagar',
+          entidade_id: contaParaBaixar.id,
+          descricao: `Baixa de conta a pagar - ${contaParaBaixar.descricao || ''}, Valor: R$ ${Number(contaParaBaixar.valor).toFixed(2).replace('.', ',')}`,
+          dados_novos: { favorecido: contaParaBaixar.favorecido, valor: contaParaBaixar.valor },
+        });
+
         toast({
           title: "Sucesso",
           description: "Título baixado com sucesso!"
