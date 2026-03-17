@@ -152,6 +152,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Após o login bem-sucedido, buscamos os dados do usuário
       if (data.user) {
         await fetchUserData(data.user.id);
+        
+        // Registrar log de login
+        try {
+          const empresaId = localStorage.getItem("userCompanyId");
+          if (empresaId) {
+            await supabase.from("logs_transacoes" as any).insert({
+              empresa_id: empresaId,
+              usuario_id: data.user.id,
+              usuario_nome: email,
+              acao: "login",
+              modulo: "autenticacao",
+              entidade: "usuario",
+              entidade_id: data.user.id,
+              descricao: `Login realizado: ${email}`,
+            });
+          }
+        } catch (logErr) {
+          console.error("[AuthContext] Erro ao registrar log de login:", logErr);
+        }
       }
     } catch (error: any) {
       console.error("[AuthContext] Erro no processo de login:", error);
