@@ -11,7 +11,36 @@ import { useCompany } from "@/contexts/company-context";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { AnaliseVariacao, DetalhesMensaisConta, FiltroAnaliseDre, ValorMensal } from "@/types/financeiro";
+// Types used locally
+interface AnaliseVariacao {
+  classificacao: string;
+  totalAtual: number;
+  totalAnterior: number;
+  variacao: number;
+  percentual: number;
+}
+
+interface ValorMensal {
+  mes: number;
+  ano: number;
+  valor: number;
+  chave: string;
+}
+
+interface DetalhesMensaisConta {
+  contaId: string;
+  nomeConta: string;
+  valoresMensais: ValorMensal[];
+  total: number;
+  media: number;
+}
+
+interface FiltroAnaliseDre {
+  mesInicio: string;
+  anoInicio: number;
+  mesFim: string;
+  anoFim: number;
+}
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import "../../../styles/collapsible.css";
 import { Separator } from "@/components/ui/separator";

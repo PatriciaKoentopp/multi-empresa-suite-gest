@@ -127,7 +127,7 @@ export default function TabelaPrecosPage() {
 
       if (error) throw error;
       
-      setProdutos(data || []);
+      setProdutos((data || []) as any);
     } catch (error) {
       console.error('Erro ao carregar produtos:', error);
       toast({
