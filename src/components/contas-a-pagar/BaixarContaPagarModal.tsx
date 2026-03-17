@@ -197,6 +197,12 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
       return;
     }
 
+    // Verificar período fechado
+    if (dataPagamento && verificarPeriodoFechado(dataPagamento)) {
+      toast.error("Não é possível realizar baixa em um período já fechado.");
+      return;
+    }
+
     if (usarAntecipacao && antecipacoesSelecionadas.length === 0) {
       toast.error("Selecione pelo menos uma antecipação.");
       return;

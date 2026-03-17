@@ -193,6 +193,12 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
       return;
     }
 
+    // Verificar período fechado
+    if (dataRecebimento && verificarPeriodoFechado(dataRecebimento)) {
+      toast.error("Não é possível realizar recebimento em um período já fechado.");
+      return;
+    }
+
     if (usarAntecipacao && antecipacoesSelecionadas.length === 0) {
       toast.error("Selecione pelo menos uma antecipação.");
       return;
