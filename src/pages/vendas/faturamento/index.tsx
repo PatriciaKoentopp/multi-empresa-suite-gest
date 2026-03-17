@@ -706,6 +706,56 @@ export default function FaturamentoPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog de confirmação de desfazer venda */}
+      <Dialog open={showDesfazerConfirm} onOpenChange={setShowDesfazerConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar desfazer venda</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja desfazer esta venda? A movimentação financeira e suas parcelas serão excluídas, e o registro voltará a ser um orçamento.
+            </DialogDescription>
+          </DialogHeader>
+
+          {desfazerVendaItem && (
+            <div className="border rounded-md p-3 bg-gray-50 my-4">
+              <p className="font-medium">
+                Venda: {desfazerVendaItem.codigo}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {formatDateBR(desfazerVendaItem.data_venda)} - {desfazerVendaItem.favorecido?.nome}
+              </p>
+              <p className="text-sm font-medium mt-1">
+                Valor: {Number(desfazerVendaItem.valor).toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL"
+                })}
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDesfazerVendaItem(null);
+                setShowDesfazerConfirm(false);
+              }}
+              className="flex-1 sm:flex-none"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmarDesfazerVenda}
+              disabled={isLoading}
+              className="flex-1 sm:flex-none"
+            >
+              {isLoading ? "Desfazendo..." : "Desfazer Venda"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Adicionar o modal de Efetivar Venda */}
       <EfetivarVendaModal
         open={!!efetivarVendaItem}
