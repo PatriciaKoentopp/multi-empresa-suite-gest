@@ -62,7 +62,7 @@ interface CompanyModalProps {
 // O formulário agora trabalha com o formato "achatado" igual ao banco/existing page
 export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
   const { toast } = useToast();
-  const { addCompany, updateCompany } = useCompany();
+  const { createCompany, updateCompany } = useCompany();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
