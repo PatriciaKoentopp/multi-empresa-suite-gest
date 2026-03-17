@@ -27,6 +27,7 @@ export interface ContaReceber {
   desconto?: number;
   contaCorrenteId?: string;
   formaPagamento?: string;
+  tipo?: string;
 }
 
 interface ContasAReceberTableProps {
