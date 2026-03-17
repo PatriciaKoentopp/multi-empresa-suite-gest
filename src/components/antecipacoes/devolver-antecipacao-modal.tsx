@@ -23,6 +23,7 @@ import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 import { AlertCircle } from "lucide-react";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 interface Antecipacao {
   id: string;
