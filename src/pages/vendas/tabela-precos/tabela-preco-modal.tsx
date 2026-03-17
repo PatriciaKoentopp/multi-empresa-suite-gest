@@ -22,7 +22,8 @@ import {
   PopoverTrigger 
 } from "@/components/ui/popover";
 import { toast } from "@/components/ui/use-toast";
-import { TabelaPreco, Servico, TabelaPrecoItem, Produto } from "@/types";
+import { TabelaPreco, Servico, TabelaPrecoItem } from "@/types";
+import { Produto } from "@/types/produtos";
 import { useCompany } from "@/contexts/company-context";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { formatDate, parseDateString } from "@/lib/utils";
