@@ -68,6 +68,7 @@ import RelatorioFinanceiro from "./pages/relatorios/financeiro";
 import RelatorioContasPagar from "./pages/relatorios/contas-a-pagar";
 import RelatorioContasReceber from "./pages/relatorios/contas-a-receber";
 import RelatorioAntecipacoes from "./pages/relatorios/antecipacoes";
+import LogsTransacoes from "./pages/relatorios/logs";
 
 // Backup
 import BackupPage from "./pages/backup";
