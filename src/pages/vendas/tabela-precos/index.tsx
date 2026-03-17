@@ -56,10 +56,8 @@ export default function TabelaPrecosPage() {
       // Converter datas corretamente sem considerar timezone
       const tabelasConvertidas = data?.map(tab => ({
         ...tab,
-        vigencia_inicial: tab.vigencia_inicial ? parseDateString(tab.vigencia_inicial) : null,
-        vigencia_final: tab.vigencia_final ? parseDateString(tab.vigencia_final) : null,
-        created_at: new Date(tab.created_at),
-        updated_at: new Date(tab.updated_at)
+        vigencia_inicial: tab.vigencia_inicial || undefined,
+        vigencia_final: tab.vigencia_final || undefined,
       })) as TabelaPreco[];
       
       setTabelas(tabelasConvertidas || []);
