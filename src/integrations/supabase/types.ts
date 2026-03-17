@@ -499,6 +499,50 @@ export type Database = {
           },
         ]
       }
+      fechamentos_mensais: {
+        Row: {
+          ano: number
+          created_at: string
+          data_fechamento: string
+          empresa_id: string
+          fechado_por: string | null
+          fechado_por_nome: string | null
+          id: string
+          mes: number
+          observacoes: string | null
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          data_fechamento?: string
+          empresa_id: string
+          fechado_por?: string | null
+          fechado_por_nome?: string | null
+          id?: string
+          mes: number
+          observacoes?: string | null
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          data_fechamento?: string
+          empresa_id?: string
+          fechado_por?: string | null
+          fechado_por_nome?: string | null
+          id?: string
+          mes?: number
+          observacoes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fechamentos_mensais_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fluxo_caixa: {
         Row: {
           antecipacao_id: string | null
@@ -2144,6 +2188,10 @@ export type Database = {
           faturado: number
           name: string
         }[]
+      }
+      is_periodo_fechado: {
+        Args: { p_data: string; p_empresa_id: string }
+        Returns: boolean
       }
     }
     Enums: {
