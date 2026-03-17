@@ -1,103 +1,47 @@
 
-## Correção: Baixa com Antecipação Parcial e Desfazer Baixa
 
-### Problemas Identificados
+## Plano: Integrar Logs em Todas as Ações dos Módulos
 
-#### 1. Processamento DUPLICADO das antecipações
-O `BaixarContaPagarModal` (handleConfirmar) já executa todas as operações no banco de dados:
-- Atualiza a parcela
-- Insere na tabela `movimentacoes_parcelas_antecipacoes`
-- Incrementa `valor_utilizado` na antecipação
-- Insere registros no `fluxo_caixa`
+### Resumo das ações que precisam de log
 
-Depois, chama `onBaixar()` que dispara `realizarBaixa()` em `index.tsx`, que repete as mesmas operações:
-- Atualiza a parcela NOVAMENTE
-- Incrementa `valor_utilizado` NOVAMENTE (duplicando o valor)
-- Insere na tabela de relacionamento NOVAMENTE
-- Insere no `fluxo_caixa` NOVAMENTE
+Já existem logs em: baixa contas a pagar, baixa contas a receber, efetivar venda, desfazer venda, criar/editar movimentação.
 
-**Exemplo:** Antecipação de R$1.000, uso parcial de R$500:
-- Modal: valor_utilizado = 0 + 500 = **500** (correto)
-- realizarBaixa: valor_utilizado = 500 + 500 = **1.000** (errado - aparece como totalmente utilizada)
+**Faltam logs em:**
 
-#### 2. Status da antecipação não atualizado corretamente
-O modal atualiza `valor_utilizado` mas nunca atualiza o campo `status`. A antecipação deveria manter status "ativa" quando ainda tem saldo disponível, e mudar para "utilizada" somente quando totalmente consumida.
+| Módulo | Ação | Arquivo |
+|--------|------|---------|
+| Contas a Pagar | Excluir | `contas-a-pagar/index.tsx` → `confirmarExclusao` |
+| Contas a Pagar | Desfazer Baixa | `contas-a-pagar/index.tsx` → `handleDesfazerBaixa` |
+| Contas a Pagar | Renegociar | `contas-a-pagar/index.tsx` → `realizarRenegociacao` |
+| Contas a Receber | Excluir | `contas-a-receber/index.tsx` → `confirmarExclusao` |
+| Contas a Receber | Desfazer Baixa | `contas-a-receber/index.tsx` → `handleDesfazerBaixa` |
+| Contas a Receber | Renegociar | `RenegociarParcelasModal.tsx` (ambos) |
+| Orçamentos | Criar/Editar | `useOrcamentoForm.ts` → `handleSubmit` |
+| Faturamento | Excluir | `faturamento/index.tsx` → `confirmarExclusao` |
+| Antecipações | Criar | `antecipacao-modal.tsx` → `handleSalvar` |
+| Antecipações | Editar | `editar-antecipacao-modal.tsx` → `handleSalvar` |
+| Antecipações | Excluir | `antecipacoes/index.tsx` → `confirmarExclusao` |
+| Antecipações | Devolver | `devolver-antecipacao-modal.tsx` → `handleSalvar` |
+| Fluxo de Caixa | Conciliar | `fluxo-caixa/index.tsx` → `handleConciliar` |
+| Fluxo de Caixa | Desfazer Conciliação | `fluxo-caixa/index.tsx` → `handleDesfazerConciliacao` |
 
-#### 3. Desfazer baixa com valor duplicado
-Ao desfazer a baixa, o sistema subtrai o valor uma vez (correto), mas como foi duplicado, o `valor_utilizado` fica com saldo residual incorreto. Além disso, existem registros duplicados na tabela `movimentacoes_parcelas_antecipacoes`.
+### Arquivos a alterar
 
----
-
-### Solução
-
-#### Arquivo 1: `src/pages/financeiro/contas-a-pagar/index.tsx`
-
-**Remover toda a lógica duplicada de `realizarBaixa`**. A função deve apenas recarregar os dados e exibir o toast, já que o modal faz todo o trabalho.
-
-Antes (linhas 133-243):
-```typescript
-function realizarBaixa({ ... }) {
-  // Atualiza parcela DUPLICADO
-  // Atualiza antecipação DUPLICADO
-  // Insere relacionamento DUPLICADO
-  // Insere fluxo de caixa DUPLICADO
-  // Recarrega dados
-}
-```
-
-Depois:
-```typescript
-function realizarBaixa() {
-  if (!contaParaBaixar || !currentCompany) return;
-
-  const recarregar = async () => {
-    try {
-      await carregarContasAPagar();
-      toast({
-        title: "Sucesso",
-        description: "Título baixado com sucesso!"
-      });
-      setModalBaixarAberto(false);
-      setContaParaBaixar(null);
-    } catch (error) {
-      console.error("Erro ao recarregar dados:", error);
-    }
-  };
-
-  recarregar();
-}
-```
-
-#### Arquivo 2: `src/components/contas-a-pagar/BaixarContaPagarModal.tsx`
-
-**Adicionar atualização do status da antecipação** ao atualizar `valor_utilizado`:
-
-```typescript
-const novoValorUtilizado = (antAtual?.valor_utilizado || 0) + antSel.valor;
-const novoStatus = novoValorUtilizado >= (antAtual?.valor_total || 0) ? 'utilizada' : 'ativa';
-
-const { error: antecipacaoError } = await supabase
-  .from("antecipacoes")
-  .update({
-    valor_utilizado: novoValorUtilizado,
-    status: novoStatus
-  })
-  .eq("id", antSel.id);
-```
-
----
-
-### Arquivos a Alterar
-
-| Arquivo | Alteracao |
+| Arquivo | Alteração |
 |---------|-----------|
-| `src/pages/financeiro/contas-a-pagar/index.tsx` | Simplificar `realizarBaixa` removendo lógica duplicada |
-| `src/components/contas-a-pagar/BaixarContaPagarModal.tsx` | Adicionar atualização de status ao usar antecipação parcial |
+| `src/pages/financeiro/contas-a-pagar/index.tsx` | Log em excluir, desfazer baixa, renegociar |
+| `src/pages/financeiro/contas-a-receber/index.tsx` | Log em excluir, desfazer baixa |
+| `src/components/contas-a-receber/RenegociarParcelasModal.tsx` | Importar hook, log em renegociar |
+| `src/components/contas-a-pagar/RenegociarParcelasModal.tsx` | Importar hook, log em renegociar |
+| `src/hooks/useOrcamentoForm.ts` | Importar hook, log em criar/editar orçamento |
+| `src/pages/vendas/faturamento/index.tsx` | Log em excluir orçamento/venda |
+| `src/components/antecipacoes/antecipacao-modal.tsx` | Importar hook, log em criar antecipação |
+| `src/components/antecipacoes/editar-antecipacao-modal.tsx` | Importar hook, log em editar |
+| `src/components/antecipacoes/devolver-antecipacao-modal.tsx` | Importar hook, log em devolver |
+| `src/pages/financeiro/antecipacoes/index.tsx` | Importar hook, log em excluir |
+| `src/pages/financeiro/fluxo-caixa/index.tsx` | Importar hook, log em conciliar/desfazer |
 
----
+### Padrão de cada log
 
-### Resultado Esperado
+Cada `registrarLog` incluirá: ação (`criar`/`editar`/`excluir`/`baixar`/`desfazer`/`renegociar`/`devolver`/`conciliar`), módulo (`financeiro`/`vendas`), entidade, ID do registro, e descrição legível com dados relevantes (valor, favorecido, código).
 
-1. Uso parcial de antecipação: `valor_utilizado` incrementa corretamente (uma vez só), status permanece "ativa"
-2. Uso total de antecipação: `valor_utilizado` = `valor_total`, status muda para "utilizada"
-3. Desfazer baixa: reverte `valor_utilizado` corretamente e restaura status para "ativa" (esta lógica já está implementada corretamente em `handleDesfazerBaixa`)
