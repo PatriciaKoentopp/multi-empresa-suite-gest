@@ -145,7 +145,7 @@ export default function EmpresasPage() {
         cidade: currentCompany.endereco?.cidade || "",
         estado: currentCompany.endereco?.estado || "",
         pais: currentCompany.endereco?.pais || "Brasil",
-        regimeTributacao: currentCompany.regimeTributacao,
+        regimeTributacao: (currentCompany.regimeTributacao as any),
         logo: currentCompany.logo || ""
       });
     } else {
