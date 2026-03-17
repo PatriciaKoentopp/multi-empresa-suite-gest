@@ -35,6 +35,7 @@ export function RenegociarParcelasModal({
   const [valoresEmEdicao, setValoresEmEdicao] = useState<{ [key: number]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { registrarLog } = useLogTransacao();
   
   useEffect(() => {
     if (conta) {
