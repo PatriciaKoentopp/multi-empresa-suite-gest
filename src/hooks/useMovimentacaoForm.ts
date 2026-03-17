@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 import { formatDate, parseDateString } from "@/lib/utils";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 export const useMovimentacaoForm = (movimentacaoEditando) => {
   const { currentCompany } = useCompany();
+  const { registrarLog } = useLogTransacao();
   const [operacao, setOperacao] = useState(movimentacaoEditando?.tipo_operacao || "pagar");
   const [dataEmissao, setDataEmissao] = useState(movimentacaoEditando?.data_emissao ? parseDateString(formatDate(movimentacaoEditando.data_emissao)) : new Date());
   const [dataLancamento, setDataLancamento] = useState(movimentacaoEditando?.data_lancamento ? parseDateString(formatDate(movimentacaoEditando.data_lancamento)) : new Date());
@@ -320,6 +322,17 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
           contaDestino
         );
       }
+
+      const valorNumericoFinal = parseFloat(valor.replace(/\./g, '').replace(',', '.')) || 0;
+      
+      await registrarLog({
+        acao: movimentacaoEditando?.id ? 'editar' : 'criar',
+        modulo: 'financeiro',
+        entidade: 'movimentacao',
+        entidade_id: movimentacaoId,
+        descricao: `${movimentacaoEditando?.id ? 'Edição' : 'Criação'} de movimentação - Tipo: ${operacao}, Valor: R$ ${valorNumericoFinal.toFixed(2).replace('.', ',')}${descricao ? `, ${descricao}` : ''}`,
+        dados_novos: { tipo_operacao: operacao, valor: valorNumericoFinal, descricao },
+      });
 
       toast.success(movimentacaoEditando?.id ? "Movimentação atualizada com sucesso!" : "Movimentação registrada com sucesso!");
       setTimeout(() => window.history.back(), 1000);

@@ -32,10 +32,12 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { formatDate } from "@/lib/utils";
 import { useExcelContasReceber } from "@/hooks/useExcelContasReceber";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 export default function ContasAReceberPage() {
   const { currentCompany } = useCompany();
   const { exportToExcel, isGenerating } = useExcelContasReceber();
+  const { registrarLog } = useLogTransacao();
   const [contas, setContas] = useState<ContaReceber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -376,6 +378,16 @@ export default function ContasAReceberPage() {
         );
         
         toast.success("Recebimento registrado com sucesso!");
+        
+        registrarLog({
+          acao: 'baixar',
+          modulo: 'financeiro',
+          entidade: 'conta_receber',
+          entidade_id: contaParaBaixar.id,
+          descricao: `Baixa de conta a receber - ${contaParaBaixar.descricao || ''}, Valor: R$ ${Number(contaParaBaixar.valor).toFixed(2).replace('.', ',')}`,
+          dados_novos: { cliente: contaParaBaixar.cliente, valor: contaParaBaixar.valor },
+        });
+
         setModalBaixarAberto(false);
       });
   }

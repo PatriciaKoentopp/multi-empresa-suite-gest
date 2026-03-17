@@ -35,6 +35,7 @@ import { EfetivarVendaModal } from "@/components/vendas/EfetivarVendaModal";
 import { formatDate } from "@/lib/utils";
 import { SalesCard } from "@/components/vendas/SalesCard";
 import { DateInput } from "@/components/movimentacao/DateInput";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 // Opções de tipo
 const tipos = ["Todos", "Orçamento", "Venda"];
@@ -68,6 +69,7 @@ function dateToDBFormat(date: Date | undefined): string | null {
 
 export default function FaturamentoPage() {
   const { currentCompany } = useCompany();
+  const { registrarLog } = useLogTransacao();
   const [busca, setBusca] = useState("");
   const [tipo, setTipo] = useState("");
   const [favorecido, setFavorecido] = useState("");
@@ -316,6 +318,16 @@ export default function FaturamentoPage() {
       toast({
         title: "Sucesso",
         description: "Venda desfeita com sucesso! O registro voltou a ser um orçamento."
+      });
+
+      await registrarLog({
+        acao: 'desfazer',
+        modulo: 'vendas',
+        entidade: 'orcamento',
+        entidade_id: desfazerVendaItem.id,
+        descricao: `Venda desfeita - Código: ${desfazerVendaItem.codigo}, Cliente: ${desfazerVendaItem.favorecido?.nome || 'N/A'}`,
+        dados_anteriores: { codigo: desfazerVendaItem.codigo, tipo: 'venda', data_venda: desfazerVendaItem.data_venda },
+        dados_novos: { tipo: 'orcamento', data_venda: null },
       });
 
       carregarFaturamentos();

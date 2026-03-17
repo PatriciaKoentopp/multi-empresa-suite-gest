@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Orcamento } from "@/types";
 import { useCompany } from "@/contexts/company-context";
 import { Label } from "@/components/ui/label";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 interface TipoTitulo {
   id: string;
@@ -27,6 +28,7 @@ interface EfetivarVendaModalProps {
 
 export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: EfetivarVendaModalProps) {
   const { currentCompany } = useCompany();
+  const { registrarLog } = useLogTransacao();
   const [dataVenda, setDataVenda] = useState(format(new Date(), "yyyy-MM-dd"));
   const [isLoading, setIsLoading] = useState(false);
   const [tipoTitulos, setTipoTitulos] = useState<TipoTitulo[]>([]);
@@ -152,6 +154,16 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
       }
 
       toast.success("Venda efetivada com sucesso!");
+      
+      await registrarLog({
+        acao: 'efetivar',
+        modulo: 'vendas',
+        entidade: 'orcamento',
+        entidade_id: orcamento.id,
+        descricao: `Venda efetivada - Código: ${orcamento.codigo}, Cliente: ${orcamento.favorecido?.nome || 'N/A'}, Valor: R$ ${valorTotal.toFixed(2).replace('.', ',')}`,
+        dados_novos: { codigo: orcamento.codigo, data_venda: dataVenda, valor_total: valorTotal },
+      });
+
       onSuccess();
       onClose();
     } catch (error) {

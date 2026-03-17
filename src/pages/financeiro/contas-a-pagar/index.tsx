@@ -36,11 +36,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ContaCorrente } from "@/types/conta-corrente";
 import { AntecipacaoSelecionada } from "@/types/financeiro";
 import { useExcelContasPagar } from "@/hooks/useExcelContasPagar";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 export default function ContasAPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { registrarLog } = useLogTransacao();
 
   // Filtros com valor padrão definido para "em_aberto"
   const [searchTerm, setSearchTerm] = useState("");
@@ -136,6 +138,16 @@ export default function ContasAPagarPage() {
     const recarregar = async () => {
       try {
         await carregarContasAPagar();
+        
+        await registrarLog({
+          acao: 'baixar',
+          modulo: 'financeiro',
+          entidade: 'conta_pagar',
+          entidade_id: contaParaBaixar.id,
+          descricao: `Baixa de conta a pagar - ${contaParaBaixar.descricao || ''}, Valor: R$ ${Number(contaParaBaixar.valor).toFixed(2).replace('.', ',')}`,
+          dados_novos: { favorecido: contaParaBaixar.favorecido, valor: contaParaBaixar.valor },
+        });
+
         toast({
           title: "Sucesso",
           description: "Título baixado com sucesso!"
