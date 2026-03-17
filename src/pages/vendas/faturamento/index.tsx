@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, X, MoreHorizontal } from "lucide-react";
+import { Search, X, MoreHorizontal, Undo2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
