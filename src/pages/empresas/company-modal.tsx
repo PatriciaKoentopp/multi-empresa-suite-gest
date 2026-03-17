@@ -109,7 +109,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
         cidade: company.endereco?.cidade || "",
         estado: company.endereco?.estado || "",
         pais: company.endereco?.pais || "Brasil",
-        regimeTributacao: company.regimeTributacao || undefined,
+        regimeTributacao: (company.regimeTributacao as any) || undefined,
         logo: company.logo || "",
       });
     } else {
