@@ -480,6 +480,14 @@ export default function FluxoCaixaPage() {
 
       if (error) throw error;
 
+      await registrarLog({
+        acao: 'conciliar',
+        modulo: 'financeiro',
+        entidade: 'fluxo_caixa',
+        entidade_id: id,
+        descricao: `Movimento conciliado no fluxo de caixa`,
+      });
+
       toast.success("Movimento conciliado com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["fluxo-caixa-periodo"] });
       queryClient.invalidateQueries({ queryKey: ["fluxo-caixa-todas"] });
