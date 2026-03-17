@@ -243,6 +243,97 @@ export default function FaturamentoPage() {
     setShowToastConfirm(false);
   }
 
+  async function confirmarDesfazerVenda() {
+    if (!desfazerVendaItem || !currentCompany) return;
+
+    try {
+      setIsLoading(true);
+
+      // 1. Buscar movimentação pelo numero_documento = codigo do orçamento
+      const { data: movimentacao, error: movError } = await supabase
+        .from('movimentacoes')
+        .select('id')
+        .eq('numero_documento', desfazerVendaItem.codigo)
+        .eq('empresa_id', currentCompany.id)
+        .single();
+
+      if (movError && movError.code !== 'PGRST116') throw movError;
+
+      if (movimentacao) {
+        // 2. Verificar se alguma parcela foi recebida
+        const { data: parcelas, error: parcelasError } = await supabase
+          .from('movimentacoes_parcelas')
+          .select('data_pagamento')
+          .eq('movimentacao_id', movimentacao.id);
+
+        if (parcelasError) throw parcelasError;
+
+        const temParcelasRecebidas = parcelas?.some(p => p.data_pagamento !== null);
+
+        if (temParcelasRecebidas) {
+          toast({
+            title: "Não é possível desfazer",
+            description: "Esta venda já possui parcelas recebidas. Desfaça as baixas primeiro.",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // 3. Excluir registros de fluxo_caixa vinculados à movimentação
+        const { error: fluxoError } = await supabase
+          .from('fluxo_caixa')
+          .delete()
+          .eq('movimentacao_id', movimentacao.id);
+
+        if (fluxoError) throw fluxoError;
+
+        // 4. Excluir parcelas da movimentação
+        const { error: deleteParcelasError } = await supabase
+          .from('movimentacoes_parcelas')
+          .delete()
+          .eq('movimentacao_id', movimentacao.id);
+
+        if (deleteParcelasError) throw deleteParcelasError;
+
+        // 5. Excluir a movimentação
+        const { error: deleteMovError } = await supabase
+          .from('movimentacoes')
+          .delete()
+          .eq('id', movimentacao.id);
+
+        if (deleteMovError) throw deleteMovError;
+      }
+
+      // 6. Reverter o orçamento: tipo = 'orcamento', data_venda = null
+      const { error: updateError } = await supabase
+        .from('orcamentos')
+        .update({ tipo: 'orcamento', data_venda: null })
+        .eq('id', desfazerVendaItem.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Sucesso",
+        description: "Venda desfeita com sucesso! O registro voltou a ser um orçamento."
+      });
+
+      carregarFaturamentos();
+      setDesfazerVendaItem(null);
+      setShowDesfazerConfirm(false);
+
+    } catch (error) {
+      console.error('Erro ao desfazer venda:', error);
+      toast({
+        title: "Erro ao desfazer venda",
+        description: "Ocorreu um erro ao tentar desfazer a venda.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   // Função para limpar todos os filtros
   function limparFiltros() {
     setBusca("");
