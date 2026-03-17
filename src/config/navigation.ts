@@ -28,6 +28,10 @@ export const navigationConfig: ModuleNavItem[] = [
         title: "Parâmetros",
         href: "/admin/parametros",
       },
+      {
+        title: "Fechamento Mensal",
+        href: "/admin/fechamento-mensal",
+      },
     ],
   },
   {

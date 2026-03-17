@@ -140,6 +140,17 @@ function App() {
               }
             />
 
+            <Route
+              path="/admin/fechamento-mensal"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <FechamentoMensal />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
             {/* Cadastros */}
             <Route
               path="/cadastros/grupo-favorecidos"
