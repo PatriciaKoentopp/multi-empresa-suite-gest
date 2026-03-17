@@ -291,7 +291,7 @@ export function Dashboard() {
               status: 'em_aberto' as 'em_aberto',
               numeroParcela: parcela.movimentacao.numero_documento || '-',
               origem: 'Movimentação',
-              movimentacao_id: parcela.movimentacao_id,
+              movimentacao_id: (parcela as any).movimentacao_id,
               tipo: parcela.movimentacao.tipo_operacao
             };
 
