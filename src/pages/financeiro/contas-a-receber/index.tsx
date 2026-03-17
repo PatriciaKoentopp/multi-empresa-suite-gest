@@ -271,6 +271,16 @@ export default function ContasAReceberPage() {
 
       if (errorMovimentacao) throw errorMovimentacao;
 
+      const contaExcluida = contas.find(c => c.movimentacao_id === contaParaExcluir);
+      await registrarLog({
+        acao: 'excluir',
+        modulo: 'financeiro',
+        entidade: 'conta_receber',
+        entidade_id: contaParaExcluir,
+        descricao: `Conta a receber excluída - ${contaExcluida?.descricao || ''} - Valor: R$ ${contaExcluida?.valor?.toFixed(2) || '0'}`,
+        dados_anteriores: contaExcluida ? { cliente: contaExcluida.cliente, valor: contaExcluida.valor, descricao: contaExcluida.descricao } : undefined,
+      });
+
       setContas(prev => prev.filter(c => c.movimentacao_id !== contaParaExcluir));
       toast.success("Título excluído com sucesso");
       setContaParaExcluir(null);
