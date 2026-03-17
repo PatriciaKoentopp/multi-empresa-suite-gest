@@ -1,89 +1,103 @@
 
+## Correção: Baixa com Antecipação Parcial e Desfazer Baixa
 
-## Plano: Rotina de Fechamento Mensal
+### Problemas Identificados
 
-### Conceito
+#### 1. Processamento DUPLICADO das antecipações
+O `BaixarContaPagarModal` (handleConfirmar) já executa todas as operações no banco de dados:
+- Atualiza a parcela
+- Insere na tabela `movimentacoes_parcelas_antecipacoes`
+- Incrementa `valor_utilizado` na antecipação
+- Insere registros no `fluxo_caixa`
 
-Criar uma tabela `fechamentos_mensais` que registra quais meses/anos foram fechados por empresa. Antes de qualquer operação com data (lançamentos, baixas, efetivações, movimentações), o sistema verificará se o período está fechado e bloqueará a ação se necessário.
+Depois, chama `onBaixar()` que dispara `realizarBaixa()` em `index.tsx`, que repete as mesmas operações:
+- Atualiza a parcela NOVAMENTE
+- Incrementa `valor_utilizado` NOVAMENTE (duplicando o valor)
+- Insere na tabela de relacionamento NOVAMENTE
+- Insere no `fluxo_caixa` NOVAMENTE
 
-### Tabela `fechamentos_mensais`
+**Exemplo:** Antecipação de R$1.000, uso parcial de R$500:
+- Modal: valor_utilizado = 0 + 500 = **500** (correto)
+- realizarBaixa: valor_utilizado = 500 + 500 = **1.000** (errado - aparece como totalmente utilizada)
 
-| Coluna | Tipo | Descrição |
-|--------|------|-----------|
-| id | uuid PK | |
-| empresa_id | uuid NOT NULL | FK empresas |
-| mes | integer NOT NULL | 1-12 |
-| ano | integer NOT NULL | ex: 2026 |
-| data_fechamento | timestamptz | Quando foi fechado |
-| fechado_por | uuid | Usuário que fechou |
-| fechado_por_nome | text | Nome do usuário (snapshot) |
-| observacoes | text | Justificativa opcional |
-| created_at | timestamptz | |
+#### 2. Status da antecipação não atualizado corretamente
+O modal atualiza `valor_utilizado` mas nunca atualiza o campo `status`. A antecipação deveria manter status "ativa" quando ainda tem saldo disponível, e mudar para "utilizada" somente quando totalmente consumida.
 
-Constraint UNIQUE em (empresa_id, mes, ano). RLS por empresa.
+#### 3. Desfazer baixa com valor duplicado
+Ao desfazer a baixa, o sistema subtrai o valor uma vez (correto), mas como foi duplicado, o `valor_utilizado` fica com saldo residual incorreto. Além disso, existem registros duplicados na tabela `movimentacoes_parcelas_antecipacoes`.
 
-### Função de verificação (DB)
+---
 
-```sql
-CREATE FUNCTION public.is_periodo_fechado(p_empresa_id uuid, p_data date)
-RETURNS boolean
+### Solução
+
+#### Arquivo 1: `src/pages/financeiro/contas-a-pagar/index.tsx`
+
+**Remover toda a lógica duplicada de `realizarBaixa`**. A função deve apenas recarregar os dados e exibir o toast, já que o modal faz todo o trabalho.
+
+Antes (linhas 133-243):
+```typescript
+function realizarBaixa({ ... }) {
+  // Atualiza parcela DUPLICADO
+  // Atualiza antecipação DUPLICADO
+  // Insere relacionamento DUPLICADO
+  // Insere fluxo de caixa DUPLICADO
+  // Recarrega dados
+}
 ```
 
-Verifica se o mês/ano da data informada está na tabela de fechamentos.
+Depois:
+```typescript
+function realizarBaixa() {
+  if (!contaParaBaixar || !currentCompany) return;
 
-### Hook `useFechamentoMensal`
+  const recarregar = async () => {
+    try {
+      await carregarContasAPagar();
+      toast({
+        title: "Sucesso",
+        description: "Título baixado com sucesso!"
+      });
+      setModalBaixarAberto(false);
+      setContaParaBaixar(null);
+    } catch (error) {
+      console.error("Erro ao recarregar dados:", error);
+    }
+  };
 
-- `verificarPeriodoFechado(data: Date): boolean` — consulta local/cache
-- `fecharMes(mes, ano, observacoes)` — insere registro
-- `reabrirMes(mes, ano)` — deleta registro (admin only)
-- `mesesFechados` — lista de períodos fechados
+  recarregar();
+}
+```
 
-### Validações no frontend (bloqueio)
+#### Arquivo 2: `src/components/contas-a-pagar/BaixarContaPagarModal.tsx`
 
-Adicionar verificação antes de salvar em:
+**Adicionar atualização do status da antecipação** ao atualizar `valor_utilizado`:
 
-| Módulo | Arquivo | Data verificada |
-|--------|---------|-----------------|
-| Movimentações | `useMovimentacaoForm.ts` | data_lancamento |
-| Baixa Contas Pagar | `BaixarContaPagarModal.tsx` | data_pagamento |
-| Baixa Contas Receber | `BaixarContaReceberModal.tsx` | data_recebimento |
-| Efetivar Venda | `EfetivarVendaModal.tsx` | data_venda |
-| Fluxo de Caixa | `fluxo-caixa/index.tsx` | data_movimentacao (conciliação) |
-| Antecipações | `antecipacao-modal.tsx` | data_lancamento |
+```typescript
+const novoValorUtilizado = (antAtual?.valor_utilizado || 0) + antSel.valor;
+const novoStatus = novoValorUtilizado >= (antAtual?.valor_total || 0) ? 'utilizada' : 'ativa';
 
-Em cada ponto, antes de salvar: `if (isPeriodoFechado(data)) { toast.error("Período fechado..."); return; }`
+const { error: antecipacaoError } = await supabase
+  .from("antecipacoes")
+  .update({
+    valor_utilizado: novoValorUtilizado,
+    status: novoStatus
+  })
+  .eq("id", antSel.id);
+```
 
-### Página de Gestão `/admin/fechamento-mensal`
+---
 
-- Tabela com os últimos 12 meses mostrando status (aberto/fechado)
-- Botão "Fechar Mês" com confirmação e campo de observações
-- Botão "Reabrir Mês" (somente admin, com confirmação)
-- Badge visual: verde=aberto, vermelho=fechado
-- Log automático via `useLogTransacao`
+### Arquivos a Alterar
 
-### Navegação
-
-- Adicionar "Fechamento Mensal" no menu Administrativo (`navigation.ts`)
-- Registrar rota `/admin/fechamento-mensal` no `App.tsx`
-
-### Arquivos a criar
-
-| Arquivo | Descrição |
+| Arquivo | Alteracao |
 |---------|-----------|
-| Migration SQL | Tabela + função + RLS |
-| `src/hooks/useFechamentoMensal.ts` | Hook reutilizável |
-| `src/pages/admin/fechamento-mensal/index.tsx` | Página de gestão |
+| `src/pages/financeiro/contas-a-pagar/index.tsx` | Simplificar `realizarBaixa` removendo lógica duplicada |
+| `src/components/contas-a-pagar/BaixarContaPagarModal.tsx` | Adicionar atualização de status ao usar antecipação parcial |
 
-### Arquivos a alterar
+---
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/hooks/useMovimentacaoForm.ts` | Verificação antes de salvar |
-| `src/components/contas-a-pagar/BaixarContaPagarModal.tsx` | Verificação antes de baixar |
-| `src/components/contas-a-receber/BaixarContaReceberModal.tsx` | Verificação antes de baixar |
-| `src/components/vendas/EfetivarVendaModal.tsx` | Verificação antes de efetivar |
-| `src/components/antecipacoes/antecipacao-modal.tsx` | Verificação antes de criar |
-| `src/pages/financeiro/fluxo-caixa/index.tsx` | Verificação antes de conciliar |
-| `src/config/navigation.ts` | Adicionar item "Fechamento Mensal" |
-| `src/App.tsx` | Registrar rota |
+### Resultado Esperado
 
+1. Uso parcial de antecipação: `valor_utilizado` incrementa corretamente (uma vez só), status permanece "ativa"
+2. Uso total de antecipação: `valor_utilizado` = `valor_total`, status muda para "utilizada"
+3. Desfazer baixa: reverte `valor_utilizado` corretamente e restaura status para "ativa" (esta lógica já está implementada corretamente em `handleDesfazerBaixa`)

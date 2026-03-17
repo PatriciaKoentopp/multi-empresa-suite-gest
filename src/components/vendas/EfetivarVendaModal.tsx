@@ -11,6 +11,7 @@ import { Orcamento } from "@/types";
 import { useCompany } from "@/contexts/company-context";
 import { Label } from "@/components/ui/label";
 import { useLogTransacao } from "@/hooks/useLogTransacao";
+import { useFechamentoMensal } from "@/hooks/useFechamentoMensal";
 
 interface TipoTitulo {
   id: string;
@@ -29,6 +30,7 @@ interface EfetivarVendaModalProps {
 export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: EfetivarVendaModalProps) {
   const { currentCompany } = useCompany();
   const { registrarLog } = useLogTransacao();
+  const { verificarPeriodoFechado } = useFechamentoMensal();
   const [dataVenda, setDataVenda] = useState(format(new Date(), "yyyy-MM-dd"));
   const [isLoading, setIsLoading] = useState(false);
   const [tipoTitulos, setTipoTitulos] = useState<TipoTitulo[]>([]);
@@ -63,6 +65,12 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
   async function handleConfirmar() {
     if (!orcamento || !currentCompany?.id || !tipoTituloId) {
       toast.error("Selecione um tipo de título");
+      return;
+    }
+
+    // Verificar período fechado
+    if (verificarPeriodoFechado(new Date(dataVenda + "T12:00:00"))) {
+      toast.error("Não é possível efetivar venda em um período já fechado.");
       return;
     }
 

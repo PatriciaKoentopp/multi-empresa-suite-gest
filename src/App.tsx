@@ -14,6 +14,7 @@ import Empresas from "./pages/empresas";
 // Admin
 import Usuarios from "./pages/admin/usuarios";
 import Parametros from "./pages/admin/parametros";
+import FechamentoMensal from "./pages/admin/fechamento-mensal";
 
 // Cadastros
 import GrupoFavorecidos from "./pages/cadastros/grupo-favorecidos";
@@ -134,6 +135,17 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <Parametros />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/admin/fechamento-mensal"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <FechamentoMensal />
                   </MainLayout>
                 </PrivateRoute>
               }

@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { Antecipacao, AntecipacaoSelecionada } from "@/types/financeiro";
+import { useFechamentoMensal } from "@/hooks/useFechamentoMensal";
 
 interface BaixarContaPagarModalProps {
   conta?: ContaPagar | null;
@@ -46,6 +47,7 @@ const formasPagamento = [
 
 export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: BaixarContaPagarModalProps) {
   const { currentCompany } = useCompany();
+  const { verificarPeriodoFechado } = useFechamentoMensal();
   const [dataPagamento, setDataPagamento] = useState<Date | undefined>(conta?.dataVencimento);
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("");
   const [formaPagamento, setFormaPagamento] = useState<string>("");
@@ -192,6 +194,12 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
     // Conta corrente obrigatória quando há valor a pagar OU quando usar antecipação
     if (!dataPagamento || !formaPagamento || (!contaCorrenteId && (valorAPagar > 0 || usarAntecipacao))) {
       toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    // Verificar período fechado
+    if (dataPagamento && verificarPeriodoFechado(dataPagamento)) {
+      toast.error("Não é possível realizar baixa em um período já fechado.");
       return;
     }
 

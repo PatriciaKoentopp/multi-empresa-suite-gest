@@ -30,6 +30,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { usePdfFluxoCaixa } from "@/hooks/usePdfFluxoCaixa";
 import { useLogTransacao } from "@/hooks/useLogTransacao";
+import { useFechamentoMensal } from "@/hooks/useFechamentoMensal";
 
 // Função para formatar datas (DD/MM/YYYY)
 function formatDateBR(dateStr: string) {
@@ -109,6 +110,7 @@ export default function FluxoCaixaPage() {
   const { currentCompany } = useCompany();
   const queryClient = useQueryClient();
   const { registrarLog } = useLogTransacao();
+  const { verificarPeriodoFechado } = useFechamentoMensal();
   const [favorecidosCache, setFavorecidosCache] = useState<Record<string, any>>({});
   const [contaCorrenteSelecionada, setContaCorrenteSelecionada] = useState<any>(null);
   const [documentosCache, setDocumentosCache] = useState<Record<string, any>>({});
@@ -474,6 +476,18 @@ export default function FluxoCaixaPage() {
   // Função para conciliar movimento
   async function handleConciliar(id: string) {
     try {
+      // Buscar data do movimento para validar período fechado
+      const { data: mov } = await supabase
+        .from("fluxo_caixa")
+        .select("data_movimentacao")
+        .eq("id", id)
+        .single();
+
+      if (mov && verificarPeriodoFechado(new Date(mov.data_movimentacao + "T12:00:00"))) {
+        toast.error("Não é possível conciliar movimentos em um período já fechado.");
+        return;
+      }
+
       const { error } = await supabase
         .from("fluxo_caixa")
         .update({ situacao: "conciliado" })

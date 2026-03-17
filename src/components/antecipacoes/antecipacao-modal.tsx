@@ -12,6 +12,7 @@ import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLogTransacao } from "@/hooks/useLogTransacao";
+import { useFechamentoMensal } from "@/hooks/useFechamentoMensal";
 
 interface AntecipacaoModalProps {
   open: boolean;
@@ -30,6 +31,7 @@ const formasPagamento = [
 export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProps) {
   const { currentCompany } = useCompany();
   const { registrarLog } = useLogTransacao();
+  const { verificarPeriodoFechado } = useFechamentoMensal();
   const { favorecidos, tiposTitulos } = useMovimentacaoDados();
 
   const [operacao, setOperacao] = useState<"receber" | "pagar">("receber");
@@ -147,6 +149,13 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
 
     try {
       setIsLoading(true);
+
+      // Verificar período fechado
+      if (verificarPeriodoFechado(dataLancamento)) {
+        toast.error("Não é possível criar antecipação em um período já fechado.");
+        setIsLoading(false);
+        return;
+      }
 
       // Converter valor para número
       const valorNumerico = Number(valor.replace(/\./g, '').replace(',', '.'));

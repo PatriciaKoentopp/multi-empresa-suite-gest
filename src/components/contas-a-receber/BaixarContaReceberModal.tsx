@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { Antecipacao, AntecipacaoSelecionada } from "@/types/financeiro";
+import { useFechamentoMensal } from "@/hooks/useFechamentoMensal";
 
 interface BaixarContaReceberModalProps {
   conta?: ContaReceber | null;
@@ -42,6 +43,7 @@ const formasPagamento = [
 
 export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: BaixarContaReceberModalProps) {
   const { currentCompany } = useCompany();
+  const { verificarPeriodoFechado } = useFechamentoMensal();
   const [dataRecebimento, setDataRecebimento] = useState<Date | undefined>(conta?.dataVencimento);
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("");
   const [formaPagamento, setFormaPagamento] = useState<string>("");
@@ -188,6 +190,12 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     // Conta corrente obrigatória quando há valor a receber OU quando usar antecipação
     if (!dataRecebimento || !formaPagamento || (!contaCorrenteId && (valorAReceber > 0 || usarAntecipacao))) {
       toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    // Verificar período fechado
+    if (dataRecebimento && verificarPeriodoFechado(dataRecebimento)) {
+      toast.error("Não é possível realizar recebimento em um período já fechado.");
       return;
     }
 
