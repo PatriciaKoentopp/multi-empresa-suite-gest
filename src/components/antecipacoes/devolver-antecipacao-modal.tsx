@@ -63,6 +63,7 @@ export function DevolverAntecipacaoModal({
   antecipacao,
 }: DevolverAntecipacaoModalProps) {
   const { currentCompany } = useCompany();
+  const { registrarLog } = useLogTransacao();
   const [dataDevolucao, setDataDevolucao] = useState<Date>(new Date());
   const [contaCorrenteId, setContaCorrenteId] = useState<string>("");
   const [formaPagamento, setFormaPagamento] = useState<string>("");

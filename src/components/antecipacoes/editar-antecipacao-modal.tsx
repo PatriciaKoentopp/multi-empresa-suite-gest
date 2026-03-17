@@ -32,6 +32,7 @@ const formasPagamento = [
 export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: EditarAntecipacaoModalProps) {
   const { currentCompany } = useCompany();
   const { favorecidos, tiposTitulos } = useMovimentacaoDados();
+  const { registrarLog } = useLogTransacao();
 
   const [dataEmissao, setDataEmissao] = useState<Date>(new Date());
   const [dataLancamento, setDataLancamento] = useState<Date>(new Date());
