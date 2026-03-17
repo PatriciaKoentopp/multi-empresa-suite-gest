@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Orcamento } from "@/types";
 import { useCompany } from "@/contexts/company-context";
 import { Label } from "@/components/ui/label";
+import { useLogTransacao } from "@/hooks/useLogTransacao";
 
 interface TipoTitulo {
   id: string;
