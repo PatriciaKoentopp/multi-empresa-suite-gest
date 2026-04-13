@@ -33,6 +33,8 @@ interface ContaAgrupada {
     saldo: number;
     favorecido?: string;
     tipo_lancamento?: string;
+    numero_documento?: string;
+    numero_parcela?: number;
   }>;
   totalDebitos: number;
   totalCreditos: number;
@@ -151,6 +153,8 @@ export default function RazaoContabil() {
         saldo: 0,
         favorecido: lanc.favorecido,
         tipo_lancamento: lanc.tipo_lancamento,
+        numero_documento: lanc.numero_documento,
+        numero_parcela: lanc.numero_parcela,
       });
     });
 
@@ -360,6 +364,7 @@ export default function RazaoContabil() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[100px]">Data</TableHead>
+                      <TableHead className="w-[150px]">NF/Parcela</TableHead>
                       <TableHead>Histórico</TableHead>
                       <TableHead className="text-right w-[130px]">Débito</TableHead>
                       <TableHead className="text-right w-[130px]">Crédito</TableHead>
@@ -370,6 +375,9 @@ export default function RazaoContabil() {
                     {grupo.lancamentos.map((lanc, idx) => (
                       <TableRow key={lanc.id || idx}>
                         <TableCell className="text-sm">{formatDataExibicao(lanc.data)}</TableCell>
+                        <TableCell className="text-sm">
+                          {[lanc.numero_documento, lanc.numero_parcela ? `P${lanc.numero_parcela}` : ''].filter(Boolean).join('/') || '-'}
+                        </TableCell>
                         <TableCell className="text-sm">{lanc.historico}</TableCell>
                         <TableCell className="text-right text-sm">
                           {lanc.tipo === "debito" ? formatCurrency(lanc.valor) : "-"}
@@ -387,7 +395,7 @@ export default function RazaoContabil() {
                     ))}
                     {/* Totalizador */}
                     <TableRow className="bg-muted/50 font-semibold">
-                      <TableCell colSpan={2} className="text-sm font-bold">
+                      <TableCell colSpan={3} className="text-sm font-bold">
                         Totais
                       </TableCell>
                       <TableCell className="text-right text-sm font-bold">
