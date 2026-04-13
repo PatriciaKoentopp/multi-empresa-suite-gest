@@ -375,6 +375,9 @@ export default function RazaoContabil() {
                     {grupo.lancamentos.map((lanc, idx) => (
                       <TableRow key={lanc.id || idx}>
                         <TableCell className="text-sm">{formatDataExibicao(lanc.data)}</TableCell>
+                        <TableCell className="text-sm">
+                          {[lanc.numero_documento, lanc.numero_parcela ? `P${lanc.numero_parcela}` : ''].filter(Boolean).join('/') || '-'}
+                        </TableCell>
                         <TableCell className="text-sm">{lanc.historico}</TableCell>
                         <TableCell className="text-right text-sm">
                           {lanc.tipo === "debito" ? formatCurrency(lanc.valor) : "-"}
