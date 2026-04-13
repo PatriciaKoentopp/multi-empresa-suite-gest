@@ -1,103 +1,51 @@
 
-## Correção: Baixa com Antecipação Parcial e Desfazer Baixa
 
-### Problemas Identificados
+## Plano: Relatório de Razão Contábil na página de Relatórios
 
-#### 1. Processamento DUPLICADO das antecipações
-O `BaixarContaPagarModal` (handleConfirmar) já executa todas as operações no banco de dados:
-- Atualiza a parcela
-- Insere na tabela `movimentacoes_parcelas_antecipacoes`
-- Incrementa `valor_utilizado` na antecipação
-- Insere registros no `fluxo_caixa`
+### Objetivo
+Criar uma nova página de relatório "Razão Contábil" acessível via `/relatorios/razao-contabil`, que exibe os lançamentos contábeis agrupados por conta e ordenados por data, no formato de razão auxiliar da contabilidade. Incluir filtros de data e conta, com opção de gerar todas as contas.
 
-Depois, chama `onBaixar()` que dispara `realizarBaixa()` em `index.tsx`, que repete as mesmas operações:
-- Atualiza a parcela NOVAMENTE
-- Incrementa `valor_utilizado` NOVAMENTE (duplicando o valor)
-- Insere na tabela de relacionamento NOVAMENTE
-- Insere no `fluxo_caixa` NOVAMENTE
+### Arquivos a criar/modificar
 
-**Exemplo:** Antecipação de R$1.000, uso parcial de R$500:
-- Modal: valor_utilizado = 0 + 500 = **500** (correto)
-- realizarBaixa: valor_utilizado = 500 + 500 = **1.000** (errado - aparece como totalmente utilizada)
+| Arquivo | Ação |
+|---------|------|
+| `src/pages/relatorios/razao-contabil/index.tsx` | Criar — página do relatório |
+| `src/pages/relatorios/index.tsx` | Modificar — adicionar card do novo relatório |
+| `src/App.tsx` | Modificar — adicionar rota `/relatorios/razao-contabil` |
 
-#### 2. Status da antecipação não atualizado corretamente
-O modal atualiza `valor_utilizado` mas nunca atualiza o campo `status`. A antecipação deveria manter status "ativa" quando ainda tem saldo disponível, e mudar para "utilizada" somente quando totalmente consumida.
+### Estrutura da página `razao-contabil/index.tsx`
 
-#### 3. Desfazer baixa com valor duplicado
-Ao desfazer a baixa, o sistema subtrai o valor uma vez (correto), mas como foi duplicado, o `valor_utilizado` fica com saldo residual incorreto. Além disso, existem registros duplicados na tabela `movimentacoes_parcelas_antecipacoes`.
+**Filtros:**
+- Período: Mês Atual / Mês Anterior / Personalizado (com campos Data Inicial e Data Final no formato DD/MM/AAAA)
+- Conta Contábil: Select com "Todas as Contas" + lista de contas ativas do plano de contas
+- Botão "Gerar PDF"
+- Botão voltar para `/relatorios`
 
----
+**Exibição dos dados:**
+- Reutiliza o hook `useLancamentosContabeis` para buscar os lançamentos e plano de contas
+- Agrupa os lançamentos por conta contábil (código + descrição)
+- Dentro de cada conta, ordena por data de lançamento (ascendente)
+- Para cada conta, exibe:
+  - Cabeçalho com código e nome da conta
+  - Tabela com colunas: Data | Histórico | Débito | Crédito | Saldo
+  - Saldo acumulado por conta (débitos somam, créditos subtraem, considerando o tipo da conta)
+  - Totalizador ao final de cada conta
+- Quando "Todas as Contas" selecionado, exibe todas as contas que possuem lançamentos no período, uma após a outra
 
-### Solução
+**Layout:**
+- Segue o padrão visual das outras páginas de relatório (header com botão voltar, Card com filtros, tabelas)
+- Cores de botões e ícones seguindo o padrão do projeto (azul para ações principais)
 
-#### Arquivo 1: `src/pages/financeiro/contas-a-pagar/index.tsx`
+### Alterações em `relatorios/index.tsx`
+- Adicionar novo card "Razão Contábil" com ícone `BookOpen` e cor teal
+- Incluir na lista de cards ativos (sem `opacity-60`)
 
-**Remover toda a lógica duplicada de `realizarBaixa`**. A função deve apenas recarregar os dados e exibir o toast, já que o modal faz todo o trabalho.
+### Alterações em `App.tsx`
+- Importar o componente `RazaoContabil`
+- Adicionar rota protegida `/relatorios/razao-contabil`
 
-Antes (linhas 133-243):
-```typescript
-function realizarBaixa({ ... }) {
-  // Atualiza parcela DUPLICADO
-  // Atualiza antecipação DUPLICADO
-  // Insere relacionamento DUPLICADO
-  // Insere fluxo de caixa DUPLICADO
-  // Recarrega dados
-}
-```
+### Detalhes técnicos
+- O hook `useLancamentosContabeis` já carrega todos os lançamentos com `conta`, `conta_nome`, `conta_codigo`, `tipo` (debito/credito), `valor`, `saldo` e `data`
+- A lógica de agrupamento e ordenação será feita com `useMemo` no componente
+- Para o cálculo de saldo por conta no relatório, será recalculado localmente considerando apenas os lançamentos filtrados por período
 
-Depois:
-```typescript
-function realizarBaixa() {
-  if (!contaParaBaixar || !currentCompany) return;
-
-  const recarregar = async () => {
-    try {
-      await carregarContasAPagar();
-      toast({
-        title: "Sucesso",
-        description: "Título baixado com sucesso!"
-      });
-      setModalBaixarAberto(false);
-      setContaParaBaixar(null);
-    } catch (error) {
-      console.error("Erro ao recarregar dados:", error);
-    }
-  };
-
-  recarregar();
-}
-```
-
-#### Arquivo 2: `src/components/contas-a-pagar/BaixarContaPagarModal.tsx`
-
-**Adicionar atualização do status da antecipação** ao atualizar `valor_utilizado`:
-
-```typescript
-const novoValorUtilizado = (antAtual?.valor_utilizado || 0) + antSel.valor;
-const novoStatus = novoValorUtilizado >= (antAtual?.valor_total || 0) ? 'utilizada' : 'ativa';
-
-const { error: antecipacaoError } = await supabase
-  .from("antecipacoes")
-  .update({
-    valor_utilizado: novoValorUtilizado,
-    status: novoStatus
-  })
-  .eq("id", antSel.id);
-```
-
----
-
-### Arquivos a Alterar
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `src/pages/financeiro/contas-a-pagar/index.tsx` | Simplificar `realizarBaixa` removendo lógica duplicada |
-| `src/components/contas-a-pagar/BaixarContaPagarModal.tsx` | Adicionar atualização de status ao usar antecipação parcial |
-
----
-
-### Resultado Esperado
-
-1. Uso parcial de antecipação: `valor_utilizado` incrementa corretamente (uma vez só), status permanece "ativa"
-2. Uso total de antecipação: `valor_utilizado` = `valor_total`, status muda para "utilizada"
-3. Desfazer baixa: reverte `valor_utilizado` corretamente e restaura status para "ativa" (esta lógica já está implementada corretamente em `handleDesfazerBaixa`)
