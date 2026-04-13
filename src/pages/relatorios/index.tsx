@@ -98,6 +98,13 @@ export default function Relatorios() {
       route: "/relatorios/antecipacoes"
     },
     {
+      id: "razaoContabil",
+      title: "Razão Contábil",
+      description: "Lançamentos contábeis agrupados por conta e ordenados por data",
+      icon: <BookOpen className="h-8 w-8 text-teal-500" />,
+      route: "/relatorios/razao-contabil"
+    },
+    {
       id: "geral",
       title: "Relatório Geral",
       description: "Visão geral de todas as operações da empresa",
@@ -153,7 +160,7 @@ export default function Relatorios() {
           return (
             <Card 
               key={relatorio.id} 
-              className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' || relatorio.id === 'projetos' || relatorio.id === 'aniversariantes' || relatorio.id === 'financeiro' || relatorio.id === 'contasPagar' || relatorio.id === 'contasReceber' || relatorio.id === 'antecipacoes' || relatorio.id === 'logs' ? '' : 'opacity-60'}`}
+              className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id === 'favorecido' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' || relatorio.id === 'projetos' || relatorio.id === 'aniversariantes' || relatorio.id === 'financeiro' || relatorio.id === 'contasPagar' || relatorio.id === 'contasReceber' || relatorio.id === 'antecipacoes' || relatorio.id === 'logs' || relatorio.id === 'razaoContabil' ? '' : 'opacity-60'}`}
               onClick={() => handleCardClick(relatorio.route)}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
