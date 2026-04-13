@@ -933,8 +933,35 @@ export function useLancamentosContabeis() {
       // 8. Combinar os lançamentos da tabela com os processados das movimentações
       const todosLancamentos = [...lancamentosContabeis, ...lancamentosProcessados];
       
+      // 8.1 Enriquecer lançamentos com numero_documento e numero_parcela
+      const movimentacoesMap = new Map<string, any>();
+      (movimentacoesTipadas || []).forEach(m => movimentacoesMap.set(m.id, m));
+      const parcelasMap = new Map<string, any>();
+      (parcelas || []).forEach(p => parcelasMap.set(p.id, p));
+      
+      const todosLancamentosEnriquecidos = todosLancamentos.map(lanc => {
+        let numero_documento = lanc.numero_documento;
+        let numero_parcela = lanc.numero_parcela;
+        
+        if (!numero_documento && lanc.movimentacao_id) {
+          const mov = movimentacoesMap.get(lanc.movimentacao_id);
+          if (mov) {
+            numero_documento = mov.numero_documento || undefined;
+          }
+        }
+        
+        if (numero_parcela === undefined && lanc.parcela_id) {
+          const parc = parcelasMap.get(lanc.parcela_id);
+          if (parc) {
+            numero_parcela = parc.numero;
+          }
+        }
+        
+        return { ...lanc, numero_documento, numero_parcela };
+      });
+      
       // 9. Calcular saldos para todos os lançamentos
-      const lancamentosComSaldo = calcularSaldos(todosLancamentos);
+      const lancamentosComSaldo = calcularSaldos(todosLancamentosEnriquecidos);
       
       setLancamentos(lancamentosComSaldo);
     } catch (error) {
