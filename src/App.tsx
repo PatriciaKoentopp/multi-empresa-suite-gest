@@ -70,6 +70,7 @@ import RelatorioContasPagar from "./pages/relatorios/contas-a-pagar";
 import RelatorioContasReceber from "./pages/relatorios/contas-a-receber";
 import RelatorioAntecipacoes from "./pages/relatorios/antecipacoes";
 import LogsTransacoes from "./pages/relatorios/logs-transacoes";
+import RazaoContabil from "./pages/relatorios/razao-contabil";
 
 // Backup
 import BackupPage from "./pages/backup";
