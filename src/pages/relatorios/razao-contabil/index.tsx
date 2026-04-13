@@ -153,6 +153,8 @@ export default function RazaoContabil() {
         saldo: 0,
         favorecido: lanc.favorecido,
         tipo_lancamento: lanc.tipo_lancamento,
+        numero_documento: lanc.numero_documento,
+        numero_parcela: lanc.numero_parcela,
       });
     });
 
