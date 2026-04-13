@@ -364,6 +364,7 @@ export default function RazaoContabil() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[100px]">Data</TableHead>
+                      <TableHead className="w-[150px]">NF/Parcela</TableHead>
                       <TableHead>Histórico</TableHead>
                       <TableHead className="text-right w-[130px]">Débito</TableHead>
                       <TableHead className="text-right w-[130px]">Crédito</TableHead>
