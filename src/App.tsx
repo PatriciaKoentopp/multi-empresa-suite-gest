@@ -593,6 +593,16 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/relatorios/razao-contabil"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <RazaoContabil />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
 
             {/* Backup */}
             <Route
