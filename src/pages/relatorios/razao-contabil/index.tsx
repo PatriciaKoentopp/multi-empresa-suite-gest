@@ -395,7 +395,7 @@ export default function RazaoContabil() {
                     ))}
                     {/* Totalizador */}
                     <TableRow className="bg-muted/50 font-semibold">
-                      <TableCell colSpan={2} className="text-sm font-bold">
+                      <TableCell colSpan={3} className="text-sm font-bold">
                         Totais
                       </TableCell>
                       <TableCell className="text-right text-sm font-bold">
