@@ -33,6 +33,8 @@ interface ContaAgrupada {
     saldo: number;
     favorecido?: string;
     tipo_lancamento?: string;
+    numero_documento?: string;
+    numero_parcela?: number;
   }>;
   totalDebitos: number;
   totalCreditos: number;
