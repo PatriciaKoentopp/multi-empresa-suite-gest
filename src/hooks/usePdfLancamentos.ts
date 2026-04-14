@@ -185,6 +185,13 @@ export const usePdfLancamentos = () => {
         totalGeralDebitos += grupo.totalDebitos;
         totalGeralCreditos += grupo.totalCreditos;
 
+        // Linha em branco separadora entre contas (exceto antes da primeira)
+        if (dadosTabela.length > 0) {
+          dadosTabela.push([
+            { content: '', colSpan: 6, styles: { minCellHeight: 4, fillColor: [255, 255, 255], lineWidth: 0 } } as any
+          ]);
+        }
+
         // Linha de cabeçalho da conta
         dadosTabela.push([
           { content: `${grupo.contaCodigo} - ${grupo.contaNome}`, colSpan: 6, styles: { fontStyle: 'bold', fillColor: [220, 230, 241], fontSize: 9, halign: 'left' } } as any
