@@ -197,8 +197,7 @@ export const usePdfLancamentos = () => {
 
         // Linha de cabeçalho da conta (dentro da tabela como linha destacada)
         dadosTabela.push([
-          { content: `${grupo.contaCodigo} - ${grupo.contaNome}`, colSpan: 6, styles: { fontStyle: 'bold', fillColor: [220, 230, 241], fontSize: 9, halign: 'left' } } as any,
-          '', '', '', '', ''
+          { content: `${grupo.contaCodigo} - ${grupo.contaNome}`, colSpan: 6, styles: { fontStyle: 'bold', fillColor: [220, 230, 241], fontSize: 9, halign: 'left' } } as any
         ]);
 
         // Lançamentos
@@ -216,7 +215,6 @@ export const usePdfLancamentos = () => {
         // Linha de totais da conta
         dadosTabela.push([
           { content: `Totais - ${grupo.contaCodigo}`, colSpan: 3, styles: { fontStyle: 'bold', fillColor: [235, 235, 235], halign: 'left' } } as any,
-          '', '',
           { content: formatCurrency(grupo.totalDebitos), styles: { fontStyle: 'bold', fillColor: [235, 235, 235], halign: 'right' } } as any,
           { content: formatCurrency(grupo.totalCreditos), styles: { fontStyle: 'bold', fillColor: [235, 235, 235], halign: 'right' } } as any,
           { content: formatCurrency(grupo.saldoFinal), styles: { fontStyle: 'bold', fillColor: [235, 235, 235], halign: 'right' } } as any,
