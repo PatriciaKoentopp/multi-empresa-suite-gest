@@ -178,24 +178,14 @@ export const usePdfLancamentos = () => {
       let totalGeralDebitos = 0;
       let totalGeralCreditos = 0;
 
-      // Iterar por cada conta agrupada
-      contasAgrupadas.forEach((grupo, grupoIdx) => {
+      // Montar todos os dados em uma única tabela
+      const dadosTabela: (string | { content: string; colSpan?: number; styles?: any })[][] = [];
+
+      contasAgrupadas.forEach((grupo) => {
         totalGeralDebitos += grupo.totalDebitos;
         totalGeralCreditos += grupo.totalCreditos;
 
-        // Verificar se precisa de nova página para o título da conta
-        const currentY = grupoIdx === 0 ? startY : ((doc as any).lastAutoTable?.finalY || startY) + 10;
-        if (currentY > pageHeight - 40) {
-          doc.addPage();
-          headerHeight = adicionarCabecalho();
-        }
-
-        const tabelaStartY = grupoIdx === 0 ? startY : ((doc as any).lastAutoTable?.finalY || startY) + 10;
-
-        // Preparar dados da tabela para esta conta
-        const dadosTabela: (string | { content: string; colSpan?: number; styles?: any })[][] = [];
-
-        // Linha de cabeçalho da conta (dentro da tabela como linha destacada)
+        // Linha de cabeçalho da conta
         dadosTabela.push([
           { content: `${grupo.contaCodigo} - ${grupo.contaNome}`, colSpan: 6, styles: { fontStyle: 'bold', fillColor: [220, 230, 241], fontSize: 9, halign: 'left' } } as any
         ]);
@@ -219,46 +209,46 @@ export const usePdfLancamentos = () => {
           { content: formatCurrency(grupo.totalCreditos), styles: { fontStyle: 'bold', fillColor: [235, 235, 235], halign: 'right' } } as any,
           { content: formatCurrency(grupo.saldoFinal), styles: { fontStyle: 'bold', fillColor: [235, 235, 235], halign: 'right' } } as any,
         ]);
+      });
 
-        autoTable(doc, {
-          head: grupoIdx === 0 ? [['Data', 'NF/Parcela', 'Histórico', 'Débito', 'Crédito', 'Saldo']] : undefined,
-          body: dadosTabela,
-          startY: tabelaStartY,
-          margin: { left: 15, right: 15, top: headerHeight, bottom: 20 },
-          styles: {
-            fontSize: 8,
-            cellPadding: 2,
-            lineColor: [200, 200, 200],
-            lineWidth: 0.1,
-            minCellHeight: 7,
-            overflow: 'ellipsize',
-            valign: 'middle'
-          },
-          headStyles: {
-            fillColor: [45, 55, 72],
-            textColor: 255,
-            fontStyle: 'bold',
-            fontSize: 9,
-            minCellHeight: 10
-          },
-          columnStyles: {
-            0: { cellWidth: 20, halign: 'center' },
-            1: { cellWidth: 30, halign: 'left' },
-            2: { cellWidth: 115, halign: 'left' },
-            3: { cellWidth: 30, halign: 'right' },
-            4: { cellWidth: 30, halign: 'right' },
-            5: { cellWidth: 30, halign: 'right' }
-          },
-          showHead: grupoIdx === 0 ? 'firstPage' : 'never',
-          didDrawPage: (data) => {
-            const pageNumber = data.pageNumber || 1;
-            if (pageNumber > 1 || grupoIdx > 0) {
-              adicionarCabecalho();
-            }
-            const totalPages = doc.internal.pages.length - 1;
-            adicionarRodape(pageNumber, totalPages);
-          },
-        });
+      autoTable(doc, {
+        head: [['Data', 'NF/Parcela', 'Histórico', 'Débito', 'Crédito', 'Saldo']],
+        body: dadosTabela,
+        startY: startY,
+        margin: { left: 15, right: 15, top: headerHeight, bottom: 20 },
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1,
+          minCellHeight: 7,
+          overflow: 'ellipsize',
+          valign: 'middle'
+        },
+        headStyles: {
+          fillColor: [45, 55, 72],
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 9,
+          minCellHeight: 10
+        },
+        columnStyles: {
+          0: { cellWidth: 20, halign: 'center' },
+          1: { cellWidth: 30, halign: 'left' },
+          2: { cellWidth: 115, halign: 'left' },
+          3: { cellWidth: 30, halign: 'right' },
+          4: { cellWidth: 30, halign: 'right' },
+          5: { cellWidth: 30, halign: 'right' }
+        },
+        showHead: 'firstPage',
+        didDrawPage: (data) => {
+          const pageNumber = data.pageNumber || 1;
+          if (pageNumber > 1) {
+            adicionarCabecalho();
+          }
+          const totalPages = doc.internal.pages.length - 1;
+          adicionarRodape(pageNumber, totalPages);
+        },
       });
 
       // Resumo geral no final
