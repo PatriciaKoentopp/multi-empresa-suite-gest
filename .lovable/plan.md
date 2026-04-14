@@ -1,51 +1,23 @@
 
 
-## Plano: Relatório de Razão Contábil na página de Relatórios
+## Plano: Corrigir colunas fantasmas no PDF do Razão Contábil
 
-### Objetivo
-Criar uma nova página de relatório "Razão Contábil" acessível via `/relatorios/razao-contabil`, que exibe os lançamentos contábeis agrupados por conta e ordenados por data, no formato de razão auxiliar da contabilidade. Incluir filtros de data e conta, com opção de gerar todas as contas.
+### Diagnóstico
+O PDF do Razão Contábil está gerando colunas extras (mostradas como "..." no anexo) porque nas linhas de cabeçalho de conta e de totais, além da célula com `colSpan`, estão sendo adicionadas células vazias (`''`) que o jsPDF interpreta como colunas adicionais.
 
-### Arquivos a criar/modificar
-
+### Arquivo a modificar
 | Arquivo | Ação |
 |---------|------|
-| `src/pages/relatorios/razao-contabil/index.tsx` | Criar — página do relatório |
-| `src/pages/relatorios/index.tsx` | Modificar — adicionar card do novo relatório |
-| `src/App.tsx` | Modificar — adicionar rota `/relatorios/razao-contabil` |
+| `src/hooks/usePdfLancamentos.ts` | Corrigir — remover células vazias extras nas linhas com colSpan |
 
-### Estrutura da página `razao-contabil/index.tsx`
+### Alterações
+1. **Linha de cabeçalho da conta (aprox. linha 199-202)**: Remover as 5 células vazias após a célula com `colSpan: 6`
+2. **Linha de totais da conta (aprox. linha 217-223)**: Reestruturar para ter apenas as células necessárias:
+   - Célula 1: `Totais - {código}` com `colSpan: 3`
+   - Célula 2: Total de Débitos (sem colSpan, posição 3)
+   - Célula 3: Total de Créditos (sem colSpan, posição 4)
+   - Célula 4: Saldo Final (sem colSpan, posição 5)
 
-**Filtros:**
-- Período: Mês Atual / Mês Anterior / Personalizado (com campos Data Inicial e Data Final no formato DD/MM/AAAA)
-- Conta Contábil: Select com "Todas as Contas" + lista de contas ativas do plano de contas
-- Botão "Gerar PDF"
-- Botão voltar para `/relatorios`
-
-**Exibição dos dados:**
-- Reutiliza o hook `useLancamentosContabeis` para buscar os lançamentos e plano de contas
-- Agrupa os lançamentos por conta contábil (código + descrição)
-- Dentro de cada conta, ordena por data de lançamento (ascendente)
-- Para cada conta, exibe:
-  - Cabeçalho com código e nome da conta
-  - Tabela com colunas: Data | Histórico | Débito | Crédito | Saldo
-  - Saldo acumulado por conta (débitos somam, créditos subtraem, considerando o tipo da conta)
-  - Totalizador ao final de cada conta
-- Quando "Todas as Contas" selecionado, exibe todas as contas que possuem lançamentos no período, uma após a outra
-
-**Layout:**
-- Segue o padrão visual das outras páginas de relatório (header com botão voltar, Card com filtros, tabelas)
-- Cores de botões e ícones seguindo o padrão do projeto (azul para ações principais)
-
-### Alterações em `relatorios/index.tsx`
-- Adicionar novo card "Razão Contábil" com ícone `BookOpen` e cor teal
-- Incluir na lista de cards ativos (sem `opacity-60`)
-
-### Alterações em `App.tsx`
-- Importar o componente `RazaoContabil`
-- Adicionar rota protegida `/relatorios/razao-contabil`
-
-### Detalhes técnicos
-- O hook `useLancamentosContabeis` já carrega todos os lançamentos com `conta`, `conta_nome`, `conta_codigo`, `tipo` (debito/credito), `valor`, `saldo` e `data`
-- A lógica de agrupamento e ordenação será feita com `useMemo` no componente
-- Para o cálculo de saldo por conta no relatório, será recalculado localmente considerando apenas os lançamentos filtrados por período
+### Resultado esperado
+PDF com exatamente 6 colunas alinhadas: Data | NF/Parcela | Histórico | Débito | Crédito | Saldo — sem colunas fantasmas à direita.
 
