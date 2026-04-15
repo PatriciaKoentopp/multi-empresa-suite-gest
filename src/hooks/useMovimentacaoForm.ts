@@ -92,6 +92,64 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     }
   }, [dataLancamento]);
 
+  // Carregar impostos retidos existentes ao editar
+  useEffect(() => {
+    if (movimentacaoEditando?.id) {
+      carregarImpostosRetidos(movimentacaoEditando.id);
+    }
+  }, [movimentacaoEditando?.id]);
+
+  async function carregarImpostosRetidos(movimentacaoId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('movimentacoes_impostos_retidos')
+        .select('*, impostos_retidos:imposto_retido_id(nome)')
+        .eq('movimentacao_id', movimentacaoId);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setPossuiImpostosRetidos(true);
+        setImpostosRetidosSelecionados(data.map((item: any) => ({
+          imposto_retido_id: item.imposto_retido_id,
+          nome: item.impostos_retidos?.nome || '',
+          valor: Number(item.valor).toFixed(2).replace('.', ','),
+          data_vencimento: item.data_vencimento ? new Date(item.data_vencimento + 'T00:00:00') : new Date()
+        })));
+      }
+    } catch (error) {
+      console.error("Erro ao carregar impostos retidos:", error);
+    }
+  }
+
+  // Handlers para impostos retidos
+  const adicionarImpostoRetido = (impostoId: string, impostosDisponiveis: any[]) => {
+    const imposto = impostosDisponiveis.find((i: any) => i.id === impostoId);
+    if (!imposto) return;
+    setImpostosRetidosSelecionados(prev => [...prev, {
+      imposto_retido_id: imposto.id,
+      nome: imposto.nome,
+      valor: "0,00",
+      data_vencimento: dataPrimeiroVenc || new Date()
+    }]);
+  };
+
+  const removerImpostoRetido = (index: number) => {
+    setImpostosRetidosSelecionados(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const atualizarValorImpostoRetido = (index: number, valor: string) => {
+    setImpostosRetidosSelecionados(prev => prev.map((item, i) => 
+      i === index ? { ...item, valor } : item
+    ));
+  };
+
+  const atualizarDataImpostoRetido = (index: number, data?: Date) => {
+    setImpostosRetidosSelecionados(prev => prev.map((item, i) => 
+      i === index ? { ...item, data_vencimento: data } : item
+    ));
+  };
+
   // Função para fazer upload do documento PDF
   const uploadDocumentoPdf = async (file) => {
     if (!file || !currentCompany?.id) {
