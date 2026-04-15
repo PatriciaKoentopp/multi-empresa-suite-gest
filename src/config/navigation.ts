@@ -70,6 +70,10 @@ export const navigationConfig: ModuleNavItem[] = [
         title: "Tipos de Títulos",
         href: "/cadastros/tipos-titulos",
       },
+      {
+        title: "Impostos Retidos",
+        href: "/cadastros/impostos-retidos",
+      },
     ],
   },
   {

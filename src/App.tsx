@@ -25,6 +25,7 @@ import MotivosPerdas from "./pages/cadastros/motivos-perda";
 import ContaCorrente from "./pages/cadastros/conta-corrente";
 import TiposTitulos from "./pages/cadastros/tipos-titulos";
 import GrupoProdutos from "./pages/cadastros/grupo-produtos";
+import ImpostosRetidos from "./pages/cadastros/impostos-retidos";
 
 // Financeiro
 import FluxoCaixa from "./pages/financeiro/fluxo-caixa";
@@ -229,6 +230,17 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <TiposTitulos />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/cadastros/impostos-retidos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <ImpostosRetidos />
                   </MainLayout>
                 </PrivateRoute>
               }
