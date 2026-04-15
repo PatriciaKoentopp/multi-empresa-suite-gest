@@ -20,12 +20,21 @@ interface ContaCorrente {
   nome: string;
 }
 
+interface ImpostoRetido {
+  id: string;
+  nome: string;
+  tipo_titulo_id: string;
+  conta_despesa_id?: string;
+  favorecido_id?: string;
+}
+
 export function useMovimentacaoDados() {
   const { currentCompany } = useCompany();
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [contasCorrente, setContasCorrente] = useState<ContaCorrente[]>([]);
   const [tiposTitulos, setTiposTitulos] = useState<TipoTitulo[]>([]);
+  const [impostosRetidos, setImpostosRetidos] = useState<ImpostoRetido[]>([]);
 
   useEffect(() => {
     carregarDados();
