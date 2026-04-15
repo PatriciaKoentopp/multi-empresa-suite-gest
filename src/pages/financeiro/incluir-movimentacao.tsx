@@ -86,10 +86,17 @@ export default function IncluirMovimentacaoPage() {
     setDocumentoPdf,
     handleDocumentoChange,
     isLoading,
-    isUploading
+    isUploading,
+    possuiImpostosRetidos,
+    setPossuiImpostosRetidos,
+    impostosRetidosSelecionados,
+    adicionarImpostoRetido,
+    removerImpostoRetido,
+    atualizarValorImpostoRetido,
+    atualizarDataImpostoRetido
   } = useMovimentacaoForm(movimentacaoParaEditar);
 
-  const { favorecidos, categorias, contasCorrente, tiposTitulos } = useMovimentacaoDados();
+  const { favorecidos, categorias, contasCorrente, tiposTitulos, impostosRetidos } = useMovimentacaoDados();
   
   // Filtrar tipos de títulos baseado na operação
   const tiposTitulosFiltrados = tiposTitulos.filter(tipo => {
