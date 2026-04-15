@@ -802,6 +802,191 @@ export function useLancamentosContabeis() {
     return lancamentosGerados;
   }
   
+  // Processar antecipações e gerar lançamentos contábeis
+  function processarAntecipacoesParaLancamentos(
+    antecipacoes: any[],
+    favorecidos: any[],
+    contas: PlanoConta[],
+    tiposTitulos: TipoTitulo[],
+    contasCorrentes: {id: string; nome: string; conta_contabil_id: string}[]
+  ): LancamentoContabil[] {
+    const lancamentosGerados: LancamentoContabil[] = [];
+    
+    const contasMap = new Map<string, PlanoConta>();
+    contas.forEach(c => contasMap.set(c.id, c));
+    
+    const tiposTitulosMap = new Map<string, TipoTitulo>();
+    tiposTitulos.forEach(t => tiposTitulosMap.set(t.id, t));
+    
+    const contasCorrentesMap = new Map<string, {id: string; nome: string; conta_contabil_id: string}>();
+    contasCorrentes.forEach(cc => contasCorrentesMap.set(cc.id, cc));
+    
+    const favorecidosMap = new Map<string, string>();
+    favorecidos.forEach((f: any) => favorecidosMap.set(f.id, f.nome));
+    
+    antecipacoes.forEach(ant => {
+      // Precisamos do tipo_titulo_id e conta_corrente_id para contabilizar
+      if (!ant.tipo_titulo_id || !ant.conta_corrente_id) {
+        console.log(`Antecipação ${ant.id} sem tipo_titulo_id ou conta_corrente_id, skipping.`);
+        return;
+      }
+      
+      const tipoTitulo = tiposTitulosMap.get(ant.tipo_titulo_id);
+      if (!tipoTitulo || !tipoTitulo.conta_contabil_id) {
+        console.log(`Tipo título ${ant.tipo_titulo_id} sem conta_contabil_id, skipping.`);
+        return;
+      }
+      
+      const contaTitulo = contasMap.get(tipoTitulo.conta_contabil_id);
+      if (!contaTitulo) return;
+      
+      const contaCorrente = contasCorrentesMap.get(ant.conta_corrente_id);
+      if (!contaCorrente || !contaCorrente.conta_contabil_id) return;
+      
+      const contaBanco = contasMap.get(contaCorrente.conta_contabil_id);
+      if (!contaBanco) return;
+      
+      const dataFormatada = formatarDataPtBr(ant.data_lancamento);
+      const favorecidoNome = ant.favorecido_id ? (favorecidosMap.get(ant.favorecido_id) || '') : '';
+      const historico = ant.descricao || 'Antecipação';
+      const valor = Number(ant.valor_total);
+      
+      if (ant.tipo_operacao === 'receber') {
+        // D - Banco / C - Tipo Título
+        lancamentosGerados.push({
+          id: `ant_${ant.id}_debito`,
+          data: dataFormatada,
+          historico,
+          conta: contaCorrente.conta_contabil_id,
+          conta_nome: contaBanco.descricao,
+          conta_codigo: contaBanco.codigo,
+          tipo: 'debito',
+          valor,
+          saldo: 0,
+          tipo_lancamento: 'principal',
+          favorecido: favorecidoNome,
+          numero_documento: ant.numero_documento || undefined,
+        });
+        lancamentosGerados.push({
+          id: `ant_${ant.id}_credito`,
+          data: dataFormatada,
+          historico,
+          conta: tipoTitulo.conta_contabil_id,
+          conta_nome: contaTitulo.descricao,
+          conta_codigo: contaTitulo.codigo,
+          tipo: 'credito',
+          valor,
+          saldo: 0,
+          tipo_lancamento: 'principal',
+          favorecido: favorecidoNome,
+          numero_documento: ant.numero_documento || undefined,
+        });
+      } else if (ant.tipo_operacao === 'pagar') {
+        // D - Tipo Título / C - Banco
+        lancamentosGerados.push({
+          id: `ant_${ant.id}_debito`,
+          data: dataFormatada,
+          historico,
+          conta: tipoTitulo.conta_contabil_id,
+          conta_nome: contaTitulo.descricao,
+          conta_codigo: contaTitulo.codigo,
+          tipo: 'debito',
+          valor,
+          saldo: 0,
+          tipo_lancamento: 'principal',
+          favorecido: favorecidoNome,
+          numero_documento: ant.numero_documento || undefined,
+        });
+        lancamentosGerados.push({
+          id: `ant_${ant.id}_credito`,
+          data: dataFormatada,
+          historico,
+          conta: contaCorrente.conta_contabil_id,
+          conta_nome: contaBanco.descricao,
+          conta_codigo: contaBanco.codigo,
+          tipo: 'credito',
+          valor,
+          saldo: 0,
+          tipo_lancamento: 'principal',
+          favorecido: favorecidoNome,
+          numero_documento: ant.numero_documento || undefined,
+        });
+      }
+      
+      // Se devolvida, gerar lançamento inverso
+      if (ant.status === 'devolvida' && ant.valor_devolvido && Number(ant.valor_devolvido) > 0) {
+        const valorDevolvido = Number(ant.valor_devolvido);
+        // Usar updated_at como data aproximada da devolução
+        const dataDevolucao = formatarDataPtBr(ant.updated_at?.split('T')[0] || ant.data_lancamento);
+        const historicoDev = `Devolução - ${historico}`;
+        
+        if (ant.tipo_operacao === 'receber') {
+          // Inverso: D - Tipo Título / C - Banco
+          lancamentosGerados.push({
+            id: `ant_${ant.id}_dev_debito`,
+            data: dataDevolucao,
+            historico: historicoDev,
+            conta: tipoTitulo.conta_contabil_id,
+            conta_nome: contaTitulo.descricao,
+            conta_codigo: contaTitulo.codigo,
+            tipo: 'debito',
+            valor: valorDevolvido,
+            saldo: 0,
+            tipo_lancamento: 'principal',
+            favorecido: favorecidoNome,
+            numero_documento: ant.numero_documento || undefined,
+          });
+          lancamentosGerados.push({
+            id: `ant_${ant.id}_dev_credito`,
+            data: dataDevolucao,
+            historico: historicoDev,
+            conta: contaCorrente.conta_contabil_id,
+            conta_nome: contaBanco.descricao,
+            conta_codigo: contaBanco.codigo,
+            tipo: 'credito',
+            valor: valorDevolvido,
+            saldo: 0,
+            tipo_lancamento: 'principal',
+            favorecido: favorecidoNome,
+            numero_documento: ant.numero_documento || undefined,
+          });
+        } else {
+          // Inverso: D - Banco / C - Tipo Título
+          lancamentosGerados.push({
+            id: `ant_${ant.id}_dev_debito`,
+            data: dataDevolucao,
+            historico: historicoDev,
+            conta: contaCorrente.conta_contabil_id,
+            conta_nome: contaBanco.descricao,
+            conta_codigo: contaBanco.codigo,
+            tipo: 'debito',
+            valor: valorDevolvido,
+            saldo: 0,
+            tipo_lancamento: 'principal',
+            favorecido: favorecidoNome,
+            numero_documento: ant.numero_documento || undefined,
+          });
+          lancamentosGerados.push({
+            id: `ant_${ant.id}_dev_credito`,
+            data: dataDevolucao,
+            historico: historicoDev,
+            conta: tipoTitulo.conta_contabil_id,
+            conta_nome: contaTitulo.descricao,
+            conta_codigo: contaTitulo.codigo,
+            tipo: 'credito',
+            valor: valorDevolvido,
+            saldo: 0,
+            tipo_lancamento: 'principal',
+            favorecido: favorecidoNome,
+            numero_documento: ant.numero_documento || undefined,
+          });
+        }
+      }
+    });
+    
+    return lancamentosGerados;
+  }
+  
   // Função para formatar datas no padrão PT-BR (DD/MM/YYYY)
   function formatarDataPtBr(dataStr: string): string {
     // Se já estiver no formato DD/MM/YYYY, retornar como está
