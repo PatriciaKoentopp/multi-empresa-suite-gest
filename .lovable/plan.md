@@ -1,37 +1,31 @@
 
 
-## Plano: Criar rotina de Impostos Retidos (sem alíquota)
+## Plano: Adicionar Conta de Despesa ao Cadastro de Impostos Retidos
+
+### Objetivo
+Incluir o campo "Conta de Despesa" (plano de contas) no cadastro de impostos retidos, para que cada imposto tenha tanto o tipo de título (para contabilização do valor a pagar) quanto a conta de despesa (para contabilização da despesa).
 
 ### 1. Migração de banco de dados
-Criar tabela `impostos_retidos`:
-- `id` (uuid, PK, default gen_random_uuid())
-- `empresa_id` (uuid, NOT NULL)
-- `nome` (text, NOT NULL) — ex: "ISS Retido", "IRRF"
-- `tipo_titulo_id` (uuid, NOT NULL) — tipo de título para contabilização
-- `status` (varchar, default 'ativo')
-- `created_at`, `updated_at` (timestamptz, default now())
-- RLS policies com `get_user_company_id()` para SELECT, INSERT, UPDATE, DELETE
-- Trigger `handle_updated_at` para updated_at
+Adicionar coluna `conta_despesa_id` (uuid, nullable) na tabela `impostos_retidos`.
 
-### 2. Arquivos a criar
+```sql
+ALTER TABLE public.impostos_retidos ADD COLUMN conta_despesa_id UUID;
+```
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `src/types/impostos-retidos.d.ts` | Interface TypeScript com id, empresa_id, nome, tipo_titulo_id, status, created_at, updated_at |
-| `src/pages/cadastros/impostos-retidos/index.tsx` | Página principal seguindo padrão de Tipos de Títulos (busca, filtro status, dialog CRUD, AlertDialog exclusão) |
-| `src/components/impostos-retidos/impostos-retidos-form.tsx` | Formulário: Nome (input), Tipo de Título (select filtrado por tipo "pagar" e status "ativo"), Status (radio ativo/inativo) |
-| `src/components/impostos-retidos/impostos-retidos-table.tsx` | Tabela: Nome, Tipo de Título (nome), Status, Ações (editar/excluir) |
-
-### 3. Arquivos a modificar
+### 2. Arquivos a modificar
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/config/navigation.ts` | Adicionar `{ title: "Impostos Retidos", href: "/cadastros/impostos-retidos" }` no submenu Cadastros |
-| `src/App.tsx` | Importar página e adicionar rota `/cadastros/impostos-retidos` com PrivateRoute + MainLayout |
+| `src/types/impostos-retidos.d.ts` | Adicionar `conta_despesa_id?: string` |
+| `src/pages/cadastros/impostos-retidos/index.tsx` | Buscar `plano_contas` da empresa (useQuery). Passar `contasContabeis` como prop ao form e table. |
+| `src/components/impostos-retidos/impostos-retidos-form.tsx` | Adicionar campo `conta_despesa_id` (Select filtrado por contas de movimentação ativas). Receber `contasContabeis` como prop. |
+| `src/components/impostos-retidos/impostos-retidos-table.tsx` | Adicionar coluna "Conta de Despesa" exibindo a descrição da conta. Receber `contasContabeis` como prop. |
 
-### Detalhes técnicos
-- Formulário busca tipos de títulos ativos do tipo "pagar" da empresa
-- Tabela exibe o nome do tipo de título associado (join local com dados carregados)
-- Padrão visual idêntico à página de Tipos de Títulos (cores de botões, ícones, badges)
-- Sem campo de alíquota
+### 3. Detalhes do formulário
+- O select de "Conta de Despesa" exibirá contas do plano de contas com categoria "movimentação" e status "ativo"
+- Campo opcional (nullable no banco)
+- Exibição: `codigo - descricao`
+
+### O que NÃO será alterado
+- Nenhuma outra funcionalidade ou layout existente
 
