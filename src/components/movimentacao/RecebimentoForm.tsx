@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { DateInput } from "./DateInput";
 import { ParcelasForm } from './ParcelasForm';
+import { ImpostosRetidosMovForm, ImpostoRetidoSelecionado } from './ImpostosRetidosMovForm';
 
 // Interface mais flexível para ParcelasForm
 interface FlexibleParcelasFormProps {
@@ -45,6 +46,15 @@ interface RecebimentoFormProps {
   onNovaCategoria: () => void;
   parcelas: any[];
   readOnly?: boolean;
+  // Impostos retidos
+  possuiImpostosRetidos?: boolean;
+  onPossuiImpostosRetidosChange?: (checked: boolean) => void;
+  impostosRetidosDisponiveis?: any[];
+  impostosRetidosSelecionados?: ImpostoRetidoSelecionado[];
+  onAdicionarImpostoRetido?: (impostoId: string) => void;
+  onRemoverImpostoRetido?: (index: number) => void;
+  onImpostoRetidoValorChange?: (index: number, valor: string) => void;
+  onImpostoRetidoDataChange?: (index: number, data?: Date) => void;
 }
 
 export function RecebimentoForm({
@@ -75,7 +85,15 @@ export function RecebimentoForm({
   onNovoFavorecido,
   onNovaCategoria,
   parcelas,
-  readOnly = false
+  readOnly = false,
+  possuiImpostosRetidos = false,
+  onPossuiImpostosRetidosChange,
+  impostosRetidosDisponiveis = [],
+  impostosRetidosSelecionados = [],
+  onAdicionarImpostoRetido,
+  onRemoverImpostoRetido,
+  onImpostoRetidoValorChange,
+  onImpostoRetidoDataChange
 }: RecebimentoFormProps) {
   // Implementação similar ao PagamentoForm, mas com campos adaptados para recebimentos
   return (
@@ -237,14 +255,25 @@ export function RecebimentoForm({
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Switch 
-          id="consider-dre" 
-          checked={considerarDRE} 
-          onCheckedChange={onConsiderarDREChange}
-          disabled={readOnly}
-        />
-        <Label htmlFor="consider-dre">Considerar para DRE</Label>
+      <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-2">
+          <Switch 
+            id="consider-dre-receber" 
+            checked={considerarDRE} 
+            onCheckedChange={onConsiderarDREChange}
+            disabled={readOnly}
+          />
+          <Label htmlFor="consider-dre-receber">Considerar para DRE</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Switch 
+            id="impostos-retidos-receber" 
+            checked={possuiImpostosRetidos} 
+            onCheckedChange={onPossuiImpostosRetidosChange}
+            disabled={readOnly}
+          />
+          <Label htmlFor="impostos-retidos-receber">Impostos Retidos</Label>
+        </div>
       </div>
 
       {/* Tabela de parcelas */}
@@ -255,6 +284,21 @@ export function RecebimentoForm({
             parcelas={parcelas}
             onValorChange={() => {}}
             onDataChange={() => {}}
+          />
+        </div>
+      )}
+
+      {/* Impostos Retidos */}
+      {possuiImpostosRetidos && (
+        <div className="mt-6">
+          <ImpostosRetidosMovForm
+            impostosDisponiveis={impostosRetidosDisponiveis}
+            impostosRetidosSelecionados={impostosRetidosSelecionados}
+            onAdicionarImposto={onAdicionarImpostoRetido || (() => {})}
+            onRemoverImposto={onRemoverImpostoRetido || (() => {})}
+            onValorChange={onImpostoRetidoValorChange || (() => {})}
+            onDataVencimentoChange={onImpostoRetidoDataChange || (() => {})}
+            readOnly={readOnly}
           />
         </div>
       )}
