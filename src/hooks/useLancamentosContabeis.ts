@@ -1115,8 +1115,36 @@ export function useLancamentosContabeis() {
         contasCorrentes
       );
       
-      // 8. Combinar os lançamentos da tabela com os processados das movimentações
-      const todosLancamentos = [...lancamentosContabeis, ...lancamentosProcessados];
+      // 7.1 Carregar antecipações e gerar lançamentos contábeis
+      const { data: antecipacoesData, error: antError } = await supabase
+        .from("antecipacoes")
+        .select("*")
+        .eq("empresa_id", currentCompany.id)
+        .neq("status", "cancelada");
+      
+      if (antError) throw antError;
+      
+      // Buscar favorecidos das antecipações
+      const favIdsAnt = [...new Set((antecipacoesData || []).map(a => a.favorecido_id).filter(Boolean))];
+      let favorecidosAnt: any[] = [];
+      if (favIdsAnt.length > 0) {
+        const { data: favData } = await supabase
+          .from("favorecidos")
+          .select("id, nome")
+          .in("id", favIdsAnt);
+        favorecidosAnt = favData || [];
+      }
+      
+      const lancamentosAntecipacoes = processarAntecipacoesParaLancamentos(
+        antecipacoesData || [],
+        favorecidosAnt,
+        planosContas,
+        tiposTitulos,
+        contasCorrentes
+      );
+      
+      // 8. Combinar os lançamentos da tabela com os processados das movimentações e antecipações
+      const todosLancamentos = [...lancamentosContabeis, ...lancamentosProcessados, ...lancamentosAntecipacoes];
       
       // 8.1 Enriquecer lançamentos com numero_documento e numero_parcela
       const movimentacoesMap = new Map<string, any>();
