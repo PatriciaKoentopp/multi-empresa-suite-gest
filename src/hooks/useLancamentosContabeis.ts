@@ -1125,7 +1125,7 @@ export function useLancamentosContabeis() {
       if (antError) throw antError;
       
       // Buscar favorecidos das antecipações
-      const favIdsAnt = [...new Set((antecipacoesData || []).map(a => a.favorecido_id).filter(Boolean))];
+      const favIdsAnt = Array.from(new Set((antecipacoesData || []).map(a => a.favorecido_id).filter(Boolean)));
       let favorecidosAnt: any[] = [];
       if (favIdsAnt.length > 0) {
         const { data: favData } = await supabase
