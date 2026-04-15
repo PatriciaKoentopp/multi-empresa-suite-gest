@@ -132,6 +132,9 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     setImpostosRetidosSelecionados(prev => [...prev, {
       imposto_retido_id: imposto.id,
       nome: imposto.nome,
+      tipo_titulo_id: imposto.tipo_titulo_id || '',
+      conta_despesa_id: imposto.conta_despesa_id || '',
+      favorecido_id: imposto.favorecido_id || '',
       valor: "0,00",
       data_vencimento: dataPrimeiroVenc || new Date()
     }]);
