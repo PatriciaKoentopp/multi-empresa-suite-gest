@@ -1,45 +1,37 @@
 
 
-## Plano: Contabilizar baixa de contas a pagar com antecipação
+## Plano: Criar rotina de Impostos Retidos (sem alíquota)
 
-### Problema atual
-Quando uma conta a pagar é baixada usando antecipação, o sistema gera apenas o lançamento padrão com o valor total da parcela:
-- D - Fornecedores a Pagar / C - Banco
+### 1. Migração de banco de dados
+Criar tabela `impostos_retidos`:
+- `id` (uuid, PK, default gen_random_uuid())
+- `empresa_id` (uuid, NOT NULL)
+- `nome` (text, NOT NULL) — ex: "ISS Retido", "IRRF"
+- `tipo_titulo_id` (uuid, NOT NULL) — tipo de título para contabilização
+- `status` (varchar, default 'ativo')
+- `created_at`, `updated_at` (timestamptz, default now())
+- RLS policies com `get_user_company_id()` para SELECT, INSERT, UPDATE, DELETE
+- Trigger `handle_updated_at` para updated_at
 
-Não diferencia a parte paga com dinheiro da parte compensada com antecipação. Falta o lançamento de baixa da antecipação.
+### 2. Arquivos a criar
 
-### Lançamentos corretos esperados
+| Arquivo | Descrição |
+|---------|-----------|
+| `src/types/impostos-retidos.d.ts` | Interface TypeScript com id, empresa_id, nome, tipo_titulo_id, status, created_at, updated_at |
+| `src/pages/cadastros/impostos-retidos/index.tsx` | Página principal seguindo padrão de Tipos de Títulos (busca, filtro status, dialog CRUD, AlertDialog exclusão) |
+| `src/components/impostos-retidos/impostos-retidos-form.tsx` | Formulário: Nome (input), Tipo de Título (select filtrado por tipo "pagar" e status "ativo"), Status (radio ativo/inativo) |
+| `src/components/impostos-retidos/impostos-retidos-table.tsx` | Tabela: Nome, Tipo de Título (nome), Status, Ações (editar/excluir) |
 
-**Parte paga via antecipação (compensação):**
-- D - Fornecedores a Pagar (conta do tipo título da movimentação)
-- C - Adiantamento de Fornecedores (conta do tipo título da antecipação)
+### 3. Arquivos a modificar
 
-**Parte paga em dinheiro (valor efetivo):**
-- D - Fornecedores a Pagar (conta do tipo título da movimentação)
-- C - Banco (conta corrente)
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/config/navigation.ts` | Adicionar `{ title: "Impostos Retidos", href: "/cadastros/impostos-retidos" }` no submenu Cadastros |
+| `src/App.tsx` | Importar página e adicionar rota `/cadastros/impostos-retidos` com PrivateRoute + MainLayout |
 
-### Arquivo a modificar
-
-| Arquivo | Ação |
-|---------|------|
-| `src/hooks/useLancamentosContabeis.ts` | Buscar `movimentacoes_parcelas_antecipacoes` e `antecipacoes`, e gerar lançamentos contábeis separados para a parte paga via antecipação |
-
-### Detalhes da implementação
-
-1. **Na função `carregarDados`**: Buscar registros de `movimentacoes_parcelas_antecipacoes` (com batch de 50) e as antecipações correspondentes para obter o `tipo_titulo_id` de cada antecipação usada.
-
-2. **Na função `processarMovimentacoesParaLancamentos`**: Receber os dados de antecipações utilizadas como parâmetro adicional. No bloco de processamento de parcelas pagas (`tipoOperacao === 'pagar'`):
-   - Verificar se a parcela tem antecipações associadas na tabela `movimentacoes_parcelas_antecipacoes`
-   - Para cada antecipação utilizada:
-     - Gerar: D - Fornecedores a Pagar / C - Conta do tipo título da antecipação (valor da antecipação utilizada)
-   - Para o valor restante pago em dinheiro (valor da parcela - total antecipações):
-     - Gerar: D - Fornecedores a Pagar / C - Banco (apenas o valor efetivamente pago)
-   - Se o valor total foi pago via antecipação (valor a pagar = 0), não gerar lançamento contra o banco
-
-3. **Mesma lógica para `tipoOperacao === 'receber'`**: Adaptar para contas a receber com antecipação (D - Banco / C - Clientes a Receber para a parte em dinheiro, e D - Adiantamento de Clientes / C - Clientes a Receber para a parte da antecipação).
-
-### O que NÃO será alterado
-- Nenhum modal de baixa
-- Nenhuma migração de banco
-- Lógica de antecipações na criação/devolução permanece igual
+### Detalhes técnicos
+- Formulário busca tipos de títulos ativos do tipo "pagar" da empresa
+- Tabela exibe o nome do tipo de título associado (join local com dados carregados)
+- Padrão visual idêntico à página de Tipos de Títulos (cores de botões, ícones, badges)
+- Sem campo de alíquota
 
