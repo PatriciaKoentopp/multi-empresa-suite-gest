@@ -1,43 +1,45 @@
 
 
-## Plano Revisado: Integrar Antecipações no Razão Contábil via Tipo de Título
+## Plano: Contabilizar baixa de contas a pagar com antecipação
 
-### Lógica contábil das antecipações
+### Problema atual
+Quando uma conta a pagar é baixada usando antecipação, o sistema gera apenas o lançamento padrão com o valor total da parcela:
+- D - Fornecedores a Pagar / C - Banco
 
-A antecipação é um adiantamento — dinheiro entra ou sai do banco contra a conta do tipo de título, seguindo o mesmo padrão das baixas de contas a pagar/receber:
+Não diferencia a parte paga com dinheiro da parte compensada com antecipação. Falta o lançamento de baixa da antecipação.
 
-**Antecipação de Cliente (receber):**
-- D - Banco (conta contábil da conta corrente)
-- C - Tipo de Título (conta_contabil_id do tipo_titulo)
+### Lançamentos corretos esperados
 
-**Antecipação de Fornecedor (pagar):**
-- D - Tipo de Título (conta_contabil_id do tipo_titulo)
-- C - Banco (conta contábil da conta corrente)
+**Parte paga via antecipação (compensação):**
+- D - Fornecedores a Pagar (conta do tipo título da movimentação)
+- C - Adiantamento de Fornecedores (conta do tipo título da antecipação)
 
-**Devolução de antecipação** — lançamento inverso ao da criação.
+**Parte paga em dinheiro (valor efetivo):**
+- D - Fornecedores a Pagar (conta do tipo título da movimentação)
+- C - Banco (conta corrente)
 
-### Implementação
-
-Ao invés de gravar na tabela `lancamentos_contabeis`, os lançamentos serão **gerados dinamicamente** no hook `useLancamentosContabeis`, exatamente como já é feito para movimentações e parcelas. Isso mantém o padrão existente.
-
-### Arquivos a modificar
+### Arquivo a modificar
 
 | Arquivo | Ação |
 |---------|------|
-| `src/hooks/useLancamentosContabeis.ts` | Adicionar função para buscar antecipações e gerar lançamentos contábeis a partir delas |
+| `src/hooks/useLancamentosContabeis.ts` | Buscar `movimentacoes_parcelas_antecipacoes` e `antecipacoes`, e gerar lançamentos contábeis separados para a parte paga via antecipação |
 
-### Detalhes da alteração em `useLancamentosContabeis.ts`
+### Detalhes da implementação
 
-1. **Na função `carregarDados`**: Buscar antecipações da empresa (tabela `antecipacoes`) com status diferente de `cancelada`
-2. **Nova função `processarAntecipacoesParaLancamentos`**: Recebe as antecipações, contas, tipos de títulos e contas correntes, e gera os `LancamentoContabil[]` seguindo a lógica:
-   - Busca a `conta_contabil_id` do tipo de título selecionado na antecipação
-   - Busca a `conta_contabil_id` da conta corrente selecionada
-   - Gera dois lançamentos (débito + crédito) por antecipação
-   - Para antecipações devolvidas, gera lançamentos adicionais invertidos com a data da devolução
-3. **Campos preenchidos**: `numero_documento` e histórico com nome do favorecido, seguindo o mesmo padrão das movimentações
+1. **Na função `carregarDados`**: Buscar registros de `movimentacoes_parcelas_antecipacoes` (com batch de 50) e as antecipações correspondentes para obter o `tipo_titulo_id` de cada antecipação usada.
+
+2. **Na função `processarMovimentacoesParaLancamentos`**: Receber os dados de antecipações utilizadas como parâmetro adicional. No bloco de processamento de parcelas pagas (`tipoOperacao === 'pagar'`):
+   - Verificar se a parcela tem antecipações associadas na tabela `movimentacoes_parcelas_antecipacoes`
+   - Para cada antecipação utilizada:
+     - Gerar: D - Fornecedores a Pagar / C - Conta do tipo título da antecipação (valor da antecipação utilizada)
+   - Para o valor restante pago em dinheiro (valor da parcela - total antecipações):
+     - Gerar: D - Fornecedores a Pagar / C - Banco (apenas o valor efetivamente pago)
+   - Se o valor total foi pago via antecipação (valor a pagar = 0), não gerar lançamento contra o banco
+
+3. **Mesma lógica para `tipoOperacao === 'receber'`**: Adaptar para contas a receber com antecipação (D - Banco / C - Clientes a Receber para a parte em dinheiro, e D - Adiantamento de Clientes / C - Clientes a Receber para a parte da antecipação).
 
 ### O que NÃO será alterado
-- Nenhum modal de antecipação será modificado (criação, edição, devolução)
-- Nenhuma migração de banco será necessária
-- A página de antecipações permanece inalterada
+- Nenhum modal de baixa
+- Nenhuma migração de banco
+- Lógica de antecipações na criação/devolução permanece igual
 
