@@ -20,12 +20,21 @@ interface ContaCorrente {
   nome: string;
 }
 
+interface ImpostoRetido {
+  id: string;
+  nome: string;
+  tipo_titulo_id: string;
+  conta_despesa_id?: string;
+  favorecido_id?: string;
+}
+
 export function useMovimentacaoDados() {
   const { currentCompany } = useCompany();
   const [favorecidos, setFavorecidos] = useState<Favorecido[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [contasCorrente, setContasCorrente] = useState<ContaCorrente[]>([]);
   const [tiposTitulos, setTiposTitulos] = useState<TipoTitulo[]>([]);
+  const [impostosRetidos, setImpostosRetidos] = useState<ImpostoRetido[]>([]);
 
   useEffect(() => {
     carregarDados();
@@ -71,10 +80,21 @@ export function useMovimentacaoDados() {
         .order("nome", { ascending: true }); // Ordenação alfabética por nome
         
       if (errorTipos) throw errorTipos;
+
+      // Buscar impostos retidos ativos
+      const { data: impostosData, error: errorImpostos } = await supabase
+        .from("impostos_retidos")
+        .select("id, nome, tipo_titulo_id, conta_despesa_id, favorecido_id")
+        .eq("empresa_id", currentCompany.id)
+        .eq("status", "ativo")
+        .order("nome", { ascending: true });
+
+      if (errorImpostos) throw errorImpostos;
       
       setFavorecidos(favorecidosData?.sort((a, b) => a.nome.localeCompare(b.nome)) || []);
       setCategorias(categoriasData || []);
       setContasCorrente(contasData || []);
+      setImpostosRetidos(impostosData || []);
       
       // Garantir que tiposTitulosData está no formato esperado
       if (tiposTitulosData) {
@@ -97,6 +117,7 @@ export function useMovimentacaoDados() {
     favorecidos,
     categorias,
     contasCorrente,
-    tiposTitulos
+    tiposTitulos,
+    impostosRetidos
   };
 }

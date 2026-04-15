@@ -1370,6 +1370,51 @@ export type Database = {
           },
         ]
       }
+      movimentacoes_impostos_retidos: {
+        Row: {
+          created_at: string
+          data_vencimento: string
+          id: string
+          imposto_retido_id: string
+          movimentacao_id: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data_vencimento: string
+          id?: string
+          imposto_retido_id: string
+          movimentacao_id: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          created_at?: string
+          data_vencimento?: string
+          id?: string
+          imposto_retido_id?: string
+          movimentacao_id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_impostos_retidos_imposto_retido_id_fkey"
+            columns: ["imposto_retido_id"]
+            isOneToOne: false
+            referencedRelation: "impostos_retidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_impostos_retidos_movimentacao_id_fkey"
+            columns: ["movimentacao_id"]
+            isOneToOne: false
+            referencedRelation: "movimentacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimentacoes_parcelas: {
         Row: {
           antecipacao_id: string | null

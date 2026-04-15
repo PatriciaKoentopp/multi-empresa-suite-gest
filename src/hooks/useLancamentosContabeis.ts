@@ -1272,6 +1272,104 @@ export function useLancamentosContabeis() {
         antecipacoesUsadasMap
       );
       
+      // 7.05 Carregar e processar impostos retidos das movimentações
+      let lancamentosImpostosRetidos: LancamentoContabil[] = [];
+      if (movimentacoesIds.length > 0) {
+        let impostosRetidosMov: any[] = [];
+        const batchSize = 50;
+        for (let i = 0; i < movimentacoesIds.length; i += batchSize) {
+          const batch = movimentacoesIds.slice(i, i + batchSize);
+          const { data: irData, error: irError } = await supabase
+            .from("movimentacoes_impostos_retidos")
+            .select("*, impostos_retidos:imposto_retido_id(id, nome, tipo_titulo_id, conta_despesa_id, favorecido_id)")
+            .in("movimentacao_id", batch);
+          if (irError) throw irError;
+          if (irData) impostosRetidosMov.push(...irData);
+        }
+
+        // Buscar nomes dos favorecidos dos impostos
+        const favIdsIR = Array.from(new Set(impostosRetidosMov.map((ir: any) => ir.impostos_retidos?.favorecido_id).filter(Boolean)));
+        let favorecidosIRMap = new Map<string, string>();
+        if (favIdsIR.length > 0) {
+          for (let i = 0; i < favIdsIR.length; i += batchSize) {
+            const batch = favIdsIR.slice(i, i + batchSize);
+            const { data: favData } = await supabase.from("favorecidos").select("id, nome").in("id", batch);
+            if (favData) favData.forEach((f: any) => favorecidosIRMap.set(f.id, f.nome));
+          }
+        }
+
+        // Gerar lançamentos contábeis para cada imposto retido
+        const contasMap = new Map<string, PlanoConta>();
+        planosContas.forEach(c => contasMap.set(c.id, c));
+        const tiposTitulosMap = new Map<string, TipoTitulo>();
+        tiposTitulos.forEach(t => tiposTitulosMap.set(t.id, t));
+        const movMap = new Map<string, any>();
+        movimentacoesTipadas.forEach(m => movMap.set(m.id, m));
+
+        impostosRetidosMov.forEach((ir: any) => {
+          const imposto = ir.impostos_retidos;
+          if (!imposto) return;
+
+          const mov = movMap.get(ir.movimentacao_id);
+          if (!mov) return;
+
+          const dataFormatada = typeof mov.data_lancamento === 'string'
+            ? formatarDataPtBr(mov.data_lancamento)
+            : formatarDataPtBr(new Date(mov.data_lancamento).toISOString().split('T')[0]);
+
+          const favorecidoNome = imposto.favorecido_id ? (favorecidosIRMap.get(imposto.favorecido_id) || '') : '';
+          const historico = `Imposto Retido - ${imposto.nome}`;
+          const valor = Number(ir.valor);
+
+          if (valor <= 0) return;
+
+          // D - Conta de despesa do imposto
+          if (imposto.conta_despesa_id) {
+            const contaDespesa = contasMap.get(imposto.conta_despesa_id);
+            if (contaDespesa) {
+              lancamentosImpostosRetidos.push({
+                id: `ir_${ir.id}_debito`,
+                data: dataFormatada,
+                historico,
+                conta: imposto.conta_despesa_id,
+                conta_nome: contaDespesa.descricao,
+                conta_codigo: contaDespesa.codigo,
+                tipo: 'debito',
+                valor,
+                saldo: 0,
+                movimentacao_id: ir.movimentacao_id,
+                tipo_lancamento: 'principal',
+                favorecido: favorecidoNome
+              });
+            }
+          }
+
+          // C - Conta contábil do tipo de título do imposto
+          if (imposto.tipo_titulo_id) {
+            const tipoTituloImp = tiposTitulosMap.get(imposto.tipo_titulo_id);
+            if (tipoTituloImp && tipoTituloImp.conta_contabil_id) {
+              const contaTitulo = contasMap.get(tipoTituloImp.conta_contabil_id);
+              if (contaTitulo) {
+                lancamentosImpostosRetidos.push({
+                  id: `ir_${ir.id}_credito`,
+                  data: dataFormatada,
+                  historico,
+                  conta: tipoTituloImp.conta_contabil_id,
+                  conta_nome: contaTitulo.descricao,
+                  conta_codigo: contaTitulo.codigo,
+                  tipo: 'credito',
+                  valor,
+                  saldo: 0,
+                  movimentacao_id: ir.movimentacao_id,
+                  tipo_lancamento: 'principal',
+                  favorecido: favorecidoNome
+                });
+              }
+            }
+          }
+        });
+      }
+      
       // 7.1 Carregar antecipações e gerar lançamentos contábeis
       const { data: antecipacoesData, error: antError } = await supabase
         .from("antecipacoes")
@@ -1300,8 +1398,8 @@ export function useLancamentosContabeis() {
         contasCorrentes
       );
       
-      // 8. Combinar os lançamentos da tabela com os processados das movimentações e antecipações
-      const todosLancamentos = [...lancamentosContabeis, ...lancamentosProcessados, ...lancamentosAntecipacoes];
+      // 8. Combinar os lançamentos da tabela com os processados das movimentações, impostos retidos e antecipações
+      const todosLancamentos = [...lancamentosContabeis, ...lancamentosProcessados, ...lancamentosImpostosRetidos, ...lancamentosAntecipacoes];
       
       // 8.1 Enriquecer lançamentos com numero_documento e numero_parcela
       const movimentacoesMap = new Map<string, any>();
