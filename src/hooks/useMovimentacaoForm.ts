@@ -34,6 +34,10 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
   const [mesReferencia, setMesReferencia] = useState(movimentacaoEditando?.mes_referencia || "");
   const [documentoPdf, setDocumentoPdf] = useState(movimentacaoEditando?.documento_pdf || "");
 
+  // Impostos retidos
+  const [possuiImpostosRetidos, setPossuiImpostosRetidos] = useState(false);
+  const [impostosRetidosSelecionados, setImpostosRetidosSelecionados] = useState<any[]>([]);
+
   const handleValorChange = (e) => {
     const value = e.target.value.replace(/[^0-9,.]/g, '');
     setValor(value);
