@@ -1,85 +1,47 @@
 
 
-## Plano: Impostos Retidos na Movimentação Financeira
+## Plano: Gerar Parcelas de Contas a Pagar para Impostos Retidos
 
-### Objetivo
-Adicionar a funcionalidade de impostos retidos na página `/financeiro/incluir-movimentacao`. O usuário pode ativar "Impostos Retidos", selecionar impostos cadastrados, informar valor e data de vencimento manualmente. Os impostos geram registros separados e são contabilizados usando as contas configuradas no cadastro de cada imposto (tipo de título, conta de despesa e favorecido padrão).
+### Problema
+Ao salvar uma movimentação com impostos retidos, os lançamentos contábeis são gerados corretamente, mas não são criadas as movimentações de contas a pagar (com suas respectivas parcelas) para cada imposto retido.
 
-### 1. Migração de banco de dados
+### Solução
+No `handleSalvar` do `useMovimentacaoForm.ts`, após salvar os registros em `movimentacoes_impostos_retidos`, criar uma movimentação do tipo "pagar" para cada imposto retido, com sua respectiva parcela.
 
-Criar tabela `movimentacoes_impostos_retidos` para armazenar os impostos retidos de cada movimentação:
+### Arquivo a modificar
 
-```sql
-CREATE TABLE public.movimentacoes_impostos_retidos (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  movimentacao_id UUID NOT NULL REFERENCES public.movimentacoes(id) ON DELETE CASCADE,
-  imposto_retido_id UUID NOT NULL REFERENCES public.impostos_retidos(id),
-  valor NUMERIC NOT NULL DEFAULT 0,
-  data_vencimento DATE NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+**`src/hooks/useMovimentacaoForm.ts`** - No bloco de salvamento dos impostos retidos (linhas ~375-388), após inserir os registros em `movimentacoes_impostos_retidos`, adicionar lógica para:
 
-ALTER TABLE public.movimentacoes_impostos_retidos ENABLE ROW LEVEL SECURITY;
+1. Para cada imposto retido selecionado, buscar os dados completos do imposto (tipo_titulo_id, conta_despesa_id, favorecido_id)
+2. Criar uma nova movimentação do tipo "pagar" com:
+   - `tipo_operacao`: "pagar"
+   - `tipo_titulo_id`: do imposto retido
+   - `favorecido_id`: favorecido padrão do imposto retido
+   - `categoria_id`: conta_despesa_id do imposto retido
+   - `valor`: valor digitado para o imposto
+   - `data_lancamento`: mesma data de lançamento da movimentação principal
+   - `data_emissao`: mesma data de emissão
+   - `numero_parcelas`: 1
+   - `descricao`: referência ao imposto retido e à movimentação principal
+   - `considerar_dre`: true
+   - `mes_referencia`: mesmo da movimentação principal
+3. Criar uma parcela (em `movimentacoes_parcelas`) para essa movimentação com:
+   - `numero`: 1
+   - `valor`: valor do imposto
+   - `data_vencimento`: data de vencimento digitada para o imposto
 
-CREATE POLICY "Users can view" ON public.movimentacoes_impostos_retidos FOR SELECT USING (
-  movimentacao_id IN (SELECT id FROM movimentacoes WHERE empresa_id = get_user_company_id())
-);
-CREATE POLICY "Users can insert" ON public.movimentacoes_impostos_retidos FOR INSERT WITH CHECK (
-  movimentacao_id IN (SELECT id FROM movimentacoes WHERE empresa_id = get_user_company_id())
-);
-CREATE POLICY "Users can update" ON public.movimentacoes_impostos_retidos FOR UPDATE USING (
-  movimentacao_id IN (SELECT id FROM movimentacoes WHERE empresa_id = get_user_company_id())
-);
-CREATE POLICY "Users can delete" ON public.movimentacoes_impostos_retidos FOR DELETE USING (
-  movimentacao_id IN (SELECT id FROM movimentacoes WHERE empresa_id = get_user_company_id())
-);
-```
+4. Na edição, antes de recriar, excluir as movimentações de impostos retidos anteriores (identificadas por uma referência ou padrão na descrição vinculado ao `movimentacao_id` principal). Para isso, uma abordagem segura é armazenar o `movimentacao_id` principal na descrição ou usar a relação via `movimentacoes_impostos_retidos`.
 
-### 2. Novo componente
+### Detalhes técnicos
+- Os dados de `tipo_titulo_id`, `conta_despesa_id` e `favorecido_id` já estão disponíveis no array `impostosRetidos` retornado por `useMovimentacaoDados`
+- O `adicionarImpostoRetido` já recebe os dados do imposto, mas precisamos garantir que `tipo_titulo_id`, `conta_despesa_id` e `favorecido_id` sejam armazenados no estado `impostosRetidosSelecionados`
+- Na edição, as movimentações filhas dos impostos retidos precisam ser excluídas e recriadas
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `src/components/movimentacao/ImpostosRetidosMovForm.tsx` | Componente com: select para adicionar imposto da lista cadastrada, tabela com nome do imposto, campo valor (R$) e campo data de vencimento (DateInput), botão remover. Exibido após a seção de parcelas. |
-
-### 3. Arquivos a modificar
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/hooks/useMovimentacaoDados.ts` | Buscar `impostos_retidos` ativos da empresa (com tipo_titulo_id, conta_despesa_id, favorecido_id). Retornar no hook. |
-| `src/hooks/useMovimentacaoForm.ts` | Adicionar estado `possuiImpostosRetidos` (boolean, default false) e `impostosRetidosSelecionados` (array com imposto_retido_id, valor, data_vencimento). No `handleSalvar`: deletar registros antigos (se edição) e inserir novos em `movimentacoes_impostos_retidos`. Carregar dados existentes ao editar. Retornar estados e handlers. |
-| `src/components/movimentacao/PagamentoForm.tsx` | Adicionar Switch "Impostos Retidos" ao lado do "Considerar para DRE". Renderizar `ImpostosRetidosMovForm` após parcelas quando ativado. Novas props. |
-| `src/components/movimentacao/RecebimentoForm.tsx` | Mesma alteração do PagamentoForm. |
-| `src/pages/financeiro/incluir-movimentacao.tsx` | Passar novas props (impostos retidos disponíveis, estado, handlers) para PagamentoForm e RecebimentoForm. |
-| `src/hooks/useLancamentosContabeis.ts` | Buscar `movimentacoes_impostos_retidos` com join em `impostos_retidos`. Para cada imposto retido: gerar lançamento D - conta_despesa_id do imposto / C - conta contábil do tipo_titulo_id do imposto. |
-
-### 4. Detalhes da UI
-
-- Switch "Impostos Retidos" na mesma linha do "Considerar para DRE"
-- Quando ativado, após a tabela de parcelas aparece a seção "Impostos Retidos"
-- Select para escolher imposto cadastrado e botão "Adicionar"
-- Tabela com colunas: Nome do Imposto, Valor (R$), Data Vencimento, Ação (remover)
-- Valores e datas digitados manualmente
-- Em modo visualização (readOnly), campos desabilitados
-
-### 5. Contabilização
-
-Para cada imposto retido na movimentação:
-- **D** - Conta de despesa do imposto (`conta_despesa_id` da tabela `impostos_retidos`)
-- **C** - Conta contábil do tipo de título do imposto (`conta_contabil_id` via `tipo_titulo_id` da tabela `impostos_retidos`)
-
-Usa a data de lançamento da movimentação e o favorecido padrão do imposto (`favorecido_id`).
-
-### 6. Salvamento no handleSalvar
-
-1. Após salvar movimentação e parcelas (sem alteração na rotina existente)
-2. Se edição: deletar registros antigos de `movimentacoes_impostos_retidos`
-3. Inserir novos registros dos impostos selecionados (com valor e data_vencimento)
+### Ajuste no estado dos impostos selecionados
+Modificar `adicionarImpostoRetido` para incluir `tipo_titulo_id`, `conta_despesa_id` e `favorecido_id` no objeto armazenado em `impostosRetidosSelecionados`.
 
 ### O que NÃO será alterado
-- Cálculo de parcelas e valor total
-- Modais de baixa
-- Rotina de antecipações
-- Cadastro de impostos retidos
+- Lançamentos contábeis (já funcionando)
+- Cálculo de parcelas do título principal
 - Demais funcionalidades existentes
 
