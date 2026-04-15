@@ -167,7 +167,9 @@ export function useLancamentosContabeis() {
     parcelas: MovimentacaoParcela[],
     contas: PlanoConta[],
     tiposTitulos: TipoTitulo[],
-    contasCorrentes: {id: string; nome: string; conta_contabil_id: string}[]
+    contasCorrentes: {id: string; nome: string; conta_contabil_id: string}[],
+    parcelasAntecipacoes?: Map<string, {antecipacao_id: string; valor_utilizado: number}[]>,
+    antecipacoesMap?: Map<string, any>
   ): LancamentoContabil[] {
     const lancamentosGerados: LancamentoContabil[] = [];
     
