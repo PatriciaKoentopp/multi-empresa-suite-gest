@@ -1222,13 +1222,54 @@ export function useLancamentosContabeis() {
       // 6. Carregar lançamentos da tabela lancamentos_contabeis
       const lancamentosContabeis = await carregarLancamentosContabeis();
       
+      // 6.1 Carregar antecipações utilizadas nas parcelas (movimentacoes_parcelas_antecipacoes)
+      let parcelasAntecipacoesList: {movimentacao_parcela_id: string; antecipacao_id: string; valor_utilizado: number}[] = [];
+      const parcelasIds = parcelas.map(p => p.id);
+      if (parcelasIds.length > 0) {
+        const batchSize = 50;
+        for (let i = 0; i < parcelasIds.length; i += batchSize) {
+          const batch = parcelasIds.slice(i, i + batchSize);
+          const { data: batchData, error: batchErr } = await supabase
+            .from("movimentacoes_parcelas_antecipacoes")
+            .select("movimentacao_parcela_id, antecipacao_id, valor_utilizado")
+            .in("movimentacao_parcela_id", batch);
+          if (batchErr) throw batchErr;
+          if (batchData) parcelasAntecipacoesList.push(...batchData);
+        }
+      }
+      
+      // Montar mapa de parcela -> antecipações usadas
+      const parcelasAntecipacoesMap = new Map<string, {antecipacao_id: string; valor_utilizado: number}[]>();
+      parcelasAntecipacoesList.forEach(pa => {
+        const list = parcelasAntecipacoesMap.get(pa.movimentacao_parcela_id) || [];
+        list.push({ antecipacao_id: pa.antecipacao_id, valor_utilizado: pa.valor_utilizado });
+        parcelasAntecipacoesMap.set(pa.movimentacao_parcela_id, list);
+      });
+      
+      // Buscar antecipações referenciadas para obter tipo_titulo_id
+      const antecipacaoIdsUsadas = Array.from(new Set(parcelasAntecipacoesList.map(pa => pa.antecipacao_id)));
+      let antecipacoesUsadasMap = new Map<string, any>();
+      if (antecipacaoIdsUsadas.length > 0) {
+        const batchSize = 50;
+        for (let i = 0; i < antecipacaoIdsUsadas.length; i += batchSize) {
+          const batch = antecipacaoIdsUsadas.slice(i, i + batchSize);
+          const { data: antData } = await supabase
+            .from("antecipacoes")
+            .select("id, tipo_titulo_id, tipo_operacao")
+            .in("id", batch);
+          if (antData) antData.forEach(a => antecipacoesUsadasMap.set(a.id, a));
+        }
+      }
+      
       // 7. Processar movimentações para gerar lançamentos
       const lancamentosProcessados = processarMovimentacoesParaLancamentos(
         movimentacoesTipadas,
         parcelas || [],
         planosContas,
         tiposTitulos,
-        contasCorrentes
+        contasCorrentes,
+        parcelasAntecipacoesMap,
+        antecipacoesUsadasMap
       );
       
       // 7.1 Carregar antecipações e gerar lançamentos contábeis
