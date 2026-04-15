@@ -54,10 +54,7 @@ export default function ImpostosRetidosPage() {
         .from("impostos_retidos")
         .select("*")
         .eq("empresa_id", currentCompany.id);
-      if (error) {
-        toast.error("Erro ao carregar impostos retidos");
-        throw error;
-      }
+      if (error) { toast.error("Erro ao carregar impostos retidos"); throw error; }
       return data as ImpostoRetido[];
     },
     enabled: !!currentCompany?.id,
@@ -71,10 +68,7 @@ export default function ImpostosRetidosPage() {
         .from("tipos_titulos")
         .select("*")
         .eq("empresa_id", currentCompany.id);
-      if (error) {
-        toast.error("Erro ao carregar tipos de títulos");
-        throw error;
-      }
+      if (error) { toast.error("Erro ao carregar tipos de títulos"); throw error; }
       return data as TipoTitulo[];
     },
     enabled: !!currentCompany?.id,
@@ -88,11 +82,22 @@ export default function ImpostosRetidosPage() {
         .from("plano_contas")
         .select("*")
         .eq("empresa_id", currentCompany.id);
-      if (error) {
-        toast.error("Erro ao carregar plano de contas");
-        throw error;
-      }
+      if (error) { toast.error("Erro ao carregar plano de contas"); throw error; }
       return data as PlanoConta[];
+    },
+    enabled: !!currentCompany?.id,
+  });
+
+  const { data: favorecidos = [] } = useQuery({
+    queryKey: ["favorecidos", currentCompany?.id],
+    queryFn: async () => {
+      if (!currentCompany?.id) return [];
+      const { data, error } = await supabase
+        .from("favorecidos")
+        .select("id, nome, status")
+        .eq("empresa_id", currentCompany.id);
+      if (error) { toast.error("Erro ao carregar favorecidos"); throw error; }
+      return data as { id: string; nome: string; status: string }[];
     },
     enabled: !!currentCompany?.id,
   });
@@ -110,9 +115,7 @@ export default function ImpostosRetidosPage() {
       toast.success("Imposto retido criado com sucesso!");
       handleCloseDialog();
     },
-    onError: () => {
-      toast.error("Erro ao criar imposto retido");
-    },
+    onError: () => { toast.error("Erro ao criar imposto retido"); },
   });
 
   const updateMutation = useMutation({
@@ -128,9 +131,7 @@ export default function ImpostosRetidosPage() {
       toast.success("Imposto retido atualizado com sucesso!");
       handleCloseDialog();
     },
-    onError: () => {
-      toast.error("Erro ao atualizar imposto retido");
-    },
+    onError: () => { toast.error("Erro ao atualizar imposto retido"); },
   });
 
   const deleteMutation = useMutation({
@@ -147,9 +148,7 @@ export default function ImpostosRetidosPage() {
       setIsDeleteDialogOpen(false);
       setDeletingImpostoId(null);
     },
-    onError: () => {
-      toast.error("Erro ao excluir imposto retido");
-    },
+    onError: () => { toast.error("Erro ao excluir imposto retido"); },
   });
 
   const handleOpenDialog = (imposto?: ImpostoRetido) => {
@@ -203,7 +202,6 @@ export default function ImpostosRetidosPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px] bg-background">
                 <SelectValue placeholder="Filtrar por status" />
@@ -220,6 +218,7 @@ export default function ImpostosRetidosPage() {
             impostos={filteredImpostos}
             tiposTitulos={tiposTitulos}
             contasContabeis={contasContabeis}
+            favorecidos={favorecidos}
             onEdit={handleOpenDialog}
             onDelete={handleDelete}
           />
@@ -237,6 +236,7 @@ export default function ImpostosRetidosPage() {
             impostoRetido={editingImposto}
             tiposTitulos={tiposTitulos}
             contasContabeis={contasContabeis}
+            favorecidos={favorecidos}
             onSubmit={handleSubmit}
             onCancel={handleCloseDialog}
           />

@@ -22,6 +22,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface Favorecido {
+  id: string;
+  nome: string;
+  status: string;
+}
+
 const formSchema = z.object({
   nome: z.string().min(3, {
     message: "Nome deve ter pelo menos 3 caracteres.",
@@ -30,6 +36,7 @@ const formSchema = z.object({
     required_error: "Você deve selecionar um tipo de título.",
   }),
   conta_despesa_id: z.string().optional(),
+  favorecido_id: z.string().optional(),
   status: z.enum(["ativo", "inativo"], {
     required_error: "Você deve selecionar um status.",
   }),
@@ -41,6 +48,7 @@ interface ImpostosRetidosFormProps {
   impostoRetido?: ImpostoRetido;
   tiposTitulos: TipoTitulo[];
   contasContabeis: PlanoConta[];
+  favorecidos: Favorecido[];
   onSubmit: (data: FormValues) => void;
   onCancel: () => void;
 }
@@ -49,6 +57,7 @@ export function ImpostosRetidosForm({
   impostoRetido,
   tiposTitulos,
   contasContabeis,
+  favorecidos,
   onSubmit,
   onCancel,
 }: ImpostosRetidosFormProps) {
@@ -58,18 +67,21 @@ export function ImpostosRetidosForm({
       nome: impostoRetido?.nome || "",
       tipo_titulo_id: impostoRetido?.tipo_titulo_id || "",
       conta_despesa_id: impostoRetido?.conta_despesa_id || "",
+      favorecido_id: impostoRetido?.favorecido_id || "",
       status: (impostoRetido?.status as "ativo" | "inativo") || "ativo",
     },
   });
 
-  // Filtrar tipos de títulos ativos do tipo "pagar"
   const tiposFiltrados = tiposTitulos.filter(
     (tipo) => tipo.tipo === "pagar" && tipo.status === "ativo"
   );
 
-  // Filtrar contas contábeis de movimentação ativas
   const contasFiltradas = contasContabeis.filter(
     (conta) => conta.categoria === "movimentação" && conta.status === "ativo"
+  );
+
+  const favorecidosAtivos = favorecidos.filter(
+    (f) => f.status === "ativo"
   );
 
   return (
@@ -130,6 +142,31 @@ export function ImpostosRetidosForm({
                   {contasFiltradas.map((conta) => (
                     <SelectItem key={conta.id} value={conta.id}>
                       {conta.codigo} - {conta.descricao}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="favorecido_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Favorecido Padrão</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um favorecido padrão" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {favorecidosAtivos.map((fav) => (
+                    <SelectItem key={fav.id} value={fav.id}>
+                      {fav.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>

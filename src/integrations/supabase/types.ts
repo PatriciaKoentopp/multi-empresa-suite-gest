@@ -782,6 +782,7 @@ export type Database = {
           conta_despesa_id: string | null
           created_at: string
           empresa_id: string
+          favorecido_id: string | null
           id: string
           nome: string
           status: string
@@ -792,6 +793,7 @@ export type Database = {
           conta_despesa_id?: string | null
           created_at?: string
           empresa_id: string
+          favorecido_id?: string | null
           id?: string
           nome: string
           status?: string
@@ -802,6 +804,7 @@ export type Database = {
           conta_despesa_id?: string | null
           created_at?: string
           empresa_id?: string
+          favorecido_id?: string | null
           id?: string
           nome?: string
           status?: string
@@ -821,6 +824,13 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impostos_retidos_favorecido_id_fkey"
+            columns: ["favorecido_id"]
+            isOneToOne: false
+            referencedRelation: "favorecidos"
             referencedColumns: ["id"]
           },
           {
