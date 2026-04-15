@@ -167,7 +167,9 @@ export function useLancamentosContabeis() {
     parcelas: MovimentacaoParcela[],
     contas: PlanoConta[],
     tiposTitulos: TipoTitulo[],
-    contasCorrentes: {id: string; nome: string; conta_contabil_id: string}[]
+    contasCorrentes: {id: string; nome: string; conta_contabil_id: string}[],
+    parcelasAntecipacoes?: Map<string, {antecipacao_id: string; valor_utilizado: number}[]>,
+    antecipacoesMap?: Map<string, any>
   ): LancamentoContabil[] {
     const lancamentosGerados: LancamentoContabil[] = [];
     
@@ -444,7 +446,7 @@ export function useLancamentosContabeis() {
               // Obter a conta contábil do tipo do título
               let contaContrapartidaId = '';
               let contaContrapartidaNome = 'Contas a Pagar';
-              let contaContrapartidaCodigo = '2.01.01'; // Código padrão caso não encontre o tipo título
+              let contaContrapartidaCodigo = '2.01.01';
               
               if (tipoTitulo && tipoTitulo.conta_contabil_id) {
                 contaContrapartidaId = tipoTitulo.conta_contabil_id;
@@ -455,41 +457,98 @@ export function useLancamentosContabeis() {
                 }
               }
               
-              // Débito em contas a pagar (conta do tipo de título)
-              const lancamentoAPagar: LancamentoContabil = {
-                id: `${parcela.id}_debito_ap`,
-                data: dataFormatadaParcela,
-                historico: historicoParcela,
-                conta: contaContrapartidaId || 'passivo',
-                conta_nome: contaContrapartidaNome,
-                conta_codigo: contaContrapartidaCodigo,
-                tipo: 'debito',
-                valor: parcela.valor,
-                saldo: 0,
-                parcela_id: parcela.id,
-                movimentacao_id: mov.id,
-                tipo_lancamento: 'principal',
-                favorecido: favorecidoNome
-              };
+              // Verificar antecipações utilizadas nesta parcela
+              const antecipacoesDaParcela = parcelasAntecipacoes?.get(parcela.id) || [];
+              let totalAntecipacoes = 0;
               
-              // Crédito na conta contábil associada à conta corrente
-              const lancamentoBanco: LancamentoContabil = {
-                id: `${parcela.id}_banco_credito`,
-                data: dataFormatadaParcela,
-                historico: historicoParcela,
-                conta: contaContabilCorrenteId || 'caixa',
-                conta_nome: contaContabilCorrenteNome,
-                conta_codigo: contaContabilCorrenteCodigo,
-                tipo: 'credito',
-                valor: parcela.valor,
-                saldo: 0,
-                parcela_id: parcela.id,
-                movimentacao_id: mov.id,
-                tipo_lancamento: 'principal',
-                favorecido: favorecidoNome
-              };
+              // Gerar lançamentos para cada antecipação usada
+              antecipacoesDaParcela.forEach((antUso, idx) => {
+                if (antUso.valor_utilizado > 0 && antecipacoesMap) {
+                  const antecipacao = antecipacoesMap.get(antUso.antecipacao_id);
+                  if (antecipacao && antecipacao.tipo_titulo_id) {
+                    const tipoTituloAnt = tiposTitulosMap.get(antecipacao.tipo_titulo_id);
+                    if (tipoTituloAnt && tipoTituloAnt.conta_contabil_id) {
+                      const contaAnt = contasMap.get(tipoTituloAnt.conta_contabil_id);
+                      if (contaAnt) {
+                        totalAntecipacoes += antUso.valor_utilizado;
+                        
+                        // D - Fornecedores a Pagar (tipo título da movimentação)
+                        lancamentosGerados.push({
+                          id: `${parcela.id}_ant${idx}_debito_ap`,
+                          data: dataFormatadaParcela,
+                          historico: `${historicoParcela} - Compensação Antecipação`,
+                          conta: contaContrapartidaId || 'passivo',
+                          conta_nome: contaContrapartidaNome,
+                          conta_codigo: contaContrapartidaCodigo,
+                          tipo: 'debito',
+                          valor: antUso.valor_utilizado,
+                          saldo: 0,
+                          parcela_id: parcela.id,
+                          movimentacao_id: mov.id,
+                          tipo_lancamento: 'principal',
+                          favorecido: favorecidoNome
+                        });
+                        
+                        // C - Adiantamento de Fornecedores (tipo título da antecipação)
+                        lancamentosGerados.push({
+                          id: `${parcela.id}_ant${idx}_credito_adiant`,
+                          data: dataFormatadaParcela,
+                          historico: `${historicoParcela} - Compensação Antecipação`,
+                          conta: tipoTituloAnt.conta_contabil_id,
+                          conta_nome: contaAnt.descricao,
+                          conta_codigo: contaAnt.codigo,
+                          tipo: 'credito',
+                          valor: antUso.valor_utilizado,
+                          saldo: 0,
+                          parcela_id: parcela.id,
+                          movimentacao_id: mov.id,
+                          tipo_lancamento: 'principal',
+                          favorecido: favorecidoNome
+                        });
+                      }
+                    }
+                  }
+                }
+              });
               
-              lancamentosGerados.push(lancamentoAPagar, lancamentoBanco);
+              // Valor restante pago em dinheiro
+              const valorEfetivo = parcela.valor - totalAntecipacoes;
+              
+              if (valorEfetivo > 0) {
+                // Débito em contas a pagar (conta do tipo de título)
+                lancamentosGerados.push({
+                  id: `${parcela.id}_debito_ap`,
+                  data: dataFormatadaParcela,
+                  historico: historicoParcela,
+                  conta: contaContrapartidaId || 'passivo',
+                  conta_nome: contaContrapartidaNome,
+                  conta_codigo: contaContrapartidaCodigo,
+                  tipo: 'debito',
+                  valor: valorEfetivo,
+                  saldo: 0,
+                  parcela_id: parcela.id,
+                  movimentacao_id: mov.id,
+                  tipo_lancamento: 'principal',
+                  favorecido: favorecidoNome
+                });
+                
+                // Crédito na conta contábil associada à conta corrente
+                lancamentosGerados.push({
+                  id: `${parcela.id}_banco_credito`,
+                  data: dataFormatadaParcela,
+                  historico: historicoParcela,
+                  conta: contaContabilCorrenteId || 'caixa',
+                  conta_nome: contaContabilCorrenteNome,
+                  conta_codigo: contaContabilCorrenteCodigo,
+                  tipo: 'credito',
+                  valor: valorEfetivo,
+                  saldo: 0,
+                  parcela_id: parcela.id,
+                  movimentacao_id: mov.id,
+                  tipo_lancamento: 'principal',
+                  favorecido: favorecidoNome
+                });
+              }
               
               // Processar juros se houver
               if (parcela.juros && parcela.juros > 0 && tipoTitulo && tipoTitulo.conta_juros_id) {
@@ -621,7 +680,7 @@ export function useLancamentosContabeis() {
               // Obter a conta contábil do tipo do título
               let contaContrapartidaId = '';
               let contaContrapartidaNome = 'Contas a Receber';
-              let contaContrapartidaCodigo = '1.02.01'; // Código padrão caso não encontre o tipo título
+              let contaContrapartidaCodigo = '1.02.01';
               
               if (tipoTitulo && tipoTitulo.conta_contabil_id) {
                 contaContrapartidaId = tipoTitulo.conta_contabil_id;
@@ -632,41 +691,98 @@ export function useLancamentosContabeis() {
                 }
               }
               
-              // Débito na conta contábil associada à conta corrente
-              const lancamentoBanco: LancamentoContabil = {
-                id: `${parcela.id}_banco_debito`,
-                data: dataFormatadaParcela,
-                historico: historicoParcela,
-                conta: contaContabilCorrenteId || 'caixa',
-                conta_nome: contaContabilCorrenteNome,
-                conta_codigo: contaContabilCorrenteCodigo,
-                tipo: 'debito',
-                valor: parcela.valor,
-                saldo: 0,
-                parcela_id: parcela.id,
-                movimentacao_id: mov.id,
-                tipo_lancamento: 'principal',
-                favorecido: favorecidoNome
-              };
+              // Verificar antecipações utilizadas nesta parcela
+              const antecipacoesDaParcela = parcelasAntecipacoes?.get(parcela.id) || [];
+              let totalAntecipacoes = 0;
               
-              // Crédito em contas a receber (conta do tipo de título)
-              const lancamentoAReceber: LancamentoContabil = {
-                id: `${parcela.id}_credito_ar`,
-                data: dataFormatadaParcela,
-                historico: historicoParcela,
-                conta: contaContrapartidaId || 'ativo',
-                conta_nome: contaContrapartidaNome,
-                conta_codigo: contaContrapartidaCodigo,
-                tipo: 'credito',
-                valor: parcela.valor,
-                saldo: 0,
-                parcela_id: parcela.id,
-                movimentacao_id: mov.id,
-                tipo_lancamento: 'principal',
-                favorecido: favorecidoNome
-              };
+              // Gerar lançamentos para cada antecipação usada
+              antecipacoesDaParcela.forEach((antUso, idx) => {
+                if (antUso.valor_utilizado > 0 && antecipacoesMap) {
+                  const antecipacao = antecipacoesMap.get(antUso.antecipacao_id);
+                  if (antecipacao && antecipacao.tipo_titulo_id) {
+                    const tipoTituloAnt = tiposTitulosMap.get(antecipacao.tipo_titulo_id);
+                    if (tipoTituloAnt && tipoTituloAnt.conta_contabil_id) {
+                      const contaAnt = contasMap.get(tipoTituloAnt.conta_contabil_id);
+                      if (contaAnt) {
+                        totalAntecipacoes += antUso.valor_utilizado;
+                        
+                        // D - Adiantamento de Clientes (tipo título da antecipação)
+                        lancamentosGerados.push({
+                          id: `${parcela.id}_ant${idx}_debito_adiant`,
+                          data: dataFormatadaParcela,
+                          historico: `${historicoParcela} - Compensação Antecipação`,
+                          conta: tipoTituloAnt.conta_contabil_id,
+                          conta_nome: contaAnt.descricao,
+                          conta_codigo: contaAnt.codigo,
+                          tipo: 'debito',
+                          valor: antUso.valor_utilizado,
+                          saldo: 0,
+                          parcela_id: parcela.id,
+                          movimentacao_id: mov.id,
+                          tipo_lancamento: 'principal',
+                          favorecido: favorecidoNome
+                        });
+                        
+                        // C - Clientes a Receber (tipo título da movimentação)
+                        lancamentosGerados.push({
+                          id: `${parcela.id}_ant${idx}_credito_ar`,
+                          data: dataFormatadaParcela,
+                          historico: `${historicoParcela} - Compensação Antecipação`,
+                          conta: contaContrapartidaId || 'ativo',
+                          conta_nome: contaContrapartidaNome,
+                          conta_codigo: contaContrapartidaCodigo,
+                          tipo: 'credito',
+                          valor: antUso.valor_utilizado,
+                          saldo: 0,
+                          parcela_id: parcela.id,
+                          movimentacao_id: mov.id,
+                          tipo_lancamento: 'principal',
+                          favorecido: favorecidoNome
+                        });
+                      }
+                    }
+                  }
+                }
+              });
               
-              lancamentosGerados.push(lancamentoBanco, lancamentoAReceber);
+              // Valor restante pago em dinheiro
+              const valorEfetivo = parcela.valor - totalAntecipacoes;
+              
+              if (valorEfetivo > 0) {
+                // Débito na conta contábil associada à conta corrente
+                lancamentosGerados.push({
+                  id: `${parcela.id}_banco_debito`,
+                  data: dataFormatadaParcela,
+                  historico: historicoParcela,
+                  conta: contaContabilCorrenteId || 'caixa',
+                  conta_nome: contaContabilCorrenteNome,
+                  conta_codigo: contaContabilCorrenteCodigo,
+                  tipo: 'debito',
+                  valor: valorEfetivo,
+                  saldo: 0,
+                  parcela_id: parcela.id,
+                  movimentacao_id: mov.id,
+                  tipo_lancamento: 'principal',
+                  favorecido: favorecidoNome
+                });
+                
+                // Crédito em contas a receber (conta do tipo de título)
+                lancamentosGerados.push({
+                  id: `${parcela.id}_credito_ar`,
+                  data: dataFormatadaParcela,
+                  historico: historicoParcela,
+                  conta: contaContrapartidaId || 'ativo',
+                  conta_nome: contaContrapartidaNome,
+                  conta_codigo: contaContrapartidaCodigo,
+                  tipo: 'credito',
+                  valor: valorEfetivo,
+                  saldo: 0,
+                  parcela_id: parcela.id,
+                  movimentacao_id: mov.id,
+                  tipo_lancamento: 'principal',
+                  favorecido: favorecidoNome
+                });
+              }
               
               // Processar juros se houver
               if (parcela.juros && parcela.juros > 0 && tipoTitulo && tipoTitulo.conta_juros_id) {
@@ -1106,13 +1222,54 @@ export function useLancamentosContabeis() {
       // 6. Carregar lançamentos da tabela lancamentos_contabeis
       const lancamentosContabeis = await carregarLancamentosContabeis();
       
+      // 6.1 Carregar antecipações utilizadas nas parcelas (movimentacoes_parcelas_antecipacoes)
+      let parcelasAntecipacoesList: {movimentacao_parcela_id: string; antecipacao_id: string; valor_utilizado: number}[] = [];
+      const parcelasIds = parcelas.map(p => p.id);
+      if (parcelasIds.length > 0) {
+        const batchSize = 50;
+        for (let i = 0; i < parcelasIds.length; i += batchSize) {
+          const batch = parcelasIds.slice(i, i + batchSize);
+          const { data: batchData, error: batchErr } = await supabase
+            .from("movimentacoes_parcelas_antecipacoes")
+            .select("movimentacao_parcela_id, antecipacao_id, valor_utilizado")
+            .in("movimentacao_parcela_id", batch);
+          if (batchErr) throw batchErr;
+          if (batchData) parcelasAntecipacoesList.push(...batchData);
+        }
+      }
+      
+      // Montar mapa de parcela -> antecipações usadas
+      const parcelasAntecipacoesMap = new Map<string, {antecipacao_id: string; valor_utilizado: number}[]>();
+      parcelasAntecipacoesList.forEach(pa => {
+        const list = parcelasAntecipacoesMap.get(pa.movimentacao_parcela_id) || [];
+        list.push({ antecipacao_id: pa.antecipacao_id, valor_utilizado: pa.valor_utilizado });
+        parcelasAntecipacoesMap.set(pa.movimentacao_parcela_id, list);
+      });
+      
+      // Buscar antecipações referenciadas para obter tipo_titulo_id
+      const antecipacaoIdsUsadas = Array.from(new Set(parcelasAntecipacoesList.map(pa => pa.antecipacao_id)));
+      let antecipacoesUsadasMap = new Map<string, any>();
+      if (antecipacaoIdsUsadas.length > 0) {
+        const batchSize = 50;
+        for (let i = 0; i < antecipacaoIdsUsadas.length; i += batchSize) {
+          const batch = antecipacaoIdsUsadas.slice(i, i + batchSize);
+          const { data: antData } = await supabase
+            .from("antecipacoes")
+            .select("id, tipo_titulo_id, tipo_operacao")
+            .in("id", batch);
+          if (antData) antData.forEach(a => antecipacoesUsadasMap.set(a.id, a));
+        }
+      }
+      
       // 7. Processar movimentações para gerar lançamentos
       const lancamentosProcessados = processarMovimentacoesParaLancamentos(
         movimentacoesTipadas,
         parcelas || [],
         planosContas,
         tiposTitulos,
-        contasCorrentes
+        contasCorrentes,
+        parcelasAntecipacoesMap,
+        antecipacoesUsadasMap
       );
       
       // 7.1 Carregar antecipações e gerar lançamentos contábeis
