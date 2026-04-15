@@ -415,6 +415,17 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
 
           if (erroImpostos) throw erroImpostos;
 
+          // Buscar nome do favorecido da movimentação principal
+          let favorecidoNome = '';
+          if (favorecido) {
+            const { data: favData } = await supabase
+              .from('favorecidos')
+              .select('nome')
+              .eq('id', favorecido)
+              .single();
+            favorecidoNome = favData?.nome || '';
+          }
+
           // Criar movimentações de contas a pagar para cada imposto retido
           for (const imp of impostosRetidosSelecionados) {
             const valorImposto = parseFloat(imp.valor.replace(/\./g, '').replace(',', '.')) || 0;
