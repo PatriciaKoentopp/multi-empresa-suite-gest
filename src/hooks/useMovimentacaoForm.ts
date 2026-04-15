@@ -428,7 +428,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
               data_emissao: dataEmissao.toISOString().split('T')[0],
               data_lancamento: dataLancamento.toISOString().split('T')[0],
               valor: valorImposto,
-              descricao: `Imposto Retido: ${imp.nome} [IR-${movimentacaoId}]`,
+              descricao: `Imposto Retido: ${imp.nome}${numDoc ? ` documento ${numDoc}` : ''}${favorecidoNome ? ` - ${favorecidoNome}` : ''} [IR-${movimentacaoId}]`,
               mes_referencia: mesReferencia,
               tipo_titulo_id: imp.tipo_titulo_id || null,
               favorecido_id: imp.favorecido_id || null,
