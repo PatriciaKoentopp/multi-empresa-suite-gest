@@ -1,0 +1,1 @@
+ALTER TABLE public.impostos_retidos ADD COLUMN favorecido_id UUID REFERENCES public.favorecidos(id);

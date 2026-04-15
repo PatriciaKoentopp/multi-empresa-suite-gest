@@ -14,10 +14,17 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Pencil, Trash2, MoreVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+interface Favorecido {
+  id: string;
+  nome: string;
+  status: string;
+}
+
 interface ImpostosRetidosTableProps {
   impostos: ImpostoRetido[];
   tiposTitulos: TipoTitulo[];
   contasContabeis: PlanoConta[];
+  favorecidos: Favorecido[];
   onEdit: (imposto: ImpostoRetido) => void;
   onDelete: (id: string) => void;
 }
@@ -26,6 +33,7 @@ export function ImpostosRetidosTable({
   impostos,
   tiposTitulos,
   contasContabeis,
+  favorecidos,
   onEdit,
   onDelete,
 }: ImpostosRetidosTableProps) {
@@ -40,6 +48,12 @@ export function ImpostosRetidosTable({
     return conta ? `${conta.codigo} - ${conta.descricao}` : "—";
   };
 
+  const getFavorecidoNome = (favorecidoId?: string) => {
+    if (!favorecidoId) return "—";
+    const fav = favorecidos.find((f) => f.id === favorecidoId);
+    return fav?.nome || "—";
+  };
+
   return (
     <div className="border rounded-md">
       <Table>
@@ -48,6 +62,7 @@ export function ImpostosRetidosTable({
             <TableHead>Nome</TableHead>
             <TableHead>Tipo de Título</TableHead>
             <TableHead>Conta de Despesa</TableHead>
+            <TableHead>Favorecido Padrão</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="w-[100px]">Ações</TableHead>
           </TableRow>
@@ -55,7 +70,7 @@ export function ImpostosRetidosTable({
         <TableBody>
           {impostos.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                 Nenhum imposto retido encontrado
               </TableCell>
             </TableRow>
@@ -65,6 +80,7 @@ export function ImpostosRetidosTable({
                 <TableCell>{imposto.nome}</TableCell>
                 <TableCell>{getTipoTituloNome(imposto.tipo_titulo_id)}</TableCell>
                 <TableCell>{getContaDespesaNome(imposto.conta_despesa_id)}</TableCell>
+                <TableCell>{getFavorecidoNome(imposto.favorecido_id)}</TableCell>
                 <TableCell>
                   <Badge
                     variant={imposto.status === "ativo" ? "success" : "destructive"}
