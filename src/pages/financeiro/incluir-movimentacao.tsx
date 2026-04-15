@@ -317,6 +317,14 @@ export default function IncluirMovimentacaoPage() {
               onParcelaValorChange={atualizarValorParcela}
               onParcelaDataChange={atualizarDataVencimento}
               readOnly={modoVisualizacao}
+              possuiImpostosRetidos={possuiImpostosRetidos}
+              onPossuiImpostosRetidosChange={setPossuiImpostosRetidos}
+              impostosRetidosDisponiveis={impostosRetidos}
+              impostosRetidosSelecionados={impostosRetidosSelecionados}
+              onAdicionarImpostoRetido={(id) => adicionarImpostoRetido(id, impostosRetidos)}
+              onRemoverImpostoRetido={removerImpostoRetido}
+              onImpostoRetidoValorChange={atualizarValorImpostoRetido}
+              onImpostoRetidoDataChange={atualizarDataImpostoRetido}
             />
           ) : operacao === "receber" ? (
             <RecebimentoForm
@@ -348,6 +356,14 @@ export default function IncluirMovimentacaoPage() {
               onNovaCategoria={() => setIsModalNovaCategoria(true)}
               parcelas={parcelas || []}
               readOnly={modoVisualizacao}
+              possuiImpostosRetidos={possuiImpostosRetidos}
+              onPossuiImpostosRetidosChange={setPossuiImpostosRetidos}
+              impostosRetidosDisponiveis={impostosRetidos}
+              impostosRetidosSelecionados={impostosRetidosSelecionados}
+              onAdicionarImpostoRetido={(id) => adicionarImpostoRetido(id, impostosRetidos)}
+              onRemoverImpostoRetido={removerImpostoRetido}
+              onImpostoRetidoValorChange={atualizarValorImpostoRetido}
+              onImpostoRetidoDataChange={atualizarDataImpostoRetido}
             />
           ) : null}
           
