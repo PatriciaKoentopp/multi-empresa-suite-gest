@@ -103,7 +103,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     try {
       const { data, error } = await supabase
         .from('movimentacoes_impostos_retidos')
-        .select('*, impostos_retidos:imposto_retido_id(nome)')
+        .select('*, impostos_retidos:imposto_retido_id(nome, tipo_titulo_id, conta_despesa_id, favorecido_id)')
         .eq('movimentacao_id', movimentacaoId);
 
       if (error) throw error;
@@ -113,6 +113,9 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
         setImpostosRetidosSelecionados(data.map((item: any) => ({
           imposto_retido_id: item.imposto_retido_id,
           nome: item.impostos_retidos?.nome || '',
+          tipo_titulo_id: item.impostos_retidos?.tipo_titulo_id || '',
+          conta_despesa_id: item.impostos_retidos?.conta_despesa_id || '',
+          favorecido_id: item.impostos_retidos?.favorecido_id || '',
           valor: Number(item.valor).toFixed(2).replace('.', ','),
           data_vencimento: item.data_vencimento ? new Date(item.data_vencimento + 'T00:00:00') : new Date()
         })));
