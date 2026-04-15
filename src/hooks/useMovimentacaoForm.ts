@@ -359,6 +359,34 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
 
         if (erroParcelas) throw erroParcelas;
       }
+
+      // Salvar impostos retidos
+      if (operacao !== "transferencia") {
+        // Deletar registros antigos (se edição)
+        if (movimentacaoEditando?.id) {
+          const { error: erroDeleteImpostos } = await supabase
+            .from('movimentacoes_impostos_retidos')
+            .delete()
+            .eq('movimentacao_id', movimentacaoId);
+          if (erroDeleteImpostos) throw erroDeleteImpostos;
+        }
+
+        // Inserir novos registros se houver impostos retidos
+        if (possuiImpostosRetidos && impostosRetidosSelecionados.length > 0) {
+          const impostosFormatados = impostosRetidosSelecionados.map(imp => ({
+            movimentacao_id: movimentacaoId,
+            imposto_retido_id: imp.imposto_retido_id,
+            valor: parseFloat(imp.valor.replace(/\./g, '').replace(',', '.')) || 0,
+            data_vencimento: imp.data_vencimento ? imp.data_vencimento.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          }));
+
+          const { error: erroImpostos } = await supabase
+            .from('movimentacoes_impostos_retidos')
+            .insert(impostosFormatados);
+
+          if (erroImpostos) throw erroImpostos;
+        }
+      }
       
       // Registrar no fluxo de caixa para transferências
       if (operacao === "transferencia") {
