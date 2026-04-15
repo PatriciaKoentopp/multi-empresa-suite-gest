@@ -484,6 +484,13 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     handleDocumentoChange,
     handleSalvar,
     isLoading,
-    isUploading
+    isUploading,
+    possuiImpostosRetidos,
+    setPossuiImpostosRetidos,
+    impostosRetidosSelecionados,
+    adicionarImpostoRetido,
+    removerImpostoRetido,
+    atualizarValorImpostoRetido,
+    atualizarDataImpostoRetido
   };
 };
