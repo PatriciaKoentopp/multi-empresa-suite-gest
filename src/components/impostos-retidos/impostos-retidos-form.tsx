@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { ImpostoRetido } from "@/types/impostos-retidos";
 import { TipoTitulo } from "@/types/tipos-titulos";
+import { PlanoConta } from "@/types/plano-contas";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -28,6 +29,7 @@ const formSchema = z.object({
   tipo_titulo_id: z.string({
     required_error: "Você deve selecionar um tipo de título.",
   }),
+  conta_despesa_id: z.string().optional(),
   status: z.enum(["ativo", "inativo"], {
     required_error: "Você deve selecionar um status.",
   }),
@@ -38,6 +40,7 @@ type FormValues = z.infer<typeof formSchema>;
 interface ImpostosRetidosFormProps {
   impostoRetido?: ImpostoRetido;
   tiposTitulos: TipoTitulo[];
+  contasContabeis: PlanoConta[];
   onSubmit: (data: FormValues) => void;
   onCancel: () => void;
 }
@@ -45,6 +48,7 @@ interface ImpostosRetidosFormProps {
 export function ImpostosRetidosForm({
   impostoRetido,
   tiposTitulos,
+  contasContabeis,
   onSubmit,
   onCancel,
 }: ImpostosRetidosFormProps) {
@@ -53,6 +57,7 @@ export function ImpostosRetidosForm({
     defaultValues: {
       nome: impostoRetido?.nome || "",
       tipo_titulo_id: impostoRetido?.tipo_titulo_id || "",
+      conta_despesa_id: impostoRetido?.conta_despesa_id || "",
       status: (impostoRetido?.status as "ativo" | "inativo") || "ativo",
     },
   });
@@ -60,6 +65,11 @@ export function ImpostosRetidosForm({
   // Filtrar tipos de títulos ativos do tipo "pagar"
   const tiposFiltrados = tiposTitulos.filter(
     (tipo) => tipo.tipo === "pagar" && tipo.status === "ativo"
+  );
+
+  // Filtrar contas contábeis de movimentação ativas
+  const contasFiltradas = contasContabeis.filter(
+    (conta) => conta.categoria === "movimentação" && conta.status === "ativo"
   );
 
   return (
@@ -95,6 +105,31 @@ export function ImpostosRetidosForm({
                   {tiposFiltrados.map((tipo) => (
                     <SelectItem key={tipo.id} value={tipo.id}>
                       {tipo.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="conta_despesa_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Conta de Despesa</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma conta de despesa" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {contasFiltradas.map((conta) => (
+                    <SelectItem key={conta.id} value={conta.id}>
+                      {conta.codigo} - {conta.descricao}
                     </SelectItem>
                   ))}
                 </SelectContent>

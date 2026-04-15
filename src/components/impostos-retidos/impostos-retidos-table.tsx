@@ -1,5 +1,6 @@
 import { ImpostoRetido } from "@/types/impostos-retidos";
 import { TipoTitulo } from "@/types/tipos-titulos";
+import { PlanoConta } from "@/types/plano-contas";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -16,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 interface ImpostosRetidosTableProps {
   impostos: ImpostoRetido[];
   tiposTitulos: TipoTitulo[];
+  contasContabeis: PlanoConta[];
   onEdit: (imposto: ImpostoRetido) => void;
   onDelete: (id: string) => void;
 }
@@ -23,12 +25,19 @@ interface ImpostosRetidosTableProps {
 export function ImpostosRetidosTable({
   impostos,
   tiposTitulos,
+  contasContabeis,
   onEdit,
   onDelete,
 }: ImpostosRetidosTableProps) {
   const getTipoTituloNome = (tipoTituloId: string) => {
     const tipo = tiposTitulos.find((t) => t.id === tipoTituloId);
     return tipo?.nome || "—";
+  };
+
+  const getContaDespesaNome = (contaDespesaId?: string) => {
+    if (!contaDespesaId) return "—";
+    const conta = contasContabeis.find((c) => c.id === contaDespesaId);
+    return conta ? `${conta.codigo} - ${conta.descricao}` : "—";
   };
 
   return (
@@ -38,6 +47,7 @@ export function ImpostosRetidosTable({
           <TableRow>
             <TableHead>Nome</TableHead>
             <TableHead>Tipo de Título</TableHead>
+            <TableHead>Conta de Despesa</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="w-[100px]">Ações</TableHead>
           </TableRow>
@@ -45,7 +55,7 @@ export function ImpostosRetidosTable({
         <TableBody>
           {impostos.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
                 Nenhum imposto retido encontrado
               </TableCell>
             </TableRow>
@@ -54,6 +64,7 @@ export function ImpostosRetidosTable({
               <TableRow key={imposto.id}>
                 <TableCell>{imposto.nome}</TableCell>
                 <TableCell>{getTipoTituloNome(imposto.tipo_titulo_id)}</TableCell>
+                <TableCell>{getContaDespesaNome(imposto.conta_despesa_id)}</TableCell>
                 <TableCell>
                   <Badge
                     variant={imposto.status === "ativo" ? "success" : "destructive"}

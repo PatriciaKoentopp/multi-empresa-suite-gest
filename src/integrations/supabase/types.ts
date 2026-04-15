@@ -779,6 +779,7 @@ export type Database = {
       }
       impostos_retidos: {
         Row: {
+          conta_despesa_id: string | null
           created_at: string
           empresa_id: string
           id: string
@@ -788,6 +789,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          conta_despesa_id?: string | null
           created_at?: string
           empresa_id: string
           id?: string
@@ -797,6 +799,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          conta_despesa_id?: string | null
           created_at?: string
           empresa_id?: string
           id?: string
@@ -806,6 +809,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "impostos_retidos_conta_despesa_id_fkey"
+            columns: ["conta_despesa_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "impostos_retidos_empresa_id_fkey"
             columns: ["empresa_id"]

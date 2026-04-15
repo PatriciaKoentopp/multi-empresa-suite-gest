@@ -34,6 +34,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ImpostoRetido } from "@/types/impostos-retidos";
 import { TipoTitulo } from "@/types/tipos-titulos";
+import { PlanoConta } from "@/types/plano-contas";
 
 export default function ImpostosRetidosPage() {
   const { currentCompany } = useCompany();
@@ -45,44 +46,53 @@ export default function ImpostosRetidosPage() {
   const [deletingImpostoId, setDeletingImpostoId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  // Buscar impostos retidos
   const { data: impostosRetidos = [] } = useQuery({
     queryKey: ["impostos-retidos", currentCompany?.id],
     queryFn: async () => {
       if (!currentCompany?.id) return [];
-
       const { data, error } = await supabase
         .from("impostos_retidos")
         .select("*")
         .eq("empresa_id", currentCompany.id);
-
       if (error) {
         toast.error("Erro ao carregar impostos retidos");
         throw error;
       }
-
       return data as ImpostoRetido[];
     },
     enabled: !!currentCompany?.id,
   });
 
-  // Buscar tipos de títulos
   const { data: tiposTitulos = [] } = useQuery({
     queryKey: ["tipos-titulos", currentCompany?.id],
     queryFn: async () => {
       if (!currentCompany?.id) return [];
-
       const { data, error } = await supabase
         .from("tipos_titulos")
         .select("*")
         .eq("empresa_id", currentCompany.id);
-
       if (error) {
         toast.error("Erro ao carregar tipos de títulos");
         throw error;
       }
-
       return data as TipoTitulo[];
+    },
+    enabled: !!currentCompany?.id,
+  });
+
+  const { data: contasContabeis = [] } = useQuery({
+    queryKey: ["plano-contas", currentCompany?.id],
+    queryFn: async () => {
+      if (!currentCompany?.id) return [];
+      const { data, error } = await supabase
+        .from("plano_contas")
+        .select("*")
+        .eq("empresa_id", currentCompany.id);
+      if (error) {
+        toast.error("Erro ao carregar plano de contas");
+        throw error;
+      }
+      return data as PlanoConta[];
     },
     enabled: !!currentCompany?.id,
   });
@@ -90,11 +100,9 @@ export default function ImpostosRetidosPage() {
   const createMutation = useMutation({
     mutationFn: async (data: Omit<ImpostoRetido, "id" | "created_at" | "updated_at" | "empresa_id">) => {
       if (!currentCompany?.id) throw new Error("Empresa não selecionada");
-
       const { error } = await supabase
         .from("impostos_retidos")
         .insert([{ ...data, empresa_id: currentCompany.id }]);
-
       if (error) throw error;
     },
     onSuccess: () => {
@@ -113,7 +121,6 @@ export default function ImpostosRetidosPage() {
         .from("impostos_retidos")
         .update(data)
         .eq("id", id);
-
       if (error) throw error;
     },
     onSuccess: () => {
@@ -132,7 +139,6 @@ export default function ImpostosRetidosPage() {
         .from("impostos_retidos")
         .delete()
         .eq("id", id);
-
       if (error) throw error;
     },
     onSuccess: () => {
@@ -213,6 +219,7 @@ export default function ImpostosRetidosPage() {
           <ImpostosRetidosTable
             impostos={filteredImpostos}
             tiposTitulos={tiposTitulos}
+            contasContabeis={contasContabeis}
             onEdit={handleOpenDialog}
             onDelete={handleDelete}
           />
@@ -229,6 +236,7 @@ export default function ImpostosRetidosPage() {
           <ImpostosRetidosForm
             impostoRetido={editingImposto}
             tiposTitulos={tiposTitulos}
+            contasContabeis={contasContabeis}
             onSubmit={handleSubmit}
             onCancel={handleCloseDialog}
           />

@@ -1,0 +1,1 @@
+ALTER TABLE public.impostos_retidos ADD COLUMN conta_despesa_id UUID REFERENCES public.plano_contas(id);
