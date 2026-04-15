@@ -209,20 +209,85 @@ export default function ContasAPagarPage() {
     if (!contaParaExcluir) return;
     
     try {
-      // Primeiro, excluir as parcelas associadas à movimentação
+      // 1. Buscar movimentações filhas de impostos retidos pelo padrão [IR-{id}] na descrição
+      const { data: movFilhas, error: errorFilhas } = await supabase
+        .from("movimentacoes")
+        .select("id, descricao")
+        .ilike("descricao", `%[IR-${contaParaExcluir}]%`);
+
+      if (errorFilhas) throw errorFilhas;
+
+      const idsFilhas = (movFilhas || []).map(m => m.id);
+
+      // 2. Verificar se alguma parcela dos impostos retidos filhos já foi paga
+      if (idsFilhas.length > 0) {
+        const { data: parcelasFilhas, error: errorParcelasFilhas } = await supabase
+          .from("movimentacoes_parcelas")
+          .select("id, data_pagamento, movimentacao_id")
+          .in("movimentacao_id", idsFilhas);
+
+        if (errorParcelasFilhas) throw errorParcelasFilhas;
+
+        const temBaixa = (parcelasFilhas || []).some(p => p.data_pagamento);
+        if (temBaixa) {
+          toast({
+            variant: "destructive",
+            title: "Exclusão bloqueada",
+            description: "Existem impostos retidos já pagos vinculados a esta conta. Desfaça as baixas dos impostos retidos antes de excluir.",
+          });
+          setConfirmarExclusaoAberto(false);
+          setContaParaExcluir(null);
+          return;
+        }
+
+        // 3. Excluir parcelas dos impostos retidos filhos
+        const { error: errDelParcelasFilhas } = await supabase
+          .from("movimentacoes_parcelas")
+          .delete()
+          .in("movimentacao_id", idsFilhas);
+        if (errDelParcelasFilhas) throw errDelParcelasFilhas;
+
+        // 4. Excluir lançamentos contábeis dos impostos retidos filhos
+        const { error: errDelLancFilhas } = await supabase
+          .from("lancamentos_contabeis")
+          .delete()
+          .in("movimentacao_id", idsFilhas);
+        if (errDelLancFilhas) throw errDelLancFilhas;
+
+        // 5. Excluir movimentações filhas dos impostos retidos
+        const { error: errDelFilhas } = await supabase
+          .from("movimentacoes")
+          .delete()
+          .in("id", idsFilhas);
+        if (errDelFilhas) throw errDelFilhas;
+      }
+
+      // 6. Excluir registros de movimentacoes_impostos_retidos
+      const { error: errDelIR } = await supabase
+        .from("movimentacoes_impostos_retidos")
+        .delete()
+        .eq("movimentacao_id", contaParaExcluir);
+      if (errDelIR) throw errDelIR;
+
+      // 7. Excluir lançamentos contábeis da movimentação principal
+      const { error: errDelLanc } = await supabase
+        .from("lancamentos_contabeis")
+        .delete()
+        .eq("movimentacao_id", contaParaExcluir);
+      if (errDelLanc) throw errDelLanc;
+
+      // 8. Excluir as parcelas da movimentação principal
       const { error: errorParcelas } = await supabase
         .from("movimentacoes_parcelas")
         .delete()
         .eq("movimentacao_id", contaParaExcluir);
-
       if (errorParcelas) throw errorParcelas;
       
-      // Depois de excluir as parcelas, excluir a movimentação principal
+      // 9. Excluir a movimentação principal
       const { error } = await supabase
         .from("movimentacoes")
         .delete()
         .eq("id", contaParaExcluir);
-
       if (error) throw error;
 
       // Recarregar as contas após a exclusão
@@ -251,7 +316,6 @@ export default function ContasAPagarPage() {
         description: "Erro ao excluir a conta"
       });
     } finally {
-      // Fechar o modal e limpar o estado
       setConfirmarExclusaoAberto(false);
       setContaParaExcluir(null);
     }
