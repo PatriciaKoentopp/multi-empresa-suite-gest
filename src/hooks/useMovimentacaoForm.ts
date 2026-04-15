@@ -370,6 +370,29 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       if (operacao !== "transferencia") {
         // Deletar registros antigos (se edição)
         if (movimentacaoEditando?.id) {
+          // Deletar movimentações filhas de impostos retidos (parcelas são deletadas em cascata via movimentacao_id)
+          const { data: impostosAntigos } = await supabase
+            .from('movimentacoes_impostos_retidos')
+            .select('id')
+            .eq('movimentacao_id', movimentacaoId);
+
+          if (impostosAntigos && impostosAntigos.length > 0) {
+            // Buscar e deletar movimentações filhas criadas para impostos retidos
+            const descricaoPattern = `[IR-${movimentacaoId}]`;
+            const { data: movFilhas } = await supabase
+              .from('movimentacoes')
+              .select('id')
+              .eq('empresa_id', currentCompany.id)
+              .ilike('descricao', `%${descricaoPattern}%`);
+
+            if (movFilhas && movFilhas.length > 0) {
+              for (const movFilha of movFilhas) {
+                await supabase.from('movimentacoes_parcelas').delete().eq('movimentacao_id', movFilha.id);
+                await supabase.from('movimentacoes').delete().eq('id', movFilha.id);
+              }
+            }
+          }
+
           const { error: erroDeleteImpostos } = await supabase
             .from('movimentacoes_impostos_retidos')
             .delete()
@@ -391,6 +414,51 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
             .insert(impostosFormatados);
 
           if (erroImpostos) throw erroImpostos;
+
+          // Criar movimentações de contas a pagar para cada imposto retido
+          for (const imp of impostosRetidosSelecionados) {
+            const valorImposto = parseFloat(imp.valor.replace(/\./g, '').replace(',', '.')) || 0;
+            if (valorImposto <= 0) continue;
+
+            const dataVencImposto = imp.data_vencimento ? imp.data_vencimento.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+
+            const dadosMovImposto = {
+              empresa_id: currentCompany.id,
+              tipo_operacao: 'pagar',
+              data_emissao: dataEmissao.toISOString().split('T')[0],
+              data_lancamento: dataLancamento.toISOString().split('T')[0],
+              valor: valorImposto,
+              descricao: `Imposto Retido: ${imp.nome} [IR-${movimentacaoId}]`,
+              mes_referencia: mesReferencia,
+              tipo_titulo_id: imp.tipo_titulo_id || null,
+              favorecido_id: imp.favorecido_id || null,
+              categoria_id: imp.conta_despesa_id || null,
+              forma_pagamento: formaPagamento,
+              numero_parcelas: 1,
+              primeiro_vencimento: dataVencImposto,
+              considerar_dre: true,
+            };
+
+            const { data: movImpData, error: erroMovImp } = await supabase
+              .from('movimentacoes')
+              .insert(dadosMovImposto)
+              .select();
+
+            if (erroMovImp) throw erroMovImp;
+
+            if (movImpData && movImpData[0]) {
+              const { error: erroParcelaImp } = await supabase
+                .from('movimentacoes_parcelas')
+                .insert({
+                  movimentacao_id: movImpData[0].id,
+                  numero: 1,
+                  valor: valorImposto,
+                  data_vencimento: dataVencImposto,
+                });
+
+              if (erroParcelaImp) throw erroParcelaImp;
+            }
+          }
         }
       }
       
