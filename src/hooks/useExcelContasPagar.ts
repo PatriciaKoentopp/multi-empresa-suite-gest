@@ -56,7 +56,7 @@ export function useExcelContasPagar() {
       const dadosExcel = contas.map(conta => ({
         "Data de Vencimento": formatDate(conta.dataVencimento),
         "Data de Pagamento": formatDate(conta.dataPagamento),
-        "Parcela": conta.numeroParcela,
+        "Parcela": `${conta.numeroTitulo || '-'}/${conta.numeroParcela}`,
         "Favorecido": conta.favorecido,
         "Descrição": conta.descricao,
         "Status": getStatusLabel(conta.status),
