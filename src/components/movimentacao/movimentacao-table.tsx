@@ -32,6 +32,7 @@ interface MovimentacaoTableProps {
   onEdit: (movimentacao: MovimentacaoItem) => void;
   onDelete: (id: string) => void;
   onVisualizar: (movimentacao: MovimentacaoItem) => void;
+  ordem?: "asc" | "desc";
 }
 
 function getTipoOperacao(tipo?: string) {
