@@ -47,6 +47,7 @@ export default function MovimentacaoPage() {
   const [periodo, setPeriodo] = useState<"mes_atual" | "mes_anterior" | "personalizado">("mes_atual");
   const [dataInicial, setDataInicial] = useState<Date | undefined>();
   const [dataFinal, setDataFinal] = useState<Date | undefined>();
+  const [ordem, setOrdem] = useState<"asc" | "desc">("desc");
   
   // Estado para o modal de confirmação de exclusão
   const [movimentacaoParaExcluir, setMovimentacaoParaExcluir] = useState<string | null>(null);
