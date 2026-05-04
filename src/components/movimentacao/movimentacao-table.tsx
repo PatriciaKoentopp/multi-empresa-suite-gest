@@ -9,7 +9,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { Edit, MoreHorizontal, Eye, Trash, FileText } from "lucide-react";
+import { Edit, MoreHorizontal, Eye, Trash, FileText, ArrowUp, ArrowDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
