@@ -489,6 +489,7 @@ export default function MovimentacaoPage() {
                 onDelete={prepararExclusao}
                 onVisualizar={handleVisualizar}
                 ordem={ordem}
+                onToggleOrdem={() => setOrdem(ordem === "asc" ? "desc" : "asc")}
               />
             </div>
           </div>
