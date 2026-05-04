@@ -103,7 +103,8 @@ export function useLancamentosContabeis() {
         .from("lancamentos_contabeis")
         .select("id, empresa_id, data, historico, conta_debito_id, conta_credito_id, valor, movimentacao_id, parcela_id, tipo_lancamento, created_at, updated_at")
         .eq("empresa_id", currentCompany.id)
-        .order("data", { ascending: true });
+        .order("data", { ascending: true })
+        .limit(20000);
         
       if (error) throw error;
       
