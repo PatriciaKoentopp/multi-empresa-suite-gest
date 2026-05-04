@@ -338,7 +338,14 @@ export default function MovimentacaoPage() {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => exportToExcel(filteredMovimentacoes, searchTerm, periodo)}
+            onClick={() => {
+              const sorted = [...filteredMovimentacoes].sort((a, b) => {
+                const dA = a.dataLancamento ? new Date(a.dataLancamento).getTime() : 0;
+                const dB = b.dataLancamento ? new Date(b.dataLancamento).getTime() : 0;
+                return ordem === "asc" ? dA - dB : dB - dA;
+              });
+              exportToExcel(sorted, searchTerm, periodo);
+            }}
             className="flex items-center gap-2"
           >
             <FileSpreadsheet className="h-4 w-4" />
