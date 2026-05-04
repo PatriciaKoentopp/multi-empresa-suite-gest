@@ -128,39 +128,58 @@ export default function MovimentacaoPage() {
     }
   };
 
-  // Carregar dados do Supabase
+  // Helper para formatar Date para YYYY-MM-DD sem timezone
+  const toISODate = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  // Carregar dados do Supabase filtrando por empresa e período no banco
   useEffect(() => {
     async function carregarMovimentacoes() {
+      if (!currentCompany?.id || !dataInicial || !dataFinal) return;
       try {
         const { data: movimentacoesData, error } = await supabase
           .from('movimentacoes')
           .select(`
             *,
             favorecido:favorecidos(nome),
-            categoria:plano_contas(id, descricao)
-          `);
+            categoria:plano_contas(id, descricao),
+            movimentacoes_parcelas(id, numero)
+          `)
+          .eq('empresa_id', currentCompany.id)
+          .gte('data_lancamento', toISODate(dataInicial))
+          .lte('data_lancamento', toISODate(dataFinal))
+          .order('data_lancamento', { ascending: false })
+          .limit(5000);
 
         if (error) throw error;
 
         if (movimentacoesData) {
-          // Converter movimentações para o formato esperado
-          const movimentacoesFormatadas: any[] = movimentacoesData.map((mov: any) => ({
-            id: mov.id,
-            movimentacao_id: mov.id,
-            favorecido: mov.favorecido?.nome || 'Não informado',
-            descricao: mov.descricao || '',
-            dataVencimento: mov.primeiro_vencimento || undefined,
-            dataPagamento: undefined,
-            status: 'em_aberto',
-            valor: Number(mov.valor),
-            numeroParcela: mov.numero_documento,
-            tipo_operacao: mov.tipo_operacao,
-            dataLancamento: mov.data_lancamento || undefined,
-            mes_referencia: mov.mes_referencia,
-            documento_pdf: mov.documento_pdf,
-            tipo_titulo_id: mov.tipo_titulo_id,
-            categoria_id: mov.categoria_id
-          }));
+          const movimentacoesFormatadas: any[] = movimentacoesData.map((mov: any) => {
+            const parcelas = Array.isArray(mov.movimentacoes_parcelas) ? mov.movimentacoes_parcelas : [];
+            const primeiraParcela = [...parcelas].sort((a: any, b: any) => (a.numero ?? 0) - (b.numero ?? 0))[0];
+            return {
+              id: mov.id,
+              movimentacao_id: mov.id,
+              favorecido: mov.favorecido?.nome || 'Não informado',
+              descricao: mov.descricao || '',
+              dataVencimento: mov.primeiro_vencimento || undefined,
+              dataPagamento: undefined,
+              status: 'em_aberto',
+              valor: Number(mov.valor),
+              numeroTitulo: mov.numero_documento || undefined,
+              numeroParcela: primeiraParcela?.numero ?? 1,
+              tipo_operacao: mov.tipo_operacao,
+              dataLancamento: mov.data_lancamento || undefined,
+              mes_referencia: mov.mes_referencia,
+              documento_pdf: mov.documento_pdf,
+              tipo_titulo_id: mov.tipo_titulo_id,
+              categoria_id: mov.categoria_id
+            };
+          });
 
           setMovimentacoes(movimentacoesFormatadas);
         }
@@ -171,7 +190,7 @@ export default function MovimentacaoPage() {
     }
 
     carregarMovimentacoes();
-  }, []);
+  }, [currentCompany?.id, dataInicial, dataFinal]);
 
   // Limpar todos os filtros
   const limparFiltros = () => {
@@ -188,7 +207,7 @@ export default function MovimentacaoPage() {
     setDataFinal(fim);
   };
 
-  // Filtro com o novo campo de tipo de título e filtro de datas
+  // Filtro local restante (busca, tipo, categoria) - datas já filtradas no banco
   const filteredMovimentacoes = useMemo(() => {
     return movimentacoes.filter((movimentacao) => {
       const textoBusca = (movimentacao.favorecido + " " + (movimentacao.descricao || "") + " " + ((movimentacao as any).mes_referencia || ""))
@@ -196,30 +215,9 @@ export default function MovimentacaoPage() {
         .includes(searchTerm.toLowerCase());
       const tipoTituloOk = tipoTituloId === "todos" || movimentacao.tipo_titulo_id === tipoTituloId;
       const categoriaOk = categoriaId === "todos" || (movimentacao as any).categoria_id === categoriaId;
-      
-      // Aplicar filtro de data de lançamento
-      let dataLancamentoOk = true;
-      if (dataInicial && movimentacao.dataLancamento) {
-        // Comparar apenas as datas, ignorando as horas
-        const dataInicioComparacao = new Date(dataInicial);
-        dataInicioComparacao.setHours(0, 0, 0, 0);
-        const dataMovComparacao = new Date(movimentacao.dataLancamento);
-        dataMovComparacao.setHours(0, 0, 0, 0);
-        dataLancamentoOk = dataLancamentoOk && dataMovComparacao >= dataInicioComparacao;
-      }
-      
-      if (dataFinal && movimentacao.dataLancamento) {
-        // Comparar apenas as datas, ignorando as horas
-        const dataFimComparacao = new Date(dataFinal);
-        dataFimComparacao.setHours(23, 59, 59, 999); // Fim do dia
-        const dataMovComparacao = new Date(movimentacao.dataLancamento);
-        dataMovComparacao.setHours(0, 0, 0, 0);
-        dataLancamentoOk = dataLancamentoOk && dataMovComparacao <= dataFimComparacao;
-      }
-
-      return textoBusca && tipoTituloOk && categoriaOk && dataLancamentoOk;
+      return textoBusca && tipoTituloOk && categoriaOk;
     });
-  }, [movimentacoes, searchTerm, tipoTituloId, categoriaId, dataInicial, dataFinal]);
+  }, [movimentacoes, searchTerm, tipoTituloId, categoriaId]);
 
   // Prepara a exclusão abrindo o modal de confirmação
   const prepararExclusao = (id: string) => {
