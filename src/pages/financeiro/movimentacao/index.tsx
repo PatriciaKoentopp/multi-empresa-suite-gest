@@ -28,15 +28,17 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useMovimentacaoDados } from "@/hooks/useMovimentacaoDados";
-import { formatDate } from "@/lib/utils";
+import { formatDate, parseDateString } from "@/lib/utils";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { useExcelMovimentacao } from "@/hooks/useExcelMovimentacao";
+import { useCompany } from "@/contexts/company-context";
 
 export default function MovimentacaoPage() {
   const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
   const navigate = useNavigate();
   const { tiposTitulos, categorias } = useMovimentacaoDados();
   const { exportToExcel } = useExcelMovimentacao();
+  const { currentCompany } = useCompany();
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
