@@ -32,6 +32,7 @@ interface MovimentacaoTableProps {
   onEdit: (movimentacao: MovimentacaoItem) => void;
   onDelete: (id: string) => void;
   onVisualizar: (movimentacao: MovimentacaoItem) => void;
+  ordem?: "asc" | "desc";
 }
 
 function getTipoOperacao(tipo?: string) {
@@ -63,15 +64,14 @@ export function MovimentacaoTable({
   movimentacoes, 
   onEdit, 
   onDelete,
-  onVisualizar 
+  onVisualizar,
+  ordem = "desc",
 }: MovimentacaoTableProps) {
-  // Ordenar movimentações por data de vencimento ou pagamento (mais recente primeiro)
+  // Ordenar movimentações por data de lançamento conforme `ordem`
   const sortedMovimentacoes = [...movimentacoes].sort((a, b) => {
-    const dateA = a.dataPagamento ? new Date(a.dataPagamento).getTime() : 
-                 a.dataVencimento ? new Date(a.dataVencimento).getTime() : 0;
-    const dateB = b.dataPagamento ? new Date(b.dataPagamento).getTime() : 
-                 b.dataVencimento ? new Date(b.dataVencimento).getTime() : 0;
-    return dateB - dateA; // Ordem decrescente (mais recente primeiro)
+    const dateA = a.dataLancamento ? new Date(a.dataLancamento).getTime() : 0;
+    const dateB = b.dataLancamento ? new Date(b.dataLancamento).getTime() : 0;
+    return ordem === "asc" ? dateA - dateB : dateB - dateA;
   });
 
   const totalValor = movimentacoes.reduce((soma, movimentacao) => soma + (movimentacao.valor || 0), 0);
