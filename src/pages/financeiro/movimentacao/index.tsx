@@ -502,6 +502,7 @@ export default function MovimentacaoPage() {
                 onEdit={handleEdit}
                 onDelete={prepararExclusao}
                 onVisualizar={handleVisualizar}
+                ordem={ordem}
               />
             </div>
           </div>
