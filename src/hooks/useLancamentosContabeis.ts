@@ -103,7 +103,8 @@ export function useLancamentosContabeis() {
         .from("lancamentos_contabeis")
         .select("id, empresa_id, data, historico, conta_debito_id, conta_credito_id, valor, movimentacao_id, parcela_id, tipo_lancamento, created_at, updated_at")
         .eq("empresa_id", currentCompany.id)
-        .order("data", { ascending: true });
+        .order("data", { ascending: true })
+        .limit(20000);
         
       if (error) throw error;
       
@@ -1186,7 +1187,9 @@ export function useLancamentosContabeis() {
           tipo_titulo:tipos_titulos(*),
           favorecido:favorecidos(nome)
         `)
-        .eq("empresa_id", currentCompany.id);
+        .eq("empresa_id", currentCompany.id)
+        .order("data_lancamento", { ascending: false })
+        .limit(20000);
         
       if (movError) throw movError;
       
