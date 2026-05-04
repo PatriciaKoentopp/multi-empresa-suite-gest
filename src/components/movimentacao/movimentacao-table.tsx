@@ -67,6 +67,7 @@ export function MovimentacaoTable({
   onDelete,
   onVisualizar,
   ordem = "desc",
+  onToggleOrdem,
 }: MovimentacaoTableProps) {
   // Ordenar movimentações por data de lançamento conforme `ordem`
   const sortedMovimentacoes = [...movimentacoes].sort((a, b) => {
