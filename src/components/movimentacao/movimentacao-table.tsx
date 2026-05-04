@@ -9,7 +9,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { Edit, MoreHorizontal, Eye, Trash, FileText } from "lucide-react";
+import { Edit, MoreHorizontal, Eye, Trash, FileText, ArrowUp, ArrowDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -33,6 +33,7 @@ interface MovimentacaoTableProps {
   onDelete: (id: string) => void;
   onVisualizar: (movimentacao: MovimentacaoItem) => void;
   ordem?: "asc" | "desc";
+  onToggleOrdem?: () => void;
 }
 
 function getTipoOperacao(tipo?: string) {
@@ -66,6 +67,7 @@ export function MovimentacaoTable({
   onDelete,
   onVisualizar,
   ordem = "desc",
+  onToggleOrdem,
 }: MovimentacaoTableProps) {
   // Ordenar movimentações por data de lançamento conforme `ordem`
   const sortedMovimentacoes = [...movimentacoes].sort((a, b) => {
@@ -81,7 +83,21 @@ export function MovimentacaoTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Data de Lançamento</TableHead>
+            <TableHead>
+              <button
+                type="button"
+                onClick={onToggleOrdem}
+                className="inline-flex items-center gap-1 hover:text-blue-600"
+                title={ordem === "asc" ? "Ordem crescente" : "Ordem decrescente"}
+              >
+                Data de Lançamento
+                {ordem === "asc" ? (
+                  <ArrowUp className="h-3.5 w-3.5" />
+                ) : (
+                  <ArrowDown className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </TableHead>
             <TableHead>Título/Parcela</TableHead>
             <TableHead>Favorecido</TableHead>
             <TableHead>Descrição</TableHead>

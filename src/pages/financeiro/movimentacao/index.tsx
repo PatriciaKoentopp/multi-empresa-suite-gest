@@ -459,8 +459,8 @@ export default function MovimentacaoPage() {
               </div>
             </div>
 
-            {/* Segunda linha com filtros de data e ordenação */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Segunda linha com filtros de data */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Data Inicial */}
               <div>
                 <DateInput 
@@ -480,20 +480,6 @@ export default function MovimentacaoPage() {
                   disabled={periodo !== "personalizado"}
                 />
               </div>
-
-              {/* Ordenação por data de lançamento */}
-              <div>
-                <label className="text-sm font-medium mb-1 block">Ordenar por Data de Lançamento</label>
-                <Select value={ordem} onValueChange={(v) => setOrdem(v as "asc" | "desc")}>
-                  <SelectTrigger className="w-full bg-white">
-                    <SelectValue placeholder="Ordenação" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border">
-                    <SelectItem value="desc">Mais recente primeiro</SelectItem>
-                    <SelectItem value="asc">Mais antiga primeiro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             
             <div className="mt-6">
@@ -503,6 +489,7 @@ export default function MovimentacaoPage() {
                 onDelete={prepararExclusao}
                 onVisualizar={handleVisualizar}
                 ordem={ordem}
+                onToggleOrdem={() => setOrdem(ordem === "asc" ? "desc" : "asc")}
               />
             </div>
           </div>
