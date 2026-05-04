@@ -1187,7 +1187,9 @@ export function useLancamentosContabeis() {
           tipo_titulo:tipos_titulos(*),
           favorecido:favorecidos(nome)
         `)
-        .eq("empresa_id", currentCompany.id);
+        .eq("empresa_id", currentCompany.id)
+        .order("data_lancamento", { ascending: false })
+        .limit(20000);
         
       if (movError) throw movError;
       
