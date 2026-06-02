@@ -1,6 +1,14 @@
 import { useMemo } from "react";
-import { extractProjectNumber } from "@/utils/timeUtils";
-import { useRelatorioFotos } from "./useRelatorioFotos";
+
+interface ProjetoFotosInput {
+  numeroProjeto: string;
+  cliente: string;
+  fotosVendidas: number;
+  fotosEnviadas: number;
+  fotosTiradas: number;
+  totalHoras: number;
+}
+
 
 export interface ProjetoCompleto {
   numeroProjeto: string;
@@ -46,7 +54,7 @@ interface ProjetoVendas {
   receitaTotal: number;
 }
 
-export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: any[]) {
+export function useRelatorioProjetos(vendasData: any[], fotosProjetos: ProjetoFotosInput[]) {
   // Processar vendas agrupando por projeto
   const vendasMap = useMemo(() => {
     const map = new Map<string, ProjetoVendas>();
@@ -87,8 +95,8 @@ export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: an
     return map;
   }, [vendasData]);
 
-  // Processar dados de fotos
-  const { projetosAgrupados: fotosProjetos } = useRelatorioFotos(fotosSpreadsheetData);
+  // Dados de fotos vêm prontos do hook chamador (banco de dados)
+
 
   // Combinar dados
   const projetos = useMemo(() => {
