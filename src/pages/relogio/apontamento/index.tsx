@@ -79,6 +79,7 @@ export default function ApontamentoRelogioPage() {
   const [projetoFilter, setProjetoFilter] = useState<string>("todos");
   const [manualOpen, setManualOpen] = useState(false);
   const [cronoOpen, setCronoOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<RelogioApontamento | undefined>();
   const [toDelete, setToDelete] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
