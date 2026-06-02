@@ -1898,6 +1898,48 @@ export type Database = {
           },
         ]
       }
+      relogio_projetos: {
+        Row: {
+          codigo: string
+          created_at: string
+          empresa_id: string
+          favorecido_id: string
+          fotos_enviadas: number
+          fotos_tiradas: number
+          fotos_vendidas: number
+          id: string
+          nome: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          empresa_id: string
+          favorecido_id: string
+          fotos_enviadas?: number
+          fotos_tiradas?: number
+          fotos_vendidas?: number
+          id?: string
+          nome: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          empresa_id?: string
+          favorecido_id?: string
+          fotos_enviadas?: number
+          fotos_tiradas?: number
+          fotos_vendidas?: number
+          id?: string
+          nome?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       relogio_tarefas: {
         Row: {
           created_at: string
