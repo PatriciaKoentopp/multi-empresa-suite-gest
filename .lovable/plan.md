@@ -1,40 +1,66 @@
-# Plano: Novo módulo "Relógio"
+# Plano: Cadastro de Tipo de Projeto e Tarefas (Relógio)
 
-Nesta primeira etapa, criar apenas a estrutura de navegação e a página inicial do módulo, sem alterar nenhuma funcionalidade existente. Funcionalidades de timer, projetos, tarefas e relatórios serão adicionadas em etapas seguintes.
+Criar dentro do módulo Relógio o cadastro de **Tipo de Projeto** e suas **Tarefas** vinculadas (1:N), em uma única página com linhas expansíveis.
 
-## Escopo desta etapa
+## Banco de dados (Supabase)
 
-1. **Adicionar item "Relógio" no menu lateral**
-   - Inserir em `src/config/navigation.ts`, logo após o bloco do CRM e antes de Relatórios.
-   - Usar ícone `Clock` (Lucide), seguindo o mesmo padrão dos demais itens.
-   - Inicialmente sem subitens (link direto para `/relogio`), mantendo o padrão visual e cores atuais da sidebar.
+Duas novas tabelas no schema `public`, ambas escopadas por `empresa_id` com RLS via `get_user_company_id()`, seguindo o padrão dos demais cadastros.
 
-2. **Registrar ícone `Clock` no renderizador da sidebar**
-   - Em `src/components/layout/sidebar-nav.tsx`, adicionar o case `"Clock"` em `renderIcon` para suportar o novo ícone via string.
+### `relogio_tipos_projeto`
+- `id` uuid PK
+- `empresa_id` uuid (NOT NULL)
+- `nome` varchar (NOT NULL)
+- `status` varchar default `'ativo'` (valores: `ativo` / `inativo`)
+- `created_at`, `updated_at` timestamptz
 
-3. **Criar página inicial do módulo**
-   - Novo arquivo `src/pages/relogio/index.tsx` com layout padrão (título, descrição e área de conteúdo vazia), usando os mesmos tokens de design e estilos das demais páginas.
-   - Conteúdo: um cabeçalho "Relógio" + texto curto indicando que as funcionalidades serão adicionadas em breve.
+### `relogio_tarefas`
+- `id` uuid PK
+- `tipo_projeto_id` uuid (NOT NULL) — referencia `relogio_tipos_projeto.id`, ON DELETE CASCADE
+- `nome` varchar (NOT NULL)
+- `status` varchar default `'ativo'` (valores: `ativo` / `inativo`)
+- `percentual_tempo_estimado` numeric(5,2) default 0 — percentual (0–100) do tempo total estimado do tipo de projeto
+- `created_at`, `updated_at` timestamptz
 
-4. **Registrar a rota no `App.tsx`**
-   - Adicionar `<Route path="/relogio" element={<Relogio />} />` dentro do layout autenticado, seguindo o mesmo padrão das demais rotas.
+GRANTs para `authenticated` e `service_role`. RLS:
+- `relogio_tipos_projeto`: filtro `empresa_id = get_user_company_id()` para SELECT/INSERT/UPDATE/DELETE.
+- `relogio_tarefas`: políticas via subselect na tabela pai garantindo que o tipo de projeto pertença à empresa do usuário (mesmo padrão de `funil_etapas` / `orcamentos_itens`).
 
-5. **Habilitar visibilidade pelo controle de módulos**
-   - O hook `useModulosParametros` gera automaticamente as chaves de módulo a partir de `navigationConfig`, então o novo item aparecerá como ativo por padrão para empresas existentes (fallback `true` em `isModuloAtivo` quando não há registro). Não é necessária migração.
+Sem validação dura de soma = 100% no banco; aviso visual no front quando a soma divergir de 100%.
+
+## Frontend
+
+### Rota e navegação
+- Nova rota `/relogio/tipos-projeto`.
+- Substituir o item "Relógio" do menu (hoje link direto) por um grupo com subitens:
+  - "Tipos de Projeto" → `/relogio/tipos-projeto`
+- A página atual `/relogio` permanece como placeholder do módulo (apontada pelo título do grupo se aplicável, ou removida da navegação se o grupo já cobrir o acesso). Manter o arquivo `src/pages/relogio/index.tsx` como página inicial em `/relogio`.
+
+### Página `src/pages/relogio/tipos-projeto/index.tsx`
+- Cabeçalho com título "Tipos de Projeto" + botão "Novo Tipo de Projeto" (padrão visual de Favorecidos).
+- Campo de busca por nome e filtro por status (Ativo/Inativo/Todos).
+- Tabela com colunas: Nome, Qtde. de Tarefas, % Total Estimado (soma das tarefas ativas), Status, Ações.
+- Cada linha expande (acordeão) revelando a sub-tabela de Tarefas:
+  - Colunas: Nome, % Tempo Estimado, Status, Ações (editar/excluir).
+  - Botão "Adicionar Tarefa" dentro do bloco expandido.
+  - Indicador discreto quando a soma do percentual ≠ 100%.
+- Ações no Tipo de Projeto: editar, ativar/inativar, excluir (com confirmação — cascade apaga tarefas).
+
+### Modais
+- `TipoProjetoFormModal` — campos: Nome, Status.
+- `TarefaFormModal` — campos: Nome, % Tempo Estimado (input numérico com sufixo `%`, 0–100, 2 casas), Status. Recebe `tipoProjetoId`.
+- Confirmação de exclusão usando `AlertDialog` padrão.
+
+### Hook `src/hooks/useTiposProjetoRelogio.ts`
+- Carrega tipos de projeto da empresa atual com `useCompany()`.
+- Carrega todas as tarefas dos tipos retornados em uma única query (`in('tipo_projeto_id', ids)`), respeitando o batching de 50 IDs.
+- Funções: `criarTipoProjeto`, `atualizarTipoProjeto`, `excluirTipoProjeto`, `criarTarefa`, `atualizarTarefa`, `excluirTarefa`, `refetch`.
+- Loga ações via `useLogTransacao` (módulo `relogio`, entidades `tipo_projeto` e `tarefa`), seguindo o padrão de auditoria.
 
 ## Detalhes técnicos
+- Campos no front em snake_case (`empresa_id`, `tipo_projeto_id`, `percentual_tempo_estimado`, `created_at`).
+- Tipos TS em `src/types/relogio.d.ts`.
+- Cores e botões idênticos aos das páginas existentes (ex.: Favorecidos).
+- Sem alterações em rotinas existentes.
 
-- Arquivos alterados:
-  - `src/config/navigation.ts` — novo item entre CRM e Relatórios.
-  - `src/components/layout/sidebar-nav.tsx` — case `"Clock"` em `renderIcon`.
-  - `src/App.tsx` — nova rota `/relogio`.
-- Arquivo criado:
-  - `src/pages/relogio/index.tsx` — página placeholder.
-- Sem alterações em banco de dados, hooks de negócio ou outras páginas.
-
-## Próximas etapas (não fazem parte desta)
-
-Após confirmar a estrutura, definiremos juntos:
-- Entidades (projetos/tarefas/entradas de tempo) e tabelas no Supabase.
-- Timer ao vivo (start/stop), entradas manuais, edição.
-- Listagem por dia/semana e relatórios.
+## Fora de escopo (próximas etapas)
+- Apontamento de tempo (timer), vínculo a clientes/usuários, relatórios.
