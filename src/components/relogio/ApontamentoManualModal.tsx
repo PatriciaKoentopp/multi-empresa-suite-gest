@@ -102,9 +102,10 @@ export function ApontamentoManualModal({
 
   const handleSave = async () => {
     if (!projetoId) return toast.error("Selecione um projeto");
-    if (!data) return toast.error("Informe a data");
+    if (!data) return toast.error("Informe a data inicial");
     if (!horaInicio || !horaFim) return toast.error("Informe hora inicial e final");
-    if (duracao <= 0) return toast.error("Hora final deve ser maior que a inicial");
+    if (duracao <= 0) return toast.error("A hora/data final deve ser maior que a inicial");
+
 
     setSaving(true);
     try {
