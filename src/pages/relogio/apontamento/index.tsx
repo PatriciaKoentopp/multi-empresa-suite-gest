@@ -56,6 +56,7 @@ import { useProjetosRelogio } from "@/hooks/useProjetosRelogio";
 import { useTiposProjetoRelogio } from "@/hooks/useTiposProjetoRelogio";
 import { ApontamentoManualModal } from "@/components/relogio/ApontamentoManualModal";
 import { ApontamentoCronometroModal } from "@/components/relogio/ApontamentoCronometroModal";
+import { ImportarApontamentosModal } from "@/components/relogio/ImportarApontamentosModal";
 import { formatDate } from "@/lib/utils";
 import type { RelogioApontamento } from "@/types/relogio";
 
