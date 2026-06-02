@@ -202,17 +202,17 @@ export function ImportarApontamentosModal({
         const projetoRaw = String(get("Projeto", "Project") ?? "").trim();
         const tarefaRaw = String(get("Tarefa", "Task") ?? "").trim();
         const dataRaw = get("Data de início", "Data de inicio", "Data inicial", "Data");
+        const dataFimRaw = get("Data de término", "Data de termino", "Data final", "Data fim");
         const horaIniRaw = get("Hora de início", "Hora de inicio", "Hora inicial");
         const horaFimRaw = get("Hora de término", "Hora de termino", "Hora final");
 
         const { codigo, nome: nomeParsed } = parseCodigo(projetoRaw);
 
         let projeto_id: string | null = null;
-        let projetoNome = nomeParsed || projetoRaw;
+        const projetoNome = nomeParsed || projetoRaw;
         const proj = codigo ? projByCodigo.get(norm(codigo)) : null;
         if (proj) {
           projeto_id = proj.id;
-          projetoNome = proj.nome;
         }
 
         // Tarefa
@@ -234,9 +234,16 @@ export function ImportarApontamentosModal({
         }
 
         const data = parseDateCell(dataRaw);
+        const dataFim = parseDateCell(dataFimRaw);
         const hora_inicio = parseTimeCell(horaIniRaw);
         const hora_fim = parseTimeCell(horaFimRaw);
-        const duracao_decimal = calcularDuracaoDecimal(hora_inicio, hora_fim);
+        const duracao_decimal = calcularDuracaoComDatas(
+          data,
+          hora_inicio,
+          dataFim || data,
+          hora_fim
+        );
+
 
         let valid = true;
         let motivo: string | undefined;
