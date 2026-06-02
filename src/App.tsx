@@ -74,6 +74,7 @@ import LogsTransacoes from "./pages/relatorios/logs-transacoes";
 import RazaoContabil from "./pages/relatorios/razao-contabil";
 import RelogioPage from "./pages/relogio";
 import TiposProjetoRelogioPage from "./pages/relogio/tipos-projeto";
+import ProjetosRelogioPage from "./pages/relogio/projetos";
 
 // Backup
 import BackupPage from "./pages/backup";
