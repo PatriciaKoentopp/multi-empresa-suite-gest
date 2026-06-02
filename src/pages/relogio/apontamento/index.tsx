@@ -79,6 +79,7 @@ export default function ApontamentoRelogioPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [projetoFilter, setProjetoFilter] = useState<string>("todos");
+  const [statusFilter, setStatusFilter] = useState<string>("ativo");
   const [manualOpen, setManualOpen] = useState(false);
   const [cronoOpen, setCronoOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -94,8 +95,8 @@ export default function ApontamentoRelogioPage() {
   }, [apontamentoEmAndamento]);
 
   const projetoMap = useMemo(() => {
-    const m = new Map<string, { codigo: string; nome: string }>();
-    projetos.forEach((p) => m.set(p.id, { codigo: p.codigo, nome: p.nome }));
+    const m = new Map<string, { codigo: string; nome: string; status: string }>();
+    projetos.forEach((p) => m.set(p.id, { codigo: p.codigo, nome: p.nome, status: p.status }));
     return m;
   }, [projetos]);
 
@@ -104,6 +105,11 @@ export default function ApontamentoRelogioPage() {
     tarefas.forEach((t) => m.set(t.id, t.nome));
     return m;
   }, [tarefas]);
+
+  const projetosPorStatus = useMemo(() => {
+    if (statusFilter === "todos") return projetos;
+    return projetos.filter((p) => p.status === statusFilter);
+  }, [projetos, statusFilter]);
 
   const filtered = useMemo(() => {
     return apontamentos.filter((a) => {
@@ -115,9 +121,10 @@ export default function ApontamentoRelogioPage() {
       const matchSearch =
         !term || projText.includes(term) || tarefaText.includes(term);
       const matchProj = projetoFilter === "todos" || a.projeto_id === projetoFilter;
-      return matchSearch && matchProj;
+      const matchStatus = statusFilter === "todos" || (proj && proj.status === statusFilter);
+      return matchSearch && matchProj && matchStatus;
     });
-  }, [apontamentos, searchTerm, projetoFilter, projetoMap, tarefaMap]);
+  }, [apontamentos, searchTerm, projetoFilter, statusFilter, projetoMap, tarefaMap]);
 
   const handleSaveManual = async (payload: ApontamentoPayload, id?: string) => {
     if (id) await atualizarApontamento(id, payload);
@@ -281,6 +288,18 @@ export default function ApontamentoRelogioPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            <div className="flex w-full sm:w-[200px]">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800">
+                  <SelectItem value="ativo">Ativos</SelectItem>
+                  <SelectItem value="arquivado">Arquivados</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex w-full sm:w-[280px]">
               <Select value={projetoFilter} onValueChange={setProjetoFilter}>
                 <SelectTrigger className="w-full bg-white dark:bg-gray-900">
@@ -288,7 +307,7 @@ export default function ApontamentoRelogioPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 max-h-72">
                   <SelectItem value="todos">Todos os projetos</SelectItem>
-                  {projetos.map((p) => (
+                  {projetosPorStatus.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.codigo} - {p.nome}
                     </SelectItem>
