@@ -50,6 +50,7 @@ export function ApontamentoManualModal({
   const [projetoId, setProjetoId] = useState<string>("");
   const [tarefaId, setTarefaId] = useState<string>("");
   const [data, setData] = useState<string>("");
+  const [dataFim, setDataFim] = useState<string>("");
   const [horaInicio, setHoraInicio] = useState<string>("");
   const [horaFim, setHoraFim] = useState<string>("");
   const [observacao, setObservacao] = useState<string>("");
@@ -61,6 +62,7 @@ export function ApontamentoManualModal({
         setProjetoId(apontamento.projeto_id);
         setTarefaId(apontamento.tarefa_id || "");
         setData(apontamento.data);
+        setDataFim(apontamento.data);
         setHoraInicio(apontamento.hora_inicio?.slice(0, 5) || "");
         setHoraFim(apontamento.hora_fim?.slice(0, 5) || "");
         setObservacao(apontamento.observacao || "");
@@ -68,11 +70,11 @@ export function ApontamentoManualModal({
         setProjetoId("");
         setTarefaId("");
         const d = new Date();
-        setData(
-          `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-            d.getDate()
-          ).padStart(2, "0")}`
-        );
+        const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+          d.getDate()
+        ).padStart(2, "0")}`;
+        setData(today);
+        setDataFim(today);
         setHoraInicio("");
         setHoraFim("");
         setObservacao("");
@@ -89,15 +91,21 @@ export function ApontamentoManualModal({
   }, [projeto, tarefas]);
 
   const duracao = useMemo(() => {
-    if (!horaInicio || !horaFim) return 0;
-    return calcularDuracaoDecimal(horaInicio + ":00", horaFim + ":00");
-  }, [horaInicio, horaFim]);
+    if (!horaInicio || !horaFim || !data) return 0;
+    const ini = new Date(`${data}T${horaInicio}:00`);
+    const fim = new Date(`${dataFim || data}T${horaFim}:00`);
+    const diff = (fim.getTime() - ini.getTime()) / 1000;
+    if (diff <= 0) return 0;
+    return Math.round((diff / 3600) * 100) / 100;
+  }, [data, dataFim, horaInicio, horaFim]);
+
 
   const handleSave = async () => {
     if (!projetoId) return toast.error("Selecione um projeto");
-    if (!data) return toast.error("Informe a data");
+    if (!data) return toast.error("Informe a data inicial");
     if (!horaInicio || !horaFim) return toast.error("Informe hora inicial e final");
-    if (duracao <= 0) return toast.error("Hora final deve ser maior que a inicial");
+    if (duracao <= 0) return toast.error("A hora/data final deve ser maior que a inicial");
+
 
     setSaving(true);
     try {
@@ -187,34 +195,69 @@ export function ApontamentoManualModal({
             </Select>
           </div>
 
-          <div>
-            <Label>Data *</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal bg-white dark:bg-gray-900",
-                    !data && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {data ? formatDate(data) : "Selecione uma data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-white" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dateObj}
-                  onSelect={(d) => {
-                    if (d) setData(dateToISOString(d) || "");
-                  }}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Data inicial *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal bg-white dark:bg-gray-900",
+                      !data && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {data ? formatDate(data) : "Selecione"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-white" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateObj}
+                    onSelect={(d) => {
+                      if (d) {
+                        const iso = dateToISOString(d) || "";
+                        setData(iso);
+                        if (!dataFim || dataFim < iso) setDataFim(iso);
+                      }
+                    }}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <Label>Data final</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal bg-white dark:bg-gray-900",
+                      !dataFim && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dataFim ? formatDate(dataFim) : "Mesmo dia"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-white" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dataFim ? parseDateString(dataFim) : undefined}
+                    onSelect={(d) => {
+                      if (d) setDataFim(dateToISOString(d) || "");
+                    }}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
+
 
           <div className="grid grid-cols-3 gap-3">
             <div>
