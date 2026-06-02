@@ -95,8 +95,8 @@ export function useRelatorioProjetos(vendasData: any[], fotosProjetos: ProjetoFo
     return map;
   }, [vendasData]);
 
-  // Processar dados de fotos
-  const { projetosAgrupados: fotosProjetos } = useRelatorioFotos(fotosSpreadsheetData);
+  // Dados de fotos vêm prontos do hook chamador (banco de dados)
+
 
   // Combinar dados
   const projetos = useMemo(() => {
