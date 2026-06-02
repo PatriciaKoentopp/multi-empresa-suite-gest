@@ -385,6 +385,14 @@ export default function ApontamentoRelogioPage() {
         onIniciar={handleIniciarCronometro}
       />
 
+      <ImportarApontamentosModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        projetos={projetos}
+        tarefas={tarefas}
+        onImport={importarApontamentos}
+      />
+
       <AlertDialog open={!!toDelete} onOpenChange={() => setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
