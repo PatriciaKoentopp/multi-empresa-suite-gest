@@ -31,3 +31,19 @@ export interface RelogioProjeto {
   created_at: string;
   updated_at: string;
 }
+
+export interface RelogioApontamento {
+  id: string;
+  empresa_id: string;
+  projeto_id: string;
+  tarefa_id: string | null;
+  data: string; // YYYY-MM-DD
+  hora_inicio: string; // HH:MM:SS
+  hora_fim: string | null; // HH:MM:SS
+  duracao_decimal: number;
+  origem: "manual" | "cronometro";
+  status: "em_andamento" | "concluido";
+  observacao: string | null;
+  created_at: string;
+  updated_at: string;
+}
