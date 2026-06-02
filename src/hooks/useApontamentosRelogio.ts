@@ -146,6 +146,31 @@ export function useApontamentosRelogio() {
     });
   };
 
+  const importarApontamentos = async (items: ApontamentoPayload[]) => {
+    if (!currentCompany?.id) return { inserted: 0, errors: items.length };
+    let inserted = 0;
+    let errors = 0;
+    const chunkSize = 50;
+    for (let i = 0; i < items.length; i += chunkSize) {
+      const chunk = items.slice(i, i + chunkSize).map((p) => ({
+        ...p,
+        empresa_id: currentCompany.id,
+      }));
+      const { error, data } = await supabase
+        .from("relogio_apontamentos" as any)
+        .insert(chunk)
+        .select("id");
+      if (error) {
+        console.error(error);
+        errors += chunk.length;
+      } else {
+        inserted += (data as any[] | null)?.length ?? chunk.length;
+      }
+    }
+    await fetchData();
+    return { inserted, errors };
+  };
+
   const apontamentoEmAndamento =
     apontamentos.find((a) => a.status === "em_andamento") || null;
 
@@ -158,6 +183,7 @@ export function useApontamentosRelogio() {
     excluirApontamento,
     iniciarCronometro,
     pararCronometro,
+    importarApontamentos,
     apontamentoEmAndamento,
   };
 }

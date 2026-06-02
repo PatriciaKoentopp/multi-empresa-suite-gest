@@ -42,6 +42,7 @@ import {
   Pencil,
   Trash2,
   Timer,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -55,6 +56,7 @@ import { useProjetosRelogio } from "@/hooks/useProjetosRelogio";
 import { useTiposProjetoRelogio } from "@/hooks/useTiposProjetoRelogio";
 import { ApontamentoManualModal } from "@/components/relogio/ApontamentoManualModal";
 import { ApontamentoCronometroModal } from "@/components/relogio/ApontamentoCronometroModal";
+import { ImportarApontamentosModal } from "@/components/relogio/ImportarApontamentosModal";
 import { formatDate } from "@/lib/utils";
 import type { RelogioApontamento } from "@/types/relogio";
 
@@ -67,6 +69,7 @@ export default function ApontamentoRelogioPage() {
     excluirApontamento,
     iniciarCronometro,
     pararCronometro,
+    importarApontamentos,
     apontamentoEmAndamento,
   } = useApontamentosRelogio();
   const { projetos } = useProjetosRelogio();
@@ -76,6 +79,7 @@ export default function ApontamentoRelogioPage() {
   const [projetoFilter, setProjetoFilter] = useState<string>("todos");
   const [manualOpen, setManualOpen] = useState(false);
   const [cronoOpen, setCronoOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<RelogioApontamento | undefined>();
   const [toDelete, setToDelete] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
@@ -168,6 +172,10 @@ export default function ApontamentoRelogioPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Apontamento</h1>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Importar
+          </Button>
           <Button
             variant="outline"
             onClick={() => setCronoOpen(true)}
@@ -375,6 +383,14 @@ export default function ApontamentoRelogioPage() {
         tiposProjeto={tiposProjeto}
         tarefas={tarefas}
         onIniciar={handleIniciarCronometro}
+      />
+
+      <ImportarApontamentosModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        projetos={projetos}
+        tarefas={tarefas}
+        onImport={importarApontamentos}
       />
 
       <AlertDialog open={!!toDelete} onOpenChange={() => setToDelete(null)}>
