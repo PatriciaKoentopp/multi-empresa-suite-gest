@@ -1898,6 +1898,54 @@ export type Database = {
           },
         ]
       }
+      relogio_apontamentos: {
+        Row: {
+          created_at: string
+          data: string
+          duracao_decimal: number
+          empresa_id: string
+          hora_fim: string | null
+          hora_inicio: string
+          id: string
+          observacao: string | null
+          origem: string
+          projeto_id: string
+          status: string
+          tarefa_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          duracao_decimal?: number
+          empresa_id: string
+          hora_fim?: string | null
+          hora_inicio: string
+          id?: string
+          observacao?: string | null
+          origem?: string
+          projeto_id: string
+          status?: string
+          tarefa_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          duracao_decimal?: number
+          empresa_id?: string
+          hora_fim?: string | null
+          hora_inicio?: string
+          id?: string
+          observacao?: string | null
+          origem?: string
+          projeto_id?: string
+          status?: string
+          tarefa_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       relogio_projetos: {
         Row: {
           codigo: string
