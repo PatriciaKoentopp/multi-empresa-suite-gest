@@ -67,18 +67,40 @@ export function useRelatorioProjetosFotosDB() {
       );
     });
 
-    return projetos
-      .map((p) => {
-        const totalHoras = horasPorProjeto.get(p.id) || 0;
-        return {
-          numeroProjeto: normalizarCodigo(p.codigo),
-          cliente: p.nome || "",
+    // Agrupar por código normalizado: somar fotos/horas e mesclar clientes
+    const agrupados = new Map<string, ProjetoFotosDB & { _clientes: Set<string> }>();
+    projetos.forEach((p) => {
+      const numeroProjeto = normalizarCodigo(p.codigo);
+      if (!numeroProjeto) return;
+      const totalHoras = horasPorProjeto.get(p.id) || 0;
+      const nomeCliente = (p.nome || "").trim();
+      const existing = agrupados.get(numeroProjeto);
+      if (existing) {
+        existing.fotosVendidas += Number(p.fotos_vendidas) || 0;
+        existing.fotosEnviadas += Number(p.fotos_enviadas) || 0;
+        existing.fotosTiradas += Number(p.fotos_tiradas) || 0;
+        existing.totalHoras += totalHoras;
+        if (nomeCliente) existing._clientes.add(nomeCliente);
+      } else {
+        const clientes = new Set<string>();
+        if (nomeCliente) clientes.add(nomeCliente);
+        agrupados.set(numeroProjeto, {
+          numeroProjeto,
+          cliente: "",
           fotosVendidas: Number(p.fotos_vendidas) || 0,
           fotosEnviadas: Number(p.fotos_enviadas) || 0,
           fotosTiradas: Number(p.fotos_tiradas) || 0,
           totalHoras,
-        };
-      })
+          _clientes: clientes,
+        });
+      }
+    });
+
+    return Array.from(agrupados.values())
+      .map(({ _clientes, ...rest }) => ({
+        ...rest,
+        cliente: Array.from(_clientes).join(", "),
+      }))
       .filter(
         (p) =>
           p.cliente.trim() !== "" &&
