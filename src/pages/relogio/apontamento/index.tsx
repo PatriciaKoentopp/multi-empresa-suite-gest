@@ -42,6 +42,7 @@ import {
   Pencil,
   Trash2,
   Timer,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
