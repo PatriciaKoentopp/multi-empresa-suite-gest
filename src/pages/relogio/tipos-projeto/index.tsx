@@ -239,7 +239,7 @@ export default function TiposProjetoRelogioPage() {
                         ? "text-green-700"
                         : "text-amber-600";
                     return (
-                      <>
+                      <Fragment key={tipo.id}>
                         <TableRow key={tipo.id} className="hover:bg-muted/40">
                           <TableCell>
                             <Button
