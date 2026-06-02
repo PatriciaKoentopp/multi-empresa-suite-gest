@@ -139,6 +139,21 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
                   <CommandList>
                     <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
                     <CommandGroup>
+                      <CommandItem
+                        value="__sem_cliente__"
+                        onSelect={() => {
+                          setFavorecidoId("");
+                          setClientePopoverOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            !favorecidoId ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <span className="text-muted-foreground">Sem cliente</span>
+                      </CommandItem>
                       {favorecidos.map((f) => (
                         <CommandItem
                           key={f.id}
