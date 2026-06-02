@@ -509,6 +509,16 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/relogio/apontamento"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <ApontamentoRelogioPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
 
 
             {/* Relatórios */}
