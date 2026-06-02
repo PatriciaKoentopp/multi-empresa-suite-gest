@@ -43,7 +43,9 @@ import {
   Trash2,
   Timer,
   Upload,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import {
   useApontamentosRelogio,
@@ -152,6 +154,38 @@ export default function ApontamentoRelogioPage() {
     }
   };
 
+  const handleExportar = () => {
+    if (filtered.length === 0) {
+      toast.error("Nenhum apontamento para exportar");
+      return;
+    }
+    const rows = filtered.map((a) => {
+      const proj = projetoMap.get(a.projeto_id);
+      const tarefa = a.tarefa_id ? tarefaMap.get(a.tarefa_id) : "";
+      return {
+        Projeto: proj ? `${proj.codigo} - ${proj.nome}` : "",
+        Tarefa: tarefa || "",
+        "Data de início": formatDate(a.data),
+        "Hora de início": (a.hora_inicio || "").slice(0, 8),
+        "Data final": formatDate(a.data),
+        "Hora de término": (a.hora_fim || "").slice(0, 8),
+        "Duração (decimal)": Number(a.duracao_decimal || 0),
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [
+      { wch: 50 }, { wch: 22 }, { wch: 14 }, { wch: 14 },
+      { wch: 14 }, { wch: 14 }, { wch: 16 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Apontamentos");
+    const today = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const fname = `apontamentos_${today.getFullYear()}${pad(today.getMonth() + 1)}${pad(today.getDate())}.xlsx`;
+    XLSX.writeFile(wb, fname);
+    toast.success(`${rows.length} apontamento(s) exportado(s)`);
+  };
+
   // Tempo decorrido do cronômetro ativo
   const tempoDecorrido = useMemo(() => {
     if (!apontamentoEmAndamento) return "00:00:00";
@@ -175,6 +209,10 @@ export default function ApontamentoRelogioPage() {
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Upload className="mr-2 h-4 w-4" />
             Importar
+          </Button>
+          <Button variant="outline" onClick={handleExportar}>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar
           </Button>
           <Button
             variant="outline"
