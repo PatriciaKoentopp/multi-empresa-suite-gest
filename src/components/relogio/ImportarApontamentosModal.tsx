@@ -69,20 +69,15 @@ const ALIAS_TAREFA: Record<string, string> = {
   [norm("Produção de Fotos")]: norm("Produção"),
 };
 
-// Parser do "Projeto" (mesmo padrão da importação de projetos)
+// Parser do "Projeto": usa o primeiro "-" como separador.
+// Antes do "-" => código; depois do "-" => nome completo (preservado).
 const parseCodigo = (raw: string): { codigo: string; nome: string } => {
   const text = String(raw ?? "").trim();
   if (!text) return { codigo: "", nome: "" };
-  const idx = text.indexOf(" - ");
+  const idx = text.indexOf("-");
   if (idx < 0) return { codigo: "", nome: text };
   const codigo = text.slice(0, idx).trim();
-  const resto = text.slice(idx + 3).trim();
-  const nome = resto
-    .replace(/\([^)]*\)/g, "")
-    .replace(/\[[^\]]*\]/g, "")
-    .replace(/\{[^}]*\}/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  const nome = text.slice(idx + 1).trim();
   return { codigo, nome };
 };
 
