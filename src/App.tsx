@@ -489,6 +489,16 @@ function App() {
               }
             />
             <Route
+              path="/relogio/projetos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <ProjetosRelogioPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/relogio/tipos-projeto"
               element={
                 <PrivateRoute>
@@ -498,6 +508,7 @@ function App() {
                 </PrivateRoute>
               }
             />
+
 
             {/* Relatórios */}
             <Route
