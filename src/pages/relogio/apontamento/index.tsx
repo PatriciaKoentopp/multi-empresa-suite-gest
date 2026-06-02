@@ -210,6 +210,10 @@ export default function ApontamentoRelogioPage() {
             <Upload className="mr-2 h-4 w-4" />
             Importar
           </Button>
+          <Button variant="outline" onClick={handleExportar}>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar
+          </Button>
           <Button
             variant="outline"
             onClick={() => setCronoOpen(true)}
