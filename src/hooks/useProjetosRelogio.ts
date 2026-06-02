@@ -7,7 +7,7 @@ import type { RelogioProjeto } from "@/types/relogio";
 export interface ProjetoPayload {
   codigo: string;
   nome: string;
-  favorecido_id: string;
+  favorecido_id: string | null;
   fotos_tiradas: number;
   fotos_enviadas: number;
   fotos_vendidas: number;
