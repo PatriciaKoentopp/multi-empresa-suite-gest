@@ -1898,6 +1898,71 @@ export type Database = {
           },
         ]
       }
+      relogio_tarefas: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          percentual_tempo_estimado: number
+          status: string
+          tipo_projeto_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          percentual_tempo_estimado?: number
+          status?: string
+          tipo_projeto_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          percentual_tempo_estimado?: number
+          status?: string
+          tipo_projeto_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relogio_tarefas_tipo_projeto_id_fkey"
+            columns: ["tipo_projeto_id"]
+            isOneToOne: false
+            referencedRelation: "relogio_tipos_projeto"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relogio_tipos_projeto: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          id: string
+          nome: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nome: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       servicos: {
         Row: {
           conta_receita_id: string | null
