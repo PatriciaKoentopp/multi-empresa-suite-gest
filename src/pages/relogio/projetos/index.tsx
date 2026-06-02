@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import { useProjetosRelogio, type ProjetoPayload } from "@/hooks/useProjetosRelogio";
 import { useFavorecidos } from "@/hooks/useFavorecidos";
+import { useTiposProjetoRelogio } from "@/hooks/useTiposProjetoRelogio";
 import { ProjetoFormModal } from "@/components/relogio/ProjetoFormModal";
 import { ImportarProjetosModal } from "@/components/relogio/ImportarProjetosModal";
 import type { RelogioProjeto } from "@/types/relogio";
@@ -74,11 +75,11 @@ export default function ProjetosRelogioPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [toDelete, setToDelete] = useState<string | null>(null);
 
-  const favorecidoNome = useMemo(() => {
-    const m = new Map<string, string>();
-    favorecidos.forEach((f) => m.set(f.id, f.nome));
-    return m;
-  }, [favorecidos]);
+  const { data: favorecidos = [] } = useFavorecidos();
+  const { tiposProjeto } = useTiposProjetoRelogio();
+
+  // (variáveis de filtro permanecem abaixo)
+
 
   const filtered = useMemo(() => {
     return projetos.filter((p) => {
