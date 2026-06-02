@@ -1,0 +1,1 @@
+ALTER TABLE public.relogio_projetos ALTER COLUMN favorecido_id DROP NOT NULL;

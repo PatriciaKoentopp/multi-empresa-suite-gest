@@ -73,13 +73,13 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!codigo.trim() || !nome.trim() || !favorecidoId) return;
+    if (!codigo.trim() || !nome.trim()) return;
     setSaving(true);
     try {
       await onSubmit({
         codigo: codigo.trim(),
         nome: nome.trim(),
-        favorecido_id: favorecidoId,
+        favorecido_id: favorecidoId || null,
         fotos_tiradas: Number(fotosTiradas) || 0,
         fotos_enviadas: Number(fotosEnviadas) || 0,
         fotos_vendidas: Number(fotosVendidas) || 0,
@@ -139,6 +139,21 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
                   <CommandList>
                     <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
                     <CommandGroup>
+                      <CommandItem
+                        value="__sem_cliente__"
+                        onSelect={() => {
+                          setFavorecidoId("");
+                          setClientePopoverOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            !favorecidoId ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <span className="text-muted-foreground">Sem cliente</span>
+                      </CommandItem>
                       {favorecidos.map((f) => (
                         <CommandItem
                           key={f.id}

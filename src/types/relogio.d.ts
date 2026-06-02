@@ -22,7 +22,7 @@ export interface RelogioProjeto {
   empresa_id: string;
   codigo: string;
   nome: string;
-  favorecido_id: string;
+  favorecido_id: string | null;
   fotos_tiradas: number;
   fotos_enviadas: number;
   fotos_vendidas: number;

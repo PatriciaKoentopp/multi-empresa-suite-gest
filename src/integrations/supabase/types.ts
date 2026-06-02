@@ -1903,7 +1903,7 @@ export type Database = {
           codigo: string
           created_at: string
           empresa_id: string
-          favorecido_id: string
+          favorecido_id: string | null
           fotos_enviadas: number
           fotos_tiradas: number
           fotos_vendidas: number
@@ -1916,7 +1916,7 @@ export type Database = {
           codigo: string
           created_at?: string
           empresa_id: string
-          favorecido_id: string
+          favorecido_id?: string | null
           fotos_enviadas?: number
           fotos_tiradas?: number
           fotos_vendidas?: number
@@ -1929,7 +1929,7 @@ export type Database = {
           codigo?: string
           created_at?: string
           empresa_id?: string
-          favorecido_id?: string
+          favorecido_id?: string | null
           fotos_enviadas?: number
           fotos_tiradas?: number
           fotos_vendidas?: number

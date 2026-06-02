@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Upload, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Upload, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useFavorecidos } from "@/hooks/useFavorecidos";
 import type { ProjetoPayload } from "@/hooks/useProjetosRelogio";
@@ -42,6 +42,7 @@ interface PreviewRow {
   status: "ativo" | "arquivado";
   valid: boolean;
   motivo?: string;
+  clienteStatus: "ok" | "nao_encontrado" | "vazio";
 }
 
 const norm = (s: string) =>
@@ -51,6 +52,47 @@ const norm = (s: string) =>
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+
+// Extrai número dentro de delimitadores (), [] ou {}
+const extractNum = (text: string, open: string, close: string): number => {
+  const re = new RegExp(`\\${open}\\s*(\\d+)\\s*\\${close}`);
+  const m = text.match(re);
+  return m ? Number(m[1]) : 0;
+};
+
+// Faz o parse da coluna "Projeto"
+// Formato: "<codigo> - <nome> (vendidas) [enviadas] {tiradas}"
+const parseProjeto = (raw: string) => {
+  const text = String(raw ?? "").trim();
+  if (!text) return { codigo: "", nome: "", tiradas: 0, enviadas: 0, vendidas: 0 };
+
+  // separa código do restante pelo primeiro " - "
+  const idx = text.indexOf(" - ");
+  let codigo = "";
+  let resto = text;
+  if (idx >= 0) {
+    codigo = text.slice(0, idx).trim();
+    resto = text.slice(idx + 3).trim();
+  } else {
+    // sem separador: tenta usar tudo como nome, código vazio
+    codigo = "";
+    resto = text;
+  }
+
+  const vendidas = extractNum(resto, "(", ")");
+  const enviadas = extractNum(resto, "[", "]");
+  const tiradas = extractNum(resto, "{", "}");
+
+  // remove grupos para extrair o nome limpo
+  const nome = resto
+    .replace(/\([^)]*\)/g, "")
+    .replace(/\[[^\]]*\]/g, "")
+    .replace(/\{[^}]*\}/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return { codigo, nome, tiradas, enviadas, vendidas };
+};
 
 export function ImportarProjetosModal({ open, onOpenChange, onImport }: Props) {
   const { data: favorecidos = [] } = useFavorecidos();
@@ -91,17 +133,25 @@ export function ImportarProjetosModal({ open, onOpenChange, onImport }: Props) {
           return "";
         };
 
-        const codigo = String(get("Código", "Codigo", "Code") ?? "").trim();
-        const nome = String(get("Nome", "Name", "Projeto") ?? "").trim();
+        const projetoRaw = String(get("Projeto", "Project") ?? "").trim();
+        const { codigo, nome, tiradas, enviadas, vendidas } = parseProjeto(projetoRaw);
+
         const clienteNome = String(get("Cliente", "Client", "Favorecido") ?? "").trim();
-        const fotos_tiradas = Number(get("Fotos Tiradas", "FotosTiradas")) || 0;
-        const fotos_enviadas = Number(get("Fotos Enviadas", "FotosEnviadas")) || 0;
-        const fotos_vendidas = Number(get("Fotos Vendidas", "FotosVendidas")) || 0;
         const statusRaw = norm(String(get("Status") ?? "ativo"));
         const status: "ativo" | "arquivado" =
           statusRaw === "arquivado" || statusRaw === "inativo" ? "arquivado" : "ativo";
 
-        const favorecido_id = clienteNome ? favMap.get(norm(clienteNome)) ?? null : null;
+        let favorecido_id: string | null = null;
+        let clienteStatus: PreviewRow["clienteStatus"] = "vazio";
+        if (clienteNome) {
+          const found = favMap.get(norm(clienteNome));
+          if (found) {
+            favorecido_id = found;
+            clienteStatus = "ok";
+          } else {
+            clienteStatus = "nao_encontrado";
+          }
+        }
 
         let valid = true;
         let motivo: string | undefined;
@@ -111,12 +161,6 @@ export function ImportarProjetosModal({ open, onOpenChange, onImport }: Props) {
         } else if (!nome) {
           valid = false;
           motivo = "Nome vazio";
-        } else if (!clienteNome) {
-          valid = false;
-          motivo = "Cliente vazio";
-        } else if (!favorecido_id) {
-          valid = false;
-          motivo = "Cliente não encontrado no cadastro";
         }
 
         return {
@@ -124,12 +168,13 @@ export function ImportarProjetosModal({ open, onOpenChange, onImport }: Props) {
           nome,
           clienteNome,
           favorecido_id,
-          fotos_tiradas,
-          fotos_enviadas,
-          fotos_vendidas,
+          fotos_tiradas: tiradas,
+          fotos_enviadas: enviadas,
+          fotos_vendidas: vendidas,
           status,
           valid,
           motivo,
+          clienteStatus,
         };
       });
 
@@ -142,14 +187,17 @@ export function ImportarProjetosModal({ open, onOpenChange, onImport }: Props) {
 
   const validCount = preview.filter((p) => p.valid).length;
   const invalidCount = preview.length - validCount;
+  const clienteFaltandoCount = preview.filter(
+    (p) => p.valid && p.clienteStatus !== "ok"
+  ).length;
 
   const handleImport = async () => {
     const items: ProjetoPayload[] = preview
-      .filter((p) => p.valid && p.favorecido_id)
+      .filter((p) => p.valid)
       .map((p) => ({
         codigo: p.codigo,
         nome: p.nome,
-        favorecido_id: p.favorecido_id as string,
+        favorecido_id: p.favorecido_id,
         fotos_tiradas: p.fotos_tiradas,
         fotos_enviadas: p.fotos_enviadas,
         fotos_vendidas: p.fotos_vendidas,
@@ -178,14 +226,15 @@ export function ImportarProjetosModal({ open, onOpenChange, onImport }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[900px]">
+      <DialogContent className="sm:max-w-[1000px]">
         <DialogHeader>
           <DialogTitle>Importar Projetos</DialogTitle>
           <DialogDescription>
-            Planilha .xlsx/.csv com as colunas: <strong>Código</strong>, <strong>Nome</strong>,{" "}
-            <strong>Cliente</strong>, <strong>Fotos Tiradas</strong>,{" "}
-            <strong>Fotos Enviadas</strong>, <strong>Fotos Vendidas</strong> e (opcional){" "}
-            <strong>Status</strong>. O cliente é casado por nome com o cadastro de favorecidos.
+            Planilha .xlsx/.csv com as colunas: <strong>Projeto</strong>,{" "}
+            <strong>Cliente</strong> e <strong>Status</strong>. A coluna{" "}
+            <strong>Projeto</strong> deve seguir o padrão{" "}
+            <code>codigo - nome (vendidas) [enviadas] {"{"}tiradas{"}"}</code>. Clientes
+            não encontrados ficarão em branco para preenchimento manual.
           </DialogDescription>
         </DialogHeader>
 
@@ -205,7 +254,7 @@ export function ImportarProjetosModal({ open, onOpenChange, onImport }: Props) {
 
           {preview.length > 0 && (
             <>
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex flex-wrap items-center gap-4 text-sm">
                 <span className="inline-flex items-center gap-1 text-green-700">
                   <CheckCircle2 className="h-4 w-4" /> {validCount} válidas
                 </span>
@@ -214,30 +263,74 @@ export function ImportarProjetosModal({ open, onOpenChange, onImport }: Props) {
                     <AlertCircle className="h-4 w-4" /> {invalidCount} com problema
                   </span>
                 )}
+                {clienteFaltandoCount > 0 && (
+                  <span className="inline-flex items-center gap-1 text-amber-600">
+                    <AlertTriangle className="h-4 w-4" /> {clienteFaltandoCount} sem
+                    cliente vinculado
+                  </span>
+                )}
               </div>
 
-              <ScrollArea className="h-[360px] border rounded-md">
+              <ScrollArea className="h-[400px] border rounded-md">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[100px]">Código</TableHead>
+                      <TableHead className="w-[90px]">Código</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead>Cliente</TableHead>
-                      <TableHead className="text-right w-[80px]">Tiradas</TableHead>
-                      <TableHead className="text-right w-[80px]">Enviadas</TableHead>
-                      <TableHead className="text-right w-[80px]">Vendidas</TableHead>
+                      <TableHead className="text-right w-[70px]">Tir.</TableHead>
+                      <TableHead className="text-right w-[70px]">Env.</TableHead>
+                      <TableHead className="text-right w-[70px]">Vend.</TableHead>
+                      <TableHead className="w-[100px]">Status</TableHead>
                       <TableHead className="w-[180px]">Situação</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {preview.map((row, idx) => (
-                      <TableRow key={idx} className={!row.valid ? "bg-red-50" : ""}>
+                      <TableRow
+                        key={idx}
+                        className={
+                          !row.valid
+                            ? "bg-red-50"
+                            : row.clienteStatus === "nao_encontrado"
+                            ? "bg-amber-50"
+                            : ""
+                        }
+                      >
                         <TableCell>{row.codigo}</TableCell>
                         <TableCell>{row.nome}</TableCell>
-                        <TableCell>{row.clienteNome}</TableCell>
+                        <TableCell>
+                          {row.clienteNome ? (
+                            <span
+                              className={
+                                row.clienteStatus === "ok"
+                                  ? ""
+                                  : "text-amber-700"
+                              }
+                            >
+                              {row.clienteNome}
+                              {row.clienteStatus === "nao_encontrado" && (
+                                <span className="ml-1 text-xs">(não encontrado)</span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right">{row.fotos_tiradas}</TableCell>
                         <TableCell className="text-right">{row.fotos_enviadas}</TableCell>
                         <TableCell className="text-right">{row.fotos_vendidas}</TableCell>
+                        <TableCell>
+                          <span
+                            className={
+                              row.status === "ativo"
+                                ? "text-xs text-green-700"
+                                : "text-xs text-red-600"
+                            }
+                          >
+                            {row.status === "ativo" ? "Ativo" : "Arquivado"}
+                          </span>
+                        </TableCell>
                         <TableCell>
                           {row.valid ? (
                             <span className="text-xs text-green-700">OK</span>
