@@ -75,10 +75,20 @@ export default function ProjetosRelogioPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [toDelete, setToDelete] = useState<string | null>(null);
 
-  const { data: favorecidos = [] } = useFavorecidos();
   const { tiposProjeto } = useTiposProjetoRelogio();
 
-  // (variáveis de filtro permanecem abaixo)
+  const favorecidoNome = useMemo(() => {
+    const m = new Map<string, string>();
+    favorecidos.forEach((f) => m.set(f.id, f.nome));
+    return m;
+  }, [favorecidos]);
+
+  const tipoProjetoNome = useMemo(() => {
+    const m = new Map<string, string>();
+    tiposProjeto.forEach((t) => m.set(t.id, t.nome));
+    return m;
+  }, [tiposProjeto]);
+
 
 
   const filtered = useMemo(() => {
