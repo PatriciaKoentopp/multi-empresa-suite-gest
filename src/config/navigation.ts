@@ -190,8 +190,13 @@ export const navigationConfig: ModuleNavItem[] = [
   },
   {
     title: "Relógio",
-    href: "/relogio",
     icon: "Clock",
+    subItems: [
+      {
+        title: "Tipos de Projeto",
+        href: "/relogio/tipos-projeto",
+      },
+    ],
   },
   {
     title: "Relatórios",

@@ -73,6 +73,7 @@ import RelatorioAntecipacoes from "./pages/relatorios/antecipacoes";
 import LogsTransacoes from "./pages/relatorios/logs-transacoes";
 import RazaoContabil from "./pages/relatorios/razao-contabil";
 import RelogioPage from "./pages/relogio";
+import TiposProjetoRelogioPage from "./pages/relogio/tipos-projeto";
 
 // Backup
 import BackupPage from "./pages/backup";
@@ -482,6 +483,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <RelogioPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/relogio/tipos-projeto"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <TiposProjetoRelogioPage />
                   </MainLayout>
                 </PrivateRoute>
               }
