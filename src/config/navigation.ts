@@ -193,6 +193,10 @@ export const navigationConfig: ModuleNavItem[] = [
     icon: "Clock",
     subItems: [
       {
+        title: "Projetos",
+        href: "/relogio/projetos",
+      },
+      {
         title: "Tipos de Projeto",
         href: "/relogio/tipos-projeto",
       },
