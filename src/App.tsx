@@ -487,6 +487,16 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/relogio/tipos-projeto"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <TiposProjetoRelogioPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
 
             {/* Relatórios */}
             <Route
