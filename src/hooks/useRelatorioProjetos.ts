@@ -54,7 +54,7 @@ interface ProjetoVendas {
   receitaTotal: number;
 }
 
-export function useRelatorioProjetos(vendasData: any[], fotosSpreadsheetData: any[]) {
+export function useRelatorioProjetos(vendasData: any[], fotosProjetos: ProjetoFotosInput[]) {
   // Processar vendas agrupando por projeto
   const vendasMap = useMemo(() => {
     const map = new Map<string, ProjetoVendas>();
