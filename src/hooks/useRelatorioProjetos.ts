@@ -1,6 +1,14 @@
 import { useMemo } from "react";
-import { extractProjectNumber } from "@/utils/timeUtils";
-import { useRelatorioFotos } from "./useRelatorioFotos";
+
+interface ProjetoFotosInput {
+  numeroProjeto: string;
+  cliente: string;
+  fotosVendidas: number;
+  fotosEnviadas: number;
+  fotosTiradas: number;
+  totalHoras: number;
+}
+
 
 export interface ProjetoCompleto {
   numeroProjeto: string;
