@@ -74,6 +74,7 @@ import LogsTransacoes from "./pages/relatorios/logs-transacoes";
 import RazaoContabil from "./pages/relatorios/razao-contabil";
 import RelogioPage from "./pages/relogio";
 import TiposProjetoRelogioPage from "./pages/relogio/tipos-projeto";
+import ProjetosRelogioPage from "./pages/relogio/projetos";
 
 // Backup
 import BackupPage from "./pages/backup";
@@ -488,6 +489,16 @@ function App() {
               }
             />
             <Route
+              path="/relogio/projetos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <ProjetosRelogioPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/relogio/tipos-projeto"
               element={
                 <PrivateRoute>
@@ -497,6 +508,7 @@ function App() {
                 </PrivateRoute>
               }
             />
+
 
             {/* Relatórios */}
             <Route
