@@ -69,6 +69,7 @@ export default function ApontamentoRelogioPage() {
     excluirApontamento,
     iniciarCronometro,
     pararCronometro,
+    importarApontamentos,
     apontamentoEmAndamento,
   } = useApontamentosRelogio();
   const { projetos } = useProjetosRelogio();
