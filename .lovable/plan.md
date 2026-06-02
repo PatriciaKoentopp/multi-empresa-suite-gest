@@ -1,49 +1,55 @@
-# Apontamento de Horas — Relógio
+## Importar Apontamentos de Horas
 
-## Análise da planilha
-Cada apontamento tem: **Projeto**, **Tarefa**, **Data início**, **Hora início**, **Data fim**, **Hora fim**, **Duração (HH:MM:SS)** e **Duração decimal** (ex.: 03:08:00 = 3,13h). A duração decimal é calculada como `(fim - início) em segundos / 3600`.
+Adicionar rotina de importação de planilha Excel/CSV na página **Apontamento** (`/relogio/apontamento`), seguindo o mesmo padrão já usado em `ImportarProjetosModal.tsx`.
 
-## Banco de dados (migration)
-Criar tabela `relogio_apontamentos`:
-- `id`, `empresa_id`, `projeto_id` (FK), `tarefa_id` (FK, nullable)
-- `data` (date, sem timezone)
-- `hora_inicio` (time), `hora_fim` (time, nullable enquanto cronômetro roda)
-- `duracao_decimal` (numeric)
-- `origem` ('manual' | 'cronometro')
-- `status` ('em_andamento' | 'concluido')
-- `observacao` (text, opcional)
-- `created_at`, `updated_at`
+### Formato esperado da planilha
 
-RLS por `empresa_id` (mesmo padrão das outras tabelas relogio_*) + GRANTs para authenticated/service_role.
+Colunas (conforme `horas20261.xlsx`):
+- `Projeto` — formato `codigo - nome (vend) [env] {tir}` (mesmo parser já existente)
+- `Tarefa` — nome da tarefa (pode ficar vazio)
+- `Data de início` — data (sem timezone, formato DD/MM/YYYY na UI)
+- `Hora de início` — HH:MM:SS
+- `Data final` — usada apenas para validação
+- `Hora de término` — HH:MM:SS
+- `Duração (decimal)` — ignorada; recalculada a partir do início/fim
 
-## Frontend
+### Regras de mapeamento
 
-### Navegação
-`src/config/navigation.ts` — adicionar "Apontamento" no menu Relógio, abaixo de "Projetos", apontando para `/relogio/apontamento`.
+1. **Projeto**: extrair `codigo` via parser existente e localizar por `codigo` (+ `empresa_id`) na tabela `relogio_projetos`. Se não encontrado → linha inválida.
+2. **Tarefa**:
+   - Aliases: `Sessão de Fotos` → `Sessão`; `Produção de Fotos` → `Produção`.
+   - Buscar tarefa por nome (case/acentos-insensível) dentro do `tipo_projeto_id` do projeto resolvido na tabela `relogio_tarefas`.
+   - Vazio ou não encontrada → `tarefa_id = null` (apontamento permitido sem tarefa, com aviso amarelo no preview se nome veio preenchido mas não casou).
+3. **Data**: usar `Data de início` como string `YYYY-MM-DD` (sem timezone, padrão já adotado no projeto).
+4. **Horas**: normalizar para `HH:MM:SS`. `hora_fim` obrigatória.
+5. **Duração decimal**: calculada via `calcularDuracaoDecimal` já existente em `useApontamentosRelogio`.
+6. **Origem**: gravar como `manual` (planilha importada).
+7. **Status**: `concluido`.
+8. Validações de linha: projeto encontrado, hora início < hora fim, datas válidas. Linhas inválidas exibidas em vermelho e desmarcadas da importação.
 
-### Tipo
-`src/types/relogio.d.ts` — adicionar interface `RelogioApontamento`.
+### Arquivos
 
-### Hook
-`src/hooks/useApontamentosRelogio.ts` — CRUD + cálculo decimal + busca de cronômetro ativo da empresa.
+**Novo:** `src/components/relogio/ImportarApontamentosModal.tsx`
+- Mesma estrutura visual do `ImportarProjetosModal` (Dialog 1000px, ScrollArea com tabela de preview, contadores de válidas/com problema/aviso, botão azul "Importar N apontamento(s)").
+- Lê `.xlsx/.xls/.csv` via `XLSX`.
+- Recebe `projetos` e `tarefas` por props para resolver IDs.
+- Aplica aliases "Sessão de Fotos"/"Produção de Fotos".
+- Chama `onImport(items)` retornando `{ inserted, errors }`.
 
-### Página `src/pages/relogio/apontamento/index.tsx`
-Layout no padrão das demais páginas Relógio (header + tabela), com **dois botões** de novo apontamento:
-1. **Novo Apontamento (Manual)** — abre modal com: Projeto, Tarefa (filtrada por tipo do projeto), Data (DD/MM/YYYY, sem TZ), Hora início (HH:MM), Hora fim (HH:MM). Calcula e exibe duração decimal automaticamente.
-2. **Iniciar Cronômetro** — abre modal com Projeto + Tarefa, ao confirmar grava registro `em_andamento` com `hora_inicio = now()` local. Enquanto há cronômetro ativo a página exibe um card no topo com tempo corrido (atualizado por `setInterval` a cada 1s) e botão **Parar**, que grava `hora_fim` e calcula duração.
+**Editado:** `src/hooks/useApontamentosRelogio.ts`
+- Nova função `importarApontamentos(items: ApontamentoPayload[])` que insere em lote via `supabase.from('relogio_apontamentos').insert([...])` em chunks de 50 (regra do projeto para `in()`, aplico mesma cautela ao insert).
+- Retorna `{ inserted, errors }`.
 
-### Tabela de apontamentos
-Colunas: Data, Projeto, Tarefa, Início, Fim, Duração (HH:MM:SS), Duração decimal, Origem, Ações (editar/excluir). Filtros por projeto e período.
+**Editado:** `src/pages/relogio/apontamento/index.tsx`
+- Botão "Importar" (variant `outline`, ícone `Upload`) ao lado dos botões Manual/Cronômetro, no mesmo padrão da página de Projetos.
+- Carrega lista de tarefas via hook existente `useTarefasRelogio` (ou similar) e projetos via `useProjetosRelogio`.
+- Abre o novo modal.
 
-### Modais
-- `src/components/relogio/ApontamentoManualModal.tsx`
-- `src/components/relogio/ApontamentoCronometroModal.tsx`
+### Pontos técnicos
 
-### Utilitários
-Reutilizar `decimalToHHMMSS` / `hhmmssToDecimal` de `src/utils/timeUtils.ts`. Datas sempre via `dateToISOString`/`parseDateString` (12:00 PM, sem timezone).
+- Datas tratadas como strings `YYYY-MM-DD` extraídas diretamente do objeto Excel (sem `new Date()` para evitar timezone).
+- Horas formatadas com `pad` de 2 dígitos, suportando entrada `HH:MM` ou `HH:MM:SS`.
+- Sem alteração de schema; reutiliza tabela `relogio_apontamentos` existente.
+- Mantém padrão de cores e ícones igual ao da página Favoritos / demais importações.
 
-## Regras técnicas
-- Datas no formato DD/MM/YYYY na UI; persistir como `YYYY-MM-DD` sem conversão de timezone.
-- Duração decimal = `(segundos_fim - segundos_inicio) / 3600`, arredondada a 2 casas.
-- Cronômetro: apenas 1 ativo por usuário/empresa por vez (validação no modal).
-- Manter padrão de cores/botões das páginas Relógio existentes.
+Nenhuma migração de banco necessária.
