@@ -475,6 +475,18 @@ function App() {
               }
             />
 
+            {/* Relógio */}
+            <Route
+              path="/relogio"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <RelogioPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
             {/* Relatórios */}
             <Route
               path="/relatorios"
