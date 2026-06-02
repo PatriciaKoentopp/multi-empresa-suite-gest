@@ -288,6 +288,18 @@ export default function ApontamentoRelogioPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            <div className="flex w-full sm:w-[200px]">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800">
+                  <SelectItem value="ativo">Ativos</SelectItem>
+                  <SelectItem value="arquivado">Arquivados</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex w-full sm:w-[280px]">
               <Select value={projetoFilter} onValueChange={setProjetoFilter}>
                 <SelectTrigger className="w-full bg-white dark:bg-gray-900">
@@ -295,7 +307,7 @@ export default function ApontamentoRelogioPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 max-h-72">
                   <SelectItem value="todos">Todos os projetos</SelectItem>
-                  {projetos.map((p) => (
+                  {projetosPorStatus.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.codigo} - {p.nome}
                     </SelectItem>
