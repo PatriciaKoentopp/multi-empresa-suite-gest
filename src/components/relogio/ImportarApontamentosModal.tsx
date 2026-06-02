@@ -118,6 +118,33 @@ const parseTimeCell = (v: unknown): string => {
   return `${pad(Number(m[1]))}:${pad(Number(m[2]))}:${pad(Number(m[3] ?? 0))}`;
 };
 
+// Calcula duração em horas decimais considerando datas (suporta virada de dia)
+const calcularDuracaoComDatas = (
+  dataIni: string,
+  horaIni: string,
+  dataFim: string,
+  horaFim: string
+): number => {
+  if (!horaIni || !horaFim) return 0;
+  const toSec = (t: string) => {
+    const [h, m, s = 0] = t.split(":").map(Number);
+    return h * 3600 + m * 60 + s;
+  };
+  if (dataIni && dataFim) {
+    const ini = new Date(`${dataIni}T${horaIni}`);
+    const fim = new Date(`${dataFim}T${horaFim}`);
+    const diff = (fim.getTime() - ini.getTime()) / 1000;
+    if (diff <= 0) return 0;
+    return Math.round((diff / 3600) * 100) / 100;
+  }
+  let diff = toSec(horaFim) - toSec(horaIni);
+  if (diff < 0) diff += 86400;
+  if (diff <= 0) return 0;
+  return Math.round((diff / 3600) * 100) / 100;
+};
+
+
+
 export function ImportarApontamentosModal({
   open,
   onOpenChange,
