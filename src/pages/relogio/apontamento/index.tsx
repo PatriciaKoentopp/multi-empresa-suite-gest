@@ -95,8 +95,8 @@ export default function ApontamentoRelogioPage() {
   }, [apontamentoEmAndamento]);
 
   const projetoMap = useMemo(() => {
-    const m = new Map<string, { codigo: string; nome: string }>();
-    projetos.forEach((p) => m.set(p.id, { codigo: p.codigo, nome: p.nome }));
+    const m = new Map<string, { codigo: string; nome: string; status: string }>();
+    projetos.forEach((p) => m.set(p.id, { codigo: p.codigo, nome: p.nome, status: p.status }));
     return m;
   }, [projetos]);
 
