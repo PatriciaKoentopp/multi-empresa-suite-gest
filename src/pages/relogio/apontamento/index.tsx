@@ -43,7 +43,9 @@ import {
   Trash2,
   Timer,
   Upload,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import {
   useApontamentosRelogio,
