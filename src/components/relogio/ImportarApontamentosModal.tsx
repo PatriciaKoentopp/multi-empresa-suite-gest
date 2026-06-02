@@ -77,7 +77,13 @@ const parseCodigo = (raw: string): { codigo: string; nome: string } => {
   const idx = text.indexOf("-");
   if (idx < 0) return { codigo: "", nome: text };
   const codigo = text.slice(0, idx).trim();
-  const nome = text.slice(idx + 1).trim();
+  const nome = text
+    .slice(idx + 1)
+    .replace(/\s*\([^)]*\)/g, "")
+    .replace(/\s*\[[^\]]*\]/g, "")
+    .replace(/\s*\{[^}]*\}/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
   return { codigo, nome };
 };
 
