@@ -32,6 +32,7 @@ import {
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFavorecidos } from "@/hooks/useFavorecidos";
+import { useTiposProjetoRelogio } from "@/hooks/useTiposProjetoRelogio";
 import type { RelogioProjeto } from "@/types/relogio";
 import type { ProjetoPayload } from "@/hooks/useProjetosRelogio";
 
@@ -44,15 +45,22 @@ interface Props {
 
 export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Props) {
   const { data: favorecidos = [] } = useFavorecidos();
+  const { tiposProjeto } = useTiposProjetoRelogio();
   const [codigo, setCodigo] = useState("");
   const [nome, setNome] = useState("");
   const [favorecidoId, setFavorecidoId] = useState("");
+  const [tipoProjetoId, setTipoProjetoId] = useState("");
   const [fotosTiradas, setFotosTiradas] = useState("0");
   const [fotosEnviadas, setFotosEnviadas] = useState("0");
   const [fotosVendidas, setFotosVendidas] = useState("0");
   const [status, setStatus] = useState<"ativo" | "arquivado">("ativo");
   const [saving, setSaving] = useState(false);
   const [clientePopoverOpen, setClientePopoverOpen] = useState(false);
+
+  const tiposAtivos = useMemo(
+    () => tiposProjeto.filter((t) => t.status === "ativo" || t.id === projeto?.tipo_projeto_id),
+    [tiposProjeto, projeto?.tipo_projeto_id]
+  );
 
   useEffect(() => {
     if (open) {
@@ -63,8 +71,14 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
       setFotosEnviadas(String(projeto?.fotos_enviadas ?? 0));
       setFotosVendidas(String(projeto?.fotos_vendidas ?? 0));
       setStatus((projeto?.status as "ativo" | "arquivado") ?? "ativo");
+      if (projeto?.tipo_projeto_id) {
+        setTipoProjetoId(projeto.tipo_projeto_id);
+      } else {
+        const fotografia = tiposProjeto.find((t) => t.nome.toLowerCase() === "fotografia");
+        setTipoProjetoId(fotografia?.id ?? "");
+      }
     }
-  }, [open, projeto]);
+  }, [open, projeto, tiposProjeto]);
 
   const clienteSelecionado = useMemo(
     () => favorecidos.find((f) => f.id === favorecidoId),
@@ -80,6 +94,7 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
         codigo: codigo.trim(),
         nome: nome.trim(),
         favorecido_id: favorecidoId || null,
+        tipo_projeto_id: tipoProjetoId || null,
         fotos_tiradas: Number(fotosTiradas) || 0,
         fotos_enviadas: Number(fotosEnviadas) || 0,
         fotos_vendidas: Number(fotosVendidas) || 0,
@@ -117,6 +132,28 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
                 required
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tipo de Projeto</Label>
+            <Select
+              value={tipoProjetoId || "__sem_tipo__"}
+              onValueChange={(v) => setTipoProjetoId(v === "__sem_tipo__" ? "" : v)}
+            >
+              <SelectTrigger className="bg-white dark:bg-gray-900">
+                <SelectValue placeholder="Selecione o tipo de projeto" />
+              </SelectTrigger>
+              <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 max-h-72">
+                <SelectItem value="__sem_tipo__">
+                  <span className="text-muted-foreground">Sem tipo</span>
+                </SelectItem>
+                {tiposAtivos.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

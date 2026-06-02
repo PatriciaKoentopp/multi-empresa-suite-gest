@@ -25,10 +25,12 @@ import { toast } from "sonner";
 import { useFavorecidos } from "@/hooks/useFavorecidos";
 import type { ProjetoPayload } from "@/hooks/useProjetosRelogio";
 
+type ImportPayload = Omit<ProjetoPayload, "tipo_projeto_id">;
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onImport: (items: ProjetoPayload[]) => Promise<{ inserted: number; errors: number }>;
+  onImport: (items: ImportPayload[]) => Promise<{ inserted: number; errors: number }>;
 }
 
 interface PreviewRow {
@@ -192,7 +194,7 @@ export function ImportarProjetosModal({ open, onOpenChange, onImport }: Props) {
   ).length;
 
   const handleImport = async () => {
-    const items: ProjetoPayload[] = preview
+    const items: ImportPayload[] = preview
       .filter((p) => p.valid)
       .map((p) => ({
         codigo: p.codigo,

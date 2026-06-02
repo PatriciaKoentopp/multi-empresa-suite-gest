@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import { useProjetosRelogio, type ProjetoPayload } from "@/hooks/useProjetosRelogio";
 import { useFavorecidos } from "@/hooks/useFavorecidos";
+import { useTiposProjetoRelogio } from "@/hooks/useTiposProjetoRelogio";
 import { ProjetoFormModal } from "@/components/relogio/ProjetoFormModal";
 import { ImportarProjetosModal } from "@/components/relogio/ImportarProjetosModal";
 import type { RelogioProjeto } from "@/types/relogio";
@@ -74,11 +75,21 @@ export default function ProjetosRelogioPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [toDelete, setToDelete] = useState<string | null>(null);
 
+  const { tiposProjeto } = useTiposProjetoRelogio();
+
   const favorecidoNome = useMemo(() => {
     const m = new Map<string, string>();
     favorecidos.forEach((f) => m.set(f.id, f.nome));
     return m;
   }, [favorecidos]);
+
+  const tipoProjetoNome = useMemo(() => {
+    const m = new Map<string, string>();
+    tiposProjeto.forEach((t) => m.set(t.id, t.nome));
+    return m;
+  }, [tiposProjeto]);
+
+
 
   const filtered = useMemo(() => {
     return projetos.filter((p) => {
@@ -123,6 +134,7 @@ export default function ProjetosRelogioPage() {
         codigo: p.codigo,
         nome: p.nome,
         favorecido_id: p.favorecido_id,
+        tipo_projeto_id: p.tipo_projeto_id,
         fotos_tiradas: p.fotos_tiradas,
         fotos_enviadas: p.fotos_enviadas,
         fotos_vendidas: p.fotos_vendidas,
@@ -204,6 +216,7 @@ export default function ProjetosRelogioPage() {
                 <TableRow>
                   <TableHead className="w-[120px]">Código</TableHead>
                   <TableHead>Nome</TableHead>
+                  <TableHead className="w-[160px]">Tipo de Projeto</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead className="text-right w-[110px]">Fotos Tiradas</TableHead>
                   <TableHead className="text-right w-[110px]">Fotos Enviadas</TableHead>
@@ -215,13 +228,13 @@ export default function ProjetosRelogioPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
                       Nenhum resultado encontrado
                     </TableCell>
                   </TableRow>
@@ -230,7 +243,9 @@ export default function ProjetosRelogioPage() {
                     <TableRow key={p.id} className="hover:bg-muted/40">
                       <TableCell className="font-medium">{p.codigo}</TableCell>
                       <TableCell>{p.nome}</TableCell>
+                      <TableCell>{p.tipo_projeto_id ? (tipoProjetoNome.get(p.tipo_projeto_id) ?? "—") : "—"}</TableCell>
                       <TableCell>{favorecidoNome.get(p.favorecido_id) ?? "—"}</TableCell>
+
                       <TableCell className="text-right">{p.fotos_tiradas}</TableCell>
                       <TableCell className="text-right">{p.fotos_enviadas}</TableCell>
                       <TableCell className="text-right">{p.fotos_vendidas}</TableCell>
