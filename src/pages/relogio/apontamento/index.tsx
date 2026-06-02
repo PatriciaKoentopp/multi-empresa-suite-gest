@@ -106,6 +106,11 @@ export default function ApontamentoRelogioPage() {
     return m;
   }, [tarefas]);
 
+  const projetosPorStatus = useMemo(() => {
+    if (statusFilter === "todos") return projetos;
+    return projetos.filter((p) => p.status === statusFilter);
+  }, [projetos, statusFilter]);
+
   const filtered = useMemo(() => {
     return apontamentos.filter((a) => {
       if (a.status === "em_andamento") return false;
@@ -116,9 +121,10 @@ export default function ApontamentoRelogioPage() {
       const matchSearch =
         !term || projText.includes(term) || tarefaText.includes(term);
       const matchProj = projetoFilter === "todos" || a.projeto_id === projetoFilter;
-      return matchSearch && matchProj;
+      const matchStatus = statusFilter === "todos" || (proj && proj.status === statusFilter);
+      return matchSearch && matchProj && matchStatus;
     });
-  }, [apontamentos, searchTerm, projetoFilter, projetoMap, tarefaMap]);
+  }, [apontamentos, searchTerm, projetoFilter, statusFilter, projetoMap, tarefaMap]);
 
   const handleSaveManual = async (payload: ApontamentoPayload, id?: string) => {
     if (id) await atualizarApontamento(id, payload);
