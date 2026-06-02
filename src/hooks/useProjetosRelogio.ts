@@ -80,20 +80,16 @@ export function useProjetosRelogio() {
 
     let inserted = 0;
     let errors = 0;
-    // batch de 100
-    for (let i = 0; i < items.length; i += 100) {
-      const batch = items.slice(i, i + 100).map((p) => ({
-        ...p,
-        empresa_id: currentCompany.id,
-      }));
-      const { error, count } = await supabase
+    // Insere um a um para que duplicatas (codigo+nome) não cancelem o lote inteiro
+    for (const item of items) {
+      const { error } = await supabase
         .from("relogio_projetos")
-        .insert(batch, { count: "exact" });
+        .insert({ ...item, empresa_id: currentCompany.id });
       if (error) {
-        console.error("Erro ao importar lote:", error);
-        errors += batch.length;
+        console.error("Erro ao importar projeto:", item.codigo, item.nome, error);
+        errors += 1;
       } else {
-        inserted += count ?? batch.length;
+        inserted += 1;
       }
     }
     await fetchData();

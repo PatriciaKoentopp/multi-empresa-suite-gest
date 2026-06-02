@@ -211,7 +211,7 @@ export function ImportarProjetosModal({ open, onOpenChange, onImport }: Props) {
     try {
       const { inserted, errors } = await onImport(items);
       if (errors > 0) {
-        toast.warning(`${inserted} projetos importados. ${errors} falharam (códigos duplicados?).`);
+        toast.warning(`${inserted} projetos importados. ${errors} falharam (combinação código + nome já existe?).`);
       } else {
         toast.success(`${inserted} projetos importados com sucesso!`);
       }
