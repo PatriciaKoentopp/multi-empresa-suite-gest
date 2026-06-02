@@ -1,66 +1,52 @@
-# Plano: Cadastro de Tipo de Projeto e Tarefas (Relógio)
+## Rotina de Projetos (Relógio)
 
-Criar dentro do módulo Relógio o cadastro de **Tipo de Projeto** e suas **Tarefas** vinculadas (1:N), em uma única página com linhas expansíveis.
+### Banco de Dados
 
-## Banco de dados (Supabase)
+Nova tabela `relogio_projetos`:
+- `id` (uuid PK)
+- `empresa_id` (uuid, NOT NULL)
+- `codigo` (varchar, NOT NULL) — único por empresa
+- `nome` (varchar, NOT NULL)
+- `favorecido_id` (uuid, NOT NULL) — referência ao cadastro de favorecidos (clientes)
+- `fotos_tiradas` (integer, default 0)
+- `fotos_enviadas` (integer, default 0)
+- `fotos_vendidas` (integer, default 0)
+- `status` (varchar, default `'ativo'`) — valores: `ativo` / `arquivado`
+- `created_at`, `updated_at`
 
-Duas novas tabelas no schema `public`, ambas escopadas por `empresa_id` com RLS via `get_user_company_id()`, seguindo o padrão dos demais cadastros.
+GRANTs para `authenticated` e `service_role`, RLS por `empresa_id = get_user_company_id()`, trigger `handle_updated_at`, índice único em `(empresa_id, codigo)`.
 
-### `relogio_tipos_projeto`
-- `id` uuid PK
-- `empresa_id` uuid (NOT NULL)
-- `nome` varchar (NOT NULL)
-- `status` varchar default `'ativo'` (valores: `ativo` / `inativo`)
-- `created_at`, `updated_at` timestamptz
+### Frontend
 
-### `relogio_tarefas`
-- `id` uuid PK
-- `tipo_projeto_id` uuid (NOT NULL) — referencia `relogio_tipos_projeto.id`, ON DELETE CASCADE
-- `nome` varchar (NOT NULL)
-- `status` varchar default `'ativo'` (valores: `ativo` / `inativo`)
-- `percentual_tempo_estimado` numeric(5,2) default 0 — percentual (0–100) do tempo total estimado do tipo de projeto
-- `created_at`, `updated_at` timestamptz
+**Menu**: adicionar "Projetos" no grupo "Relógio" (acima de "Tipos de Projeto").
 
-GRANTs para `authenticated` e `service_role`. RLS:
-- `relogio_tipos_projeto`: filtro `empresa_id = get_user_company_id()` para SELECT/INSERT/UPDATE/DELETE.
-- `relogio_tarefas`: políticas via subselect na tabela pai garantindo que o tipo de projeto pertença à empresa do usuário (mesmo padrão de `funil_etapas` / `orcamentos_itens`).
+**Rota**: `/relogio/projetos`
 
-Sem validação dura de soma = 100% no banco; aviso visual no front quando a soma divergir de 100%.
+**Página `src/pages/relogio/projetos/index.tsx`**:
+- Header padrão (ícone `FolderKanban`, título, descrição) seguindo o padrão das demais páginas do Relógio.
+- Botões: "Importar Planilha" e "Novo Projeto".
+- Filtros: busca por código/nome, filtro por cliente (Select com favorecidos), filtro por status.
+- Tabela com colunas: Código, Nome, Cliente, Fotos Tiradas, Fotos Enviadas, Fotos Vendidas, Status, Ações (editar, arquivar/reativar, excluir).
 
-## Frontend
+**Modais**:
+- `ProjetoFormModal.tsx`: campos Código, Nome, Cliente (Combobox de favorecidos), Fotos Tiradas, Fotos Enviadas, Fotos Vendidas, Status.
+- `ImportarProjetosModal.tsx`: upload de planilha `.xlsx`/`.csv` usando `xlsx` (já no projeto). Mostra preview das linhas, mapeamento de colunas esperadas (Código, Nome, Cliente, Fotos Tiradas, Fotos Enviadas, Fotos Vendidas), match do cliente por nome contra `favorecidos` da empresa, sinaliza linhas sem match para resolução manual, e faz `insert` em lote.
 
-### Rota e navegação
-- Nova rota `/relogio/tipos-projeto`.
-- Substituir o item "Relógio" do menu (hoje link direto) por um grupo com subitens:
-  - "Tipos de Projeto" → `/relogio/tipos-projeto`
-- A página atual `/relogio` permanece como placeholder do módulo (apontada pelo título do grupo se aplicável, ou removida da navegação se o grupo já cobrir o acesso). Manter o arquivo `src/pages/relogio/index.tsx` como página inicial em `/relogio`.
+**Hook `src/hooks/useProjetosRelogio.ts`**: CRUD completo + import em lote, integrando `useLogTransacao` para auditoria.
 
-### Página `src/pages/relogio/tipos-projeto/index.tsx`
-- Cabeçalho com título "Tipos de Projeto" + botão "Novo Tipo de Projeto" (padrão visual de Favorecidos).
-- Campo de busca por nome e filtro por status (Ativo/Inativo/Todos).
-- Tabela com colunas: Nome, Qtde. de Tarefas, % Total Estimado (soma das tarefas ativas), Status, Ações.
-- Cada linha expande (acordeão) revelando a sub-tabela de Tarefas:
-  - Colunas: Nome, % Tempo Estimado, Status, Ações (editar/excluir).
-  - Botão "Adicionar Tarefa" dentro do bloco expandido.
-  - Indicador discreto quando a soma do percentual ≠ 100%.
-- Ações no Tipo de Projeto: editar, ativar/inativar, excluir (com confirmação — cascade apaga tarefas).
+**Tipos**: adicionar `RelogioProjeto` em `src/types/relogio.d.ts`.
 
-### Modais
-- `TipoProjetoFormModal` — campos: Nome, Status.
-- `TarefaFormModal` — campos: Nome, % Tempo Estimado (input numérico com sufixo `%`, 0–100, 2 casas), Status. Recebe `tipoProjetoId`.
-- Confirmação de exclusão usando `AlertDialog` padrão.
+### Numeração automática (futuro)
 
-### Hook `src/hooks/useTiposProjetoRelogio.ts`
-- Carrega tipos de projeto da empresa atual com `useCompany()`.
-- Carrega todas as tarefas dos tipos retornados em uma única query (`in('tipo_projeto_id', ids)`), respeitando o batching de 50 IDs.
-- Funções: `criarTipoProjeto`, `atualizarTipoProjeto`, `excluirTipoProjeto`, `criarTarefa`, `atualizarTarefa`, `excluirTarefa`, `refetch`.
-- Loga ações via `useLogTransacao` (módulo `relogio`, entidades `tipo_projeto` e `tarefa`), seguindo o padrão de auditoria.
+Por ora o campo `codigo` é manual / vem da planilha. Estrutura pronta para futuramente acoplar uma função de numeração automática semelhante a `gerar_proximo_numero_orcamento`.
 
-## Detalhes técnicos
-- Campos no front em snake_case (`empresa_id`, `tipo_projeto_id`, `percentual_tempo_estimado`, `created_at`).
-- Tipos TS em `src/types/relogio.d.ts`.
-- Cores e botões idênticos aos das páginas existentes (ex.: Favorecidos).
-- Sem alterações em rotinas existentes.
+### Arquivos
 
-## Fora de escopo (próximas etapas)
-- Apontamento de tempo (timer), vínculo a clientes/usuários, relatórios.
+**Criar**: `src/pages/relogio/projetos/index.tsx`, `src/components/relogio/ProjetoFormModal.tsx`, `src/components/relogio/ImportarProjetosModal.tsx`, `src/hooks/useProjetosRelogio.ts`, migração SQL.
+**Modificar**: `src/App.tsx`, `src/config/navigation.ts`, `src/types/relogio.d.ts`.
+
+### Perguntas antes de implementar
+
+1. **Formato da planilha de importação**: os cabeçalhos devem ser exatamente `Código`, `Nome`, `Cliente`, `Fotos Tiradas`, `Fotos Enviadas`, `Fotos Vendidas`? Ou você quer enviar um modelo específico?
+2. **Match do cliente na importação**: se o nome do cliente da planilha não existir no cadastro de favorecidos, devo (a) pular a linha e reportar, (b) criar o cliente automaticamente, ou (c) deixar o usuário escolher manualmente no preview?
+3. **Status na importação**: assumir todos como `ativo`, ou ler de uma coluna `Status` opcional?
