@@ -118,6 +118,33 @@ const parseTimeCell = (v: unknown): string => {
   return `${pad(Number(m[1]))}:${pad(Number(m[2]))}:${pad(Number(m[3] ?? 0))}`;
 };
 
+// Calcula duração em horas decimais considerando datas (suporta virada de dia)
+const calcularDuracaoComDatas = (
+  dataIni: string,
+  horaIni: string,
+  dataFim: string,
+  horaFim: string
+): number => {
+  if (!horaIni || !horaFim) return 0;
+  const toSec = (t: string) => {
+    const [h, m, s = 0] = t.split(":").map(Number);
+    return h * 3600 + m * 60 + s;
+  };
+  if (dataIni && dataFim) {
+    const ini = new Date(`${dataIni}T${horaIni}`);
+    const fim = new Date(`${dataFim}T${horaFim}`);
+    const diff = (fim.getTime() - ini.getTime()) / 1000;
+    if (diff <= 0) return 0;
+    return Math.round((diff / 3600) * 100) / 100;
+  }
+  let diff = toSec(horaFim) - toSec(horaIni);
+  if (diff < 0) diff += 86400;
+  if (diff <= 0) return 0;
+  return Math.round((diff / 3600) * 100) / 100;
+};
+
+
+
 export function ImportarApontamentosModal({
   open,
   onOpenChange,
@@ -175,17 +202,17 @@ export function ImportarApontamentosModal({
         const projetoRaw = String(get("Projeto", "Project") ?? "").trim();
         const tarefaRaw = String(get("Tarefa", "Task") ?? "").trim();
         const dataRaw = get("Data de início", "Data de inicio", "Data inicial", "Data");
+        const dataFimRaw = get("Data de término", "Data de termino", "Data final", "Data fim");
         const horaIniRaw = get("Hora de início", "Hora de inicio", "Hora inicial");
         const horaFimRaw = get("Hora de término", "Hora de termino", "Hora final");
 
         const { codigo, nome: nomeParsed } = parseCodigo(projetoRaw);
 
         let projeto_id: string | null = null;
-        let projetoNome = nomeParsed || projetoRaw;
+        const projetoNome = nomeParsed || projetoRaw;
         const proj = codigo ? projByCodigo.get(norm(codigo)) : null;
         if (proj) {
           projeto_id = proj.id;
-          projetoNome = proj.nome;
         }
 
         // Tarefa
@@ -207,9 +234,16 @@ export function ImportarApontamentosModal({
         }
 
         const data = parseDateCell(dataRaw);
+        const dataFim = parseDateCell(dataFimRaw);
         const hora_inicio = parseTimeCell(horaIniRaw);
         const hora_fim = parseTimeCell(horaFimRaw);
-        const duracao_decimal = calcularDuracaoDecimal(hora_inicio, hora_fim);
+        const duracao_decimal = calcularDuracaoComDatas(
+          data,
+          hora_inicio,
+          dataFim || data,
+          hora_fim
+        );
+
 
         let valid = true;
         let motivo: string | undefined;
