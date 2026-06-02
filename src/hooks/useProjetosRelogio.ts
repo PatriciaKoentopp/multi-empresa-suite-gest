@@ -8,6 +8,7 @@ export interface ProjetoPayload {
   codigo: string;
   nome: string;
   favorecido_id: string | null;
+  tipo_projeto_id: string | null;
   fotos_tiradas: number;
   fotos_enviadas: number;
   fotos_vendidas: number;
@@ -72,11 +73,39 @@ export function useProjetosRelogio() {
     await fetchData();
   };
 
+  // Garante existência do tipo "Fotografia" para a empresa, retornando o id
+  const garantirTipoFotografia = async (): Promise<string | null> => {
+    if (!currentCompany?.id) return null;
+    const { data: existente, error: errSel } = await supabase
+      .from("relogio_tipos_projeto")
+      .select("id")
+      .eq("empresa_id", currentCompany.id)
+      .ilike("nome", "fotografia")
+      .maybeSingle();
+    if (errSel) {
+      console.error(errSel);
+      return null;
+    }
+    if (existente?.id) return existente.id;
+    const { data: novo, error: errIns } = await supabase
+      .from("relogio_tipos_projeto")
+      .insert({ empresa_id: currentCompany.id, nome: "Fotografia", status: "ativo" })
+      .select("id")
+      .single();
+    if (errIns) {
+      console.error(errIns);
+      return null;
+    }
+    return novo.id;
+  };
+
   const importarProjetos = async (
-    items: Array<ProjetoPayload>
+    items: Array<Omit<ProjetoPayload, "tipo_projeto_id">>
   ): Promise<{ inserted: number; errors: number }> => {
     if (!currentCompany?.id) return { inserted: 0, errors: 0 };
     if (items.length === 0) return { inserted: 0, errors: 0 };
+
+    const tipoFotografiaId = await garantirTipoFotografia();
 
     let inserted = 0;
     let errors = 0;
@@ -84,7 +113,11 @@ export function useProjetosRelogio() {
     for (const item of items) {
       const { error } = await supabase
         .from("relogio_projetos")
-        .insert({ ...item, empresa_id: currentCompany.id });
+        .insert({
+          ...item,
+          tipo_projeto_id: tipoFotografiaId,
+          empresa_id: currentCompany.id,
+        });
       if (error) {
         console.error("Erro ao importar projeto:", item.codigo, item.nome, error);
         errors += 1;

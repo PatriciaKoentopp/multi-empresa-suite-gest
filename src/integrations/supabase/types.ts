@@ -1910,6 +1910,7 @@ export type Database = {
           id: string
           nome: string
           status: string
+          tipo_projeto_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1923,6 +1924,7 @@ export type Database = {
           id?: string
           nome: string
           status?: string
+          tipo_projeto_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1936,9 +1938,18 @@ export type Database = {
           id?: string
           nome?: string
           status?: string
+          tipo_projeto_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "relogio_projetos_tipo_projeto_id_fkey"
+            columns: ["tipo_projeto_id"]
+            isOneToOne: false
+            referencedRelation: "relogio_tipos_projeto"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       relogio_tarefas: {
         Row: {
