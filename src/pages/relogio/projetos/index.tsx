@@ -216,6 +216,7 @@ export default function ProjetosRelogioPage() {
                 <TableRow>
                   <TableHead className="w-[120px]">Código</TableHead>
                   <TableHead>Nome</TableHead>
+                  <TableHead className="w-[160px]">Tipo de Projeto</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead className="text-right w-[110px]">Fotos Tiradas</TableHead>
                   <TableHead className="text-right w-[110px]">Fotos Enviadas</TableHead>
@@ -227,13 +228,13 @@ export default function ProjetosRelogioPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
                       Nenhum resultado encontrado
                     </TableCell>
                   </TableRow>
@@ -242,7 +243,9 @@ export default function ProjetosRelogioPage() {
                     <TableRow key={p.id} className="hover:bg-muted/40">
                       <TableCell className="font-medium">{p.codigo}</TableCell>
                       <TableCell>{p.nome}</TableCell>
+                      <TableCell>{p.tipo_projeto_id ? (tipoProjetoNome.get(p.tipo_projeto_id) ?? "—") : "—"}</TableCell>
                       <TableCell>{favorecidoNome.get(p.favorecido_id) ?? "—"}</TableCell>
+
                       <TableCell className="text-right">{p.fotos_tiradas}</TableCell>
                       <TableCell className="text-right">{p.fotos_enviadas}</TableCell>
                       <TableCell className="text-right">{p.fotos_vendidas}</TableCell>
