@@ -404,7 +404,7 @@ export default function TiposProjetoRelogioPage() {
                             </TableCell>
                           </TableRow>
                         )}
-                      </>
+                      </Fragment>
                     );
                   })
                 )}
