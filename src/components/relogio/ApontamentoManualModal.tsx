@@ -50,6 +50,7 @@ export function ApontamentoManualModal({
   const [projetoId, setProjetoId] = useState<string>("");
   const [tarefaId, setTarefaId] = useState<string>("");
   const [data, setData] = useState<string>("");
+  const [dataFim, setDataFim] = useState<string>("");
   const [horaInicio, setHoraInicio] = useState<string>("");
   const [horaFim, setHoraFim] = useState<string>("");
   const [observacao, setObservacao] = useState<string>("");
@@ -61,6 +62,7 @@ export function ApontamentoManualModal({
         setProjetoId(apontamento.projeto_id);
         setTarefaId(apontamento.tarefa_id || "");
         setData(apontamento.data);
+        setDataFim(apontamento.data);
         setHoraInicio(apontamento.hora_inicio?.slice(0, 5) || "");
         setHoraFim(apontamento.hora_fim?.slice(0, 5) || "");
         setObservacao(apontamento.observacao || "");
@@ -68,11 +70,11 @@ export function ApontamentoManualModal({
         setProjetoId("");
         setTarefaId("");
         const d = new Date();
-        setData(
-          `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-            d.getDate()
-          ).padStart(2, "0")}`
-        );
+        const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+          d.getDate()
+        ).padStart(2, "0")}`;
+        setData(today);
+        setDataFim(today);
         setHoraInicio("");
         setHoraFim("");
         setObservacao("");
@@ -89,9 +91,14 @@ export function ApontamentoManualModal({
   }, [projeto, tarefas]);
 
   const duracao = useMemo(() => {
-    if (!horaInicio || !horaFim) return 0;
-    return calcularDuracaoDecimal(horaInicio + ":00", horaFim + ":00");
-  }, [horaInicio, horaFim]);
+    if (!horaInicio || !horaFim || !data) return 0;
+    const ini = new Date(`${data}T${horaInicio}:00`);
+    const fim = new Date(`${dataFim || data}T${horaFim}:00`);
+    const diff = (fim.getTime() - ini.getTime()) / 1000;
+    if (diff <= 0) return 0;
+    return Math.round((diff / 3600) * 100) / 100;
+  }, [data, dataFim, horaInicio, horaFim]);
+
 
   const handleSave = async () => {
     if (!projetoId) return toast.error("Selecione um projeto");
