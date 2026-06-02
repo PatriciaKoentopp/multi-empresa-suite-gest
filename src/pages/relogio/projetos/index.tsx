@@ -123,6 +123,7 @@ export default function ProjetosRelogioPage() {
         codigo: p.codigo,
         nome: p.nome,
         favorecido_id: p.favorecido_id,
+        tipo_projeto_id: p.tipo_projeto_id,
         fotos_tiradas: p.fotos_tiradas,
         fotos_enviadas: p.fotos_enviadas,
         fotos_vendidas: p.fotos_vendidas,
