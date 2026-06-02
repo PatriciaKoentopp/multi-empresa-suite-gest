@@ -1,52 +1,48 @@
-## Rotina de Projetos (Relógio)
+## Ajuste no parser de importação de Projetos
 
-### Banco de Dados
+Atualizar o `ImportarProjetosModal.tsx` para interpretar a planilha no formato real do usuário, onde a coluna **Projeto** concentra código, nome e contadores de fotos.
 
-Nova tabela `relogio_projetos`:
-- `id` (uuid PK)
-- `empresa_id` (uuid, NOT NULL)
-- `codigo` (varchar, NOT NULL) — único por empresa
-- `nome` (varchar, NOT NULL)
-- `favorecido_id` (uuid, NOT NULL) — referência ao cadastro de favorecidos (clientes)
-- `fotos_tiradas` (integer, default 0)
-- `fotos_enviadas` (integer, default 0)
-- `fotos_vendidas` (integer, default 0)
-- `status` (varchar, default `'ativo'`) — valores: `ativo` / `arquivado`
-- `created_at`, `updated_at`
+### Formato esperado da planilha
+3 colunas: `Projeto`, `Cliente`, `Status`.
 
-GRANTs para `authenticated` e `service_role`, RLS por `empresa_id = get_user_company_id()`, trigger `handle_updated_at`, índice único em `(empresa_id, codigo)`.
+A célula `Projeto` segue o padrão:
+```
+<codigo> - <nome> (vendidas) [enviadas] {tiradas}
+```
+- Antes do primeiro ` - ` → **Código**
+- Depois do ` - ` (até o primeiro `(`, `[` ou `{`) → **Nome**
+- `(N)` → **Fotos Vendidas**
+- `[N]` → **Fotos Enviadas**
+- `{N}` → **Fotos Tiradas**
+- Qualquer grupo ausente → 0 (em branco)
 
-### Frontend
+### Regras de parsing
+- Regex para extrair: `^\s*([^\s-][^-]*?)\s*-\s*(.*)$` separa código e o restante.
+- Sobre o restante, aplicar: `/\((\d+)\)/`, `/\[(\d+)\]/`, `/\{(\d+)\}/` para vendidas, enviadas e tiradas.
+- Nome = restante após remover os três grupos `()`, `[]`, `{}`, com trim.
+- Status: "Ativo" → `ativo`; "Arquivado"/"Inativo" → `arquivado`; vazio → `ativo`.
 
-**Menu**: adicionar "Projetos" no grupo "Relógio" (acima de "Tipos de Projeto").
+### Cliente
+- Coluna `Cliente` lida da planilha (não mais embutida no nome, conforme imagem real).
+- Match por nome normalizado contra `favorecidos`.
+- Se vazio ou não encontrado: deixar `favorecido_id = null` e marcar para resolução manual (sem bloquear linha como inválida — projetos sem cliente são permitidos, como `0 - Administrativo`).
 
-**Rota**: `/relogio/projetos`
+### Validação de linha
+- **Válida** se houver código e nome.
+- Cliente é **opcional**: se vazio, importa sem favorecido; se preenchido mas não encontrado, mostrar aviso e permitir importar em branco (informar manualmente depois).
 
-**Página `src/pages/relogio/projetos/index.tsx`**:
-- Header padrão (ícone `FolderKanban`, título, descrição) seguindo o padrão das demais páginas do Relógio.
-- Botões: "Importar Planilha" e "Novo Projeto".
-- Filtros: busca por código/nome, filtro por cliente (Select com favorecidos), filtro por status.
-- Tabela com colunas: Código, Nome, Cliente, Fotos Tiradas, Fotos Enviadas, Fotos Vendidas, Status, Ações (editar, arquivar/reativar, excluir).
+### Mudança no banco
+- `relogio_projetos.favorecido_id` precisa virar **NULL permitido** (hoje é `NOT NULL`). Migration para alterar a coluna.
 
-**Modais**:
-- `ProjetoFormModal.tsx`: campos Código, Nome, Cliente (Combobox de favorecidos), Fotos Tiradas, Fotos Enviadas, Fotos Vendidas, Status.
-- `ImportarProjetosModal.tsx`: upload de planilha `.xlsx`/`.csv` usando `xlsx` (já no projeto). Mostra preview das linhas, mapeamento de colunas esperadas (Código, Nome, Cliente, Fotos Tiradas, Fotos Enviadas, Fotos Vendidas), match do cliente por nome contra `favorecidos` da empresa, sinaliza linhas sem match para resolução manual, e faz `insert` em lote.
+### Preview do modal
+- Adicionar colunas mostrando os valores extraídos: Código, Nome, Cliente (com status do match: ✓ encontrado / ⚠ não encontrado / — vazio), Tiradas, Enviadas, Vendidas, Status.
+- Linhas com cliente preenchido mas não encontrado: destaque amarelo, ainda importáveis.
+- Linhas sem código ou nome: destaque vermelho, não importáveis.
 
-**Hook `src/hooks/useProjetosRelogio.ts`**: CRUD completo + import em lote, integrando `useLogTransacao` para auditoria.
-
-**Tipos**: adicionar `RelogioProjeto` em `src/types/relogio.d.ts`.
-
-### Numeração automática (futuro)
-
-Por ora o campo `codigo` é manual / vem da planilha. Estrutura pronta para futuramente acoplar uma função de numeração automática semelhante a `gerar_proximo_numero_orcamento`.
-
-### Arquivos
-
-**Criar**: `src/pages/relogio/projetos/index.tsx`, `src/components/relogio/ProjetoFormModal.tsx`, `src/components/relogio/ImportarProjetosModal.tsx`, `src/hooks/useProjetosRelogio.ts`, migração SQL.
-**Modificar**: `src/App.tsx`, `src/config/navigation.ts`, `src/types/relogio.d.ts`.
-
-### Perguntas antes de implementar
-
-1. **Formato da planilha de importação**: os cabeçalhos devem ser exatamente `Código`, `Nome`, `Cliente`, `Fotos Tiradas`, `Fotos Enviadas`, `Fotos Vendidas`? Ou você quer enviar um modelo específico?
-2. **Match do cliente na importação**: se o nome do cliente da planilha não existir no cadastro de favorecidos, devo (a) pular a linha e reportar, (b) criar o cliente automaticamente, ou (c) deixar o usuário escolher manualmente no preview?
-3. **Status na importação**: assumir todos como `ativo`, ou ler de uma coluna `Status` opcional?
+### Arquivos afetados
+- `src/components/relogio/ImportarProjetosModal.tsx` — novo parser e preview.
+- `src/hooks/useProjetosRelogio.ts` — `ProjetoPayload.favorecido_id` passa a aceitar `string | null`.
+- `src/components/relogio/ProjetoFormModal.tsx` — permitir cliente vazio.
+- `src/pages/relogio/projetos/index.tsx` — coluna Cliente exibe "—" quando vazio.
+- `src/types/relogio.d.ts` — `favorecido_id: string | null`.
+- Nova migration: `ALTER TABLE relogio_projetos ALTER COLUMN favorecido_id DROP NOT NULL`.
