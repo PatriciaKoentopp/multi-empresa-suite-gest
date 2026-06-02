@@ -23,7 +23,8 @@ import {
   Settings,
   ShoppingBag, 
   User, 
-  Users 
+  Users,
+  Clock
 } from "lucide-react";
 import { useModulosParametros } from "@/hooks/useModulosParametros";
 
