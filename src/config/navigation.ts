@@ -189,6 +189,11 @@ export const navigationConfig: ModuleNavItem[] = [
     ],
   },
   {
+    title: "Relógio",
+    href: "/relogio",
+    icon: "Clock",
+  },
+  {
     title: "Relatórios",
     icon: "BarChart",
     href: "/relatorios",

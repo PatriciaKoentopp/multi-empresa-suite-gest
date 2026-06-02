@@ -1,23 +1,40 @@
-## Problema
+# Plano: Novo módulo "Relógio"
 
-No relatório `/relatorios/razao-contabil`, alguns lançamentos de 04/2026 não aparecem — os mesmos que sumiam em `/financeiro/movimentacao` antes da correção anterior. A causa é a mesma: o hook `useLancamentosContabeis` carrega todas as movimentações e lançamentos contábeis da empresa sem `limit()` nem `order()`, batendo no limite padrão de 1000 linhas do Supabase.
+Nesta primeira etapa, criar apenas a estrutura de navegação e a página inicial do módulo, sem alterar nenhuma funcionalidade existente. Funcionalidades de timer, projetos, tarefas e relatórios serão adicionadas em etapas seguintes.
 
-Confirmado via banco: a empresa atualmente em uso possui **1019 movimentações**, ou seja, ultrapassa o limite — registros mais antigos/recentes ficam de fora do retorno e seus lançamentos contábeis associados não aparecem no Razão.
+## Escopo desta etapa
 
-## Arquivo a alterar
+1. **Adicionar item "Relógio" no menu lateral**
+   - Inserir em `src/config/navigation.ts`, logo após o bloco do CRM e antes de Relatórios.
+   - Usar ícone `Clock` (Lucide), seguindo o mesmo padrão dos demais itens.
+   - Inicialmente sem subitens (link direto para `/relogio`), mantendo o padrão visual e cores atuais da sidebar.
 
-**`src/hooks/useLancamentosContabeis.ts`**
+2. **Registrar ícone `Clock` no renderizador da sidebar**
+   - Em `src/components/layout/sidebar-nav.tsx`, adicionar o case `"Clock"` em `renderIcon` para suportar o novo ícone via string.
 
-### Ajuste 1 — Query de `lancamentos_contabeis` (linha ~102)
+3. **Criar página inicial do módulo**
+   - Novo arquivo `src/pages/relogio/index.tsx` com layout padrão (título, descrição e área de conteúdo vazia), usando os mesmos tokens de design e estilos das demais páginas.
+   - Conteúdo: um cabeçalho "Relógio" + texto curto indicando que as funcionalidades serão adicionadas em breve.
 
-Adicionar `.limit(20000)` à consulta existente para garantir que todos os lançamentos do período sejam retornados (atualmente sem limit, pegando só os 1000 primeiros por ordem de data ascendente).
+4. **Registrar a rota no `App.tsx`**
+   - Adicionar `<Route path="/relogio" element={<Relogio />} />` dentro do layout autenticado, seguindo o mesmo padrão das demais rotas.
 
-### Ajuste 2 — Query de `movimentacoes` (linha ~1182)
+5. **Habilitar visibilidade pelo controle de módulos**
+   - O hook `useModulosParametros` gera automaticamente as chaves de módulo a partir de `navigationConfig`, então o novo item aparecerá como ativo por padrão para empresas existentes (fallback `true` em `isModuloAtivo` quando não há registro). Não é necessária migração.
 
-Adicionar `.order("data_lancamento", { ascending: false })` e `.limit(20000)` na consulta de movimentações, pelo mesmo motivo.
+## Detalhes técnicos
 
-## O que NÃO será alterado
+- Arquivos alterados:
+  - `src/config/navigation.ts` — novo item entre CRM e Relatórios.
+  - `src/components/layout/sidebar-nav.tsx` — case `"Clock"` em `renderIcon`.
+  - `src/App.tsx` — nova rota `/relogio`.
+- Arquivo criado:
+  - `src/pages/relogio/index.tsx` — página placeholder.
+- Sem alterações em banco de dados, hooks de negócio ou outras páginas.
 
-- Layout, filtros e UI da página de Razão Contábil
-- Lógica de agrupamento, cálculo de saldo, geração de PDF
-- Demais funções do hook
+## Próximas etapas (não fazem parte desta)
+
+Após confirmar a estrutura, definiremos juntos:
+- Entidades (projetos/tarefas/entradas de tempo) e tabelas no Supabase.
+- Timer ao vivo (start/stop), entradas manuais, edição.
+- Listagem por dia/semana e relatórios.
