@@ -64,14 +64,24 @@ export function useApontamentosRelogio() {
     }
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("relogio_apontamentos" as any)
-        .select("*")
-        .eq("empresa_id", currentCompany.id)
-        .order("data", { ascending: false })
-        .order("hora_inicio", { ascending: false });
-      if (error) throw error;
-      setApontamentos((data || []) as unknown as RelogioApontamento[]);
+      const pageSize = 1000;
+      let from = 0;
+      const all: any[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("relogio_apontamentos" as any)
+          .select("*")
+          .eq("empresa_id", currentCompany.id)
+          .order("data", { ascending: false })
+          .order("hora_inicio", { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const rows = (data || []) as any[];
+        all.push(...rows);
+        if (rows.length < pageSize) break;
+        from += pageSize;
+      }
+      setApontamentos(all as unknown as RelogioApontamento[]);
     } catch (e) {
       console.error(e);
       toast.error("Erro ao carregar apontamentos");
