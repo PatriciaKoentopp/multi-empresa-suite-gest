@@ -1,0 +1,225 @@
+import { useEffect, useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useFavorecidos } from "@/hooks/useFavorecidos";
+import type { RelogioProjeto } from "@/types/relogio";
+import type { ProjetoPayload } from "@/hooks/useProjetosRelogio";
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  projeto?: RelogioProjeto;
+  onSubmit: (data: ProjetoPayload) => Promise<void>;
+}
+
+export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Props) {
+  const { data: favorecidos = [] } = useFavorecidos();
+  const [codigo, setCodigo] = useState("");
+  const [nome, setNome] = useState("");
+  const [favorecidoId, setFavorecidoId] = useState("");
+  const [fotosTiradas, setFotosTiradas] = useState("0");
+  const [fotosEnviadas, setFotosEnviadas] = useState("0");
+  const [fotosVendidas, setFotosVendidas] = useState("0");
+  const [status, setStatus] = useState<"ativo" | "arquivado">("ativo");
+  const [saving, setSaving] = useState(false);
+  const [clientePopoverOpen, setClientePopoverOpen] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setCodigo(projeto?.codigo ?? "");
+      setNome(projeto?.nome ?? "");
+      setFavorecidoId(projeto?.favorecido_id ?? "");
+      setFotosTiradas(String(projeto?.fotos_tiradas ?? 0));
+      setFotosEnviadas(String(projeto?.fotos_enviadas ?? 0));
+      setFotosVendidas(String(projeto?.fotos_vendidas ?? 0));
+      setStatus((projeto?.status as "ativo" | "arquivado") ?? "ativo");
+    }
+  }, [open, projeto]);
+
+  const clienteSelecionado = useMemo(
+    () => favorecidos.find((f) => f.id === favorecidoId),
+    [favorecidos, favorecidoId]
+  );
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!codigo.trim() || !nome.trim() || !favorecidoId) return;
+    setSaving(true);
+    try {
+      await onSubmit({
+        codigo: codigo.trim(),
+        nome: nome.trim(),
+        favorecido_id: favorecidoId,
+        fotos_tiradas: Number(fotosTiradas) || 0,
+        fotos_enviadas: Number(fotosEnviadas) || 0,
+        fotos_vendidas: Number(fotosVendidas) || 0,
+        status,
+      });
+      onOpenChange(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>{projeto ? "Editar Projeto" : "Novo Projeto"}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="codigo">Código</Label>
+              <Input
+                id="codigo"
+                value={codigo}
+                onChange={(e) => setCodigo(e.target.value)}
+                required
+              />
+            </div>
+            <div className="sm:col-span-2 space-y-2">
+              <Label htmlFor="nome">Nome</Label>
+              <Input
+                id="nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Cliente</Label>
+            <Popover open={clientePopoverOpen} onOpenChange={setClientePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between bg-white dark:bg-gray-900"
+                >
+                  {clienteSelecionado ? clienteSelecionado.nome : "Selecione um cliente..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-white" align="start">
+                <Command>
+                  <CommandInput placeholder="Buscar cliente..." />
+                  <CommandList>
+                    <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                    <CommandGroup>
+                      {favorecidos.map((f) => (
+                        <CommandItem
+                          key={f.id}
+                          value={f.nome}
+                          onSelect={() => {
+                            setFavorecidoId(f.id);
+                            setClientePopoverOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              favorecidoId === f.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {f.nome}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fotos_tiradas">Fotos Tiradas</Label>
+              <Input
+                id="fotos_tiradas"
+                type="number"
+                min="0"
+                value={fotosTiradas}
+                onChange={(e) => setFotosTiradas(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fotos_enviadas">Fotos Enviadas</Label>
+              <Input
+                id="fotos_enviadas"
+                type="number"
+                min="0"
+                value={fotosEnviadas}
+                onChange={(e) => setFotosEnviadas(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fotos_vendidas">Fotos Vendidas</Label>
+              <Input
+                id="fotos_vendidas"
+                type="number"
+                min="0"
+                value={fotosVendidas}
+                onChange={(e) => setFotosVendidas(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as "ativo" | "arquivado")}>
+              <SelectTrigger className="bg-white dark:bg-gray-900">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-white dark:bg-gray-800">
+                <SelectItem value="ativo" className="text-blue-600">Ativo</SelectItem>
+                <SelectItem value="arquivado" className="text-red-600">Arquivado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" variant="blue" disabled={saving}>
+              {saving ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
