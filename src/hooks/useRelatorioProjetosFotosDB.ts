@@ -11,6 +11,7 @@ export interface ProjetoFotosDB {
   fotosTiradas: number;
   totalHoras: number;
   tipoProjetoId: string | null;
+  favorecidosIds: string[];
 }
 
 const normalizarCodigo = (codigo: string): string => {
@@ -39,7 +40,7 @@ export function useRelatorioProjetosFotosDB() {
       while (true) {
         const { data, error } = await supabase
           .from("relogio_projetos")
-          .select("id, codigo, nome, fotos_tiradas, fotos_enviadas, fotos_vendidas, status, tipo_projeto_id")
+          .select("id, codigo, nome, fotos_tiradas, fotos_enviadas, fotos_vendidas, status, tipo_projeto_id, favorecido_id")
           .eq("empresa_id", currentCompany.id)
           .range(fromP, fromP + pageSize - 1);
         if (error) throw error;
@@ -91,12 +92,13 @@ export function useRelatorioProjetosFotosDB() {
     });
 
     // Agrupar por código normalizado: somar fotos/horas e mesclar clientes
-    const agrupados = new Map<string, ProjetoFotosDB & { _clientes: Set<string> }>();
+    const agrupados = new Map<string, ProjetoFotosDB & { _clientes: Set<string>; _favorecidos: Set<string> }>();
     projetos.forEach((p) => {
       const numeroProjeto = normalizarCodigo(p.codigo);
       if (!numeroProjeto) return;
       const totalHoras = horasPorProjeto.get(p.id) || 0;
       const nomeCliente = (p.nome || "").trim();
+      const favorecidoId = (p.favorecido_id as string) || "";
       const existing = agrupados.get(numeroProjeto);
       if (existing) {
         existing.fotosVendidas += Number(p.fotos_vendidas) || 0;
@@ -104,9 +106,12 @@ export function useRelatorioProjetosFotosDB() {
         existing.fotosTiradas += Number(p.fotos_tiradas) || 0;
         existing.totalHoras += totalHoras;
         if (nomeCliente) existing._clientes.add(nomeCliente);
+        if (favorecidoId) existing._favorecidos.add(favorecidoId);
       } else {
         const clientes = new Set<string>();
         if (nomeCliente) clientes.add(nomeCliente);
+        const favs = new Set<string>();
+        if (favorecidoId) favs.add(favorecidoId);
         agrupados.set(numeroProjeto, {
           numeroProjeto,
           cliente: "",
@@ -115,16 +120,20 @@ export function useRelatorioProjetosFotosDB() {
           fotosTiradas: Number(p.fotos_tiradas) || 0,
           totalHoras,
           tipoProjetoId: (p.tipo_projeto_id as string) || null,
+          favorecidosIds: [],
           _clientes: clientes,
+          _favorecidos: favs,
         });
       }
     });
 
     return Array.from(agrupados.values())
-      .map(({ _clientes, ...rest }) => ({
+      .map(({ _clientes, _favorecidos, ...rest }) => ({
         ...rest,
         cliente: Array.from(_clientes).join(", "),
+        favorecidosIds: Array.from(_favorecidos),
       }))
+
       .filter(
         (p) =>
           p.cliente.trim() !== "" &&

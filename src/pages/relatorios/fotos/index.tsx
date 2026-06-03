@@ -59,7 +59,9 @@ const RelatorioFotosPage = () => {
     const totalProjetos = projetosFotos.length;
     const clientes = new Set<string>();
     projetosFotos.forEach((p) => {
-      if (p.cliente && p.cliente.trim()) clientes.add(p.cliente.trim());
+      (p.favorecidosIds || []).forEach((id) => {
+        if (id) clientes.add(id);
+      });
     });
     return {
       totalHoras,
