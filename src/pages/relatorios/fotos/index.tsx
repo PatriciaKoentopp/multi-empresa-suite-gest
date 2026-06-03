@@ -27,8 +27,24 @@ const RelatorioFotosPage = () => {
   const [filtroProjeto, setFiltroProjeto] = useState<string>("");
   const [filtroPercentualMin, setFiltroPercentualMin] = useState<string>("");
   const [filtroPercentualMax, setFiltroPercentualMax] = useState<string>("");
+  const [tiposProjeto, setTiposProjeto] = useState<{ id: string; nome: string }[]>([]);
+  const [filtroTipoProjeto, setFiltroTipoProjeto] = useState<string>("todos");
 
+  const { currentCompany } = useCompany();
   const { projetosFotos, isLoading } = useRelatorioProjetosFotosDB();
+
+  useEffect(() => {
+    if (!currentCompany?.id) return;
+    async function carregarTipos() {
+      const { data, error } = await supabase
+        .from("relogio_tipos_projeto")
+        .select("id, nome")
+        .eq("empresa_id", currentCompany.id)
+        .order("nome", { ascending: true });
+      if (!error) setTiposProjeto(data || []);
+    }
+    carregarTipos();
+  }, [currentCompany?.id]);
 
   const formatHoursMinutes = (hours: number) => {
     const h = Math.floor(hours);
