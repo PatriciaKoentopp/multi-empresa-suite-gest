@@ -375,6 +375,24 @@ export default function RelatorioTempoPage() {
                 </div>
                 <div className="flex gap-4">
                   <div className="flex-1">
+                    <label className="text-sm font-medium mb-2 block">Tipo de Projeto</label>
+                    <Select value={filtroTipoProjeto} onValueChange={setFiltroTipoProjeto}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos os Tipos</SelectItem>
+                        {tiposProjeto.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1" />
+                </div>
+                <div className="flex gap-4">
+
+                  <div className="flex-1">
                     <label className="text-sm font-medium mb-2 block">Código do Projeto</label>
                     <Input
                       placeholder="Buscar por código..."
