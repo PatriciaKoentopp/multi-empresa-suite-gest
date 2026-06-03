@@ -106,6 +106,10 @@ export default function RelatorioProjetosPage() {
       lista = lista.filter(p => p.numeroProjeto.includes(filtroProjeto));
     }
 
+    if (filtroTipoProjeto !== "todos") {
+      lista = lista.filter(p => p.tipoProjetoId === filtroTipoProjeto);
+    }
+
     if (dataInicial) {
       lista = lista.filter(p => {
         if (!p.dataVenda) return false;
@@ -125,7 +129,7 @@ export default function RelatorioProjetosPage() {
     }
 
     return lista;
-  }, [projetos, projetosCompletos, projetosSemVenda, projetosSemFotos, filtroStatus, filtroCliente, filtroProjeto, dataInicial, dataFinal]);
+  }, [projetos, projetosCompletos, projetosSemVenda, projetosSemFotos, filtroStatus, filtroCliente, filtroProjeto, filtroTipoProjeto, dataInicial, dataFinal]);
 
   const metricasFiltradas = useMemo(() => {
     const projetosComVenda = projetosFiltrados.filter(p => p.temVenda);
