@@ -112,7 +112,7 @@ const RelatorioFotosPage = () => {
     }));
   }, [projetosFotos, metrics.totalHoras]);
 
-  const projetosFiltrados = useMemo(() => {
+    const projetosFiltrados = useMemo(() => {
     let filtrados = [...projetosAgrupados];
 
     filtrados = filtrados.filter(
@@ -141,12 +141,16 @@ const RelatorioFotosPage = () => {
       });
     }
 
+    if (filtroTipoProjeto !== "todos") {
+      filtrados = filtrados.filter((projeto) => projeto.tipoProjetoId === filtroTipoProjeto);
+    }
+
     return filtrados.sort((a, b) => {
       const numA = parseInt(a.numeroProjeto) || 0;
       const numB = parseInt(b.numeroProjeto) || 0;
       return numB - numA;
     });
-  }, [projetosAgrupados, filtroProjeto, filtroPercentualMin, filtroPercentualMax]);
+  }, [projetosAgrupados, filtroProjeto, filtroPercentualMin, filtroPercentualMax, filtroTipoProjeto]);
 
   if (isLoading) {
     return (
