@@ -190,6 +190,10 @@ export default function ProjetosRelogioPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Projetos</h1>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportar}>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar Planilha
+          </Button>
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Upload className="mr-2 h-4 w-4" />
             Importar Planilha
