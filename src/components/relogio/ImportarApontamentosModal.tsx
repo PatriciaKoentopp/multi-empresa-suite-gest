@@ -221,7 +221,20 @@ export function ImportarApontamentosModal({
 
         let projeto_id: string | null = null;
         const projetoNome = nomeParsed || projetoRaw;
-        const proj = codigo ? projByCodigo.get(norm(codigo)) : null;
+        const candidatos = codigo ? projsByCodigo.get(norm(codigo)) ?? [] : [];
+        let proj: RelogioProjeto | null = null;
+        let ambiguo = false;
+        if (candidatos.length === 1) {
+          proj = candidatos[0];
+        } else if (candidatos.length > 1) {
+          const alvo = norm(nomeParsed);
+          proj =
+            candidatos.find((p) => norm(p.nome) === alvo) ??
+            candidatos.find((p) => alvo && (norm(p.nome).startsWith(alvo) || alvo.startsWith(norm(p.nome)))) ??
+            candidatos.find((p) => alvo && (norm(p.nome).includes(alvo) || alvo.includes(norm(p.nome)))) ??
+            null;
+          if (!proj) ambiguo = true;
+        }
         if (proj) {
           projeto_id = proj.id;
         }
