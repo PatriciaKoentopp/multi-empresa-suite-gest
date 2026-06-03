@@ -222,6 +222,23 @@ export default function RelatorioProjetosPage() {
                   <Label>Data Final</Label>
                   <Input type="date" value={dataFinal} onChange={e => setDataFinal(e.target.value)} />
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Tipo de Projeto</Label>
+                  <Select value={filtroTipoProjeto} onValueChange={setFiltroTipoProjeto}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {tiposProjeto.map((tipo) => (
+                        <SelectItem key={tipo.id} value={tipo.id}>
+                          {tipo.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {(filtroCliente || filtroProjeto || filtroStatus !== "todos" || dataInicial || dataFinal) && (
