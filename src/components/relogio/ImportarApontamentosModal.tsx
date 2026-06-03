@@ -237,6 +237,7 @@ export function ImportarApontamentosModal({
         }
         if (proj) {
           projeto_id = proj.id;
+          projetoNome = proj.nome;
         }
 
         // Tarefa
