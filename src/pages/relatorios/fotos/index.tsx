@@ -33,6 +33,7 @@ const RelatorioFotosPage = () => {
 
   const { currentCompany } = useCompany();
   const { projetosFotos, isLoading } = useRelatorioProjetosFotosDB();
+  const { exportToExcel, isGenerating } = useExcelFotosProjetos();
 
   useEffect(() => {
     if (!currentCompany?.id) return;
