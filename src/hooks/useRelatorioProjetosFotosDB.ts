@@ -40,7 +40,7 @@ export function useRelatorioProjetosFotosDB() {
       while (true) {
         const { data, error } = await supabase
           .from("relogio_projetos")
-          .select("id, codigo, nome, fotos_tiradas, fotos_enviadas, fotos_vendidas, status, tipo_projeto_id")
+          .select("id, codigo, nome, fotos_tiradas, fotos_enviadas, fotos_vendidas, status, tipo_projeto_id, favorecido_id")
           .eq("empresa_id", currentCompany.id)
           .range(fromP, fromP + pageSize - 1);
         if (error) throw error;
