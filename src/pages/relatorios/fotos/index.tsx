@@ -358,7 +358,7 @@ const RelatorioFotosPage = () => {
                 </div>
               </div>
             </div>
-            {(filtroProjeto || filtroPercentualMin || filtroPercentualMax) && (
+            {(filtroProjeto || filtroPercentualMin || filtroPercentualMax || filtroTipoProjeto !== "todos") && (
               <div className="flex items-center justify-between pt-2">
                 <p className="text-sm text-muted-foreground">
                   {projetosFiltrados.length} projeto{projetosFiltrados.length !== 1 ? "s" : ""} encontrado{projetosFiltrados.length !== 1 ? "s" : ""}
@@ -370,6 +370,7 @@ const RelatorioFotosPage = () => {
                     setFiltroProjeto("");
                     setFiltroPercentualMin("");
                     setFiltroPercentualMax("");
+                    setFiltroTipoProjeto("todos");
                   }}
                 >
                   Limpar filtros
