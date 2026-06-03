@@ -287,8 +287,16 @@ const RelatorioFotosPage = () => {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Visão por Projeto</CardTitle>
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(projetosFiltrados)}
+            disabled={isGenerating || projetosFiltrados.length === 0}
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            {isGenerating ? "Gerando..." : "Exportar Excel"}
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="space-y-4 mb-6 pb-6 border-b">
