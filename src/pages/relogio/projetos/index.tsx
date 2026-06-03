@@ -43,6 +43,7 @@ import {
   Upload,
   Archive,
   ArchiveRestore,
+  Download,
 } from "lucide-react";
 import { useProjetosRelogio, type ProjetoPayload } from "@/hooks/useProjetosRelogio";
 import { useFavorecidos } from "@/hooks/useFavorecidos";
@@ -146,11 +147,53 @@ export default function ProjetosRelogioPage() {
     }
   };
 
+  const handleExportar = () => {
+    if (filtered.length === 0) {
+      toast.error("Nenhum projeto para exportar");
+      return;
+    }
+
+    const headers = ["Código", "Nome", "Tipo de Projeto", "Cliente", "Fotos Tiradas", "Fotos Enviadas", "Fotos Vendidas", "Status"];
+    const rows = filtered.map((p) => [
+      p.codigo,
+      p.nome,
+      p.tipo_projeto_id ? (tipoProjetoNome.get(p.tipo_projeto_id) ?? "") : "",
+      favorecidoNome.get(p.favorecido_id) ?? "",
+      String(p.fotos_tiradas ?? 0),
+      String(p.fotos_enviadas ?? 0),
+      String(p.fotos_vendidas ?? 0),
+      p.status === "ativo" ? "Ativo" : "Arquivado",
+    ]);
+
+    const escapeCsv = (value: string) => {
+      if (value.includes(",") || value.includes('"') || value.includes("\n") || value.includes("\r")) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    };
+
+    const csvContent = [headers.map(escapeCsv).join(";"), ...rows.map((r) => r.map(escapeCsv).join(";"))].join("\r\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `projetos_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Planilha exportada com sucesso");
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Projetos</h1>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportar}>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar Planilha
+          </Button>
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Upload className="mr-2 h-4 w-4" />
             Importar Planilha
