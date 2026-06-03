@@ -153,6 +153,7 @@ export default function RelatorioProjetosPage() {
     setFiltroCliente("");
     setFiltroProjeto("");
     setFiltroStatus("todos");
+    setFiltroTipoProjeto("todos");
     setDataInicial("");
     setDataFinal("");
   };
