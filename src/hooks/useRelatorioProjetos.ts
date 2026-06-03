@@ -163,7 +163,8 @@ export function useRelatorioProjetos(vendasData: any[], fotosProjetos: ProjetoFo
           horasPorFoto: 0,
           eficienciaFotos: 0,
           temVenda: true,
-          temDadosFotos: false
+          temDadosFotos: false,
+          tipoProjetoId: null
         });
       }
     });
