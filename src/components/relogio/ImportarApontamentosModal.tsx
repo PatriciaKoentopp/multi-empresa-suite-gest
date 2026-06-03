@@ -220,7 +220,7 @@ export function ImportarApontamentosModal({
         const { codigo, nome: nomeParsed } = parseCodigo(projetoRaw);
 
         let projeto_id: string | null = null;
-        const projetoNome = nomeParsed || projetoRaw;
+        let projetoNome = nomeParsed || projetoRaw;
         const candidatos = codigo ? projsByCodigo.get(norm(codigo)) ?? [] : [];
         let proj: RelogioProjeto | null = null;
         let ambiguo = false;
