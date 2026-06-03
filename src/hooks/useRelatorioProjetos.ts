@@ -137,7 +137,8 @@ export function useRelatorioProjetos(vendasData: any[], fotosProjetos: ProjetoFo
           ? (fotoProjeto.fotosVendidas / fotoProjeto.fotosEnviadas) * 100
           : 0,
         temVenda: !!vendas,
-        temDadosFotos: true
+        temDadosFotos: true,
+        tipoProjetoId: fotoProjeto.tipoProjetoId
       });
       
       numerosProcessados.add(numeroProjeto);
