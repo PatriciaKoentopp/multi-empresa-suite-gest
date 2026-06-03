@@ -108,6 +108,7 @@ const RelatorioFotosPage = () => {
       fotosTiradas: p.fotosTiradas,
       tempoPorFotoVendida:
         p.fotosVendidas > 0 ? p.totalHoras / p.fotosVendidas : 0,
+      tipoProjetoId: p.tipoProjetoId,
     }));
   }, [projetosFotos, metrics.totalHoras]);
 
