@@ -24,14 +24,26 @@ const fetchInBatches = async <T,>(
   return all;
 };
 
+export type HoraTrabalhadaDataExt = HoraTrabalhadaData & {
+  tipo_projeto_id: string | null;
+  tipo_projeto_nome: string;
+};
+
+export interface TipoProjetoOption {
+  id: string;
+  nome: string;
+}
+
 export function useRelatorioTempoDB() {
   const { currentCompany } = useCompany();
-  const [horasData, setHorasData] = useState<HoraTrabalhadaData[]>([]);
+  const [horasData, setHorasData] = useState<HoraTrabalhadaDataExt[]>([]);
+  const [tiposProjeto, setTiposProjeto] = useState<TipoProjetoOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     if (!currentCompany?.id) {
       setHorasData([]);
+      setTiposProjeto([]);
       setIsLoading(false);
       return;
     }
@@ -59,7 +71,7 @@ export function useRelatorioTempoDB() {
       // 2) Projetos
       const { data: projetos, error: errProjetos } = await supabase
         .from("relogio_projetos" as any)
-        .select("id, codigo, nome, favorecido_id")
+        .select("id, codigo, nome, favorecido_id, tipo_projeto_id")
         .eq("empresa_id", currentCompany.id);
       if (errProjetos) throw errProjetos;
       const projetoMap = new Map<string, any>(
@@ -75,7 +87,17 @@ export function useRelatorioTempoDB() {
         ((tarefas || []) as any[]).map((t) => [t.id, t.nome])
       );
 
-      // 4) Favorecidos (em batches de 50)
+      // 4) Tipos de projeto
+      const { data: tipos, error: errTipos } = await supabase
+        .from("relogio_tipos_projeto" as any)
+        .select("id, nome")
+        .eq("empresa_id", currentCompany.id);
+      if (errTipos) throw errTipos;
+      const tipoMap = new Map<string, string>(
+        ((tipos || []) as any[]).map((t) => [t.id, t.nome])
+      );
+
+      // 5) Favorecidos (em batches de 50)
       const favorecidoIds = Array.from(
         new Set(
           ((projetos || []) as any[])
@@ -95,8 +117,9 @@ export function useRelatorioTempoDB() {
         favorecidos.map((f) => [f.id, f.nome])
       );
 
-      // 5) Montar HoraTrabalhadaData
-      const result: HoraTrabalhadaData[] = apontamentos.map((a) => {
+      // 6) Montar HoraTrabalhadaData
+      const tiposUsados = new Set<string>();
+      const result: HoraTrabalhadaDataExt[] = apontamentos.map((a) => {
         const projeto = projetoMap.get(a.projeto_id);
         const codigo = projeto?.codigo ?? "";
         const nomeProj = projeto?.nome ?? "";
@@ -109,6 +132,11 @@ export function useRelatorioTempoDB() {
         const tarefa = a.tarefa_id
           ? tarefaMap.get(a.tarefa_id) ?? "Sem tarefa"
           : "Sem tarefa";
+        const tipoProjetoId: string | null = projeto?.tipo_projeto_id ?? null;
+        const tipoProjetoNome = tipoProjetoId
+          ? tipoMap.get(tipoProjetoId) ?? ""
+          : "";
+        if (tipoProjetoId) tiposUsados.add(tipoProjetoId);
 
         return {
           projeto: projetoStr,
@@ -127,14 +155,23 @@ export function useRelatorioTempoDB() {
           duracao_horas: "",
           duracao_decimal: Number(a.duracao_decimal) || 0,
           valor_faturavel: 0,
+          tipo_projeto_id: tipoProjetoId,
+          tipo_projeto_nome: tipoProjetoNome,
         };
       });
 
+      const tiposOptions: TipoProjetoOption[] = Array.from(tiposUsados)
+        .map((id) => ({ id, nome: tipoMap.get(id) ?? "" }))
+        .filter((t) => !!t.nome)
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+
       setHorasData(result);
+      setTiposProjeto(tiposOptions);
     } catch (err: any) {
       console.error("Erro ao carregar relatório de tempo:", err);
       toast.error("Erro ao carregar dados do relatório de tempo");
       setHorasData([]);
+      setTiposProjeto([]);
     } finally {
       setIsLoading(false);
     }
@@ -144,5 +181,6 @@ export function useRelatorioTempoDB() {
     fetchData();
   }, [fetchData]);
 
-  return { horasData, isLoading, refetch: fetchData };
+  return { horasData, tiposProjeto, isLoading, refetch: fetchData };
 }
+

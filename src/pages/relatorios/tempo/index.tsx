@@ -16,23 +16,30 @@ export default function RelatorioTempoPage() {
   const [expandedYears, setExpandedYears] = useState<Set<string>>(new Set());
   const [filtroAno, setFiltroAno] = useState<string>("todos");
   const [filtroMes, setFiltroMes] = useState<string>("todos");
+  const [filtroTipoProjeto, setFiltroTipoProjeto] = useState<string>("todos");
   const [filtroCodigo, setFiltroCodigo] = useState<string>("");
   const [filtroCliente, setFiltroCliente] = useState<string>("");
 
-  const { horasData, isLoading } = useRelatorioTempoDB();
+  const { horasData, tiposProjeto, isLoading } = useRelatorioTempoDB();
 
-  // Filtrar por ano/mês antes de passar ao hook de processamento
+  // Filtrar por ano/mês/tipo de projeto antes de passar ao hook de processamento
   const horasFiltradas: HoraTrabalhadaData[] = useMemo(() => {
-    if (filtroAno === "todos" && filtroMes === "todos") return horasData;
-    return horasData.filter((h) => {
+    return horasData.filter((h: any) => {
       const di = h.data_inicio;
-      if (!di || typeof di !== "string" || !di.includes("/")) return false;
-      const [, mes, ano] = di.split("/");
-      const matchAno = filtroAno === "todos" || ano === filtroAno;
-      const matchMes = filtroMes === "todos" || mes.padStart(2, "0") === filtroMes;
-      return matchAno && matchMes;
+      let matchAno = true;
+      let matchMes = true;
+      if (filtroAno !== "todos" || filtroMes !== "todos") {
+        if (!di || typeof di !== "string" || !di.includes("/")) return false;
+        const [, mes, ano] = di.split("/");
+        matchAno = filtroAno === "todos" || ano === filtroAno;
+        matchMes = filtroMes === "todos" || mes.padStart(2, "0") === filtroMes;
+      }
+      const matchTipo =
+        filtroTipoProjeto === "todos" || h.tipo_projeto_id === filtroTipoProjeto;
+      return matchAno && matchMes && matchTipo;
     });
-  }, [horasData, filtroAno, filtroMes]);
+  }, [horasData, filtroAno, filtroMes, filtroTipoProjeto]);
+
 
   // Adaptar para o formato esperado por useRelatorioTempo (SpreadsheetData[])
   const dadosAdaptados = useMemo<SpreadsheetData[]>(
@@ -367,6 +374,24 @@ export default function RelatorioTempoPage() {
                   </div>
                 </div>
                 <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium mb-2 block">Tipo de Projeto</label>
+                    <Select value={filtroTipoProjeto} onValueChange={setFiltroTipoProjeto}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos os Tipos</SelectItem>
+                        {tiposProjeto.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1" />
+                </div>
+                <div className="flex gap-4">
+
                   <div className="flex-1">
                     <label className="text-sm font-medium mb-2 block">Código do Projeto</label>
                     <Input
