@@ -31,20 +31,42 @@ export function useRelatorioProjetosFotosDB() {
     }
     setIsLoading(true);
     try {
-      const [projRes, apRes] = await Promise.all([
-        supabase
+      const pageSize = 1000;
+
+      // Buscar projetos paginado
+      const projetosAll: any[] = [];
+      let fromP = 0;
+      while (true) {
+        const { data, error } = await supabase
           .from("relogio_projetos")
           .select("id, codigo, nome, fotos_tiradas, fotos_enviadas, fotos_vendidas, status, tipo_projeto_id")
-          .eq("empresa_id", currentCompany.id),
-        supabase
+          .eq("empresa_id", currentCompany.id)
+          .range(fromP, fromP + pageSize - 1);
+        if (error) throw error;
+        const rows = (data || []) as any[];
+        projetosAll.push(...rows);
+        if (rows.length < pageSize) break;
+        fromP += pageSize;
+      }
+
+      // Buscar apontamentos paginado
+      const apontamentosAll: any[] = [];
+      let fromA = 0;
+      while (true) {
+        const { data, error } = await supabase
           .from("relogio_apontamentos" as any)
           .select("projeto_id, duracao_decimal")
-          .eq("empresa_id", currentCompany.id),
-      ]);
-      if (projRes.error) throw projRes.error;
-      if (apRes.error) throw apRes.error;
-      setProjetos(projRes.data || []);
-      setApontamentos((apRes.data || []) as any[]);
+          .eq("empresa_id", currentCompany.id)
+          .range(fromA, fromA + pageSize - 1);
+        if (error) throw error;
+        const rows = (data || []) as any[];
+        apontamentosAll.push(...rows);
+        if (rows.length < pageSize) break;
+        fromA += pageSize;
+      }
+
+      setProjetos(projetosAll);
+      setApontamentos(apontamentosAll);
     } catch (e) {
       console.error(e);
       toast.error("Erro ao carregar dados de projetos");
