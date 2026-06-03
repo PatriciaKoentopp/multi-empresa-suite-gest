@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Search } from "lucide-react";
+import { Camera, Search, FileSpreadsheet } from "lucide-react";
 import { useCompany } from "@/contexts/company-context";
 import { supabase } from "@/integrations/supabase/client";
 import { useRelatorioProjetosFotosDB } from "@/hooks/useRelatorioProjetosFotosDB";
+import { useExcelFotosProjetos } from "@/hooks/useExcelFotosProjetos";
 import { ProjetoAccordion } from "@/components/relatorios/fotos/ProjetoAccordion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion } from "@/components/ui/accordion";
@@ -32,6 +33,7 @@ const RelatorioFotosPage = () => {
 
   const { currentCompany } = useCompany();
   const { projetosFotos, isLoading } = useRelatorioProjetosFotosDB();
+  const { exportToExcel, isGenerating } = useExcelFotosProjetos();
 
   useEffect(() => {
     if (!currentCompany?.id) return;
@@ -285,8 +287,16 @@ const RelatorioFotosPage = () => {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Visão por Projeto</CardTitle>
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(projetosFiltrados)}
+            disabled={isGenerating || projetosFiltrados.length === 0}
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            {isGenerating ? "Gerando..." : "Exportar Excel"}
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="space-y-4 mb-6 pb-6 border-b">
