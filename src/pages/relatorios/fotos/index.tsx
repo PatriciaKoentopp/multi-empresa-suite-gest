@@ -290,7 +290,7 @@ const RelatorioFotosPage = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4 mb-6 pb-6 border-b">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-1">
                 <Label htmlFor="filtro-projeto" className="text-sm text-muted-foreground mb-2 block">
                   Buscar por projeto ou cliente
@@ -306,6 +306,24 @@ const RelatorioFotosPage = () => {
                     className="pl-9"
                   />
                 </div>
+              </div>
+              <div className="md:col-span-1">
+                <Label htmlFor="filtro-tipo-projeto" className="text-sm text-muted-foreground mb-2 block">
+                  Tipo de Projeto
+                </Label>
+                <Select value={filtroTipoProjeto} onValueChange={setFiltroTipoProjeto}>
+                  <SelectTrigger id="filtro-tipo-projeto">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    {tiposProjeto.map((tipo) => (
+                      <SelectItem key={tipo.id} value={tipo.id}>
+                        {tipo.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="md:col-span-2 grid grid-cols-2 gap-4">
                 <div>
