@@ -43,6 +43,7 @@ import {
   Upload,
   Archive,
   ArchiveRestore,
+  Download,
 } from "lucide-react";
 import { useProjetosRelogio, type ProjetoPayload } from "@/hooks/useProjetosRelogio";
 import { useFavorecidos } from "@/hooks/useFavorecidos";
