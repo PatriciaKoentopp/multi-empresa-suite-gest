@@ -1,9 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, Search } from "lucide-react";
+import { useCompany } from "@/contexts/company-context";
+import { supabase } from "@/integrations/supabase/client";
 import { useRelatorioProjetosFotosDB } from "@/hooks/useRelatorioProjetosFotosDB";
 import { ProjetoAccordion } from "@/components/relatorios/fotos/ProjetoAccordion";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,8 +27,24 @@ const RelatorioFotosPage = () => {
   const [filtroProjeto, setFiltroProjeto] = useState<string>("");
   const [filtroPercentualMin, setFiltroPercentualMin] = useState<string>("");
   const [filtroPercentualMax, setFiltroPercentualMax] = useState<string>("");
+  const [tiposProjeto, setTiposProjeto] = useState<{ id: string; nome: string }[]>([]);
+  const [filtroTipoProjeto, setFiltroTipoProjeto] = useState<string>("todos");
 
+  const { currentCompany } = useCompany();
   const { projetosFotos, isLoading } = useRelatorioProjetosFotosDB();
+
+  useEffect(() => {
+    if (!currentCompany?.id) return;
+    async function carregarTipos() {
+      const { data, error } = await supabase
+        .from("relogio_tipos_projeto")
+        .select("id, nome")
+        .eq("empresa_id", currentCompany.id)
+        .order("nome", { ascending: true });
+      if (!error) setTiposProjeto(data || []);
+    }
+    carregarTipos();
+  }, [currentCompany?.id]);
 
   const formatHoursMinutes = (hours: number) => {
     const h = Math.floor(hours);
@@ -89,10 +108,11 @@ const RelatorioFotosPage = () => {
       fotosTiradas: p.fotosTiradas,
       tempoPorFotoVendida:
         p.fotosVendidas > 0 ? p.totalHoras / p.fotosVendidas : 0,
+      tipoProjetoId: p.tipoProjetoId,
     }));
   }, [projetosFotos, metrics.totalHoras]);
 
-  const projetosFiltrados = useMemo(() => {
+    const projetosFiltrados = useMemo(() => {
     let filtrados = [...projetosAgrupados];
 
     filtrados = filtrados.filter(
@@ -121,12 +141,16 @@ const RelatorioFotosPage = () => {
       });
     }
 
+    if (filtroTipoProjeto !== "todos") {
+      filtrados = filtrados.filter((projeto) => projeto.tipoProjetoId === filtroTipoProjeto);
+    }
+
     return filtrados.sort((a, b) => {
       const numA = parseInt(a.numeroProjeto) || 0;
       const numB = parseInt(b.numeroProjeto) || 0;
       return numB - numA;
     });
-  }, [projetosAgrupados, filtroProjeto, filtroPercentualMin, filtroPercentualMax]);
+  }, [projetosAgrupados, filtroProjeto, filtroPercentualMin, filtroPercentualMax, filtroTipoProjeto]);
 
   if (isLoading) {
     return (
@@ -266,7 +290,7 @@ const RelatorioFotosPage = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4 mb-6 pb-6 border-b">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-1">
                 <Label htmlFor="filtro-projeto" className="text-sm text-muted-foreground mb-2 block">
                   Buscar por projeto ou cliente
@@ -282,6 +306,24 @@ const RelatorioFotosPage = () => {
                     className="pl-9"
                   />
                 </div>
+              </div>
+              <div className="md:col-span-1">
+                <Label htmlFor="filtro-tipo-projeto" className="text-sm text-muted-foreground mb-2 block">
+                  Tipo de Projeto
+                </Label>
+                <Select value={filtroTipoProjeto} onValueChange={setFiltroTipoProjeto}>
+                  <SelectTrigger id="filtro-tipo-projeto">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    {tiposProjeto.map((tipo) => (
+                      <SelectItem key={tipo.id} value={tipo.id}>
+                        {tipo.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="md:col-span-2 grid grid-cols-2 gap-4">
                 <div>
@@ -316,7 +358,7 @@ const RelatorioFotosPage = () => {
                 </div>
               </div>
             </div>
-            {(filtroProjeto || filtroPercentualMin || filtroPercentualMax) && (
+            {(filtroProjeto || filtroPercentualMin || filtroPercentualMax || filtroTipoProjeto !== "todos") && (
               <div className="flex items-center justify-between pt-2">
                 <p className="text-sm text-muted-foreground">
                   {projetosFiltrados.length} projeto{projetosFiltrados.length !== 1 ? "s" : ""} encontrado{projetosFiltrados.length !== 1 ? "s" : ""}
@@ -328,6 +370,7 @@ const RelatorioFotosPage = () => {
                     setFiltroProjeto("");
                     setFiltroPercentualMin("");
                     setFiltroPercentualMax("");
+                    setFiltroTipoProjeto("todos");
                   }}
                 >
                   Limpar filtros

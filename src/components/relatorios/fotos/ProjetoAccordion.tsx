@@ -20,6 +20,7 @@ interface ProjetoFotosAgrupado {
   fotosEnviadas: number;
   fotosTiradas: number;
   tempoPorFotoVendida: number;
+  tipoProjetoId?: string | null;
 }
 
 interface ProjetoAccordionProps {
