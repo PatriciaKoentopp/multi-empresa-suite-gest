@@ -241,7 +241,7 @@ export default function RelatorioProjetosPage() {
                 </div>
               </div>
 
-              {(filtroCliente || filtroProjeto || filtroStatus !== "todos" || dataInicial || dataFinal) && (
+              {(filtroCliente || filtroProjeto || filtroStatus !== "todos" || filtroTipoProjeto !== "todos" || dataInicial || dataFinal) && (
                 <Button variant="outline" size="sm" onClick={limparFiltros}>
                   <X className="h-4 w-4 mr-2" />
                   Limpar Filtros
