@@ -92,6 +92,7 @@ export function useRelatorioProjetosFotosDB() {
           fotosEnviadas: Number(p.fotos_enviadas) || 0,
           fotosTiradas: Number(p.fotos_tiradas) || 0,
           totalHoras,
+          tipoProjetoId: (p.tipo_projeto_id as string) || null,
           _clientes: clientes,
         });
       }
