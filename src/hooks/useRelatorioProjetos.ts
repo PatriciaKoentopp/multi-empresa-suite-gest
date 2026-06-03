@@ -7,6 +7,7 @@ interface ProjetoFotosInput {
   fotosEnviadas: number;
   fotosTiradas: number;
   totalHoras: number;
+  tipoProjetoId: string | null;
 }
 
 
