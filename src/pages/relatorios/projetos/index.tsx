@@ -31,10 +31,11 @@ export default function RelatorioProjetosPage() {
   const { projetosFotos, isLoading: isLoadingFotos } = useRelatorioProjetosFotosDB();
   const { exportToExcel, isGenerating } = useExcelProjetos();
 
-  // Carregar vendas
+  // Carregar vendas e tipos de projeto
   useEffect(() => {
     if (currentCompany?.id) {
       carregarVendas();
+      carregarTiposProjeto();
     }
   }, [currentCompany]);
 
@@ -61,6 +62,20 @@ export default function RelatorioProjetosPage() {
       toast.error("Erro ao carregar vendas");
     } finally {
       setIsLoadingVendas(false);
+    }
+  }
+
+  async function carregarTiposProjeto() {
+    try {
+      const { data, error } = await supabase
+        .from('relogio_tipos_projeto')
+        .select('id, nome')
+        .eq('empresa_id', currentCompany?.id)
+        .order('nome', { ascending: true });
+      if (error) throw error;
+      setTiposProjeto(data || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar tipos de projeto:", error);
     }
   }
 
