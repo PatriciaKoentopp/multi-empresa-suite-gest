@@ -7,6 +7,7 @@ interface ProjetoFotosInput {
   fotosEnviadas: number;
   fotosTiradas: number;
   totalHoras: number;
+  tipoProjetoId: string | null;
 }
 
 
@@ -27,6 +28,7 @@ export interface ProjetoCompleto {
   eficienciaFotos: number;
   temVenda: boolean;
   temDadosFotos: boolean;
+  tipoProjetoId: string | null;
 }
 
 export interface MetricasProjetos {
@@ -135,7 +137,8 @@ export function useRelatorioProjetos(vendasData: any[], fotosProjetos: ProjetoFo
           ? (fotoProjeto.fotosVendidas / fotoProjeto.fotosEnviadas) * 100
           : 0,
         temVenda: !!vendas,
-        temDadosFotos: true
+        temDadosFotos: true,
+        tipoProjetoId: fotoProjeto.tipoProjetoId
       });
       
       numerosProcessados.add(numeroProjeto);
@@ -160,7 +163,8 @@ export function useRelatorioProjetos(vendasData: any[], fotosProjetos: ProjetoFo
           horasPorFoto: 0,
           eficienciaFotos: 0,
           temVenda: true,
-          temDadosFotos: false
+          temDadosFotos: false,
+          tipoProjetoId: null
         });
       }
     });

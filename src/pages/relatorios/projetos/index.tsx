@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Layers, Filter, X, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useRelatorioProjetos } from "@/hooks/useRelatorioProjetos";
@@ -18,9 +19,11 @@ import { ProjetosTimelineVendidasCharts } from "@/components/relatorios/projetos
 export default function RelatorioProjetosPage() {
   const { currentCompany } = useCompany();
   const [vendasData, setVendasData] = useState<any[]>([]);
+  const [tiposProjeto, setTiposProjeto] = useState<{ id: string; nome: string }[]>([]);
   const [filtroCliente, setFiltroCliente] = useState("");
   const [filtroProjeto, setFiltroProjeto] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<"todos" | "completos" | "sem-venda" | "sem-fotos">("todos");
+  const [filtroTipoProjeto, setFiltroTipoProjeto] = useState<string>("todos");
   const [dataInicial, setDataInicial] = useState("");
   const [dataFinal, setDataFinal] = useState("");
   const [isLoadingVendas, setIsLoadingVendas] = useState(false);
@@ -28,10 +31,11 @@ export default function RelatorioProjetosPage() {
   const { projetosFotos, isLoading: isLoadingFotos } = useRelatorioProjetosFotosDB();
   const { exportToExcel, isGenerating } = useExcelProjetos();
 
-  // Carregar vendas
+  // Carregar vendas e tipos de projeto
   useEffect(() => {
     if (currentCompany?.id) {
       carregarVendas();
+      carregarTiposProjeto();
     }
   }, [currentCompany]);
 
@@ -58,6 +62,20 @@ export default function RelatorioProjetosPage() {
       toast.error("Erro ao carregar vendas");
     } finally {
       setIsLoadingVendas(false);
+    }
+  }
+
+  async function carregarTiposProjeto() {
+    try {
+      const { data, error } = await supabase
+        .from('relogio_tipos_projeto')
+        .select('id, nome')
+        .eq('empresa_id', currentCompany?.id)
+        .order('nome', { ascending: true });
+      if (error) throw error;
+      setTiposProjeto(data || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar tipos de projeto:", error);
     }
   }
 
@@ -88,6 +106,10 @@ export default function RelatorioProjetosPage() {
       lista = lista.filter(p => p.numeroProjeto.includes(filtroProjeto));
     }
 
+    if (filtroTipoProjeto !== "todos") {
+      lista = lista.filter(p => p.tipoProjetoId === filtroTipoProjeto);
+    }
+
     if (dataInicial) {
       lista = lista.filter(p => {
         if (!p.dataVenda) return false;
@@ -107,7 +129,7 @@ export default function RelatorioProjetosPage() {
     }
 
     return lista;
-  }, [projetos, projetosCompletos, projetosSemVenda, projetosSemFotos, filtroStatus, filtroCliente, filtroProjeto, dataInicial, dataFinal]);
+  }, [projetos, projetosCompletos, projetosSemVenda, projetosSemFotos, filtroStatus, filtroCliente, filtroProjeto, filtroTipoProjeto, dataInicial, dataFinal]);
 
   const metricasFiltradas = useMemo(() => {
     const projetosComVenda = projetosFiltrados.filter(p => p.temVenda);
@@ -131,6 +153,7 @@ export default function RelatorioProjetosPage() {
     setFiltroCliente("");
     setFiltroProjeto("");
     setFiltroStatus("todos");
+    setFiltroTipoProjeto("todos");
     setDataInicial("");
     setDataFinal("");
   };
@@ -199,9 +222,26 @@ export default function RelatorioProjetosPage() {
                   <Label>Data Final</Label>
                   <Input type="date" value={dataFinal} onChange={e => setDataFinal(e.target.value)} />
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Tipo de Projeto</Label>
+                  <Select value={filtroTipoProjeto} onValueChange={setFiltroTipoProjeto}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {tiposProjeto.map((tipo) => (
+                        <SelectItem key={tipo.id} value={tipo.id}>
+                          {tipo.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              {(filtroCliente || filtroProjeto || filtroStatus !== "todos" || dataInicial || dataFinal) && (
+              {(filtroCliente || filtroProjeto || filtroStatus !== "todos" || filtroTipoProjeto !== "todos" || dataInicial || dataFinal) && (
                 <Button variant="outline" size="sm" onClick={limparFiltros}>
                   <X className="h-4 w-4 mr-2" />
                   Limpar Filtros
