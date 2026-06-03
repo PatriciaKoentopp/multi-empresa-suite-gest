@@ -11,6 +11,7 @@ export interface ProjetoFotosDB {
   fotosTiradas: number;
   totalHoras: number;
   tipoProjetoId: string | null;
+  favorecidosIds: string[];
 }
 
 const normalizarCodigo = (codigo: string): string => {
