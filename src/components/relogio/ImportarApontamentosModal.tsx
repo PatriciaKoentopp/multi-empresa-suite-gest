@@ -276,7 +276,9 @@ export function ImportarApontamentosModal({
           motivo = "Projeto vazio";
         } else if (!proj) {
           valid = false;
-          motivo = `Projeto ${codigo || ""} não cadastrado`;
+          motivo = ambiguo
+            ? `Projeto "${codigo} - ${nomeParsed}" ambíguo (código duplicado, nome não confere)`
+            : `Projeto ${codigo || ""} não cadastrado`;
         } else if (!data) {
           valid = false;
           motivo = "Data inválida";
