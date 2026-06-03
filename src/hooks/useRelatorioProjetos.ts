@@ -28,6 +28,7 @@ export interface ProjetoCompleto {
   eficienciaFotos: number;
   temVenda: boolean;
   temDadosFotos: boolean;
+  tipoProjetoId: string | null;
 }
 
 export interface MetricasProjetos {
