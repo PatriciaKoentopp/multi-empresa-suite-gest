@@ -185,9 +185,14 @@ export function ImportarApontamentosModal({
         defval: "",
       });
 
-      // Mapas de resolução
-      const projByCodigo = new Map<string, RelogioProjeto>();
-      projetos.forEach((p) => projByCodigo.set(norm(p.codigo), p));
+      // Mapas de resolução — agrupar por código pois pode haver vários projetos com mesmo código
+      const projsByCodigo = new Map<string, RelogioProjeto[]>();
+      projetos.forEach((p) => {
+        const key = norm(p.codigo);
+        const arr = projsByCodigo.get(key) ?? [];
+        arr.push(p);
+        projsByCodigo.set(key, arr);
+      });
 
       const tarefasByTipo = new Map<string, RelogioTarefa[]>();
       tarefas.forEach((t) => {
@@ -215,10 +220,24 @@ export function ImportarApontamentosModal({
         const { codigo, nome: nomeParsed } = parseCodigo(projetoRaw);
 
         let projeto_id: string | null = null;
-        const projetoNome = nomeParsed || projetoRaw;
-        const proj = codigo ? projByCodigo.get(norm(codigo)) : null;
+        let projetoNome = nomeParsed || projetoRaw;
+        const candidatos = codigo ? projsByCodigo.get(norm(codigo)) ?? [] : [];
+        let proj: RelogioProjeto | null = null;
+        let ambiguo = false;
+        if (candidatos.length === 1) {
+          proj = candidatos[0];
+        } else if (candidatos.length > 1) {
+          const alvo = norm(nomeParsed);
+          proj =
+            candidatos.find((p) => norm(p.nome) === alvo) ??
+            candidatos.find((p) => alvo && (norm(p.nome).startsWith(alvo) || alvo.startsWith(norm(p.nome)))) ??
+            candidatos.find((p) => alvo && (norm(p.nome).includes(alvo) || alvo.includes(norm(p.nome)))) ??
+            null;
+          if (!proj) ambiguo = true;
+        }
         if (proj) {
           projeto_id = proj.id;
+          projetoNome = proj.nome;
         }
 
         // Tarefa
@@ -258,7 +277,9 @@ export function ImportarApontamentosModal({
           motivo = "Projeto vazio";
         } else if (!proj) {
           valid = false;
-          motivo = `Projeto ${codigo || ""} não cadastrado`;
+          motivo = ambiguo
+            ? `Projeto "${codigo} - ${nomeParsed}" ambíguo (código duplicado, nome não confere)`
+            : `Projeto ${codigo || ""} não cadastrado`;
         } else if (!data) {
           valid = false;
           motivo = "Data inválida";
