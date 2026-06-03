@@ -19,9 +19,11 @@ import { ProjetosTimelineVendidasCharts } from "@/components/relatorios/projetos
 export default function RelatorioProjetosPage() {
   const { currentCompany } = useCompany();
   const [vendasData, setVendasData] = useState<any[]>([]);
+  const [tiposProjeto, setTiposProjeto] = useState<{ id: string; nome: string }[]>([]);
   const [filtroCliente, setFiltroCliente] = useState("");
   const [filtroProjeto, setFiltroProjeto] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<"todos" | "completos" | "sem-venda" | "sem-fotos">("todos");
+  const [filtroTipoProjeto, setFiltroTipoProjeto] = useState<string>("todos");
   const [dataInicial, setDataInicial] = useState("");
   const [dataFinal, setDataFinal] = useState("");
   const [isLoadingVendas, setIsLoadingVendas] = useState(false);
