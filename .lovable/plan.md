@@ -1,19 +1,24 @@
+# Filtro Tipo de Projeto em /relatorios/tempo
+
 ## Objetivo
+Incluir o filtro **Tipo de Projeto** (com opção "Todos") na página `/relatorios/tempo`, aplicando-o a todos os cards (métricas, evolução anual, distribuição de tarefas e projetos agrupados).
 
-No `/relatorios/projetos`, agrupar os projetos pelo **código** (numeroProjeto normalizado), de forma que múltiplos registros de `relogio_projetos` com o mesmo código apareçam como uma única linha — somando fotos e horas, e mesclando clientes.
+## Alterações
 
-## Alteração
+### 1. `src/hooks/useRelatorioTempoDB.ts`
+- Buscar também `relogio_tipos_projeto` (id, nome) da empresa atual.
+- Incluir `tipo_projeto_id` no select de `relogio_projetos`.
+- Acrescentar no `HoraTrabalhadaData` retornado dois novos campos auxiliares:
+  - `tipo_projeto_id` (string | null)
+  - `tipo_projeto_nome` (string)
+- Expor no retorno do hook: `tiposProjeto: { id, nome }[]` (apenas os tipos que possuem apontamentos, ordenados por nome).
 
-Apenas em `src/hooks/useRelatorioProjetosFotosDB.ts`:
+### 2. `src/pages/relatorios/tempo/index.tsx`
+- Novo estado `filtroTipoProjeto` (default `"todos"`).
+- Adicionar `<Select>` "Tipo de Projeto" na mesma linha dos filtros Ano/Mês (manter padrão visual atual), com a opção "Todos os Tipos" + lista vinda do hook.
+- Aplicar o filtro junto com Ano/Mês em `horasFiltradas` (antes de passar para `useRelatorioTempo`), garantindo que **todos os cards** (métricas, evolução anual, pizza de tarefas e projetos agrupados) reflitam o filtro.
+- Filtros de Código/Cliente continuam funcionando como hoje (aplicados depois).
 
-- Após montar a lista atual de projetos (um por linha do banco), agrupar por `numeroProjeto`:
-  - `fotosTiradas`, `fotosEnviadas`, `fotosVendidas`, `totalHoras` → soma.
-  - `cliente` → união dos nomes distintos (não vazios), concatenados por `, `.
-- Aplicar o filtro existente (cliente preenchido e algum valor > 0) **após** o agrupamento.
-
-Restante do fluxo (`useRelatorioProjetos`, página, tabela, gráficos, métricas, exportação Excel) permanece inalterado, pois já consome `ProjetoFotosInput` por `numeroProjeto`.
-
-## Fora do escopo
-
-- Nenhuma mudança em layout, filtros, métricas, gráficos ou em `/relatorios/fotos`.
-- Sem alterações em schema ou em outras telas.
+## Sem alterações
+- Layout geral, cores, ícones e demais funcionalidades permanecem inalterados.
+- Banco de dados, RLS e edge functions não são tocados.
