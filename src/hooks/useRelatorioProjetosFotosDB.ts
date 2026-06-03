@@ -10,6 +10,7 @@ export interface ProjetoFotosDB {
   fotosEnviadas: number;
   fotosTiradas: number;
   totalHoras: number;
+  tipoProjetoId: string | null;
 }
 
 const normalizarCodigo = (codigo: string): string => {
@@ -33,7 +34,7 @@ export function useRelatorioProjetosFotosDB() {
       const [projRes, apRes] = await Promise.all([
         supabase
           .from("relogio_projetos")
-          .select("id, codigo, nome, fotos_tiradas, fotos_enviadas, fotos_vendidas, status")
+          .select("id, codigo, nome, fotos_tiradas, fotos_enviadas, fotos_vendidas, status, tipo_projeto_id")
           .eq("empresa_id", currentCompany.id),
         supabase
           .from("relogio_apontamentos" as any)
