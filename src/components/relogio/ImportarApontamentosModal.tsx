@@ -185,9 +185,14 @@ export function ImportarApontamentosModal({
         defval: "",
       });
 
-      // Mapas de resolução
-      const projByCodigo = new Map<string, RelogioProjeto>();
-      projetos.forEach((p) => projByCodigo.set(norm(p.codigo), p));
+      // Mapas de resolução — agrupar por código pois pode haver vários projetos com mesmo código
+      const projsByCodigo = new Map<string, RelogioProjeto[]>();
+      projetos.forEach((p) => {
+        const key = norm(p.codigo);
+        const arr = projsByCodigo.get(key) ?? [];
+        arr.push(p);
+        projsByCodigo.set(key, arr);
+      });
 
       const tarefasByTipo = new Map<string, RelogioTarefa[]>();
       tarefas.forEach((t) => {
