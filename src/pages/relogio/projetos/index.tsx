@@ -121,15 +121,28 @@ export default function ProjetosRelogioPage() {
     }
   };
 
+  const handleAskDelete = async (p: RelogioProjeto) => {
+    const count = await contarApontamentos(p.id);
+    setConfirmText("");
+    setToDelete({ id: p.id, codigo: p.codigo, nome: p.nome, count });
+  };
+
   const confirmExcluir = async () => {
     if (!toDelete) return;
+    setDeleting(true);
     try {
-      await excluirProjeto(toDelete);
+      if (toDelete.count > 0) {
+        await excluirProjetoComApontamentos(toDelete.id);
+      } else {
+        await excluirProjeto(toDelete.id);
+      }
     } catch (e) {
       console.error(e);
       toast.error("Erro ao excluir projeto");
     } finally {
+      setDeleting(false);
       setToDelete(null);
+      setConfirmText("");
     }
   };
 
