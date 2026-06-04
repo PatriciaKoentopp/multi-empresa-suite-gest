@@ -855,7 +855,7 @@ export default function PainelTempoRelogioPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mensal.tabela.map((r) => (
+                  {[...mensal.tabela].reverse().map((r) => (
                     <TableRow key={r.key}>
                       <TableCell className="font-medium">{r.mes}</TableCell>
                       <TableCell className="text-right">{formatHoras(r.horas)}</TableCell>
