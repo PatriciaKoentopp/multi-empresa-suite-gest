@@ -430,7 +430,7 @@ export default function PainelTempoRelogioPage() {
     });
 
     return { chart, tabela };
-  }, [dados12m, intervaloAtual.inicio, intervaloAtual.fim]);
+  }, [dados12m, intervaloAtual.inicio, intervaloAtual.fim, periodo]);
 
   // ---------- Performance por Projeto ----------
   const perfProjetos = useMemo(() => {
