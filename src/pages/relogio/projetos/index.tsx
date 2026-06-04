@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,12 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,21 +41,21 @@ import {
   PlusCircle,
   Search,
   Filter,
-  EllipsisVertical,
-  Pencil,
-  Trash2,
   Upload,
-  Archive,
-  ArchiveRestore,
   Download,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import { useProjetosRelogio, type ProjetoPayload } from "@/hooks/useProjetosRelogio";
-import { useFavorecidos } from "@/hooks/useFavorecidos";
-import { useTiposProjetoRelogio } from "@/hooks/useTiposProjetoRelogio";
 import { ProjetoFormModal } from "@/components/relogio/ProjetoFormModal";
 import { ImportarProjetosModal } from "@/components/relogio/ImportarProjetosModal";
+import { ProjetoRow } from "@/components/relogio/ProjetoRow";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
 import type { RelogioProjeto } from "@/types/relogio";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 type StatusFilter = "todos" | "ativo" | "arquivado";
 
@@ -67,11 +71,43 @@ export default function ProjetosRelogioPage() {
     importarProjetos,
   } = useProjetosRelogio();
 
-  const { data: favorecidos = [] } = useFavorecidos();
+  const { currentCompany } = useCompany();
+
+  // Buscas enxutas só com id+nome (evita trafegar dados pesados)
+  const { data: favorecidos = [] } = useQuery({
+    queryKey: ["favorecidos-lite", currentCompany?.id],
+    enabled: !!currentCompany?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("favorecidos")
+        .select("id, nome")
+        .eq("empresa_id", currentCompany!.id)
+        .eq("status", "ativo")
+        .order("nome");
+      if (error) throw error;
+      return (data || []) as { id: string; nome: string }[];
+    },
+  });
+
+  const { data: tiposProjeto = [] } = useQuery({
+    queryKey: ["tipos-projeto-lite", currentCompany?.id],
+    enabled: !!currentCompany?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("relogio_tipos_projeto")
+        .select("id, nome")
+        .eq("empresa_id", currentCompany!.id)
+        .order("nome");
+      if (error) throw error;
+      return (data || []) as { id: string; nome: string }[];
+    },
+  });
 
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebouncedValue(searchTerm, 250);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
   const [clienteFilter, setClienteFilter] = useState<string>("todos");
+  const [clienteOpen, setClienteOpen] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<RelogioProjeto | undefined>();
@@ -79,8 +115,6 @@ export default function ProjetosRelogioPage() {
   const [toDelete, setToDelete] = useState<{ id: string; codigo: string; nome: string; count: number } | null>(null);
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
-
-  const { tiposProjeto } = useTiposProjetoRelogio();
 
   const favorecidoNome = useMemo(() => {
     const m = new Map<string, string>();
@@ -94,11 +128,9 @@ export default function ProjetosRelogioPage() {
     return m;
   }, [tiposProjeto]);
 
-
-
   const filtered = useMemo(() => {
+    const term = debouncedSearch.toLowerCase();
     return projetos.filter((p) => {
-      const term = searchTerm.toLowerCase();
       const matchSearch =
         !term ||
         p.codigo.toLowerCase().includes(term) ||
@@ -107,7 +139,7 @@ export default function ProjetosRelogioPage() {
       const matchCliente = clienteFilter === "todos" || p.favorecido_id === clienteFilter;
       return matchSearch && matchStatus && matchCliente;
     });
-  }, [projetos, searchTerm, statusFilter, clienteFilter]);
+  }, [projetos, debouncedSearch, statusFilter, clienteFilter]);
 
   const handleSave = async (data: ProjetoPayload) => {
     try {
@@ -121,11 +153,16 @@ export default function ProjetosRelogioPage() {
     }
   };
 
-  const handleAskDelete = async (p: RelogioProjeto) => {
+  const handleEdit = useCallback((p: RelogioProjeto) => {
+    setEditing(p);
+    setFormOpen(true);
+  }, []);
+
+  const handleAskDelete = useCallback(async (p: RelogioProjeto) => {
     const count = await contarApontamentos(p.id);
     setConfirmText("");
     setToDelete({ id: p.id, codigo: p.codigo, nome: p.nome, count });
-  };
+  }, [contarApontamentos]);
 
   const confirmExcluir = async () => {
     if (!toDelete) return;
@@ -146,7 +183,7 @@ export default function ProjetosRelogioPage() {
     }
   };
 
-  const toggleStatus = async (p: RelogioProjeto) => {
+  const toggleStatus = useCallback(async (p: RelogioProjeto) => {
     try {
       await atualizarProjeto(p.id, {
         codigo: p.codigo,
@@ -162,7 +199,7 @@ export default function ProjetosRelogioPage() {
       console.error(e);
       toast.error("Erro ao alterar status");
     }
-  };
+  }, [atualizarProjeto]);
 
   const handleExportar = () => {
     if (filtered.length === 0) {
@@ -201,6 +238,9 @@ export default function ProjetosRelogioPage() {
     URL.revokeObjectURL(url);
     toast.success("Planilha exportada com sucesso");
   };
+
+  const clienteSelecionadoNome =
+    clienteFilter === "todos" ? "Todos os clientes" : favorecidoNome.get(clienteFilter) ?? "Cliente";
 
   return (
     <div className="space-y-4">
@@ -241,19 +281,62 @@ export default function ProjetosRelogioPage() {
               />
             </div>
             <div className="flex w-full sm:w-[240px]">
-              <Select value={clienteFilter} onValueChange={setClienteFilter}>
-                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
-                  <SelectValue placeholder="Cliente" />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 max-h-72">
-                  <SelectItem value="todos">Todos os clientes</SelectItem>
-                  {favorecidos.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>
-                      {f.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={clienteOpen} onOpenChange={setClienteOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={clienteOpen}
+                    className="w-full justify-between bg-white dark:bg-gray-900 font-normal"
+                  >
+                    <span className="truncate">{clienteSelecionadoNome}</span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[240px] p-0 bg-white dark:bg-gray-800" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar cliente..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="todos"
+                          onSelect={() => {
+                            setClienteFilter("todos");
+                            setClienteOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              clienteFilter === "todos" ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          Todos os clientes
+                        </CommandItem>
+                        {favorecidos.map((f) => (
+                          <CommandItem
+                            key={f.id}
+                            value={f.nome}
+                            onSelect={() => {
+                              setClienteFilter(f.id);
+                              setClienteOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                clienteFilter === f.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {f.nome}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="flex w-full sm:w-[180px]">
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
@@ -300,73 +383,15 @@ export default function ProjetosRelogioPage() {
                   </TableRow>
                 ) : (
                   filtered.map((p) => (
-                    <TableRow key={p.id} className="hover:bg-muted/40">
-                      <TableCell className="font-medium">{p.codigo}</TableCell>
-                      <TableCell>{p.nome}</TableCell>
-                      <TableCell>{p.tipo_projeto_id ? (tipoProjetoNome.get(p.tipo_projeto_id) ?? "—") : "—"}</TableCell>
-                      <TableCell>{favorecidoNome.get(p.favorecido_id) ?? "—"}</TableCell>
-
-                      <TableCell className="text-right">{p.fotos_tiradas}</TableCell>
-                      <TableCell className="text-right">{p.fotos_enviadas}</TableCell>
-                      <TableCell className="text-right">{p.fotos_vendidas}</TableCell>
-                      <TableCell>
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                            p.status === "ativo"
-                              ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20"
-                              : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
-                          }`}
-                        >
-                          {p.status === "ativo" ? "Ativo" : "Arquivado"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-neutral-500 hover:bg-gray-100"
-                            >
-                              <EllipsisVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40 z-30 bg-white border">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setEditing(p);
-                                setFormOpen(true);
-                              }}
-                              className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
-                            >
-                              <Pencil className="h-4 w-4" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => toggleStatus(p)}
-                              className="flex items-center gap-2 text-amber-600 focus:bg-amber-100 focus:text-amber-700"
-                            >
-                              {p.status === "ativo" ? (
-                                <>
-                                  <Archive className="h-4 w-4" /> Arquivar
-                                </>
-                              ) : (
-                                <>
-                                  <ArchiveRestore className="h-4 w-4" /> Reativar
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleAskDelete(p)}
-                              className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                    <ProjetoRow
+                      key={p.id}
+                      projeto={p}
+                      tipoNome={p.tipo_projeto_id ? (tipoProjetoNome.get(p.tipo_projeto_id) ?? "") : ""}
+                      clienteNome={favorecidoNome.get(p.favorecido_id) ?? ""}
+                      onEdit={handleEdit}
+                      onToggleStatus={toggleStatus}
+                      onDelete={handleAskDelete}
+                    />
                   ))
                 )}
               </TableBody>
