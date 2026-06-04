@@ -105,7 +105,7 @@ export default function ProjetosRelogioPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebouncedValue(searchTerm, 250);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ativo");
   const [clienteFilter, setClienteFilter] = useState<string>("todos");
   const [clienteOpen, setClienteOpen] = useState(false);
 
