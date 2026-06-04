@@ -62,6 +62,8 @@ export default function ProjetosRelogioPage() {
     criarProjeto,
     atualizarProjeto,
     excluirProjeto,
+    contarApontamentos,
+    excluirProjetoComApontamentos,
     importarProjetos,
   } = useProjetosRelogio();
 
