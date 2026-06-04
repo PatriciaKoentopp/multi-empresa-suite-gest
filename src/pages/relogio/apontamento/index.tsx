@@ -61,6 +61,7 @@ import { ImportarApontamentosModal } from "@/components/relogio/ImportarApontame
 import { CronometroCard } from "@/components/relogio/CronometroCard";
 import { ApontamentoRow } from "@/components/relogio/ApontamentoRow";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { DateInput } from "@/components/movimentacao/DateInput";
 import { formatDate, cn } from "@/lib/utils";
 import type { RelogioApontamento } from "@/types/relogio";
 
