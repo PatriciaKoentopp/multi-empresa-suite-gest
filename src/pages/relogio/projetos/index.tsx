@@ -357,7 +357,7 @@ export default function ProjetosRelogioPage() {
                               )}
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => setToDelete(p.id)}
+                              onClick={() => handleAskDelete(p)}
                               className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                             >
                               <Trash2 className="h-4 w-4" />
