@@ -833,7 +833,7 @@ export default function PainelTempoRelogioPage() {
                   <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
                   <ReTooltip
-                    formatter={(v: number, n) => [formatHoras(Number(v)), n === "horas" ? "Horas" : "Média 3m"]}
+                    formatter={(v: number, n) => [formatHoras(Number(v)), n]}
                   />
                   <Legend />
                   <Bar dataKey="horas" name="Horas" fill="#4CAF50" radius={[4, 4, 0, 0]} />
