@@ -65,18 +65,57 @@ import { formatDate, cn } from "@/lib/utils";
 import type { RelogioApontamento } from "@/types/relogio";
 
 const PERIODO_STORAGE_KEY = "relogio_apontamento_periodo";
+const PERIODO_INI_KEY = "relogio_apontamento_periodo_ini";
+const PERIODO_FIM_KEY = "relogio_apontamento_periodo_fim";
+
+const VALID_PERIODOS: PeriodoFiltro[] = [
+  "semana_atual",
+  "mes_atual",
+  "mes_anterior",
+  "ano_atual",
+  "ano_anterior",
+  "todos",
+  "personalizado",
+];
+
+const isoToDate = (iso: string | null): Date | null => {
+  if (!iso) return null;
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d, 12, 0, 0);
+};
+
+const dateToIso = (d: Date | null | undefined): string | null => {
+  if (!d) return null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
 
 export default function ApontamentoRelogioPage() {
   const [periodo, setPeriodo] = useState<PeriodoFiltro>(() => {
     const stored = typeof window !== "undefined"
       ? (localStorage.getItem(PERIODO_STORAGE_KEY) as PeriodoFiltro | null)
       : null;
-    return stored || "90d";
+    return stored && VALID_PERIODOS.includes(stored) ? stored : "semana_atual";
   });
+  const [periodoIni, setPeriodoIni] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem(PERIODO_INI_KEY) : null
+  );
+  const [periodoFim, setPeriodoFim] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem(PERIODO_FIM_KEY) : null
+  );
 
   useEffect(() => {
     localStorage.setItem(PERIODO_STORAGE_KEY, periodo);
   }, [periodo]);
+  useEffect(() => {
+    if (periodoIni) localStorage.setItem(PERIODO_INI_KEY, periodoIni);
+    else localStorage.removeItem(PERIODO_INI_KEY);
+  }, [periodoIni]);
+  useEffect(() => {
+    if (periodoFim) localStorage.setItem(PERIODO_FIM_KEY, periodoFim);
+    else localStorage.removeItem(PERIODO_FIM_KEY);
+  }, [periodoFim]);
 
   const {
     apontamentos,
@@ -88,7 +127,12 @@ export default function ApontamentoRelogioPage() {
     pararCronometro,
     importarApontamentos,
     apontamentoEmAndamento,
-  } = useApontamentosRelogio(periodo);
+  } = useApontamentosRelogio(
+    periodo,
+    periodo === "personalizado" ? periodoIni : null,
+    periodo === "personalizado" ? periodoFim : null
+  );
+
   const { projetos } = useProjetosRelogio();
   const { tiposProjeto, tarefas } = useTiposProjetoRelogio();
 
