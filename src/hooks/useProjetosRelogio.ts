@@ -69,14 +69,14 @@ export function useProjetosRelogio() {
   const excluirProjeto = async (id: string) => {
     const { error } = await supabase.from("relogio_projetos").delete().eq("id", id);
     if (error) throw error;
+    setProjetos((prev) => prev.filter((p) => p.id !== id));
     toast.success("Projeto excluído!");
-    await fetchData();
   };
 
   const contarApontamentos = async (projetoId: string): Promise<number> => {
     const { count, error } = await supabase
       .from("relogio_apontamentos")
-      .select("id", { count: "exact", head: true })
+      .select("*", { count: "exact", head: true })
       .eq("projeto_id", projetoId);
     if (error) {
       console.error(error);
@@ -93,8 +93,8 @@ export function useProjetosRelogio() {
     if (errApont) throw errApont;
     const { error } = await supabase.from("relogio_projetos").delete().eq("id", id);
     if (error) throw error;
+    setProjetos((prev) => prev.filter((p) => p.id !== id));
     toast.success("Projeto e apontamentos excluídos!");
-    await fetchData();
   };
 
   // Garante existência do tipo "Fotografia" para a empresa, retornando o id
