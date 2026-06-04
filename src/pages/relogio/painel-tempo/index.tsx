@@ -253,10 +253,10 @@ export default function PainelTempoRelogioPage() {
     [intervaloAtual.inicio, intervaloAtual.fim]
   );
 
-  // Janela de 12 meses para o comparativo histórico
+  // Janela de 24 meses para o comparativo histórico (12 meses exibidos + 12 meses para Δ YoY)
   const janela12m = useMemo(() => {
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-    const ini = new Date(hoje.getFullYear() - 1, hoje.getMonth() + 1, 1);
+    const ini = new Date(hoje.getFullYear() - 2, hoje.getMonth() + 1, 1);
     return { inicio: isoFromDate(ini), fim: isoFromDate(hoje) };
   }, []);
 
@@ -855,7 +855,7 @@ export default function PainelTempoRelogioPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mensal.tabela.map((r) => (
+                  {[...mensal.tabela].reverse().map((r) => (
                     <TableRow key={r.key}>
                       <TableCell className="font-medium">{r.mes}</TableCell>
                       <TableCell className="text-right">{formatHoras(r.horas)}</TableCell>
