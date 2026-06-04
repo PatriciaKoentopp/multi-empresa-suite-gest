@@ -76,7 +76,9 @@ export default function ProjetosRelogioPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<RelogioProjeto | undefined>();
   const [importOpen, setImportOpen] = useState(false);
-  const [toDelete, setToDelete] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<{ id: string; codigo: string; nome: string; count: number } | null>(null);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const { tiposProjeto } = useTiposProjetoRelogio();
 
