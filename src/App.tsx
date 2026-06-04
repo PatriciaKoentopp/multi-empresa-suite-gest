@@ -76,6 +76,7 @@ import RelogioPage from "./pages/relogio";
 import TiposProjetoRelogioPage from "./pages/relogio/tipos-projeto";
 import ProjetosRelogioPage from "./pages/relogio/projetos";
 import ApontamentoRelogioPage from "./pages/relogio/apontamento";
+import VisualizacaoRelogioPage from "./pages/relogio/visualizacao";
 
 // Backup
 import BackupPage from "./pages/backup";
@@ -519,6 +520,18 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/relogio/visualizacao"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <VisualizacaoRelogioPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+
 
 
             {/* Relatórios */}
