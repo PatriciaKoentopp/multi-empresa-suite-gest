@@ -1,29 +1,45 @@
-## Objetivo
+## Diagnóstico
 
-Substituir a fonte de dados da página `/relatorios/fotos` da planilha `projetos.xlsx` (uploads em `useSpreadsheetData`) pelos dados já cadastrados no banco em `relogio_projetos` (campos `fotos_tiradas`, `fotos_enviadas`, `fotos_vendidas`, `nome`, `codigo`, `status`, `tipo_projeto_id`) e `relogio_apontamentos` (horas).
+A página `/relogio/apontamento` está lenta por estes motivos (cada um confirmado no código):
 
-Esse é o mesmo padrão já usado em `/relatorios/projetos` através do hook `useRelatorioProjetosFotosDB`.
+1. **Carrega TODOS os apontamentos da empresa** (`useApontamentosRelogio.fetchData`) em loop de 1000 em 1000, sem filtro de período. Hoje a base tem **2.374 registros** — todos vão para a memória do navegador toda vez que a página abre, e a cada mutação (criar/editar/excluir/parar cronômetro) o hook faz `refetch` completo.
+2. **Cronômetro reseta `tick` a cada 1s** (`setTick`) no componente da página, fazendo a tabela inteira re-renderizar a cada segundo sempre que houver cronômetro ativo.
+3. **Busca sem debounce** — cada tecla refaz o filtro sobre os 2.3k registros e re-renderiza todas as linhas (cada uma com `DropdownMenu` em Portal).
+4. **Filtro de Projeto é um `Select` simples** com todos os 162 projetos — mesmo problema visto antes.
+5. **`useTiposProjetoRelogio` carrega `relogio_tarefas` completas em lotes** só para exibir o nome da tarefa na coluna.
+6. **Mutações fazem `refetch` da tabela inteira** (`criarApontamento`, `atualizarApontamento`, `excluirApontamento`, `pararCronometro`) — equivalente a recarregar a página a cada ação.
 
-## Mudanças
+## Plano de otimização
 
-### 1. `src/pages/relatorios/fotos/index.tsx`
-- Remover: `useUploadFiles`, `useSpreadsheetData`, `useRelatorioFotos`, `UploadModal`, lista de "Planilhas Importadas", checkboxes de seleção, botão "Novo Upload", `AlertDialog` de exclusão de upload, estados `selectedUploads`, `consolidatedData`, `uploadToDelete`, `isModalOpen`, `deleteDialogOpen`.
-- Passar a usar `useRelatorioProjetosFotosDB` (já existente).
-- Calcular no próprio arquivo (com `useMemo`) as métricas que a página exibe a partir do array `projetosFotos`:
-  - `totalHoras`, `totalProjetos`, `totalClientes`, `horasMediasPorProjeto`
-  - `totalFotos` (somatórios + `tempoPorFotoVendida`, `percentualEnviadas`, `percentualVendidas`, `percentualVendidasTiradas`)
-  - `projetosAgrupados` no formato esperado pelo `ProjetoAccordion`
-- Manter exatamente a mesma UI restante: cards de métricas, gráfico "Resumo de Fotos", filtros (busca + % vendidas/tiradas mín/máx), `ProjetoAccordion` na lista "Visão por Projeto".
-- Exibir skeleton enquanto `isLoading` do hook for true.
+### 1. Carregamento dos apontamentos
+- Adicionar **filtro de período padrão** no `useApontamentosRelogio` (últimos 90 dias) com opção de "Todos" via UI. O filtro vai para o servidor (`gte('data', ...)`), não para o cliente.
+- Sempre incluir o apontamento `em_andamento` (consulta `or` separada) para o card do cronômetro continuar funcionando independente do período.
 
-### 2. `src/components/relatorios/fotos/ProjetoAccordion.tsx`
-- Manter o componente. Campos não presentes no banco (`membros`, `gerente`, `observacao`, lista `projetos[]` com nomes da planilha) serão preenchidos com valores vazios/array com o nome do projeto vindo do banco, mantendo o layout intacto.
+### 2. Mutações sem refetch (atualização local)
+- `criarApontamento`, `atualizarApontamento`, `excluirApontamento`, `pararCronometro`: usar `setApontamentos` localmente com o registro retornado pelo Supabase (`.select().single()`) em vez de `fetchData()`. Mesma abordagem que aplicamos em `useProjetosRelogio`.
 
-### 3. Itens removidos da página (não existem no banco)
-- Tabs "Ativos / Arquivados" (status vinha da planilha) — manter apenas a listagem única "Todos" para não inventar dados. Confirmar abaixo.
-- Lista de "Planilhas Importadas" e fluxo de upload.
+### 3. Isolar o card do cronômetro
+- Extrair `<CronometroCard>` em componente próprio que gerencia internamente o `tick`/`setInterval` e o cálculo de `tempoDecorrido`. Assim o `tick` deixa de re-renderizar a página inteira (e a tabela) a cada segundo.
 
-## Pontos a confirmar
+### 4. Debounce e memoização da tabela
+- `useDebouncedValue(searchTerm, 250)` (hook já existe) para o filtro.
+- Criar `ApontamentoRow` envolvido em `React.memo`, recebendo strings já calculadas (`projTexto`, `tarefaNome`, `durHHMMSS`, `formatedDate`) e callbacks estáveis (`onEdit`, `onDelete`).
 
-1. As **tabs "Ativos / Arquivados"** devem ser removidas (o status "Ativo/Arquivado" vem da planilha e não existe no banco), ou devo mapear para o campo `status` de `relogio_projetos`?
-2. Os hooks/componentes antigos (`useRelatorioFotos`, `UploadModal` de fotos, `useSpreadsheetData` para tipo "fotos") devem ser **excluídos** do projeto, ou apenas desconectados desta página?
+### 5. Filtro "Projeto" com Combobox
+- Substituir o `Select` por `Popover + Command` (mesmo padrão usado em `/relogio/projetos`), renderizando apenas os itens visíveis e com busca embutida.
+
+### 6. Query enxuta de tarefas
+- Substituir o uso de `useTiposProjetoRelogio` na página por uma query leve `relogio_tarefas` (`id, nome`) via `useQuery`, suficiente para a coluna Tarefa e o `tarefaMap`. Os modais (Manual/Cronômetro/Importar) continuam recebendo `tiposProjeto`/`tarefas` carregados sob demanda quando abertos.
+
+## Detalhes técnicos
+
+- Arquivos a alterar:
+  - `src/hooks/useApontamentosRelogio.ts` — filtro de período, retorno do registro nos mutates, update local.
+  - `src/pages/relogio/apontamento/index.tsx` — debounce, Combobox, query leve, extração do cronômetro.
+  - Novos: `src/components/relogio/CronometroCard.tsx`, `src/components/relogio/ApontamentoRow.tsx`.
+- Layout, cores, ícones e fluxos não mudam (mantém padrão da página Favorecidos).
+- Os modais (`ApontamentoManualModal`, `ApontamentoCronometroModal`, `ImportarApontamentosModal`) continuam usando `useTiposProjetoRelogio` quando abertos — sem impacto no load inicial.
+
+## Pergunta antes de implementar
+
+O filtro de período padrão (últimos 90 dias) é o item de **maior impacto** — hoje você baixa 2.374 linhas a cada acesso. Posso aplicar com seletor "Últimos 90 dias / Últimos 12 meses / Este ano / Todos" (padrão 90 dias)? Se preferir manter o carregamento total, eu aplico só os itens 2–6 (que já trazem ganho grande, sem mexer no que aparece na tela).
