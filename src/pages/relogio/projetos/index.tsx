@@ -62,6 +62,8 @@ export default function ProjetosRelogioPage() {
     criarProjeto,
     atualizarProjeto,
     excluirProjeto,
+    contarApontamentos,
+    excluirProjetoComApontamentos,
     importarProjetos,
   } = useProjetosRelogio();
 
@@ -74,7 +76,9 @@ export default function ProjetosRelogioPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<RelogioProjeto | undefined>();
   const [importOpen, setImportOpen] = useState(false);
-  const [toDelete, setToDelete] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<{ id: string; codigo: string; nome: string; count: number } | null>(null);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const { tiposProjeto } = useTiposProjetoRelogio();
 
@@ -117,15 +121,28 @@ export default function ProjetosRelogioPage() {
     }
   };
 
+  const handleAskDelete = async (p: RelogioProjeto) => {
+    const count = await contarApontamentos(p.id);
+    setConfirmText("");
+    setToDelete({ id: p.id, codigo: p.codigo, nome: p.nome, count });
+  };
+
   const confirmExcluir = async () => {
     if (!toDelete) return;
+    setDeleting(true);
     try {
-      await excluirProjeto(toDelete);
+      if (toDelete.count > 0) {
+        await excluirProjetoComApontamentos(toDelete.id);
+      } else {
+        await excluirProjeto(toDelete.id);
+      }
     } catch (e) {
       console.error(e);
       toast.error("Erro ao excluir projeto");
     } finally {
+      setDeleting(false);
       setToDelete(null);
+      setConfirmText("");
     }
   };
 
@@ -340,7 +357,7 @@ export default function ProjetosRelogioPage() {
                               )}
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => setToDelete(p.id)}
+                              onClick={() => handleAskDelete(p)}
                               className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -374,21 +391,44 @@ export default function ProjetosRelogioPage() {
         onImport={importarProjetos}
       />
 
-      <AlertDialog open={!!toDelete} onOpenChange={() => setToDelete(null)}>
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => { if (!o) { setToDelete(null); setConfirmText(""); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.
+            <AlertDialogDescription asChild>
+              {toDelete && toDelete.count > 0 ? (
+                <div className="space-y-3">
+                  <p>
+                    O projeto <strong>{toDelete.codigo} - {toDelete.nome}</strong> possui{" "}
+                    <strong className="text-red-600">{toDelete.count}</strong>{" "}
+                    {toDelete.count === 1 ? "apontamento" : "apontamentos"} de horas vinculado{toDelete.count === 1 ? "" : "s"}.
+                  </p>
+                  <p>
+                    Ao confirmar, o projeto e <strong>todos os apontamentos</strong> serão excluídos permanentemente. Esta ação não pode ser desfeita.
+                  </p>
+                  <p>
+                    Para confirmar, digite <strong>EXCLUIR</strong> abaixo:
+                  </p>
+                  <Input
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="Digite EXCLUIR"
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <span>Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.</span>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={confirmExcluir}
+              onClick={(e) => { e.preventDefault(); confirmExcluir(); }}
+              disabled={deleting || (!!toDelete && toDelete.count > 0 && confirmText.trim().toUpperCase() !== "EXCLUIR")}
               className="bg-destructive text-destructive-foreground"
             >
-              Excluir
+              {deleting ? "Excluindo..." : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
