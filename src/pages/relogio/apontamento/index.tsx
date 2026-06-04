@@ -334,19 +334,40 @@ export default function ApontamentoRelogioPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex w-full sm:w-[180px]">
+            <div className="flex w-full sm:w-[200px]">
               <Select value={periodo} onValueChange={(v) => setPeriodo(v as PeriodoFiltro)}>
                 <SelectTrigger className="w-full bg-white dark:bg-gray-900">
                   <SelectValue placeholder="Período" />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800">
-                  <SelectItem value="90d">Últimos 90 dias</SelectItem>
-                  <SelectItem value="12m">Últimos 12 meses</SelectItem>
-                  <SelectItem value="ano">Este ano</SelectItem>
-                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="semana_atual">Semana atual</SelectItem>
+                  <SelectItem value="mes_atual">Mês atual</SelectItem>
+                  <SelectItem value="mes_anterior">Mês anterior</SelectItem>
+                  <SelectItem value="ano_atual">Ano atual</SelectItem>
+                  <SelectItem value="ano_anterior">Ano anterior</SelectItem>
+                  <SelectItem value="todos">Tudo</SelectItem>
+                  <SelectItem value="personalizado">Definir período</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {periodo === "personalizado" && (
+              <>
+                <div className="flex w-full sm:w-[160px]">
+                  <DateInput
+                    value={isoToDate(periodoIni)}
+                    onChange={(d) => setPeriodoIni(dateToIso(d))}
+                    placeholder="Início"
+                  />
+                </div>
+                <div className="flex w-full sm:w-[160px]">
+                  <DateInput
+                    value={isoToDate(periodoFim)}
+                    onChange={(d) => setPeriodoFim(dateToIso(d))}
+                    placeholder="Fim"
+                  />
+                </div>
+              </>
+            )}
             <div className="flex w-full sm:w-[160px]">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full bg-white dark:bg-gray-900">
