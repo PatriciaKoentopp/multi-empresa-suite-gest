@@ -52,26 +52,67 @@ export interface ApontamentoPayload {
   observacao?: string | null;
 }
 
-export type PeriodoFiltro = "90d" | "12m" | "ano" | "todos";
+export type PeriodoFiltro =
+  | "semana_atual"
+  | "mes_atual"
+  | "mes_anterior"
+  | "ano_atual"
+  | "ano_anterior"
+  | "todos"
+  | "personalizado";
 
-const dataInicialPorPeriodo = (p: PeriodoFiltro): string | null => {
-  const d = new Date();
+const fmtDate = (d: Date) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+const intervaloPorPeriodo = (
+  p: PeriodoFiltro,
+  custom?: { inicio?: string | null; fim?: string | null }
+): { inicio: string | null; fim: string | null } => {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
   switch (p) {
-    case "90d":
-      d.setDate(d.getDate() - 90);
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    case "12m":
-      d.setMonth(d.getMonth() - 12);
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    case "ano":
-      return `${d.getFullYear()}-01-01`;
+    case "semana_atual": {
+      // Domingo como início da semana
+      const ini = new Date(hoje);
+      ini.setDate(hoje.getDate() - hoje.getDay());
+      const fim = new Date(ini);
+      fim.setDate(ini.getDate() + 6);
+      return { inicio: fmtDate(ini), fim: fmtDate(fim) };
+    }
+    case "mes_atual": {
+      const ini = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+      return { inicio: fmtDate(ini), fim: fmtDate(fim) };
+    }
+    case "mes_anterior": {
+      const ini = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+      const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+      return { inicio: fmtDate(ini), fim: fmtDate(fim) };
+    }
+    case "ano_atual": {
+      const ini = new Date(hoje.getFullYear(), 0, 1);
+      const fim = new Date(hoje.getFullYear(), 11, 31);
+      return { inicio: fmtDate(ini), fim: fmtDate(fim) };
+    }
+    case "ano_anterior": {
+      const ini = new Date(hoje.getFullYear() - 1, 0, 1);
+      const fim = new Date(hoje.getFullYear() - 1, 11, 31);
+      return { inicio: fmtDate(ini), fim: fmtDate(fim) };
+    }
+    case "personalizado":
+      return { inicio: custom?.inicio || null, fim: custom?.fim || null };
     case "todos":
     default:
-      return null;
+      return { inicio: null, fim: null };
   }
 };
 
-export function useApontamentosRelogio(periodo: PeriodoFiltro = "90d") {
+export function useApontamentosRelogio(
+  periodo: PeriodoFiltro = "semana_atual",
+  dataInicio?: string | null,
+  dataFim?: string | null
+) {
   const { currentCompany } = useCompany();
   const [apontamentos, setApontamentos] = useState<RelogioApontamento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -83,7 +124,10 @@ export function useApontamentosRelogio(periodo: PeriodoFiltro = "90d") {
     }
     setIsLoading(true);
     try {
-      const dataIni = dataInicialPorPeriodo(periodo);
+      const { inicio: dataIni, fim: dataFimRange } = intervaloPorPeriodo(
+        periodo,
+        { inicio: dataInicio, fim: dataFim }
+      );
 
       // Carrega apontamentos do período (paginação 1000 em 1000)
       const pageSize = 1000;
@@ -98,6 +142,7 @@ export function useApontamentosRelogio(periodo: PeriodoFiltro = "90d") {
           .order("hora_inicio", { ascending: false })
           .range(from, from + pageSize - 1);
         if (dataIni) q = q.gte("data", dataIni);
+        if (dataFimRange) q = q.lte("data", dataFimRange);
         const { data, error } = await q;
         if (error) throw error;
         const rows = (data || []) as any[];
@@ -107,7 +152,7 @@ export function useApontamentosRelogio(periodo: PeriodoFiltro = "90d") {
       }
 
       // Garante o registro "em_andamento" mesmo fora do período
-      if (dataIni) {
+      if (dataIni || dataFimRange) {
         const { data: emAnd } = await supabase
           .from("relogio_apontamentos" as any)
           .select("*")
@@ -127,7 +172,8 @@ export function useApontamentosRelogio(periodo: PeriodoFiltro = "90d") {
     } finally {
       setIsLoading(false);
     }
-  }, [currentCompany?.id, periodo]);
+  }, [currentCompany?.id, periodo, dataInicio, dataFim]);
+
 
   useEffect(() => {
     fetchData();
