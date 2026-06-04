@@ -208,6 +208,10 @@ export const navigationConfig: ModuleNavItem[] = [
         title: "Visualização",
         href: "/relogio/visualizacao",
       },
+      {
+        title: "Painel de Tempo",
+        href: "/relogio/painel-tempo",
+      },
     ],
   },
   {
