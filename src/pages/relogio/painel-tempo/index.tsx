@@ -826,7 +826,7 @@ export default function PainelTempoRelogioPage() {
         {/* Comparativo Mensal */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Comparativo mensal (últimos 12 meses)</CardTitle>
+            <CardTitle className="text-base">Comparativo mensal</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-72">
