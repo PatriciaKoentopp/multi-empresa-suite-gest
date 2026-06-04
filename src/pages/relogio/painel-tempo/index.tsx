@@ -98,16 +98,28 @@ const MES_LONGO = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-// Hash determinístico p/ cor de projeto
-function projetoHue(id: string): number {
+// Paleta de cores alinhada ao Painel de Vendas
+const CHART_COLORS = [
+  "#4CAF50", // Verde
+  "#2196F3", // Azul
+  "#FFC107", // Amarelo
+  "#9C27B0", // Roxo
+  "#FF5722", // Laranja
+  "#795548", // Marrom
+  "#607D8B", // Azul Acinzentado
+  "#E91E63", // Rosa
+  "#3F51B5", // Índigo
+  "#CDDC39", // Lima
+  "#009688", // Verde-azulado
+  "#FF9800", // Âmbar
+];
+function projetoColor(id: string): string {
   let h = 0;
   for (let i = 0; i < id.length; i++) {
     h = (h * 31 + id.charCodeAt(i)) >>> 0;
   }
-  return h % 360;
+  return CHART_COLORS[h % CHART_COLORS.length];
 }
-const projetoColor = (id: string, alpha = 1) =>
-  `hsl(${projetoHue(id)} 65% 55% / ${alpha})`;
 
 // Intervalo a partir do PeriodoFiltro
 function intervaloPeriodo(
@@ -168,6 +180,7 @@ function periodoAnterior(inicioIso: string, fimIso: string) {
   return { inicio: isoFromDate(iniAnt), fim: isoFromDate(fimAnt) };
 }
 
+type KpiIconColor = "blue" | "green" | "purple" | "amber";
 interface KpiProps {
   icon: React.ReactNode;
   label: string;
@@ -175,29 +188,48 @@ interface KpiProps {
   sub?: string;
   variation?: number | null;
   tone?: "positive" | "negative" | "neutral";
+  iconColor?: KpiIconColor;
 }
-function KpiCard({ icon, label, value, sub, variation, tone = "neutral" }: KpiProps) {
+function KpiCard({ icon, label, value, sub, variation, tone = "neutral", iconColor = "blue" }: KpiProps) {
   const showVar = variation !== null && variation !== undefined && isFinite(variation);
   const positive = (variation ?? 0) >= 0;
-  const variationTone =
-    tone === "neutral" ? (positive ? "text-emerald-600" : "text-red-600")
-    : tone === "positive" ? "text-emerald-600" : "text-red-600";
+  const iconClasses: Record<KpiIconColor, string> = {
+    blue: "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+    green: "bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400",
+    purple: "bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
+    amber: "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
+  };
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
-            <div className="mt-1 text-2xl font-bold">{value}</div>
-            {sub && <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>}
+    <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+      <CardContent className="p-0">
+        <div className="flex flex-col h-full">
+          <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className={cn("p-2 rounded-lg", iconClasses[iconColor])}>{icon}</div>
+              <h3 className="text-sm font-medium text-muted-foreground">{label}</h3>
+            </div>
+          </div>
+          <div className="p-5">
+            <div className="text-2xl font-bold">{value}</div>
+            {sub && <div className="text-sm text-muted-foreground mt-1">{sub}</div>}
             {showVar && (
-              <div className={cn("mt-1 inline-flex items-center gap-1 text-xs font-medium", variationTone)}>
-                {positive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              <div
+                className={cn(
+                  "flex items-center text-sm font-medium px-2.5 py-1.5 rounded-full mt-2 w-fit",
+                  tone === "negative"
+                    ? "text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400"
+                    : tone === "positive"
+                    ? "text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400"
+                    : positive
+                    ? "text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400"
+                    : "text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400"
+                )}
+              >
+                {positive ? <TrendingUp className="h-3.5 w-3.5 mr-1" /> : <TrendingDown className="h-3.5 w-3.5 mr-1" />}
                 {positive ? "+" : ""}{fmtNum(variation!, 1)}% vs período anterior
               </div>
             )}
           </div>
-          <div className="rounded-md bg-primary/10 text-primary p-2">{icon}</div>
         </div>
       </CardContent>
     </Card>
@@ -728,26 +760,30 @@ export default function PainelTempoRelogioPage() {
         {/* KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <KpiCard
-            icon={<Clock className="h-5 w-5" />}
+            iconColor="blue"
+            icon={<Clock className="h-6 w-6" />}
             label="Total de horas"
             value={formatHoras(kpis.totalAtual)}
             sub={`${kpis.qtd} apontamento(s)`}
             variation={kpis.variacao}
           />
           <KpiCard
-            icon={<CalendarIcon className="h-5 w-5" />}
+            iconColor="green"
+            icon={<CalendarIcon className="h-6 w-6" />}
             label="Dias trabalhados"
             value={String(kpis.diasTrab)}
             sub={`Média ${formatHoras(kpis.mediaDia)}/dia`}
           />
           <KpiCard
-            icon={<FolderKanban className="h-5 w-5" />}
+            iconColor="purple"
+            icon={<FolderKanban className="h-6 w-6" />}
             label="Projetos ativos"
             value={String(kpis.projetosAtivos)}
             sub={kpis.maiorProj.id ? `Top: ${projetoMap.get(kpis.maiorProj.id)?.codigo ?? "—"} (${formatHoras(kpis.maiorProj.total)})` : "—"}
           />
           <KpiCard
-            icon={<TrendingUp className="h-5 w-5" />}
+            iconColor="amber"
+            icon={<TrendingUp className="h-6 w-6" />}
             label="Tempo médio / apont."
             value={formatHoras(kpis.mediaApont)}
             sub={kpis.maiorDia.data ? `Maior dia: ${formatDate(kpis.maiorDia.data)} (${formatHoras(kpis.maiorDia.total)})` : "—"}
@@ -756,23 +792,27 @@ export default function PainelTempoRelogioPage() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <KpiCard
-            icon={<Activity className="h-5 w-5" />}
+            iconColor="amber"
+            icon={<Activity className="h-6 w-6" />}
             label="Horas hoje"
             value={formatHoras(kpis.horasHoje)}
           />
           <KpiCard
-            icon={<Hourglass className="h-5 w-5" />}
+            iconColor="green"
+            icon={<Hourglass className="h-6 w-6" />}
             label="Horas na semana"
             value={formatHoras(kpis.horasSemana)}
           />
           <KpiCard
-            icon={<Trophy className="h-5 w-5" />}
+            iconColor="purple"
+            icon={<Trophy className="h-6 w-6" />}
             label="Projeto líder"
             value={kpis.maiorProj.id ? (projetoMap.get(kpis.maiorProj.id)?.codigo ?? "—") : "—"}
             sub={kpis.maiorProj.id ? `${formatHoras(kpis.maiorProj.total)} • ${perfProjetos.total > 0 ? fmtNum((kpis.maiorProj.total / perfProjetos.total) * 100, 1) : "0"}% do total` : ""}
           />
           <KpiCard
-            icon={<AlertTriangle className="h-5 w-5" />}
+            iconColor="blue"
+            icon={<AlertTriangle className="h-6 w-6" />}
             label="Dias úteis sem apontamento"
             value={`${alertas.diasUteisSem} / ${alertas.diasUteis}`}
             sub={alertas.emAberto.length > 0 ? `${alertas.emAberto.length} apontamento(s) em aberto` : "Sem pendências"}
@@ -796,8 +836,8 @@ export default function PainelTempoRelogioPage() {
                     formatter={(v: number, n) => [formatHoras(Number(v)), n === "horas" ? "Horas" : "Média 3m"]}
                   />
                   <Legend />
-                  <Bar dataKey="horas" name="Horas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  <Line type="monotone" dataKey="media3m" name="Média móvel 3m" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
+                  <Bar dataKey="horas" name="Horas" fill="#4CAF50" radius={[4, 4, 0, 0]} />
+                  <Line type="monotone" dataKey="media3m" name="Média móvel 3m" stroke="#FF5722" strokeWidth={2} dot={false} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
@@ -990,8 +1030,8 @@ export default function PainelTempoRelogioPage() {
                     <YAxis tick={{ fontSize: 12 }} />
                     <ReTooltip formatter={(v: number) => formatHoras(Number(v))} />
                     <Legend />
-                    <Line type="monotone" dataKey="atual" name="Período atual" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="anterior" name="Período anterior" stroke="hsl(var(--muted-foreground))" strokeWidth={2} strokeDasharray="4 4" dot={false} />
+                    <Line type="monotone" dataKey="atual" name="Período atual" stroke="#4CAF50" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="anterior" name="Período anterior" stroke="#607D8B" strokeWidth={2} strokeDasharray="4 4" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -1027,9 +1067,9 @@ export default function PainelTempoRelogioPage() {
                                     className="h-9 rounded flex items-center justify-center text-[10px] font-medium"
                                     style={{
                                       background: intensity > 0
-                                        ? `hsl(var(--primary) / ${0.15 + intensity * 0.75})`
+                                        ? `rgba(76, 175, 80, ${0.15 + intensity * 0.75})`
                                         : "hsl(var(--muted) / 0.4)",
-                                      color: intensity > 0.5 ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))",
+                                      color: intensity > 0.6 ? "#ffffff" : "hsl(var(--foreground))",
                                     }}
                                   >
                                     {v > 0 ? formatHoras(v) : ""}
