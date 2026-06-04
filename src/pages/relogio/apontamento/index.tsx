@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,12 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,14 +39,11 @@ import {
 import {
   PlusCircle,
   Play,
-  Square,
   Search,
-  EllipsisVertical,
-  Pencil,
-  Trash2,
-  Timer,
   Upload,
   Download,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
@@ -51,18 +51,33 @@ import {
   useApontamentosRelogio,
   ApontamentoPayload,
   secondsToHHMMSS,
-  timeToSeconds,
-  nowTimeString,
+  type PeriodoFiltro,
 } from "@/hooks/useApontamentosRelogio";
 import { useProjetosRelogio } from "@/hooks/useProjetosRelogio";
 import { useTiposProjetoRelogio } from "@/hooks/useTiposProjetoRelogio";
 import { ApontamentoManualModal } from "@/components/relogio/ApontamentoManualModal";
 import { ApontamentoCronometroModal } from "@/components/relogio/ApontamentoCronometroModal";
 import { ImportarApontamentosModal } from "@/components/relogio/ImportarApontamentosModal";
-import { formatDate } from "@/lib/utils";
+import { CronometroCard } from "@/components/relogio/CronometroCard";
+import { ApontamentoRow } from "@/components/relogio/ApontamentoRow";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { formatDate, cn } from "@/lib/utils";
 import type { RelogioApontamento } from "@/types/relogio";
 
+const PERIODO_STORAGE_KEY = "relogio_apontamento_periodo";
+
 export default function ApontamentoRelogioPage() {
+  const [periodo, setPeriodo] = useState<PeriodoFiltro>(() => {
+    const stored = typeof window !== "undefined"
+      ? (localStorage.getItem(PERIODO_STORAGE_KEY) as PeriodoFiltro | null)
+      : null;
+    return stored || "90d";
+  });
+
+  useEffect(() => {
+    localStorage.setItem(PERIODO_STORAGE_KEY, periodo);
+  }, [periodo]);
+
   const {
     apontamentos,
     isLoading,
@@ -73,26 +88,20 @@ export default function ApontamentoRelogioPage() {
     pararCronometro,
     importarApontamentos,
     apontamentoEmAndamento,
-  } = useApontamentosRelogio();
+  } = useApontamentosRelogio(periodo);
   const { projetos } = useProjetosRelogio();
   const { tiposProjeto, tarefas } = useTiposProjetoRelogio();
 
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebouncedValue(searchTerm, 250);
   const [projetoFilter, setProjetoFilter] = useState<string>("todos");
+  const [projetoOpen, setProjetoOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("ativo");
   const [manualOpen, setManualOpen] = useState(false);
   const [cronoOpen, setCronoOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<RelogioApontamento | undefined>();
   const [toDelete, setToDelete] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
-
-  // Atualiza tempo decorrido do cronômetro a cada segundo
-  useEffect(() => {
-    if (!apontamentoEmAndamento) return;
-    const i = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(i);
-  }, [apontamentoEmAndamento]);
 
   const projetoMap = useMemo(() => {
     const m = new Map<string, { codigo: string; nome: string; status: string }>();
@@ -112,9 +121,9 @@ export default function ApontamentoRelogioPage() {
   }, [projetos, statusFilter]);
 
   const filtered = useMemo(() => {
+    const term = debouncedSearch.toLowerCase();
     return apontamentos.filter((a) => {
       if (a.status === "em_andamento") return false;
-      const term = searchTerm.toLowerCase();
       const proj = projetoMap.get(a.projeto_id);
       const projText = proj ? `${proj.codigo} ${proj.nome}`.toLowerCase() : "";
       const tarefaText = a.tarefa_id ? (tarefaMap.get(a.tarefa_id) || "").toLowerCase() : "";
@@ -124,7 +133,7 @@ export default function ApontamentoRelogioPage() {
       const matchStatus = statusFilter === "todos" || (proj && proj.status === statusFilter);
       return matchSearch && matchProj && matchStatus;
     });
-  }, [apontamentos, searchTerm, projetoFilter, statusFilter, projetoMap, tarefaMap]);
+  }, [apontamentos, debouncedSearch, projetoFilter, statusFilter, projetoMap, tarefaMap]);
 
   const handleSaveManual = async (payload: ApontamentoPayload, id?: string) => {
     if (id) await atualizarApontamento(id, payload);
@@ -139,7 +148,7 @@ export default function ApontamentoRelogioPage() {
     await iniciarCronometro(projetoId, tarefaId);
   };
 
-  const handlePararCronometro = async () => {
+  const handlePararCronometro = useCallback(async () => {
     if (!apontamentoEmAndamento) return;
     try {
       await pararCronometro(apontamentoEmAndamento);
@@ -147,7 +156,7 @@ export default function ApontamentoRelogioPage() {
       console.error(e);
       toast.error("Erro ao parar cronômetro");
     }
-  };
+  }, [apontamentoEmAndamento, pararCronometro]);
 
   const confirmExcluir = async () => {
     if (!toDelete) return;
@@ -160,6 +169,18 @@ export default function ApontamentoRelogioPage() {
       setToDelete(null);
     }
   };
+
+  const handleEdit = useCallback(
+    (id: string) => {
+      const a = apontamentos.find((x) => x.id === id);
+      if (!a) return;
+      setEditing(a);
+      setManualOpen(true);
+    },
+    [apontamentos]
+  );
+
+  const handleDelete = useCallback((id: string) => setToDelete(id), []);
 
   const handleExportar = () => {
     if (filtered.length === 0) {
@@ -193,20 +214,21 @@ export default function ApontamentoRelogioPage() {
     toast.success(`${rows.length} apontamento(s) exportado(s)`);
   };
 
-  // Tempo decorrido do cronômetro ativo
-  const tempoDecorrido = useMemo(() => {
-    if (!apontamentoEmAndamento) return "00:00:00";
-    void tick;
-    const inicioSec = timeToSeconds(apontamentoEmAndamento.hora_inicio);
-    const agoraSec = timeToSeconds(nowTimeString());
-    return secondsToHHMMSS(Math.max(0, agoraSec - inicioSec));
-  }, [apontamentoEmAndamento, tick]);
-
   const projAndamento = apontamentoEmAndamento
     ? projetoMap.get(apontamentoEmAndamento.projeto_id)
     : null;
   const tarefaAndamento =
-    apontamentoEmAndamento?.tarefa_id && tarefaMap.get(apontamentoEmAndamento.tarefa_id);
+    apontamentoEmAndamento?.tarefa_id
+      ? tarefaMap.get(apontamentoEmAndamento.tarefa_id) || null
+      : null;
+
+  const projetoSelecionadoLabel =
+    projetoFilter === "todos"
+      ? "Todos os projetos"
+      : (() => {
+          const p = projetoMap.get(projetoFilter);
+          return p ? `${p.codigo} - ${p.nome}` : "Projeto";
+        })();
 
   return (
     <div className="space-y-4">
@@ -243,37 +265,16 @@ export default function ApontamentoRelogioPage() {
       </div>
 
       {apontamentoEmAndamento && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-3">
-              <Timer className="h-6 w-6 text-blue-600 animate-pulse" />
-              <div>
-                <div className="text-sm text-muted-foreground">
-                  Cronômetro em andamento
-                </div>
-                <div className="font-medium">
-                  {projAndamento
-                    ? `${projAndamento.codigo} - ${projAndamento.nome}`
-                    : "Projeto"}
-                  {tarefaAndamento ? ` • ${tarefaAndamento}` : ""}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Iniciado às {apontamentoEmAndamento.hora_inicio.slice(0, 8)} —{" "}
-                  {formatDate(apontamentoEmAndamento.data)}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-2xl font-mono font-bold text-blue-700">
-                {tempoDecorrido}
-              </div>
-              <Button variant="destructive" onClick={handlePararCronometro}>
-                <Square className="mr-2 h-4 w-4" />
-                Parar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <CronometroCard
+          apontamento={apontamentoEmAndamento}
+          projetoLabel={
+            projAndamento
+              ? `${projAndamento.codigo} - ${projAndamento.nome}`
+              : null
+          }
+          tarefaLabel={tarefaAndamento}
+          onParar={handlePararCronometro}
+        />
       )}
 
       <Card>
@@ -288,7 +289,20 @@ export default function ApontamentoRelogioPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex w-full sm:w-[200px]">
+            <div className="flex w-full sm:w-[180px]">
+              <Select value={periodo} onValueChange={(v) => setPeriodo(v as PeriodoFiltro)}>
+                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
+                  <SelectValue placeholder="Período" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800">
+                  <SelectItem value="90d">Últimos 90 dias</SelectItem>
+                  <SelectItem value="12m">Últimos 12 meses</SelectItem>
+                  <SelectItem value="ano">Este ano</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex w-full sm:w-[160px]">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full bg-white dark:bg-gray-900">
                   <SelectValue placeholder="Status" />
@@ -301,19 +315,62 @@ export default function ApontamentoRelogioPage() {
               </Select>
             </div>
             <div className="flex w-full sm:w-[280px]">
-              <Select value={projetoFilter} onValueChange={setProjetoFilter}>
-                <SelectTrigger className="w-full bg-white dark:bg-gray-900">
-                  <SelectValue placeholder="Projeto" />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-800 max-h-72">
-                  <SelectItem value="todos">Todos os projetos</SelectItem>
-                  {projetosPorStatus.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.codigo} - {p.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={projetoOpen} onOpenChange={setProjetoOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={projetoOpen}
+                    className="w-full justify-between bg-white dark:bg-gray-900 font-normal"
+                  >
+                    <span className="truncate">{projetoSelecionadoLabel}</span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0 bg-white dark:bg-gray-800" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar projeto..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum projeto encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="todos"
+                          onSelect={() => {
+                            setProjetoFilter("todos");
+                            setProjetoOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              projetoFilter === "todos" ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          Todos os projetos
+                        </CommandItem>
+                        {projetosPorStatus.map((p) => (
+                          <CommandItem
+                            key={p.id}
+                            value={`${p.codigo} ${p.nome}`}
+                            onSelect={() => {
+                              setProjetoFilter(p.id);
+                              setProjetoOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                projetoFilter === p.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {p.codigo} - {p.nome}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -352,65 +409,20 @@ export default function ApontamentoRelogioPage() {
                     const dur = Number(a.duracao_decimal || 0);
                     const durHHMMSS = secondsToHHMMSS(Math.round(dur * 3600));
                     return (
-                      <TableRow key={a.id} className="hover:bg-muted/40">
-                        <TableCell>{formatDate(a.data)}</TableCell>
-                        <TableCell>
-                          {proj ? `${proj.codigo} - ${proj.nome}` : "—"}
-                        </TableCell>
-                        <TableCell>{tarefaNome || "—"}</TableCell>
-                        <TableCell>{a.hora_inicio?.slice(0, 5) || "—"}</TableCell>
-                        <TableCell>{a.hora_fim?.slice(0, 5) || "—"}</TableCell>
-                        <TableCell className="text-right font-mono">
-                          {dur.toFixed(2)}
-                        </TableCell>
-                        <TableCell className="font-mono">{durHHMMSS}</TableCell>
-                        <TableCell>
-                          <span
-                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                              a.origem === "cronometro"
-                                ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20"
-                                : "bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-500/20"
-                            }`}
-                          >
-                            {a.origem === "cronometro" ? "Cronômetro" : "Manual"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-neutral-500 hover:bg-gray-100"
-                              >
-                                <EllipsisVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="w-40 z-30 bg-white border"
-                            >
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setEditing(a);
-                                  setManualOpen(true);
-                                }}
-                                className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
-                              >
-                                <Pencil className="h-4 w-4" />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => setToDelete(a.id)}
-                                className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
+                      <ApontamentoRow
+                        key={a.id}
+                        id={a.id}
+                        data={formatDate(a.data)}
+                        projeto={proj ? `${proj.codigo} - ${proj.nome}` : "—"}
+                        tarefa={tarefaNome || "—"}
+                        horaInicio={a.hora_inicio?.slice(0, 5) || "—"}
+                        horaFim={a.hora_fim?.slice(0, 5) || "—"}
+                        duracaoDecimal={dur.toFixed(2)}
+                        duracaoHHMMSS={durHHMMSS}
+                        origem={a.origem}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
                     );
                   })
                 )}

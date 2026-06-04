@@ -52,7 +52,26 @@ export interface ApontamentoPayload {
   observacao?: string | null;
 }
 
-export function useApontamentosRelogio() {
+export type PeriodoFiltro = "90d" | "12m" | "ano" | "todos";
+
+const dataInicialPorPeriodo = (p: PeriodoFiltro): string | null => {
+  const d = new Date();
+  switch (p) {
+    case "90d":
+      d.setDate(d.getDate() - 90);
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    case "12m":
+      d.setMonth(d.getMonth() - 12);
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    case "ano":
+      return `${d.getFullYear()}-01-01`;
+    case "todos":
+    default:
+      return null;
+  }
+};
+
+export function useApontamentosRelogio(periodo: PeriodoFiltro = "90d") {
   const { currentCompany } = useCompany();
   const [apontamentos, setApontamentos] = useState<RelogioApontamento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,23 +83,43 @@ export function useApontamentosRelogio() {
     }
     setIsLoading(true);
     try {
+      const dataIni = dataInicialPorPeriodo(periodo);
+
+      // Carrega apontamentos do período (paginação 1000 em 1000)
       const pageSize = 1000;
       let from = 0;
       const all: any[] = [];
       while (true) {
-        const { data, error } = await supabase
+        let q = supabase
           .from("relogio_apontamentos" as any)
           .select("*")
           .eq("empresa_id", currentCompany.id)
           .order("data", { ascending: false })
           .order("hora_inicio", { ascending: false })
           .range(from, from + pageSize - 1);
+        if (dataIni) q = q.gte("data", dataIni);
+        const { data, error } = await q;
         if (error) throw error;
         const rows = (data || []) as any[];
         all.push(...rows);
         if (rows.length < pageSize) break;
         from += pageSize;
       }
+
+      // Garante o registro "em_andamento" mesmo fora do período
+      if (dataIni) {
+        const { data: emAnd } = await supabase
+          .from("relogio_apontamentos" as any)
+          .select("*")
+          .eq("empresa_id", currentCompany.id)
+          .eq("status", "em_andamento")
+          .limit(5);
+        const extras = ((emAnd || []) as any[]).filter(
+          (e) => !all.some((a) => a.id === e.id)
+        );
+        all.push(...extras);
+      }
+
       setApontamentos(all as unknown as RelogioApontamento[]);
     } catch (e) {
       console.error(e);
@@ -88,11 +127,29 @@ export function useApontamentosRelogio() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentCompany?.id]);
+  }, [currentCompany?.id, periodo]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const upsertLocal = (row: RelogioApontamento) => {
+    setApontamentos((prev) => {
+      const idx = prev.findIndex((p) => p.id === row.id);
+      if (idx === -1) {
+        // insere na posição correta (mais recente primeiro)
+        const next = [row, ...prev];
+        next.sort((a, b) => {
+          if (a.data !== b.data) return a.data < b.data ? 1 : -1;
+          return (a.hora_inicio || "") < (b.hora_inicio || "") ? 1 : -1;
+        });
+        return next;
+      }
+      const next = [...prev];
+      next[idx] = row;
+      return next;
+    });
+  };
 
   const criarApontamento = async (payload: ApontamentoPayload) => {
     if (!currentCompany?.id) return null;
@@ -102,22 +159,25 @@ export function useApontamentosRelogio() {
       .select()
       .single();
     if (error) throw error;
+    const novo = data as unknown as RelogioApontamento;
+    upsertLocal(novo);
     toast.success("Apontamento criado!");
-    await fetchData();
-    return data as unknown as RelogioApontamento;
+    return novo;
   };
 
   const atualizarApontamento = async (
     id: string,
     payload: Partial<ApontamentoPayload>
   ) => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("relogio_apontamentos" as any)
       .update(payload)
-      .eq("id", id);
+      .eq("id", id)
+      .select()
+      .single();
     if (error) throw error;
+    if (data) upsertLocal(data as unknown as RelogioApontamento);
     toast.success("Apontamento atualizado!");
-    await fetchData();
   };
 
   const excluirApontamento = async (id: string) => {
@@ -126,8 +186,8 @@ export function useApontamentosRelogio() {
       .delete()
       .eq("id", id);
     if (error) throw error;
+    setApontamentos((prev) => prev.filter((p) => p.id !== id));
     toast.success("Apontamento excluído!");
-    await fetchData();
   };
 
   const iniciarCronometro = async (
