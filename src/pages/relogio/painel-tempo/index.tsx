@@ -364,18 +364,21 @@ export default function PainelTempoRelogioPage() {
     };
   }, [dadosAtual, dadosPrev]);
 
-  // ---------- Comparativo mensal (12 meses) ----------
+  // ---------- Comparativo mensal (segue o filtro de período) ----------
   const mensal = useMemo(() => {
-    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const ini = parseIso(intervaloAtual.inicio);
+    const fim = parseIso(intervaloAtual.fim);
     const meses: { key: string; label: string; ano: number; mes: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+    const cursor = new Date(ini.getFullYear(), ini.getMonth(), 1);
+    const limite = new Date(fim.getFullYear(), fim.getMonth(), 1);
+    while (cursor <= limite) {
       meses.push({
-        key: `${d.getFullYear()}-${pad(d.getMonth() + 1)}`,
-        label: `${MES_CURTO[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`,
-        ano: d.getFullYear(),
-        mes: d.getMonth(),
+        key: `${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}`,
+        label: `${MES_CURTO[cursor.getMonth()]}/${String(cursor.getFullYear()).slice(2)}`,
+        ano: cursor.getFullYear(),
+        mes: cursor.getMonth(),
       });
+      cursor.setMonth(cursor.getMonth() + 1);
     }
     const totais = new Map<string, { horas: number; dias: Set<string> }>();
     meses.forEach((m) => totais.set(m.key, { horas: 0, dias: new Set() }));
