@@ -365,7 +365,21 @@ export default function ProjetosRelogioPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[120px]">Código</TableHead>
+                  <TableHead
+                    className="w-[120px] cursor-pointer select-none"
+                    onClick={() =>
+                      setSortCodigoDir((prev) => (prev === "asc" ? "desc" : "asc"))
+                    }
+                  >
+                    <div className="flex items-center gap-1">
+                      Código
+                      {sortCodigoDir === "asc" ? (
+                        <ArrowUp className="h-4 w-4 text-primary" />
+                      ) : (
+                        <ArrowDown className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                  </TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead className="w-[160px]">Tipo de Projeto</TableHead>
                   <TableHead>Cliente</TableHead>
