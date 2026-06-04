@@ -104,7 +104,9 @@ const dateColumns = [
   'created_at', 'updated_at', 'data', 'data_emissao', 'data_lancamento', 
   'data_vencimento', 'data_pagamento', 'data_aniversario', 'data_criacao',
   'data_inicio', 'data_fim', 'data_primeiro_vencimento', 'data_geracao_conta',
-  'data_movimentacao', 'data_venda', 'data_nota_fiscal', 'ultimo_contato'
+  'data_movimentacao', 'data_venda', 'data_nota_fiscal', 'ultimo_contato',
+  'data_fechamento'
+
 ];
 
 // Colunas de valor monetário conhecidas
