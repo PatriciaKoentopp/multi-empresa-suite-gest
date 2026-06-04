@@ -204,6 +204,10 @@ export const navigationConfig: ModuleNavItem[] = [
         title: "Apontamento",
         href: "/relogio/apontamento",
       },
+      {
+        title: "Visualização",
+        href: "/relogio/visualizacao",
+      },
     ],
   },
   {
