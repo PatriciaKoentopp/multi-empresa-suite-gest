@@ -970,58 +970,6 @@ export default function PainelTempoRelogioPage() {
           </Card>
         </div>
 
-        {/* Tabela detalhada de projetos */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Detalhamento por projeto</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Projeto</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Horas</TableHead>
-                    <TableHead className="text-right">% do total</TableHead>
-                    <TableHead className="text-right">Dias</TableHead>
-                    <TableHead className="text-right">Δ período anterior</TableHead>
-                    <TableHead>Última atividade</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {perfProjetos.lista.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
-                        Sem dados no período.
-                      </TableCell>
-                    </TableRow>
-                  ) : perfProjetos.lista.map((p) => (
-                    <TableRow key={p.id} className={cn(p.variacao <= -30 && "bg-red-50/40 dark:bg-red-950/10")}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: projetoColor(p.id) }} />
-                          <div className="min-w-0">
-                            <div className="font-medium truncate">{p.codigo} - {p.nome}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{p.tipo || "—"}</TableCell>
-                      <TableCell className="text-right">{formatHoras(p.horas)}</TableCell>
-                      <TableCell className="text-right">{fmtNum(p.pct, 1)}%</TableCell>
-                      <TableCell className="text-right">{p.dias}</TableCell>
-                      <TableCell className={cn("text-right font-medium",
-                        p.variacao >= 0 ? "text-emerald-600" : "text-red-600")}>
-                        {p.variacao >= 0 ? "+" : ""}{fmtNum(p.variacao, 1)}%
-                      </TableCell>
-                      <TableCell>{p.ultima ? formatDate(p.ultima) : "—"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Curva acumulada + Heatmap */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
