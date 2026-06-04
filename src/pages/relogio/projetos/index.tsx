@@ -45,6 +45,8 @@ import {
   Download,
   Check,
   ChevronsUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { useProjetosRelogio, type ProjetoPayload } from "@/hooks/useProjetosRelogio";
 import { ProjetoFormModal } from "@/components/relogio/ProjetoFormModal";
