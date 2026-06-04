@@ -253,12 +253,12 @@ export default function PainelTempoRelogioPage() {
     [intervaloAtual.inicio, intervaloAtual.fim]
   );
 
-  // Janela de 24 meses para o comparativo histórico (12 meses exibidos + 12 meses para Δ YoY)
+  // Janela do comparativo histórico: período atual + 12 meses anteriores (para Δ YoY)
   const janela12m = useMemo(() => {
-    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-    const ini = new Date(hoje.getFullYear() - 2, hoje.getMonth() + 1, 1);
-    return { inicio: isoFromDate(ini), fim: isoFromDate(hoje) };
-  }, []);
+    const ini = parseIso(intervaloAtual.inicio);
+    const iniYoY = new Date(ini.getFullYear() - 1, ini.getMonth(), 1);
+    return { inicio: isoFromDate(iniYoY), fim: intervaloAtual.fim };
+  }, [intervaloAtual.inicio, intervaloAtual.fim]);
 
   // Fetches
   const { apontamentos: apontPeriodo, isLoading: loadingPeriodo, refetch: refetchPeriodo } =
