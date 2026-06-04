@@ -133,7 +133,7 @@ export default function ProjetosRelogioPage() {
 
   const filtered = useMemo(() => {
     const term = debouncedSearch.toLowerCase();
-    return projetos.filter((p) => {
+    const result = projetos.filter((p) => {
       const matchSearch =
         !term ||
         p.codigo.toLowerCase().includes(term) ||
@@ -142,7 +142,12 @@ export default function ProjetosRelogioPage() {
       const matchCliente = clienteFilter === "todos" || p.favorecido_id === clienteFilter;
       return matchSearch && matchStatus && matchCliente;
     });
-  }, [projetos, debouncedSearch, statusFilter, clienteFilter]);
+    result.sort((a, b) => {
+      const cmp = a.codigo.localeCompare(b.codigo);
+      return sortCodigoDir === "asc" ? cmp : -cmp;
+    });
+    return result;
+  }, [projetos, debouncedSearch, statusFilter, clienteFilter, sortCodigoDir]);
 
   const handleSave = async (data: ProjetoPayload) => {
     try {
