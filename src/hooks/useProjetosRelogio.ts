@@ -160,6 +160,8 @@ export function useProjetosRelogio() {
     criarProjeto,
     atualizarProjeto,
     excluirProjeto,
+    contarApontamentos,
+    excluirProjetoComApontamentos,
     importarProjetos,
   };
 }
