@@ -391,21 +391,44 @@ export default function ProjetosRelogioPage() {
         onImport={importarProjetos}
       />
 
-      <AlertDialog open={!!toDelete} onOpenChange={() => setToDelete(null)}>
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => { if (!o) { setToDelete(null); setConfirmText(""); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.
+            <AlertDialogDescription asChild>
+              {toDelete && toDelete.count > 0 ? (
+                <div className="space-y-3">
+                  <p>
+                    O projeto <strong>{toDelete.codigo} - {toDelete.nome}</strong> possui{" "}
+                    <strong className="text-red-600">{toDelete.count}</strong>{" "}
+                    {toDelete.count === 1 ? "apontamento" : "apontamentos"} de horas vinculado{toDelete.count === 1 ? "" : "s"}.
+                  </p>
+                  <p>
+                    Ao confirmar, o projeto e <strong>todos os apontamentos</strong> serão excluídos permanentemente. Esta ação não pode ser desfeita.
+                  </p>
+                  <p>
+                    Para confirmar, digite <strong>EXCLUIR</strong> abaixo:
+                  </p>
+                  <Input
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="Digite EXCLUIR"
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <span>Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.</span>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={confirmExcluir}
+              onClick={(e) => { e.preventDefault(); confirmExcluir(); }}
+              disabled={deleting || (!!toDelete && toDelete.count > 0 && confirmText.trim().toUpperCase() !== "EXCLUIR")}
               className="bg-destructive text-destructive-foreground"
             >
-              Excluir
+              {deleting ? "Excluindo..." : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
