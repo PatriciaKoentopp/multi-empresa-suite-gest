@@ -366,8 +366,13 @@ export default function PainelTempoRelogioPage() {
 
   // ---------- Comparativo mensal (segue o filtro de período) ----------
   const mensal = useMemo(() => {
-    const ini = parseIso(intervaloAtual.inicio);
+    let ini = parseIso(intervaloAtual.inicio);
     const fim = parseIso(intervaloAtual.fim);
+    // Quando "todos": começa a partir da data do apontamento mais antigo
+    if (periodo === "todos" && dados12m.length > 0) {
+      const minData = dados12m.reduce((m, r) => (r.data < m ? r.data : m), dados12m[0].data);
+      ini = parseIso(minData);
+    }
     const meses: { key: string; label: string; ano: number; mes: number }[] = [];
     const cursor = new Date(ini.getFullYear(), ini.getMonth(), 1);
     const limite = new Date(fim.getFullYear(), fim.getMonth(), 1);
