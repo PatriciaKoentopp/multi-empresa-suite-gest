@@ -23,11 +23,17 @@ export const backupTables: BackupTable[] = [
   { id: 'produtos', name: 'Produtos', description: 'Produtos cadastrados' },
   { id: 'grupo_produtos', name: 'Grupos de Produtos', description: 'Grupos de produtos' },
   { id: 'servicos', name: 'Serviços', description: 'Serviços cadastrados' },
+  { id: 'tabelas_precos', name: 'Tabelas de Preços', description: 'Tabelas de preços de serviços' },
+  { id: 'tabelas_precos_itens', name: 'Itens de Tabelas de Preços', description: 'Itens das tabelas de preços' },
   { id: 'movimentacoes', name: 'Movimentações', description: 'Movimentações financeiras' },
   { id: 'movimentacoes_parcelas', name: 'Parcelas', description: 'Parcelas das movimentações' },
+  { id: 'impostos_retidos', name: 'Impostos Retidos', description: 'Cadastro de impostos retidos' },
+  { id: 'movimentacoes_impostos_retidos', name: 'Movim. Impostos Retidos', description: 'Impostos retidos das movimentações' },
   { id: 'fluxo_caixa', name: 'Fluxo de Caixa', description: 'Fluxo de caixa' },
   { id: 'antecipacoes', name: 'Antecipações', description: 'Antecipações' },
+  { id: 'movimentacoes_parcelas_antecipacoes', name: 'Uso de Antecipações', description: 'Vínculo de antecipações com parcelas' },
   { id: 'lancamentos_contabeis', name: 'Lançamentos Contábeis', description: 'Lançamentos contábeis' },
+  { id: 'fechamentos_mensais', name: 'Fechamentos Mensais', description: 'Fechamentos mensais' },
   { id: 'funis', name: 'Funis', description: 'Funis do CRM' },
   { id: 'funil_etapas', name: 'Etapas do Funil', description: 'Etapas dos funis' },
   { id: 'leads', name: 'Leads', description: 'Leads do CRM' },
@@ -36,11 +42,17 @@ export const backupTables: BackupTable[] = [
   { id: 'orcamentos', name: 'Orçamentos', description: 'Orçamentos/Vendas' },
   { id: 'orcamentos_itens', name: 'Itens de Orçamentos', description: 'Itens dos orçamentos' },
   { id: 'orcamentos_parcelas', name: 'Parcelas de Orçamentos', description: 'Parcelas dos orçamentos' },
+  { id: 'numeracao_orcamentos', name: 'Numeração de Orçamentos', description: 'Controle de numeração de orçamentos' },
   { id: 'contratos', name: 'Contratos', description: 'Contratos' },
   { id: 'contratos_parcelas', name: 'Parcelas de Contratos', description: 'Parcelas dos contratos' },
+  { id: 'relogio_tipos_projeto', name: 'Relógio - Tipos de Projeto', description: 'Tipos de projeto do Relógio' },
+  { id: 'relogio_tarefas', name: 'Relógio - Tarefas', description: 'Tarefas dos tipos de projeto' },
+  { id: 'relogio_projetos', name: 'Relógio - Projetos', description: 'Projetos do Relógio' },
+  { id: 'relogio_apontamentos', name: 'Relógio - Apontamentos', description: 'Apontamentos de horas' },
   { id: 'dashboard_cards_config', name: 'Configuração Dashboard', description: 'Configuração dos cards' },
   { id: 'modulos_parametros', name: 'Parâmetros', description: 'Parâmetros dos módulos' },
 ];
+
 
 // Função para formatar datas no padrão DD/MM/YYYY
 const formatDateValue = (value: any): string => {
@@ -92,7 +104,9 @@ const dateColumns = [
   'created_at', 'updated_at', 'data', 'data_emissao', 'data_lancamento', 
   'data_vencimento', 'data_pagamento', 'data_aniversario', 'data_criacao',
   'data_inicio', 'data_fim', 'data_primeiro_vencimento', 'data_geracao_conta',
-  'data_movimentacao', 'data_venda', 'data_nota_fiscal', 'ultimo_contato'
+  'data_movimentacao', 'data_venda', 'data_nota_fiscal', 'ultimo_contato',
+  'data_fechamento'
+
 ];
 
 // Colunas de valor monetário conhecidas
@@ -193,6 +207,63 @@ export function useBackup() {
           .in('contrato_id', contratoIds.map(c => c.id));
         break;
 
+      case 'movimentacoes_impostos_retidos': {
+        const { data: movIds2 } = await supabase
+          .from('movimentacoes')
+          .select('id')
+          .eq('empresa_id', empresaId);
+        if (!movIds2 || movIds2.length === 0) return [];
+        query = supabase
+          .from('movimentacoes_impostos_retidos')
+          .select('*')
+          .in('movimentacao_id', movIds2.map(m => m.id));
+        break;
+      }
+
+      case 'movimentacoes_parcelas_antecipacoes': {
+        const { data: movIds3 } = await supabase
+          .from('movimentacoes')
+          .select('id')
+          .eq('empresa_id', empresaId);
+        if (!movIds3 || movIds3.length === 0) return [];
+        const { data: parcelaIds } = await supabase
+          .from('movimentacoes_parcelas')
+          .select('id')
+          .in('movimentacao_id', movIds3.map(m => m.id));
+        if (!parcelaIds || parcelaIds.length === 0) return [];
+        query = supabase
+          .from('movimentacoes_parcelas_antecipacoes')
+          .select('*')
+          .in('movimentacao_parcela_id', parcelaIds.map(p => p.id));
+        break;
+      }
+
+      case 'tabelas_precos_itens': {
+        const { data: tabIds } = await supabase
+          .from('tabelas_precos')
+          .select('id')
+          .eq('empresa_id', empresaId);
+        if (!tabIds || tabIds.length === 0) return [];
+        query = supabase
+          .from('tabelas_precos_itens')
+          .select('*')
+          .in('tabela_id', tabIds.map(t => t.id));
+        break;
+      }
+
+      case 'relogio_tarefas': {
+        const { data: tipoIds } = await supabase
+          .from('relogio_tipos_projeto')
+          .select('id')
+          .eq('empresa_id', empresaId);
+        if (!tipoIds || tipoIds.length === 0) return [];
+        query = supabase
+          .from('relogio_tarefas')
+          .select('*')
+          .in('tipo_projeto_id', tipoIds.map(t => t.id));
+        break;
+      }
+
       case 'servicos':
         // Tabela servicos usa empresa_id
         query = supabase.from('servicos').select('*').eq('empresa_id', empresaId);
@@ -201,6 +272,7 @@ export function useBackup() {
       case 'tipos_titulos':
         query = supabase.from('tipos_titulos').select('*').eq('empresa_id', empresaId);
         break;
+
 
       default:
         // Tabelas com empresa_id direto
