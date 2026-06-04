@@ -45,6 +45,8 @@ import {
   Download,
   Check,
   ChevronsUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { useProjetosRelogio, type ProjetoPayload } from "@/hooks/useProjetosRelogio";
 import { ProjetoFormModal } from "@/components/relogio/ProjetoFormModal";
@@ -108,6 +110,7 @@ export default function ProjetosRelogioPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ativo");
   const [clienteFilter, setClienteFilter] = useState<string>("todos");
   const [clienteOpen, setClienteOpen] = useState(false);
+  const [sortCodigoDir, setSortCodigoDir] = useState<"asc" | "desc">("asc");
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<RelogioProjeto | undefined>();
@@ -130,7 +133,7 @@ export default function ProjetosRelogioPage() {
 
   const filtered = useMemo(() => {
     const term = debouncedSearch.toLowerCase();
-    return projetos.filter((p) => {
+    const result = projetos.filter((p) => {
       const matchSearch =
         !term ||
         p.codigo.toLowerCase().includes(term) ||
@@ -139,7 +142,12 @@ export default function ProjetosRelogioPage() {
       const matchCliente = clienteFilter === "todos" || p.favorecido_id === clienteFilter;
       return matchSearch && matchStatus && matchCliente;
     });
-  }, [projetos, debouncedSearch, statusFilter, clienteFilter]);
+    result.sort((a, b) => {
+      const cmp = a.codigo.localeCompare(b.codigo);
+      return sortCodigoDir === "asc" ? cmp : -cmp;
+    });
+    return result;
+  }, [projetos, debouncedSearch, statusFilter, clienteFilter, sortCodigoDir]);
 
   const handleSave = async (data: ProjetoPayload) => {
     try {
@@ -357,7 +365,21 @@ export default function ProjetosRelogioPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[120px]">Código</TableHead>
+                  <TableHead
+                    className="w-[120px] cursor-pointer select-none"
+                    onClick={() =>
+                      setSortCodigoDir((prev) => (prev === "asc" ? "desc" : "asc"))
+                    }
+                  >
+                    <div className="flex items-center gap-1">
+                      Código
+                      {sortCodigoDir === "asc" ? (
+                        <ArrowUp className="h-4 w-4 text-primary" />
+                      ) : (
+                        <ArrowDown className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                  </TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead className="w-[160px]">Tipo de Projeto</TableHead>
                   <TableHead>Cliente</TableHead>
