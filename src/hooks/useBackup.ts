@@ -205,6 +205,63 @@ export function useBackup() {
           .in('contrato_id', contratoIds.map(c => c.id));
         break;
 
+      case 'movimentacoes_impostos_retidos': {
+        const { data: movIds2 } = await supabase
+          .from('movimentacoes')
+          .select('id')
+          .eq('empresa_id', empresaId);
+        if (!movIds2 || movIds2.length === 0) return [];
+        query = supabase
+          .from('movimentacoes_impostos_retidos')
+          .select('*')
+          .in('movimentacao_id', movIds2.map(m => m.id));
+        break;
+      }
+
+      case 'movimentacoes_parcelas_antecipacoes': {
+        const { data: movIds3 } = await supabase
+          .from('movimentacoes')
+          .select('id')
+          .eq('empresa_id', empresaId);
+        if (!movIds3 || movIds3.length === 0) return [];
+        const { data: parcelaIds } = await supabase
+          .from('movimentacoes_parcelas')
+          .select('id')
+          .in('movimentacao_id', movIds3.map(m => m.id));
+        if (!parcelaIds || parcelaIds.length === 0) return [];
+        query = supabase
+          .from('movimentacoes_parcelas_antecipacoes')
+          .select('*')
+          .in('movimentacao_parcela_id', parcelaIds.map(p => p.id));
+        break;
+      }
+
+      case 'tabelas_precos_itens': {
+        const { data: tabIds } = await supabase
+          .from('tabelas_precos')
+          .select('id')
+          .eq('empresa_id', empresaId);
+        if (!tabIds || tabIds.length === 0) return [];
+        query = supabase
+          .from('tabelas_precos_itens')
+          .select('*')
+          .in('tabela_id', tabIds.map(t => t.id));
+        break;
+      }
+
+      case 'relogio_tarefas': {
+        const { data: tipoIds } = await supabase
+          .from('relogio_tipos_projeto')
+          .select('id')
+          .eq('empresa_id', empresaId);
+        if (!tipoIds || tipoIds.length === 0) return [];
+        query = supabase
+          .from('relogio_tarefas')
+          .select('*')
+          .in('tipo_projeto_id', tipoIds.map(t => t.id));
+        break;
+      }
+
       case 'servicos':
         // Tabela servicos usa empresa_id
         query = supabase.from('servicos').select('*').eq('empresa_id', empresaId);
@@ -213,6 +270,7 @@ export function useBackup() {
       case 'tipos_titulos':
         query = supabase.from('tipos_titulos').select('*').eq('empresa_id', empresaId);
         break;
+
 
       default:
         // Tabelas com empresa_id direto
