@@ -414,6 +414,7 @@ export default function ProjetosRelogioPage() {
                   <TableHead className="text-right w-[110px]">Fotos Tiradas</TableHead>
                   <TableHead className="text-right w-[110px]">Fotos Enviadas</TableHead>
                   <TableHead className="text-right w-[110px]">Fotos Vendidas</TableHead>
+                  <TableHead className="text-right w-[110px]">Horas</TableHead>
                   <TableHead className="w-[120px]">Status</TableHead>
                   <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
