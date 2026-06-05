@@ -242,7 +242,7 @@ export default function ProjetosRelogioPage() {
       return;
     }
 
-    const headers = ["Código", "Nome", "Tipo de Projeto", "Cliente", "Fotos Tiradas", "Fotos Enviadas", "Fotos Vendidas", "Status"];
+    const headers = ["Código", "Nome", "Tipo de Projeto", "Cliente", "Fotos Tiradas", "Fotos Enviadas", "Fotos Vendidas", "Horas", "Status"];
     const rows = filtered.map((p) => [
       p.codigo,
       p.nome,
@@ -251,6 +251,7 @@ export default function ProjetosRelogioPage() {
       String(p.fotos_tiradas ?? 0),
       String(p.fotos_enviadas ?? 0),
       String(p.fotos_vendidas ?? 0),
+      formatHoursMinutes(horasPorProjeto.get(p.id) || 0),
       p.status === "ativo" ? "Ativo" : "Arquivado",
     ]);
 
