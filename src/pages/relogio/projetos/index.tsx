@@ -58,6 +58,7 @@ import { useCompany } from "@/contexts/company-context";
 import type { RelogioProjeto } from "@/types/relogio";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { formatHoursMinutes } from "@/utils/timeUtils";
 
 type StatusFilter = "todos" | "ativo" | "arquivado";
 
