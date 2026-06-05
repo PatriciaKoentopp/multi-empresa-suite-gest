@@ -120,6 +120,32 @@ export default function ProjetosRelogioPage() {
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  const { data: horasPorProjeto = new Map() } = useQuery({
+    queryKey: ["projetos-horas", currentCompany?.id],
+    enabled: !!currentCompany?.id,
+    queryFn: async () => {
+      const map = new Map<string, number>();
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("relogio_apontamentos")
+          .select("projeto_id, duracao_decimal")
+          .eq("empresa_id", currentCompany!.id)
+          .eq("status", "concluido")
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const rows = (data || []) as { projeto_id: string; duracao_decimal: number }[];
+        rows.forEach((r) => {
+          map.set(r.projeto_id, (map.get(r.projeto_id) || 0) + (Number(r.duracao_decimal) || 0));
+        });
+        if (rows.length < pageSize) break;
+        from += pageSize;
+      }
+      return map;
+    },
+  });
+
   const favorecidoNome = useMemo(() => {
     const m = new Map<string, string>();
     favorecidos.forEach((f) => m.set(f.id, f.nome));
