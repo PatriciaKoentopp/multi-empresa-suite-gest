@@ -439,6 +439,7 @@ export default function ProjetosRelogioPage() {
                       projeto={p}
                       tipoNome={p.tipo_projeto_id ? (tipoProjetoNome.get(p.tipo_projeto_id) ?? "") : ""}
                       clienteNome={favorecidoNome.get(p.favorecido_id) ?? ""}
+                      horas={horasPorProjeto.get(p.id) || 0}
                       onEdit={handleEdit}
                       onToggleStatus={toggleStatus}
                       onDelete={handleAskDelete}
