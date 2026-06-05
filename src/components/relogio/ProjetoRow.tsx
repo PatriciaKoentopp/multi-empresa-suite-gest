@@ -20,6 +20,7 @@ interface Props {
   projeto: RelogioProjeto;
   tipoNome: string;
   clienteNome: string;
+  horas: number;
   onEdit: (p: RelogioProjeto) => void;
   onToggleStatus: (p: RelogioProjeto) => void;
   onDelete: (p: RelogioProjeto) => void;
