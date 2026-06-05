@@ -31,6 +31,7 @@ function ProjetoRowImpl({
   projeto: p,
   tipoNome,
   clienteNome,
+  horas,
   onEdit,
   onToggleStatus,
   onDelete,
