@@ -422,13 +422,13 @@ export default function ProjetosRelogioPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-6 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-6 text-muted-foreground">
                       Nenhum resultado encontrado
                     </TableCell>
                   </TableRow>
