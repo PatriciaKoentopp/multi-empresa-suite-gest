@@ -45,6 +45,9 @@ function ProjetoRowImpl({
       <TableCell className="text-right">{p.fotos_tiradas}</TableCell>
       <TableCell className="text-right">{p.fotos_enviadas}</TableCell>
       <TableCell className="text-right">{p.fotos_vendidas}</TableCell>
+      <TableCell className="text-right">
+        {horas > 0 ? formatHoursMinutes(horas) : "—"}
+      </TableCell>
       <TableCell>
         <span
           className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
