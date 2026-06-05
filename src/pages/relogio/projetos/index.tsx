@@ -58,6 +58,7 @@ import { useCompany } from "@/contexts/company-context";
 import type { RelogioProjeto } from "@/types/relogio";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { formatHoursMinutes } from "@/utils/timeUtils";
 
 type StatusFilter = "todos" | "ativo" | "arquivado";
 
@@ -118,6 +119,32 @@ export default function ProjetosRelogioPage() {
   const [toDelete, setToDelete] = useState<{ id: string; codigo: string; nome: string; count: number } | null>(null);
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
+
+  const { data: horasPorProjeto = new Map() } = useQuery({
+    queryKey: ["projetos-horas", currentCompany?.id],
+    enabled: !!currentCompany?.id,
+    queryFn: async () => {
+      const map = new Map<string, number>();
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("relogio_apontamentos")
+          .select("projeto_id, duracao_decimal")
+          .eq("empresa_id", currentCompany!.id)
+          .eq("status", "concluido")
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const rows = (data || []) as { projeto_id: string; duracao_decimal: number }[];
+        rows.forEach((r) => {
+          map.set(r.projeto_id, (map.get(r.projeto_id) || 0) + (Number(r.duracao_decimal) || 0));
+        });
+        if (rows.length < pageSize) break;
+        from += pageSize;
+      }
+      return map;
+    },
+  });
 
   const favorecidoNome = useMemo(() => {
     const m = new Map<string, string>();
@@ -215,7 +242,7 @@ export default function ProjetosRelogioPage() {
       return;
     }
 
-    const headers = ["Código", "Nome", "Tipo de Projeto", "Cliente", "Fotos Tiradas", "Fotos Enviadas", "Fotos Vendidas", "Status"];
+    const headers = ["Código", "Nome", "Tipo de Projeto", "Cliente", "Fotos Tiradas", "Fotos Enviadas", "Fotos Vendidas", "Horas", "Status"];
     const rows = filtered.map((p) => [
       p.codigo,
       p.nome,
@@ -224,6 +251,7 @@ export default function ProjetosRelogioPage() {
       String(p.fotos_tiradas ?? 0),
       String(p.fotos_enviadas ?? 0),
       String(p.fotos_vendidas ?? 0),
+      formatHoursMinutes(horasPorProjeto.get(p.id) || 0),
       p.status === "ativo" ? "Ativo" : "Arquivado",
     ]);
 
@@ -386,6 +414,7 @@ export default function ProjetosRelogioPage() {
                   <TableHead className="text-right w-[110px]">Fotos Tiradas</TableHead>
                   <TableHead className="text-right w-[110px]">Fotos Enviadas</TableHead>
                   <TableHead className="text-right w-[110px]">Fotos Vendidas</TableHead>
+                  <TableHead className="text-right w-[110px]">Horas</TableHead>
                   <TableHead className="w-[120px]">Status</TableHead>
                   <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
@@ -393,13 +422,13 @@ export default function ProjetosRelogioPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-6 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-6 text-muted-foreground">
                       Nenhum resultado encontrado
                     </TableCell>
                   </TableRow>
@@ -410,6 +439,7 @@ export default function ProjetosRelogioPage() {
                       projeto={p}
                       tipoNome={p.tipo_projeto_id ? (tipoProjetoNome.get(p.tipo_projeto_id) ?? "") : ""}
                       clienteNome={favorecidoNome.get(p.favorecido_id) ?? ""}
+                      horas={horasPorProjeto.get(p.id) || 0}
                       onEdit={handleEdit}
                       onToggleStatus={toggleStatus}
                       onDelete={handleAskDelete}

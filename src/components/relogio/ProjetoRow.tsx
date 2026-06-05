@@ -15,11 +15,13 @@ import {
   Trash2,
 } from "lucide-react";
 import type { RelogioProjeto } from "@/types/relogio";
+import { formatHoursMinutes } from "@/utils/timeUtils";
 
 interface Props {
   projeto: RelogioProjeto;
   tipoNome: string;
   clienteNome: string;
+  horas: number;
   onEdit: (p: RelogioProjeto) => void;
   onToggleStatus: (p: RelogioProjeto) => void;
   onDelete: (p: RelogioProjeto) => void;
@@ -29,6 +31,7 @@ function ProjetoRowImpl({
   projeto: p,
   tipoNome,
   clienteNome,
+  horas,
   onEdit,
   onToggleStatus,
   onDelete,
@@ -42,6 +45,9 @@ function ProjetoRowImpl({
       <TableCell className="text-right">{p.fotos_tiradas}</TableCell>
       <TableCell className="text-right">{p.fotos_enviadas}</TableCell>
       <TableCell className="text-right">{p.fotos_vendidas}</TableCell>
+      <TableCell className="text-right">
+        {horas > 0 ? formatHoursMinutes(horas) : "—"}
+      </TableCell>
       <TableCell>
         <span
           className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
