@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import type { RelogioProjeto } from "@/types/relogio";
+import { formatHoursMinutes } from "@/utils/timeUtils";
 
 interface Props {
   projeto: RelogioProjeto;
