@@ -97,6 +97,12 @@ export default function PainelProjetosRelogioPage() {
     return m;
   }, [favorecidos]);
 
+  const tipoProjetoNome = useMemo(() => {
+    const m = new Map<string, string>();
+    tiposProjeto.forEach((t) => m.set(t.id, t.nome));
+    return m;
+  }, [tiposProjeto]);
+
   const filtered = useMemo(() => {
     const term = debouncedSearch.toLowerCase();
     const result = projetos.filter((p) => {
