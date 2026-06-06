@@ -68,11 +68,27 @@ export default function PainelProjetosRelogioPage() {
     },
   });
 
+  const { data: tiposProjeto = [] } = useQuery({
+    queryKey: ["tipos-projeto-lite", currentCompany?.id],
+    enabled: !!currentCompany?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("relogio_tipos_projeto")
+        .select("id, nome")
+        .eq("empresa_id", currentCompany!.id)
+        .order("nome");
+      if (error) throw error;
+      return (data || []) as { id: string; nome: string }[];
+    },
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebouncedValue(searchTerm, 250);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ativo");
   const [clienteFilter, setClienteFilter] = useState<string>("todos");
   const [clienteOpen, setClienteOpen] = useState(false);
+  const [tipoProjetoFilter, setTipoProjetoFilter] = useState<string>("todos");
+  const [tipoOpen, setTipoOpen] = useState(false);
   const [sortCodigoDir, setSortCodigoDir] = useState<"asc" | "desc">("asc");
 
   const favorecidoNome = useMemo(() => {
@@ -80,6 +96,12 @@ export default function PainelProjetosRelogioPage() {
     favorecidos.forEach((f) => m.set(f.id, f.nome));
     return m;
   }, [favorecidos]);
+
+  const tipoProjetoNome = useMemo(() => {
+    const m = new Map<string, string>();
+    tiposProjeto.forEach((t) => m.set(t.id, t.nome));
+    return m;
+  }, [tiposProjeto]);
 
   const filtered = useMemo(() => {
     const term = debouncedSearch.toLowerCase();
@@ -90,17 +112,21 @@ export default function PainelProjetosRelogioPage() {
         p.nome.toLowerCase().includes(term);
       const matchStatus = statusFilter === "todos" || p.status === statusFilter;
       const matchCliente = clienteFilter === "todos" || p.favorecido_id === clienteFilter;
-      return matchSearch && matchStatus && matchCliente;
+      const matchTipo = tipoProjetoFilter === "todos" || p.tipo_projeto_id === tipoProjetoFilter;
+      return matchSearch && matchStatus && matchCliente && matchTipo;
     });
     result.sort((a, b) => {
       const cmp = a.codigo.localeCompare(b.codigo);
       return sortCodigoDir === "asc" ? cmp : -cmp;
     });
     return result;
-  }, [projetos, debouncedSearch, statusFilter, clienteFilter, sortCodigoDir]);
+  }, [projetos, debouncedSearch, statusFilter, clienteFilter, tipoProjetoFilter, sortCodigoDir]);
 
   const clienteSelecionadoNome =
     clienteFilter === "todos" ? "Todos os clientes" : favorecidoNome.get(clienteFilter) ?? "Cliente";
+
+  const tipoProjetoSelecionadoNome =
+    tipoProjetoFilter === "todos" ? "Todos os tipos" : tipoProjetoNome.get(tipoProjetoFilter) ?? "Tipo de Projeto";
 
   return (
     <div className="space-y-4">
@@ -170,6 +196,64 @@ export default function PainelProjetosRelogioPage() {
                               )}
                             />
                             {f.nome}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex w-full sm:w-[240px]">
+              <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={tipoOpen}
+                    className="w-full justify-between bg-white dark:bg-gray-900 font-normal"
+                  >
+                    <span className="truncate">{tipoProjetoSelecionadoNome}</span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[240px] p-0 bg-white dark:bg-gray-800" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar tipo..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="todos"
+                          onSelect={() => {
+                            setTipoProjetoFilter("todos");
+                            setTipoOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              tipoProjetoFilter === "todos" ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          Todos os tipos
+                        </CommandItem>
+                        {tiposProjeto.map((t) => (
+                          <CommandItem
+                            key={t.id}
+                            value={t.nome}
+                            onSelect={() => {
+                              setTipoProjetoFilter(t.id);
+                              setTipoOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                tipoProjetoFilter === t.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {t.nome}
                           </CommandItem>
                         ))}
                       </CommandGroup>

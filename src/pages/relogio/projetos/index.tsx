@@ -111,6 +111,8 @@ export default function ProjetosRelogioPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ativo");
   const [clienteFilter, setClienteFilter] = useState<string>("todos");
   const [clienteOpen, setClienteOpen] = useState(false);
+  const [tipoProjetoFilter, setTipoProjetoFilter] = useState<string>("todos");
+  const [tipoOpen, setTipoOpen] = useState(false);
   const [sortCodigoDir, setSortCodigoDir] = useState<"asc" | "desc">("asc");
 
   const [formOpen, setFormOpen] = useState(false);
@@ -167,14 +169,15 @@ export default function ProjetosRelogioPage() {
         p.nome.toLowerCase().includes(term);
       const matchStatus = statusFilter === "todos" || p.status === statusFilter;
       const matchCliente = clienteFilter === "todos" || p.favorecido_id === clienteFilter;
-      return matchSearch && matchStatus && matchCliente;
+      const matchTipo = tipoProjetoFilter === "todos" || p.tipo_projeto_id === tipoProjetoFilter;
+      return matchSearch && matchStatus && matchCliente && matchTipo;
     });
     result.sort((a, b) => {
       const cmp = a.codigo.localeCompare(b.codigo);
       return sortCodigoDir === "asc" ? cmp : -cmp;
     });
     return result;
-  }, [projetos, debouncedSearch, statusFilter, clienteFilter, sortCodigoDir]);
+  }, [projetos, debouncedSearch, statusFilter, clienteFilter, tipoProjetoFilter, sortCodigoDir]);
 
   const handleSave = async (data: ProjetoPayload) => {
     try {
@@ -278,6 +281,9 @@ export default function ProjetosRelogioPage() {
   const clienteSelecionadoNome =
     clienteFilter === "todos" ? "Todos os clientes" : favorecidoNome.get(clienteFilter) ?? "Cliente";
 
+  const tipoProjetoSelecionadoNome =
+    tipoProjetoFilter === "todos" ? "Todos os tipos" : tipoProjetoNome.get(tipoProjetoFilter) ?? "Tipo de Projeto";
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -366,6 +372,64 @@ export default function ProjetosRelogioPage() {
                               )}
                             />
                             {f.nome}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex w-full sm:w-[240px]">
+              <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={tipoOpen}
+                    className="w-full justify-between bg-white dark:bg-gray-900 font-normal"
+                  >
+                    <span className="truncate">{tipoProjetoSelecionadoNome}</span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[240px] p-0 bg-white dark:bg-gray-800" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar tipo..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="todos"
+                          onSelect={() => {
+                            setTipoProjetoFilter("todos");
+                            setTipoOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              tipoProjetoFilter === "todos" ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          Todos os tipos
+                        </CommandItem>
+                        {tiposProjeto.map((t) => (
+                          <CommandItem
+                            key={t.id}
+                            value={t.nome}
+                            onSelect={() => {
+                              setTipoProjetoFilter(t.id);
+                              setTipoOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                tipoProjetoFilter === t.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {t.nome}
                           </CommandItem>
                         ))}
                       </CommandGroup>
