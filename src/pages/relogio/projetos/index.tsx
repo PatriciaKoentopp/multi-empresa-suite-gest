@@ -380,6 +380,64 @@ export default function ProjetosRelogioPage() {
                 </PopoverContent>
               </Popover>
             </div>
+            <div className="flex w-full sm:w-[240px]">
+              <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={tipoOpen}
+                    className="w-full justify-between bg-white dark:bg-gray-900 font-normal"
+                  >
+                    <span className="truncate">{tipoProjetoSelecionadoNome}</span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[240px] p-0 bg-white dark:bg-gray-800" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar tipo..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="todos"
+                          onSelect={() => {
+                            setTipoProjetoFilter("todos");
+                            setTipoOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              tipoProjetoFilter === "todos" ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          Todos os tipos
+                        </CommandItem>
+                        {tiposProjeto.map((t) => (
+                          <CommandItem
+                            key={t.id}
+                            value={t.nome}
+                            onSelect={() => {
+                              setTipoProjetoFilter(t.id);
+                              setTipoOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                tipoProjetoFilter === t.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {t.nome}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
             <div className="flex w-full sm:w-[180px]">
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
                 <SelectTrigger className="w-full bg-white dark:bg-gray-900">
