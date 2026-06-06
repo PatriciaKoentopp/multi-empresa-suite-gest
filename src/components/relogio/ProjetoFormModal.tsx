@@ -78,6 +78,11 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
       setFotosEnviadas(String(projeto?.fotos_enviadas ?? 0));
       setFotosVendidas(String(projeto?.fotos_vendidas ?? 0));
       setStatus((projeto?.status as "ativo" | "arquivado") ?? "ativo");
+      setDataFotos(projeto?.data_fotos ? parseDateString(projeto.data_fotos) : undefined);
+      setDataPrevia(projeto?.data_previa ? parseDateString(projeto.data_previa) : undefined);
+      setDataSelecao(projeto?.data_selecao ? parseDateString(projeto.data_selecao) : undefined);
+      setDataPrazo(projeto?.data_prazo ? parseDateString(projeto.data_prazo) : undefined);
+      setDataEntrega(projeto?.data_entrega ? parseDateString(projeto.data_entrega) : undefined);
       if (projeto?.tipo_projeto_id) {
         setTipoProjetoId(projeto.tipo_projeto_id);
       } else {
