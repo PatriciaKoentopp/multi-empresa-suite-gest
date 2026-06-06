@@ -266,6 +266,30 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Data Fotos</Label>
+              <DateInput value={dataFotos} onChange={(d) => setDataFotos(d ?? undefined)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Data Prévia</Label>
+              <DateInput value={dataPrevia} onChange={(d) => setDataPrevia(d ?? undefined)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Data Seleção</Label>
+              <DateInput value={dataSelecao} onChange={(d) => setDataSelecao(d ?? undefined)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Data Prazo</Label>
+              <DateInput value={dataPrazo} onChange={(d) => setDataPrazo(d ?? undefined)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Data Entrega</Label>
+              <DateInput value={dataEntrega} onChange={(d) => setDataEntrega(d ?? undefined)} />
+            </div>
+          </div>
+
+
           <div className="space-y-2">
             <Label>Status</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as "ativo" | "arquivado")}>
