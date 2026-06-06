@@ -68,6 +68,20 @@ export default function PainelProjetosRelogioPage() {
     },
   });
 
+  const { data: tiposProjeto = [] } = useQuery({
+    queryKey: ["tipos-projeto-lite", currentCompany?.id],
+    enabled: !!currentCompany?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("relogio_tipos_projeto")
+        .select("id, nome")
+        .eq("empresa_id", currentCompany!.id)
+        .order("nome");
+      if (error) throw error;
+      return (data || []) as { id: string; nome: string }[];
+    },
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebouncedValue(searchTerm, 250);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ativo");
