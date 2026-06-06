@@ -177,7 +177,7 @@ export default function ProjetosRelogioPage() {
       return sortCodigoDir === "asc" ? cmp : -cmp;
     });
     return result;
-  }, [projetos, debouncedSearch, statusFilter, clienteFilter, sortCodigoDir]);
+  }, [projetos, debouncedSearch, statusFilter, clienteFilter, tipoProjetoFilter, sortCodigoDir]);
 
   const handleSave = async (data: ProjetoPayload) => {
     try {
