@@ -78,6 +78,7 @@ import ProjetosRelogioPage from "./pages/relogio/projetos";
 import ApontamentoRelogioPage from "./pages/relogio/apontamento";
 import VisualizacaoRelogioPage from "./pages/relogio/visualizacao";
 import PainelTempoRelogioPage from "./pages/relogio/painel-tempo";
+import PainelProjetosRelogioPage from "./pages/relogio/painel-projetos";
 
 // Backup
 import BackupPage from "./pages/backup";
@@ -537,6 +538,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <PainelTempoRelogioPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/relogio/painel-projetos"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <PainelProjetosRelogioPage />
                   </MainLayout>
                 </PrivateRoute>
               }
