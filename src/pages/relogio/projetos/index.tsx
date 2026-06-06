@@ -111,6 +111,8 @@ export default function ProjetosRelogioPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ativo");
   const [clienteFilter, setClienteFilter] = useState<string>("todos");
   const [clienteOpen, setClienteOpen] = useState(false);
+  const [tipoProjetoFilter, setTipoProjetoFilter] = useState<string>("todos");
+  const [tipoOpen, setTipoOpen] = useState(false);
   const [sortCodigoDir, setSortCodigoDir] = useState<"asc" | "desc">("asc");
 
   const [formOpen, setFormOpen] = useState(false);
