@@ -281,6 +281,9 @@ export default function ProjetosRelogioPage() {
   const clienteSelecionadoNome =
     clienteFilter === "todos" ? "Todos os clientes" : favorecidoNome.get(clienteFilter) ?? "Cliente";
 
+  const tipoProjetoSelecionadoNome =
+    tipoProjetoFilter === "todos" ? "Todos os tipos" : tipoProjetoNome.get(tipoProjetoFilter) ?? "Tipo de Projeto";
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
