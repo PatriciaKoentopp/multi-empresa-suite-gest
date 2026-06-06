@@ -169,7 +169,8 @@ export default function ProjetosRelogioPage() {
         p.nome.toLowerCase().includes(term);
       const matchStatus = statusFilter === "todos" || p.status === statusFilter;
       const matchCliente = clienteFilter === "todos" || p.favorecido_id === clienteFilter;
-      return matchSearch && matchStatus && matchCliente;
+      const matchTipo = tipoProjetoFilter === "todos" || p.tipo_projeto_id === tipoProjetoFilter;
+      return matchSearch && matchStatus && matchCliente && matchTipo;
     });
     result.sort((a, b) => {
       const cmp = a.codigo.localeCompare(b.codigo);
