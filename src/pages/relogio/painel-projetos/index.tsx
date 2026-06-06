@@ -120,7 +120,7 @@ export default function PainelProjetosRelogioPage() {
       return sortCodigoDir === "asc" ? cmp : -cmp;
     });
     return result;
-  }, [projetos, debouncedSearch, statusFilter, clienteFilter, sortCodigoDir]);
+  }, [projetos, debouncedSearch, statusFilter, clienteFilter, tipoProjetoFilter, sortCodigoDir]);
 
   const clienteSelecionadoNome =
     clienteFilter === "todos" ? "Todos os clientes" : favorecidoNome.get(clienteFilter) ?? "Cliente";
