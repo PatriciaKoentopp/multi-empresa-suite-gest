@@ -13,6 +13,11 @@ export interface ProjetoPayload {
   fotos_enviadas: number;
   fotos_vendidas: number;
   status: "ativo" | "arquivado";
+  data_fotos?: string | null;
+  data_previa?: string | null;
+  data_selecao?: string | null;
+  data_prazo?: string | null;
+  data_entrega?: string | null;
 }
 
 export function useProjetosRelogio() {

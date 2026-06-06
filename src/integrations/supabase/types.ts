@@ -1950,6 +1950,11 @@ export type Database = {
         Row: {
           codigo: string
           created_at: string
+          data_entrega: string | null
+          data_fotos: string | null
+          data_prazo: string | null
+          data_previa: string | null
+          data_selecao: string | null
           empresa_id: string
           favorecido_id: string | null
           fotos_enviadas: number
@@ -1964,6 +1969,11 @@ export type Database = {
         Insert: {
           codigo: string
           created_at?: string
+          data_entrega?: string | null
+          data_fotos?: string | null
+          data_prazo?: string | null
+          data_previa?: string | null
+          data_selecao?: string | null
           empresa_id: string
           favorecido_id?: string | null
           fotos_enviadas?: number
@@ -1978,6 +1988,11 @@ export type Database = {
         Update: {
           codigo?: string
           created_at?: string
+          data_entrega?: string | null
+          data_fotos?: string | null
+          data_prazo?: string | null
+          data_previa?: string | null
+          data_selecao?: string | null
           empresa_id?: string
           favorecido_id?: string | null
           fotos_enviadas?: number

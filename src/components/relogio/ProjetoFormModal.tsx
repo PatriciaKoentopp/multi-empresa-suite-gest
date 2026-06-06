@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/command";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { dateToISOString, parseDateString } from "@/lib/utils";
+import { DateInput } from "@/components/movimentacao/DateInput";
 import { useFavorecidos } from "@/hooks/useFavorecidos";
 import { useTiposProjetoRelogio } from "@/hooks/useTiposProjetoRelogio";
 import type { RelogioProjeto } from "@/types/relogio";
@@ -54,6 +56,11 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
   const [fotosEnviadas, setFotosEnviadas] = useState("0");
   const [fotosVendidas, setFotosVendidas] = useState("0");
   const [status, setStatus] = useState<"ativo" | "arquivado">("ativo");
+  const [dataFotos, setDataFotos] = useState<Date | undefined>(undefined);
+  const [dataPrevia, setDataPrevia] = useState<Date | undefined>(undefined);
+  const [dataSelecao, setDataSelecao] = useState<Date | undefined>(undefined);
+  const [dataPrazo, setDataPrazo] = useState<Date | undefined>(undefined);
+  const [dataEntrega, setDataEntrega] = useState<Date | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [clientePopoverOpen, setClientePopoverOpen] = useState(false);
 
@@ -71,6 +78,11 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
       setFotosEnviadas(String(projeto?.fotos_enviadas ?? 0));
       setFotosVendidas(String(projeto?.fotos_vendidas ?? 0));
       setStatus((projeto?.status as "ativo" | "arquivado") ?? "ativo");
+      setDataFotos(projeto?.data_fotos ? parseDateString(projeto.data_fotos) : undefined);
+      setDataPrevia(projeto?.data_previa ? parseDateString(projeto.data_previa) : undefined);
+      setDataSelecao(projeto?.data_selecao ? parseDateString(projeto.data_selecao) : undefined);
+      setDataPrazo(projeto?.data_prazo ? parseDateString(projeto.data_prazo) : undefined);
+      setDataEntrega(projeto?.data_entrega ? parseDateString(projeto.data_entrega) : undefined);
       if (projeto?.tipo_projeto_id) {
         setTipoProjetoId(projeto.tipo_projeto_id);
       } else {
@@ -99,6 +111,11 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
         fotos_enviadas: Number(fotosEnviadas) || 0,
         fotos_vendidas: Number(fotosVendidas) || 0,
         status,
+        data_fotos: dateToISOString(dataFotos),
+        data_previa: dateToISOString(dataPrevia),
+        data_selecao: dateToISOString(dataSelecao),
+        data_prazo: dateToISOString(dataPrazo),
+        data_entrega: dateToISOString(dataEntrega),
       });
       onOpenChange(false);
     } finally {
@@ -248,6 +265,30 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
               />
             </div>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Data Fotos</Label>
+              <DateInput value={dataFotos} onChange={(d) => setDataFotos(d ?? undefined)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Data Prévia</Label>
+              <DateInput value={dataPrevia} onChange={(d) => setDataPrevia(d ?? undefined)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Data Seleção</Label>
+              <DateInput value={dataSelecao} onChange={(d) => setDataSelecao(d ?? undefined)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Data Prazo</Label>
+              <DateInput value={dataPrazo} onChange={(d) => setDataPrazo(d ?? undefined)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Data Entrega</Label>
+              <DateInput value={dataEntrega} onChange={(d) => setDataEntrega(d ?? undefined)} />
+            </div>
+          </div>
+
 
           <div className="space-y-2">
             <Label>Status</Label>
