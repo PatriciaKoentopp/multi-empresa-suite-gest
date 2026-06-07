@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,18 +28,46 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Search,
   Filter,
   Check,
   ChevronsUpDown,
   ArrowUp,
   ArrowDown,
+  PlusCircle,
+  Upload,
+  Download,
+  EllipsisVertical,
+  Pencil,
+  Archive,
+  ArchiveRestore,
+  Trash2,
 } from "lucide-react";
-import { useProjetosRelogio } from "@/hooks/useProjetosRelogio";
+import { useProjetosRelogio, type ProjetoPayload } from "@/hooks/useProjetosRelogio";
+import { ProjetoFormModal } from "@/components/relogio/ProjetoFormModal";
+import { ImportarProjetosModal } from "@/components/relogio/ImportarProjetosModal";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { cn, parseDateString, formatDate } from "@/lib/utils";
+import type { RelogioProjeto } from "@/types/relogio";
+import { toast } from "sonner";
 
 type StatusFilter = "todos" | "ativo" | "arquivado";
 
@@ -50,7 +78,17 @@ const fmt = (d: string | null) => {
 };
 
 export default function PainelProjetosRelogioPage() {
-  const { projetos, isLoading } = useProjetosRelogio();
+  const {
+    projetos,
+    isLoading,
+    criarProjeto,
+    atualizarProjeto,
+    excluirProjeto,
+    contarApontamentos,
+    excluirProjetoComApontamentos,
+    importarProjetos,
+  } = useProjetosRelogio();
+
   const { currentCompany } = useCompany();
 
   const { data: favorecidos = [] } = useQuery({
@@ -91,6 +129,25 @@ export default function PainelProjetosRelogioPage() {
   const [tipoOpen, setTipoOpen] = useState(false);
   const [sortCodigoDir, setSortCodigoDir] = useState<"asc" | "desc">("asc");
 
+  // Default: seleciona "Fotografia" quando tipos carregam
+  useEffect(() => {
+    if (tiposProjeto.length > 0 && tipoProjetoFilter === "todos") {
+      const fotografia = tiposProjeto.find(
+        (t) => t.nome.toLowerCase() === "fotografia"
+      );
+      if (fotografia) {
+        setTipoProjetoFilter(fotografia.id);
+      }
+    }
+  }, [tiposProjeto, tipoProjetoFilter]);
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<RelogioProjeto | undefined>();
+  const [importOpen, setImportOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<{ id: string; codigo: string; nome: string; count: number } | null>(null);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
   const favorecidoNome = useMemo(() => {
     const m = new Map<string, string>();
     favorecidos.forEach((f) => m.set(f.id, f.nome));
@@ -122,6 +179,106 @@ export default function PainelProjetosRelogioPage() {
     return result;
   }, [projetos, debouncedSearch, statusFilter, clienteFilter, tipoProjetoFilter, sortCodigoDir]);
 
+  const handleSave = async (data: ProjetoPayload) => {
+    try {
+      if (editing) await atualizarProjeto(editing.id, data);
+      else await criarProjeto(data);
+      setEditing(undefined);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message?.includes("duplicate") ? "Código já existe" : "Erro ao salvar projeto");
+      throw e;
+    }
+  };
+
+  const handleEdit = useCallback((p: RelogioProjeto) => {
+    setEditing(p);
+    setFormOpen(true);
+  }, []);
+
+  const handleAskDelete = useCallback(async (p: RelogioProjeto) => {
+    const count = await contarApontamentos(p.id);
+    setConfirmText("");
+    setToDelete({ id: p.id, codigo: p.codigo, nome: p.nome, count });
+  }, [contarApontamentos]);
+
+  const confirmExcluir = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    try {
+      if (toDelete.count > 0) {
+        await excluirProjetoComApontamentos(toDelete.id);
+      } else {
+        await excluirProjeto(toDelete.id);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao excluir projeto");
+    } finally {
+      setDeleting(false);
+      setToDelete(null);
+      setConfirmText("");
+    }
+  };
+
+  const toggleStatus = useCallback(async (p: RelogioProjeto) => {
+    try {
+      await atualizarProjeto(p.id, {
+        codigo: p.codigo,
+        nome: p.nome,
+        favorecido_id: p.favorecido_id,
+        tipo_projeto_id: p.tipo_projeto_id,
+        fotos_tiradas: p.fotos_tiradas,
+        fotos_enviadas: p.fotos_enviadas,
+        fotos_vendidas: p.fotos_vendidas,
+        status: p.status === "ativo" ? "arquivado" : "ativo",
+      });
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao alterar status");
+    }
+  }, [atualizarProjeto]);
+
+  const handleExportar = () => {
+    if (filtered.length === 0) {
+      toast.error("Nenhum projeto para exportar");
+      return;
+    }
+
+    const headers = ["Código", "Nome", "Tipo de Projeto", "Cliente", "Data Fotos", "Data Prévia", "Data Seleção", "Data Prazo", "Data Entrega", "Status"];
+    const rows = filtered.map((p) => [
+      p.codigo,
+      p.nome,
+      p.tipo_projeto_id ? (tipoProjetoNome.get(p.tipo_projeto_id) ?? "") : "",
+      favorecidoNome.get(p.favorecido_id) ?? "",
+      fmt(p.data_fotos),
+      fmt(p.data_previa),
+      fmt(p.data_selecao),
+      fmt(p.data_prazo),
+      fmt(p.data_entrega),
+      p.status === "ativo" ? "Ativo" : "Arquivado",
+    ]);
+
+    const escapeCsv = (value: string) => {
+      if (value.includes(",") || value.includes('"') || value.includes("\n") || value.includes("\r")) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    };
+
+    const csvContent = [headers.map(escapeCsv).join(";"), ...rows.map((r) => r.map(escapeCsv).join(";"))].join("\r\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `painel_projetos_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Planilha exportada com sucesso");
+  };
+
   const clienteSelecionadoNome =
     clienteFilter === "todos" ? "Todos os clientes" : favorecidoNome.get(clienteFilter) ?? "Cliente";
 
@@ -132,6 +289,26 @@ export default function PainelProjetosRelogioPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Painel de Projetos</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportar}>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar Planilha
+          </Button>
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Importar Planilha
+          </Button>
+          <Button
+            variant="blue"
+            onClick={() => {
+              setEditing(undefined);
+              setFormOpen(true);
+            }}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Novo Projeto
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -172,12 +349,7 @@ export default function PainelProjetosRelogioPage() {
                             setClienteOpen(false);
                           }}
                         >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              clienteFilter === "todos" ? "opacity-100" : "opacity-0"
-                            )}
-                          />
+                          <Check className={cn("mr-2 h-4 w-4", clienteFilter === "todos" ? "opacity-100" : "opacity-0")} />
                           Todos os clientes
                         </CommandItem>
                         {favorecidos.map((f) => (
@@ -189,12 +361,7 @@ export default function PainelProjetosRelogioPage() {
                               setClienteOpen(false);
                             }}
                           >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                clienteFilter === f.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
+                            <Check className={cn("mr-2 h-4 w-4", clienteFilter === f.id ? "opacity-100" : "opacity-0")} />
                             {f.nome}
                           </CommandItem>
                         ))}
@@ -230,12 +397,7 @@ export default function PainelProjetosRelogioPage() {
                             setTipoOpen(false);
                           }}
                         >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              tipoProjetoFilter === "todos" ? "opacity-100" : "opacity-0"
-                            )}
-                          />
+                          <Check className={cn("mr-2 h-4 w-4", tipoProjetoFilter === "todos" ? "opacity-100" : "opacity-0")} />
                           Todos os tipos
                         </CommandItem>
                         {tiposProjeto.map((t) => (
@@ -247,12 +409,7 @@ export default function PainelProjetosRelogioPage() {
                               setTipoOpen(false);
                             }}
                           >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                tipoProjetoFilter === t.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
+                            <Check className={cn("mr-2 h-4 w-4", tipoProjetoFilter === t.id ? "opacity-100" : "opacity-0")} />
                             {t.nome}
                           </CommandItem>
                         ))}
@@ -283,9 +440,7 @@ export default function PainelProjetosRelogioPage() {
                 <TableRow>
                   <TableHead
                     className="w-[120px] cursor-pointer select-none"
-                    onClick={() =>
-                      setSortCodigoDir((prev) => (prev === "asc" ? "desc" : "asc"))
-                    }
+                    onClick={() => setSortCodigoDir((prev) => (prev === "asc" ? "desc" : "asc"))}
                   >
                     <div className="flex items-center gap-1">
                       Código
@@ -303,18 +458,19 @@ export default function PainelProjetosRelogioPage() {
                   <TableHead className="w-[120px]">Data Seleção</TableHead>
                   <TableHead className="w-[120px]">Data Prazo</TableHead>
                   <TableHead className="w-[120px]">Data Entrega</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
                       Nenhum resultado encontrado
                     </TableCell>
                   </TableRow>
@@ -329,6 +485,49 @@ export default function PainelProjetosRelogioPage() {
                       <TableCell>{fmt(p.data_selecao)}</TableCell>
                       <TableCell>{fmt(p.data_prazo)}</TableCell>
                       <TableCell>{fmt(p.data_entrega)}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-neutral-500 hover:bg-gray-100"
+                            >
+                              <EllipsisVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40 z-30 bg-white border">
+                            <DropdownMenuItem
+                              onClick={() => handleEdit(p)}
+                              className="flex items-center gap-2 text-blue-500 focus:bg-blue-100 focus:text-blue-700"
+                            >
+                              <Pencil className="h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => toggleStatus(p)}
+                              className="flex items-center gap-2 text-amber-600 focus:bg-amber-100 focus:text-amber-700"
+                            >
+                              {p.status === "ativo" ? (
+                                <>
+                                  <Archive className="h-4 w-4" /> Arquivar
+                                </>
+                              ) : (
+                                <>
+                                  <ArchiveRestore className="h-4 w-4" /> Reativar
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleAskDelete(p)}
+                              className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -337,6 +536,65 @@ export default function PainelProjetosRelogioPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ProjetoFormModal
+        open={formOpen}
+        onOpenChange={(o) => {
+          setFormOpen(o);
+          if (!o) setEditing(undefined);
+        }}
+        projeto={editing}
+        onSubmit={handleSave}
+      />
+
+      <ImportarProjetosModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImport={importarProjetos}
+      />
+
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => { if (!o) { setToDelete(null); setConfirmText(""); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              {toDelete && toDelete.count > 0 ? (
+                <div className="space-y-3">
+                  <p>
+                    O projeto <strong>{toDelete.codigo} - {toDelete.nome}</strong> possui{" "}
+                    <strong className="text-red-600">{toDelete.count}</strong>{" "}
+                    {toDelete.count === 1 ? "apontamento" : "apontamentos"} de horas vinculado{toDelete.count === 1 ? "" : "s"}.
+                  </p>
+                  <p>
+                    Ao confirmar, o projeto e <strong>todos os apontamentos</strong> serão excluídos permanentemente. Esta ação não pode ser desfeita.
+                  </p>
+                  <p>
+                    Para confirmar, digite <strong>EXCLUIR</strong> abaixo:
+                  </p>
+                  <Input
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="Digite EXCLUIR"
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <span>Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.</span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmExcluir(); }}
+              disabled={deleting || (!!toDelete && toDelete.count > 0 && confirmText.trim().toUpperCase() !== "EXCLUIR")}
+              className="bg-destructive text-destructive-foreground"
+            >
+              {deleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
