@@ -145,6 +145,7 @@ export default function PainelProjetosRelogioPage() {
   const [editing, setEditing] = useState<RelogioProjeto | undefined>();
   const [importOpen, setImportOpen] = useState(false);
   const [toDelete, setToDelete] = useState<{ id: string; codigo: string; nome: string; count: number } | null>(null);
+  const [toArchive, setToArchive] = useState<{ projeto: RelogioProjeto; missing: string[] } | null>(null);
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
 
