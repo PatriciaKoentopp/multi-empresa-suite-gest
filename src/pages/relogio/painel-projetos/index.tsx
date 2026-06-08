@@ -255,6 +255,9 @@ export default function PainelProjetosRelogioPage() {
       if (!p.data_selecao) missing.push("Data Seleção");
       if (!p.data_prazo) missing.push("Data Prazo");
       if (!p.data_entrega) missing.push("Data Entrega");
+      if ((p.fotos_tiradas ?? 0) !== 0) missing.push("Fotos Tiradas diferente de 0");
+      if ((p.fotos_enviadas ?? 0) !== 0) missing.push("Fotos Enviadas diferente de 0");
+      if ((p.fotos_vendidas ?? 0) !== 0) missing.push("Fotos Vendidas diferente de 0");
       if (missing.length > 0) {
         setToArchive({ projeto: p, missing });
         return;
