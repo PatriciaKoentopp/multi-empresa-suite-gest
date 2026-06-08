@@ -255,6 +255,9 @@ export default function PainelProjetosRelogioPage() {
       if (!p.data_selecao) missing.push("Data Seleção");
       if (!p.data_prazo) missing.push("Data Prazo");
       if (!p.data_entrega) missing.push("Data Entrega");
+      if ((p.fotos_tiradas ?? 0) !== 0) missing.push("Fotos Tiradas diferente de 0");
+      if ((p.fotos_enviadas ?? 0) !== 0) missing.push("Fotos Enviadas diferente de 0");
+      if ((p.fotos_vendidas ?? 0) !== 0) missing.push("Fotos Vendidas diferente de 0");
       if (missing.length > 0) {
         setToArchive({ projeto: p, missing });
         return;
@@ -624,22 +627,21 @@ export default function PainelProjetosRelogioPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar arquivamento</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              {toArchive ? (
-                <div className="space-y-3">
-                  <p>
-                    O projeto <strong>{toArchive.projeto.codigo} - {toArchive.projeto.nome}</strong> possui os seguintes campos em branco:
-                  </p>
-                  <ul className="list-disc pl-5 text-red-600">
-                    {toArchive.missing.map((m) => (<li key={m}>{m}</li>))}
-                  </ul>
-                  <p>Deseja arquivar mesmo assim?</p>
-                </div>
-              ) : <span />}
+            <AlertDialogDescription>
+              {toArchive ? `O projeto ${toArchive.projeto.codigo} - ${toArchive.projeto.nome} possui inconsistências.` : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {toArchive && (
+            <div className="space-y-3 text-sm">
+              <p>Os seguintes itens precisam de atenção:</p>
+              <ul className="list-disc pl-5 text-red-600">
+                {toArchive.missing.map((m) => (<li key={m}>{m}</li>))}
+              </ul>
+              <p>Deseja arquivar mesmo assim?</p>
+            </div>
+          )}
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setToArchive(null)}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
