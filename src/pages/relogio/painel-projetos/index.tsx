@@ -619,6 +619,43 @@ export default function PainelProjetosRelogioPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!toArchive} onOpenChange={(o) => { if (!o) setToArchive(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar arquivamento</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              {toArchive ? (
+                <div className="space-y-3">
+                  <p>
+                    O projeto <strong>{toArchive.projeto.codigo} - {toArchive.projeto.nome}</strong> possui os seguintes campos em branco:
+                  </p>
+                  <ul className="list-disc pl-5 text-red-600">
+                    {toArchive.missing.map((m) => (<li key={m}>{m}</li>))}
+                  </ul>
+                  <p>Deseja arquivar mesmo assim?</p>
+                </div>
+              ) : <span />}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (toArchive) {
+                  const p = toArchive.projeto;
+                  setToArchive(null);
+                  doArchive(p, "arquivado");
+                }
+              }}
+              className="bg-amber-600 text-white hover:bg-amber-700"
+            >
+              Arquivar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
