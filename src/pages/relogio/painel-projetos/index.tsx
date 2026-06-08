@@ -145,6 +145,7 @@ export default function PainelProjetosRelogioPage() {
   const [editing, setEditing] = useState<RelogioProjeto | undefined>();
   const [importOpen, setImportOpen] = useState(false);
   const [toDelete, setToDelete] = useState<{ id: string; codigo: string; nome: string; count: number } | null>(null);
+  const [toArchive, setToArchive] = useState<{ projeto: RelogioProjeto; missing: string[] } | null>(null);
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
 
@@ -221,7 +222,7 @@ export default function PainelProjetosRelogioPage() {
     }
   };
 
-  const toggleStatus = useCallback(async (p: RelogioProjeto) => {
+  const doArchive = useCallback(async (p: RelogioProjeto, novoStatus: "ativo" | "arquivado") => {
     try {
       await atualizarProjeto(p.id, {
         codigo: p.codigo,
@@ -231,13 +232,36 @@ export default function PainelProjetosRelogioPage() {
         fotos_tiradas: p.fotos_tiradas,
         fotos_enviadas: p.fotos_enviadas,
         fotos_vendidas: p.fotos_vendidas,
-        status: p.status === "ativo" ? "arquivado" : "ativo",
+        status: novoStatus,
+        data_fotos: p.data_fotos,
+        data_previa: p.data_previa,
+        data_selecao: p.data_selecao,
+        data_prazo: p.data_prazo,
+        data_entrega: p.data_entrega,
       });
     } catch (e) {
       console.error(e);
       toast.error("Erro ao alterar status");
     }
   }, [atualizarProjeto]);
+
+  const toggleStatus = useCallback(async (p: RelogioProjeto) => {
+    if (p.status === "ativo") {
+      const missing: string[] = [];
+      if (!p.favorecido_id) missing.push("Cliente");
+      if (!p.tipo_projeto_id) missing.push("Tipo de Projeto");
+      if (!p.data_fotos) missing.push("Data Fotos");
+      if (!p.data_previa) missing.push("Data Prévia");
+      if (!p.data_selecao) missing.push("Data Seleção");
+      if (!p.data_prazo) missing.push("Data Prazo");
+      if (!p.data_entrega) missing.push("Data Entrega");
+      if (missing.length > 0) {
+        setToArchive({ projeto: p, missing });
+        return;
+      }
+    }
+    await doArchive(p, p.status === "ativo" ? "arquivado" : "ativo");
+  }, [doArchive]);
 
   const handleExportar = () => {
     if (filtered.length === 0) {
@@ -591,6 +615,43 @@ export default function PainelProjetosRelogioPage() {
               className="bg-destructive text-destructive-foreground"
             >
               {deleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!toArchive} onOpenChange={(o) => { if (!o) setToArchive(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar arquivamento</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              {toArchive ? (
+                <div className="space-y-3">
+                  <p>
+                    O projeto <strong>{toArchive.projeto.codigo} - {toArchive.projeto.nome}</strong> possui os seguintes campos em branco:
+                  </p>
+                  <ul className="list-disc pl-5 text-red-600">
+                    {toArchive.missing.map((m) => (<li key={m}>{m}</li>))}
+                  </ul>
+                  <p>Deseja arquivar mesmo assim?</p>
+                </div>
+              ) : <span />}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (toArchive) {
+                  const p = toArchive.projeto;
+                  setToArchive(null);
+                  doArchive(p, "arquivado");
+                }
+              }}
+              className="bg-amber-600 text-white hover:bg-amber-700"
+            >
+              Arquivar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
