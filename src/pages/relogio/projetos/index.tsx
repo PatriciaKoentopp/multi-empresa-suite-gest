@@ -601,6 +601,42 @@ export default function ProjetosRelogioPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!toArchive} onOpenChange={(o) => { if (!o) setToArchive(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar arquivamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              {toArchive ? `O projeto ${toArchive.projeto.codigo} - ${toArchive.projeto.nome} possui inconsistências.` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {toArchive && (
+            <div className="space-y-3 text-sm">
+              <p>Os seguintes itens precisam de atenção:</p>
+              <ul className="list-disc pl-5 text-red-600">
+                {toArchive.missing.map((m) => (<li key={m}>{m}</li>))}
+              </ul>
+              <p>Deseja arquivar mesmo assim?</p>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setToArchive(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (toArchive) {
+                  const p = toArchive.projeto;
+                  setToArchive(null);
+                  doArchive(p, "arquivado");
+                }
+              }}
+              className="bg-amber-600 text-white hover:bg-amber-700"
+            >
+              Arquivar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
