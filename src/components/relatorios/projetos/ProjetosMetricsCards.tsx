@@ -141,6 +141,47 @@ export function ProjetosMetricsCards({
           </p>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Gauge className="h-4 w-4" />
+            Valor/Hora (Média)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {metrics.valorMedioPorHora > 0
+              ? metrics.valorMedioPorHora.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL'
+                })
+              : 'N/A'}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Valor médio por hora trabalhada
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Percent className="h-4 w-4" />
+            Eficiência (Média)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {metrics.eficienciaMedia > 0
+              ? `${metrics.eficienciaMedia.toFixed(1)}%`
+              : 'N/A'}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Fotos vendidas / enviadas
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
