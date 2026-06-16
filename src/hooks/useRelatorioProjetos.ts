@@ -40,6 +40,7 @@ export interface MetricasProjetos {
   valorMedioPorFoto: number;
   valorMedioPorHora: number;
   horasMediasPorFoto: number;
+  eficienciaMedia: number;
 }
 
 interface VendaData {
@@ -192,7 +193,8 @@ export function useRelatorioProjetos(vendasData: any[], fotosProjetos: ProjetoFo
       receitaMedia: 0,
       valorMedioPorFoto: 0,
       valorMedioPorHora: 0,
-      horasMediasPorFoto: 0
+      horasMediasPorFoto: 0,
+      eficienciaMedia: 0
     };
 
     if (projetosCompletosComVenda.length > 0) {
@@ -200,6 +202,9 @@ export function useRelatorioProjetos(vendasData: any[], fotosProjetos: ProjetoFo
       metrics.valorMedioPorFoto = projetosCompletosComVenda.reduce((sum, p) => sum + p.valorPorFoto, 0) / projetosCompletosComVenda.length;
       metrics.valorMedioPorHora = projetosCompletosComVenda.reduce((sum, p) => sum + p.valorPorHora, 0) / projetosCompletosComVenda.length;
       metrics.horasMediasPorFoto = projetosCompletosComVenda.reduce((sum, p) => sum + p.horasPorFoto, 0) / projetosCompletosComVenda.length;
+      const totalEnviadas = projetosCompletosComVenda.reduce((sum, p) => sum + p.fotosEnviadas, 0);
+      const totalVendidas = projetosCompletosComVenda.reduce((sum, p) => sum + p.fotosVendidas, 0);
+      metrics.eficienciaMedia = totalEnviadas > 0 ? (totalVendidas / totalEnviadas) * 100 : 0;
     }
 
     return metrics;

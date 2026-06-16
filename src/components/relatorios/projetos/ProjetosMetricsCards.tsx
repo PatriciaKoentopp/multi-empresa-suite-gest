@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MetricasProjetos } from "@/hooks/useRelatorioProjetos";
 import { formatHoursMinutes } from "@/utils/timeUtils";
-import { TrendingUp, DollarSign, Camera, Clock } from "lucide-react";
+import { TrendingUp, DollarSign, Camera, Clock, Gauge, Percent } from "lucide-react";
 
 interface Props {
   metrics: MetricasProjetos;
@@ -18,7 +18,7 @@ export function ProjetosMetricsCards({
   projetosSemFotos 
 }: Props) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -138,6 +138,47 @@ export function ProjetosMetricsCards({
           </div>
           <p className="text-xs text-muted-foreground mt-2">
             Tempo médio de produção
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Gauge className="h-4 w-4" />
+            Valor/Hora (Média)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {metrics.valorMedioPorHora > 0
+              ? metrics.valorMedioPorHora.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL'
+                })
+              : 'N/A'}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Valor médio por hora trabalhada
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Percent className="h-4 w-4" />
+            Eficiência (Média)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {metrics.eficienciaMedia > 0
+              ? `${metrics.eficienciaMedia.toFixed(1)}%`
+              : 'N/A'}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Fotos vendidas / enviadas
           </p>
         </CardContent>
       </Card>

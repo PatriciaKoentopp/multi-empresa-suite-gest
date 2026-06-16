@@ -135,6 +135,7 @@ export default function RelatorioProjetosPage() {
     const projetosComVenda = projetosFiltrados.filter(p => p.temVenda);
     const totalReceita = projetosComVenda.reduce((sum, p) => sum + p.receita, 0);
     const totalFotos = projetosComVenda.reduce((sum, p) => sum + p.fotosVendidas, 0);
+    const totalEnviadas = projetosComVenda.reduce((sum, p) => sum + p.fotosEnviadas, 0);
     const totalHoras = projetosComVenda.reduce((sum, p) => sum + p.totalHoras, 0);
 
     return {
@@ -146,6 +147,7 @@ export default function RelatorioProjetosPage() {
       valorMedioPorFoto: totalFotos > 0 ? totalReceita / totalFotos : 0,
       valorMedioPorHora: totalHoras > 0 ? totalReceita / totalHoras : 0,
       horasMediasPorFoto: totalFotos > 0 ? totalHoras / totalFotos : 0,
+      eficienciaMedia: totalEnviadas > 0 ? (totalFotos / totalEnviadas) * 100 : 0,
     };
   }, [projetosFiltrados]);
 
