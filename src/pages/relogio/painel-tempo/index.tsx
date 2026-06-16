@@ -1161,14 +1161,13 @@ export default function PainelTempoRelogioPage() {
                     <TableHead className="text-right">Horas</TableHead>
                     <TableHead className="text-right">% do total</TableHead>
                     <TableHead className="text-right">Dias</TableHead>
-                    <TableHead className="text-right">Δ período anterior</TableHead>
                     <TableHead>Última atividade</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {perfProjetos.lista.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
                         Sem dados no período.
                       </TableCell>
                     </TableRow>
@@ -1186,10 +1185,6 @@ export default function PainelTempoRelogioPage() {
                       <TableCell className="text-right">{formatHoras(p.horas)}</TableCell>
                       <TableCell className="text-right">{fmtNum(p.pct, 1)}%</TableCell>
                       <TableCell className="text-right">{p.dias}</TableCell>
-                      <TableCell className={cn("text-right font-medium",
-                        p.variacao >= 0 ? "text-emerald-600" : "text-red-600")}>
-                        {p.variacao >= 0 ? "+" : ""}{fmtNum(p.variacao, 1)}%
-                      </TableCell>
                       <TableCell>{p.ultima ? formatDate(p.ultima) : "—"}</TableCell>
                     </TableRow>
                   ))}
