@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MetricasProjetos } from "@/hooks/useRelatorioProjetos";
 import { formatHoursMinutes } from "@/utils/timeUtils";
-import { TrendingUp, DollarSign, Camera, Clock } from "lucide-react";
+import { TrendingUp, DollarSign, Camera, Clock, Gauge, Percent } from "lucide-react";
 
 interface Props {
   metrics: MetricasProjetos;
