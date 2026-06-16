@@ -1,4 +1,4 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ProjetoCompleto } from "@/hooks/useRelatorioProjetos";
 import { formatDate } from "@/lib/utils";
@@ -135,6 +135,31 @@ export function ProjetosTable({ projetos }: Props) {
             </TableRow>
           ))}
         </TableBody>
+        {projetos.length > 0 && (() => {
+          const totReceita = projetos.reduce((s, p) => s + p.receita, 0);
+          const totFotos = projetos.reduce((s, p) => s + p.fotosVendidas, 0);
+          const totHoras = projetos.reduce((s, p) => s + p.totalHoras, 0);
+          const totEnviadas = projetos.reduce((s, p) => s + p.fotosEnviadas, 0);
+          const rPorFoto = totFotos > 0 ? totReceita / totFotos : 0;
+          const rPorHora = totHoras > 0 ? totReceita / totHoras : 0;
+          const hPorFoto = totFotos > 0 ? totHoras / totFotos : 0;
+          const efic = totEnviadas > 0 ? (totFotos / totEnviadas) * 100 : 0;
+          const fmtBRL = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          return (
+            <TableFooter>
+              <TableRow className="bg-muted/50 font-bold">
+                <TableCell colSpan={4}>TOTAL</TableCell>
+                <TableCell className="text-right">{fmtBRL(totReceita)}</TableCell>
+                <TableCell className="text-center">{totFotos}</TableCell>
+                <TableCell className="text-right">{formatHoursMinutes(totHoras)}</TableCell>
+                <TableCell className="text-right">{rPorFoto > 0 ? fmtBRL(rPorFoto) : '-'}</TableCell>
+                <TableCell className="text-right">{rPorHora > 0 ? fmtBRL(rPorHora) : '-'}</TableCell>
+                <TableCell className="text-right">{hPorFoto > 0 ? formatHoursMinutes(hPorFoto) : '-'}</TableCell>
+                <TableCell className="text-right">{efic > 0 ? `${efic.toFixed(1)}%` : '-'}</TableCell>
+              </TableRow>
+            </TableFooter>
+          );
+        })()}
       </Table>
     </div>
   );
