@@ -40,6 +40,7 @@ export interface MetricasProjetos {
   valorMedioPorFoto: number;
   valorMedioPorHora: number;
   horasMediasPorFoto: number;
+  eficienciaMedia: number;
 }
 
 interface VendaData {
