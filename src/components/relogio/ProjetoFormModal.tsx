@@ -113,6 +113,7 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
         fotos_enviadas: Number(fotosEnviadas) || 0,
         fotos_vendidas: Number(fotosVendidas) || 0,
         status,
+        cidade: cidade.trim() || null,
         data_fotos: dateToISOString(dataFotos),
         data_previa: dateToISOString(dataPrevia),
         data_selecao: dateToISOString(dataSelecao),
