@@ -216,6 +216,10 @@ export const navigationConfig: ModuleNavItem[] = [
         title: "Painel de Projetos",
         href: "/relogio/painel-projetos",
       },
+      {
+        title: "Planilha de Fotos",
+        href: "/relogio/planilha-fotos",
+      },
     ],
   },
   {
