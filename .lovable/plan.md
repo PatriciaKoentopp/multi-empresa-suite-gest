@@ -1,21 +1,23 @@
 ## Objetivo
-Adicionar uma linha de totalização ao final da tabela do card "Projetos" em `/relatorios/projetos`.
+Adicionar o campo **Cidade** ao cadastro de projetos do Relógio, exibindo-o na mesma linha do campo **Tipo de Projeto** no modal.
 
-## Alteração
-Arquivo: `src/components/relatorios/projetos/ProjetosTable.tsx`
+## Alterações
 
-Incluir um `TableFooter` (ou linha destacada no final do `TableBody`) com os totais/médias calculados a partir do array `projetos` recebido por props:
+### 1. Banco de dados
+- Migration em `relogio_projetos`: adicionar coluna `cidade TEXT NULL`.
 
-- **Projeto / Cliente / Cód. Venda / Data Venda**: célula com rótulo "TOTAL" (colspan).
-- **Receita**: soma de `receita` de todos os projetos da lista.
-- **Fotos (V)**: soma de `fotosVendidas`.
-- **Horas**: soma de `totalHoras` (formatada com `formatHoursMinutes`).
-- **R$/Foto (média geral)**: `Σreceita / ΣfotosVendidas` (somente quando ΣfotosVendidas > 0).
-- **R$/Hora (média geral)**: `Σreceita / ΣtotalHoras` (somente quando ΣtotalHoras > 0).
-- **H/Foto (média geral)**: `ΣtotalHoras / ΣfotosVendidas` (formatada com `formatHoursMinutes`).
-- **Efic. % (média geral)**: `(ΣfotosVendidas / ΣfotosEnviadas) * 100`.
+### 2. Tipos
+- `src/types/relogio.d.ts`: adicionar `cidade: string | null` na interface `RelogioProjeto`.
 
-Observações:
-- Médias são "ponderadas" (calculadas a partir dos totais), conforme o pedido de "média geral".
-- Linha estilizada em negrito e com fundo `bg-muted/50` para destaque, mantendo o padrão visual da tabela.
-- Não alterar filtros, métricas dos cards superiores nem demais componentes.
+### 3. Hook
+- `src/hooks/useProjetosRelogio.ts`: adicionar `cidade?: string | null` no `ProjetoPayload`.
+
+### 4. Modal de projeto (`src/components/relogio/ProjetoFormModal.tsx`)
+- Novo estado `cidade` (string), inicializado a partir de `projeto?.cidade`.
+- Envolver os campos **Tipo de Projeto** e **Cidade** em um `grid grid-cols-1 sm:grid-cols-2 gap-4`, ficando lado a lado na mesma linha.
+- Enviar `cidade` no `onSubmit`.
+
+## Observações
+- Nenhuma alteração de layout/funcionalidade fora do solicitado.
+- A coluna é opcional (nullable), sem impacto em registros existentes.
+- Não será incluída na listagem/tabela de projetos nesta etapa (não solicitado).
