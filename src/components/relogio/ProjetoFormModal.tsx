@@ -56,6 +56,7 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
   const [fotosEnviadas, setFotosEnviadas] = useState("0");
   const [fotosVendidas, setFotosVendidas] = useState("0");
   const [status, setStatus] = useState<"ativo" | "arquivado">("ativo");
+  const [cidade, setCidade] = useState("");
   const [dataFotos, setDataFotos] = useState<Date | undefined>(undefined);
   const [dataPrevia, setDataPrevia] = useState<Date | undefined>(undefined);
   const [dataSelecao, setDataSelecao] = useState<Date | undefined>(undefined);
