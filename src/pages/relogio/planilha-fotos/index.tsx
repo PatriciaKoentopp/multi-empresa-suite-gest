@@ -126,6 +126,22 @@ export default function PlanilhaFotosPage() {
     })).filter((g) => g.projetos.length > 0);
   }, [projetos, anoFiltro]);
 
+  const totaisGerais = useMemo(() => {
+    let cr2 = 0;
+    let dng = 0;
+    let pacote = 0;
+
+    meses.forEach((g) => {
+      g.projetos.forEach((p) => {
+        cr2 += p.fotos_tiradas || 0;
+        dng += p.fotos_enviadas || 0;
+        pacote += p.fotos_vendidas || 0;
+      });
+    });
+
+    return { cr2, dng, pacote };
+  }, [meses]);
+
   const handleExportar = () => {
     if (meses.length === 0) {
       toast.error("Nenhum projeto para exportar");
