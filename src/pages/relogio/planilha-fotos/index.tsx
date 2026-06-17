@@ -357,14 +357,17 @@ function Td({
   children,
   className,
   rowSpan,
+  colSpan,
 }: {
   children?: React.ReactNode;
   className?: string;
   rowSpan?: number;
+  colSpan?: number;
 }) {
   return (
     <td
       rowSpan={rowSpan}
+      colSpan={colSpan}
       className={cn(
         "border border-gray-300 dark:border-gray-700 px-3 py-2",
         className
