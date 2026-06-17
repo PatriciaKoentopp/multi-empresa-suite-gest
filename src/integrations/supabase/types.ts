@@ -1948,6 +1948,7 @@ export type Database = {
       }
       relogio_projetos: {
         Row: {
+          cidade: string | null
           codigo: string
           created_at: string
           data_entrega: string | null
@@ -1967,6 +1968,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cidade?: string | null
           codigo: string
           created_at?: string
           data_entrega?: string | null
@@ -1986,6 +1988,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cidade?: string | null
           codigo?: string
           created_at?: string
           data_entrega?: string | null

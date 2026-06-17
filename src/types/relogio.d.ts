@@ -28,6 +28,7 @@ export interface RelogioProjeto {
   fotos_enviadas: number;
   fotos_vendidas: number;
   status: "ativo" | "arquivado";
+  cidade: string | null;
   data_fotos: string | null;
   data_previa: string | null;
   data_selecao: string | null;
