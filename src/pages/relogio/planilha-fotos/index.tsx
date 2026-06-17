@@ -312,7 +312,20 @@ export default function PlanilhaFotosPage() {
                     ))
                   )}
                 </tbody>
+                <tfoot>
+                  <tr className="bg-gray-100 dark:bg-gray-800 font-semibold">
+                    <Td colSpan={4} className="text-right">
+                      Totais
+                    </Td>
+                    <Td className="text-right tabular-nums">{totaisGerais.cr2 || ""}</Td>
+                    <Td className="text-right tabular-nums">{totaisGerais.dng || ""}</Td>
+                    <Td className="text-right tabular-nums">{totaisGerais.pacote || ""}</Td>
+                    <Td className="text-center tabular-nums">{totaisGerais.pacote || ""}</Td>
+                    <Td colSpan={5}></Td>
+                  </tr>
+                </tfoot>
               </table>
+
             </div>
           )}
         </CardContent>
