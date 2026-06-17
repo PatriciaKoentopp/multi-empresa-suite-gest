@@ -312,7 +312,20 @@ export default function PlanilhaFotosPage() {
                     ))
                   )}
                 </tbody>
+                <tfoot>
+                  <tr className="bg-gray-100 dark:bg-gray-800 font-semibold">
+                    <Td colSpan={4} className="text-right">
+                      Totais
+                    </Td>
+                    <Td className="text-right tabular-nums">{totaisGerais.cr2 || ""}</Td>
+                    <Td className="text-right tabular-nums">{totaisGerais.dng || ""}</Td>
+                    <Td className="text-right tabular-nums">{totaisGerais.pacote || ""}</Td>
+                    <Td className="text-center tabular-nums">{totaisGerais.pacote || ""}</Td>
+                    <Td colSpan={5}></Td>
+                  </tr>
+                </tfoot>
               </table>
+
             </div>
           )}
         </CardContent>
@@ -344,14 +357,17 @@ function Td({
   children,
   className,
   rowSpan,
+  colSpan,
 }: {
   children?: React.ReactNode;
   className?: string;
   rowSpan?: number;
+  colSpan?: number;
 }) {
   return (
     <td
       rowSpan={rowSpan}
+      colSpan={colSpan}
       className={cn(
         "border border-gray-300 dark:border-gray-700 px-3 py-2",
         className
