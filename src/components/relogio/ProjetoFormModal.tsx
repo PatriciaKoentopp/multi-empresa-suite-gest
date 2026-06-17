@@ -56,6 +56,7 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
   const [fotosEnviadas, setFotosEnviadas] = useState("0");
   const [fotosVendidas, setFotosVendidas] = useState("0");
   const [status, setStatus] = useState<"ativo" | "arquivado">("ativo");
+  const [cidade, setCidade] = useState("");
   const [dataFotos, setDataFotos] = useState<Date | undefined>(undefined);
   const [dataPrevia, setDataPrevia] = useState<Date | undefined>(undefined);
   const [dataSelecao, setDataSelecao] = useState<Date | undefined>(undefined);
@@ -78,6 +79,7 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
       setFotosEnviadas(String(projeto?.fotos_enviadas ?? 0));
       setFotosVendidas(String(projeto?.fotos_vendidas ?? 0));
       setStatus((projeto?.status as "ativo" | "arquivado") ?? "ativo");
+      setCidade(projeto?.cidade ?? "");
       setDataFotos(projeto?.data_fotos ? parseDateString(projeto.data_fotos) : undefined);
       setDataPrevia(projeto?.data_previa ? parseDateString(projeto.data_previa) : undefined);
       setDataSelecao(projeto?.data_selecao ? parseDateString(projeto.data_selecao) : undefined);
@@ -111,6 +113,7 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
         fotos_enviadas: Number(fotosEnviadas) || 0,
         fotos_vendidas: Number(fotosVendidas) || 0,
         status,
+        cidade: cidade.trim() || null,
         data_fotos: dateToISOString(dataFotos),
         data_previa: dateToISOString(dataPrevia),
         data_selecao: dateToISOString(dataSelecao),
@@ -151,27 +154,38 @@ export function ProjetoFormModal({ open, onOpenChange, projeto, onSubmit }: Prop
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Tipo de Projeto</Label>
-            <Select
-              value={tipoProjetoId || "__sem_tipo__"}
-              onValueChange={(v) => setTipoProjetoId(v === "__sem_tipo__" ? "" : v)}
-            >
-              <SelectTrigger className="bg-white dark:bg-gray-900">
-                <SelectValue placeholder="Selecione o tipo de projeto" />
-              </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 max-h-72">
-                <SelectItem value="__sem_tipo__">
-                  <span className="text-muted-foreground">Sem tipo</span>
-                </SelectItem>
-                {tiposAtivos.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.nome}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Tipo de Projeto</Label>
+              <Select
+                value={tipoProjetoId || "__sem_tipo__"}
+                onValueChange={(v) => setTipoProjetoId(v === "__sem_tipo__" ? "" : v)}
+              >
+                <SelectTrigger className="bg-white dark:bg-gray-900">
+                  <SelectValue placeholder="Selecione o tipo de projeto" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 max-h-72">
+                  <SelectItem value="__sem_tipo__">
+                    <span className="text-muted-foreground">Sem tipo</span>
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  {tiposAtivos.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cidade">Cidade</Label>
+              <Input
+                id="cidade"
+                value={cidade}
+                onChange={(e) => setCidade(e.target.value)}
+              />
+            </div>
           </div>
+
 
           <div className="space-y-2">
             <Label>Cliente</Label>

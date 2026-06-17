@@ -1,0 +1,1 @@
+ALTER TABLE public.relogio_projetos ADD COLUMN IF NOT EXISTS cidade TEXT NULL;
