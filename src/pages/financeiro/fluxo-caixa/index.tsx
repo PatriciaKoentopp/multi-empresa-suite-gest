@@ -154,37 +154,48 @@ export default function FluxoCaixaPage() {
     queryFn: async () => {
       if (!contaCorrenteId) return [];
 
-      let query = supabase
-        .from("fluxo_caixa")
-        .select(`
-          *,
-          movimentacoes (
-            descricao,
-            favorecido_id,
-            numero_documento,
-            numero_parcelas
-          ),
-          movimentacoes_parcelas (
-            numero
-          ),
-          antecipacoes (
-            favorecido_id,
-            numero_documento
-          )
-        `)
-        .eq("empresa_id", currentCompany?.id)
-        .eq("conta_corrente_id", contaCorrenteId)
-        .order("data_movimentacao", { ascending: true });
+      const PAGE_SIZE = 1000;
+      let from = 0;
+      const all: any[] = [];
 
-      const { data, error } = await query;
+      while (true) {
+        const { data, error } = await supabase
+          .from("fluxo_caixa")
+          .select(`
+            *,
+            movimentacoes (
+              descricao,
+              favorecido_id,
+              numero_documento,
+              numero_parcelas
+            ),
+            movimentacoes_parcelas (
+              numero
+            ),
+            antecipacoes (
+              favorecido_id,
+              numero_documento
+            )
+          `)
+          .eq("empresa_id", currentCompany?.id)
+          .eq("conta_corrente_id", contaCorrenteId)
+          .order("data_movimentacao", { ascending: true })
+          .range(from, from + PAGE_SIZE - 1);
 
-      if (error) {
-        toast.error("Erro ao carregar todas as movimentações");
-        console.error(error);
-        return [];
+        if (error) {
+          toast.error("Erro ao carregar todas as movimentações");
+          console.error(error);
+          return [];
+        }
+
+        const batch = data || [];
+        all.push(...batch);
+
+        if (batch.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
       }
 
-      return data || [];
+      return all;
     },
     enabled: !!currentCompany?.id && !!contaCorrenteId,
   });
