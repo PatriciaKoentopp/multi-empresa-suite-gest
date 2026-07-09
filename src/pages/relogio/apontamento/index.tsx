@@ -63,6 +63,7 @@ import { ApontamentoRow } from "@/components/relogio/ApontamentoRow";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { formatDate, cn } from "@/lib/utils";
+import { formatHoursMinutes } from "@/utils/timeUtils";
 import type { RelogioApontamento } from "@/types/relogio";
 
 const PERIODO_STORAGE_KEY = "relogio_apontamento_periodo";
