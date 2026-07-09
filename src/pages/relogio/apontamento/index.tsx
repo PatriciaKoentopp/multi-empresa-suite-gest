@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,6 +63,7 @@ import { ApontamentoRow } from "@/components/relogio/ApontamentoRow";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { formatDate, cn } from "@/lib/utils";
+import { formatHoursMinutes } from "@/utils/timeUtils";
 import type { RelogioApontamento } from "@/types/relogio";
 
 const PERIODO_STORAGE_KEY = "relogio_apontamento_periodo";
@@ -179,6 +180,21 @@ export default function ApontamentoRelogioPage() {
       return matchSearch && matchProj && matchStatus;
     });
   }, [apontamentos, debouncedSearch, projetoFilter, statusFilter, projetoMap, tarefaMap]);
+
+  const groupedApontamentos = useMemo(() => {
+    const map = new Map<string, RelogioApontamento[]>();
+    filtered.forEach((a) => {
+      const list = map.get(a.data) || [];
+      list.push(a);
+      map.set(a.data, list);
+    });
+    return Array.from(map.entries()).sort(([dA], [dB]) => dB.localeCompare(dA));
+  }, [filtered]);
+
+  const totalGeral = useMemo(
+    () => filtered.reduce((sum, a) => sum + Number(a.duracao_decimal || 0), 0),
+    [filtered]
+  );
 
   const handleSaveManual = async (payload: ApontamentoPayload, id?: string) => {
     if (id) await atualizarApontamento(id, payload);
@@ -440,6 +456,18 @@ export default function ApontamentoRelogioPage() {
             </div>
           </div>
 
+          {filtered.length > 0 && (
+            <div className="mb-4 flex items-center justify-end gap-3">
+              <span className="text-sm text-muted-foreground">Total geral</span>
+              <span className="text-base font-semibold">
+                {formatHoursMinutes(totalGeral)}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                ({totalGeral.toFixed(2)} h)
+              </span>
+            </div>
+          )}
+
           <div className="border rounded-md">
             <Table>
               <TableHeader>
@@ -469,26 +497,57 @@ export default function ApontamentoRelogioPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((a) => {
-                    const proj = projetoMap.get(a.projeto_id);
-                    const tarefaNome = a.tarefa_id ? tarefaMap.get(a.tarefa_id) : null;
-                    const dur = Number(a.duracao_decimal || 0);
-                    const durHHMMSS = secondsToHHMMSS(Math.round(dur * 3600));
+                  groupedApontamentos.map(([dataDia, items]) => {
+                    const totalDia = items.reduce(
+                      (sum, a) => sum + Number(a.duracao_decimal || 0),
+                      0
+                    );
+                    const totalDiaHHMMSS = secondsToHHMMSS(
+                      Math.round(totalDia * 3600)
+                    );
                     return (
-                      <ApontamentoRow
-                        key={a.id}
-                        id={a.id}
-                        data={formatDate(a.data)}
-                        projeto={proj ? `${proj.codigo} - ${proj.nome}` : "—"}
-                        tarefa={tarefaNome || "—"}
-                        horaInicio={a.hora_inicio?.slice(0, 5) || "—"}
-                        horaFim={a.hora_fim?.slice(0, 5) || "—"}
-                        duracaoDecimal={dur.toFixed(2)}
-                        duracaoHHMMSS={durHHMMSS}
-                        origem={a.origem}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                      />
+                      <Fragment key={dataDia}>
+                        {items.map((a) => {
+                          const proj = projetoMap.get(a.projeto_id);
+                          const tarefaNome = a.tarefa_id
+                            ? tarefaMap.get(a.tarefa_id)
+                            : null;
+                          const dur = Number(a.duracao_decimal || 0);
+                          const durHHMMSS = secondsToHHMMSS(
+                            Math.round(dur * 3600)
+                          );
+                          return (
+                            <ApontamentoRow
+                              key={a.id}
+                              id={a.id}
+                              data={formatDate(a.data)}
+                              projeto={
+                                proj
+                                  ? `${proj.codigo} - ${proj.nome}`
+                                  : "—"
+                              }
+                              tarefa={tarefaNome || "—"}
+                              horaInicio={a.hora_inicio?.slice(0, 5) || "—"}
+                              horaFim={a.hora_fim?.slice(0, 5) || "—"}
+                              duracaoDecimal={dur.toFixed(2)}
+                              duracaoHHMMSS={durHHMMSS}
+                              origem={a.origem}
+                              onEdit={handleEdit}
+                              onDelete={handleDelete}
+                            />
+                          );
+                        })}
+                        <TableRow className="bg-muted/60 font-semibold border-t">
+                          <TableCell colSpan={5}>
+                            Total do dia {formatDate(dataDia)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {totalDia.toFixed(2)}
+                          </TableCell>
+                          <TableCell>{totalDiaHHMMSS}</TableCell>
+                          <TableCell colSpan={2} />
+                        </TableRow>
+                      </Fragment>
                     );
                   })
                 )}
