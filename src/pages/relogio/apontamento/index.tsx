@@ -497,26 +497,57 @@ export default function ApontamentoRelogioPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((a) => {
-                    const proj = projetoMap.get(a.projeto_id);
-                    const tarefaNome = a.tarefa_id ? tarefaMap.get(a.tarefa_id) : null;
-                    const dur = Number(a.duracao_decimal || 0);
-                    const durHHMMSS = secondsToHHMMSS(Math.round(dur * 3600));
+                  groupedApontamentos.map(([dataDia, items]) => {
+                    const totalDia = items.reduce(
+                      (sum, a) => sum + Number(a.duracao_decimal || 0),
+                      0
+                    );
+                    const totalDiaHHMMSS = secondsToHHMMSS(
+                      Math.round(totalDia * 3600)
+                    );
                     return (
-                      <ApontamentoRow
-                        key={a.id}
-                        id={a.id}
-                        data={formatDate(a.data)}
-                        projeto={proj ? `${proj.codigo} - ${proj.nome}` : "—"}
-                        tarefa={tarefaNome || "—"}
-                        horaInicio={a.hora_inicio?.slice(0, 5) || "—"}
-                        horaFim={a.hora_fim?.slice(0, 5) || "—"}
-                        duracaoDecimal={dur.toFixed(2)}
-                        duracaoHHMMSS={durHHMMSS}
-                        origem={a.origem}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                      />
+                      <Fragment key={dataDia}>
+                        {items.map((a) => {
+                          const proj = projetoMap.get(a.projeto_id);
+                          const tarefaNome = a.tarefa_id
+                            ? tarefaMap.get(a.tarefa_id)
+                            : null;
+                          const dur = Number(a.duracao_decimal || 0);
+                          const durHHMMSS = secondsToHHMMSS(
+                            Math.round(dur * 3600)
+                          );
+                          return (
+                            <ApontamentoRow
+                              key={a.id}
+                              id={a.id}
+                              data={formatDate(a.data)}
+                              projeto={
+                                proj
+                                  ? `${proj.codigo} - ${proj.nome}`
+                                  : "—"
+                              }
+                              tarefa={tarefaNome || "—"}
+                              horaInicio={a.hora_inicio?.slice(0, 5) || "—"}
+                              horaFim={a.hora_fim?.slice(0, 5) || "—"}
+                              duracaoDecimal={dur.toFixed(2)}
+                              duracaoHHMMSS={durHHMMSS}
+                              origem={a.origem}
+                              onEdit={handleEdit}
+                              onDelete={handleDelete}
+                            />
+                          );
+                        })}
+                        <TableRow className="bg-muted/60 font-semibold border-t">
+                          <TableCell colSpan={5}>
+                            Total do dia {formatDate(dataDia)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {totalDia.toFixed(2)}
+                          </TableCell>
+                          <TableCell>{totalDiaHHMMSS}</TableCell>
+                          <TableCell colSpan={2} />
+                        </TableRow>
+                      </Fragment>
                     );
                   })
                 )}
