@@ -456,6 +456,18 @@ export default function ApontamentoRelogioPage() {
             </div>
           </div>
 
+          {filtered.length > 0 && (
+            <div className="mb-4 flex items-center justify-end gap-3">
+              <span className="text-sm text-muted-foreground">Total geral</span>
+              <span className="text-base font-semibold">
+                {formatHoursMinutes(totalGeral)}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                ({totalGeral.toFixed(2)} h)
+              </span>
+            </div>
+          )}
+
           <div className="border rounded-md">
             <Table>
               <TableHeader>
