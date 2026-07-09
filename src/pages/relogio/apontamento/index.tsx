@@ -181,6 +181,21 @@ export default function ApontamentoRelogioPage() {
     });
   }, [apontamentos, debouncedSearch, projetoFilter, statusFilter, projetoMap, tarefaMap]);
 
+  const groupedApontamentos = useMemo(() => {
+    const map = new Map<string, RelogioApontamento[]>();
+    filtered.forEach((a) => {
+      const list = map.get(a.data) || [];
+      list.push(a);
+      map.set(a.data, list);
+    });
+    return Array.from(map.entries()).sort(([dA], [dB]) => dB.localeCompare(dA));
+  }, [filtered]);
+
+  const totalGeral = useMemo(
+    () => filtered.reduce((sum, a) => sum + Number(a.duracao_decimal || 0), 0),
+    [filtered]
+  );
+
   const handleSaveManual = async (payload: ApontamentoPayload, id?: string) => {
     if (id) await atualizarApontamento(id, payload);
     else await criarApontamento(payload);
