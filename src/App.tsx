@@ -79,6 +79,7 @@ import ApontamentoRelogioPage from "./pages/relogio/apontamento";
 import VisualizacaoRelogioPage from "./pages/relogio/visualizacao";
 import PainelTempoRelogioPage from "./pages/relogio/painel-tempo";
 import PainelProjetosRelogioPage from "./pages/relogio/painel-projetos";
+import HorasPorProjetoPage from "./pages/relogio/horas-por-projeto";
 import PlanilhaFotosRelogioPage from "./pages/relogio/planilha-fotos";
 
 // Backup
