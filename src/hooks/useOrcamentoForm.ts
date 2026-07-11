@@ -241,7 +241,8 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
         .from('favorecidos')
         .select('*')
         .eq('empresa_id', currentCompany?.id)
-        .eq('status', 'ativo');
+        .eq('status', 'ativo')
+        .order('nome');
 
       if (error) throw error;
       setFavorecidos(data || []);
