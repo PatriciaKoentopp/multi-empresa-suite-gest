@@ -555,6 +555,16 @@ function App() {
               }
             />
             <Route
+              path="/relogio/horas-por-projeto"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <HorasPorProjetoPage />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/relogio/planilha-fotos"
               element={
                 <PrivateRoute>
