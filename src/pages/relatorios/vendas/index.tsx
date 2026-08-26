@@ -347,6 +347,59 @@ export default function RelatorioVendas() {
       },
     });
 
+    // Tabela comparativa de média mensal (ano corrente vs anteriores)
+    if (comparativoMedias.length > 0 && anoCorrente) {
+      const headComp: string[] = [
+        "Comparativo",
+        `Média Mensal ${anoCorrente}`,
+        "Média Mensal Ano Anterior",
+        "Diferença",
+        "Variação %",
+      ];
+      const bodyComp: any[][] = comparativoMedias.map((item) => {
+        const diffStr = `${item.diff > 0 ? "+" : ""}${formatCurrency(item.diff)}`;
+        const varStr =
+          item.varPct !== null ? `${item.varPct >= 0 ? "+" : ""}${item.varPct.toFixed(1)}%` : "-";
+        return [
+          `${anoCorrente} x ${item.ano}`,
+          formatCurrency(item.mediaCorrente),
+          formatCurrency(item.mediaAnterior),
+          diffStr,
+          varStr,
+        ];
+      });
+
+      autoTable(doc, {
+        head: [headComp],
+        body: bodyComp,
+        startY: (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 8 : 37,
+        styles: { fontSize: 8, cellPadding: 1.5, lineColor: [200, 200, 200], lineWidth: 0.1 },
+        headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold" },
+        columnStyles: { 0: { halign: "left", cellWidth: 45 } },
+        didParseCell: (data) => {
+          if (data.section === "body") {
+            if (data.column.index > 0) data.cell.styles.halign = "right";
+            const texto = String(data.cell.raw ?? "");
+            if (texto.endsWith("%")) {
+              if (texto.startsWith("+")) data.cell.styles.textColor = [22, 163, 74];
+              else if (texto.startsWith("-") && texto !== "-") data.cell.styles.textColor = [220, 38, 38];
+            }
+          }
+        },
+        didDrawPage: (data) => {
+          const pageCount = doc.internal.pages.length - 1;
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "normal");
+          doc.text(
+            `Página ${data.pageNumber} de ${pageCount}`,
+            pageWidth - 14,
+            doc.internal.pageSize.getHeight() - 8,
+            { align: "right" }
+          );
+        },
+      });
+    }
+
     doc.save("relatorio-vendas.pdf");
     toast.success("PDF gerado com sucesso");
   };
