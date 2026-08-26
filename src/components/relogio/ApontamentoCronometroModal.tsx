@@ -134,7 +134,11 @@ export function ApontamentoCronometroModal({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
-          <Button variant="blue" onClick={handleStart} disabled={saving || !tarefaId}>
+          <Button
+            variant="blue"
+            onClick={handleStart}
+            disabled={saving || !projetoId || (!tarefaId && tarefasFiltradas.length > 0)}
+          >
             <Play className="mr-2 h-4 w-4" />
             {saving ? "Iniciando..." : "Iniciar"}
           </Button>
