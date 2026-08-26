@@ -5,13 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Download, FilterIcon } from "lucide-react";
+import { Download, FileText, FilterIcon } from "lucide-react";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { format, subMonths, differenceInMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { DateInput } from "@/components/movimentacao/DateInput";
+import { useCompany } from "@/contexts/company-context";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { toast } from "sonner";
+
 
 type Cliente = {
   id: string;
