@@ -195,6 +195,140 @@ export default function RelatorioVendas() {
     toast.success("Relatório exportado com sucesso");
   };
 
+  const exportarPDF = () => {
+    if (anos.length === 0) return;
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Relatório de Vendas", 14, 15);
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(currentCompany?.razao_social || "", 14, 21);
+    doc.text(
+      `Anos: ${anosSelecionados.length === anosDisponiveis.length ? "Todos" : anos.join(", ")}`,
+      14,
+      26
+    );
+
+    const dataEmissao = new Date();
+    const dd = String(dataEmissao.getDate()).padStart(2, "0");
+    const mm = String(dataEmissao.getMonth() + 1).padStart(2, "0");
+    const yyyy = dataEmissao.getFullYear();
+    const hh = String(dataEmissao.getHours()).padStart(2, "0");
+    const mi = String(dataEmissao.getMinutes()).padStart(2, "0");
+    doc.text(`Emitido em ${dd}/${mm}/${yyyy} ${hh}:${mi}`, pageWidth - 14, 15, { align: "right" });
+
+    // Resumo (mesmos cards da página)
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total Geral: ${formatCurrency(totalGeral)}`, 14, 32);
+    doc.text(
+      `Melhor Ano: ${melhorAno ?? "-"}${melhorAno ? ` (${formatCurrency(totaisAno[melhorAno] || 0)})` : ""}`,
+      100,
+      32
+    );
+    doc.text(`Anos Comparados: ${anos.length}`, 200, 32);
+
+    const head: string[] = ["Mês"];
+    anos.forEach((ano, idx) => {
+      head.push(String(ano));
+      if (idx > 0) head.push("Var. %");
+    });
+
+    const body: any[][] = MESES.map((nomeMes, i) => {
+      const mes = i + 1;
+      const row: any[] = [nomeMes];
+      anos.forEach((ano, idx) => {
+        const valor = vendas[ano]?.[mes] || 0;
+        row.push(valor > 0 ? formatCurrency(valor) : "-");
+        if (idx > 0) {
+          const v = variacao(valor, vendas[anos[idx - 1]]?.[mes] || 0);
+          row.push(v !== null ? `${v >= 0 ? "+" : ""}${v.toFixed(1)}%` : "-");
+        }
+      });
+      return row;
+    });
+
+    const rowTotal: any[] = ["Total"];
+    const rowMedia: any[] = ["Média mensal"];
+    anos.forEach((ano, idx) => {
+      rowTotal.push(formatCurrency(totaisAno[ano] || 0));
+      rowMedia.push(formatCurrency(mediasAno[ano] || 0));
+      if (idx > 0) {
+        const vt = variacao(totaisAno[ano] || 0, totaisAno[anos[idx - 1]] || 0);
+        const vm = variacao(mediasAno[ano] || 0, mediasAno[anos[idx - 1]] || 0);
+        rowTotal.push(vt !== null ? `${vt >= 0 ? "+" : ""}${vt.toFixed(1)}%` : "-");
+        rowMedia.push(vm !== null ? `${vm >= 0 ? "+" : ""}${vm.toFixed(1)}%` : "-");
+      }
+    });
+    body.push(rowTotal, rowMedia);
+
+    // índices das colunas de valor por ano (para destacar o melhor mês)
+    const colunaDoAno: Record<number, number> = {};
+    let col = 1;
+    anos.forEach((ano, idx) => {
+      colunaDoAno[ano] = col;
+      col += idx > 0 ? 2 : 1;
+    });
+
+    autoTable(doc, {
+      head: [head],
+      body,
+      startY: 37,
+      styles: { fontSize: 8, cellPadding: 1.5, lineColor: [200, 200, 200], lineWidth: 0.1 },
+      headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold" },
+      columnStyles: { 0: { halign: "left", cellWidth: 30 } },
+      didParseCell: (data) => {
+        if (data.section === "body") {
+          if (data.column.index > 0) data.cell.styles.halign = "right";
+
+          const isTotal = data.row.index === body.length - 2;
+          const isMedia = data.row.index === body.length - 1;
+          if (isTotal) {
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.fillColor = [237, 240, 244];
+          } else if (isMedia) {
+            data.cell.styles.fillColor = [245, 247, 250];
+          } else {
+            const mes = data.row.index + 1;
+            const anoDestacado = anos.find(
+              (ano) => colunaDoAno[ano] === data.column.index && melhorMesAno[ano] === mes
+            );
+            if (anoDestacado) {
+              data.cell.styles.fillColor = [229, 231, 235];
+              data.cell.styles.fontStyle = "bold";
+            }
+          }
+
+          const texto = String(data.cell.raw ?? "");
+          if (texto.endsWith("%")) {
+            if (texto.startsWith("+")) data.cell.styles.textColor = [22, 163, 74];
+            else if (texto.startsWith("-") && texto !== "-") data.cell.styles.textColor = [220, 38, 38];
+          }
+        }
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.pages.length - 1;
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.text(
+          `Página ${data.pageNumber} de ${pageCount}`,
+          pageWidth - 14,
+          doc.internal.pageSize.getHeight() - 8,
+          { align: "right" }
+        );
+      },
+    });
+
+    doc.save("relatorio-vendas.pdf");
+    toast.success("PDF gerado com sucesso");
+  };
+
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
