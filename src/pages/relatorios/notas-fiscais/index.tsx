@@ -16,6 +16,7 @@ interface NotaFiscal {
   favorecido_nome: string;
   codigo_projeto: string | null;
   valor: number;
+  data_venda: string | null;
 }
 
 const toISO = (date: Date) => {
@@ -46,7 +47,7 @@ export default function RelatorioNotasFiscais() {
         const { data, error } = await supabase
           .from("orcamentos")
           .select(
-            "id, codigo, data_nota_fiscal, numero_nota_fiscal, codigo_projeto, favorecidos(nome), orcamentos_itens(valor)"
+            "id, codigo, data_nota_fiscal, numero_nota_fiscal, data_venda, codigo_projeto, favorecidos(nome), orcamentos_itens(valor)"
           )
           .eq("empresa_id", currentCompany.id)
           .not("numero_nota_fiscal", "is", null)
@@ -62,6 +63,7 @@ export default function RelatorioNotasFiscais() {
           codigo: o.codigo,
           data_nota_fiscal: o.data_nota_fiscal,
           numero_nota_fiscal: o.numero_nota_fiscal,
+          data_venda: o.data_venda,
           codigo_projeto: o.codigo_projeto,
           favorecido_nome: o.favorecidos?.nome || "-",
           valor: (o.orcamentos_itens || []).reduce(
@@ -182,6 +184,7 @@ export default function RelatorioNotasFiscais() {
                     <TableHead className="w-[130px]">Orçamento</TableHead>
                     <TableHead className="w-[140px]">Projeto</TableHead>
                     <TableHead className="text-right w-[140px]">Valor</TableHead>
+                    <TableHead className="w-[120px]">Data Venda</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -193,10 +196,11 @@ export default function RelatorioNotasFiscais() {
                       <TableCell>{nota.codigo}</TableCell>
                       <TableCell>{nota.codigo_projeto || "-"}</TableCell>
                       <TableCell className="text-right">{formatCurrency(nota.valor)}</TableCell>
+                      <TableCell>{formatDate(nota.data_venda)}</TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/50 font-semibold">
-                    <TableCell colSpan={5}>Total ({notas.length} nota(s))</TableCell>
+                    <TableCell colSpan={6}>Total ({notas.length} nota(s))</TableCell>
                     <TableCell className="text-right">{formatCurrency(totalValor)}</TableCell>
                   </TableRow>
                 </TableBody>
