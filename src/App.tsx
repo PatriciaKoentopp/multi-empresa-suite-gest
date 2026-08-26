@@ -719,6 +719,17 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/relatorios/notas-fiscais"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <RelatorioNotasFiscais />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
 
             {/* Backup */}
             <Route
