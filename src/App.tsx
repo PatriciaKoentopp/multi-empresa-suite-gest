@@ -74,6 +74,7 @@ import RelatorioAntecipacoes from "./pages/relatorios/antecipacoes";
 import LogsTransacoes from "./pages/relatorios/logs-transacoes";
 import RazaoContabil from "./pages/relatorios/razao-contabil";
 import RelatorioNotasFiscais from "./pages/relatorios/notas-fiscais";
+import RelatorioVendas from "./pages/relatorios/vendas";
 
 import RelogioPage from "./pages/relogio";
 import TiposProjetoRelogioPage from "./pages/relogio/tipos-projeto";
