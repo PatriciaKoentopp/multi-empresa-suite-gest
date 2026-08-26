@@ -56,7 +56,8 @@ export function ApontamentoCronometroModal({
 
   const handleStart = async () => {
     if (!projetoId) return toast.error("Selecione um projeto");
-    if (!tarefaId) return toast.error("Selecione uma tarefa");
+    if (!tarefaId && tarefasFiltradas.length > 0)
+      return toast.error("Selecione uma tarefa");
     setSaving(true);
     try {
       await onIniciar(projetoId, tarefaId || null);
