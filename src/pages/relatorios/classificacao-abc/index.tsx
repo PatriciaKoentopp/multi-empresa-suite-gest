@@ -38,6 +38,8 @@ export default function ClassificacaoABC() {
   const [startDate, setStartDate] = useState<Date>(subMonths(new Date(), 12));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState("");
+  const { currentCompany } = useCompany();
+
 
   const calculateFrequency = (totalDays: number, quantidadeCompras: number): number => {
     if (quantidadeCompras <= 1) return 0;
