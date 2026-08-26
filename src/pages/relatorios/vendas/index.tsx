@@ -323,9 +323,13 @@ export default function RelatorioVendas() {
                           const v = idx > 0
                             ? variacao(valor, vendas[anos[idx - 1]]?.[mes] || 0)
                             : null;
+                          const isMelhorMes = melhorMesAno[ano] === mes;
                           return (
                             <>
-                              <td key={ano} className="border px-3 py-1.5 text-right">
+                              <td
+                                key={ano}
+                                className={`border px-3 py-1.5 text-right ${isMelhorMes ? "bg-gray-100 dark:bg-gray-800 font-medium" : ""}`}
+                              >
                                 {valor > 0 ? formatCurrency(valor) : "-"}
                               </td>
                               {idx > 0 && (
