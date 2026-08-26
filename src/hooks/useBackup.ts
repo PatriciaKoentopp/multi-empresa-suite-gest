@@ -51,7 +51,12 @@ export const backupTables: BackupTable[] = [
   { id: 'relogio_apontamentos', name: 'Relógio - Apontamentos', description: 'Apontamentos de horas' },
   { id: 'dashboard_cards_config', name: 'Configuração Dashboard', description: 'Configuração dos cards' },
   { id: 'modulos_parametros', name: 'Parâmetros', description: 'Parâmetros dos módulos' },
+  { id: 'usuarios', name: 'Usuários', description: 'Usuários da empresa' },
+  { id: 'upload_files', name: 'Arquivos Importados', description: 'Arquivos de importação enviados' },
+  { id: 'spreadsheet_data', name: 'Dados de Planilhas', description: 'Linhas importadas das planilhas' },
+  { id: 'logs_transacoes', name: 'Logs de Transações', description: 'Logs de auditoria do sistema' },
 ];
+
 
 
 // Função para formatar datas no padrão DD/MM/YYYY
@@ -105,7 +110,9 @@ const dateColumns = [
   'data_vencimento', 'data_pagamento', 'data_aniversario', 'data_criacao',
   'data_inicio', 'data_fim', 'data_primeiro_vencimento', 'data_geracao_conta',
   'data_movimentacao', 'data_venda', 'data_nota_fiscal', 'ultimo_contato',
-  'data_fechamento'
+  'data_fechamento', 'data_upload', 'data_fotos', 'data_previa', 'data_selecao',
+  'data_prazo', 'data_entrega'
+
 
 ];
 
