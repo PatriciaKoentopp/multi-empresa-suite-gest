@@ -116,7 +116,7 @@ export const DashboardCardConfigurator = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           {defaultCards.map((card) => {
             const cardVisible = isCardVisible(card.card_id);
             console.log(`Card ${card.card_id} visível: ${cardVisible}`);
