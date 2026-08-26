@@ -122,6 +122,30 @@ export default function RelatorioVendas() {
     return m;
   }, [anos, vendas]);
 
+  // comparativo: média mensal do ano mais recente (corrente) vs anos anteriores
+  const anoCorrente = useMemo(() => {
+    return anos.length > 0 ? anos[anos.length - 1] : null;
+  }, [anos]);
+
+  const comparativoMedias = useMemo(() => {
+    if (!anoCorrente || anos.length < 2) return [];
+    const mediaCorrente = mediasAno[anoCorrente] || 0;
+    return anos
+      .slice(0, anos.length - 1)
+      .sort((a, b) => b - a)
+      .map((ano) => {
+        const mediaAnterior = mediasAno[ano] || 0;
+        const diff = mediaCorrente - mediaAnterior;
+        const varPct =
+          mediaAnterior > 0
+            ? ((mediaCorrente - mediaAnterior) / mediaAnterior) * 100
+            : mediaCorrente > 0
+            ? 100
+            : null;
+        return { ano, mediaAnterior, mediaCorrente, diff, varPct };
+      });
+  }, [anoCorrente, anos, mediasAno]);
+
   const toggleAno = (ano: number) => {
     setAnosSelecionados((prev) =>
       prev.includes(ano) ? prev.filter((a) => a !== ano) : [...prev, ano]
