@@ -8,6 +8,7 @@ import { CompanyProvider } from "./contexts/company-context";
 import { AuthProvider, useAuth } from "./contexts/auth-context";
 import NotFound from "./pages/NotFound";
 import { Toaster } from "sonner";
+import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
 import StyleGuide from "./pages/style-guide";
 import Empresas from "./pages/empresas";
 
