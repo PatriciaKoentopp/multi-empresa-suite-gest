@@ -110,7 +110,9 @@ const dateColumns = [
   'data_vencimento', 'data_pagamento', 'data_aniversario', 'data_criacao',
   'data_inicio', 'data_fim', 'data_primeiro_vencimento', 'data_geracao_conta',
   'data_movimentacao', 'data_venda', 'data_nota_fiscal', 'ultimo_contato',
-  'data_fechamento'
+  'data_fechamento', 'data_upload', 'data_fotos', 'data_previa', 'data_selecao',
+  'data_prazo', 'data_entrega'
+
 
 ];
 
