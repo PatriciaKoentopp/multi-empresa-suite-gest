@@ -122,6 +122,30 @@ export default function RelatorioVendas() {
     return m;
   }, [anos, vendas]);
 
+  // comparativo: média mensal do ano mais recente (corrente) vs anos anteriores
+  const anoCorrente = useMemo(() => {
+    return anos.length > 0 ? anos[anos.length - 1] : null;
+  }, [anos]);
+
+  const comparativoMedias = useMemo(() => {
+    if (!anoCorrente || anos.length < 2) return [];
+    const mediaCorrente = mediasAno[anoCorrente] || 0;
+    return anos
+      .slice(0, anos.length - 1)
+      .sort((a, b) => b - a)
+      .map((ano) => {
+        const mediaAnterior = mediasAno[ano] || 0;
+        const diff = mediaCorrente - mediaAnterior;
+        const varPct =
+          mediaAnterior > 0
+            ? ((mediaCorrente - mediaAnterior) / mediaAnterior) * 100
+            : mediaCorrente > 0
+            ? 100
+            : null;
+        return { ano, mediaAnterior, mediaCorrente, diff, varPct };
+      });
+  }, [anoCorrente, anos, mediasAno]);
+
   const toggleAno = (ano: number) => {
     setAnosSelecionados((prev) =>
       prev.includes(ano) ? prev.filter((a) => a !== ano) : [...prev, ano]
@@ -528,6 +552,57 @@ export default function RelatorioVendas() {
                     })}
                   </tr>
                 </tfoot>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Comparativo de Média Mensal - Ano Corrente vs Anos Anteriores</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Carregando...</div>
+          ) : comparativoMedias.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Selecione pelo menos dois anos para comparar a média mensal
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="bg-muted">
+                    <th className="border px-3 py-2 text-left font-semibold">Comparativo</th>
+                    <th className="border px-3 py-2 text-right font-semibold">Média Mensal {anoCorrente}</th>
+                    <th className="border px-3 py-2 text-right font-semibold">Média Mensal Ano Anterior</th>
+                    <th className="border px-3 py-2 text-right font-semibold">Diferença</th>
+                    <th className="border px-3 py-2 text-right font-semibold">Variação %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparativoMedias.map((item) => (
+                    <tr key={item.ano}>
+                      <td className="border px-3 py-1.5 font-medium">
+                        {anoCorrente} x {item.ano}
+                      </td>
+                      <td className="border px-3 py-1.5 text-right">
+                        {formatCurrency(item.mediaCorrente)}
+                      </td>
+                      <td className="border px-3 py-1.5 text-right">
+                        {formatCurrency(item.mediaAnterior)}
+                      </td>
+                      <td className="border px-3 py-1.5 text-right">
+                        {item.diff > 0 ? "+" : ""}
+                        {formatCurrency(item.diff)}
+                      </td>
+                      <td className="border px-3 py-1.5 text-right">
+                        {renderVar(item.varPct)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           )}
