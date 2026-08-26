@@ -300,7 +300,11 @@ export function ApontamentoManualModal({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
-          <Button variant="blue" onClick={handleSave} disabled={saving || !tarefaId}>
+          <Button
+            variant="blue"
+            onClick={handleSave}
+            disabled={saving || !projetoId || (!tarefaId && tarefasFiltradas.length > 0)}
+          >
             {saving ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>
