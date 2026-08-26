@@ -733,6 +733,17 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/relatorios/vendas"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <RelatorioVendas />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
 
 
             {/* Backup */}
