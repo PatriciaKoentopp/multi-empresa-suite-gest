@@ -365,7 +365,12 @@ export default function ClassificacaoABC() {
         </div>
         
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={exportarPDF} disabled={loading}>
+            <FileText className="h-4 w-4 mr-2" />
+            Gerar PDF
+          </Button>
           <Button variant="outline" size="sm" onClick={exportToCSV}>
+
             <Download className="h-4 w-4 mr-2" />
             Exportar CSV
           </Button>
