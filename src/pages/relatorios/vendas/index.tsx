@@ -103,6 +103,23 @@ export default function RelatorioVendas() {
     return melhor;
   }, [anos, totaisAno]);
 
+  const melhorMesAno = useMemo(() => {
+    const m: Record<number, number> = {};
+    anos.forEach((ano) => {
+      let melhorMes = 0;
+      let melhorValor = -1;
+      for (let mes = 1; mes <= 12; mes++) {
+        const valor = vendas[ano]?.[mes] || 0;
+        if (valor > melhorValor) {
+          melhorValor = valor;
+          melhorMes = mes;
+        }
+      }
+      if (melhorValor > 0) m[ano] = melhorMes;
+    });
+    return m;
+  }, [anos, vendas]);
+
   const toggleAno = (ano: number) => {
     setAnosSelecionados((prev) =>
       prev.includes(ano) ? prev.filter((a) => a !== ano) : [...prev, ano]
