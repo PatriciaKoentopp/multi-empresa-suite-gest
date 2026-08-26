@@ -98,12 +98,20 @@ export default function Relatorios() {
       route: "/relatorios/antecipacoes"
     },
     {
+      id: "notasFiscais",
+      title: "Relatório de Notas Fiscais",
+      description: "Notas fiscais emitidas por data e número no período selecionado",
+      icon: <Receipt className="h-8 w-8 text-blue-500" />,
+      route: "/relatorios/notas-fiscais"
+    },
+    {
       id: "razaoContabil",
       title: "Razão Contábil",
       description: "Lançamentos contábeis agrupados por conta e ordenados por data",
       icon: <BookOpen className="h-8 w-8 text-teal-500" />,
       route: "/relatorios/razao-contabil"
     },
+
     {
       id: "geral",
       title: "Relatório Geral",
