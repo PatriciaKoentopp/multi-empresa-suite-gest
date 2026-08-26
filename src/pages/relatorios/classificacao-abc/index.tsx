@@ -5,13 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Download, FilterIcon } from "lucide-react";
+import { Download, FileText, FilterIcon } from "lucide-react";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { format, subMonths, differenceInMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { DateInput } from "@/components/movimentacao/DateInput";
+import { useCompany } from "@/contexts/company-context";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { toast } from "sonner";
+
 
 type Cliente = {
   id: string;
@@ -33,6 +38,8 @@ export default function ClassificacaoABC() {
   const [startDate, setStartDate] = useState<Date>(subMonths(new Date(), 12));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState("");
+  const { currentCompany } = useCompany();
+
 
   const calculateFrequency = (totalDays: number, quantidadeCompras: number): number => {
     if (quantidadeCompras <= 1) return 0;
@@ -215,7 +222,121 @@ export default function ClassificacaoABC() {
     document.body.removeChild(link);
   };
 
+  const exportarPDF = () => {
+    if (filteredClientes.length === 0) {
+      toast.error("Nenhum dado para gerar o PDF");
+      return;
+    }
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Classificação ABC de Clientes", 14, 15);
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(currentCompany?.razao_social || "", 14, 21);
+    doc.text(
+      `Período: ${format(startDate, "dd/MM/yyyy")} a ${format(endDate, "dd/MM/yyyy")}`,
+      14,
+      26
+    );
+
+    const dataEmissao = new Date();
+    const dd = String(dataEmissao.getDate()).padStart(2, "0");
+    const mm = String(dataEmissao.getMonth() + 1).padStart(2, "0");
+    const yyyy = dataEmissao.getFullYear();
+    const hh = String(dataEmissao.getHours()).padStart(2, "0");
+    const mi = String(dataEmissao.getMinutes()).padStart(2, "0");
+    doc.text(`Emitido em ${dd}/${mm}/${yyyy} ${hh}:${mi}`, pageWidth - 14, 15, { align: "right" });
+
+    // Resumo (mesmos cards da página)
+    const totais = getTotaisPorClassificacao();
+    const total = clientes.reduce((sum, c) => sum + c.totalVendas, 0);
+    const pct = (v: number) => (total > 0 ? Math.round((v / total) * 100) : 0);
+
+    doc.setFont("helvetica", "bold");
+    doc.text(
+      `Classe A (${pct(totais.A.vendas)}%): ${totais.A.clientes} clientes - ${formatCurrency(totais.A.vendas)}`,
+      14,
+      32
+    );
+    doc.text(
+      `Classe B (${pct(totais.B.vendas)}%): ${totais.B.clientes} clientes - ${formatCurrency(totais.B.vendas)}`,
+      110,
+      32
+    );
+    doc.text(
+      `Classe C (${pct(totais.C.vendas)}%): ${totais.C.clientes} clientes - ${formatCurrency(totais.C.vendas)}`,
+      206,
+      32
+    );
+
+    const head = [
+      "Cliente",
+      "Classificação",
+      "Vendas",
+      "Qtde",
+      "Ticket",
+      "Frequência (meses)",
+      "Meses Sem Compra",
+    ];
+
+    const body = filteredClientes.map((cliente) => [
+      cliente.nome_fantasia || cliente.nome,
+      cliente.classificacao,
+      formatCurrency(cliente.totalVendas),
+      String(cliente.quantidadeCompras),
+      formatCurrency(cliente.ticketMedio),
+      cliente.frequenciaCompra > 0 ? String(cliente.frequenciaCompra) : "-",
+      String(cliente.mesesSemCompra),
+    ]);
+
+    autoTable(doc, {
+      head: [head],
+      body,
+      startY: 37,
+      styles: { fontSize: 8, cellPadding: 1.5, lineColor: [200, 200, 200], lineWidth: 0.1 },
+      headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold" },
+      columnStyles: {
+        0: { halign: "left", cellWidth: 80 },
+        1: { halign: "center" },
+        2: { halign: "right" },
+        3: { halign: "right" },
+        4: { halign: "right" },
+        5: { halign: "right" },
+        6: { halign: "right" },
+      },
+      didParseCell: (data) => {
+        if (data.section === "body" && data.column.index === 1) {
+          const classe = String(data.cell.raw ?? "");
+          if (classe === "A") data.cell.styles.textColor = [22, 163, 74];
+          else if (classe === "B") data.cell.styles.textColor = [37, 99, 235];
+          else if (classe === "C") data.cell.styles.textColor = [234, 88, 12];
+          data.cell.styles.fontStyle = "bold";
+        }
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.pages.length - 1;
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.text(
+          `Página ${data.pageNumber} de ${pageCount}`,
+          pageWidth - 14,
+          doc.internal.pageSize.getHeight() - 8,
+          { align: "right" }
+        );
+      },
+    });
+
+    doc.save(`classificacao-abc-${format(new Date(), "dd-MM-yyyy")}.pdf`);
+    toast.success("PDF gerado com sucesso");
+  };
+
   const getTotaisPorClassificacao = () => {
+
     const totais = {
       A: { clientes: 0, vendas: 0 },
       B: { clientes: 0, vendas: 0 },
@@ -244,7 +365,12 @@ export default function ClassificacaoABC() {
         </div>
         
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={exportarPDF} disabled={loading}>
+            <FileText className="h-4 w-4 mr-2" />
+            Gerar PDF
+          </Button>
           <Button variant="outline" size="sm" onClick={exportToCSV}>
+
             <Download className="h-4 w-4 mr-2" />
             Exportar CSV
           </Button>
