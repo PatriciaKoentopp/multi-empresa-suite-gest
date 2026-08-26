@@ -1,37 +1,29 @@
+# Plano: Relatório de Vendas (/relatorios/vendas)
+
 ## Objetivo
-Criar a página **Horas por Projeto** no menu Relógio, mostrando os projetos com totalização de horas apontadas e permitindo detalhar as horas por tarefa. Layout referenciado em `/relogio/projetos`.
+Criar a página do card "Relatório de Vendas" já previsto em `/relatorios` (rota `/relatorios/vendas` ainda não existe). A página mostrará as vendas em formato de tabela estilo Excel: meses nas linhas, anos nas colunas, com totais e comparativo (variação) entre anos.
+
+## Fonte de dados
+- Tabela `orcamentos` com `tipo = 'venda'`, `status = 'ativo'`, `data_venda` preenchida e `empresa_id` da empresa atual (mesmo critério do painel de vendas).
+- Valor de cada venda = soma de `orcamentos_itens.valor`.
+- Agrupamento por mês/ano extraído de `data_venda` via substring (padrão já usado em `useYearlyComparison`).
+
+## Página: `src/pages/relogio/../relatorios/vendas/index.tsx` (novo arquivo)
+1. **Filtro de anos**: seleção múltipla de anos (anos detectados automaticamente a partir das vendas existentes) + opção "Todos". Por padrão, todos os anos com vendas.
+2. **Tabela estilo Excel** (padrão visual da página Planilha de Fotos: bordas em todas as células, cabeçalho destacado):
+   - Linhas: Janeiro a Dezembro.
+   - Colunas: uma por ano selecionado, com o valor vendido no mês.
+   - Coluna extra por ano (exceto o mais antigo): **Var. %** — variação percentual do mês em relação ao mesmo mês do ano anterior (verde quando positiva, vermelha quando negativa, "-" quando não há base).
+   - Linha de **Total** no rodapé: soma anual por coluna + variação % do total ano a ano.
+   - Linha de **Média mensal**: média dos meses com venda por ano.
+   - Células sem venda exibem "-".
+3. **Cards de resumo** (padrão dos demais relatórios): Total geral do período filtrado, melhor ano e quantidade de anos comparados.
+4. **Botão Exportar Excel** (.xlsx via `xlsx`, mesmo padrão da Planilha de Fotos), exportando a tabela exatamente como exibida.
+5. Datas e valores formatados nos padrões do projeto (`formatCurrency`, DD/MM/YYYY).
 
 ## Rota e menu
-- Criar rota `/relogio/horas-por-projeto` em `src/App.tsx` importando a nova página.
-- Adicionar item **"Horas por Projeto"** em `src/config/navigation.ts` no submenu **Relógio** (após "Painel de Projetos").
+- Registrar a rota `/relatorios/vendas` em `src/App.tsx` (lazy import, padrão das demais páginas de relatório).
+- O card em `/relatorios` já aponta para essa rota — nenhuma alteração necessária no índice.
 
-## Nova página `src/pages/relogio/horas-por-projeto/index.tsx`
-Estrutura visual idêntica à `/relogio/projetos` (título, `Card`, filtros na mesma linha, `Table`), sem botões de ação (Novo/Importar/Exportar) já que é somente leitura.
-
-### Filtros (mesma barra da página de projetos)
-- **Busca** por código ou nome do projeto (`Input` com ícone).
-- **Cliente** (`Popover + Command`, com "Todos os clientes").
-- **Tipo de Projeto** (`Popover + Command`, com "Todos os tipos").
-- **Situação** (`Select`: Todos / Ativo / Arquivado — padrão "Ativo").
-
-### Fonte de dados
-- `useProjetosRelogio` para lista de projetos, `favorecidos` (id, nome), `relogio_tipos_projeto` (id, nome), `relogio_tarefas` (id, nome).
-- `relogio_apontamentos` (status = `concluido`) paginado 1000/1000 trazendo `projeto_id`, `tarefa_id`, `duracao_decimal`, agregando em dois mapas:
-  - `horasPorProjeto: Map<projetoId, number>`
-  - `horasPorProjetoTarefa: Map<projetoId, Map<tarefaId|"sem-tarefa", number>>`
-
-### Tabela (agrupada por projeto, ordenada por código asc)
-Colunas: **Código | Nome do Projeto | Cliente | Tipo | Total de Horas | (expandir)**
-
-- Cada linha do projeto tem um botão chevron (`ChevronRight`/`ChevronDown`) para expandir.
-- Ao expandir, renderiza sub-linhas com colunas: **Tarefa | Horas** (indentadas, `colSpan` cobrindo a largura, fundo `bg-muted/30`).
-- Tarefas ordenadas por nome; apontamentos sem tarefa aparecem como "Sem tarefa".
-- Formatação de horas via `formatHoursMinutes` (padrão do projeto).
-
-### Filtragem
-- Aplica busca/cliente/tipo/status igual à página de projetos.
-- Projetos sem apontamentos ainda são exibidos (total = `0h00`), mantendo consistência da listagem.
-
-## Não incluso
-- Sem edição, arquivamento, exclusão, importação ou exportação.
-- Sem alterações em hooks ou schema existentes.
+## Fora de escopo
+- Nenhuma alteração no banco de dados, no painel de vendas ou em outras páginas.
