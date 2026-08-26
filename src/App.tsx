@@ -761,6 +761,7 @@ function App() {
           </Routes>
         </Router>
         <Toaster />
+        <ShadcnToaster />
       </CompanyProvider>
     </AuthProvider>
   );
