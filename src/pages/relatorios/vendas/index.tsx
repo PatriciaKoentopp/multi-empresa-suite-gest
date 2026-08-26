@@ -338,10 +338,16 @@ export default function RelatorioVendas() {
             Vendas mensais por ano em formato de planilha, com comparativo entre anos
           </p>
         </div>
-        <Button onClick={exportarExcel} variant="outline" disabled={anos.length === 0}>
-          <FileSpreadsheet className="h-4 w-4 mr-2" />
-          Exportar Excel
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={exportarPDF} variant="outline" disabled={anos.length === 0}>
+            <FileText className="h-4 w-4 mr-2" />
+            Gerar PDF
+          </Button>
+          <Button onClick={exportarExcel} variant="outline" disabled={anos.length === 0}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Exportar Excel
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
