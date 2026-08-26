@@ -102,7 +102,8 @@ export function ApontamentoManualModal({
 
   const handleSave = async () => {
     if (!projetoId) return toast.error("Selecione um projeto");
-    if (!tarefaId) return toast.error("Selecione uma tarefa");
+    if (!tarefaId && tarefasFiltradas.length > 0)
+      return toast.error("Selecione uma tarefa");
     if (!data) return toast.error("Informe a data inicial");
     if (!horaInicio || !horaFim) return toast.error("Informe hora inicial e final");
     if (duracao <= 0) return toast.error("A hora/data final deve ser maior que a inicial");
@@ -299,7 +300,11 @@ export function ApontamentoManualModal({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
-          <Button variant="blue" onClick={handleSave} disabled={saving || !tarefaId}>
+          <Button
+            variant="blue"
+            onClick={handleSave}
+            disabled={saving || !projetoId || (!tarefaId && tarefasFiltradas.length > 0)}
+          >
             {saving ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>

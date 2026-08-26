@@ -56,7 +56,8 @@ export function ApontamentoCronometroModal({
 
   const handleStart = async () => {
     if (!projetoId) return toast.error("Selecione um projeto");
-    if (!tarefaId) return toast.error("Selecione uma tarefa");
+    if (!tarefaId && tarefasFiltradas.length > 0)
+      return toast.error("Selecione uma tarefa");
     setSaving(true);
     try {
       await onIniciar(projetoId, tarefaId || null);
@@ -133,7 +134,11 @@ export function ApontamentoCronometroModal({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
-          <Button variant="blue" onClick={handleStart} disabled={saving || !tarefaId}>
+          <Button
+            variant="blue"
+            onClick={handleStart}
+            disabled={saving || !projetoId || (!tarefaId && tarefasFiltradas.length > 0)}
+          >
             <Play className="mr-2 h-4 w-4" />
             {saving ? "Iniciando..." : "Iniciar"}
           </Button>
