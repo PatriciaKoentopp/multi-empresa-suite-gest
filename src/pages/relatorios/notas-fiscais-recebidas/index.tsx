@@ -207,11 +207,17 @@ export default function RelatorioNotasFiscaisRecebidas() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Relatório de Notas Fiscais Recebidas</h1>
-        <p className="text-muted-foreground">
-          Notas fiscais recebidas de fornecedores por data de emissão e número
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Relatório de Notas Fiscais Recebidas</h1>
+          <p className="text-muted-foreground">
+            Notas fiscais recebidas de fornecedores por data de emissão e número
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={exportarPDF} disabled={isLoading || notas.length === 0}>
+          <Download className="h-4 w-4 mr-2" />
+          Gerar PDF
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
