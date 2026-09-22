@@ -201,6 +201,7 @@ export default function RelatorioNotasFiscaisRecebidas() {
                     <TableHead>Descrição</TableHead>
                     <TableHead className="w-[120px]">Referência</TableHead>
                     <TableHead className="text-right w-[140px]">Valor</TableHead>
+                    <TableHead className="w-[90px] text-center">Nota</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -212,11 +213,27 @@ export default function RelatorioNotasFiscaisRecebidas() {
                       <TableCell>{nota.descricao}</TableCell>
                       <TableCell>{nota.mes_referencia || "-"}</TableCell>
                       <TableCell className="text-right">{formatCurrency(nota.valor)}</TableCell>
+                      <TableCell className="text-center">
+                        {nota.documento_pdf ? (
+                          <a
+                            href={nota.documento_pdf}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Abrir nota fiscal"
+                            className="inline-flex items-center justify-center text-blue-600 hover:text-blue-800"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/50 font-semibold">
                     <TableCell colSpan={5}>Total ({notas.length} nota(s))</TableCell>
                     <TableCell className="text-right">{formatCurrency(totalValor)}</TableCell>
+                    <TableCell />
                   </TableRow>
                 </TableBody>
               </Table>
