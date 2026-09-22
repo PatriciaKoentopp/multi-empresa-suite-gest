@@ -18,6 +18,7 @@ interface NotaRecebida {
   descricao: string;
   mes_referencia: string | null;
   valor: number;
+  documento_pdf: string | null;
 }
 
 const toISO = (date: Date) => {
@@ -50,7 +51,7 @@ export default function RelatorioNotasFiscaisRecebidas() {
         let query = supabase
           .from("movimentacoes")
           .select(
-            "id, data_emissao, numero_documento, descricao, mes_referencia, valor, favorecidos(nome)"
+            "id, data_emissao, numero_documento, descricao, mes_referencia, valor, documento_pdf, favorecidos(nome)"
           )
           .eq("empresa_id", currentCompany.id)
           .eq("tipo_operacao", "pagar")
@@ -73,6 +74,7 @@ export default function RelatorioNotasFiscaisRecebidas() {
           mes_referencia: m.mes_referencia,
           favorecido_nome: m.favorecidos?.nome || "-",
           valor: Number(m.valor || 0),
+          documento_pdf: m.documento_pdf || null,
         }));
 
         mapped.sort((a, b) => {
