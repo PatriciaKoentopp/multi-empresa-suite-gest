@@ -67,6 +67,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           <p>ERP Multi-empresa © {new Date().getFullYear()}</p>
         </footer>
       </div>
+      <AssistenteIaButton />
     </div>
   );
 }
