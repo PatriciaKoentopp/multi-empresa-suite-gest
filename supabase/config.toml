@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.gerar-leads-aniversarios]
 verify_jwt = false
+
+[functions.assistente-ia]
+verify_jwt = false
