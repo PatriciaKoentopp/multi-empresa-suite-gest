@@ -777,6 +777,65 @@ export type Database = {
         }
         Relationships: []
       }
+      ia_conversas: {
+        Row: {
+          created_at: string
+          empresa_id: string | null
+          id: string
+          titulo: string
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id?: string | null
+          id?: string
+          titulo?: string
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string | null
+          id?: string
+          titulo?: string
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
+      ia_mensagens: {
+        Row: {
+          conteudo: string
+          conversa_id: string
+          created_at: string
+          id: string
+          papel: string
+        }
+        Insert: {
+          conteudo: string
+          conversa_id: string
+          created_at?: string
+          id?: string
+          papel: string
+        }
+        Update: {
+          conteudo?: string
+          conversa_id?: string
+          created_at?: string
+          id?: string
+          papel?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ia_mensagens_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "ia_conversas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       impostos_retidos: {
         Row: {
           conta_despesa_id: string | null
@@ -2483,6 +2542,11 @@ export type Database = {
           name: string
         }[]
       }
+      ia_executar_consulta: {
+        Args: { p_empresa_id: string; p_sql: string }
+        Returns: Json
+      }
+      ia_listar_schema: { Args: never; Returns: Json }
       is_periodo_fechado: {
         Args: { p_data: string; p_empresa_id: string }
         Returns: boolean
