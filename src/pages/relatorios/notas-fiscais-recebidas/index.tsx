@@ -1,14 +1,18 @@
 import { useState, useEffect, useMemo } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateInput } from "@/components/movimentacao/DateInput";
-import { FileText, Receipt, DollarSign } from "lucide-react";
+import { FileText, Receipt, DollarSign, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { useFavorecidos } from "@/hooks/useFavorecidos";
 import { formatCurrency } from "@/lib/utils";
-import { startOfMonth, endOfMonth } from "date-fns";
+import { startOfMonth, endOfMonth, format } from "date-fns";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { toast } from "sonner";
 
 interface NotaRecebida {
   id: string;
@@ -100,13 +104,120 @@ export default function RelatorioNotasFiscaisRecebidas() {
   const totalValor = useMemo(() => notas.reduce((sum, n) => sum + n.valor, 0), [notas]);
   const ticketMedio = notas.length > 0 ? totalValor / notas.length : 0;
 
+  const exportarPDF = () => {
+    if (notas.length === 0) {
+      toast.error("Nenhum dado para gerar o PDF");
+      return;
+    }
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Relatório de Notas Fiscais Recebidas", 14, 15);
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(currentCompany?.razao_social || "", 14, 21);
+    doc.text(
+      `Período: ${format(dataInicial, "dd/MM/yyyy")} a ${format(dataFinal, "dd/MM/yyyy")}`,
+      14,
+      26
+    );
+
+    const favorecidoNome =
+      favorecidoId === "todos"
+        ? "Todos"
+        : favorecidos.find((f) => f.id === favorecidoId)?.nome || "Todos";
+    doc.text(`Favorecido: ${favorecidoNome}`, 14, 31);
+
+    const dataEmissao = new Date();
+    const dd = String(dataEmissao.getDate()).padStart(2, "0");
+    const mm = String(dataEmissao.getMonth() + 1).padStart(2, "0");
+    const yyyy = dataEmissao.getFullYear();
+    const hh = String(dataEmissao.getHours()).padStart(2, "0");
+    const mi = String(dataEmissao.getMinutes()).padStart(2, "0");
+    doc.text(`Emitido em ${dd}/${mm}/${yyyy} ${hh}:${mi}`, pageWidth - 14, 15, { align: "right" });
+
+    // Resumo
+    doc.setFont("helvetica", "bold");
+    doc.text(`Notas Recebidas: ${notas.length}`, 14, 38);
+    doc.text(`Valor Total: ${formatCurrency(totalValor)}`, 80, 38);
+    doc.text(`Valor Médio: ${formatCurrency(ticketMedio)}`, 160, 38);
+
+    const head = ["Data", "Número", "Fornecedor", "Descrição", "Referência", "Valor"];
+
+    const body = notas.map((nota) => [
+      formatDate(nota.data_emissao),
+      nota.numero_documento,
+      nota.favorecido_nome,
+      nota.descricao,
+      nota.mes_referencia || "-",
+      formatCurrency(nota.valor),
+    ]);
+
+    // Linha de total
+    body.push([
+      "",
+      "",
+      "",
+      "",
+      `Total (${notas.length} nota(s))`,
+      formatCurrency(totalValor),
+    ]);
+
+    autoTable(doc, {
+      head: [head],
+      body,
+      startY: 42,
+      styles: { fontSize: 8, cellPadding: 1.5, lineColor: [200, 200, 200], lineWidth: 0.1 },
+      headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold" },
+      columnStyles: {
+        0: { halign: "left", cellWidth: 28 },
+        1: { halign: "left", cellWidth: 30 },
+        2: { halign: "left", cellWidth: 55 },
+        3: { halign: "left" },
+        4: { halign: "center", cellWidth: 30 },
+        5: { halign: "right", cellWidth: 35 },
+      },
+      didParseCell: (data) => {
+        // Destaca a linha de total
+        if (data.section === "body" && data.row.index === body.length - 1) {
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.fillColor = [241, 245, 249];
+        }
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.pages.length - 1;
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.text(
+          `Página ${data.pageNumber} de ${pageCount}`,
+          pageWidth - 14,
+          doc.internal.pageSize.getHeight() - 8,
+          { align: "right" }
+        );
+      },
+    });
+
+    doc.save(`notas-fiscais-recebidas-${format(new Date(), "dd-MM-yyyy")}.pdf`);
+    toast.success("PDF gerado com sucesso");
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Relatório de Notas Fiscais Recebidas</h1>
-        <p className="text-muted-foreground">
-          Notas fiscais recebidas de fornecedores por data de emissão e número
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Relatório de Notas Fiscais Recebidas</h1>
+          <p className="text-muted-foreground">
+            Notas fiscais recebidas de fornecedores por data de emissão e número
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={exportarPDF} disabled={isLoading || notas.length === 0}>
+          <Download className="h-4 w-4 mr-2" />
+          Gerar PDF
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
