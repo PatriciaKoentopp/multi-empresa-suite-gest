@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Navigate } from "react-router-dom";
 import { useCompany } from "@/contexts/company-context";
 import { useEffect } from "react";
+import { AssistenteIaButton } from "@/components/ia/AssistenteIaButton";
 
 interface MainLayoutProps {
   children: React.ReactNode;
