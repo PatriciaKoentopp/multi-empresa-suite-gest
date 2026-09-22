@@ -99,10 +99,17 @@ export default function Relatorios() {
     },
     {
       id: "notasFiscais",
-      title: "Relatório de Notas Fiscais",
+      title: "Relatório de Notas Fiscais Emitidas",
       description: "Notas fiscais emitidas por data e número no período selecionado",
       icon: <Receipt className="h-8 w-8 text-blue-500" />,
       route: "/relatorios/notas-fiscais"
+    },
+    {
+      id: "notasFiscaisRecebidas",
+      title: "Relatório de Notas Fiscais Recebidas",
+      description: "Notas fiscais recebidas de fornecedores por data de emissão e número",
+      icon: <Receipt className="h-8 w-8 text-orange-500" />,
+      route: "/relatorios/notas-fiscais-recebidas"
     },
     {
       id: "razaoContabil",
