@@ -99,10 +99,17 @@ export default function Relatorios() {
     },
     {
       id: "notasFiscais",
-      title: "Relatório de Notas Fiscais",
+      title: "Relatório de Notas Fiscais Emitidas",
       description: "Notas fiscais emitidas por data e número no período selecionado",
       icon: <Receipt className="h-8 w-8 text-blue-500" />,
       route: "/relatorios/notas-fiscais"
+    },
+    {
+      id: "notasFiscaisRecebidas",
+      title: "Relatório de Notas Fiscais Recebidas",
+      description: "Notas fiscais recebidas de fornecedores por data de emissão e número",
+      icon: <Receipt className="h-8 w-8 text-orange-500" />,
+      route: "/relatorios/notas-fiscais-recebidas"
     },
     {
       id: "razaoContabil",
@@ -168,7 +175,7 @@ export default function Relatorios() {
           return (
             <Card 
               key={relatorio.id} 
-              className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id === 'favorecido' || relatorio.id === 'vendas' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' || relatorio.id === 'projetos' || relatorio.id === 'aniversariantes' || relatorio.id === 'financeiro' || relatorio.id === 'contasPagar' || relatorio.id === 'contasReceber' || relatorio.id === 'antecipacoes' || relatorio.id === 'logs' || relatorio.id === 'razaoContabil' || relatorio.id === 'notasFiscais' ? '' : 'opacity-60'}`}
+              className={`cursor-pointer transition-shadow hover:shadow-lg ${relatorio.id === 'favorecido' || relatorio.id === 'vendas' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' || relatorio.id === 'projetos' || relatorio.id === 'aniversariantes' || relatorio.id === 'financeiro' || relatorio.id === 'contasPagar' || relatorio.id === 'contasReceber' || relatorio.id === 'antecipacoes' || relatorio.id === 'logs' || relatorio.id === 'razaoContabil' || relatorio.id === 'notasFiscais' || relatorio.id === 'notasFiscaisRecebidas' ? '' : 'opacity-60'}`}
               onClick={() => handleCardClick(relatorio.route)}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -184,7 +191,7 @@ export default function Relatorios() {
               </CardHeader>
               <CardContent>
                 <Button 
-                  variant={relatorio.id === 'favorecido' || relatorio.id === 'vendas' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' || relatorio.id === 'projetos' || relatorio.id === 'aniversariantes' || relatorio.id === 'financeiro' || relatorio.id === 'contasPagar' || relatorio.id === 'contasReceber' || relatorio.id === 'antecipacoes' || relatorio.id === 'logs' || relatorio.id === 'razaoContabil' || relatorio.id === 'notasFiscais' ? "default" : "outline"} 
+                  variant={relatorio.id === 'favorecido' || relatorio.id === 'vendas' || relatorio.id === 'classificacaoABC' || relatorio.id === 'analiseDRE' || relatorio.id === 'tempo' || relatorio.id === 'fotos' || relatorio.id === 'projetos' || relatorio.id === 'aniversariantes' || relatorio.id === 'financeiro' || relatorio.id === 'contasPagar' || relatorio.id === 'contasReceber' || relatorio.id === 'antecipacoes' || relatorio.id === 'logs' || relatorio.id === 'razaoContabil' || relatorio.id === 'notasFiscais' || relatorio.id === 'notasFiscaisRecebidas' ? "default" : "outline"} 
                   className="w-full"
                   onClick={() => handleCardClick(relatorio.route)}
                 >

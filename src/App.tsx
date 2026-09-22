@@ -74,6 +74,7 @@ import RelatorioAntecipacoes from "./pages/relatorios/antecipacoes";
 import LogsTransacoes from "./pages/relatorios/logs-transacoes";
 import RazaoContabil from "./pages/relatorios/razao-contabil";
 import RelatorioNotasFiscais from "./pages/relatorios/notas-fiscais";
+import RelatorioNotasFiscaisRecebidas from "./pages/relatorios/notas-fiscais-recebidas";
 import RelatorioVendas from "./pages/relatorios/vendas";
 
 import RelogioPage from "./pages/relogio";
@@ -729,6 +730,16 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <RelatorioNotasFiscais />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/relatorios/notas-fiscais-recebidas"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <RelatorioNotasFiscaisRecebidas />
                   </MainLayout>
                 </PrivateRoute>
               }
