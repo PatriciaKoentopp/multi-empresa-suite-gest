@@ -168,7 +168,7 @@ export function useAssistenteIa() {
         setIsStreaming(false);
       }
     },
-    [mensagens, conversaId, isStreaming, user?.id, userData?.empresa_id, carregarConversas]
+    [mensagens, conversaId, isStreaming, user?.id, userData?.empresa_id, currentCompany?.id, carregarConversas]
   );
 
   return {
