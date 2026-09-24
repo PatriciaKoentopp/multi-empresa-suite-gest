@@ -112,6 +112,7 @@ export function useAssistenteIa() {
           },
           body: JSON.stringify({
             messages: historico.map((m) => ({ role: m.papel, content: m.conteudo })),
+            empresaId: currentCompany?.id ?? userData?.empresa_id ?? null,
           }),
         });
 
