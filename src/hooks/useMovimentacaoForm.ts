@@ -225,6 +225,15 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
         return;
       }
 
+      if (data?.empresa_divergente) {
+        toast.error("Documento não pertence à empresa", {
+          description: `O documento está em nome de ${data.documento_empresa}, e não da empresa ${data.empresa_logada}. Os campos não foram preenchidos.`,
+          duration: 10000,
+        });
+        return;
+      }
+
+
       const preenchidos: string[] = [];
       if (data.numero_documento) { setNumDoc(String(data.numero_documento)); preenchidos.push("número do documento"); }
       if (typeof data.valor_total === "number" && data.valor_total > 0) {
