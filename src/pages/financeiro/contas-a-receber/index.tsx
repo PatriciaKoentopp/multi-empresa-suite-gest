@@ -637,6 +637,131 @@ export default function ContasAReceberPage() {
     }
   };
 
+  const getStatusLabel = (status: ContaReceber["status"]) => {
+    switch (status) {
+      case "recebido": return "Recebido";
+      case "recebido_em_atraso": return "Recebido em Atraso";
+      default: return "Em Aberto";
+    }
+  };
+
+  const exportarPDF = () => {
+    if (filteredContas.length === 0) {
+      toast.error("Nenhum dado para gerar o PDF");
+      return;
+    }
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Contas a Receber", 14, 15);
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(currentCompany?.razao_social || "", 14, 21);
+
+    const statusLabelFiltro =
+      statusFilter === "todas" ? "Todos Status" : getStatusLabel(statusFilter as ContaReceber["status"]);
+    let y = 26;
+    doc.text(`Status: ${statusLabelFiltro}`, 14, y);
+
+    if (searchTerm) {
+      y += 5;
+      doc.text(`Busca: ${searchTerm}`, 14, y);
+    }
+    if (dataVencInicio || dataVencFim) {
+      y += 5;
+      const ini = dataVencInicio ? formatDate(criarDataSemTimezone(dataVencInicio)!) : "-";
+      const fim = dataVencFim ? formatDate(criarDataSemTimezone(dataVencFim)!) : "-";
+      doc.text(`Vencimento: ${ini} a ${fim}`, 14, y);
+    }
+    if (dataRecInicio || dataRecFim) {
+      y += 5;
+      const ini = dataRecInicio ? formatDate(criarDataSemTimezone(dataRecInicio)!) : "-";
+      const fim = dataRecFim ? formatDate(criarDataSemTimezone(dataRecFim)!) : "-";
+      doc.text(`Recebimento: ${ini} a ${fim}`, 14, y);
+    }
+
+    const dataEmissao = new Date();
+    const dd = String(dataEmissao.getDate()).padStart(2, "0");
+    const mm = String(dataEmissao.getMonth() + 1).padStart(2, "0");
+    const yyyy = dataEmissao.getFullYear();
+    const hh = String(dataEmissao.getHours()).padStart(2, "0");
+    const mi = String(dataEmissao.getMinutes()).padStart(2, "0");
+    doc.text(`Emitido em ${dd}/${mm}/${yyyy} ${hh}:${mi}`, pageWidth - 14, 15, { align: "right" });
+
+    const totalValor = filteredContas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
+
+    // Resumo
+    y += 7;
+    doc.setFont("helvetica", "bold");
+    doc.text(`Títulos: ${filteredContas.length}`, 14, y);
+    doc.text(`Valor Total: ${formatCurrency(totalValor)}`, 80, y);
+
+    const head = ["Data Venc.", "Data Receb.", "Parcela", "Cliente", "Descrição", "Status", "Valor"];
+
+    const body = filteredContas.map((conta) => [
+      formatDate(conta.dataVencimento),
+      conta.dataRecebimento ? formatDate(conta.dataRecebimento) : "-",
+      conta.numeroParcela || "-",
+      conta.cliente,
+      conta.descricao || "-",
+      getStatusLabel(conta.status),
+      formatCurrency(conta.valor),
+    ]);
+
+    // Linha de total
+    body.push([
+      "",
+      "",
+      "",
+      "",
+      "",
+      `Total (${filteredContas.length} título(s))`,
+      formatCurrency(totalValor),
+    ]);
+
+    autoTable(doc, {
+      head: [head],
+      body,
+      startY: y + 4,
+      styles: { fontSize: 8, cellPadding: 1.5, lineColor: [200, 200, 200], lineWidth: 0.1 },
+      headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold" },
+      columnStyles: {
+        0: { halign: "left", cellWidth: 24 },
+        1: { halign: "left", cellWidth: 24 },
+        2: { halign: "left", cellWidth: 26 },
+        3: { halign: "left", cellWidth: 60 },
+        4: { halign: "left" },
+        5: { halign: "left", cellWidth: 26 },
+        6: { halign: "right", cellWidth: 30 },
+      },
+      didParseCell: (data) => {
+        // Destaca a linha de total
+        if (data.section === "body" && data.row.index === body.length - 1) {
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.fillColor = [241, 245, 249];
+        }
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.pages.length - 1;
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.text(
+          `Página ${data.pageNumber} de ${pageCount}`,
+          pageWidth - 14,
+          doc.internal.pageSize.getHeight() - 8,
+          { align: "right" }
+        );
+      },
+    });
+
+    doc.save(`contas-a-receber-${dd}-${mm}-${yyyy}.pdf`);
+    toast.success("PDF gerado com sucesso!");
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
