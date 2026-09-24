@@ -327,6 +327,33 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       return;
     }
 
+    // Verificar documento duplicado (número + data de emissão + favorecido)
+    const numDocTrim = String(numDoc || "").trim();
+    if (operacao !== "transferencia" && numDocTrim && favorecido && dataEmissao) {
+      const dataEmissaoStr = dataEmissao.toISOString().split('T')[0];
+      let query = supabase
+        .from('movimentacoes')
+        .select('id')
+        .eq('empresa_id', currentCompany.id)
+        .eq('favorecido_id', favorecido)
+        .eq('data_emissao', dataEmissaoStr)
+        .eq('numero_documento', numDocTrim)
+        .limit(1);
+      if (movimentacaoEditando?.id) {
+        query = query.neq('id', movimentacaoEditando.id);
+      }
+      const { data: duplicadas, error: dupError } = await query;
+      if (dupError) {
+        console.error("Erro ao verificar duplicidade:", dupError);
+      } else if (duplicadas && duplicadas.length > 0) {
+        const [a, m, d] = dataEmissaoStr.split('-');
+        toast.error("Documento já cadastrado", {
+          description: `Já existe uma movimentação com o número ${numDocTrim}, emitida em ${d}/${m}/${a}, para este favorecido.`,
+        });
+        return;
+      }
+    }
+
     try {
       setIsLoading(true);
       
