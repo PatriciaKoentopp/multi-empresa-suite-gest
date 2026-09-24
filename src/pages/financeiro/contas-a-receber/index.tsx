@@ -794,6 +794,14 @@ export default function ContasAReceberPage() {
         <div className="flex gap-2">
           <Button
             variant="outline"
+            onClick={exportarPDF}
+            disabled={filteredContas.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Gerar PDF
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => exportToExcel(filteredContas, {
               searchTerm,
               statusFilter,
