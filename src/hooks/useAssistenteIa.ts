@@ -21,6 +21,7 @@ const FUNCTION_URL =
 
 export function useAssistenteIa() {
   const { user, userData } = useAuth();
+  const { currentCompany } = useCompany();
   const [conversas, setConversas] = useState<IaConversa[]>([]);
   const [conversaId, setConversaId] = useState<string | null>(null);
   const [mensagens, setMensagens] = useState<IaMensagem[]>([]);
