@@ -91,6 +91,8 @@ export default function VisualizacaoRelogioPage() {
   const [cursor, setCursor] = useState<Date>(today);
   const [projetoFilter, setProjetoFilter] = useState<string>("todos");
   const [projetoOpen, setProjetoOpen] = useState(false);
+  const [tipoProjetoFilter, setTipoProjetoFilter] = useState<string>("todos");
+  const [tipoOpen, setTipoOpen] = useState(false);
   const [dayDialog, setDayDialog] = useState<DayAgregado | null>(null);
 
   // Grid de 6 semanas que cobre o mês
@@ -114,11 +116,17 @@ export default function VisualizacaoRelogioPage() {
     gridRange.endIso
   );
   const { projetos } = useProjetosRelogio();
-  const { tarefas } = useTiposProjetoRelogio();
+  const { tarefas, tiposProjeto } = useTiposProjetoRelogio();
 
   const projetoMap = useMemo(() => {
     const m = new Map<string, { codigo: string; nome: string }>();
     projetos.forEach((p) => m.set(p.id, { codigo: p.codigo, nome: p.nome }));
+    return m;
+  }, [projetos]);
+
+  const projetoTipoMap = useMemo(() => {
+    const m = new Map<string, string | null>();
+    projetos.forEach((p) => m.set(p.id, p.tipo_projeto_id ?? null));
     return m;
   }, [projetos]);
 
@@ -136,6 +144,11 @@ export default function VisualizacaoRelogioPage() {
     apontamentos.forEach((a) => {
       if (a.status === "em_andamento") return;
       if (projetoFilter !== "todos" && a.projeto_id !== projetoFilter) return;
+      if (
+        tipoProjetoFilter !== "todos" &&
+        projetoTipoMap.get(a.projeto_id) !== tipoProjetoFilter
+      )
+        return;
       if (a.data < gridRange.startIso || a.data > gridRange.endIso) return;
       let agg = map.get(a.data);
       if (!agg) {
@@ -177,7 +190,15 @@ export default function VisualizacaoRelogioPage() {
         mediaDiaria: diasMes > 0 ? totalMes / diasMes : 0,
       },
     };
-  }, [apontamentos, projetoFilter, gridRange.startIso, gridRange.endIso, cursor]);
+  }, [
+    apontamentos,
+    projetoFilter,
+    tipoProjetoFilter,
+    projetoTipoMap,
+    gridRange.startIso,
+    gridRange.endIso,
+    cursor,
+  ]);
 
   // Cores máx do dia para heatmap
   const maxDia = useMemo(() => {
@@ -224,6 +245,12 @@ export default function VisualizacaoRelogioPage() {
           const p = projetoMap.get(projetoFilter);
           return p ? `${p.codigo} - ${p.nome}` : "Projeto";
         })();
+
+  const tipoProjetoSelecionadoNome =
+    tipoProjetoFilter === "todos"
+      ? "Todos os tipos"
+      : tiposProjeto.find((t) => t.id === tipoProjetoFilter)?.nome ??
+        "Tipo de Projeto";
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -328,6 +355,64 @@ export default function VisualizacaoRelogioPage() {
                                 )}
                               />
                               {p.codigo} - {p.nome}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="w-full sm:w-[240px]">
+                <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={tipoOpen}
+                      className="w-full justify-between bg-white dark:bg-gray-900 font-normal"
+                    >
+                      <span className="truncate">{tipoProjetoSelecionadoNome}</span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[240px] p-0 bg-white dark:bg-gray-800" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar tipo..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="todos"
+                            onSelect={() => {
+                              setTipoProjetoFilter("todos");
+                              setTipoOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                tipoProjetoFilter === "todos" ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            Todos os tipos
+                          </CommandItem>
+                          {tiposProjeto.map((t) => (
+                            <CommandItem
+                              key={t.id}
+                              value={t.nome}
+                              onSelect={() => {
+                                setTipoProjetoFilter(t.id);
+                                setTipoOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  tipoProjetoFilter === t.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {t.nome}
                             </CommandItem>
                           ))}
                         </CommandGroup>
