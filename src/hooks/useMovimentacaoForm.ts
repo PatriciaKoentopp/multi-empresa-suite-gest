@@ -201,6 +201,57 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     }
   };
 
+  const [isAnalisandoIa, setIsAnalisandoIa] = useState(false);
+
+  const analisarDocumentoIa = async (file: File) => {
+    try {
+      setIsAnalisandoIa(true);
+      const buffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      }
+      const pdfBase64 = btoa(binary);
+
+      const { data, error } = await supabase.functions.invoke("ler-documento-movimentacao", {
+        body: { pdfBase64, fileName: file.name, empresaId: currentCompany?.id, tipoOperacao: operacao },
+      });
+      if (error || data?.error) {
+        let msg = data?.error;
+        try { msg = msg || (await (error as any)?.context?.json())?.error; } catch { /* ignore */ }
+        toast.error("Não foi possível ler o documento com IA", { description: msg || "Preencha os campos manualmente." });
+        return;
+      }
+
+      const preenchidos: string[] = [];
+      if (data.numero_documento) { setNumDoc(String(data.numero_documento)); preenchidos.push("número do documento"); }
+      if (typeof data.valor_total === "number" && data.valor_total > 0) {
+        setValor(data.valor_total.toFixed(2).replace(".", ","));
+        preenchidos.push("valor");
+      }
+      if (data.favorecido_id) { setFavorecido(data.favorecido_id); preenchidos.push("favorecido"); }
+      if (data.tipo_titulo_id) { setTipoTitulo(data.tipo_titulo_id); preenchidos.push("tipo de título"); }
+      if (data.categoria_id) { setCategoria(data.categoria_id); preenchidos.push("categoria"); }
+
+      if (preenchidos.length) {
+        toast.success("Campos preenchidos pela IA", { description: `Confira: ${preenchidos.join(", ")}.` });
+      }
+      if (!data.favorecido_encontrado) {
+        toast.warning("Favorecido não encontrado no cadastro", {
+          description: data.favorecido_nome ? `Identificado: ${data.favorecido_nome}.` : "Selecione o favorecido manualmente.",
+        });
+      } else if (!data.tipo_titulo_id && !data.categoria_id) {
+        toast.info("Nenhum lançamento anterior deste favorecido", { description: "Preencha tipo de título e categoria." });
+      }
+    } catch (err) {
+      console.error("Erro na análise IA:", err);
+      toast.error("Erro ao analisar o documento com IA");
+    } finally {
+      setIsAnalisandoIa(false);
+    }
+  };
+
   const handleDocumentoChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -217,6 +268,9 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       if (url) {
         setDocumentoPdf(url);
         toast.success("Documento anexado com sucesso!");
+        if (!movimentacaoEditando?.id) {
+          await analisarDocumentoIa(file);
+        }
       }
     }
   };
@@ -570,6 +624,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     handleSalvar,
     isLoading,
     isUploading,
+    isAnalisandoIa,
     possuiImpostosRetidos,
     setPossuiImpostosRetidos,
     impostosRetidosSelecionados,

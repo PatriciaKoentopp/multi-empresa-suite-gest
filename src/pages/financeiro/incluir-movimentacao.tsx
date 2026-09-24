@@ -87,6 +87,7 @@ export default function IncluirMovimentacaoPage() {
     handleDocumentoChange,
     isLoading,
     isUploading,
+    isAnalisandoIa,
     possuiImpostosRetidos,
     setPossuiImpostosRetidos,
     impostosRetidosSelecionados,
@@ -265,6 +266,12 @@ export default function IncluirMovimentacaoPage() {
                   Fazendo upload...
                 </div>
               )}
+              {isAnalisandoIa && (
+                <div className="mt-2 text-sm flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 mr-2 border-t-2 border-blue-500"></div>
+                  Analisando documento com IA...
+                </div>
+              )}
             </div>
           </div>
 
@@ -376,7 +383,7 @@ export default function IncluirMovimentacaoPage() {
               <Button 
                 variant="blue" 
                 onClick={handleSalvar} 
-                disabled={isLoading || isUploading}
+                disabled={isLoading || isUploading || isAnalisandoIa}
               >
                 {isLoading || isUploading ? "Salvando..." : "Salvar"}
               </Button>
