@@ -55,6 +55,8 @@ Deno.serve(async (req) => {
     });
 
     const schema = z.object({
+      tipo_documento: z.enum(["nota_fiscal", "guia_imposto"]),
+      orgao_arrecadador: z.string().nullable(),
       numero_documento: z.string().nullable(),
       cnpj_cpf_emitente: z.string().nullable(),
       nome_emitente: z.string().nullable(),
@@ -75,7 +77,7 @@ Deno.serve(async (req) => {
               {
                 type: "text",
                 text:
-                  "Leia este documento (geralmente uma nota fiscal brasileira) e extraia: número do documento/nota (apenas o número), CNPJ/CPF e nome do emitente (prestador/fornecedor), CNPJ/CPF e nome do destinatário (tomador/cliente) e o valor total do documento em reais (número decimal). Use null quando não encontrar.",
+                  "Leia este documento brasileiro. Primeiro classifique tipo_documento: 'guia_imposto' para guias de arrecadação (DARF, DAS, GPS, DARE, GNRE, guias de ISS/IPTU municipais) ou 'nota_fiscal' para notas fiscais e demais documentos. Extraia: número do documento exatamente como aparece (em guias, o campo 'Número do Documento', mantendo pontos e traço; em notas, apenas o número da nota), CNPJ/CPF e nome do emitente (prestador/fornecedor), CNPJ/CPF e nome do destinatário (tomador/cliente) e o valor total do documento em reais (número decimal; em guias, o 'Valor Total do Documento'). Em guias de imposto, o CNPJ exibido é do contribuinte que paga: preencha orgao_arrecadador com o órgão que recebe a guia (ex.: 'Receita Federal' para DARF/DAS/GPS, 'Secretaria da Fazenda' para DARE/GNRE, 'Prefeitura de <cidade>' para guias municipais). Em notas fiscais, orgao_arrecadador = null. Use null quando não encontrar.",
               },
               { type: "file", filename: fileName, data: pdfBase64, mediaType: "application/pdf" },
             ],
@@ -100,26 +102,40 @@ Deno.serve(async (req) => {
       return json({ error: "Não foi possível ler o documento com IA." }, 500);
     }
 
-    const docFav = tipoOperacao === "pagar" ? extraido.cnpj_cpf_emitente : extraido.cnpj_cpf_destinatario;
-    const nomeFav = tipoOperacao === "pagar" ? extraido.nome_emitente : extraido.nome_destinatario;
+    const isGuia = extraido.tipo_documento === "guia_imposto";
+    const docFav = isGuia ? null : tipoOperacao === "pagar" ? extraido.cnpj_cpf_emitente : extraido.cnpj_cpf_destinatario;
+    const nomeFav = isGuia
+      ? extraido.orgao_arrecadador
+      : tipoOperacao === "pagar" ? extraido.nome_emitente : extraido.nome_destinatario;
 
     const { data: favs } = await admin
       .from("favorecidos")
       .select("id, nome, nome_fantasia, documento")
       .eq("empresa_id", empresaId);
 
-    let favorecido: any = null;
-    const dig = soDigitos(docFav);
-    if (dig && favs) favorecido = favs.find((f: any) => soDigitos(f.documento) === dig) || null;
-    if (!favorecido && nomeFav && favs) {
-      const n = normNome(nomeFav);
-      favorecido =
+    const buscarPorNome = (nome: string) => {
+      const n = normNome(nome);
+      if (!n || !favs) return null;
+      return (
         favs.find((f: any) => normNome(f.nome) === n || normNome(f.nome_fantasia) === n) ||
         favs.find((f: any) => {
           const a = normNome(f.nome);
-          return a.length > 3 && (a.includes(n) || n.includes(a));
+          const b = normNome(f.nome_fantasia);
+          return (a.length > 3 && (a.includes(n) || n.includes(a))) || (b.length > 3 && (b.includes(n) || n.includes(b)));
         }) ||
-        null;
+        null
+      );
+    };
+
+    let favorecido: any = null;
+    const dig = soDigitos(docFav);
+    if (dig && favs) favorecido = favs.find((f: any) => soDigitos(f.documento) === dig) || null;
+    if (!favorecido && nomeFav) favorecido = buscarPorNome(nomeFav);
+    if (!favorecido && isGuia && nomeFav && /receita federal|rfb|darf/i.test(normNome(nomeFav) + " " + nomeFav)) {
+      for (const alt of ["Receita Federal", "Secretaria da Receita Federal", "Receita Federal do Brasil", "RFB"]) {
+        favorecido = buscarPorNome(alt);
+        if (favorecido) break;
+      }
     }
 
     let tipo_titulo_id: string | null = null;
