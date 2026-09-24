@@ -241,8 +241,13 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
         toast.warning("Favorecido não encontrado no cadastro", {
           description: data.favorecido_nome ? `Identificado: ${data.favorecido_nome}.` : "Selecione o favorecido manualmente.",
         });
-      } else if (!data.tipo_titulo_id && !data.categoria_id) {
+      } else if (!data.is_guia && !data.tipo_titulo_id && !data.categoria_id) {
         toast.info("Nenhum lançamento anterior deste favorecido", { description: "Preencha tipo de título e categoria." });
+      }
+      if (data.is_guia && !data.tipo_titulo_id) {
+        toast.warning(`Imposto identificado: ${data.imposto_identificado || "não identificado"}`, {
+          description: "Selecione o tipo de título.",
+        });
       }
     } catch (err) {
       console.error("Erro na análise IA:", err);
