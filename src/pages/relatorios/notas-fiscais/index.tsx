@@ -200,8 +200,9 @@ export default function RelatorioNotasFiscais() {
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/50 font-semibold">
-                    <TableCell colSpan={6}>Total ({notas.length} nota(s))</TableCell>
+                    <TableCell colSpan={5}>Total ({notas.length} nota(s))</TableCell>
                     <TableCell className="text-right">{formatCurrency(totalValor)}</TableCell>
+                    <TableCell></TableCell>
                   </TableRow>
                 </TableBody>
               </Table>

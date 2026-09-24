@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/auth-context";
+import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 
 export interface IaMensagem {
@@ -20,6 +21,7 @@ const FUNCTION_URL =
 
 export function useAssistenteIa() {
   const { user, userData } = useAuth();
+  const { currentCompany } = useCompany();
   const [conversas, setConversas] = useState<IaConversa[]>([]);
   const [conversaId, setConversaId] = useState<string | null>(null);
   const [mensagens, setMensagens] = useState<IaMensagem[]>([]);
@@ -110,6 +112,7 @@ export function useAssistenteIa() {
           },
           body: JSON.stringify({
             messages: historico.map((m) => ({ role: m.papel, content: m.conteudo })),
+            empresaId: currentCompany?.id ?? userData?.empresa_id ?? null,
           }),
         });
 
@@ -165,7 +168,7 @@ export function useAssistenteIa() {
         setIsStreaming(false);
       }
     },
-    [mensagens, conversaId, isStreaming, user?.id, userData?.empresa_id, carregarConversas]
+    [mensagens, conversaId, isStreaming, user?.id, userData?.empresa_id, currentCompany?.id, carregarConversas]
   );
 
   return {

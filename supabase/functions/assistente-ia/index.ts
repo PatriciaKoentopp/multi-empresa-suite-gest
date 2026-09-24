@@ -100,7 +100,16 @@ Deno.serve(async (req) => {
       .eq("id", userResult.user.id)
       .maybeSingle();
 
-    const empresaId = usuario?.empresa_id as string | undefined;
+    const usuarioEmpresaId = usuario?.empresa_id as string | undefined;
+
+    const body = await req.json();
+    const messages = body?.messages;
+    const empresaIdSolicitada = body?.empresaId as string | null | undefined;
+
+    // Segurança: se o usuário tem empresa vinculada no perfil, ele só pode
+    // consultar essa empresa (ignora o empresaId enviado pelo cliente).
+    // Se o usuário não tem empresa vinculada (admin), usa o empresaId do cliente.
+    const empresaId = usuarioEmpresaId ?? (empresaIdSolicitada || undefined);
     if (!empresaId) {
       return new Response(JSON.stringify({ error: "Usuário sem empresa vinculada." }), {
         status: 400,
@@ -114,7 +123,6 @@ Deno.serve(async (req) => {
       .eq("id", empresaId)
       .maybeSingle();
 
-    const { messages } = await req.json();
     if (!Array.isArray(messages) || messages.length === 0) {
       return new Response(JSON.stringify({ error: "Nenhuma mensagem enviada." }), {
         status: 400,
