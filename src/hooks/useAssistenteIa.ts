@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/auth-context";
+import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 
 export interface IaMensagem {
