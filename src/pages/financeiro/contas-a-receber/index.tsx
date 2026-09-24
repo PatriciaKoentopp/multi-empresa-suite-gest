@@ -4,7 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, X, ChevronDown, ChevronUp, FileSpreadsheet } from "lucide-react";
+import { Search, Filter, X, ChevronDown, ChevronUp, FileSpreadsheet, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 import { ContasAReceberTable, ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table.tsx";
 import {
@@ -30,7 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatCurrency } from "@/lib/utils";
 import { useExcelContasReceber } from "@/hooks/useExcelContasReceber";
 import { useLogTransacao } from "@/hooks/useLogTransacao";
 
