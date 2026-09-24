@@ -686,6 +686,138 @@ export default function ContasAPagarPage() {
     inputBuscaRef.current?.focus();
   }
 
+  const getStatusLabel = (status: ContaPagar["status"]) => {
+    switch (status) {
+      case "pago": return "Pago";
+      case "pago_em_atraso": return "Pago em Atraso";
+      default: return "Em Aberto";
+    }
+  };
+
+  const exportarPDF = () => {
+    if (filteredContas.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Nenhum dado para gerar o PDF"
+      });
+      return;
+    }
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Contas a Pagar", 14, 15);
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(currentCompany?.razao_social || "", 14, 21);
+
+    const statusLabelFiltro =
+      statusFilter === "todas" ? "Todos Status" : getStatusLabel(statusFilter as ContaPagar["status"]);
+    let y = 26;
+    doc.text(`Status: ${statusLabelFiltro}`, 14, y);
+
+    if (searchTerm) {
+      y += 5;
+      doc.text(`Busca: ${searchTerm}`, 14, y);
+    }
+    if (dataVencInicio || dataVencFim) {
+      y += 5;
+      const ini = dataVencInicio ? format(new Date(dataVencInicio + "T12:00:00"), "dd/MM/yyyy") : "-";
+      const fim = dataVencFim ? format(new Date(dataVencFim + "T12:00:00"), "dd/MM/yyyy") : "-";
+      doc.text(`Vencimento: ${ini} a ${fim}`, 14, y);
+    }
+    if (dataPagInicio || dataPagFim) {
+      y += 5;
+      const ini = dataPagInicio ? format(new Date(dataPagInicio + "T12:00:00"), "dd/MM/yyyy") : "-";
+      const fim = dataPagFim ? format(new Date(dataPagFim + "T12:00:00"), "dd/MM/yyyy") : "-";
+      doc.text(`Pagamento: ${ini} a ${fim}`, 14, y);
+    }
+
+    const dataEmissao = new Date();
+    const dd = String(dataEmissao.getDate()).padStart(2, "0");
+    const mm = String(dataEmissao.getMonth() + 1).padStart(2, "0");
+    const yyyy = dataEmissao.getFullYear();
+    const hh = String(dataEmissao.getHours()).padStart(2, "0");
+    const mi = String(dataEmissao.getMinutes()).padStart(2, "0");
+    doc.text(`Emitido em ${dd}/${mm}/${yyyy} ${hh}:${mi}`, pageWidth - 14, 15, { align: "right" });
+
+    const totalValor = filteredContas.reduce((soma, conta) => soma + (conta.valor || 0), 0);
+
+    // Resumo
+    y += 7;
+    doc.setFont("helvetica", "bold");
+    doc.text(`Títulos: ${filteredContas.length}`, 14, y);
+    doc.text(`Valor Total: ${formatCurrency(totalValor)}`, 80, y);
+
+    const head = ["Data Venc.", "Data Pag.", "Parcela", "Favorecido", "Descrição", "Status", "Valor"];
+
+    const body = filteredContas.map((conta) => [
+      formatDate(conta.dataVencimento),
+      conta.dataPagamento ? formatDate(conta.dataPagamento) : "-",
+      `${conta.numeroTitulo || "-"}/${conta.numeroParcela}`,
+      conta.favorecido,
+      conta.descricao || "-",
+      getStatusLabel(conta.status),
+      formatCurrency(conta.valor),
+    ]);
+
+    // Linha de total
+    body.push([
+      "",
+      "",
+      "",
+      "",
+      "",
+      `Total (${filteredContas.length} título(s))`,
+      formatCurrency(totalValor),
+    ]);
+
+    autoTable(doc, {
+      head: [head],
+      body,
+      startY: y + 4,
+      styles: { fontSize: 8, cellPadding: 1.5, lineColor: [200, 200, 200], lineWidth: 0.1 },
+      headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold" },
+      columnStyles: {
+        0: { halign: "left", cellWidth: 24 },
+        1: { halign: "left", cellWidth: 24 },
+        2: { halign: "left", cellWidth: 26 },
+        3: { halign: "left", cellWidth: 60 },
+        4: { halign: "left" },
+        5: { halign: "left", cellWidth: 26 },
+        6: { halign: "right", cellWidth: 30 },
+      },
+      didParseCell: (data) => {
+        // Destaca a linha de total
+        if (data.section === "body" && data.row.index === body.length - 1) {
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.fillColor = [241, 245, 249];
+        }
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.pages.length - 1;
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.text(
+          `Página ${data.pageNumber} de ${pageCount}`,
+          pageWidth - 14,
+          doc.internal.pageSize.getHeight() - 8,
+          { align: "right" }
+        );
+      },
+    });
+
+    doc.save(`contas-a-pagar-${format(new Date(), "dd-MM-yyyy")}.pdf`);
+    toast({
+      title: "Sucesso",
+      description: "PDF gerado com sucesso!"
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
