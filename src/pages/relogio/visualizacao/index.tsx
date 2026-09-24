@@ -91,6 +91,8 @@ export default function VisualizacaoRelogioPage() {
   const [cursor, setCursor] = useState<Date>(today);
   const [projetoFilter, setProjetoFilter] = useState<string>("todos");
   const [projetoOpen, setProjetoOpen] = useState(false);
+  const [tipoProjetoFilter, setTipoProjetoFilter] = useState<string>("todos");
+  const [tipoOpen, setTipoOpen] = useState(false);
   const [dayDialog, setDayDialog] = useState<DayAgregado | null>(null);
 
   // Grid de 6 semanas que cobre o mês
@@ -114,11 +116,17 @@ export default function VisualizacaoRelogioPage() {
     gridRange.endIso
   );
   const { projetos } = useProjetosRelogio();
-  const { tarefas } = useTiposProjetoRelogio();
+  const { tarefas, tiposProjeto } = useTiposProjetoRelogio();
 
   const projetoMap = useMemo(() => {
     const m = new Map<string, { codigo: string; nome: string }>();
     projetos.forEach((p) => m.set(p.id, { codigo: p.codigo, nome: p.nome }));
+    return m;
+  }, [projetos]);
+
+  const projetoTipoMap = useMemo(() => {
+    const m = new Map<string, string | null>();
+    projetos.forEach((p) => m.set(p.id, p.tipo_projeto_id ?? null));
     return m;
   }, [projetos]);
 
@@ -136,6 +144,11 @@ export default function VisualizacaoRelogioPage() {
     apontamentos.forEach((a) => {
       if (a.status === "em_andamento") return;
       if (projetoFilter !== "todos" && a.projeto_id !== projetoFilter) return;
+      if (
+        tipoProjetoFilter !== "todos" &&
+        projetoTipoMap.get(a.projeto_id) !== tipoProjetoFilter
+      )
+        return;
       if (a.data < gridRange.startIso || a.data > gridRange.endIso) return;
       let agg = map.get(a.data);
       if (!agg) {
