@@ -18,7 +18,8 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
   const [tipoTitulo, setTipoTitulo] = useState(movimentacaoEditando?.tipo_titulo_id || "");
   const [favorecido, setFavorecido] = useState(movimentacaoEditando?.favorecido_id || "");
   const [categoria, setCategoria] = useState(movimentacaoEditando?.categoria_id || "");
-  const [formaPagamento, setFormaPagamento] = useState(movimentacaoEditando?.forma_pagamento || "1");
+  // Forma de pagamento padrão: "3" = Boleto (lista de formas de pagamento da página de movimentações)
+  const [formaPagamento, setFormaPagamento] = useState(movimentacaoEditando?.forma_pagamento || "3");
   const [descricao, setDescricao] = useState(movimentacaoEditando?.descricao || "");
   const [valor, setValor] = useState(movimentacaoEditando?.valor ? movimentacaoEditando.valor.toFixed(2).replace('.', ',') : "0");
   const [numParcelas, setNumParcelas] = useState(movimentacaoEditando?.numero_parcelas || 1);
