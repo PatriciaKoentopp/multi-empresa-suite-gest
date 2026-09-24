@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.assistente-ia]
 verify_jwt = false
+
+[functions.ler-documento-movimentacao]
+verify_jwt = false
