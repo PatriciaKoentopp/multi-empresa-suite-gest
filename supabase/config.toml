@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.ler-documento-movimentacao]
 verify_jwt = false
+
+[functions.alterar-senha-usuario]
+verify_jwt = false
