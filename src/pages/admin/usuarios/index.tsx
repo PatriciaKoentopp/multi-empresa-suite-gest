@@ -133,7 +133,20 @@ export default function UsuariosPage() {
           return;
         }
 
-        console.log("Usuário atualizado com sucesso!");
+        const novaSenha = (data as any).senha as string | undefined;
+        if (novaSenha) {
+          const { data: resp, error: senhaError } = await supabase.functions.invoke("alterar-senha-usuario", {
+            body: { userId: editingUsuario.id, senha: novaSenha },
+          });
+          if (senhaError || resp?.error) {
+            let msg = resp?.error;
+            try { msg = msg || (await (senhaError as any)?.context?.json())?.error; } catch {}
+            toast.error("Erro ao alterar senha", { description: msg || "Tente novamente." });
+            return;
+          }
+          toast.success("Senha alterada com sucesso");
+        }
+
         toast.success("Usuário atualizado com sucesso!");
       } else {
         // Create new usuario

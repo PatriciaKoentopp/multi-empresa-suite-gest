@@ -13,17 +13,22 @@ const usuarioSchema = z.object({
   id: z.string().optional(),
   nome: z.string().min(1, "O nome é obrigatório"),
   email: z.string().email("Email inválido").min(1, "O email é obrigatório"),
-  senha: z.string().min(6, "A senha deve ter pelo menos 6 caracteres").optional(),
+  senha: z.string().optional().refine((v) => !v || v.length >= 6, "A senha deve ter pelo menos 6 caracteres"),
+  confirmarSenha: z.string().optional(),
   tipo: z.enum(["Administrador", "Usuário"]),
   status: z.enum(["ativo", "inativo"]),
   vendedor: z.enum(["sim", "nao"]),
+}).superRefine((d, ctx) => {
+  if ((d.senha || "") !== (d.confirmarSenha || "")) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["confirmarSenha"], message: "As senhas não conferem" });
+  }
 });
 
 type FormData = z.infer<typeof usuarioSchema>;
 
 interface UsuariosFormProps {
   usuario?: Usuario;
-  onSubmit: (data: Usuario) => void;
+  onSubmit: (data: Usuario & { senha?: string }) => void;
   onCancel: () => void;
 }
 
@@ -55,7 +60,7 @@ export function UsuariosForm({ usuario, onSubmit, onCancel }: UsuariosFormProps)
   const handleSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      const usuarioData: Usuario = {
+      const usuarioData: Usuario & { senha?: string } = {
         id: usuario?.id || crypto.randomUUID(),
         nome: data.nome,
         email: data.email,
@@ -64,8 +69,9 @@ export function UsuariosForm({ usuario, onSubmit, onCancel }: UsuariosFormProps)
         vendedor: data.vendedor,
         created_at: usuario?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        empresa_id: usuario?.empresa_id || null
-      };
+        empresa_id: usuario?.empresa_id || null,
+        senha: data.senha || undefined,
+      } as any;
       
       onSubmit(usuarioData);
     } finally {
@@ -117,6 +123,21 @@ export function UsuariosForm({ usuario, onSubmit, onCancel }: UsuariosFormProps)
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="confirmarSenha"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{usuario ? "Confirmar nova senha" : "Confirmar senha"}</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="******" type="password" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
 
         <FormField
           control={form.control}
