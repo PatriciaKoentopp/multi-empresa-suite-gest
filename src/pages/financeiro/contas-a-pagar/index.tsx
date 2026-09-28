@@ -529,7 +529,7 @@ export default function ContasAPagarPage() {
       // 7. Atualizar a lista local
       setContas(prev => prev.map(c => 
         c.id === conta.id
-          ? { ...c, dataPagamento: undefined, status: "em_aberto" as const, formaPagamento: null, multa: null, juros: null, desconto: null, contaCorrenteId: null }
+          ? { ...c, dataPagamento: undefined, status: "em_aberto" as const, formaPagamento: undefined, multa: undefined, juros: undefined, desconto: undefined, contaCorrenteId: undefined }
           : c
       ));
 
