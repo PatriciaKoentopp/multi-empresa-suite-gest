@@ -136,7 +136,13 @@ async function processarMensagens(admin: SupabaseClient<any>, value: any) {
       contato = ins.data;
     }
 
-    // Lead automático para contatos no CRM
+    // Regra: interações ficam no lead aberto; sem lead aberto, abre um novo lead
+    let leadAnterior: any = null;
+    if (contato.status === "crm" && contato.lead_id) {
+      const { data: l } = await admin.from("leads").select("id, status, nome, telefone, favorecido_id").eq("id", contato.lead_id).maybeSingle();
+      if (l && l.status === "ativo") leadAnterior = null;
+      else { leadAnterior = l; contato.lead_id = null; }
+    }
     if (contato.status === "crm" && !contato.lead_id) {
       const etapa = await obterEtapaPadrao(admin, numero);
       if (etapa) {
@@ -144,8 +150,9 @@ async function processarMensagens(admin: SupabaseClient<any>, value: any) {
           empresa_id: numero.empresa_id,
           funil_id: etapa.funil_id,
           etapa_id: etapa.etapa_id,
-          nome: contato.nome || nome || `+${from}`,
-          telefone: from,
+          nome: leadAnterior?.nome || contato.nome || nome || `+${from}`,
+          telefone: leadAnterior?.telefone || from,
+          favorecido_id: leadAnterior?.favorecido_id ?? null,
           observacoes: "Lead criado automaticamente pelo WhatsApp",
           origem_id: await obterOrigemWhatsapp(admin, numero.empresa_id),
           status: "ativo",
