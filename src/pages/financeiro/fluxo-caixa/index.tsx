@@ -256,11 +256,11 @@ export default function FluxoCaixaPage() {
       
       // IDs das movimentações normais
       data.filter(item => item.movimentacoes?.favorecido_id)
-        .forEach(item => favorecidosIds.push(item.movimentacoes!.favorecido_id));
+        .forEach(item => favorecidosIds.push(item.movimentacoes!.favorecido_id as string));
       
       // IDs das antecipações
       data.filter(item => item.antecipacoes?.favorecido_id)
-        .forEach(item => favorecidosIds.push(item.antecipacoes!.favorecido_id));
+        .forEach(item => favorecidosIds.push(item.antecipacoes!.favorecido_id as string));
 
       // Buscar os dados dos favorecidos se existirem IDs
       if (favorecidosIds.length > 0) {
@@ -282,12 +282,12 @@ export default function FluxoCaixaPage() {
       const movimentacoesIds = new Set<string>();
       
       data.filter(item => item.movimentacao_id).forEach(item => {
-        movimentacoesIds.add(item.movimentacao_id);
+        movimentacoesIds.add(item.movimentacao_id as string);
       });
       
       const parcelasIds = data
         .filter(item => item.movimentacao_parcela_id)
-        .map(item => item.movimentacao_parcela_id);
+        .map(item => item.movimentacao_parcela_id as string);
       
       if (parcelasIds.length > 0) {
         const { data: parcelasData } = await supabase
@@ -327,11 +327,11 @@ export default function FluxoCaixaPage() {
       
       // Coletar números de documentos das movimentações
       data.filter(item => item.movimentacoes?.numero_documento)
-        .forEach(item => numerosTitulos.push(item.movimentacoes!.numero_documento));
+        .forEach(item => numerosTitulos.push(item.movimentacoes!.numero_documento as string));
       
       // Coletar números de documentos das antecipações
       data.filter(item => item.antecipacoes?.numero_documento)
-        .forEach(item => numerosTitulos.push(item.antecipacoes!.numero_documento));
+        .forEach(item => numerosTitulos.push(item.antecipacoes!.numero_documento as string));
 
       if (numerosTitulos.length > 0) {
         const uniqueNumeros = [...new Set(numerosTitulos)];
