@@ -13,7 +13,7 @@ import {
   DropdownMenuPortal,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import { EllipsisVertical, Phone, Mail, Building, Calendar, User, Tag, MoveRight } from "lucide-react";
+import { EllipsisVertical, Phone, Mail, Building, Calendar, User, Tag, MoveRight, UserMinus, UserPlus } from "lucide-react";
 import { Origem, Usuario } from "@/types";
 
 interface Lead {
@@ -48,9 +48,12 @@ interface LeadCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onMove: (leadId: string, etapaId: string) => void;
+  onRetirarDoCrm: () => void;
+  onVoltarAoCrm: () => void;
+  mostrandoInativos: boolean;
 }
 
-export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, onMove }: LeadCardProps) {
+export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, onMove, onRetirarDoCrm, onVoltarAoCrm, mostrandoInativos }: LeadCardProps) {
   const etapa = useMemo(
     () => etapas.find((e) => e.id === lead.etapaId) || etapas[0],
     [lead.etapaId, etapas]
@@ -132,7 +135,27 @@ export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, on
               </DropdownMenuSub>
 
               <DropdownMenuSeparator />
-              
+
+              {mostrandoInativos ? (
+                <DropdownMenuItem
+                  onClick={onVoltarAoCrm}
+                  className="flex items-center gap-2 text-green-600 focus:bg-green-100 focus:text-green-700"
+                >
+                  <UserPlus className="h-3 w-3" />
+                  Voltar ao CRM
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onClick={onRetirarDoCrm}
+                  className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                >
+                  <UserMinus className="h-3 w-3" />
+                  Retirar do CRM
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuSeparator />
+
               <DropdownMenuItem
                 onClick={onDelete}
                 className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"

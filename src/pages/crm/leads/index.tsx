@@ -641,6 +641,56 @@ export default function LeadsPage() {
     }
   };
 
+  const handleRetirarDoCrm = async (leadId: string) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ status: 'inativo' })
+        .eq('id', leadId);
+
+      if (error) throw error;
+
+      // Se o lead veio do WhatsApp, o contato passa para "Fora do CRM"
+      await (supabase as any)
+        .from('whatsapp_contatos')
+        .update({ status: 'fora' })
+        .eq('lead_id', leadId);
+
+      setLeads(leads.filter((lead) => lead.id !== leadId));
+      toast.success("Lead retirado do CRM");
+    } catch (error: any) {
+      console.error('Erro ao retirar lead do CRM:', error);
+      toast.error("Erro ao retirar lead do CRM", {
+        description: "Não foi possível retirar o lead do CRM."
+      });
+    }
+  };
+
+  const handleVoltarAoCrm = async (leadId: string) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ status: 'ativo' })
+        .eq('id', leadId);
+
+      if (error) throw error;
+
+      // Devolve o contato do WhatsApp para o CRM
+      await (supabase as any)
+        .from('whatsapp_contatos')
+        .update({ status: 'crm' })
+        .eq('lead_id', leadId);
+
+      setLeads(leads.filter((lead) => lead.id !== leadId));
+      toast.success("Lead devolvido ao CRM");
+    } catch (error: any) {
+      console.error('Erro ao devolver lead ao CRM:', error);
+      toast.error("Erro ao devolver lead ao CRM", {
+        description: "Não foi possível devolver o lead ao CRM."
+      });
+    }
+  };
+
   const handleMoveLead = async (leadId: string, newEtapaId: string) => {
     try {
       const { error } = await supabase
@@ -1052,6 +1102,9 @@ export default function LeadsPage() {
                                     onEdit={() => handleOpenFormModal(lead)}
                                     onDelete={() => handleDeleteLead(lead.id)}
                                     onMove={handleMoveLead}
+                                    onRetirarDoCrm={() => handleRetirarDoCrm(lead.id)}
+                                    onVoltarAoCrm={() => handleVoltarAoCrm(lead.id)}
+                                    mostrandoInativos={statusFilter === 'inativo'}
                                   />
                                 </div>
                               )}
