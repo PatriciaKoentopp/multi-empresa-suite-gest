@@ -25,7 +25,8 @@ import { toast } from "sonner";
 import { LeadInteracao, EtapaFunil } from "./types";
 import { format } from "date-fns";
 
-import { abrirWhatsApp } from "./utils/whatsappUtils";
+import { useServerFn } from "@tanstack/react-start";
+import { enviarWhatsappLead } from "@/lib/whatsapp.functions";
 
 interface LeadFormModalProps {
   open: boolean;
@@ -73,6 +74,8 @@ export function LeadFormModal({
     responsavelId: "",
   });
 
+  const enviarWhats = useServerFn(enviarWhatsappLead);
+
   // Estado para armazenar interações do lead atual
   const [interacoes, setInteracoes] = useState<LeadInteracao[]>([]);
   const [carregandoInteracoes, setCarregandoInteracoes] = useState(false);
@@ -98,6 +101,15 @@ export function LeadFormModal({
       setFechamento(null);
     }
   }, [lead]);
+
+  // Atualiza as interações quando chegam mensagens do WhatsApp deste lead
+  useEffect(() => {
+    if (!open || !lead?.id) return;
+    const channel = supabase.channel(`lead-interacoes-${lead.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "leads_interacoes", filter: `lead_id=eq.${lead.id}` }, () => buscarInteracoes(lead.id))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [open, lead?.id]);
 
   const buscarInteracoes = async (leadId: string) => {
   setCarregandoInteracoes(true);
@@ -310,6 +322,19 @@ export function LeadFormModal({
       return;
     }
 
+    // WhatsApp: envia pela API e a interação é registrada no servidor
+    if ((novaInteracao.tipo as string) === "whatsapp") {
+      try {
+        await enviarWhats({ data: { leadId: lead.id, texto: novaInteracao.descricao.trim() } });
+        toast.success("Mensagem enviada pelo WhatsApp");
+        setNovaInteracao({ tipo: "mensagem", descricao: "", data: new Date(), responsavelId: novaInteracao.responsavelId });
+        buscarInteracoes(lead.id);
+      } catch (e: any) {
+        toast.error("Não foi possível enviar", { description: String(e?.message ?? e).slice(0, 300) });
+      }
+      return;
+    }
+
     try {
       const dataFormatada = format(novaInteracao.data, "yyyy-MM-dd");
       
@@ -352,10 +377,6 @@ export function LeadFormModal({
         setInteracoes(prev => [novaInteracaoCompleta, ...prev]);
       }
 
-      // Se o tipo de interação for WhatsApp, abrir o WhatsApp com a mensagem
-      if ((novaInteracao.tipo as string) === "whatsapp" && lead.telefone) {
-        abrirWhatsApp(lead.telefone, novaInteracao.descricao);
-      }
 
       // Limpar o formulário
       setNovaInteracao({
