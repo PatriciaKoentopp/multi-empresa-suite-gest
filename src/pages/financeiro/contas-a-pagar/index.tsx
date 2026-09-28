@@ -1,6 +1,6 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -870,7 +870,7 @@ export default function ContasAPagarPage() {
                 <Input
                   ref={inputBuscaRef}
                   placeholder="Buscar favorecido ou descrição"
-                  className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
+                  className="pl-10 bg-white border-gray-300 shadow-xs focus:bg-white min-w-[180px] w-full"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => {
@@ -928,7 +928,7 @@ export default function ContasAPagarPage() {
             
             {isFiltroAvancadoOpen && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                <div className="border rounded-lg p-3 bg-gray-50 shadow-xs">
                   <div className="text-sm font-medium mb-2 text-gray-700">Data de Vencimento</div>
                   <div className="flex flex-row gap-2">
                     <div className="flex flex-col flex-1">
@@ -954,7 +954,7 @@ export default function ContasAPagarPage() {
                   </div>
                 </div>
                 
-                <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                <div className="border rounded-lg p-3 bg-gray-50 shadow-xs">
                   <div className="text-sm font-medium mb-2 text-gray-700">Data de Pagamento</div>
                   <div className="flex flex-row gap-2">
                     <div className="flex flex-col flex-1">

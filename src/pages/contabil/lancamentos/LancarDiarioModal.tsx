@@ -81,7 +81,7 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
           <div>
             <label className="text-sm font-medium mb-1 block">Conta Débito</label>
             <Select value={contaDebitoId} onValueChange={setContaDebitoId}>
-              <SelectTrigger className="w-full bg-white border rounded">
+              <SelectTrigger className="w-full bg-white border rounded-sm">
                 <SelectValue placeholder="Conta Débito" />
               </SelectTrigger>
               <SelectContent className="bg-white border z-50">
@@ -94,7 +94,7 @@ export default function LancarDiarioModal({ open, onClose, onSave, contas, conta
           <div>
             <label className="text-sm font-medium mb-1 block">Conta Crédito</label>
             <Select value={contaCreditoId} onValueChange={setContaCreditoId}>
-              <SelectTrigger className="w-full bg-white border rounded">
+              <SelectTrigger className="w-full bg-white border rounded-sm">
                 <SelectValue placeholder="Conta Crédito" />
               </SelectTrigger>
               <SelectContent className="bg-white border z-50">

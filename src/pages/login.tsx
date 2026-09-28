@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "@/lib/router-compat";
 
 export function Login() {
   const [email, setEmail] = useState("");

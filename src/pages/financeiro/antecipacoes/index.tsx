@@ -477,7 +477,7 @@ export default function AntecipacoesPage() {
                 <Input
                   ref={inputBuscaRef}
                   placeholder="Buscar favorecido ou descrição"
-                  className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
+                  className="pl-10 bg-white border-gray-300 shadow-xs focus:bg-white min-w-[180px] w-full"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => {
@@ -551,7 +551,7 @@ export default function AntecipacoesPage() {
             
             {isFiltroAvancadoOpen && (
               <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-2">
-                <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                <div className="border rounded-lg p-3 bg-gray-50 shadow-xs">
                   <div className="text-sm font-medium mb-2 text-gray-700">Data da Antecipação</div>
                   <div className="flex flex-row gap-2">
                     <div className="flex flex-col flex-1">

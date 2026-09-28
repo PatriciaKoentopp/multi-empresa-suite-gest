@@ -518,7 +518,7 @@ export default function VisualizacaoRelogioPage() {
                                 className="flex items-center gap-1 text-[10px] leading-tight"
                               >
                                 <span
-                                  className="h-2 w-2 rounded-sm shrink-0"
+                                  className="h-2 w-2 rounded-xs shrink-0"
                                   style={{ background: projetoColor(pid) }}
                                 />
                                 <span className="truncate flex-1">
@@ -553,7 +553,7 @@ export default function VisualizacaoRelogioPage() {
                             return (
                               <div key={pid} className="flex items-center gap-2 text-xs">
                                 <span
-                                  className="h-2 w-2 rounded-sm"
+                                  className="h-2 w-2 rounded-xs"
                                   style={{ background: projetoColor(pid) }}
                                 />
                                 <span className="truncate flex-1">
@@ -599,7 +599,7 @@ export default function VisualizacaoRelogioPage() {
                       }}
                     >
                       <span
-                        className="h-2.5 w-2.5 rounded-sm"
+                        className="h-2.5 w-2.5 rounded-xs"
                         style={{ background: projetoColor(pid) }}
                       />
                       <span className="font-medium">

@@ -1,6 +1,6 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -380,7 +380,7 @@ export default function MovimentacaoPage() {
                 <Input
                   ref={inputBuscaRef}
                   placeholder="Buscar favorecido, descrição ou referência"
-                  className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
+                  className="pl-10 bg-white border-gray-300 shadow-xs focus:bg-white min-w-[180px] w-full"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => {

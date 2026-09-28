@@ -158,7 +158,7 @@ export function LeadDadosTab({
       <div className="space-y-2">
         <Label>Produto/Serviço</Label>
         {isLoadingProdutos ? (
-          <div className="flex items-center justify-center py-8 border rounded">
+          <div className="flex items-center justify-center py-8 border rounded-sm">
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
             <span>Carregando produtos e serviços...</span>
           </div>

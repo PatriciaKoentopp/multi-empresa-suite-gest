@@ -8,7 +8,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ContaReceber } from "@/components/contas-a-receber/contas-a-receber-table";
 import { LeadInteracao } from "@/pages/crm/leads/types";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 

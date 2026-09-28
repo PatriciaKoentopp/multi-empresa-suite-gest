@@ -223,7 +223,7 @@ export function ContaCorrenteForm({
           control={form.control}
           name="considerar_saldo"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-xs">
               <div className="space-y-0.5">
                 <FormLabel>Considerar no Saldo</FormLabel>
                 <p className="text-sm text-muted-foreground">

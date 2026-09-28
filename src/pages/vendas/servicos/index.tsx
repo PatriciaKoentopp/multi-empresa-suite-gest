@@ -212,7 +212,7 @@ export default function ServicosPage() {
               <Input
                 ref={inputBuscaRef}
                 placeholder="Buscar serviço ou descrição"
-                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white w-full"
+                className="pl-10 bg-white border-gray-300 shadow-xs focus:bg-white w-full"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => {

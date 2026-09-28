@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "@/lib/router-compat";
 import { ParcelasForm } from "@/components/movimentacao/ParcelasForm";
 import { useOrcamentoForm, formasPagamento } from "@/hooks/useOrcamentoForm";
 import { CabecalhoForm } from "@/components/vendas/orcamento/CabecalhoForm";

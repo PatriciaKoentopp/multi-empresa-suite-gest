@@ -29,7 +29,7 @@ export const TabelaPrecoCard: React.FC<TabelaPrecoCardProps> = ({
   onEditar,
   onExcluir,
 }) => (
-  <div className="bg-white rounded-lg shadow-sm border p-4 flex flex-col gap-2 hover:shadow-md transition">
+  <div className="bg-white rounded-lg shadow-xs border p-4 flex flex-col gap-2 hover:shadow-md transition">
     <div className="flex justify-between items-start">
       <div>
         <div className="font-bold text-base mb-1">{tabela.nome}</div>

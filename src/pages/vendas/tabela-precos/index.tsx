@@ -295,7 +295,7 @@ export default function TabelaPrecosPage() {
       </div>
 
       {/* Listagem em tabela */}
-      <div className="bg-white rounded-xl shadow-sm border">
+      <div className="bg-white rounded-xl shadow-xs border">
         <Table>
           <thead>
             <TableRow>

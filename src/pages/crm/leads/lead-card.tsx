@@ -80,7 +80,7 @@ export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, on
   });
 
   return (
-    <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <Card className="overflow-hidden shadow-xs hover:shadow-md transition-shadow">
       <div className="h-1" style={{ backgroundColor: etapa?.cor }}></div>
       <CardContent className="p-3">
         <div className="flex justify-between items-start">

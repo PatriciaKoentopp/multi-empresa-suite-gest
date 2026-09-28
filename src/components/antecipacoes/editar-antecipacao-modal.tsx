@@ -255,7 +255,7 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
         </DialogHeader>
 
         {antecipacao.conciliada && (
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-sm mb-4">
             <p className="text-yellow-800 text-sm">
               Esta antecipação está conciliada e não pode ser editada.
             </p>
@@ -263,7 +263,7 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
         )}
 
         {!antecipacao.conciliada && antecipacao.valorUtilizado > 0 && antecipacao.status !== 'devolvida' && (
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-sm mb-4">
             <p className="text-yellow-800 text-sm">
               Esta antecipação possui valor utilizado e não pode ser editada.
             </p>
@@ -271,7 +271,7 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
         )}
 
         {antecipacao.status === 'devolvida' && (
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-sm mb-4">
             <p className="text-yellow-800 text-sm">
               Esta antecipação foi devolvida e não pode ser editada.
             </p>
