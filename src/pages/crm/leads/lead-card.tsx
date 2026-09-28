@@ -135,7 +135,27 @@ export function LeadCard({ lead, etapas, origens, usuarios, onEdit, onDelete, on
               </DropdownMenuSub>
 
               <DropdownMenuSeparator />
-              
+
+              {mostrandoInativos ? (
+                <DropdownMenuItem
+                  onClick={onVoltarAoCrm}
+                  className="flex items-center gap-2 text-green-600 focus:bg-green-100 focus:text-green-700"
+                >
+                  <UserPlus className="h-3 w-3" />
+                  Voltar ao CRM
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onClick={onRetirarDoCrm}
+                  className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
+                >
+                  <UserMinus className="h-3 w-3" />
+                  Retirar do CRM
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuSeparator />
+
               <DropdownMenuItem
                 onClick={onDelete}
                 className="flex items-center gap-2 text-red-500 focus:bg-red-100 focus:text-red-700"
