@@ -587,7 +587,7 @@ export const useMovimentacaoForm = (movimentacaoEditando?: any) => {
           'pagar', // Valor correto para o tipo_operacao conforme constraint
           valorNumerico, // A função registrarFluxoCaixa vai transformar em negativo
           `Transferência para outra conta - ${descricao || ''}`.trim(), 
-          dataLancamento,
+          dataLancamento!,
           contaOrigem
         );
         
@@ -597,7 +597,7 @@ export const useMovimentacaoForm = (movimentacaoEditando?: any) => {
           'receber', // Valor correto para o tipo_operacao conforme constraint
           valorNumerico, // Valor positivo pois é uma entrada
           `Transferência de outra conta - ${descricao || ''}`.trim(),
-          dataLancamento,
+          dataLancamento!,
           contaDestino
         );
       }

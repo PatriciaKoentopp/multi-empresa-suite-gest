@@ -124,7 +124,7 @@ export default function FluxoCaixaPage() {
       const { data, error } = await supabase
         .from("contas_correntes")
         .select("*")
-        .eq("empresa_id", currentCompany?.id)
+        .eq("empresa_id", currentCompany?.id ?? "")
         .eq("status", "ativo");
 
       if (error) {
@@ -177,7 +177,7 @@ export default function FluxoCaixaPage() {
               numero_documento
             )
           `)
-          .eq("empresa_id", currentCompany?.id)
+          .eq("empresa_id", currentCompany?.id ?? "")
           .eq("conta_corrente_id", contaCorrenteId)
           .order("data_movimentacao", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
@@ -228,7 +228,7 @@ export default function FluxoCaixaPage() {
             numero_documento
           )
         `)
-        .eq("empresa_id", currentCompany?.id)
+        .eq("empresa_id", currentCompany?.id ?? "")
         .eq("conta_corrente_id", contaCorrenteId);
 
       if (dataInicial) {
@@ -339,7 +339,7 @@ export default function FluxoCaixaPage() {
           .from("orcamentos")
           .select("codigo, numero_nota_fiscal, tipo")
           .in("codigo", uniqueNumeros)
-          .eq("empresa_id", currentCompany?.id);
+          .eq("empresa_id", currentCompany?.id ?? "");
 
         if (!orcError && orcamentosData) {
           const orcMap: Record<string, any> = {};
