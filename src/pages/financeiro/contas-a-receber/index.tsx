@@ -117,7 +117,7 @@ export default function ContasAReceberPage() {
             )
           )
         `)
-        .eq('movimentacao.empresa_id', currentCompany.id)
+        .eq('movimentacao.empresa_id', currentCompany?.id ?? '')
         .eq('movimentacao.tipo_operacao', 'receber')
         .order('data_vencimento', { ascending: true });
       
@@ -129,7 +129,7 @@ export default function ContasAReceberPage() {
         .map(parcela => {
           // Criar objeto Date sem conversão de timezone
           const dataVencimento = criarDataSemTimezone(parcela.data_vencimento);
-          const dataRecebimento = criarDataSemTimezone(parcela.data_pagamento);
+          const dataRecebimento = criarDataSemTimezone(parcela.data_pagamento ?? undefined);
           
           return {
             id: parcela.id,
@@ -137,16 +137,16 @@ export default function ContasAReceberPage() {
             descricao: parcela.movimentacao.descricao || '',
             dataVencimento: dataVencimento!,
             dataRecebimento,
-            status: determinarStatus(parcela.data_vencimento, parcela.data_pagamento),
+            status: determinarStatus(parcela.data_vencimento, parcela.data_pagamento ?? undefined),
             valor: Number(parcela.valor),
             numeroParcela: `${parcela.movimentacao.numero_documento || '-'}/${parcela.numero}`,
             origem: 'movimentacao',
             movimentacao_id: parcela.movimentacao_id,
-            multa: parcela.multa,
-            juros: parcela.juros,
-            desconto: parcela.desconto,
-            contaCorrenteId: parcela.conta_corrente_id,
-            formaPagamento: parcela.forma_pagamento
+            multa: parcela.multa ?? undefined,
+            juros: parcela.juros ?? undefined,
+            desconto: parcela.desconto ?? undefined,
+            contaCorrenteId: parcela.conta_corrente_id ?? undefined,
+            formaPagamento: parcela.forma_pagamento ?? undefined
           };
         });
 
@@ -183,7 +183,7 @@ export default function ContasAReceberPage() {
           favorecido:favorecidos(id, nome),
           parcelas:movimentacoes_parcelas(*)
         `)
-        .eq('id', conta.movimentacao_id)
+        .eq('id', conta.movimentacao_id ?? '')
         .single();
         
       if (error) throw error;
@@ -304,7 +304,7 @@ export default function ContasAReceberPage() {
           favorecido:favorecidos(id, nome),
           parcelas:movimentacoes_parcelas(*)
         `)
-        .eq('id', conta.movimentacao_id)
+        .eq('id', conta.movimentacao_id ?? '')
         .single();
         
       if (error) throw error;
@@ -537,7 +537,7 @@ export default function ContasAReceberPage() {
       // 7. Atualizar a lista local
       setContas(prev => prev.map(c => 
         c.id === conta.id
-          ? { ...c, dataRecebimento: undefined, status: "em_aberto" as const, formaPagamento: null, multa: null, juros: null, desconto: null, contaCorrenteId: null }
+          ? { ...c, dataRecebimento: undefined, status: "em_aberto" as const, formaPagamento: undefined, multa: undefined, juros: undefined, desconto: undefined, contaCorrenteId: undefined }
           : c
       ));
 

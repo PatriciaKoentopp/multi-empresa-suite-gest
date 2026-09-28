@@ -580,7 +580,7 @@ export default function ContasAPagarPage() {
           )
         `)
         .eq('tipo_operacao', 'pagar')
-        .eq('empresa_id', currentCompany?.id);
+        .eq('empresa_id', currentCompany?.id ?? '');
 
       if (error) throw error;
 
