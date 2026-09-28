@@ -211,7 +211,7 @@ export default function LeadsPage() {
       const funisFormatados = (funisData || []).map(funil => ({
         id: funil.id,
         nome: funil.nome,
-        descricao: funil.descricao,
+        descricao: funil.descricao ?? undefined,
         ativo: funil.ativo,
         empresa_id: funil.empresa_id,
         data_criacao: funil.data_criacao,
@@ -271,7 +271,7 @@ export default function LeadsPage() {
       
       console.log('Usuários obtidos:', usuariosData?.length);
       
-      const usuariosFormatados = (usuariosData || []).map(usuario => ({
+      const usuariosFormatados = (usuariosData || []).map((usuario: any) => ({
         id: usuario.id,
         nome: usuario.nome,
         email: usuario.email,
@@ -406,8 +406,8 @@ export default function LeadsPage() {
       
       // Buscar informações dos responsáveis após obter os leads
       const responsaveisIds = leadsData
-        .filter(lead => lead.responsavel_id)
-        .map(lead => lead.responsavel_id);
+        .map(lead => lead.responsavel_id)
+        .filter((id): id is string => !!id);
       
       // Só busca usuários se houver IDs de responsáveis
       let responsaveisMap = new Map();
