@@ -75,8 +75,8 @@ export function VisualizarAntecipacaoModal({ open, onClose, antecipacao }: Visua
         antecipacaoData.tipo_titulo_id 
           ? supabase.from("tipos_titulos").select("nome").eq("id", antecipacaoData.tipo_titulo_id).single()
           : Promise.resolve({ data: null }),
-        supabase.from("favorecidos").select("nome").eq("id", antecipacaoData.favorecido_id).single(),
-        supabase.from("contas_correntes").select("nome, banco").eq("id", antecipacaoData.conta_corrente_id).single()
+        supabase.from("favorecidos").select("nome").eq("id", antecipacaoData.favorecido_id ?? "").single(),
+        supabase.from("contas_correntes").select("nome, banco").eq("id", antecipacaoData.conta_corrente_id ?? "").single()
       ]);
 
       // Verificar se está conciliada no fluxo de caixa

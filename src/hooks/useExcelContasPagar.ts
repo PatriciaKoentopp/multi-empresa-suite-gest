@@ -14,7 +14,7 @@ export function useExcelContasPagar() {
     }).format(value);
   };
 
-  const formatDate = (date: Date | string | null): string => {
+  const formatDate = (date: Date | string | null | undefined): string => {
     if (!date) return "";
     
     const dateObj = typeof date === 'string' ? new Date(date) : date;

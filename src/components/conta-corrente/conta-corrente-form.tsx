@@ -38,7 +38,7 @@ const formSchema = z.object({
   status: z.enum(["ativo", "inativo"]),
   data: z.date({ required_error: "Data é obrigatória" }),
   saldoInicial: z.coerce.number(),
-  considerar_saldo: z.boolean().default(true),
+  considerar_saldo: z.boolean(),
 });
 
 type FormData = z.infer<typeof formSchema>;

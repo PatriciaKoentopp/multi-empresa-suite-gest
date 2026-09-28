@@ -46,12 +46,13 @@ export default function ProdutosPage() {
   }, [currentCompany]);
 
   async function carregarProdutos() {
+    if (!currentCompany?.id) return;
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('produtos')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
+        .eq('empresa_id', currentCompany.id)
         .order('nome');
 
       if (error) {

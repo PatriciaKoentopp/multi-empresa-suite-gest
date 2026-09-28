@@ -124,6 +124,11 @@ export function DevolverAntecipacaoModal({
   async function handleSalvar() {
     if (!antecipacao) return;
 
+    if (!currentCompany?.id) {
+      toast.error("Nenhuma empresa selecionada");
+      return;
+    }
+
     // Validações
     if (!dataDevolucao) {
       toast.error("Informe a data da devolução");
@@ -188,7 +193,7 @@ export function DevolverAntecipacaoModal({
       const valorFluxo = valorNumerico;
 
       const fluxoCaixaData = {
-        empresa_id: currentCompany?.id,
+        empresa_id: currentCompany.id,
         data_movimentacao: dataFormatada,
         tipo_operacao: tipoOperacaoFluxo,
         valor: valorFluxo,

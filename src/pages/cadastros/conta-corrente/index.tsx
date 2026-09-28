@@ -87,7 +87,7 @@ export default function ContaCorrentePage() {
         createdAt: new Date(item.created_at),
         updatedAt: new Date(item.updated_at),
         data: item.data ? new Date(item.data) : undefined,
-        saldoInicial: item.saldo_inicial,
+        saldoInicial: item.saldo_inicial ?? undefined,
         considerar_saldo: item.considerar_saldo
       }));
       
@@ -178,6 +178,11 @@ export default function ContaCorrentePage() {
         toast.success("Conta corrente atualizada com sucesso!");
       } else {
         // Create new conta corrente
+        if (!data.nome || !data.banco || !data.agencia || !data.numero || !data.contaContabilId) {
+          toast.error('Preencha todos os campos obrigatórios');
+          return;
+        }
+
         const { error } = await supabase
           .from('contas_correntes')
           .insert({

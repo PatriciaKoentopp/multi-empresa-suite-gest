@@ -167,7 +167,7 @@ export default function AntecipacoesPage() {
 
       // Buscar favorecidos
       const favorecidosIds = antecipacoesData
-        ?.filter(item => item.favorecido_id)
+        ?.filter((item): item is typeof item & { favorecido_id: string } => Boolean(item.favorecido_id))
         .map(item => item.favorecido_id) || [];
 
       let favorecidosMap: Record<string, string> = {};
@@ -189,7 +189,7 @@ export default function AntecipacoesPage() {
 
       // Buscar tipos de títulos
       const tiposTitulosIds = antecipacoesData
-        ?.filter(item => item.tipo_titulo_id)
+        ?.filter((item): item is typeof item & { tipo_titulo_id: string } => Boolean(item.tipo_titulo_id))
         .map(item => item.tipo_titulo_id) || [];
 
       let tiposTitulosMap: Record<string, string> = {};
@@ -211,7 +211,7 @@ export default function AntecipacoesPage() {
 
       // Buscar contas correntes
       const contasCorrentesIds = antecipacoesData
-        ?.filter(item => item.conta_corrente_id)
+        ?.filter((item): item is typeof item & { conta_corrente_id: string } => Boolean(item.conta_corrente_id))
         .map(item => item.conta_corrente_id) || [];
 
       let contasCorrentesMap: Record<string, string> = {};
@@ -259,7 +259,7 @@ export default function AntecipacoesPage() {
 
         return {
           id: item.id,
-          favorecido: favorecidosMap[item.favorecido_id] || "N/A",
+          favorecido: (item.favorecido_id ? favorecidosMap[item.favorecido_id] : undefined) || "N/A",
           tipoOperacao: item.tipo_operacao as "receber" | "pagar",
           dataAntecipacao: new Date(item.data_lancamento + 'T12:00:00'),
           valorTotal,

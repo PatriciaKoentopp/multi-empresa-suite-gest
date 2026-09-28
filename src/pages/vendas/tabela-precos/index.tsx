@@ -44,11 +44,12 @@ export default function TabelaPrecosPage() {
   }, [currentCompany]);
 
   async function carregarTabelas() {
+    if (!currentCompany?.id) return;
     try {
       const { data, error } = await supabase
         .from('tabelas_precos')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
+        .eq('empresa_id', currentCompany.id)
         .order('nome');
 
       if (error) throw error;
@@ -90,11 +91,12 @@ export default function TabelaPrecosPage() {
   }
 
   async function carregarServicos() {
+    if (!currentCompany?.id) return;
     try {
       const { data, error } = await supabase
         .from('servicos')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
+        .eq('empresa_id', currentCompany.id)
         .order('nome');
 
       if (error) throw error;
@@ -117,11 +119,12 @@ export default function TabelaPrecosPage() {
   }
 
   async function carregarProdutos() {
+    if (!currentCompany?.id) return;
     try {
       const { data, error } = await supabase
         .from('produtos')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
+        .eq('empresa_id', currentCompany.id)
         .eq('status', 'ativo')
         .order('nome');
 
@@ -166,6 +169,7 @@ export default function TabelaPrecosPage() {
   }
 
   async function handleSalvarTabela(tabela: TabelaPreco) {
+    if (!currentCompany?.id) return;
     try {
       if (tabelaSelecionada) {
         // Atualização
@@ -178,7 +182,7 @@ export default function TabelaPrecosPage() {
             status: tabela.status
           })
           .eq('id', tabelaSelecionada.id)
-          .eq('empresa_id', currentCompany?.id);
+          .eq('empresa_id', currentCompany.id);
 
         if (updateError) throw updateError;
         toast({ title: "Tabela de Preços atualizada com sucesso!" });
@@ -187,7 +191,7 @@ export default function TabelaPrecosPage() {
         const { data: novaTabela, error: insertError } = await supabase
           .from('tabelas_precos')
           .insert({
-            empresa_id: currentCompany?.id,
+            empresa_id: currentCompany.id,
             nome: tabela.nome,
             vigencia_inicial: tabela.vigencia_inicial,
             vigencia_final: tabela.vigencia_final,
@@ -213,6 +217,7 @@ export default function TabelaPrecosPage() {
   }
 
   async function handleExcluirTabela(tabela: TabelaPreco) {
+    if (!currentCompany?.id) return;
     try {
       // Primeiro excluir os itens relacionados
       const { error: deleteItensError } = await supabase
@@ -227,7 +232,7 @@ export default function TabelaPrecosPage() {
         .from('tabelas_precos')
         .delete()
         .eq('id', tabela.id)
-        .eq('empresa_id', currentCompany?.id);
+        .eq('empresa_id', currentCompany.id);
 
       if (error) throw error;
       

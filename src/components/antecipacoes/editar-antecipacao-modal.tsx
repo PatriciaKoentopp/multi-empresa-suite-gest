@@ -66,7 +66,7 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
       const { data, error } = await supabase
         .from("contas_correntes")
         .select("id, nome, banco")
-        .eq("empresa_id", currentCompany?.id)
+        .eq("empresa_id", currentCompany?.id ?? "")
         .eq("status", "ativo");
 
       if (error) {
@@ -285,7 +285,7 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
               <DateInput
                 label="Data de Emissão"
                 value={dataEmissao}
-                onChange={setDataEmissao}
+                onChange={(d) => setDataEmissao(d || new Date())}
                 disabled={isReadOnly}
               />
             </div>
@@ -294,7 +294,7 @@ export function EditarAntecipacaoModal({ open, onClose, onSave, antecipacao }: E
               <DateInput
                 label="Data de Lançamento"
                 value={dataLancamento}
-                onChange={setDataLancamento}
+                onChange={(d) => setDataLancamento(d || new Date())}
                 disabled={isReadOnly}
               />
             </div>

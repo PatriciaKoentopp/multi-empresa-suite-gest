@@ -337,7 +337,7 @@ export function Dashboard() {
         if (erroVendasAnoAnterior) throw erroVendasAnoAnterior;
         
         // Agregar dados por cliente para o ano atual - Alterado para incluir nome_fantasia
-        const clientesAnoAtual = {};
+        const clientesAnoAtual: Record<string, { id: string; nome: string; nomeFantasia: string; totalVendas: number }> = {};
         if (vendasAnoAtual) {
           vendasAnoAtual.forEach(venda => {
             if (!venda.favorecido_id) return;
@@ -360,7 +360,7 @@ export function Dashboard() {
         }
         
         // Agregar dados por cliente para o ano anterior - Alterado para incluir nome_fantasia
-        const clientesAnoAnterior = {};
+        const clientesAnoAnterior: Record<string, { id: string; nome: string; nomeFantasia: string; totalVendas: number }> = {};
         if (vendasAnoAnterior) {
           vendasAnoAnterior.forEach(venda => {
             if (!venda.favorecido_id) return;
@@ -414,7 +414,7 @@ export function Dashboard() {
         
         if (interacoes && interacoes.length > 0) {
           // Filtrar apenas interações de leads da empresa atual e com status ativo
-          const leadIds = [...new Set(interacoes.map(i => i.lead_id))];
+          const leadIds = [...new Set(interacoes.map(i => i.lead_id))].filter((id): id is string => Boolean(id));
           
           const { data: leadsInfo } = await supabase
             .from('leads')
@@ -430,7 +430,7 @@ export function Dashboard() {
           }
           
           // Buscar informações dos responsáveis
-          const responsavelIds = [...new Set(interacoes.map(i => i.responsavel_id).filter(Boolean))];
+          const responsavelIds = [...new Set(interacoes.map(i => i.responsavel_id).filter((id): id is string => Boolean(id)))];
           
           const { data: usuariosInfo } = await supabase
             .from('usuarios')
@@ -458,7 +458,7 @@ export function Dashboard() {
                 tipo: interacao.tipo as any,
                 descricao: interacao.descricao,
                 data: interacao.data,
-                responsavelId: interacao.responsavel_id,
+                responsavelId: interacao.responsavel_id ?? "",
                 responsavelNome: responsavel?.nome || "Não atribuído",
                 status: interacao.status,
                 leadNome: lead?.nome || "Lead não encontrado",
