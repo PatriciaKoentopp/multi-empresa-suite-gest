@@ -951,7 +951,7 @@ export default function PainelTempoRelogioPage() {
                     {perfTipos.map((t) => (
                       <div key={t.id} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: projetoColor(t.id) }} />
+                          <span className="h-2.5 w-2.5 rounded-xs shrink-0" style={{ background: projetoColor(t.id) }} />
                           <span className="truncate">{t.nome}</span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
@@ -1020,7 +1020,7 @@ export default function PainelTempoRelogioPage() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div
-                                    className="h-9 rounded flex items-center justify-center text-[10px] font-medium"
+                                    className="h-9 rounded-sm flex items-center justify-center text-[10px] font-medium"
                                     style={{
                                       background: intensity > 0
                                         ? `rgba(76, 175, 80, ${0.15 + intensity * 0.75})`
@@ -1175,7 +1175,7 @@ export default function PainelTempoRelogioPage() {
                     <TableRow key={p.id} className={cn(p.variacao <= -30 && "bg-red-50/40 dark:bg-red-950/10")}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: projetoColor(p.id) }} />
+                          <span className="h-2.5 w-2.5 rounded-xs shrink-0" style={{ background: projetoColor(p.id) }} />
                           <div className="min-w-0">
                             <div className="font-medium truncate">{p.codigo} - {p.nome}</div>
                           </div>

@@ -441,7 +441,7 @@ export default function RelatorioVendas() {
             </PopoverTrigger>
             <PopoverContent className="w-56 p-2" align="start">
               <div
-                className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer"
+                className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
                 onClick={() => setAnosSelecionados(anosDisponiveis)}
               >
                 <Checkbox checked={anosSelecionados.length === anosDisponiveis.length} />
@@ -450,7 +450,7 @@ export default function RelatorioVendas() {
               {anosDisponiveis.map((ano) => (
                 <div
                   key={ano}
-                  className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer"
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
                   onClick={() => toggleAno(ano)}
                 >
                   <Checkbox checked={anosSelecionados.includes(ano)} />

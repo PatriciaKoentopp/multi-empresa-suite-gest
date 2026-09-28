@@ -25,7 +25,7 @@ export function ReceitasDespesasBarChart({ fluxoMensal, loading }: ReceitasDespe
           <CardTitle>Receitas x Despesas - Evolução Mensal</CardTitle>
         </CardHeader>
         <CardContent className="h-[350px] flex items-center justify-center">
-          <div className="animate-pulse w-full h-[300px] bg-muted rounded"></div>
+          <div className="animate-pulse w-full h-[300px] bg-muted rounded-sm"></div>
         </CardContent>
       </Card>
     );

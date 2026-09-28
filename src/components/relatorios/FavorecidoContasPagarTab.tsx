@@ -233,7 +233,7 @@ export function FavorecidoContasPagarTab({ favorecidoId }: FavorecidoContasPagar
                 <TableRow key={conta.id}>
                   <TableCell>
                     {(conta.numeroTitulo || conta.numeroParcela) ? (
-                      <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
+                      <span className="block font-mono text-xs px-2 py-0.5 rounded-sm bg-gray-50 text-gray-700 border border-gray-200">
                         {`${conta.numeroTitulo || '-'}/${conta.numeroParcela || '1'}`}
                       </span>
                     ) : (

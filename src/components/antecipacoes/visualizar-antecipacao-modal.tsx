@@ -75,8 +75,8 @@ export function VisualizarAntecipacaoModal({ open, onClose, antecipacao }: Visua
         antecipacaoData.tipo_titulo_id 
           ? supabase.from("tipos_titulos").select("nome").eq("id", antecipacaoData.tipo_titulo_id).single()
           : Promise.resolve({ data: null }),
-        supabase.from("favorecidos").select("nome").eq("id", antecipacaoData.favorecido_id).single(),
-        supabase.from("contas_correntes").select("nome, banco").eq("id", antecipacaoData.conta_corrente_id).single()
+        supabase.from("favorecidos").select("nome").eq("id", antecipacaoData.favorecido_id ?? "").single(),
+        supabase.from("contas_correntes").select("nome, banco").eq("id", antecipacaoData.conta_corrente_id ?? "").single()
       ]);
 
       // Verificar se está conciliada no fluxo de caixa
@@ -239,14 +239,14 @@ export function VisualizarAntecipacaoModal({ open, onClose, antecipacao }: Visua
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium text-gray-700">Data de Emissão</Label>
-                <div className="p-2 bg-gray-50 rounded border text-sm">
+                <div className="p-2 bg-gray-50 rounded-sm border text-sm">
                   {formatData(antecipacaoCompleta.data_emissao)}
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium text-gray-700">Data de Lançamento</Label>
-                <div className="p-2 bg-gray-50 rounded border text-sm">
+                <div className="p-2 bg-gray-50 rounded-sm border text-sm">
                   {formatData(antecipacaoCompleta.data_lancamento)}
                 </div>
               </div>
@@ -256,14 +256,14 @@ export function VisualizarAntecipacaoModal({ open, onClose, antecipacao }: Visua
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium text-gray-700">Mês de Referência</Label>
-                <div className="p-2 bg-gray-50 rounded border text-sm">
+                <div className="p-2 bg-gray-50 rounded-sm border text-sm">
                   {antecipacaoCompleta.mes_referencia || "Não informado"}
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium text-gray-700">Número do Documento</Label>
-                <div className="p-2 bg-gray-50 rounded border text-sm">
+                <div className="p-2 bg-gray-50 rounded-sm border text-sm">
                   {antecipacaoCompleta.numero_documento || "Não informado"}
                 </div>
               </div>
@@ -273,14 +273,14 @@ export function VisualizarAntecipacaoModal({ open, onClose, antecipacao }: Visua
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium text-gray-700">Tipo de Título</Label>
-                <div className="p-2 bg-gray-50 rounded border text-sm">
+                <div className="p-2 bg-gray-50 rounded-sm border text-sm">
                   {antecipacaoCompleta.tipo_titulo_nome || "Não informado"}
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium text-gray-700">Favorecido</Label>
-                <div className="p-2 bg-gray-50 rounded border text-sm">
+                <div className="p-2 bg-gray-50 rounded-sm border text-sm">
                   {antecipacaoCompleta.favorecido_nome}
                 </div>
               </div>
@@ -290,14 +290,14 @@ export function VisualizarAntecipacaoModal({ open, onClose, antecipacao }: Visua
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium text-gray-700">Forma de Pagamento</Label>
-                <div className="p-2 bg-gray-50 rounded border text-sm">
+                <div className="p-2 bg-gray-50 rounded-sm border text-sm">
                   {antecipacaoCompleta.forma_pagamento}
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium text-gray-700">Conta Corrente</Label>
-                <div className="p-2 bg-gray-50 rounded border text-sm">
+                <div className="p-2 bg-gray-50 rounded-sm border text-sm">
                   {antecipacaoCompleta.conta_corrente_nome}
                 </div>
               </div>
@@ -307,21 +307,21 @@ export function VisualizarAntecipacaoModal({ open, onClose, antecipacao }: Visua
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium text-gray-700">Valor Total</Label>
-                <div className="p-2 bg-gray-50 rounded border text-sm font-medium">
+                <div className="p-2 bg-gray-50 rounded-sm border text-sm font-medium">
                   {formatCurrency(antecipacaoCompleta.valor_total)}
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium text-gray-700">Valor Utilizado</Label>
-                <div className="p-2 bg-gray-50 rounded border text-sm">
+                <div className="p-2 bg-gray-50 rounded-sm border text-sm">
                   {formatCurrency(antecipacaoCompleta.valor_utilizado)}
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium text-gray-700">Valor Disponível</Label>
-                <div className="p-2 bg-gray-50 rounded border text-sm font-medium text-green-600">
+                <div className="p-2 bg-gray-50 rounded-sm border text-sm font-medium text-green-600">
                   {formatCurrency(antecipacaoCompleta.valor_total - antecipacaoCompleta.valor_utilizado)}
                 </div>
               </div>
@@ -330,7 +330,7 @@ export function VisualizarAntecipacaoModal({ open, onClose, antecipacao }: Visua
             {/* Sétima linha - Descrição */}
             <div className="flex flex-col gap-1">
               <Label className="text-sm font-medium text-gray-700">Descrição</Label>
-              <div className="p-2 bg-gray-50 rounded border text-sm min-h-[80px]">
+              <div className="p-2 bg-gray-50 rounded-sm border text-sm min-h-[80px]">
                 {antecipacaoCompleta.descricao || "Nenhuma descrição informada"}
               </div>
             </div>

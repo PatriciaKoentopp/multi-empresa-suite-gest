@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
@@ -45,7 +45,7 @@ const InteracaoChip = ({
   return (
     <div
       className={cn(
-        "text-xs px-1.5 py-0.5 rounded cursor-pointer truncate flex items-center gap-1 transition-colors",
+        "text-xs px-1.5 py-0.5 rounded-sm cursor-pointer truncate flex items-center gap-1 transition-colors",
         isRealizado 
           ? "bg-green-100 text-green-800 hover:bg-green-200" 
           : "bg-blue-100 text-blue-800 hover:bg-blue-200"
@@ -325,11 +325,11 @@ export default function CrmAgenda() {
       {/* Legenda */}
       <div className="flex items-center gap-6 text-sm text-muted-foreground">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300" />
+          <div className="w-4 h-4 rounded-sm bg-blue-100 border border-blue-300" />
           <span>Pendente/Aberto</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-green-100 border border-green-300" />
+          <div className="w-4 h-4 rounded-sm bg-green-100 border border-green-300" />
           <span>Realizado</span>
         </div>
       </div>

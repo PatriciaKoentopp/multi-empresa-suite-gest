@@ -2,7 +2,7 @@
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { useAuth } from "@/contexts/auth-context";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "@/lib/router-compat";
 import { useCompany } from "@/contexts/company-context";
 import { useEffect } from "react";
 import { AssistenteIaButton } from "@/components/ia/AssistenteIaButton";

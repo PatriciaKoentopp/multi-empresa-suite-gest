@@ -40,6 +40,7 @@ export default function RelatorioProjetosPage() {
   }, [currentCompany]);
 
   async function carregarVendas() {
+    if (!currentCompany?.id) return;
     setIsLoadingVendas(true);
     try {
       const { data, error } = await supabase.from('orcamentos').select(`
@@ -49,7 +50,7 @@ export default function RelatorioProjetosPage() {
           data_venda,
           favorecidos!inner(nome),
           orcamentos_itens(valor)
-        `).eq('empresa_id', currentCompany?.id).eq('tipo', 'venda').eq('status', 'ativo');
+        `).eq('empresa_id', currentCompany.id).eq('tipo', 'venda').eq('status', 'ativo');
       if (error) throw error;
       const vendasComValor = (data || []).map(v => ({
         ...v,
@@ -66,11 +67,12 @@ export default function RelatorioProjetosPage() {
   }
 
   async function carregarTiposProjeto() {
+    if (!currentCompany?.id) return;
     try {
       const { data, error } = await supabase
         .from('relogio_tipos_projeto')
         .select('id, nome')
-        .eq('empresa_id', currentCompany?.id)
+        .eq('empresa_id', currentCompany.id)
         .order('nome', { ascending: true });
       if (error) throw error;
       setTiposProjeto(data || []);

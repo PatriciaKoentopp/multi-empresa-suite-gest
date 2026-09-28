@@ -125,7 +125,7 @@ export function ContasAPagarTable({
                 <TableCell>{formatDate(conta.dataVencimento)}</TableCell>
                 <TableCell>{formatDate(conta.dataPagamento)}</TableCell>
                 <TableCell>
-                  <span className="block font-mono text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200">
+                  <span className="block font-mono text-xs px-2 py-0.5 rounded-sm bg-gray-50 text-gray-700 border border-gray-200">
                     {`${conta.numeroTitulo || '-'}/${conta.numeroParcela}`}
                   </span>
                 </TableCell>

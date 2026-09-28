@@ -533,7 +533,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
                 {!somenteLeitura && (
                   <div className="grid grid-cols-1 md:grid-cols-8 gap-2 items-center">
                     <select
-                      className="border rounded px-2 py-1 md:col-span-4 bg-white"
+                      className="border rounded-sm px-2 py-1 md:col-span-4 bg-white"
                       value={novoServicoId}
                       onChange={(e) => setNovoServicoId(e.target.value)}
                     >
@@ -573,7 +573,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
                     <div className="text-muted-foreground text-sm">Nenhum serviço adicionado ainda.</div>
                   )}
                   {servicosTabela.length > 0 && (
-                    <table className="w-full border mt-2 rounded text-sm">
+                    <table className="w-full border mt-2 rounded-sm text-sm">
                       <thead>
                         <tr className="bg-muted">
                           <th className="py-1 px-2 font-bold text-left">Serviço</th>
@@ -615,7 +615,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
                 {!somenteLeitura && (
                   <div className="grid grid-cols-1 md:grid-cols-8 gap-2 items-center">
                     <select
-                      className="border rounded px-2 py-1 md:col-span-4 bg-white"
+                      className="border rounded-sm px-2 py-1 md:col-span-4 bg-white"
                       value={novoProdutoId}
                       onChange={(e) => setNovoProdutoId(e.target.value)}
                     >
@@ -655,7 +655,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
                     <div className="text-muted-foreground text-sm">Nenhum produto adicionado ainda.</div>
                   )}
                   {produtosTabela.length > 0 && (
-                    <table className="w-full border mt-2 rounded text-sm">
+                    <table className="w-full border mt-2 rounded-sm text-sm">
                       <thead>
                         <tr className="bg-muted">
                           <th className="py-1 px-2 font-bold text-left">Produto</th>

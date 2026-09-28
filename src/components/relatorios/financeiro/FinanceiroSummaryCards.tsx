@@ -32,11 +32,11 @@ export function FinanceiroSummaryCards({ resumo, loading }: FinanceiroSummaryCar
         {[1, 2, 3].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div className="h-4 bg-muted rounded w-24"></div>
+              <div className="h-4 bg-muted rounded-sm w-24"></div>
               <div className="h-8 w-8 bg-muted rounded-full"></div>
             </CardHeader>
             <CardContent>
-              <div className="h-8 bg-muted rounded w-32"></div>
+              <div className="h-8 bg-muted rounded-sm w-32"></div>
             </CardContent>
           </Card>
         ))}

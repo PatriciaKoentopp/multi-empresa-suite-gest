@@ -12,7 +12,7 @@ import { TransferenciaForm } from "@/components/movimentacao/TransferenciaForm";
 import { PagamentoForm } from "@/components/movimentacao/PagamentoForm";
 import { RecebimentoForm } from "@/components/movimentacao/RecebimentoForm";
 import { DateInput } from "@/components/movimentacao/DateInput";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "@/lib/router-compat";
 import { toast } from "sonner";
 import { FileText } from "lucide-react";
 import { formatDate } from "@/lib/utils";
@@ -156,7 +156,7 @@ export default function IncluirMovimentacaoPage() {
         {modoVisualizacao ? "Visualizar Movimentação" : movimentacaoParaEditar ? "Editar Movimentação" : "Incluir Movimentação"}
       </h1>
       
-      <div className="bg-white shadow rounded flex flex-col gap-6">
+      <div className="bg-white shadow-sm rounded-sm flex flex-col gap-6">
         <div className="p-6">
           <div className="grid grid-cols-3 gap-4 items-end mb-6">
             <div className="flex flex-col gap-1">

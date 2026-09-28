@@ -272,7 +272,7 @@ export function RenegociarParcelasModal({
             
             <div>
               <div className="text-sm font-medium mb-1">Parcela original:</div>
-              <div className="font-mono text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 border border-gray-200 inline-block">
+              <div className="font-mono text-xs px-2 py-1 rounded-sm bg-gray-100 text-gray-700 border border-gray-200 inline-block">
                 {`${conta.numeroTitulo || '-'}/${conta.numeroParcela}`}
               </div>
             </div>

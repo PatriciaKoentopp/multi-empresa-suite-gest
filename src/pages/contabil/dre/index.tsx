@@ -686,7 +686,7 @@ export default function DrePage() {
             {visualizacao === "comparar_anos" && <div>
                 <label className="block text-xs text-muted-foreground mb-1">Anos para comparar</label>
                 <div className="flex flex-wrap gap-2">
-                  {anos.map(a => <Button key={a} variant={anosComparar.includes(a) ? "blue" : "outline"} size="sm" type="button" className="px-3 py-1 rounded" onClick={() => handleAnoCompararChange(a)} aria-pressed={anosComparar.includes(a)}>
+                  {anos.map(a => <Button key={a} variant={anosComparar.includes(a) ? "blue" : "outline"} size="sm" type="button" className="px-3 py-1 rounded-sm" onClick={() => handleAnoCompararChange(a)} aria-pressed={anosComparar.includes(a)}>
                       {a}
                     </Button>)}
                 </div>

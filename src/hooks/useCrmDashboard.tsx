@@ -46,7 +46,7 @@ interface TimelineData {
 interface Funil {
   id: string;
   nome: string;
-  descricao?: string;
+  descricao?: string | null;
 }
 
 interface UseCrmDashboardResult {

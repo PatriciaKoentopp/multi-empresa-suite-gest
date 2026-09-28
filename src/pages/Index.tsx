@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { useAuth } from "@/contexts/auth-context";
 import { useModulosParametros } from "@/hooks/useModulosParametros";
 

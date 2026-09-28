@@ -174,7 +174,7 @@ export const SalesBarChart = ({
                     if (!payload || !payload.length) return null;
                     
                     return (
-                      <div className="bg-white p-2 border rounded shadow">
+                      <div className="bg-white p-2 border rounded-sm shadow-sm">
                         <p className="font-medium mb-1">{label}</p>
                         {payload.map((entry, index) => (
                           <p 
@@ -235,7 +235,7 @@ export const SalesBarChart = ({
                   if (!payload || !payload.length) return null;
                   
                   return (
-                    <div className="bg-white p-2 border rounded shadow">
+                    <div className="bg-white p-2 border rounded-sm shadow-sm">
                       <p className="font-medium mb-1">{isYearlyServiceComparison ? `Ano ${label}` : label}</p>
                       {payload.map((entry, index) => {
                         // Verificar se temos dados de projetos e variação para exibir

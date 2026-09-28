@@ -311,7 +311,7 @@ export default function LancamentosPage() {
             {/* Conta contábil */}
             <div className="col-span-1">
               <Select value={contaId} onValueChange={setContaId}>
-                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-xs pl-4 text-base font-normal">
                   <SelectValue placeholder="Conta Contábil" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border max-h-[400px] overflow-y-auto">
@@ -328,7 +328,7 @@ export default function LancamentosPage() {
             {/* Tipo de lançamento */}
             <div className="col-span-1">
               <Select value={tipoLancamentoFiltro} onValueChange={setTipoLancamentoFiltro}>
-                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-xs pl-4 text-base font-normal">
                   <SelectValue placeholder="Tipo de Lançamento" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border">
@@ -344,7 +344,7 @@ export default function LancamentosPage() {
             {/* Período */}
             <div className="col-span-1">
               <Select value={periodo} onValueChange={handlePeriodoChange}>
-                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-xs pl-4 text-base font-normal">
                   <CalendarIcon className="mr-2 h-5 w-5 text-neutral-400" />
                   <SelectValue placeholder="Selecionar Período" />
                 </SelectTrigger>
@@ -418,7 +418,7 @@ export default function LancamentosPage() {
                 <Input 
                   id="busca-lancamento" 
                   placeholder="Buscar" 
-                  className="pl-10 bg-white border rounded-lg h-[52px] text-base font-normal border-gray-300 shadow-sm focus:bg-white min-w-[140px] w-full" 
+                  className="pl-10 bg-white border rounded-lg h-[52px] text-base font-normal border-gray-300 shadow-xs focus:bg-white min-w-[140px] w-full" 
                   value={searchTerm} 
                   onChange={e => setSearchTerm(e.target.value)} 
                   autoComplete="off" 

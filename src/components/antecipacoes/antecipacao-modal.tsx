@@ -67,7 +67,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
       const { data, error } = await supabase
         .from("contas_correntes")
         .select("id, nome, banco")
-        .eq("empresa_id", currentCompany?.id)
+        .eq("empresa_id", currentCompany?.id ?? "")
         .eq("status", "ativo");
 
       if (error) {
@@ -283,7 +283,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
               <DateInput
                 label="Data de Emissão"
                 value={dataEmissao}
-                onChange={setDataEmissao}
+                onChange={(d) => setDataEmissao(d || new Date())}
               />
             </div>
 
@@ -291,7 +291,7 @@ export function AntecipacaoModal({ open, onClose, onSave }: AntecipacaoModalProp
               <DateInput
                 label="Data de Lançamento"
                 value={dataLancamento}
-                onChange={setDataLancamento}
+                onChange={(d) => setDataLancamento(d || new Date())}
               />
             </div>
           </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { format, addMonths } from 'date-fns';
 import { toast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/company-context";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { supabase } from "@/integrations/supabase/client";
 import { Favorecido, Servico, TabelaPreco, TabelaPrecoItem } from "@/types";
 import { OrcamentoItem, Parcela } from "@/types/orcamento";

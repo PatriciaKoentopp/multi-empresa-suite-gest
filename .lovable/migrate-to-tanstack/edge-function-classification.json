@@ -1,0 +1,7 @@
+{"functions": [
+  {"name": "alterar-senha-usuario", "classification": "internal-only", "signal": "called via supabase.functions.invoke from src/pages/admin/usuarios; requires SUPABASE_SERVICE_ROLE_KEY, available only in the Supabase Edge runtime (external Supabase project, service-role key not stored in Lovable)", "outcome": "left"},
+  {"name": "assistente-ia", "classification": "internal-only", "signal": "called via /functions/v1/ URL from src/hooks/useAssistenteIa.ts; requires SERVICE_ROLE_KEY and LOVABLE_API_KEY secrets available only in the Supabase Edge runtime", "outcome": "left"},
+  {"name": "gerar-leads-aniversarios", "classification": "internal-only", "signal": "called via /functions/v1/ URL from CRM birthday trigger; requires SERVICE_ROLE_KEY secret available only in the Supabase Edge runtime", "outcome": "left"},
+  {"name": "ler-documento-movimentacao", "classification": "internal-only", "signal": "called via supabase.functions.invoke from src/hooks/useMovimentacaoForm.ts; requires SERVICE_ROLE_KEY and LOVABLE_API_KEY secrets available only in the Supabase Edge runtime", "outcome": "left"},
+  {"name": "criar-usuario-auth", "classification": "unknown", "signal": "no internal call sites in src/; URL treated as load-bearing", "outcome": "left"}
+]}

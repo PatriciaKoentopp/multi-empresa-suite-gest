@@ -167,7 +167,7 @@ export default function AntecipacoesPage() {
 
       // Buscar favorecidos
       const favorecidosIds = antecipacoesData
-        ?.filter(item => item.favorecido_id)
+        ?.filter((item): item is typeof item & { favorecido_id: string } => Boolean(item.favorecido_id))
         .map(item => item.favorecido_id) || [];
 
       let favorecidosMap: Record<string, string> = {};
@@ -189,7 +189,7 @@ export default function AntecipacoesPage() {
 
       // Buscar tipos de títulos
       const tiposTitulosIds = antecipacoesData
-        ?.filter(item => item.tipo_titulo_id)
+        ?.filter((item): item is typeof item & { tipo_titulo_id: string } => Boolean(item.tipo_titulo_id))
         .map(item => item.tipo_titulo_id) || [];
 
       let tiposTitulosMap: Record<string, string> = {};
@@ -211,7 +211,7 @@ export default function AntecipacoesPage() {
 
       // Buscar contas correntes
       const contasCorrentesIds = antecipacoesData
-        ?.filter(item => item.conta_corrente_id)
+        ?.filter((item): item is typeof item & { conta_corrente_id: string } => Boolean(item.conta_corrente_id))
         .map(item => item.conta_corrente_id) || [];
 
       let contasCorrentesMap: Record<string, string> = {};
@@ -259,7 +259,7 @@ export default function AntecipacoesPage() {
 
         return {
           id: item.id,
-          favorecido: favorecidosMap[item.favorecido_id] || "N/A",
+          favorecido: (item.favorecido_id ? favorecidosMap[item.favorecido_id] : undefined) || "N/A",
           tipoOperacao: item.tipo_operacao as "receber" | "pagar",
           dataAntecipacao: new Date(item.data_lancamento + 'T12:00:00'),
           valorTotal,
@@ -477,7 +477,7 @@ export default function AntecipacoesPage() {
                 <Input
                   ref={inputBuscaRef}
                   placeholder="Buscar favorecido ou descrição"
-                  className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white min-w-[180px] w-full"
+                  className="pl-10 bg-white border-gray-300 shadow-xs focus:bg-white min-w-[180px] w-full"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => {
@@ -551,7 +551,7 @@ export default function AntecipacoesPage() {
             
             {isFiltroAvancadoOpen && (
               <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-2">
-                <div className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                <div className="border rounded-lg p-3 bg-gray-50 shadow-xs">
                   <div className="text-sm font-medium mb-2 text-gray-700">Data da Antecipação</div>
                   <div className="flex flex-row gap-2">
                     <div className="flex flex-col flex-1">

@@ -264,13 +264,29 @@ export default function FavorecidosPage() {
   
         if (data) {
           const favorecidosFormatados: Favorecido[] = data.map(favorecido => ({
-            ...favorecido,
+            id: favorecido.id,
+            nome: favorecido.nome,
+            documento: favorecido.documento,
+            tipo: favorecido.tipo,
+            email: favorecido.email ?? undefined,
+            telefone: favorecido.telefone ?? undefined,
+            status: favorecido.status,
+            empresa_id: favorecido.empresa_id,
+            grupo_id: favorecido.grupo_id ?? undefined,
+            profissao_id: favorecido.profissao_id ?? undefined,
+            nome_fantasia: favorecido.nome_fantasia ?? undefined,
+            logradouro: favorecido.logradouro ?? undefined,
+            numero: favorecido.numero ?? undefined,
+            complemento: favorecido.complemento ?? undefined,
+            bairro: favorecido.bairro ?? undefined,
+            cidade: favorecido.cidade ?? undefined,
+            estado: favorecido.estado ?? undefined,
+            pais: favorecido.pais ?? undefined,
+            cep: favorecido.cep ?? undefined,
+            tipo_documento: favorecido.tipo_documento,
+            data_aniversario: favorecido.data_aniversario ? parseDateString(favorecido.data_aniversario) : undefined,
             created_at: new Date(favorecido.created_at),
             updated_at: new Date(favorecido.updated_at),
-            data_aniversario: favorecido.data_aniversario ? parseDateString(favorecido.data_aniversario) : undefined,
-            tipo: favorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor",
-            tipo_documento: favorecido.tipo_documento as "cpf" | "cnpj",
-            status: favorecido.status as "ativo" | "inativo"
           }));
           setFavorecidos(favorecidosFormatados);
         }
@@ -316,6 +332,11 @@ export default function FavorecidosPage() {
       return;
     }
 
+    if (!data.tipo || !data.tipo_documento || !data.documento || !data.nome) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+
     try {
       // Converter a data de aniversário para o formato YYYY-MM-DD para o Supabase
       const dataAniversarioFormatada = data.data_aniversario ? dateToISOString(data.data_aniversario) : null;
@@ -323,9 +344,9 @@ export default function FavorecidosPage() {
       // Preparar os dados para inserção/atualização no Supabase
       const favorecidoData = {
         empresa_id: currentCompany.id,
-        tipo: data.tipo,
-        tipo_documento: data.tipo_documento,
-        documento: data.documento,
+        tipo: data.tipo as string,
+        tipo_documento: data.tipo_documento as string,
+        documento: data.documento as string,
         grupo_id: data.grupo_id === null ? null : data.grupo_id,
         profissao_id: data.profissao_id === null ? null : data.profissao_id,
         nome: data.nome,
@@ -366,6 +387,19 @@ export default function FavorecidosPage() {
               return {
                 ...f,
                 ...favorecidoData,
+                email: favorecidoData.email ?? undefined,
+                telefone: favorecidoData.telefone ?? undefined,
+                grupo_id: favorecidoData.grupo_id ?? undefined,
+                profissao_id: favorecidoData.profissao_id ?? undefined,
+                nome_fantasia: favorecidoData.nome_fantasia ?? undefined,
+                logradouro: favorecidoData.logradouro ?? undefined,
+                numero: favorecidoData.numero ?? undefined,
+                complemento: favorecidoData.complemento ?? undefined,
+                bairro: favorecidoData.bairro ?? undefined,
+                cidade: favorecidoData.cidade ?? undefined,
+                estado: favorecidoData.estado ?? undefined,
+                pais: favorecidoData.pais ?? undefined,
+                cep: favorecidoData.cep ?? undefined,
                 data_aniversario: data.data_aniversario,
                 created_at: f.created_at,
                 updated_at: new Date()
@@ -411,14 +445,30 @@ export default function FavorecidosPage() {
         }
 
         if (novoFavorecido) {
-          const novoFavorecidoFormatado = {
-            ...novoFavorecido,
+          const novoFavorecidoFormatado: Favorecido = {
+            id: novoFavorecido.id,
+            nome: novoFavorecido.nome,
+            documento: novoFavorecido.documento,
+            tipo: novoFavorecido.tipo,
+            email: novoFavorecido.email ?? undefined,
+            telefone: novoFavorecido.telefone ?? undefined,
+            status: novoFavorecido.status,
+            empresa_id: novoFavorecido.empresa_id,
+            grupo_id: novoFavorecido.grupo_id ?? undefined,
+            profissao_id: novoFavorecido.profissao_id ?? undefined,
+            nome_fantasia: novoFavorecido.nome_fantasia ?? undefined,
+            logradouro: novoFavorecido.logradouro ?? undefined,
+            numero: novoFavorecido.numero ?? undefined,
+            complemento: novoFavorecido.complemento ?? undefined,
+            bairro: novoFavorecido.bairro ?? undefined,
+            cidade: novoFavorecido.cidade ?? undefined,
+            estado: novoFavorecido.estado ?? undefined,
+            pais: novoFavorecido.pais ?? undefined,
+            cep: novoFavorecido.cep ?? undefined,
+            tipo_documento: novoFavorecido.tipo_documento,
+            data_aniversario: novoFavorecido.data_aniversario ? parseDateString(novoFavorecido.data_aniversario) : undefined,
             created_at: new Date(novoFavorecido.created_at),
             updated_at: new Date(novoFavorecido.updated_at),
-            data_aniversario: novoFavorecido.data_aniversario ? parseDateString(novoFavorecido.data_aniversario) : undefined,
-            tipo: novoFavorecido.tipo as "fisica" | "juridica" | "publico" | "funcionario" | "cliente" | "fornecedor",
-            tipo_documento: novoFavorecido.tipo_documento as "cpf" | "cnpj",
-            status: novoFavorecido.status as "ativo" | "inativo"
           };
           setFavorecidos(prev => [...prev, novoFavorecidoFormatado]);
           toast.success("Favorecido criado com sucesso!");

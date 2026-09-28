@@ -36,12 +36,13 @@ const RelatorioFotosPage = () => {
   const { exportToExcel, isGenerating } = useExcelFotosProjetos();
 
   useEffect(() => {
-    if (!currentCompany?.id) return;
+    const empresaId = currentCompany?.id;
+    if (!empresaId) return;
     async function carregarTipos() {
       const { data, error } = await supabase
         .from("relogio_tipos_projeto")
         .select("id, nome")
-        .eq("empresa_id", currentCompany.id)
+        .eq("empresa_id", empresaId)
         .order("nome", { ascending: true });
       if (!error) setTiposProjeto(data || []);
     }

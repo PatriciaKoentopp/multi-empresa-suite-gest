@@ -46,12 +46,13 @@ export default function ProdutosPage() {
   }, [currentCompany]);
 
   async function carregarProdutos() {
+    if (!currentCompany?.id) return;
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('produtos')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
+        .eq('empresa_id', currentCompany.id)
         .order('nome');
 
       if (error) {
@@ -215,7 +216,7 @@ export default function ProdutosPage() {
               <Input
                 ref={inputBuscaRef}
                 placeholder="Buscar produto ou descrição"
-                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white w-full"
+                className="pl-10 bg-white border-gray-300 shadow-xs focus:bg-white w-full"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => {

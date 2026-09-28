@@ -713,7 +713,7 @@ export default function FunilConfiguracaoPage() {
                 id="ativo"
                 checked={ativoFunil}
                 onChange={(e) => setAtivoFunil(e.target.checked)}
-                className="rounded border-gray-300 text-primary focus:ring-primary"
+                className="rounded-sm border-gray-300 text-primary focus:ring-primary"
               />
               <label htmlFor="ativo" className="text-sm font-medium">
                 Funil ativo

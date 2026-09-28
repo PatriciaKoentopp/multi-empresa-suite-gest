@@ -67,11 +67,12 @@ export default function ServicosPage() {
   }, [currentCompany]);
 
   async function loadServicos() {
+    if (!currentCompany?.id) return;
     try {
       const { data, error } = await supabase
         .from('servicos')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
+        .eq('empresa_id', currentCompany.id)
         .order('nome');
 
       if (error) throw error;
@@ -96,6 +97,7 @@ export default function ServicosPage() {
   }, [servicos, searchTerm, statusFilter]);
 
   async function handleSubmitServico(formData: any) {
+    if (!currentCompany?.id) return;
     try {
       if (formData.id) {
         const { error } = await supabase
@@ -107,7 +109,7 @@ export default function ServicosPage() {
             conta_receita_id: formData.conta_receita_id
           })
           .eq('id', formData.id)
-          .eq('empresa_id', currentCompany?.id);
+          .eq('empresa_id', currentCompany.id);
 
         if (error) throw error;
         toast("Serviço atualizado com sucesso!");
@@ -119,7 +121,7 @@ export default function ServicosPage() {
             descricao: formData.descricao,
             status: formData.status,
             conta_receita_id: formData.conta_receita_id,
-            empresa_id: currentCompany?.id
+            empresa_id: currentCompany.id
           }]);
 
         if (error) throw error;
@@ -141,14 +143,14 @@ export default function ServicosPage() {
   }
   
   async function handleConfirmDelete() {
-    if (!deletingServicoId) return;
+    if (!deletingServicoId || !currentCompany?.id) return;
     
     try {
       const { error } = await supabase
         .from('servicos')
         .delete()
         .eq('id', deletingServicoId)
-        .eq('empresa_id', currentCompany?.id);
+        .eq('empresa_id', currentCompany.id);
 
       if (error) throw error;
       
@@ -212,7 +214,7 @@ export default function ServicosPage() {
               <Input
                 ref={inputBuscaRef}
                 placeholder="Buscar serviço ou descrição"
-                className="pl-10 bg-white border-gray-300 shadow-sm focus:bg-white w-full"
+                className="pl-10 bg-white border-gray-300 shadow-xs focus:bg-white w-full"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => {

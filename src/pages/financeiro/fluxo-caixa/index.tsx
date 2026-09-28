@@ -1,6 +1,6 @@
 
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -739,7 +739,7 @@ export default function FluxoCaixaPage() {
             {/* Filtro de Situação */}
             <div className="col-span-1">
               <Select value={situacao} onValueChange={v => setSituacao(v as "todos" | "conciliado" | "nao_conciliado")}>
-                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-xs pl-4 text-base font-normal">
                   <Filter className="mr-2 h-5 w-5 text-neutral-400" />
                   <SelectValue placeholder="Situação" />
                 </SelectTrigger>
@@ -754,7 +754,7 @@ export default function FluxoCaixaPage() {
             {/* Conta Corrente */}
             <div className="col-span-1">
               <Select value={contaCorrenteId} onValueChange={setContaCorrenteId}>
-                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-xs pl-4 text-base font-normal">
                   <Filter className="mr-2 h-5 w-5 text-neutral-400" />
                   <SelectValue placeholder="Conta Corrente" />
                 </SelectTrigger>
@@ -771,7 +771,7 @@ export default function FluxoCaixaPage() {
             {/* Período */}
             <div className="col-span-1">
               <Select value={periodo} onValueChange={(v) => setPeriodo(v as any)}>
-                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-sm pl-4 text-base font-normal">
+                <SelectTrigger className="w-full bg-white border rounded-lg h-[52px] shadow-xs pl-4 text-base font-normal">
                   <CalendarIcon className="mr-2 h-5 w-5 text-neutral-400" />
                   <SelectValue placeholder="Selecionar Período" />
                 </SelectTrigger>
@@ -846,7 +846,7 @@ export default function FluxoCaixaPage() {
               <Input
                 id="busca-extrato"
                 placeholder="Buscar favorecido ou descrição"
-                className="pl-10 bg-white border rounded-lg h-[52px] text-base font-normal border-gray-300 shadow-sm focus:bg-white"
+                className="pl-10 bg-white border rounded-lg h-[52px] text-base font-normal border-gray-300 shadow-xs focus:bg-white"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 autoComplete="off"

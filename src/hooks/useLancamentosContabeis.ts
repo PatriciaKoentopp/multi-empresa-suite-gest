@@ -83,7 +83,10 @@ export function useLancamentosContabeis() {
       // Conversão explícita do tipo de dado
       const tiposTitulosFormatados: TipoTitulo[] = data?.map(tipo => ({
         ...tipo,
-        tipo: tipo.tipo as "pagar" | "receber"
+        tipo: tipo.tipo as "pagar" | "receber",
+        conta_juros_id: tipo.conta_juros_id ?? undefined,
+        conta_multa_id: tipo.conta_multa_id ?? undefined,
+        conta_desconto_id: tipo.conta_desconto_id ?? undefined,
       })) || [];
       
       setTiposTitulos(tiposTitulosFormatados);
