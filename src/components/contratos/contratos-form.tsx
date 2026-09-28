@@ -27,7 +27,7 @@ const formSchema = z.object({
   periodicidade: z.enum(["mensal", "trimestral", "semestral", "anual"]),
   forma_pagamento: z.string().min(1, "Forma de pagamento é obrigatória"),
   observacoes: z.string().optional(),
-  gerar_automatico: z.boolean().default(true),
+  gerar_automatico: z.boolean(),
 });
 
 type FormValues = z.infer<typeof formSchema>;

@@ -237,15 +237,16 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
   // Carregar favorecidos
   async function carregarFavorecidos() {
     try {
+      if (!currentCompany?.id) return;
       const { data, error } = await supabase
         .from('favorecidos')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
+        .eq('empresa_id', currentCompany.id)
         .eq('status', 'ativo')
         .order('nome');
 
       if (error) throw error;
-      setFavorecidos(data || []);
+      setFavorecidos((data || []) as Favorecido[]);
     } catch (error) {
       console.error('Erro ao carregar favorecidos:', error);
       toast({
