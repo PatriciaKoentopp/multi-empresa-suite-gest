@@ -11,8 +11,8 @@ export const usePainelFinanceiro = () => {
   const [filtroFluxoCaixa, setFiltroFluxoCaixa] = useState<FiltroFluxoCaixa>({
     dataInicio: subDays(new Date(), 30),
     dataFim: new Date(),
-    contaId: null,
-    situacao: null,
+    contaId: undefined,
+    situacao: undefined,
   });
   const [saldoInicialPeriodo, setSaldoInicialPeriodo] = useState<number>(0);
   
@@ -46,6 +46,7 @@ export const usePainelFinanceiro = () => {
   // Função para calcular o saldo inicial do período para o fluxo de caixa
   const calcularSaldoInicialPeriodo = async (filtro: FiltroFluxoCaixa) => {
     try {
+      if (!filtro.dataInicio) return 0;
       // Formatar as datas para o formato do Supabase (YYYY-MM-DD)
       const dataInicioStr = filtro.dataInicio.toISOString().split('T')[0];
       
@@ -138,6 +139,7 @@ export const usePainelFinanceiro = () => {
 
   const fetchFluxoCaixa = async (filtro: FiltroFluxoCaixa) => {
     try {
+      if (!filtro.dataInicio || !filtro.dataFim) return [];
       // Formatar as datas para o formato do Supabase (YYYY-MM-DD)
       const dataInicioStr = filtro.dataInicio.toISOString().split('T')[0];
       const dataFimStr = filtro.dataFim.toISOString().split('T')[0];
@@ -261,7 +263,7 @@ export const usePainelFinanceiro = () => {
             data: extrairDataSemTimeZone(item.data_movimentacao),
             descricao: item.descricao || '',
             conta_nome: item.contas_correntes?.nome || '',
-            conta_id: item.conta_corrente_id,
+            conta_id: item.conta_corrente_id ?? undefined,
             valor: Number(item.valor) || 0,
             tipo: item.tipo_operacao === 'receber' ? 'entrada' : 'saida',
             favorecido: favorecidoNome,
