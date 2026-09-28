@@ -384,7 +384,7 @@ export default function FavorecidosPage() {
         setFavorecidos(prev => 
           prev.map(f => {
             if (f.id === editingFavorecido.id) {
-              return {
+              return ({
                 ...f,
                 ...favorecidoData,
                 email: favorecidoData.email ?? undefined,
@@ -403,7 +403,7 @@ export default function FavorecidosPage() {
                 data_aniversario: data.data_aniversario,
                 created_at: f.created_at,
                 updated_at: new Date()
-              };
+              } as Favorecido);
             }
             return f;
           })

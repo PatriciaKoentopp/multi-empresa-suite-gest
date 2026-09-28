@@ -181,7 +181,7 @@ export default function ContratosPage() {
             </DialogDescription>
           </DialogHeader>
           <ContratosForm
-            onSubmit={handleSubmit}
+            onSubmit={(formData) => handleSubmit(formData as ContratoFormData)}
             onCancel={() => {
               setIsFormOpen(false);
               setEditingContrato(null);

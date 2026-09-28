@@ -99,7 +99,7 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
         console.log("Dados da parcela (formato antigo):", parcela);
 
         // Se tem antecipacao_id (formato antigo - uma única antecipação)
-        if (parcela?.antecipacao_id && parcela?.valor_antecipacao_utilizado > 0) {
+        if (parcela?.antecipacao_id && (parcela?.valor_antecipacao_utilizado ?? 0) > 0) {
           const { data: antecipacao, error: antError } = await supabase
             .from("antecipacoes")
             .select("id, descricao, data_lancamento, numero_documento")
@@ -112,7 +112,7 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
               descricao: antecipacao.descricao || "Antecipação",
               data_lancamento: antecipacao.data_lancamento,
               numero_documento: antecipacao.numero_documento || "-",
-              valor_utilizado: parcela.valor_antecipacao_utilizado
+              valor_utilizado: parcela.valor_antecipacao_utilizado ?? 0
             });
           }
         }

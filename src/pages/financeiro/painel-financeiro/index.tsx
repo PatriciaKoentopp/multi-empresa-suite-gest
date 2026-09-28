@@ -75,7 +75,7 @@ const PainelFinanceiroPage = () => {
           {isCardVisible('filtro-fluxo-caixa') && (
             <FluxoCaixaFilter 
               filtro={filtroFluxoCaixa}
-              contas={dadosFinanceiros.contas_correntes.filter(c => c.considerar_saldo) || []}
+              contas={(dadosFinanceiros.contas_correntes ?? []).filter(c => c.considerar_saldo)}
               onFiltroChange={atualizarFiltroFluxoCaixa}
             />
           )}

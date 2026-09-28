@@ -45,7 +45,7 @@ export default function RelatorioFavorecido() {
         }
   
         if (data) {
-          setFavorecidos(data);
+          setFavorecidos(data as unknown as Favorecido[]);
 
           // Verificar se há um favorecido na URL
           const favorecidoId = searchParams.get('id');

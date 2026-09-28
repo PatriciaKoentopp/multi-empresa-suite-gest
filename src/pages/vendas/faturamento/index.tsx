@@ -104,7 +104,7 @@ export default function FaturamentoPage() {
           favorecido:favorecidos(nome),
           itens:orcamentos_itens(valor)
         `)
-        .eq('empresa_id', currentCompany?.id);
+        .eq('empresa_id', currentCompany?.id ?? '');
 
       // Aplica filtro de status se não for "todos"
       if (statusFilter !== "todos") {
@@ -121,7 +121,7 @@ export default function FaturamentoPage() {
         valor: fat.itens?.reduce((sum, item) => sum + Number(item.valor), 0) || 0
       })) || [];
 
-      setFaturamentos(faturamentosComValor);
+      setFaturamentos(faturamentosComValor as unknown as Orcamento[]);
     } catch (error) {
       console.error('Erro ao carregar faturamentos:', error);
       toast({
@@ -136,11 +136,11 @@ export default function FaturamentoPage() {
       const { data, error } = await supabase
         .from('favorecidos')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
+        .eq('empresa_id', currentCompany?.id ?? '')
         .eq('status', 'ativo');
 
       if (error) throw error;
-      setFavorecidos(data || []);
+      setFavorecidos((data || []) as unknown as Favorecido[]);
     } catch (error) {
       console.error('Erro ao carregar favorecidos:', error);
       toast({
@@ -380,7 +380,7 @@ export default function FaturamentoPage() {
     
     const favMatch = favorecido ? item.favorecido_id === favorecido : true;
     
-    const itemDataStr = item.tipo === 'venda' ? item.data_venda : item.data;
+    const itemDataStr = (item.tipo === 'venda' ? item.data_venda : item.data) ?? '';
     const dataInicialStr = dateToDBFormat(dataInicial);
     const dataFinalStr = dateToDBFormat(dataFinal);
     
@@ -500,7 +500,7 @@ export default function FaturamentoPage() {
           <div className="w-full sm:w-auto sm:min-w-[130px]">
             <DateInput
               value={dataInicial}
-              onChange={setDataInicial}
+              onChange={(d) => setDataInicial(d ?? undefined)}
               disabled={false}
               label=""
             />
@@ -510,7 +510,7 @@ export default function FaturamentoPage() {
           <div className="w-full sm:w-auto sm:min-w-[130px]">
             <DateInput
               value={dataFinal}
-              onChange={setDataFinal}
+              onChange={(d) => setDataFinal(d ?? undefined)}
               disabled={false}
               label=""
             />

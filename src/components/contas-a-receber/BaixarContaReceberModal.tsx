@@ -65,7 +65,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
       const { data, error } = await supabase
         .from("contas_correntes")
         .select("*")
-        .eq("empresa_id", currentCompany?.id)
+        .eq("empresa_id", currentCompany?.id ?? "")
         .eq("status", "ativo");
 
       if (error) {
@@ -87,7 +87,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
       const { data, error } = await supabase
         .from("antecipacoes")
         .select("id, descricao, valor_total, valor_utilizado")
-        .eq("empresa_id", currentCompany?.id)
+        .eq("empresa_id", currentCompany?.id ?? "")
         .eq("favorecido_id", favorecidoId)
         .eq("tipo_operacao", "receber")
         .eq("status", "ativa")
@@ -116,7 +116,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
         const { data, error } = await supabase
           .from("movimentacoes")
           .select("favorecido_id")
-          .eq("id", conta.movimentacao_id)
+          .eq("id", conta.movimentacao_id ?? "")
           .single();
 
         if (!error && data) {
@@ -144,7 +144,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
   // Calcular valores
   const valorConta = conta?.valor || 0;
   const valorAcrescimos = multa + juros;
-  const valorTotalAntecipacoes = antecipacoesSelecionadas.reduce((total, ant) => total + ant.valor, 0);
+  const valorTotalAntecipacoes = antecipacoesSelecionadas.reduce((total, ant) => total + (ant.valor ?? 0), 0);
   const valorTotalConta = valorConta + valorAcrescimos - desconto;
   const valorAReceber = Math.max(0, valorTotalConta - valorTotalAntecipacoes);
 
@@ -177,7 +177,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antecipacaoId);
     const valorJaUsado = antecipacoesSelecionadas
       .filter(ant => ant.id !== antecipacaoId)
-      .reduce((total, ant) => total + ant.valor, 0);
+      .reduce((total, ant) => total + (ant.valor ?? 0), 0);
     const valorRestante = Math.max(0, valorTotalConta - valorJaUsado);
     
     return Math.min(
@@ -207,11 +207,11 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
     // Validar valores das antecipações
     for (const antSel of antecipacoesSelecionadas) {
       const maxValor = getMaxValorAntecipacao(antSel.id);
-      if (antSel.valor <= 0) {
+      if ((antSel.valor ?? 0) <= 0) {
         toast.error("Informe valores válidos para as antecipações selecionadas.");
         return;
       }
-      if (antSel.valor > maxValor) {
+      if ((antSel.valor ?? 0) > maxValor) {
         toast.error("Valor da antecipação não pode exceder o disponível ou o valor da conta.");
         return;
       }
@@ -225,7 +225,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
         const { data: movimentacao, error: movError } = await supabase
           .from("movimentacoes")
           .select("descricao")
-          .eq("id", conta.movimentacao_id)
+          .eq("id", conta.movimentacao_id ?? "")
           .single();
           
         if (!movError && movimentacao) {
@@ -250,20 +250,21 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
       const { error: updateError } = await supabase
         .from("movimentacoes_parcelas")
         .update(updateData)
-        .eq("id", conta?.id);
+        .eq("id", conta?.id ?? "");
 
       if (updateError) throw updateError;
 
       // 2. Inserir registros na nova tabela de relacionamento para cada antecipação
       if (usarAntecipacao && antecipacoesSelecionadas.length > 0) {
         for (const antSel of antecipacoesSelecionadas) {
-          if (antSel.valor > 0) {
+          const valorAntSel = antSel.valor ?? 0;
+          if (valorAntSel > 0) {
             const { error: relationError } = await supabase
               .from("movimentacoes_parcelas_antecipacoes")
               .insert({
-                movimentacao_parcela_id: conta?.id,
+                movimentacao_parcela_id: conta?.id ?? "",
                 antecipacao_id: antSel.id,
-                valor_utilizado: antSel.valor
+                valor_utilizado: valorAntSel
               });
 
             if (relationError) throw relationError;
@@ -273,7 +274,8 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
         // 3. Atualizar valor utilizado nas antecipações
         // Buscar dados atualizados diretamente do banco para evitar duplicação
         for (const antSel of antecipacoesSelecionadas) {
-          if (antSel.valor > 0) {
+          const valorAntSel = antSel.valor ?? 0;
+          if (valorAntSel > 0) {
             // Buscar valor atual da antecipação no banco
             const { data: antAtual, error: fetchError } = await supabase
               .from("antecipacoes")
@@ -283,7 +285,7 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
 
             if (fetchError) throw fetchError;
             
-            const novoValorUtilizado = (antAtual?.valor_utilizado || 0) + antSel.valor;
+            const novoValorUtilizado = (antAtual?.valor_utilizado || 0) + valorAntSel;
             
             // Validar que não excede o valor total
             if (novoValorUtilizado > (antAtual?.valor_total || 0)) {
@@ -305,7 +307,8 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
         // 4. Inserir registros no fluxo de caixa para cada antecipação utilizada
         // Gerar PAR de lançamentos: saída (baixa antecipação) + entrada (recebimento)
         for (const antSel of antecipacoesSelecionadas) {
-          if (antSel.valor > 0) {
+          const valorAntSel = antSel.valor ?? 0;
+          if (valorAntSel > 0) {
             const antecipacao = antecipacoesDisponiveis.find(ant => ant.id === antSel.id);
             
             // 4.1 - Lançamento de SAÍDA: Baixa da Antecipação (valor negativo)
@@ -313,14 +316,14 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
             const { error: fluxoBaixaAntecipacaoError } = await supabase
               .from("fluxo_caixa")
               .insert({
-                empresa_id: currentCompany?.id,
+                empresa_id: currentCompany?.id ?? "",
                 conta_corrente_id: contaCorrenteId, // AGORA COM CONTA CORRENTE
                 data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
-                valor: -antSel.valor, // NEGATIVO - saída de caixa
-                saldo: -antSel.valor,
+                valor: -valorAntSel, // NEGATIVO - saída de caixa
+                saldo: -valorAntSel,
                 tipo_operacao: "receber", // Mantém o contexto da operação
                 origem: "antecipacao_baixa",
-                movimentacao_parcela_id: conta?.id,
+                movimentacao_parcela_id: conta?.id ?? "",
                 movimentacao_id: conta?.movimentacao_id,
                 antecipacao_id: antSel.id,
                 situacao: "nao_conciliado",
@@ -335,14 +338,14 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
             const { error: fluxoRecebimentoAntecipacaoError } = await supabase
               .from("fluxo_caixa")
               .insert({
-                empresa_id: currentCompany?.id,
+                empresa_id: currentCompany?.id ?? "",
                 conta_corrente_id: contaCorrenteId, // COM CONTA CORRENTE
                 data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
-                valor: antSel.valor, // POSITIVO - entrada de caixa
-                saldo: antSel.valor,
+                valor: valorAntSel, // POSITIVO - entrada de caixa
+                saldo: valorAntSel,
                 tipo_operacao: "receber",
                 origem: "movimentacao",
-                movimentacao_parcela_id: conta?.id,
+                movimentacao_parcela_id: conta?.id ?? "",
                 movimentacao_id: conta?.movimentacao_id,
                 antecipacao_id: antSel.id, // Vincula à antecipação
                 situacao: "nao_conciliado",
@@ -360,14 +363,14 @@ export function BaixarContaReceberModal({ conta, open, onClose, onBaixar }: Baix
         const { error: fluxoError } = await supabase
           .from("fluxo_caixa")
           .insert({
-            empresa_id: currentCompany?.id,
+            empresa_id: currentCompany?.id ?? "",
             conta_corrente_id: contaCorrenteId,
             data_movimentacao: format(dataRecebimento, "yyyy-MM-dd"),
             valor: valorAReceber,
             saldo: valorAReceber,
             tipo_operacao: "receber",
             origem: "movimentacao",
-            movimentacao_parcela_id: conta?.id,
+            movimentacao_parcela_id: conta?.id ?? "",
             movimentacao_id: conta?.movimentacao_id,
             situacao: "nao_conciliado",
             descricao: descricao || conta?.descricao || `Recebimento ${conta?.cliente}`,

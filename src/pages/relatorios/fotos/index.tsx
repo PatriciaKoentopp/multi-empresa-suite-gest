@@ -42,9 +42,9 @@ const RelatorioFotosPage = () => {
       const { data, error } = await supabase
         .from("relogio_tipos_projeto")
         .select("id, nome")
-        .eq("empresa_id", empresaId)
+        .eq("empresa_id", empresaId ?? "")
         .order("nome", { ascending: true });
-      if (!error) setTiposProjeto(data || []);
+      if (!error) setTiposProjeto((data || []) as { id: string; nome: string }[]);
     }
     carregarTipos();
   }, [currentCompany?.id]);

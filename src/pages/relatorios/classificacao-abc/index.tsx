@@ -135,7 +135,7 @@ export default function ClassificacaoABC() {
           valor: valorTotal
         });
         
-        if (!cliente.ultimaCompra || new Date(dataVenda) > new Date(cliente.ultimaCompra)) {
+        if (dataVenda && (!cliente.ultimaCompra || new Date(dataVenda) > new Date(cliente.ultimaCompra))) {
           cliente.ultimaCompra = dataVenda;
         }
       });

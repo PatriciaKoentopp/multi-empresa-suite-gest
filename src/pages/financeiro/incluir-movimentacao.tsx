@@ -28,14 +28,15 @@ const formasPagamento = [
 export default function IncluirMovimentacaoPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  let movimentacaoParaEditar = location.state?.movimentacao;
-  const modoVisualizacao = location.state?.modoVisualizacao;
+  const state = (location.state ?? {}) as { movimentacao?: any; modoVisualizacao?: boolean };
+  let movimentacaoParaEditar = state.movimentacao;
+  const modoVisualizacao = state.modoVisualizacao;
   
   // Garantir que as datas das parcelas sejam objetos Date
   if (movimentacaoParaEditar && movimentacaoParaEditar.parcelas) {
     movimentacaoParaEditar = {
       ...movimentacaoParaEditar,
-      parcelas: movimentacaoParaEditar.parcelas.map(parcela => ({
+      parcelas: movimentacaoParaEditar.parcelas.map((parcela: any) => ({
         ...parcela,
         dataVencimento: parcela.data_vencimento ? new Date(formatDate(parcela.data_vencimento)) : new Date()
       }))
@@ -136,7 +137,7 @@ export default function IncluirMovimentacaoPage() {
   };
 
   // Função para formatar o mês de referência
-  const handleMesReferenciaChange = (e) => {
+  const handleMesReferenciaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^0-9/]/g, '');
     
     // Formatar como MM/YYYY
@@ -181,7 +182,7 @@ export default function IncluirMovimentacaoPage() {
               <DateInput
                 label="Data de Emissão"
                 value={dataEmissao}
-                onChange={setDataEmissao}
+                onChange={(d) => { if (d) setDataEmissao(d); }}
                 disabled={modoVisualizacao}
               />
             </div>
@@ -190,7 +191,7 @@ export default function IncluirMovimentacaoPage() {
               <DateInput
                 label="Data de Lançamento"
                 value={dataLancamento}
-                onChange={setDataLancamento}
+                onChange={(d) => { if (d) setDataLancamento(d); }}
                 disabled={modoVisualizacao}
               />
             </div>
@@ -229,7 +230,7 @@ export default function IncluirMovimentacaoPage() {
                         type="button" 
                         variant="outline" 
                         className="h-10"
-                        onClick={() => document.getElementById('documento-upload').click()}
+                        onClick={() => document.getElementById('documento-upload')?.click()}
                       >
                         Alterar
                       </Button>
@@ -250,7 +251,7 @@ export default function IncluirMovimentacaoPage() {
                         type="button" 
                         variant="outline" 
                         className="w-full flex items-center gap-2"
-                        onClick={() => document.getElementById('documento-upload').click()}
+                        onClick={() => document.getElementById('documento-upload')?.click()}
                         disabled={isUploading}
                       >
                         <FileText size={16} />

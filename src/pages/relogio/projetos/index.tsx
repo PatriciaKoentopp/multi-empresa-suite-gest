@@ -277,7 +277,7 @@ export default function ProjetosRelogioPage() {
       p.codigo,
       p.nome,
       p.tipo_projeto_id ? (tipoProjetoNome.get(p.tipo_projeto_id) ?? "") : "",
-      favorecidoNome.get(p.favorecido_id) ?? "",
+      favorecidoNome.get(p.favorecido_id ?? "") ?? "",
       String(p.fotos_tiradas ?? 0),
       String(p.fotos_enviadas ?? 0),
       String(p.fotos_vendidas ?? 0),
@@ -529,7 +529,7 @@ export default function ProjetosRelogioPage() {
                       key={p.id}
                       projeto={p}
                       tipoNome={p.tipo_projeto_id ? (tipoProjetoNome.get(p.tipo_projeto_id) ?? "") : ""}
-                      clienteNome={favorecidoNome.get(p.favorecido_id) ?? ""}
+                      clienteNome={favorecidoNome.get(p.favorecido_id ?? "") ?? ""}
                       horas={horasPorProjeto.get(p.id) || 0}
                       onEdit={handleEdit}
                       onToggleStatus={toggleStatus}
