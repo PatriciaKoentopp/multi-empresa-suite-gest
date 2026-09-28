@@ -46,7 +46,7 @@ const formSchema = z.object({
   bairro: z.string().min(1, "Bairro é obrigatório"),
   cidade: z.string().min(1, "Cidade é obrigatória"),
   estado: z.string().min(1, "Estado é obrigatório"),
-  pais: z.string().min(1, "País é obrigatório").default("Brasil"),
+  pais: z.string().min(1, "País é obrigatório"),
   regimeTributacao: z.enum(["simples", "lucro_presumido", "lucro_real", "mei"]).optional(),
   logo: z.string().url("URL inválida").optional().or(z.literal("")),
 });
