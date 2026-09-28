@@ -66,6 +66,35 @@ function textoMensagem(m: any): { tipo: string; conteudo: string } {
   return { tipo, conteudo: `[${rotulos[tipo] ?? tipo}${media?.id ? ` ${media.id}` : ""}]${legenda ? ` ${legenda}` : ""}` };
 }
 
+export function dataSP(iso: string): string {
+  return new Date(new Date(iso).getTime() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+/** Registra mensagem do WhatsApp como interação do lead e atualiza o último contato. */
+export async function registrarInteracaoLead(db: SupabaseClient<any>, leadId: string | null | undefined, direcao: "entrada" | "saida", texto: string, quandoIso: string, responsavelId?: string | null) {
+  if (!leadId) return;
+  const data = dataSP(quandoIso);
+  const ins = await db.from("leads_interacoes").insert({
+    lead_id: leadId,
+    tipo: "whatsapp",
+    descricao: `${direcao === "entrada" ? "Recebida" : "Enviada"}: ${texto}`,
+    data,
+    responsavel_id: responsavelId ?? null,
+    status: "Realizado",
+  });
+  if (ins.error) throw ins.error;
+  await db.from("leads").update({ ultimo_contato: data }).eq("id", leadId);
+}
+
+async function obterOrigemWhatsapp(admin: SupabaseClient<any>, empresaId: string): Promise<string | null> {
+  const { data, error } = await admin.from("origens").select("id").eq("empresa_id", empresaId).ilike("nome", "whatsapp").limit(1);
+  if (error) throw error;
+  if (data?.[0]) return data[0].id;
+  const ins = await admin.from("origens").insert({ empresa_id: empresaId, nome: "WhatsApp", status: "ativo" }).select("id").single();
+  if (ins.error) throw ins.error;
+  return ins.data.id;
+}
+
 async function obterEtapaPadrao(admin: SupabaseClient<any>, numero: any) {
   if (numero.funil_id && numero.etapa_id) return { funil_id: numero.funil_id, etapa_id: numero.etapa_id };
   let funilId = numero.funil_id as string | null;
@@ -118,6 +147,7 @@ async function processarMensagens(admin: SupabaseClient<any>, value: any) {
           nome: contato.nome || nome || `+${from}`,
           telefone: from,
           observacoes: "Lead criado automaticamente pelo WhatsApp",
+          origem_id: await obterOrigemWhatsapp(admin, numero.empresa_id),
           status: "ativo",
         }).select("id").single();
         if (leadIns.error) throw leadIns.error;
@@ -150,6 +180,7 @@ async function processarMensagens(admin: SupabaseClient<any>, value: any) {
         ...(nome && !contato.nome ? { nome } : {}),
       }).eq("id", contato.id);
       if (up.error) throw up.error;
+      await registrarInteracaoLead(admin, contato.lead_id, "entrada", conteudo, quando);
     }
   }
 }
