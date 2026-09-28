@@ -144,7 +144,7 @@ export default function CrmAgenda() {
         empId = empresaData?.id;
       }
 
-      setEmpresaId(empId);
+      setEmpresaId(empId ?? null);
     };
 
     fetchEmpresaId();

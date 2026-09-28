@@ -21,8 +21,8 @@ export const FluxoCaixaFilter = ({
   filtro,
   onFiltroChange,
 }: FluxoCaixaFilterProps) => {
-  const [dataInicio, setDataInicio] = useState<Date>(filtro.dataInicio);
-  const [dataFim, setDataFim] = useState<Date>(filtro.dataFim);
+  const [dataInicio, setDataInicio] = useState<Date | undefined>(filtro.dataInicio);
+  const [dataFim, setDataFim] = useState<Date | undefined>(filtro.dataFim);
   const [contaId, setContaId] = useState<string | null>(filtro.contaId || filtro.conta_corrente_id || null);
   const [situacao, setSituacao] = useState<string | null>(filtro.situacao || "todos");
 

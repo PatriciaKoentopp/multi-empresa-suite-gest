@@ -420,7 +420,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
           const { data: tabelasRecentes, error: errorBusca } = await supabase
             .from('tabelas_precos')
             .select('*')
-            .eq('empresa_id', currentCompany?.id)
+            .eq('empresa_id', currentCompany?.id ?? '')
             .eq('nome', nome)
             .order('created_at', { ascending: false })
             .limit(1);
@@ -504,7 +504,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
               <label className="block font-medium mb-1">Vigência (início)</label>
               <DateInput 
                 value={vigenciaInicial}
-                onChange={setVigenciaInicial}
+                onChange={(d) => setVigenciaInicial(d ?? null)}
                 disabled={somenteLeitura}
               />
             </div>
@@ -512,7 +512,7 @@ export const TabelaPrecoModal: React.FC<TabelaPrecoModalProps> = ({
               <label className="block font-medium mb-1">Vigência (final)</label>
               <DateInput 
                 value={vigenciaFinal}
-                onChange={setVigenciaFinal}
+                onChange={(d) => setVigenciaFinal(d ?? null)}
                 disabled={somenteLeitura}
               />
             </div>

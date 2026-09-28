@@ -24,8 +24,8 @@ interface ImpostoRetido {
   id: string;
   nome: string;
   tipo_titulo_id: string;
-  conta_despesa_id?: string;
-  favorecido_id?: string;
+  conta_despesa_id?: string | null;
+  favorecido_id?: string | null;
 }
 
 export function useMovimentacaoDados() {
@@ -100,7 +100,10 @@ export function useMovimentacaoDados() {
       if (tiposTitulosData) {
         const tiposTitulosFormatados: TipoTitulo[] = tiposTitulosData.map(tipo => ({
           ...tipo,
-          tipo: tipo.tipo === "pagar" ? "pagar" : "receber"
+          tipo: tipo.tipo === "pagar" ? "pagar" : "receber",
+          conta_juros_id: tipo.conta_juros_id ?? undefined,
+          conta_multa_id: tipo.conta_multa_id ?? undefined,
+          conta_desconto_id: tipo.conta_desconto_id ?? undefined,
         }));
         setTiposTitulos(tiposTitulosFormatados);
       } else {

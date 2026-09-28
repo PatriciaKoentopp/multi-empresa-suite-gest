@@ -10,8 +10,8 @@ import { toast } from "sonner";
 interface Antecipacao {
   id: string;
   data_lancamento: string;
-  numero_documento?: string;
-  descricao?: string;
+  numero_documento?: string | null;
+  descricao?: string | null;
   valor_total: number;
   valor_utilizado: number;
   valor_disponivel: number;

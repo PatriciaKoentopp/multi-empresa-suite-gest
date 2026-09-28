@@ -153,7 +153,7 @@ export function RenegociarParcelasModal({
       
       // 4. Inserir novas parcelas
       const parcelasParaInserir = novasParcelas.map((p, index) => ({
-        movimentacao_id: parcela.movimentacao_id,
+        movimentacao_id: parcela.movimentacao_id ?? "",
         numero: numeroInicial + index,
         valor: p.valor,
         data_vencimento: format(p.dataVencimento, "yyyy-MM-dd")

@@ -126,8 +126,8 @@ export function LeadFormModal({
     
     // Agora vamos buscar os dados dos responsáveis
     const responsaveisIds = data
-      .filter(item => item.responsavel_id)
-      .map(item => item.responsavel_id);
+      .map(item => item.responsavel_id)
+      .filter((id): id is string => !!id);
     
     let responsaveisMap = new Map();
     
@@ -154,7 +154,7 @@ export function LeadFormModal({
       tipo: item.tipo as LeadInteracao['tipo'],
       descricao: item.descricao,
       data: item.data,  // Usar a data exatamente como vem do banco
-      responsavelId: item.responsavel_id,
+      responsavelId: item.responsavel_id ?? '',
       responsavelNome: item.responsavel_id ? (responsaveisMap.get(item.responsavel_id) || 'Desconhecido') : 'Não atribuído',
       status: item.status || 'Aberto'
     }));
@@ -186,7 +186,7 @@ export function LeadFormModal({
         console.log('Fechamento encontrado:', data);
         setFechamento({
           status: data.status as 'perda' | 'sucesso',
-          motivoPerdaId: data.motivo_perda_id,
+          motivoPerdaId: data.motivo_perda_id ?? undefined,
           descricao: data.descricao || '',
           data: new Date(data.data)
         });
@@ -344,7 +344,7 @@ export function LeadFormModal({
           tipo: data[0].tipo as LeadInteracao['tipo'],
           descricao: data[0].descricao,
           data: formatDate(data[0].data),
-          responsavelId: data[0].responsavel_id,
+          responsavelId: data[0].responsavel_id ?? '',
           responsavelNome: usuarios.find(u => u.id === data[0].responsavel_id)?.nome || 'Desconhecido',
           status: data[0].status || 'Aberto'
         };

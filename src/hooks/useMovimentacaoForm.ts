@@ -7,7 +7,7 @@ import { formatDate, parseDateString } from "@/lib/utils";
 import { useLogTransacao } from "@/hooks/useLogTransacao";
 import { useFechamentoMensal } from "@/hooks/useFechamentoMensal";
 
-export const useMovimentacaoForm = (movimentacaoEditando) => {
+export const useMovimentacaoForm = (movimentacaoEditando?: any) => {
   const { currentCompany } = useCompany();
   const { registrarLog } = useLogTransacao();
   const { verificarPeriodoFechado } = useFechamentoMensal();
@@ -39,7 +39,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
   const [possuiImpostosRetidos, setPossuiImpostosRetidos] = useState(false);
   const [impostosRetidosSelecionados, setImpostosRetidosSelecionados] = useState<any[]>([]);
 
-  const handleValorChange = (e) => {
+  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^0-9,.]/g, '');
     setValor(value);
   };
@@ -66,20 +66,20 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     }
   }, [valor, numParcelas, dataPrimeiroVenc, operacao]);
 
-  const atualizarValorParcela = (index, novoValor) => {
+  const atualizarValorParcela = (index: number, novoValor: number) => {
     const novasParcelas = [...parcelas];
     novasParcelas[index].valor = novoValor;
     setParcelas(novasParcelas);
   };
 
-  const atualizarDataVencimento = (index, novaData) => {
+  const atualizarDataVencimento = (index: number, novaData: Date) => {
     const novasParcelas = [...parcelas];
     novasParcelas[index].dataVencimento = novaData;
     setParcelas(novasParcelas);
   };
 
   // Função auxiliar para formatar mês/ano no padrão MM/YYYY
-  const formatarMesReferencia = (data) => {
+  const formatarMesReferencia = (data?: Date | null) => {
     if (!data) return "";
     const mes = String(data.getMonth() + 1).padStart(2, '0');
     const ano = data.getFullYear();
@@ -158,7 +158,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
   };
 
   // Função para fazer upload do documento PDF
-  const uploadDocumentoPdf = async (file) => {
+  const uploadDocumentoPdf = async (file: File | null) => {
     if (!file || !currentCompany?.id) {
       toast.error("Erro ao fazer upload", {
         description: "Arquivo inválido ou empresa não selecionada."
@@ -267,7 +267,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     }
   };
 
-  const handleDocumentoChange = async (e) => {
+  const handleDocumentoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       console.log("Arquivo selecionado:", file.name, file.type, file.size);
@@ -291,14 +291,14 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
   };
 
   // Função auxiliar para registrar lançamentos no fluxo de caixa
-  const registrarFluxoCaixa = async (movimentacaoId, tipoOperacao, valorNumerico, descricao, dataMovimentacao, contaId, situacao = 'nao_conciliado') => {
+  const registrarFluxoCaixa = async (movimentacaoId: string, tipoOperacao: string, valorNumerico: number, descricao: string, dataMovimentacao: Date, contaId: string, situacao = 'nao_conciliado') => {
     // Se for uma operação do tipo "pagar", o valor deve ser registrado como negativo
     const valorFinal = tipoOperacao === 'pagar' ? -Math.abs(valorNumerico) : Math.abs(valorNumerico);
     
     const { error } = await supabase
       .from('fluxo_caixa')
       .insert({
-        empresa_id: currentCompany.id,
+        empresa_id: currentCompany!.id,
         movimentacao_id: movimentacaoId,
         origem: 'movimentacao',
         descricao: descricao || `Movimentação - ${tipoOperacao}`,
@@ -337,7 +337,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
     }
 
     // Verificar período fechado
-    if (verificarPeriodoFechado(dataLancamento)) {
+    if (verificarPeriodoFechado(dataLancamento!)) {
       toast.error("Não é possível realizar lançamentos em um período já fechado.");
       return;
     }
@@ -376,8 +376,8 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       const valorNumerico = parseFloat(valor.replace(/\./g, '').replace(',', '.'));
       
       // Formatando datas para o formato aceito pelo Supabase
-      const dataEmissaoFormatada = dataEmissao.toISOString().split('T')[0];
-      const dataLancamentoFormatada = dataLancamento.toISOString().split('T')[0];
+      const dataEmissaoFormatada = dataEmissao!.toISOString().split('T')[0];
+      const dataLancamentoFormatada = dataLancamento!.toISOString().split('T')[0];
       const dataPrimeiroVencFormatada = dataPrimeiroVenc ? dataPrimeiroVenc.toISOString().split('T')[0] : null;
 
       // Dados comuns para todas as operações
@@ -448,7 +448,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
 
       // Criar parcelas se não for transferência
       if (operacao !== "transferencia" && parcelas && parcelas.length > 0) {
-        const parcelasFormatadas = parcelas.map(parcela => ({
+        const parcelasFormatadas = parcelas.map((parcela: any) => ({
           movimentacao_id: movimentacaoId,
           numero: parcela.numero,
           valor: parcela.valor,
@@ -532,8 +532,8 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
             const dadosMovImposto = {
               empresa_id: currentCompany.id,
               tipo_operacao: 'pagar',
-              data_emissao: dataEmissao.toISOString().split('T')[0],
-              data_lancamento: dataLancamento.toISOString().split('T')[0],
+              data_emissao: dataEmissao!.toISOString().split('T')[0],
+              data_lancamento: dataLancamento!.toISOString().split('T')[0],
               valor: valorImposto,
               descricao: `Imposto Retido: ${imp.nome}${numDoc ? ` documento ${numDoc}` : ''}${favorecidoNome ? ` - ${favorecidoNome}` : ''} [IR-${movimentacaoId}]`,
               mes_referencia: mesReferencia,
@@ -587,7 +587,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
           'pagar', // Valor correto para o tipo_operacao conforme constraint
           valorNumerico, // A função registrarFluxoCaixa vai transformar em negativo
           `Transferência para outra conta - ${descricao || ''}`.trim(), 
-          dataLancamento,
+          dataLancamento!,
           contaOrigem
         );
         
@@ -597,7 +597,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
           'receber', // Valor correto para o tipo_operacao conforme constraint
           valorNumerico, // Valor positivo pois é uma entrada
           `Transferência de outra conta - ${descricao || ''}`.trim(),
-          dataLancamento,
+          dataLancamento!,
           contaDestino
         );
       }
@@ -617,7 +617,7 @@ export const useMovimentacaoForm = (movimentacaoEditando) => {
       setTimeout(() => window.history.back(), 1000);
     } catch (error) {
       console.error("Erro ao salvar movimentação:", error);
-      toast.error(error.message || "Erro ao salvar movimentação");
+      toast.error((error as Error).message || "Erro ao salvar movimentação");
     } finally {
       setIsLoading(false);
     }

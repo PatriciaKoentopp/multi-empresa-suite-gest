@@ -277,7 +277,7 @@ export default function PainelProjetosRelogioPage() {
       p.codigo,
       p.nome,
       p.tipo_projeto_id ? (tipoProjetoNome.get(p.tipo_projeto_id) ?? "") : "",
-      favorecidoNome.get(p.favorecido_id) ?? "",
+      favorecidoNome.get(p.favorecido_id ?? "") ?? "",
       fmt(p.data_fotos),
       fmt(p.data_previa),
       fmt(p.data_selecao),
@@ -506,7 +506,7 @@ export default function PainelProjetosRelogioPage() {
                     <TableRow key={p.id} className="hover:bg-muted/40">
                       <TableCell className="font-medium">{p.codigo}</TableCell>
                       <TableCell>{p.nome}</TableCell>
-                      <TableCell>{favorecidoNome.get(p.favorecido_id) ?? "—"}</TableCell>
+                      <TableCell>{favorecidoNome.get(p.favorecido_id ?? "") ?? "—"}</TableCell>
                       <TableCell>{fmt(p.data_fotos)}</TableCell>
                       <TableCell>{fmt(p.data_previa)}</TableCell>
                       <TableCell>{fmt(p.data_selecao)}</TableCell>

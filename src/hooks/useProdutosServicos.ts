@@ -42,13 +42,13 @@ export function useProdutosServicos() {
         if (errorServicos) throw errorServicos;
         
         // Combinar produtos e serviços em uma única lista
-        const produtosFormatados = produtos?.map((p: Produto) => ({
+        const produtosFormatados = produtos?.map((p: { id: string; nome: string }) => ({
           id: p.id,
           nome: p.nome,
           tipo: "produto" as const
         })) || [];
         
-        const servicosFormatados = servicos?.map((s: Servico) => ({
+        const servicosFormatados = servicos?.map((s: { id: string; nome: string }) => ({
           id: s.id,
           nome: s.nome,
           tipo: "servico" as const

@@ -371,7 +371,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
         const { error: fluxoError } = await supabase
           .from("fluxo_caixa")
           .insert({
-            empresa_id: currentCompany?.id,
+            empresa_id: currentCompany?.id ?? "",
             conta_corrente_id: contaCorrenteId,
             data_movimentacao: format(dataPagamento, "yyyy-MM-dd"),
             valor: -valorAPagar, // Negativo para pagamento

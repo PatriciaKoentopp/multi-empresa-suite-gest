@@ -43,7 +43,7 @@ export function TransferenciaForm({
           <Label>Data da Transferência</Label>
           <DateInput 
             value={dataLancamento} 
-            onChange={onDataLancamentoChange}
+            onChange={(d) => onDataLancamentoChange(d ?? undefined)}
             disabled={readOnly}
           />
         </div>

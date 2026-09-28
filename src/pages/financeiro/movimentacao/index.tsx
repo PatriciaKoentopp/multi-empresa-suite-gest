@@ -473,7 +473,7 @@ export default function MovimentacaoPage() {
                 <DateInput 
                   label="Data Inicial"
                   value={dataInicial}
-                  onChange={setDataInicial}
+                  onChange={(d) => { if (d) setDataInicial(d); }}
                   disabled={periodo !== "personalizado"}
                 />
               </div>
@@ -483,7 +483,7 @@ export default function MovimentacaoPage() {
                 <DateInput 
                   label="Data Final"
                   value={dataFinal}
-                  onChange={setDataFinal}
+                  onChange={(d) => { if (d) setDataFinal(d); }}
                   disabled={periodo !== "personalizado"}
                 />
               </div>

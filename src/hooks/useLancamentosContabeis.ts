@@ -123,15 +123,15 @@ export function useLancamentosContabeis() {
           const lancamentoDebito: LancamentoContabil = {
             id: `${lanc.id}_debito`,
             data: lanc.data,
-            historico: lanc.historico,
-            conta: lanc.conta_debito_id,
+            historico: lanc.historico ?? undefined,
+            conta: lanc.conta_debito_id ?? undefined,
             conta_nome: contaDebito.descricao,
             conta_codigo: contaDebito.codigo,
             tipo: 'debito',
             valor: lanc.valor,
             saldo: 0, // Será calculado depois
-            movimentacao_id: lanc.movimentacao_id,
-            parcela_id: lanc.parcela_id,
+            movimentacao_id: lanc.movimentacao_id ?? undefined,
+            parcela_id: lanc.parcela_id ?? undefined,
             tipo_lancamento: (lanc.tipo_lancamento || 'principal') as 'principal' | 'juros' | 'multa' | 'desconto'
           };
           lancamentosProcessados.push(lancamentoDebito);
@@ -142,15 +142,15 @@ export function useLancamentosContabeis() {
           const lancamentoCredito: LancamentoContabil = {
             id: `${lanc.id}_credito`,
             data: lanc.data,
-            historico: lanc.historico,
-            conta: lanc.conta_credito_id,
+            historico: lanc.historico ?? undefined,
+            conta: lanc.conta_credito_id ?? undefined,
             conta_nome: contaCredito.descricao,
             conta_codigo: contaCredito.codigo,
             tipo: 'credito',
             valor: lanc.valor,
             saldo: 0, // Será calculado depois
-            movimentacao_id: lanc.movimentacao_id,
-            parcela_id: lanc.parcela_id,
+            movimentacao_id: lanc.movimentacao_id ?? undefined,
+            parcela_id: lanc.parcela_id ?? undefined,
             tipo_lancamento: (lanc.tipo_lancamento || 'principal') as 'principal' | 'juros' | 'multa' | 'desconto'
           };
           lancamentosProcessados.push(lancamentoCredito);
@@ -1269,7 +1269,7 @@ export function useLancamentosContabeis() {
       
       // 7. Processar movimentações para gerar lançamentos
       const lancamentosProcessados = processarMovimentacoesParaLancamentos(
-        movimentacoesTipadas,
+        movimentacoesTipadas as unknown as Movimentacao[],
         parcelas || [],
         planosContas,
         tiposTitulos,
@@ -1386,7 +1386,7 @@ export function useLancamentosContabeis() {
       if (antError) throw antError;
       
       // Buscar favorecidos das antecipações
-      const favIdsAnt = Array.from(new Set((antecipacoesData || []).map(a => a.favorecido_id).filter(Boolean)));
+      const favIdsAnt = Array.from(new Set((antecipacoesData || []).map(a => a.favorecido_id).filter((x): x is string => x !== null)));
       let favorecidosAnt: any[] = [];
       if (favIdsAnt.length > 0) {
         const { data: favData } = await supabase

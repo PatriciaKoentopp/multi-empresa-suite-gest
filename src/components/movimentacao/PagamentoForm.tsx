@@ -242,7 +242,7 @@ export function PagamentoForm({
           <Label>Data Primeiro Vencimento</Label>
           <DateInput 
             value={dataPrimeiroVenc} 
-            onChange={onDataPrimeiroVencChange} 
+            onChange={(d) => onDataPrimeiroVencChange(d ?? undefined)} 
             disabled={readOnly}
           />
         </div>
@@ -275,8 +275,8 @@ export function PagamentoForm({
           <h3 className="text-lg font-medium mb-2">Parcelas</h3>
           <ParcelasForm 
             parcelas={parcelas}
-            onValorChange={onParcelaValorChange}
-            onDataChange={onParcelaDataChange}
+            onValorChange={onParcelaValorChange ?? (() => {})}
+            onDataChange={onParcelaDataChange ?? (() => {})}
             readOnly={readOnly}
           />
         </div>

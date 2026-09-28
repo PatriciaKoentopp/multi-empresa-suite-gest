@@ -133,6 +133,11 @@ export default function AnaliseDrePage() {
           dataCompInicio = new Date(anoAtual - 1, mesAtual - 1, 1);
           dataCompFim = new Date(anoAtual, mesAtual - 1, 0);
         }
+        else {
+          // Fallback (não deve ocorrer): usa o próprio período de análise
+          dataCompInicio = dataAtualInicio;
+          dataCompFim = dataAtualFim;
+        }
         
         // Formatar datas para consulta
         const dataAtualInicioStr = format(dataAtualInicio, 'yyyy-MM-dd');
@@ -188,7 +193,7 @@ export default function AnaliseDrePage() {
         const dadosComparacao = processarMovimentacoesDRE(movComp || []);
         
         // Para média dos últimos 13 meses, buscar também os dados mensais
-        let dadosMensais = [];
+        let dadosMensais: any[] = [];
         if (filtro.tipo_comparacao === "media_12_meses") {
           dadosMensais = await buscarDadosMensais(
             anoAtual - 1, 
@@ -220,7 +225,7 @@ export default function AnaliseDrePage() {
 
   // Função para buscar dados mensais para visualização detalhada
   async function buscarDadosMensais(anoInicio: number, mesInicio: number, anoFim: number, mesFim: number, empresaId: string) {
-    const dadosMensais = [];
+    const dadosMensais: any[] = [];
     const dataInicio = new Date(anoInicio, mesInicio - 1, 1);
     const dataFim = new Date(anoFim, mesFim, 0);
     
@@ -935,14 +940,14 @@ export default function AnaliseDrePage() {
     if (tipo === 'negativas') return dadosAnalise.filter(item => item.avaliacao === 'negativa');
     if (tipo === 'atencao') return dadosAnalise.filter(item => 
       item.avaliacao === 'atencao' || 
-      (item.subcontas && item.subcontas.some(s => s.avaliacao === 'atencao'))
+      (item.subcontas && item.subcontas.some((s: any) => s.avaliacao === 'atencao'))
     );
     return dadosAnalise;
   };
   
   // Função para atualizar valor do filtro
   const updateFiltro = (campo: keyof FiltroAnaliseDre, valor: any) => {
-    setFiltro(prev => ({
+    setFiltro((prev: any) => ({
       ...prev,
       [campo]: valor
     }));
@@ -1163,7 +1168,7 @@ export default function AnaliseDrePage() {
                                 </TableRow>
                                 
                                 {/* Linhas das subcontas, quando expandidas */}
-                                {estaExpandida && conta.subcontas && conta.subcontas.map((subconta, subIndex) => {
+                                {estaExpandida && conta.subcontas && conta.subcontas.map((subconta: any, subIndex: number) => {
                                   const { icon: subIcon, cor: subCor } = getAvaliacaoIcone(subconta.avaliacao);
                                   
                                   return (
@@ -1218,7 +1223,7 @@ export default function AnaliseDrePage() {
                                                           </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
-                                                          {contaSelecionadaDetalhes.valores_mensais.map((valor, idx) => (
+                                                          {contaSelecionadaDetalhes.valores_mensais.map((valor: any, idx: number) => (
                                                             <TableRow key={idx}>
                                                               <TableCell>
                                                                 {valor.mes_nome}/{valor.ano}
@@ -1352,7 +1357,7 @@ export default function AnaliseDrePage() {
                                                           </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
-                                                          {contaSelecionadaDetalhes.valores_mensais.map((valor, idx) => (
+                                                          {contaSelecionadaDetalhes.valores_mensais.map((valor: any, idx: number) => (
                                                             <TableRow key={idx}>
                                                               <TableCell>
                                                                 {valor.mes_nome}/{valor.ano}

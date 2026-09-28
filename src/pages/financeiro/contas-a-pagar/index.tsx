@@ -102,7 +102,7 @@ export default function ContasAPagarPage() {
           createdAt: new Date(conta.created_at),
           updatedAt: new Date(conta.updated_at),
           data: conta.data ? new Date(conta.data) : undefined,
-          saldoInicial: conta.saldo_inicial,
+          saldoInicial: conta.saldo_inicial ?? undefined,
           considerar_saldo: conta.considerar_saldo
         }));
 
@@ -529,7 +529,7 @@ export default function ContasAPagarPage() {
       // 7. Atualizar a lista local
       setContas(prev => prev.map(c => 
         c.id === conta.id
-          ? { ...c, dataPagamento: undefined, status: "em_aberto" as const, formaPagamento: null, multa: null, juros: null, desconto: null, contaCorrenteId: null }
+          ? { ...c, dataPagamento: undefined, status: "em_aberto" as const, formaPagamento: undefined, multa: undefined, juros: undefined, desconto: undefined, contaCorrenteId: undefined }
           : c
       ));
 
@@ -580,7 +580,7 @@ export default function ContasAPagarPage() {
           )
         `)
         .eq('tipo_operacao', 'pagar')
-        .eq('empresa_id', currentCompany?.id);
+        .eq('empresa_id', currentCompany?.id ?? '');
 
       if (error) throw error;
 

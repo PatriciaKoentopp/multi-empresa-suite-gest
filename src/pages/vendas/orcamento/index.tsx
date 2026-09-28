@@ -69,7 +69,7 @@ export default function OrcamentoPage() {
     isLoading,
     isUploading,
     isVisualizacao: isVizualizacaoProp
-  } = useOrcamentoForm(orcamentoId, isVisualizacao);
+  } = useOrcamentoForm(orcamentoId ?? undefined, isVisualizacao);
 
   // Função personalizada para lidar com o envio do formulário
   const handleFormSubmit = (e: React.FormEvent) => {
