@@ -2496,6 +2496,243 @@ export type Database = {
           },
         ]
       }
+      whatsapp_contatos: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          id: string
+          lead_id: string | null
+          nao_lidas: number
+          nome: string | null
+          numero_id: string
+          status: string
+          ultima_mensagem_em: string | null
+          updated_at: string
+          wa_id: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          id?: string
+          lead_id?: string | null
+          nao_lidas?: number
+          nome?: string | null
+          numero_id: string
+          status?: string
+          ultima_mensagem_em?: string | null
+          updated_at?: string
+          wa_id: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          lead_id?: string | null
+          nao_lidas?: number
+          nome?: string | null
+          numero_id?: string
+          status?: string
+          ultima_mensagem_em?: string | null
+          updated_at?: string
+          wa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_contatos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_contatos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_contatos_numero_id_fkey"
+            columns: ["numero_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_numeros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_mensagens: {
+        Row: {
+          contato_id: string
+          conteudo: string | null
+          created_at: string
+          direcao: string
+          empresa_id: string
+          enviado_por: string | null
+          erro: string | null
+          id: string
+          numero_id: string
+          provider_timestamp: string | null
+          status: string
+          status_timestamps: Json
+          tipo: string
+          updated_at: string
+          wa_message_id: string | null
+        }
+        Insert: {
+          contato_id: string
+          conteudo?: string | null
+          created_at?: string
+          direcao: string
+          empresa_id: string
+          enviado_por?: string | null
+          erro?: string | null
+          id?: string
+          numero_id: string
+          provider_timestamp?: string | null
+          status?: string
+          status_timestamps?: Json
+          tipo?: string
+          updated_at?: string
+          wa_message_id?: string | null
+        }
+        Update: {
+          contato_id?: string
+          conteudo?: string | null
+          created_at?: string
+          direcao?: string
+          empresa_id?: string
+          enviado_por?: string | null
+          erro?: string | null
+          id?: string
+          numero_id?: string
+          provider_timestamp?: string | null
+          status?: string
+          status_timestamps?: Json
+          tipo?: string
+          updated_at?: string
+          wa_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_mensagens_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_mensagens_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_mensagens_numero_id_fkey"
+            columns: ["numero_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_numeros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_numeros: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          empresa_id: string
+          etapa_id: string | null
+          funil_id: string | null
+          id: string
+          nome: string
+          phone_number_id: string
+          secret_name: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id: string
+          etapa_id?: string | null
+          funil_id?: string | null
+          id?: string
+          nome?: string
+          phone_number_id: string
+          secret_name?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id?: string
+          etapa_id?: string | null
+          funil_id?: string | null
+          id?: string
+          nome?: string
+          phone_number_id?: string
+          secret_name?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_numeros_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_numeros_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "funil_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_numeros_funil_id_fkey"
+            columns: ["funil_id"]
+            isOneToOne: false
+            referencedRelation: "funis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_webhook_events: {
+        Row: {
+          attempts: number
+          delivery_id: string
+          event: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          processing_error: string | null
+          received_at: string
+        }
+        Insert: {
+          attempts?: number
+          delivery_id: string
+          event: string
+          id?: string
+          payload: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          received_at?: string
+        }
+        Update: {
+          attempts?: number
+          delivery_id?: string
+          event?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          received_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
