@@ -68,7 +68,7 @@ export const enviarWhatsappLead = createServerFn({ method: "POST" })
       if (!numero) throw new Error("Nenhum número de WhatsApp ativo nesta empresa");
       const { data: existente } = await sb.from("whatsapp_contatos").select("id, lead_id").eq("numero_id", numero.id).eq("wa_id", fone).maybeSingle();
       if (existente) {
-        if (!existente.lead_id) await sb.from("whatsapp_contatos").update({ lead_id: lead.id }).eq("id", existente.id);
+        if (existente.lead_id !== lead.id) await sb.from("whatsapp_contatos").update({ lead_id: lead.id }).eq("id", existente.id);
         contato = existente;
       } else {
         const ins = await sb.from("whatsapp_contatos").insert({ empresa_id: lead.empresa_id, numero_id: numero.id, wa_id: fone, nome: lead.nome, lead_id: lead.id, status: "crm" }).select("id").single();
