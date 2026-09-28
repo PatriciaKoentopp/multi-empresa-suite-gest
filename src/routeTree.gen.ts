@@ -37,6 +37,8 @@ import { Route as CrmAgendaRouteImport } from './routes/crm/agenda'
 import { Route as CrmFunilConfiguracaoRouteImport } from './routes/crm/funil-configuracao'
 import { Route as CrmLeadsRouteImport } from './routes/crm/leads'
 import { Route as CrmPainelRouteImport } from './routes/crm/painel'
+import { Route as CrmWhatsappRouteImport } from './routes/crm/whatsapp'
+import { Route as CrmWhatsappImplantacaoRouteImport } from './routes/crm/whatsapp-implantacao'
 import { Route as FinanceiroAntecipacoesRouteImport } from './routes/financeiro/antecipacoes'
 import { Route as FinanceiroContasAPagarRouteImport } from './routes/financeiro/contas-a-pagar'
 import { Route as FinanceiroContasReceberRouteImport } from './routes/financeiro/contas-receber'
@@ -75,6 +77,7 @@ import { Route as VendasPainelVendasRouteImport } from './routes/vendas/painel-v
 import { Route as VendasProdutosRouteImport } from './routes/vendas/produtos'
 import { Route as VendasServicosRouteImport } from './routes/vendas/servicos'
 import { Route as VendasTabelaPrecosRouteImport } from './routes/vendas/tabela-precos'
+import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -216,6 +219,16 @@ const CrmLeadsRoute = CrmLeadsRouteImport.update({
 const CrmPainelRoute = CrmPainelRouteImport.update({
   id: '/crm/painel',
   path: '/crm/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmWhatsappRoute = CrmWhatsappRouteImport.update({
+  id: '/crm/whatsapp',
+  path: '/crm/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmWhatsappImplantacaoRoute = CrmWhatsappImplantacaoRouteImport.update({
+  id: '/crm/whatsapp-implantacao',
+  path: '/crm/whatsapp-implantacao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FinanceiroAntecipacoesRoute = FinanceiroAntecipacoesRouteImport.update({
@@ -414,6 +427,12 @@ const VendasTabelaPrecosRoute = VendasTabelaPrecosRouteImport.update({
   path: '/vendas/tabela-precos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWhatsappWebhookRoute =
+  ApiPublicWhatsappWebhookRouteImport.update({
+    id: '/api/public/whatsapp/webhook',
+    path: '/api/public/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -444,6 +463,8 @@ export interface FileRoutesByFullPath {
   '/crm/funil-configuracao': typeof CrmFunilConfiguracaoRoute
   '/crm/leads': typeof CrmLeadsRoute
   '/crm/painel': typeof CrmPainelRoute
+  '/crm/whatsapp': typeof CrmWhatsappRoute
+  '/crm/whatsapp-implantacao': typeof CrmWhatsappImplantacaoRoute
   '/financeiro/antecipacoes': typeof FinanceiroAntecipacoesRoute
   '/financeiro/contas-a-pagar': typeof FinanceiroContasAPagarRoute
   '/financeiro/contas-receber': typeof FinanceiroContasReceberRoute
@@ -482,6 +503,7 @@ export interface FileRoutesByFullPath {
   '/vendas/produtos': typeof VendasProdutosRoute
   '/vendas/servicos': typeof VendasServicosRoute
   '/vendas/tabela-precos': typeof VendasTabelaPrecosRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -512,6 +534,8 @@ export interface FileRoutesByTo {
   '/crm/funil-configuracao': typeof CrmFunilConfiguracaoRoute
   '/crm/leads': typeof CrmLeadsRoute
   '/crm/painel': typeof CrmPainelRoute
+  '/crm/whatsapp': typeof CrmWhatsappRoute
+  '/crm/whatsapp-implantacao': typeof CrmWhatsappImplantacaoRoute
   '/financeiro/antecipacoes': typeof FinanceiroAntecipacoesRoute
   '/financeiro/contas-a-pagar': typeof FinanceiroContasAPagarRoute
   '/financeiro/contas-receber': typeof FinanceiroContasReceberRoute
@@ -550,6 +574,7 @@ export interface FileRoutesByTo {
   '/vendas/produtos': typeof VendasProdutosRoute
   '/vendas/servicos': typeof VendasServicosRoute
   '/vendas/tabela-precos': typeof VendasTabelaPrecosRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -581,6 +606,8 @@ export interface FileRoutesById {
   '/crm/funil-configuracao': typeof CrmFunilConfiguracaoRoute
   '/crm/leads': typeof CrmLeadsRoute
   '/crm/painel': typeof CrmPainelRoute
+  '/crm/whatsapp': typeof CrmWhatsappRoute
+  '/crm/whatsapp-implantacao': typeof CrmWhatsappImplantacaoRoute
   '/financeiro/antecipacoes': typeof FinanceiroAntecipacoesRoute
   '/financeiro/contas-a-pagar': typeof FinanceiroContasAPagarRoute
   '/financeiro/contas-receber': typeof FinanceiroContasReceberRoute
@@ -619,6 +646,7 @@ export interface FileRoutesById {
   '/vendas/produtos': typeof VendasProdutosRoute
   '/vendas/servicos': typeof VendasServicosRoute
   '/vendas/tabela-precos': typeof VendasTabelaPrecosRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -651,6 +679,8 @@ export interface FileRouteTypes {
     | '/crm/funil-configuracao'
     | '/crm/leads'
     | '/crm/painel'
+    | '/crm/whatsapp'
+    | '/crm/whatsapp-implantacao'
     | '/financeiro/antecipacoes'
     | '/financeiro/contas-a-pagar'
     | '/financeiro/contas-receber'
@@ -689,6 +719,7 @@ export interface FileRouteTypes {
     | '/vendas/produtos'
     | '/vendas/servicos'
     | '/vendas/tabela-precos'
+    | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -719,6 +750,8 @@ export interface FileRouteTypes {
     | '/crm/funil-configuracao'
     | '/crm/leads'
     | '/crm/painel'
+    | '/crm/whatsapp'
+    | '/crm/whatsapp-implantacao'
     | '/financeiro/antecipacoes'
     | '/financeiro/contas-a-pagar'
     | '/financeiro/contas-receber'
@@ -757,6 +790,7 @@ export interface FileRouteTypes {
     | '/vendas/produtos'
     | '/vendas/servicos'
     | '/vendas/tabela-precos'
+    | '/api/public/whatsapp/webhook'
   id:
     | '__root__'
     | '/'
@@ -787,6 +821,8 @@ export interface FileRouteTypes {
     | '/crm/funil-configuracao'
     | '/crm/leads'
     | '/crm/painel'
+    | '/crm/whatsapp'
+    | '/crm/whatsapp-implantacao'
     | '/financeiro/antecipacoes'
     | '/financeiro/contas-a-pagar'
     | '/financeiro/contas-receber'
@@ -825,6 +861,7 @@ export interface FileRouteTypes {
     | '/vendas/produtos'
     | '/vendas/servicos'
     | '/vendas/tabela-precos'
+    | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -856,6 +893,8 @@ export interface RootRouteChildren {
   CrmFunilConfiguracaoRoute: typeof CrmFunilConfiguracaoRoute
   CrmLeadsRoute: typeof CrmLeadsRoute
   CrmPainelRoute: typeof CrmPainelRoute
+  CrmWhatsappRoute: typeof CrmWhatsappRoute
+  CrmWhatsappImplantacaoRoute: typeof CrmWhatsappImplantacaoRoute
   FinanceiroAntecipacoesRoute: typeof FinanceiroAntecipacoesRoute
   FinanceiroContasAPagarRoute: typeof FinanceiroContasAPagarRoute
   FinanceiroContasReceberRoute: typeof FinanceiroContasReceberRoute
@@ -870,6 +909,7 @@ export interface RootRouteChildren {
   VendasProdutosRoute: typeof VendasProdutosRoute
   VendasServicosRoute: typeof VendasServicosRoute
   VendasTabelaPrecosRoute: typeof VendasTabelaPrecosRoute
+  ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1068,6 +1108,20 @@ declare module '@tanstack/react-router' {
       path: '/crm/painel'
       fullPath: '/crm/painel'
       preLoaderRoute: typeof CrmPainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/whatsapp': {
+      id: '/crm/whatsapp'
+      path: '/crm/whatsapp'
+      fullPath: '/crm/whatsapp'
+      preLoaderRoute: typeof CrmWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/whatsapp-implantacao': {
+      id: '/crm/whatsapp-implantacao'
+      path: '/crm/whatsapp-implantacao'
+      fullPath: '/crm/whatsapp-implantacao'
+      preLoaderRoute: typeof CrmWhatsappImplantacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/financeiro/antecipacoes': {
@@ -1336,6 +1390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendasTabelaPrecosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/whatsapp/webhook': {
+      id: '/api/public/whatsapp/webhook'
+      path: '/api/public/whatsapp/webhook'
+      fullPath: '/api/public/whatsapp/webhook'
+      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1435,6 +1496,8 @@ const rootRouteChildren: RootRouteChildren = {
   CrmFunilConfiguracaoRoute: CrmFunilConfiguracaoRoute,
   CrmLeadsRoute: CrmLeadsRoute,
   CrmPainelRoute: CrmPainelRoute,
+  CrmWhatsappRoute: CrmWhatsappRoute,
+  CrmWhatsappImplantacaoRoute: CrmWhatsappImplantacaoRoute,
   FinanceiroAntecipacoesRoute: FinanceiroAntecipacoesRoute,
   FinanceiroContasAPagarRoute: FinanceiroContasAPagarRoute,
   FinanceiroContasReceberRoute: FinanceiroContasReceberRoute,
@@ -1449,6 +1512,7 @@ const rootRouteChildren: RootRouteChildren = {
   VendasProdutosRoute: VendasProdutosRoute,
   VendasServicosRoute: VendasServicosRoute,
   VendasTabelaPrecosRoute: VendasTabelaPrecosRoute,
+  ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,0 +1,1 @@
+CREATE POLICY "wa_webhook sem acesso app" ON public.whatsapp_webhook_events FOR SELECT TO authenticated USING (false);

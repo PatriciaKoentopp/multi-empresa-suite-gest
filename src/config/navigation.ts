@@ -179,8 +179,16 @@ export const navigationConfig: ModuleNavItem[] = [
         href: "/crm/agenda",
       },
       {
+        title: "WhatsApp",
+        href: "/crm/whatsapp",
+      },
+      {
         title: "Conf. do Funil",
         href: "/crm/funil-configuracao",
+      },
+      {
+        title: "Implantação WhatsApp",
+        href: "/crm/whatsapp-implantacao",
       },
       {
         title: "Marketing",
