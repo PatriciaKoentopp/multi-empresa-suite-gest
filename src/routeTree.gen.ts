@@ -75,6 +75,7 @@ import { Route as VendasPainelVendasRouteImport } from './routes/vendas/painel-v
 import { Route as VendasProdutosRouteImport } from './routes/vendas/produtos'
 import { Route as VendasServicosRouteImport } from './routes/vendas/servicos'
 import { Route as VendasTabelaPrecosRouteImport } from './routes/vendas/tabela-precos'
+import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -414,6 +415,12 @@ const VendasTabelaPrecosRoute = VendasTabelaPrecosRouteImport.update({
   path: '/vendas/tabela-precos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWhatsappWebhookRoute =
+  ApiPublicWhatsappWebhookRouteImport.update({
+    id: '/api/public/whatsapp/webhook',
+    path: '/api/public/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -482,6 +489,7 @@ export interface FileRoutesByFullPath {
   '/vendas/produtos': typeof VendasProdutosRoute
   '/vendas/servicos': typeof VendasServicosRoute
   '/vendas/tabela-precos': typeof VendasTabelaPrecosRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -550,6 +558,7 @@ export interface FileRoutesByTo {
   '/vendas/produtos': typeof VendasProdutosRoute
   '/vendas/servicos': typeof VendasServicosRoute
   '/vendas/tabela-precos': typeof VendasTabelaPrecosRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -619,6 +628,7 @@ export interface FileRoutesById {
   '/vendas/produtos': typeof VendasProdutosRoute
   '/vendas/servicos': typeof VendasServicosRoute
   '/vendas/tabela-precos': typeof VendasTabelaPrecosRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -689,6 +699,7 @@ export interface FileRouteTypes {
     | '/vendas/produtos'
     | '/vendas/servicos'
     | '/vendas/tabela-precos'
+    | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -757,6 +768,7 @@ export interface FileRouteTypes {
     | '/vendas/produtos'
     | '/vendas/servicos'
     | '/vendas/tabela-precos'
+    | '/api/public/whatsapp/webhook'
   id:
     | '__root__'
     | '/'
@@ -825,6 +837,7 @@ export interface FileRouteTypes {
     | '/vendas/produtos'
     | '/vendas/servicos'
     | '/vendas/tabela-precos'
+    | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -870,6 +883,7 @@ export interface RootRouteChildren {
   VendasProdutosRoute: typeof VendasProdutosRoute
   VendasServicosRoute: typeof VendasServicosRoute
   VendasTabelaPrecosRoute: typeof VendasTabelaPrecosRoute
+  ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1336,6 +1350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendasTabelaPrecosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/whatsapp/webhook': {
+      id: '/api/public/whatsapp/webhook'
+      path: '/api/public/whatsapp/webhook'
+      fullPath: '/api/public/whatsapp/webhook'
+      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1449,6 +1470,7 @@ const rootRouteChildren: RootRouteChildren = {
   VendasProdutosRoute: VendasProdutosRoute,
   VendasServicosRoute: VendasServicosRoute,
   VendasTabelaPrecosRoute: VendasTabelaPrecosRoute,
+  ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
