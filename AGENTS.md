@@ -1,0 +1,9 @@
+# Decisões técnicas
+
+- Stack: TanStack Start (migrado do Vite+React Router em 2026-09-28) — rotas em `src/routes/`, uma por página; `__root.tsx` carrega QueryClientProvider > AuthProvider > CompanyProvider + Toasters. Por quê: SSR e rotas de API para receber webhooks (WhatsApp).
+- Navegação: todo código de página importa de `@/lib/router-compat` (shim com API do react-router-dom sobre @tanstack/react-router); não importar `react-router-dom` nem reescrever call sites para a API nativa sem pedido explícito. Por quê: preserva 67 páginas sem reescrita.
+- Proteção de login: `PrivateRoute` em `src/components/auth/private-route.tsx`, aplicado dentro de cada arquivo de rota (não no __root). Por quê: espelha o App.tsx original; rotas públicas: `/login` e `/`.
+- Tema: tokens do design system em `src/styles.css` (Tailwind v4, paleta azul/cinza portada do antigo index.css; tokens sidebar-* duplicados como `--sidebar` e `--sidebar-background`). Por quê: componentes usam ambos os nomes.
+- tsconfig: `strict: true` (exigido pelo TanStack Router); flags extra-strict (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noPropertyAccessFromIndexSignature`, `noImplicitReturns`) desativadas. Por quê: reduzir o volume de ajustes sem perder null-safety.
+- Edge functions: as 5 permanecem no Supabase externo (segredos SERVICE_ROLE_KEY/LOVABLE_API_KEY só existem lá); não migrar para server functions sem antes armazenar os segredos no projeto.
+- Erros SSR: `src/server.ts` + `src/start.ts` + `errorComponent` do `__root.tsx` formam o tratamento de erros; não remover nem substituir o `requestMiddleware`.
