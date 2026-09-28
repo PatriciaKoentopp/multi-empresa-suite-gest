@@ -102,7 +102,7 @@ export default function ContasAPagarPage() {
           createdAt: new Date(conta.created_at),
           updatedAt: new Date(conta.updated_at),
           data: conta.data ? new Date(conta.data) : undefined,
-          saldoInicial: conta.saldo_inicial,
+          saldoInicial: conta.saldo_inicial ?? undefined,
           considerar_saldo: conta.considerar_saldo
         }));
 
