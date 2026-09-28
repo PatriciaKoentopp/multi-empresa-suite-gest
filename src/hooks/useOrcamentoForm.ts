@@ -258,14 +258,15 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
 
   async function carregarServicos() {
     try {
+      if (!currentCompany?.id) return;
       const { data, error } = await supabase
         .from('servicos')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
+        .eq('empresa_id', currentCompany.id)
         .eq('status', 'ativo');
 
       if (error) throw error;
-      setServicosDisponiveis(data || []);
+      setServicosDisponiveis((data || []) as Servico[]);
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
       toast({
@@ -277,10 +278,11 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
 
   async function carregarTabelasPreco() {
     try {
+      if (!currentCompany?.id) return;
       const { data: tabelas, error: tabelasError } = await supabase
         .from('tabelas_precos')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
+        .eq('empresa_id', currentCompany.id)
         .eq('status', 'ativo')
         .lte('vigencia_inicial', new Date().toISOString())
         .gte('vigencia_final', new Date().toISOString());
@@ -294,7 +296,7 @@ export function useOrcamentoForm(orcamentoId?: string, isVisualizacao: boolean =
           .eq('tabela_id', tabelas[0].id);
 
         if (precosError) throw precosError;
-        setPrecosServicos(precos || []);
+        setPrecosServicos((precos || []) as TabelaPrecoItem[]);
       }
     } catch (error) {
       console.error('Erro ao carregar tabelas de preço:', error);
