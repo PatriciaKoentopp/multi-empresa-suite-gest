@@ -249,7 +249,7 @@ export function RecebimentoForm({
           <Label>Data Primeiro Vencimento</Label>
           <DateInput 
             value={dataPrimeiroVenc} 
-            onChange={onDataPrimeiroVencChange}
+            onChange={(d) => onDataPrimeiroVencChange(d ?? undefined)}
             disabled={readOnly}
           />
         </div>

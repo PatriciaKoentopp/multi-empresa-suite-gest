@@ -252,15 +252,15 @@ export default function FluxoCaixaPage() {
       }
 
       // Coletar todos os IDs de favorecidos - incluindo das antecipações
-      const favorecidosIds = [];
+      const favorecidosIds: string[] = [];
       
       // IDs das movimentações normais
       data.filter(item => item.movimentacoes?.favorecido_id)
-        .forEach(item => favorecidosIds.push(item.movimentacoes.favorecido_id));
+        .forEach(item => favorecidosIds.push(item.movimentacoes!.favorecido_id));
       
       // IDs das antecipações
       data.filter(item => item.antecipacoes?.favorecido_id)
-        .forEach(item => favorecidosIds.push(item.antecipacoes.favorecido_id));
+        .forEach(item => favorecidosIds.push(item.antecipacoes!.favorecido_id));
 
       // Buscar os dados dos favorecidos se existirem IDs
       if (favorecidosIds.length > 0) {
@@ -268,7 +268,7 @@ export default function FluxoCaixaPage() {
         const { data: favorecidosData, error: favError } = await supabase
           .from("favorecidos")
           .select("id, nome")
-          .in("id", uniqueIds);
+          .in("id", uniqueIds as string[]);
 
         if (!favError && favorecidosData) {
           const favMap: Record<string, any> = {};
@@ -323,22 +323,22 @@ export default function FluxoCaixaPage() {
       }
 
       // Buscar dados dos orçamentos baseados nos números dos documentos
-      const numerosTitulos = [];
+      const numerosTitulos: string[] = [];
       
       // Coletar números de documentos das movimentações
       data.filter(item => item.movimentacoes?.numero_documento)
-        .forEach(item => numerosTitulos.push(item.movimentacoes.numero_documento));
+        .forEach(item => numerosTitulos.push(item.movimentacoes!.numero_documento));
       
       // Coletar números de documentos das antecipações
       data.filter(item => item.antecipacoes?.numero_documento)
-        .forEach(item => numerosTitulos.push(item.antecipacoes.numero_documento));
+        .forEach(item => numerosTitulos.push(item.antecipacoes!.numero_documento));
 
       if (numerosTitulos.length > 0) {
         const uniqueNumeros = [...new Set(numerosTitulos)];
         const { data: orcamentosData, error: orcError } = await supabase
           .from("orcamentos")
           .select("codigo, numero_nota_fiscal, tipo")
-          .in("codigo", uniqueNumeros)
+          .in("codigo", uniqueNumeros as string[])
           .eq("empresa_id", currentCompany?.id ?? "");
 
         if (!orcError && orcamentosData) {
@@ -658,7 +658,7 @@ export default function FluxoCaixaPage() {
     }
 
     const sucesso = gerarPdfFluxoCaixa(
-      filteredMovimentacoes,
+      filteredMovimentacoes as any,
       currentCompany?.nome_fantasia || currentCompany?.razao_social || "Empresa",
       contaCorrenteSelecionada,
       saldoInicial,

@@ -24,8 +24,8 @@ interface ImpostoRetido {
   id: string;
   nome: string;
   tipo_titulo_id: string;
-  conta_despesa_id?: string;
-  favorecido_id?: string;
+  conta_despesa_id?: string | null;
+  favorecido_id?: string | null;
 }
 
 export function useMovimentacaoDados() {

@@ -66,7 +66,7 @@ export function useRelatorioAntecipacoes() {
       if (error) throw error;
 
       // Buscar nomes dos favorecidos
-      const favorecidoIds = [...new Set(antecipacoesData?.map(a => a.favorecido_id).filter(Boolean))];
+      const favorecidoIds = [...new Set(antecipacoesData?.map(a => a.favorecido_id).filter((id): id is string => Boolean(id)))];
       
       let favorecidosMap: Record<string, string> = {};
       if (favorecidoIds.length > 0) {

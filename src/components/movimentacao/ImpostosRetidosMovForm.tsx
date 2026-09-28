@@ -118,7 +118,7 @@ export function ImpostosRetidosMovForm({
                   <TableCell>
                     <DateInput
                       value={imp.data_vencimento}
-                      onChange={(date) => onDataVencimentoChange(index, date)}
+                      onChange={(date) => onDataVencimentoChange(index, date ?? undefined)}
                       disabled={readOnly}
                     />
                   </TableCell>

@@ -46,7 +46,7 @@ export function ProjetosTimelineCharts({ projetos }: Props) {
 
     projetosValidos.forEach((projeto) => {
       try {
-        const data = projeto.dataVenda instanceof Date ? projeto.dataVenda : parseISO(projeto.dataVenda!);
+        const data = projeto.dataVenda instanceof Date ? projeto.dataVenda : parseISO(projeto.dataVenda as unknown as string);
         const chaveMes = format(data, "yyyy-MM");
         
         if (!projetosPorMes.has(chaveMes)) {

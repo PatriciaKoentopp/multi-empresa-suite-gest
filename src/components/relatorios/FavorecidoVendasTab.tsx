@@ -15,7 +15,7 @@ interface Venda {
   codigo: string;
   data: Date;
   tipo: string;
-  codigo_projeto?: string;
+  codigo_projeto?: string | null;
   valor_total: number;
 }
 

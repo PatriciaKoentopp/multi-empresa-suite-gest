@@ -36,7 +36,7 @@ export const UploadModal = ({ open, onOpenChange, onUploadComplete }: UploadModa
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !currentCompany.id) return;
+    if (!selectedFile || !currentCompany?.id) return;
 
     const uploadId = await parseExcelAndInsert(
       selectedFile,

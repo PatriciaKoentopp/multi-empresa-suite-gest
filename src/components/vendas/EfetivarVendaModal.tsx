@@ -47,7 +47,7 @@ export function EfetivarVendaModal({ open, onClose, orcamento, onSuccess }: Efet
       const { data, error } = await supabase
         .from('tipos_titulos')
         .select('*')
-        .eq('empresa_id', currentCompany?.id)
+        .eq('empresa_id', currentCompany?.id ?? "")
         .eq('tipo', 'receber')
         .eq('status', 'ativo');
 
