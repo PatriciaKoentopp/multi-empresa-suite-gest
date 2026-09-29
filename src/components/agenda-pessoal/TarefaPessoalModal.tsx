@@ -146,7 +146,7 @@ export function TarefaPessoalModal({ open, onOpenChange, tarefa, dataPadrao, pap
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button className="bg-blue-500 hover:bg-blue-600" onClick={handleSalvar} disabled={salvando}>
+          <Button variant="blue" onClick={handleSalvar} disabled={salvando}>
             {salvando ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>
