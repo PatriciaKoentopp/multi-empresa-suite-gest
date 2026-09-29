@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_google_config: {
+        Row: {
+          calendar_id: string
+          created_at: string
+          email: string | null
+          ultima_sync: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calendar_id?: string
+          created_at?: string
+          email?: string | null
+          ultima_sync?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calendar_id?: string
+          created_at?: string
+          email?: string | null
+          ultima_sync?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agenda_metas: {
         Row: {
           created_at: string
@@ -101,6 +128,8 @@ export type Database = {
           data: string
           descricao: string | null
           duracao_min: number
+          google_event_id: string | null
+          google_updated_at: string | null
           hora_fim: string | null
           hora_inicio: string | null
           id: string
@@ -118,6 +147,8 @@ export type Database = {
           data: string
           descricao?: string | null
           duracao_min?: number
+          google_event_id?: string | null
+          google_updated_at?: string | null
           hora_fim?: string | null
           hora_inicio?: string | null
           id?: string
@@ -135,6 +166,8 @@ export type Database = {
           data?: string
           descricao?: string | null
           duracao_min?: number
+          google_event_id?: string | null
+          google_updated_at?: string | null
           hora_fim?: string | null
           hora_inicio?: string | null
           id?: string
@@ -236,6 +269,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      app_user_connections: {
+        Row: {
+          connection_key_ciphertext: string
+          connector_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connection_key_ciphertext: string
+          connector_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connection_key_ciphertext?: string
+          connector_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       contas_correntes: {
         Row: {
