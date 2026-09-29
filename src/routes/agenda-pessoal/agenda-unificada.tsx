@@ -4,7 +4,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import Page from "@/pages/agenda-pessoal/agenda-unificada";
 
 export const Route = createFileRoute("/agenda-pessoal/agenda-unificada")({
-  head: () => ({ meta: [{ title: "Agenda Unificada - Agenda Pessoal" }] }),
+  head: () => ({ meta: [{ title: "Agenda Pessoal" }] }),
   component: () => (
     <PrivateRoute>
       <MainLayout>

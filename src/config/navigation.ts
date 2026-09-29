@@ -238,7 +238,7 @@ export const navigationConfig: ModuleNavItem[] = [
     title: "Agenda Pessoal",
     icon: "CalendarCheck",
     subItems: [
-      { title: "Agenda Unificada", href: "/agenda-pessoal/agenda-unificada" },
+      { title: "Agenda Pessoal", href: "/agenda-pessoal/agenda-unificada" },
       { title: "Planejamento", href: "/agenda-pessoal/planejamento" },
       { title: "Papéis e Metas", href: "/agenda-pessoal/metas" },
       { title: "Painel da Tríade", href: "/agenda-pessoal/painel" },
