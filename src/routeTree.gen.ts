@@ -21,6 +21,7 @@ import { Route as AdminFechamentoMensalRouteImport } from './routes/admin/fecham
 import { Route as AdminParametrosRouteImport } from './routes/admin/parametros'
 import { Route as AdminUsuariosRouteImport } from './routes/admin/usuarios'
 import { Route as AgendaPessoalAgendaUnificadaRouteImport } from './routes/agenda-pessoal/agenda-unificada'
+import { Route as AgendaPessoalGoogleAgendaRouteImport } from './routes/agenda-pessoal/google-agenda'
 import { Route as AgendaPessoalMetasRouteImport } from './routes/agenda-pessoal/metas'
 import { Route as AgendaPessoalPainelRouteImport } from './routes/agenda-pessoal/painel'
 import { Route as AgendaPessoalPlanejamentoRouteImport } from './routes/agenda-pessoal/planejamento'
@@ -81,6 +82,7 @@ import { Route as VendasPainelVendasRouteImport } from './routes/vendas/painel-v
 import { Route as VendasProdutosRouteImport } from './routes/vendas/produtos'
 import { Route as VendasServicosRouteImport } from './routes/vendas/servicos'
 import { Route as VendasTabelaPrecosRouteImport } from './routes/vendas/tabela-precos'
+import { Route as OauthGoogleCalendarReturnRouteImport } from './routes/oauth/google-calendar/return'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -142,6 +144,12 @@ const AgendaPessoalAgendaUnificadaRoute =
   AgendaPessoalAgendaUnificadaRouteImport.update({
     id: '/agenda-pessoal/agenda-unificada',
     path: '/agenda-pessoal/agenda-unificada',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AgendaPessoalGoogleAgendaRoute =
+  AgendaPessoalGoogleAgendaRouteImport.update({
+    id: '/agenda-pessoal/google-agenda',
+    path: '/agenda-pessoal/google-agenda',
     getParentRoute: () => rootRouteImport,
   } as any)
 const AgendaPessoalMetasRoute = AgendaPessoalMetasRouteImport.update({
@@ -453,6 +461,12 @@ const VendasTabelaPrecosRoute = VendasTabelaPrecosRouteImport.update({
   path: '/vendas/tabela-precos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OauthGoogleCalendarReturnRoute =
+  OauthGoogleCalendarReturnRouteImport.update({
+    id: '/oauth/google-calendar/return',
+    path: '/oauth/google-calendar/return',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
@@ -473,6 +487,7 @@ export interface FileRoutesByFullPath {
   '/admin/parametros': typeof AdminParametrosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/agenda-pessoal/agenda-unificada': typeof AgendaPessoalAgendaUnificadaRoute
+  '/agenda-pessoal/google-agenda': typeof AgendaPessoalGoogleAgendaRoute
   '/agenda-pessoal/metas': typeof AgendaPessoalMetasRoute
   '/agenda-pessoal/painel': typeof AgendaPessoalPainelRoute
   '/agenda-pessoal/planejamento': typeof AgendaPessoalPlanejamentoRoute
@@ -533,6 +548,7 @@ export interface FileRoutesByFullPath {
   '/vendas/produtos': typeof VendasProdutosRoute
   '/vendas/servicos': typeof VendasServicosRoute
   '/vendas/tabela-precos': typeof VendasTabelaPrecosRoute
+  '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -548,6 +564,7 @@ export interface FileRoutesByTo {
   '/admin/parametros': typeof AdminParametrosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/agenda-pessoal/agenda-unificada': typeof AgendaPessoalAgendaUnificadaRoute
+  '/agenda-pessoal/google-agenda': typeof AgendaPessoalGoogleAgendaRoute
   '/agenda-pessoal/metas': typeof AgendaPessoalMetasRoute
   '/agenda-pessoal/painel': typeof AgendaPessoalPainelRoute
   '/agenda-pessoal/planejamento': typeof AgendaPessoalPlanejamentoRoute
@@ -608,6 +625,7 @@ export interface FileRoutesByTo {
   '/vendas/produtos': typeof VendasProdutosRoute
   '/vendas/servicos': typeof VendasServicosRoute
   '/vendas/tabela-precos': typeof VendasTabelaPrecosRoute
+  '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesById {
@@ -624,6 +642,7 @@ export interface FileRoutesById {
   '/admin/parametros': typeof AdminParametrosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/agenda-pessoal/agenda-unificada': typeof AgendaPessoalAgendaUnificadaRoute
+  '/agenda-pessoal/google-agenda': typeof AgendaPessoalGoogleAgendaRoute
   '/agenda-pessoal/metas': typeof AgendaPessoalMetasRoute
   '/agenda-pessoal/painel': typeof AgendaPessoalPainelRoute
   '/agenda-pessoal/planejamento': typeof AgendaPessoalPlanejamentoRoute
@@ -684,6 +703,7 @@ export interface FileRoutesById {
   '/vendas/produtos': typeof VendasProdutosRoute
   '/vendas/servicos': typeof VendasServicosRoute
   '/vendas/tabela-precos': typeof VendasTabelaPrecosRoute
+  '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRouteTypes {
@@ -701,6 +721,7 @@ export interface FileRouteTypes {
     | '/admin/parametros'
     | '/admin/usuarios'
     | '/agenda-pessoal/agenda-unificada'
+    | '/agenda-pessoal/google-agenda'
     | '/agenda-pessoal/metas'
     | '/agenda-pessoal/painel'
     | '/agenda-pessoal/planejamento'
@@ -761,6 +782,7 @@ export interface FileRouteTypes {
     | '/vendas/produtos'
     | '/vendas/servicos'
     | '/vendas/tabela-precos'
+    | '/oauth/google-calendar/return'
     | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -776,6 +798,7 @@ export interface FileRouteTypes {
     | '/admin/parametros'
     | '/admin/usuarios'
     | '/agenda-pessoal/agenda-unificada'
+    | '/agenda-pessoal/google-agenda'
     | '/agenda-pessoal/metas'
     | '/agenda-pessoal/painel'
     | '/agenda-pessoal/planejamento'
@@ -836,6 +859,7 @@ export interface FileRouteTypes {
     | '/vendas/produtos'
     | '/vendas/servicos'
     | '/vendas/tabela-precos'
+    | '/oauth/google-calendar/return'
     | '/api/public/whatsapp/webhook'
   id:
     | '__root__'
@@ -851,6 +875,7 @@ export interface FileRouteTypes {
     | '/admin/parametros'
     | '/admin/usuarios'
     | '/agenda-pessoal/agenda-unificada'
+    | '/agenda-pessoal/google-agenda'
     | '/agenda-pessoal/metas'
     | '/agenda-pessoal/painel'
     | '/agenda-pessoal/planejamento'
@@ -911,6 +936,7 @@ export interface FileRouteTypes {
     | '/vendas/produtos'
     | '/vendas/servicos'
     | '/vendas/tabela-precos'
+    | '/oauth/google-calendar/return'
     | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -927,6 +953,7 @@ export interface RootRouteChildren {
   AdminParametrosRoute: typeof AdminParametrosRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AgendaPessoalAgendaUnificadaRoute: typeof AgendaPessoalAgendaUnificadaRoute
+  AgendaPessoalGoogleAgendaRoute: typeof AgendaPessoalGoogleAgendaRoute
   AgendaPessoalMetasRoute: typeof AgendaPessoalMetasRoute
   AgendaPessoalPainelRoute: typeof AgendaPessoalPainelRoute
   AgendaPessoalPlanejamentoRoute: typeof AgendaPessoalPlanejamentoRoute
@@ -963,6 +990,7 @@ export interface RootRouteChildren {
   VendasProdutosRoute: typeof VendasProdutosRoute
   VendasServicosRoute: typeof VendasServicosRoute
   VendasTabelaPrecosRoute: typeof VendasTabelaPrecosRoute
+  OauthGoogleCalendarReturnRoute: typeof OauthGoogleCalendarReturnRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
@@ -1050,6 +1078,13 @@ declare module '@tanstack/react-router' {
       path: '/agenda-pessoal/agenda-unificada'
       fullPath: '/agenda-pessoal/agenda-unificada'
       preLoaderRoute: typeof AgendaPessoalAgendaUnificadaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agenda-pessoal/google-agenda': {
+      id: '/agenda-pessoal/google-agenda'
+      path: '/agenda-pessoal/google-agenda'
+      fullPath: '/agenda-pessoal/google-agenda'
+      preLoaderRoute: typeof AgendaPessoalGoogleAgendaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agenda-pessoal/metas': {
@@ -1472,6 +1507,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendasTabelaPrecosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/oauth/google-calendar/return': {
+      id: '/oauth/google-calendar/return'
+      path: '/oauth/google-calendar/return'
+      fullPath: '/oauth/google-calendar/return'
+      preLoaderRoute: typeof OauthGoogleCalendarReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/whatsapp/webhook': {
       id: '/api/public/whatsapp/webhook'
       path: '/api/public/whatsapp/webhook'
@@ -1562,6 +1604,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminParametrosRoute: AdminParametrosRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   AgendaPessoalAgendaUnificadaRoute: AgendaPessoalAgendaUnificadaRoute,
+  AgendaPessoalGoogleAgendaRoute: AgendaPessoalGoogleAgendaRoute,
   AgendaPessoalMetasRoute: AgendaPessoalMetasRoute,
   AgendaPessoalPainelRoute: AgendaPessoalPainelRoute,
   AgendaPessoalPlanejamentoRoute: AgendaPessoalPlanejamentoRoute,
@@ -1598,6 +1641,7 @@ const rootRouteChildren: RootRouteChildren = {
   VendasProdutosRoute: VendasProdutosRoute,
   VendasServicosRoute: VendasServicosRoute,
   VendasTabelaPrecosRoute: VendasTabelaPrecosRoute,
+  OauthGoogleCalendarReturnRoute: OauthGoogleCalendarReturnRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
