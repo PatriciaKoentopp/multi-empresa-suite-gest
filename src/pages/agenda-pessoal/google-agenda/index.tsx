@@ -121,7 +121,7 @@ export default function GoogleAgendaPage() {
                     <Label>Agenda usada na sincronização</Label>
                     <Select value={st.calendarId} onValueChange={trocarAgenda}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{st.agendas.map((a) => <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>)}</SelectContent>
+                      <SelectContent>{st.agendas.map((a: { id: string; nome: string }) => <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <p className="text-sm">Última sincronização: <span className="font-medium">{fmtDataHora(st.ultimaSync)}</span></p>
