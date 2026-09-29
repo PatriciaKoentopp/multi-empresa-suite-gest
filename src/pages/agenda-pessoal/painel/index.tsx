@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { addMonths, endOfMonth, format, startOfMonth } from "date-fns";
+import { addMonths, differenceInCalendarDays, endOfMonth, format, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,20 @@ export default function PainelTriadePage() {
 
   const dados = useMemo(() => {
     const validas = tarefas.filter((t) => t.status !== "cancelada");
+    const totalMinutosPeriodo = (differenceInCalendarDays(endOfMonth(mes), startOfMonth(mes)) + 1) * 24 * 60;
+    const minutosPorPapel = new Map<string | null, number>();
+    validas.forEach((t) => {
+      const id = papeis.some((p) => p.id === t.papel_id) ? t.papel_id : null;
+      minutosPorPapel.set(id, (minutosPorPapel.get(id) ?? 0) + Math.max(0, t.duracao_min || 0));
+    });
+    const minutosRegistrados = Array.from(minutosPorPapel.values()).reduce((s, n) => s + n, 0);
+    const participacaoPapeis = [
+      ...papeis.map((p) => ({ id: p.id, name: p.nome, cor: p.cor })),
+      { id: null, name: "Sem papel", cor: "var(--chart-5)" },
+    ].map((p) => ({ ...p, minutos: minutosPorPapel.get(p.id) ?? 0 }))
+      .filter((p) => p.minutos > 0)
+      .map((p) => ({ ...p, value: p.minutos / 60 }));
+    participacaoPapeis.push({ id: null, name: "Sem tarefa registrada", cor: "var(--muted-foreground)", minutos: Math.max(0, totalMinutosPeriodo - minutosRegistrados), value: Math.max(0, totalMinutosPeriodo - minutosRegistrados) / 60 });
     const usarDuracao = validas.some((t) => t.duracao_min > 0);
     const peso = (t: (typeof validas)[number]) => (usarDuracao ? t.duracao_min : 1);
     const total = validas.reduce((s, t) => s + peso(t), 0);
@@ -40,10 +54,12 @@ export default function PainelTriadePage() {
       total: validas.length,
       concluidas: validas.filter((t) => t.status === "concluida").length,
       horas: validas.reduce((s, t) => s + t.duracao_min, 0) / 60,
+      participacaoPapeis,
+      totalHorasPeriodo: totalMinutosPeriodo / 60,
       pizza,
       porPapel,
     };
-  }, [tarefas, papeis]);
+  }, [tarefas, papeis, mes]);
 
   const metasAndamento = metas.filter((m) => m.status === "em_andamento");
   const taxa = dados.total ? (dados.concluidas / dados.total) * 100 : 0;
@@ -66,6 +82,32 @@ export default function PainelTriadePage() {
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Horas planejadas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{dados.horas.toFixed(1).replace(".", ",")}h</div></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Metas em andamento</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{metasAndamento.length}</div></CardContent></Card>
       </div>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Participação dos papéis nas horas do período</CardTitle></CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Total do período: {dados.totalHorasPeriodo.toLocaleString("pt-BR")}h</p>
+          <div className="grid items-center gap-4 md:grid-cols-2">
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={dados.participacaoPapeis.filter((p) => p.value > 0)} dataKey="value" nameKey="name" innerRadius={65} outerRadius={100}>
+                  {dados.participacaoPapeis.filter((p) => p.value > 0).map((p) => <Cell key={`${p.id ?? "sem-papel"}-${p.name}`} fill={p.cor} />)}
+                </Pie>
+                <Tooltip formatter={(value: number, name: string) => [`${Number(value).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}h (${(Number(value) / dados.totalHorasPeriodo * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%)`, name]} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="space-y-2">
+              {dados.participacaoPapeis.map((p) => (
+                <div key={`${p.id ?? "sem-papel"}-${p.name}`} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="flex min-w-0 items-center gap-2"><span className="h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: p.cor }} /><span className="break-words">{p.name}</span></span>
+                  <span className="shrink-0 tabular-nums">{p.value.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}h · {(p.value / dados.totalHorasPeriodo * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Horas sem tarefa registrada = horas do mês menos a duração planejada das tarefas não canceladas.</p>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
