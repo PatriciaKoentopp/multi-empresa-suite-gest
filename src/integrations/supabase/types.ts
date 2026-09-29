@@ -14,6 +14,155 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_metas: {
+        Row: {
+          created_at: string
+          data_alvo: string | null
+          descricao: string | null
+          id: string
+          papel_id: string | null
+          progresso: number
+          status: string
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_alvo?: string | null
+          descricao?: string | null
+          id?: string
+          papel_id?: string | null
+          progresso?: number
+          status?: string
+          titulo: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          data_alvo?: string | null
+          descricao?: string | null
+          id?: string
+          papel_id?: string | null
+          progresso?: number
+          status?: string
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_metas_papel_id_fkey"
+            columns: ["papel_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_papeis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_papeis: {
+        Row: {
+          ativo: boolean
+          cor: string
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          cor?: string
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          ativo?: boolean
+          cor?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agenda_tarefas: {
+        Row: {
+          concluida_em: string | null
+          created_at: string
+          data: string
+          descricao: string | null
+          duracao_min: number
+          hora_fim: string | null
+          hora_inicio: string | null
+          id: string
+          meta_id: string | null
+          papel_id: string | null
+          status: string
+          titulo: string
+          triade: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          concluida_em?: string | null
+          created_at?: string
+          data: string
+          descricao?: string | null
+          duracao_min?: number
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          meta_id?: string | null
+          papel_id?: string | null
+          status?: string
+          titulo: string
+          triade?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          concluida_em?: string | null
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          duracao_min?: number
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          meta_id?: string | null
+          papel_id?: string | null
+          status?: string
+          titulo?: string
+          triade?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_tarefas_meta_id_fkey"
+            columns: ["meta_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_metas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_tarefas_papel_id_fkey"
+            columns: ["papel_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_papeis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       antecipacoes: {
         Row: {
           conta_corrente_id: string | null
