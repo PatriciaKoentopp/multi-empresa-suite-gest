@@ -20,6 +20,10 @@ import { Route as AdminEmpresasRouteImport } from './routes/admin/empresas'
 import { Route as AdminFechamentoMensalRouteImport } from './routes/admin/fechamento-mensal'
 import { Route as AdminParametrosRouteImport } from './routes/admin/parametros'
 import { Route as AdminUsuariosRouteImport } from './routes/admin/usuarios'
+import { Route as AgendaPessoalAgendaUnificadaRouteImport } from './routes/agenda-pessoal/agenda-unificada'
+import { Route as AgendaPessoalMetasRouteImport } from './routes/agenda-pessoal/metas'
+import { Route as AgendaPessoalPainelRouteImport } from './routes/agenda-pessoal/painel'
+import { Route as AgendaPessoalPlanejamentoRouteImport } from './routes/agenda-pessoal/planejamento'
 import { Route as CadastrosContaCorrenteRouteImport } from './routes/cadastros/conta-corrente'
 import { Route as CadastrosFavorecidosRouteImport } from './routes/cadastros/favorecidos'
 import { Route as CadastrosGrupoFavorecidosRouteImport } from './routes/cadastros/grupo-favorecidos'
@@ -134,6 +138,28 @@ const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
   path: '/admin/usuarios',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgendaPessoalAgendaUnificadaRoute =
+  AgendaPessoalAgendaUnificadaRouteImport.update({
+    id: '/agenda-pessoal/agenda-unificada',
+    path: '/agenda-pessoal/agenda-unificada',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AgendaPessoalMetasRoute = AgendaPessoalMetasRouteImport.update({
+  id: '/agenda-pessoal/metas',
+  path: '/agenda-pessoal/metas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgendaPessoalPainelRoute = AgendaPessoalPainelRouteImport.update({
+  id: '/agenda-pessoal/painel',
+  path: '/agenda-pessoal/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgendaPessoalPlanejamentoRoute =
+  AgendaPessoalPlanejamentoRouteImport.update({
+    id: '/agenda-pessoal/planejamento',
+    path: '/agenda-pessoal/planejamento',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const CadastrosContaCorrenteRoute = CadastrosContaCorrenteRouteImport.update({
   id: '/cadastros/conta-corrente',
   path: '/cadastros/conta-corrente',
@@ -446,6 +472,10 @@ export interface FileRoutesByFullPath {
   '/admin/fechamento-mensal': typeof AdminFechamentoMensalRoute
   '/admin/parametros': typeof AdminParametrosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/agenda-pessoal/agenda-unificada': typeof AgendaPessoalAgendaUnificadaRoute
+  '/agenda-pessoal/metas': typeof AgendaPessoalMetasRoute
+  '/agenda-pessoal/painel': typeof AgendaPessoalPainelRoute
+  '/agenda-pessoal/planejamento': typeof AgendaPessoalPlanejamentoRoute
   '/cadastros/conta-corrente': typeof CadastrosContaCorrenteRoute
   '/cadastros/favorecidos': typeof CadastrosFavorecidosRoute
   '/cadastros/grupo-favorecidos': typeof CadastrosGrupoFavorecidosRoute
@@ -517,6 +547,10 @@ export interface FileRoutesByTo {
   '/admin/fechamento-mensal': typeof AdminFechamentoMensalRoute
   '/admin/parametros': typeof AdminParametrosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/agenda-pessoal/agenda-unificada': typeof AgendaPessoalAgendaUnificadaRoute
+  '/agenda-pessoal/metas': typeof AgendaPessoalMetasRoute
+  '/agenda-pessoal/painel': typeof AgendaPessoalPainelRoute
+  '/agenda-pessoal/planejamento': typeof AgendaPessoalPlanejamentoRoute
   '/cadastros/conta-corrente': typeof CadastrosContaCorrenteRoute
   '/cadastros/favorecidos': typeof CadastrosFavorecidosRoute
   '/cadastros/grupo-favorecidos': typeof CadastrosGrupoFavorecidosRoute
@@ -589,6 +623,10 @@ export interface FileRoutesById {
   '/admin/fechamento-mensal': typeof AdminFechamentoMensalRoute
   '/admin/parametros': typeof AdminParametrosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/agenda-pessoal/agenda-unificada': typeof AgendaPessoalAgendaUnificadaRoute
+  '/agenda-pessoal/metas': typeof AgendaPessoalMetasRoute
+  '/agenda-pessoal/painel': typeof AgendaPessoalPainelRoute
+  '/agenda-pessoal/planejamento': typeof AgendaPessoalPlanejamentoRoute
   '/cadastros/conta-corrente': typeof CadastrosContaCorrenteRoute
   '/cadastros/favorecidos': typeof CadastrosFavorecidosRoute
   '/cadastros/grupo-favorecidos': typeof CadastrosGrupoFavorecidosRoute
@@ -662,6 +700,10 @@ export interface FileRouteTypes {
     | '/admin/fechamento-mensal'
     | '/admin/parametros'
     | '/admin/usuarios'
+    | '/agenda-pessoal/agenda-unificada'
+    | '/agenda-pessoal/metas'
+    | '/agenda-pessoal/painel'
+    | '/agenda-pessoal/planejamento'
     | '/cadastros/conta-corrente'
     | '/cadastros/favorecidos'
     | '/cadastros/grupo-favorecidos'
@@ -733,6 +775,10 @@ export interface FileRouteTypes {
     | '/admin/fechamento-mensal'
     | '/admin/parametros'
     | '/admin/usuarios'
+    | '/agenda-pessoal/agenda-unificada'
+    | '/agenda-pessoal/metas'
+    | '/agenda-pessoal/painel'
+    | '/agenda-pessoal/planejamento'
     | '/cadastros/conta-corrente'
     | '/cadastros/favorecidos'
     | '/cadastros/grupo-favorecidos'
@@ -804,6 +850,10 @@ export interface FileRouteTypes {
     | '/admin/fechamento-mensal'
     | '/admin/parametros'
     | '/admin/usuarios'
+    | '/agenda-pessoal/agenda-unificada'
+    | '/agenda-pessoal/metas'
+    | '/agenda-pessoal/painel'
+    | '/agenda-pessoal/planejamento'
     | '/cadastros/conta-corrente'
     | '/cadastros/favorecidos'
     | '/cadastros/grupo-favorecidos'
@@ -876,6 +926,10 @@ export interface RootRouteChildren {
   AdminFechamentoMensalRoute: typeof AdminFechamentoMensalRoute
   AdminParametrosRoute: typeof AdminParametrosRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
+  AgendaPessoalAgendaUnificadaRoute: typeof AgendaPessoalAgendaUnificadaRoute
+  AgendaPessoalMetasRoute: typeof AgendaPessoalMetasRoute
+  AgendaPessoalPainelRoute: typeof AgendaPessoalPainelRoute
+  AgendaPessoalPlanejamentoRoute: typeof AgendaPessoalPlanejamentoRoute
   CadastrosContaCorrenteRoute: typeof CadastrosContaCorrenteRoute
   CadastrosFavorecidosRoute: typeof CadastrosFavorecidosRoute
   CadastrosGrupoFavorecidosRoute: typeof CadastrosGrupoFavorecidosRoute
@@ -989,6 +1043,34 @@ declare module '@tanstack/react-router' {
       path: '/admin/usuarios'
       fullPath: '/admin/usuarios'
       preLoaderRoute: typeof AdminUsuariosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agenda-pessoal/agenda-unificada': {
+      id: '/agenda-pessoal/agenda-unificada'
+      path: '/agenda-pessoal/agenda-unificada'
+      fullPath: '/agenda-pessoal/agenda-unificada'
+      preLoaderRoute: typeof AgendaPessoalAgendaUnificadaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agenda-pessoal/metas': {
+      id: '/agenda-pessoal/metas'
+      path: '/agenda-pessoal/metas'
+      fullPath: '/agenda-pessoal/metas'
+      preLoaderRoute: typeof AgendaPessoalMetasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agenda-pessoal/painel': {
+      id: '/agenda-pessoal/painel'
+      path: '/agenda-pessoal/painel'
+      fullPath: '/agenda-pessoal/painel'
+      preLoaderRoute: typeof AgendaPessoalPainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agenda-pessoal/planejamento': {
+      id: '/agenda-pessoal/planejamento'
+      path: '/agenda-pessoal/planejamento'
+      fullPath: '/agenda-pessoal/planejamento'
+      preLoaderRoute: typeof AgendaPessoalPlanejamentoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cadastros/conta-corrente': {
@@ -1479,6 +1561,10 @@ const rootRouteChildren: RootRouteChildren = {
   AdminFechamentoMensalRoute: AdminFechamentoMensalRoute,
   AdminParametrosRoute: AdminParametrosRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
+  AgendaPessoalAgendaUnificadaRoute: AgendaPessoalAgendaUnificadaRoute,
+  AgendaPessoalMetasRoute: AgendaPessoalMetasRoute,
+  AgendaPessoalPainelRoute: AgendaPessoalPainelRoute,
+  AgendaPessoalPlanejamentoRoute: AgendaPessoalPlanejamentoRoute,
   CadastrosContaCorrenteRoute: CadastrosContaCorrenteRoute,
   CadastrosFavorecidosRoute: CadastrosFavorecidosRoute,
   CadastrosGrupoFavorecidosRoute: CadastrosGrupoFavorecidosRoute,
