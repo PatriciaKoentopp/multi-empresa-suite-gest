@@ -303,7 +303,9 @@ export default function LeadsPage() {
       
       // Buscar leads após ter os dados de funis
       if (funisFormatados.length > 0) {
-        await fetchLeads(empresaIdToUse, funisFormatados[0].id, funisFormatados);
+        const prioritarioId = loadPriorityFunilFromStorage(empresaIdToUse);
+        const funilInicialId = (prioritarioId && funisFormatados.find(f => f.id === prioritarioId)?.id) || funisFormatados[0].id;
+        await fetchLeads(empresaIdToUse, funilInicialId, funisFormatados);
       } else {
         setLeads([]);
         toast.error("Nenhum funil encontrado", {
