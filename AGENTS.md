@@ -8,3 +8,4 @@
 - Edge functions: as 5 permanecem no Supabase externo (segredos SERVICE_ROLE_KEY/LOVABLE_API_KEY só existem lá); não migrar para server functions sem antes armazenar os segredos no projeto.
 - Erros SSR: `src/server.ts` + `src/start.ts` + `errorComponent` do `__root.tsx` formam o tratamento de erros; não remover nem substituir o `requestMiddleware`.
 - WhatsApp: cada empresa tem registro em `whatsapp_numeros` (phone_number_id + nome da credencial WHATSAPP_API_KEY[_N]); webhook único em `/api/public/whatsapp/webhook` roteia pela phone_number_id. Por quê: múltiplas empresas no mesmo app com números distintos.
+- Agenda Pessoal: tabelas `agenda_papeis`, `agenda_metas`, `agenda_tarefas` privadas por `user_id` (RLS auth.uid(), sem empresa_id); páginas em `src/pages/agenda-pessoal/*`, hook `useAgendaPessoal`. A Agenda Unificada junta só CRM (leads_interacoes) + tarefas pessoais; Relógio fica separado. Por quê: compromissos pessoais não devem ser visíveis à empresa.
