@@ -46,15 +46,15 @@ export function LeadFechamentoTab({
   const [isSaving, setIsSaving] = useState(false);
 
   // Inicializar estados com base no fechamento recebido
+  // (somente leitura: não devolve nada ao pai, evitando loop)
   useEffect(() => {
     if (fechamento) {
-      console.log("Inicializando com fechamento:", fechamento);
+      const d = fechamento.data instanceof Date && !isNaN(fechamento.data.getTime()) ? fechamento.data : new Date();
       setStatus(fechamento.status);
-      setDate(fechamento.data);
+      setDate(d);
       setDescricao(fechamento.descricao);
       setMotivoPerdaId(fechamento.motivoPerdaId);
     } else {
-      console.log("Sem dados de fechamento, resetando estados");
       setStatus(null);
       setDate(new Date());
       setDescricao("");
@@ -62,30 +62,24 @@ export function LeadFechamentoTab({
     }
   }, [fechamento]);
 
-  // Atualizar o objeto de fechamento quando os valores mudarem
-  useEffect(() => {
-    if (status) {
-      const data = date || new Date();
-      const motivo = status === "perda" ? motivoPerdaId : undefined;
-      // Só atualiza o pai quando algo mudou de fato, evitando loop de atualização
-      if (
-        fechamento &&
-        fechamento.status === status &&
-        fechamento.motivoPerdaId === motivo &&
-        fechamento.descricao === descricao &&
-        fechamento.data?.getTime?.() === data.getTime()
-      ) return;
-      setFechamento({ status, motivoPerdaId: motivo, descricao, data });
-    } else if (fechamento) {
-      setFechamento(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, motivoPerdaId, descricao, date]);
+  // Avisa o pai apenas quando o usuário altera algum campo
+  const atualizarPai = (parcial: Partial<{ status: "sucesso" | "perda" | null; motivoPerdaId: string | undefined; descricao: string; date: Date }>) => {
+    const s = "status" in parcial ? parcial.status : status;
+    if (!s) { setFechamento(null); return; }
+    const motivo = "motivoPerdaId" in parcial ? parcial.motivoPerdaId : motivoPerdaId;
+    setFechamento({
+      status: s,
+      motivoPerdaId: s === "perda" ? motivo : undefined,
+      descricao: parcial.descricao ?? descricao,
+      data: parcial.date ?? date ?? new Date(),
+    });
+  };
 
   // Função para lidar com mudanças na data
   const handleDateChange = (newDate?: Date | null) => {
     if (newDate) {
       setDate(newDate);
+      atualizarPai({ date: newDate });
     }
   };
 
@@ -195,7 +189,7 @@ export function LeadFechamentoTab({
         <Label className="text-base font-medium">Status de Fechamento</Label>
         <RadioGroup
           value={status || ""}
-          onValueChange={(value) => setStatus(value as "sucesso" | "perda")}
+          onValueChange={(value) => { setStatus(value as "sucesso" | "perda"); atualizarPai({ status: value as "sucesso" | "perda" }); }}
           className="flex flex-wrap gap-6 mt-2"
         >
           <div className="flex items-center space-x-2">
@@ -218,7 +212,7 @@ export function LeadFechamentoTab({
           <Label className="text-base font-medium">Motivo da Perda</Label>
           <Select
             value={motivoPerdaId}
-            onValueChange={setMotivoPerdaId}
+            onValueChange={(v) => { setMotivoPerdaId(v); atualizarPai({ motivoPerdaId: v }); }}
           >
             <SelectTrigger className="bg-white">
               <SelectValue placeholder="Selecione o motivo" />
@@ -248,7 +242,7 @@ export function LeadFechamentoTab({
             <Label className="text-base font-medium">Observações</Label>
             <Textarea
               value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
+              onChange={(e) => { setDescricao(e.target.value); atualizarPai({ descricao: e.target.value }); }}
               placeholder={
                 status === "sucesso"
                   ? "Adicione informações sobre a venda..."
