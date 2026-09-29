@@ -24,7 +24,8 @@ import {
   ShoppingBag, 
   User, 
   Users,
-  Clock
+  Clock,
+  CalendarCheck
 } from "lucide-react";
 import { useModulosParametros } from "@/hooks/useModulosParametros";
 
@@ -52,6 +53,7 @@ const renderIcon = (icon?: React.ReactNode | string) => {
       case "HelpCircle": return <HelpCircle className="h-4 w-4" />;
       case "Download": return <Download className="h-4 w-4" />;
       case "Clock": return <Clock className="h-4 w-4" />;
+      case "CalendarCheck": return <CalendarCheck className="h-4 w-4" />;
       default: return <Circle className="h-4 w-4" />;
     }
   }
