@@ -352,7 +352,12 @@ export default function CrmAgenda() {
               <p className="text-sm text-muted-foreground">Nenhuma interação neste dia.</p>
             )}
             {diaSelecionado && (interacoesPorData[format(diaSelecionado, "yyyy-MM-dd")] || []).map((i) => (
-              <InteracaoChip key={i.id} interacao={i} onClick={(id) => { setDiaSelecionado(null); handleNavigateToLead(id); }} />
+              <InteracaoChip key={i.id} interacao={i} onClick={(id) => {
+                // Fecha a janela primeiro e só navega depois que ela terminar de fechar,
+                // evitando o loop de atualização ao abrir o lead na página de leads.
+                setDiaSelecionado(null);
+                setTimeout(() => handleNavigateToLead(id), 250);
+              }} />
             ))}
           </div>
         </DialogContent>
