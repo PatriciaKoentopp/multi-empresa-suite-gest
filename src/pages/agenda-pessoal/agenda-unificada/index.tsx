@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { sincronizarGoogleAgenda } from "@/lib/google-agenda.functions";
 import {
   addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek,
 } from "date-fns";
@@ -31,7 +32,17 @@ export default function AgendaPessoalPage() {
 
   const { papeis } = useAgendaPapeis();
   const { metas } = useAgendaMetas();
-  const { tarefas, salvar, alternarConcluida } = useAgendaTarefas(inicio, fim);
+  const { tarefas, salvar, alternarConcluida, carregar } = useAgendaTarefas(inicio, fim);
+
+  // Traz os eventos do Google Agenda do mês (quando o usuário está conectado)
+  useEffect(() => {
+    let ativo = true;
+    sincronizarGoogleAgenda({ data: { inicio, fim } })
+      .then((r: any) => { if (ativo && r?.conectado) carregar(); })
+      .catch(() => {});
+    return () => { ativo = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inicio, fim]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editando, setEditando] = useState<AgendaTarefa | undefined>();
   const [dataPadrao, setDataPadrao] = useState<string | undefined>();
