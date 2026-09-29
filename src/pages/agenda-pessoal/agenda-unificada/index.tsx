@@ -79,6 +79,12 @@ export default function AgendaPessoalPage() {
       className={`flex items-center gap-1 truncate rounded border px-1 py-0.5 text-[11px] cursor-pointer hover:opacity-80 ${TRIADE_INFO[it.tarefa.triade].chip} ${it.concluido ? "line-through opacity-60" : ""}`}
       title={`${it.titulo} - ${it.subtitulo}`}
     >
+      <Checkbox
+        checked={it.concluido}
+        onCheckedChange={() => alternarConcluida(it.tarefa)}
+        onClick={(e) => e.stopPropagation()}
+        className="h-3 w-3 shrink-0"
+      />
       <User className="h-3 w-3 shrink-0" />
       {it.hora && <span className="font-semibold">{it.hora}</span>}
       <span className="truncate">{it.titulo}</span>
