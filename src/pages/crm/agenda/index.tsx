@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/auth-context";
 import { getIconForInteraction } from "../leads/utils/leadUtils";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   format, 
   startOfMonth, 
@@ -70,13 +71,15 @@ const DayCell = ({
   isCurrentMonth, 
   isTodayDate, 
   interacoes, 
-  onInteracaoClick 
+  onInteracaoClick,
+  onDayClick
 }: { 
   date: Date;
   isCurrentMonth: boolean;
   isTodayDate: boolean;
   interacoes: Interacao[];
   onInteracaoClick: (leadId: string) => void;
+  onDayClick: () => void;
 }) => {
   const maxVisible = 3;
   const hasMore = interacoes.length > maxVisible;
@@ -85,8 +88,9 @@ const DayCell = ({
 
   return (
     <div 
+      onClick={onDayClick}
       className={cn(
-        "min-h-[100px] md:min-h-[120px] border-r border-b p-1 transition-colors",
+        "min-h-[100px] md:min-h-[120px] border-r border-b p-1 transition-colors cursor-pointer hover:bg-muted/40",
         !isCurrentMonth && "bg-muted/30 text-muted-foreground",
         isTodayDate && "bg-blue-50/50"
       )}
@@ -110,7 +114,7 @@ const DayCell = ({
           />
         ))}
         {hasMore && (
-          <span className="text-xs text-muted-foreground pl-1">
+          <span className="text-xs text-blue-600 pl-1 hover:underline">
             +{remaining} mais
           </span>
         )}
@@ -123,6 +127,7 @@ export default function CrmAgenda() {
   const navigate = useNavigate();
   const { userData, isAuthenticated, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [diaSelecionado, setDiaSelecionado] = useState<Date | null>(null);
   const [interacoes, setInteracoes] = useState<Interacao[]>([]);
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [empresaId, setEmpresaId] = useState<string | null>(null);
@@ -173,10 +178,12 @@ export default function CrmAgenda() {
               id,
               nome,
               empresa,
-              empresa_id
+              empresa_id,
+              status
             )
           `)
           .eq("leads.empresa_id", empresaId)
+          .neq("leads.status", "inativo")
           .gte("data", inicioMes)
           .lte("data", fimMes)
           .order("data", { ascending: true });
@@ -315,6 +322,7 @@ export default function CrmAgenda() {
                   isTodayDate={isToday(day)}
                   interacoes={interacoesDoDia}
                   onInteracaoClick={handleNavigateToLead}
+                  onDayClick={() => setDiaSelecionado(day)}
                 />
               );
             })}
@@ -333,6 +341,22 @@ export default function CrmAgenda() {
           <span>Realizado</span>
         </div>
       </div>
+
+      <Dialog open={!!diaSelecionado} onOpenChange={(o) => !o && setDiaSelecionado(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Agenda de {diaSelecionado ? format(diaSelecionado, "dd/MM/yyyy") : ""}</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto space-y-1 pr-1">
+            {diaSelecionado && (interacoesPorData[format(diaSelecionado, "yyyy-MM-dd")] || []).length === 0 && (
+              <p className="text-sm text-muted-foreground">Nenhuma interação neste dia.</p>
+            )}
+            {diaSelecionado && (interacoesPorData[format(diaSelecionado, "yyyy-MM-dd")] || []).map((i) => (
+              <InteracaoChip key={i.id} interacao={i} onClick={(id) => { setDiaSelecionado(null); handleNavigateToLead(id); }} />
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
