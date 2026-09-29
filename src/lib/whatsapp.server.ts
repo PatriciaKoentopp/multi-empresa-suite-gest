@@ -71,18 +71,22 @@ export function dataSP(iso: string): string {
 }
 
 /** Registra mensagem do WhatsApp como interação do lead e atualiza o último contato. */
-export async function registrarInteracaoLead(db: SupabaseClient<any>, leadId: string | null | undefined, direcao: "entrada" | "saida", texto: string, quandoIso: string, responsavelId?: string | null) {
+export async function registrarInteracaoLead(db: SupabaseClient<any>, leadId: string | null | undefined, _direcao: "entrada" | "saida", _texto: string, quandoIso: string, responsavelId?: string | null) {
   if (!leadId) return;
   const data = dataSP(quandoIso);
-  const ins = await db.from("leads_interacoes").insert({
-    lead_id: leadId,
-    tipo: "whatsapp",
-    descricao: `${direcao === "entrada" ? "Recebida" : "Enviada"}: ${texto}`,
-    data,
-    responsavel_id: responsavelId ?? null,
-    status: "Realizado",
-  });
-  if (ins.error) throw ins.error;
+  // Apenas a primeira mensagem gera interação (marca o início da conversa)
+  const { data: existentes } = await db.from("leads_interacoes").select("id").eq("lead_id", leadId).eq("tipo", "whatsapp").limit(1);
+  if (!existentes || existentes.length === 0) {
+    const ins = await db.from("leads_interacoes").insert({
+      lead_id: leadId,
+      tipo: "whatsapp",
+      descricao: "Início da conversa pelo WhatsApp",
+      data,
+      responsavel_id: responsavelId ?? null,
+      status: "Realizado",
+    });
+    if (ins.error) throw ins.error;
+  }
   await db.from("leads").update({ ultimo_contato: data }).eq("id", leadId);
 }
 
