@@ -19,6 +19,7 @@ import { Origem, Usuario, MotivoPerda } from "@/types";
 import { LeadDadosTab } from "./LeadDadosTab";
 import { LeadFechamentoTab } from "./LeadFechamentoTab";
 import { InteracoesTab } from "./components/InteracoesTab";
+import { WhatsappTab } from "./components/WhatsappTab";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "./utils/leadUtils";
 import { toast } from "sonner";
@@ -581,6 +582,14 @@ export function LeadFormModal({
                   >
                     Interações
                   </TabsTrigger>
+                  {lead?.id && (
+                    <TabsTrigger 
+                      value="whatsapp" 
+                      className="pb-2 pt-2 px-4 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:text-blue-700 data-[state=active]:shadow-none data-[state=active]:bg-transparent"
+                    >
+                      WhatsApp
+                    </TabsTrigger>
+                  )}
                   <TabsTrigger 
                     value="fechamento"
                     className="pb-2 pt-2 px-4 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:text-blue-700 data-[state=active]:shadow-none data-[state=active]:bg-transparent"
@@ -621,6 +630,13 @@ export function LeadFormModal({
                     getNomeResponsavel={getNomeResponsavel}
                   />
                 </TabsContent>
+
+                {/* WHATSAPP */}
+                {lead?.id && (
+                  <TabsContent value="whatsapp" className="mt-0">
+                    <WhatsappTab leadId={lead.id} />
+                  </TabsContent>
+                )}
 
                 {/* FECHAMENTO */}
                 <TabsContent value="fechamento" className="p-6 mt-0">
