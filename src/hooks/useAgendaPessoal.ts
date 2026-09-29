@@ -5,6 +5,17 @@ import { toast } from "sonner";
 // Agenda Pessoal: dados privados do usuário logado (RLS por user_id)
 const db = supabase as any;
 
+// Envia a tarefa ao Google Agenda do usuário (ignora quando não está conectado)
+async function enviarGoogle(tarefaId?: string) {
+  if (!tarefaId) return;
+  try {
+    const { enviarTarefaGoogle } = await import("@/lib/google-agenda.functions");
+    await enviarTarefaGoogle({ data: { tarefaId } });
+  } catch (e: any) {
+    toast.error("Não foi possível enviar ao Google Agenda", { description: e.message });
+  }
+}
+
 export type Triade = "importante" | "urgente" | "circunstancial";
 
 export interface AgendaPapel {
@@ -135,11 +146,12 @@ export function useAgendaTarefas(inicio: string, fim: string) {
   useEffect(() => { carregar(); }, [carregar]);
 
   const salvar = async (t: Partial<AgendaTarefa>, id?: string) => {
-    const { error } = id
-      ? await db.from("agenda_tarefas").update(t).eq("id", id)
-      : await db.from("agenda_tarefas").insert(t);
+    const { data, error } = id
+      ? await db.from("agenda_tarefas").update(t).eq("id", id).select("id").single()
+      : await db.from("agenda_tarefas").insert(t).select("id").single();
     if (error) { toast.error("Erro ao salvar tarefa"); return false; }
     toast.success("Tarefa salva");
+    await enviarGoogle(data?.id ?? id);
     await carregar();
     return true;
   };
@@ -151,13 +163,21 @@ export function useAgendaTarefas(inicio: string, fim: string) {
       .update({ status: concluir ? "concluida" : "pendente", concluida_em: concluir ? new Date().toISOString() : null })
       .eq("id", t.id);
     if (error) { toast.error("Erro ao atualizar tarefa"); return; }
+    await enviarGoogle(t.id);
     await carregar();
   };
 
   const excluir = async (id: string) => {
+    const { data: atual } = await db.from("agenda_tarefas").select("google_event_id").eq("id", id).maybeSingle();
     const { error } = await db.from("agenda_tarefas").delete().eq("id", id);
     if (error) { toast.error("Erro ao excluir tarefa"); return; }
     toast.success("Tarefa excluída");
+    if (atual?.google_event_id) {
+      try {
+        const { removerEventoGoogle } = await import("@/lib/google-agenda.functions");
+        await removerEventoGoogle({ data: { googleEventId: atual.google_event_id } });
+      } catch (e: any) { toast.error("Não foi possível remover do Google Agenda", { description: e.message }); }
+    }
     await carregar();
   };
 
