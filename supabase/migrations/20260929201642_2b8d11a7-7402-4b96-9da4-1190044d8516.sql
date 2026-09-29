@@ -1,0 +1,1 @@
+CREATE POLICY "Somente servidor" ON public.app_user_connections FOR SELECT TO authenticated USING (false);
