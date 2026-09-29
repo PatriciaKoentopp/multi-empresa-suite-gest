@@ -65,18 +65,22 @@ export function LeadFechamentoTab({
   // Atualizar o objeto de fechamento quando os valores mudarem
   useEffect(() => {
     if (status) {
-      console.log("Atualizando objeto de fechamento:", { status, date, descricao });
-      setFechamento({
-        status,
-        motivoPerdaId: status === "perda" ? motivoPerdaId : undefined,
-        descricao,
-        data: date || new Date(),
-      });
+      const data = date || new Date();
+      const motivo = status === "perda" ? motivoPerdaId : undefined;
+      // Só atualiza o pai quando algo mudou de fato, evitando loop de atualização
+      if (
+        fechamento &&
+        fechamento.status === status &&
+        fechamento.motivoPerdaId === motivo &&
+        fechamento.descricao === descricao &&
+        fechamento.data?.getTime?.() === data.getTime()
+      ) return;
+      setFechamento({ status, motivoPerdaId: motivo, descricao, data });
     } else if (fechamento) {
-      console.log("Limpando objeto de fechamento");
       setFechamento(null);
     }
-  }, [status, motivoPerdaId, descricao, date, setFechamento, fechamento]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, motivoPerdaId, descricao, date]);
 
   // Função para lidar com mudanças na data
   const handleDateChange = (newDate?: Date | null) => {
