@@ -10,7 +10,7 @@ import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable from "@/lib/autotable";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",

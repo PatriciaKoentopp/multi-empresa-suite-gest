@@ -1,6 +1,6 @@
 
 import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import autoTable from "@/lib/autotable";
 import { formatCurrency } from '@/lib/utils';
 
 interface FluxoCaixaItem {

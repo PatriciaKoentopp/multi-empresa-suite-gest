@@ -14,7 +14,7 @@ import { ptBR } from "date-fns/locale";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { useCompany } from "@/contexts/company-context";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable from "@/lib/autotable";
 import { toast } from "sonner";
 
 

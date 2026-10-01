@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Filter, X, ChevronDown, ChevronUp, FileSpreadsheet, Download } from "lucide-react";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable from "@/lib/autotable";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ContasAPagarTable, ContaPagar } from "@/components/contas-a-pagar/contas-a-pagar-table";
