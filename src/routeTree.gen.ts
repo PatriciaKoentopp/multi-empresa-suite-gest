@@ -13,8 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BackupRouteImport } from './routes/backup'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as RelatoriosRouteImport } from './routes/relatorios'
-import { Route as RelogioRouteImport } from './routes/relogio'
 import { Route as StyleGuideRouteImport } from './routes/style-guide'
 import { Route as AdminEmpresasRouteImport } from './routes/admin/empresas'
 import { Route as AdminFechamentoMensalRouteImport } from './routes/admin/fechamento-mensal'
@@ -51,6 +49,7 @@ import { Route as FinanceiroFluxoCaixaRouteImport } from './routes/financeiro/fl
 import { Route as FinanceiroIncluirMovimentacaoRouteImport } from './routes/financeiro/incluir-movimentacao'
 import { Route as FinanceiroMovimentacaoRouteImport } from './routes/financeiro/movimentacao'
 import { Route as FinanceiroPainelFinanceiroRouteImport } from './routes/financeiro/painel-financeiro'
+import { Route as RelatoriosIndexRouteImport } from './routes/relatorios/index'
 import { Route as RelatoriosAnaliseDreRouteImport } from './routes/relatorios/analise-dre'
 import { Route as RelatoriosAniversariantesRouteImport } from './routes/relatorios/aniversariantes'
 import { Route as RelatoriosAntecipacoesRouteImport } from './routes/relatorios/antecipacoes'
@@ -67,6 +66,7 @@ import { Route as RelatoriosProjetosRouteImport } from './routes/relatorios/proj
 import { Route as RelatoriosRazaoContabilRouteImport } from './routes/relatorios/razao-contabil'
 import { Route as RelatoriosTempoRouteImport } from './routes/relatorios/tempo'
 import { Route as RelatoriosVendasRouteImport } from './routes/relatorios/vendas'
+import { Route as RelogioIndexRouteImport } from './routes/relogio/index'
 import { Route as RelogioApontamentoRouteImport } from './routes/relogio/apontamento'
 import { Route as RelogioHorasPorProjetoRouteImport } from './routes/relogio/horas-por-projeto'
 import { Route as RelogioPainelProjetosRouteImport } from './routes/relogio/painel-projetos'
@@ -103,16 +103,6 @@ const DashboardRoute = DashboardRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RelatoriosRoute = RelatoriosRouteImport.update({
-  id: '/relatorios',
-  path: '/relatorios',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RelogioRoute = RelogioRouteImport.update({
-  id: '/relogio',
-  path: '/relogio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StyleGuideRoute = StyleGuideRouteImport.update({
@@ -302,129 +292,139 @@ const FinanceiroPainelFinanceiroRoute =
     path: '/financeiro/painel-financeiro',
     getParentRoute: () => rootRouteImport,
   } as any)
+const RelatoriosIndexRoute = RelatoriosIndexRouteImport.update({
+  id: '/relatorios/',
+  path: '/relatorios/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RelatoriosAnaliseDreRoute = RelatoriosAnaliseDreRouteImport.update({
-  id: '/analise-dre',
-  path: '/analise-dre',
-  getParentRoute: () => RelatoriosRoute,
+  id: '/relatorios/analise-dre',
+  path: '/relatorios/analise-dre',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosAniversariantesRoute =
   RelatoriosAniversariantesRouteImport.update({
-    id: '/aniversariantes',
-    path: '/aniversariantes',
-    getParentRoute: () => RelatoriosRoute,
+    id: '/relatorios/aniversariantes',
+    path: '/relatorios/aniversariantes',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const RelatoriosAntecipacoesRoute = RelatoriosAntecipacoesRouteImport.update({
-  id: '/antecipacoes',
-  path: '/antecipacoes',
-  getParentRoute: () => RelatoriosRoute,
+  id: '/relatorios/antecipacoes',
+  path: '/relatorios/antecipacoes',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosClassificacaoAbcRoute =
   RelatoriosClassificacaoAbcRouteImport.update({
-    id: '/classificacao-abc',
-    path: '/classificacao-abc',
-    getParentRoute: () => RelatoriosRoute,
+    id: '/relatorios/classificacao-abc',
+    path: '/relatorios/classificacao-abc',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const RelatoriosContasAPagarRoute = RelatoriosContasAPagarRouteImport.update({
-  id: '/contas-a-pagar',
-  path: '/contas-a-pagar',
-  getParentRoute: () => RelatoriosRoute,
+  id: '/relatorios/contas-a-pagar',
+  path: '/relatorios/contas-a-pagar',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosContasAReceberRoute =
   RelatoriosContasAReceberRouteImport.update({
-    id: '/contas-a-receber',
-    path: '/contas-a-receber',
-    getParentRoute: () => RelatoriosRoute,
+    id: '/relatorios/contas-a-receber',
+    path: '/relatorios/contas-a-receber',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const RelatoriosFavorecidoRoute = RelatoriosFavorecidoRouteImport.update({
-  id: '/favorecido',
-  path: '/favorecido',
-  getParentRoute: () => RelatoriosRoute,
+  id: '/relatorios/favorecido',
+  path: '/relatorios/favorecido',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosFinanceiroRoute = RelatoriosFinanceiroRouteImport.update({
-  id: '/financeiro',
-  path: '/financeiro',
-  getParentRoute: () => RelatoriosRoute,
+  id: '/relatorios/financeiro',
+  path: '/relatorios/financeiro',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosFotosRoute = RelatoriosFotosRouteImport.update({
-  id: '/fotos',
-  path: '/fotos',
-  getParentRoute: () => RelatoriosRoute,
+  id: '/relatorios/fotos',
+  path: '/relatorios/fotos',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosLogsRoute = RelatoriosLogsRouteImport.update({
-  id: '/logs',
-  path: '/logs',
-  getParentRoute: () => RelatoriosRoute,
+  id: '/relatorios/logs',
+  path: '/relatorios/logs',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosNotasFiscaisRoute = RelatoriosNotasFiscaisRouteImport.update({
-  id: '/notas-fiscais',
-  path: '/notas-fiscais',
-  getParentRoute: () => RelatoriosRoute,
+  id: '/relatorios/notas-fiscais',
+  path: '/relatorios/notas-fiscais',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosNotasFiscaisRecebidasRoute =
   RelatoriosNotasFiscaisRecebidasRouteImport.update({
-    id: '/notas-fiscais-recebidas',
-    path: '/notas-fiscais-recebidas',
-    getParentRoute: () => RelatoriosRoute,
+    id: '/relatorios/notas-fiscais-recebidas',
+    path: '/relatorios/notas-fiscais-recebidas',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const RelatoriosProjetosRoute = RelatoriosProjetosRouteImport.update({
-  id: '/projetos',
-  path: '/projetos',
-  getParentRoute: () => RelatoriosRoute,
+  id: '/relatorios/projetos',
+  path: '/relatorios/projetos',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosRazaoContabilRoute = RelatoriosRazaoContabilRouteImport.update({
-  id: '/razao-contabil',
-  path: '/razao-contabil',
-  getParentRoute: () => RelatoriosRoute,
+  id: '/relatorios/razao-contabil',
+  path: '/relatorios/razao-contabil',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosTempoRoute = RelatoriosTempoRouteImport.update({
-  id: '/tempo',
-  path: '/tempo',
-  getParentRoute: () => RelatoriosRoute,
+  id: '/relatorios/tempo',
+  path: '/relatorios/tempo',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosVendasRoute = RelatoriosVendasRouteImport.update({
-  id: '/vendas',
-  path: '/vendas',
-  getParentRoute: () => RelatoriosRoute,
+  id: '/relatorios/vendas',
+  path: '/relatorios/vendas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelogioIndexRoute = RelogioIndexRouteImport.update({
+  id: '/relogio/',
+  path: '/relogio/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelogioApontamentoRoute = RelogioApontamentoRouteImport.update({
-  id: '/apontamento',
-  path: '/apontamento',
-  getParentRoute: () => RelogioRoute,
+  id: '/relogio/apontamento',
+  path: '/relogio/apontamento',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelogioHorasPorProjetoRoute = RelogioHorasPorProjetoRouteImport.update({
-  id: '/horas-por-projeto',
-  path: '/horas-por-projeto',
-  getParentRoute: () => RelogioRoute,
+  id: '/relogio/horas-por-projeto',
+  path: '/relogio/horas-por-projeto',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelogioPainelProjetosRoute = RelogioPainelProjetosRouteImport.update({
-  id: '/painel-projetos',
-  path: '/painel-projetos',
-  getParentRoute: () => RelogioRoute,
+  id: '/relogio/painel-projetos',
+  path: '/relogio/painel-projetos',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelogioPainelTempoRoute = RelogioPainelTempoRouteImport.update({
-  id: '/painel-tempo',
-  path: '/painel-tempo',
-  getParentRoute: () => RelogioRoute,
+  id: '/relogio/painel-tempo',
+  path: '/relogio/painel-tempo',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelogioPlanilhaFotosRoute = RelogioPlanilhaFotosRouteImport.update({
-  id: '/planilha-fotos',
-  path: '/planilha-fotos',
-  getParentRoute: () => RelogioRoute,
+  id: '/relogio/planilha-fotos',
+  path: '/relogio/planilha-fotos',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelogioProjetosRoute = RelogioProjetosRouteImport.update({
-  id: '/projetos',
-  path: '/projetos',
-  getParentRoute: () => RelogioRoute,
+  id: '/relogio/projetos',
+  path: '/relogio/projetos',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelogioTiposProjetoRoute = RelogioTiposProjetoRouteImport.update({
-  id: '/tipos-projeto',
-  path: '/tipos-projeto',
-  getParentRoute: () => RelogioRoute,
+  id: '/relogio/tipos-projeto',
+  path: '/relogio/tipos-projeto',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RelogioVisualizacaoRoute = RelogioVisualizacaoRouteImport.update({
-  id: '/visualizacao',
-  path: '/visualizacao',
-  getParentRoute: () => RelogioRoute,
+  id: '/relogio/visualizacao',
+  path: '/relogio/visualizacao',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const VendasContratosRoute = VendasContratosRouteImport.update({
   id: '/vendas/contratos',
@@ -479,8 +479,6 @@ export interface FileRoutesByFullPath {
   '/backup': typeof BackupRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/relatorios': typeof RelatoriosRouteWithChildren
-  '/relogio': typeof RelogioRouteWithChildren
   '/style-guide': typeof StyleGuideRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/fechamento-mensal': typeof AdminFechamentoMensalRoute
@@ -548,6 +546,8 @@ export interface FileRoutesByFullPath {
   '/vendas/produtos': typeof VendasProdutosRoute
   '/vendas/servicos': typeof VendasServicosRoute
   '/vendas/tabela-precos': typeof VendasTabelaPrecosRoute
+  '/relatorios/': typeof RelatoriosIndexRoute
+  '/relogio/': typeof RelogioIndexRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
@@ -556,8 +556,6 @@ export interface FileRoutesByTo {
   '/backup': typeof BackupRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/relatorios': typeof RelatoriosRouteWithChildren
-  '/relogio': typeof RelogioRouteWithChildren
   '/style-guide': typeof StyleGuideRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/fechamento-mensal': typeof AdminFechamentoMensalRoute
@@ -625,6 +623,8 @@ export interface FileRoutesByTo {
   '/vendas/produtos': typeof VendasProdutosRoute
   '/vendas/servicos': typeof VendasServicosRoute
   '/vendas/tabela-precos': typeof VendasTabelaPrecosRoute
+  '/relatorios': typeof RelatoriosIndexRoute
+  '/relogio': typeof RelogioIndexRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
@@ -634,8 +634,6 @@ export interface FileRoutesById {
   '/backup': typeof BackupRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/relatorios': typeof RelatoriosRouteWithChildren
-  '/relogio': typeof RelogioRouteWithChildren
   '/style-guide': typeof StyleGuideRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/fechamento-mensal': typeof AdminFechamentoMensalRoute
@@ -703,6 +701,8 @@ export interface FileRoutesById {
   '/vendas/produtos': typeof VendasProdutosRoute
   '/vendas/servicos': typeof VendasServicosRoute
   '/vendas/tabela-precos': typeof VendasTabelaPrecosRoute
+  '/relatorios/': typeof RelatoriosIndexRoute
+  '/relogio/': typeof RelogioIndexRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
@@ -713,8 +713,6 @@ export interface FileRouteTypes {
     | '/backup'
     | '/dashboard'
     | '/login'
-    | '/relatorios'
-    | '/relogio'
     | '/style-guide'
     | '/admin/empresas'
     | '/admin/fechamento-mensal'
@@ -782,6 +780,8 @@ export interface FileRouteTypes {
     | '/vendas/produtos'
     | '/vendas/servicos'
     | '/vendas/tabela-precos'
+    | '/relatorios/'
+    | '/relogio/'
     | '/oauth/google-calendar/return'
     | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -790,8 +790,6 @@ export interface FileRouteTypes {
     | '/backup'
     | '/dashboard'
     | '/login'
-    | '/relatorios'
-    | '/relogio'
     | '/style-guide'
     | '/admin/empresas'
     | '/admin/fechamento-mensal'
@@ -859,6 +857,8 @@ export interface FileRouteTypes {
     | '/vendas/produtos'
     | '/vendas/servicos'
     | '/vendas/tabela-precos'
+    | '/relatorios'
+    | '/relogio'
     | '/oauth/google-calendar/return'
     | '/api/public/whatsapp/webhook'
   id:
@@ -867,8 +867,6 @@ export interface FileRouteTypes {
     | '/backup'
     | '/dashboard'
     | '/login'
-    | '/relatorios'
-    | '/relogio'
     | '/style-guide'
     | '/admin/empresas'
     | '/admin/fechamento-mensal'
@@ -936,6 +934,8 @@ export interface FileRouteTypes {
     | '/vendas/produtos'
     | '/vendas/servicos'
     | '/vendas/tabela-precos'
+    | '/relatorios/'
+    | '/relogio/'
     | '/oauth/google-calendar/return'
     | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
@@ -945,8 +945,6 @@ export interface RootRouteChildren {
   BackupRoute: typeof BackupRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
-  RelatoriosRoute: typeof RelatoriosRouteWithChildren
-  RelogioRoute: typeof RelogioRouteWithChildren
   StyleGuideRoute: typeof StyleGuideRoute
   AdminEmpresasRoute: typeof AdminEmpresasRoute
   AdminFechamentoMensalRoute: typeof AdminFechamentoMensalRoute
@@ -983,6 +981,30 @@ export interface RootRouteChildren {
   FinanceiroIncluirMovimentacaoRoute: typeof FinanceiroIncluirMovimentacaoRoute
   FinanceiroMovimentacaoRoute: typeof FinanceiroMovimentacaoRoute
   FinanceiroPainelFinanceiroRoute: typeof FinanceiroPainelFinanceiroRoute
+  RelatoriosAnaliseDreRoute: typeof RelatoriosAnaliseDreRoute
+  RelatoriosAniversariantesRoute: typeof RelatoriosAniversariantesRoute
+  RelatoriosAntecipacoesRoute: typeof RelatoriosAntecipacoesRoute
+  RelatoriosClassificacaoAbcRoute: typeof RelatoriosClassificacaoAbcRoute
+  RelatoriosContasAPagarRoute: typeof RelatoriosContasAPagarRoute
+  RelatoriosContasAReceberRoute: typeof RelatoriosContasAReceberRoute
+  RelatoriosFavorecidoRoute: typeof RelatoriosFavorecidoRoute
+  RelatoriosFinanceiroRoute: typeof RelatoriosFinanceiroRoute
+  RelatoriosFotosRoute: typeof RelatoriosFotosRoute
+  RelatoriosLogsRoute: typeof RelatoriosLogsRoute
+  RelatoriosNotasFiscaisRoute: typeof RelatoriosNotasFiscaisRoute
+  RelatoriosNotasFiscaisRecebidasRoute: typeof RelatoriosNotasFiscaisRecebidasRoute
+  RelatoriosProjetosRoute: typeof RelatoriosProjetosRoute
+  RelatoriosRazaoContabilRoute: typeof RelatoriosRazaoContabilRoute
+  RelatoriosTempoRoute: typeof RelatoriosTempoRoute
+  RelatoriosVendasRoute: typeof RelatoriosVendasRoute
+  RelogioApontamentoRoute: typeof RelogioApontamentoRoute
+  RelogioHorasPorProjetoRoute: typeof RelogioHorasPorProjetoRoute
+  RelogioPainelProjetosRoute: typeof RelogioPainelProjetosRoute
+  RelogioPainelTempoRoute: typeof RelogioPainelTempoRoute
+  RelogioPlanilhaFotosRoute: typeof RelogioPlanilhaFotosRoute
+  RelogioProjetosRoute: typeof RelogioProjetosRoute
+  RelogioTiposProjetoRoute: typeof RelogioTiposProjetoRoute
+  RelogioVisualizacaoRoute: typeof RelogioVisualizacaoRoute
   VendasContratosRoute: typeof VendasContratosRoute
   VendasFaturamentoRoute: typeof VendasFaturamentoRoute
   VendasOrcamentoRoute: typeof VendasOrcamentoRoute
@@ -990,6 +1012,8 @@ export interface RootRouteChildren {
   VendasProdutosRoute: typeof VendasProdutosRoute
   VendasServicosRoute: typeof VendasServicosRoute
   VendasTabelaPrecosRoute: typeof VendasTabelaPrecosRoute
+  RelatoriosIndexRoute: typeof RelatoriosIndexRoute
+  RelogioIndexRoute: typeof RelogioIndexRoute
   OauthGoogleCalendarReturnRoute: typeof OauthGoogleCalendarReturnRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
@@ -1022,20 +1046,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/relatorios': {
-      id: '/relatorios'
-      path: '/relatorios'
-      fullPath: '/relatorios'
-      preLoaderRoute: typeof RelatoriosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/relogio': {
-      id: '/relogio'
-      path: '/relogio'
-      fullPath: '/relogio'
-      preLoaderRoute: typeof RelogioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/style-guide': {
@@ -1290,173 +1300,187 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FinanceiroPainelFinanceiroRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/relatorios/': {
+      id: '/relatorios/'
+      path: '/relatorios'
+      fullPath: '/relatorios/'
+      preLoaderRoute: typeof RelatoriosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/relatorios/analise-dre': {
       id: '/relatorios/analise-dre'
-      path: '/analise-dre'
+      path: '/relatorios/analise-dre'
       fullPath: '/relatorios/analise-dre'
       preLoaderRoute: typeof RelatoriosAnaliseDreRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/aniversariantes': {
       id: '/relatorios/aniversariantes'
-      path: '/aniversariantes'
+      path: '/relatorios/aniversariantes'
       fullPath: '/relatorios/aniversariantes'
       preLoaderRoute: typeof RelatoriosAniversariantesRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/antecipacoes': {
       id: '/relatorios/antecipacoes'
-      path: '/antecipacoes'
+      path: '/relatorios/antecipacoes'
       fullPath: '/relatorios/antecipacoes'
       preLoaderRoute: typeof RelatoriosAntecipacoesRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/classificacao-abc': {
       id: '/relatorios/classificacao-abc'
-      path: '/classificacao-abc'
+      path: '/relatorios/classificacao-abc'
       fullPath: '/relatorios/classificacao-abc'
       preLoaderRoute: typeof RelatoriosClassificacaoAbcRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/contas-a-pagar': {
       id: '/relatorios/contas-a-pagar'
-      path: '/contas-a-pagar'
+      path: '/relatorios/contas-a-pagar'
       fullPath: '/relatorios/contas-a-pagar'
       preLoaderRoute: typeof RelatoriosContasAPagarRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/contas-a-receber': {
       id: '/relatorios/contas-a-receber'
-      path: '/contas-a-receber'
+      path: '/relatorios/contas-a-receber'
       fullPath: '/relatorios/contas-a-receber'
       preLoaderRoute: typeof RelatoriosContasAReceberRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/favorecido': {
       id: '/relatorios/favorecido'
-      path: '/favorecido'
+      path: '/relatorios/favorecido'
       fullPath: '/relatorios/favorecido'
       preLoaderRoute: typeof RelatoriosFavorecidoRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/financeiro': {
       id: '/relatorios/financeiro'
-      path: '/financeiro'
+      path: '/relatorios/financeiro'
       fullPath: '/relatorios/financeiro'
       preLoaderRoute: typeof RelatoriosFinanceiroRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/fotos': {
       id: '/relatorios/fotos'
-      path: '/fotos'
+      path: '/relatorios/fotos'
       fullPath: '/relatorios/fotos'
       preLoaderRoute: typeof RelatoriosFotosRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/logs': {
       id: '/relatorios/logs'
-      path: '/logs'
+      path: '/relatorios/logs'
       fullPath: '/relatorios/logs'
       preLoaderRoute: typeof RelatoriosLogsRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/notas-fiscais': {
       id: '/relatorios/notas-fiscais'
-      path: '/notas-fiscais'
+      path: '/relatorios/notas-fiscais'
       fullPath: '/relatorios/notas-fiscais'
       preLoaderRoute: typeof RelatoriosNotasFiscaisRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/notas-fiscais-recebidas': {
       id: '/relatorios/notas-fiscais-recebidas'
-      path: '/notas-fiscais-recebidas'
+      path: '/relatorios/notas-fiscais-recebidas'
       fullPath: '/relatorios/notas-fiscais-recebidas'
       preLoaderRoute: typeof RelatoriosNotasFiscaisRecebidasRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/projetos': {
       id: '/relatorios/projetos'
-      path: '/projetos'
+      path: '/relatorios/projetos'
       fullPath: '/relatorios/projetos'
       preLoaderRoute: typeof RelatoriosProjetosRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/razao-contabil': {
       id: '/relatorios/razao-contabil'
-      path: '/razao-contabil'
+      path: '/relatorios/razao-contabil'
       fullPath: '/relatorios/razao-contabil'
       preLoaderRoute: typeof RelatoriosRazaoContabilRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/tempo': {
       id: '/relatorios/tempo'
-      path: '/tempo'
+      path: '/relatorios/tempo'
       fullPath: '/relatorios/tempo'
       preLoaderRoute: typeof RelatoriosTempoRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relatorios/vendas': {
       id: '/relatorios/vendas'
-      path: '/vendas'
+      path: '/relatorios/vendas'
       fullPath: '/relatorios/vendas'
       preLoaderRoute: typeof RelatoriosVendasRouteImport
-      parentRoute: typeof RelatoriosRoute
+      parentRoute: typeof rootRouteImport
+    }
+    '/relogio/': {
+      id: '/relogio/'
+      path: '/relogio'
+      fullPath: '/relogio/'
+      preLoaderRoute: typeof RelogioIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/relogio/apontamento': {
       id: '/relogio/apontamento'
-      path: '/apontamento'
+      path: '/relogio/apontamento'
       fullPath: '/relogio/apontamento'
       preLoaderRoute: typeof RelogioApontamentoRouteImport
-      parentRoute: typeof RelogioRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relogio/horas-por-projeto': {
       id: '/relogio/horas-por-projeto'
-      path: '/horas-por-projeto'
+      path: '/relogio/horas-por-projeto'
       fullPath: '/relogio/horas-por-projeto'
       preLoaderRoute: typeof RelogioHorasPorProjetoRouteImport
-      parentRoute: typeof RelogioRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relogio/painel-projetos': {
       id: '/relogio/painel-projetos'
-      path: '/painel-projetos'
+      path: '/relogio/painel-projetos'
       fullPath: '/relogio/painel-projetos'
       preLoaderRoute: typeof RelogioPainelProjetosRouteImport
-      parentRoute: typeof RelogioRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relogio/painel-tempo': {
       id: '/relogio/painel-tempo'
-      path: '/painel-tempo'
+      path: '/relogio/painel-tempo'
       fullPath: '/relogio/painel-tempo'
       preLoaderRoute: typeof RelogioPainelTempoRouteImport
-      parentRoute: typeof RelogioRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relogio/planilha-fotos': {
       id: '/relogio/planilha-fotos'
-      path: '/planilha-fotos'
+      path: '/relogio/planilha-fotos'
       fullPath: '/relogio/planilha-fotos'
       preLoaderRoute: typeof RelogioPlanilhaFotosRouteImport
-      parentRoute: typeof RelogioRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relogio/projetos': {
       id: '/relogio/projetos'
-      path: '/projetos'
+      path: '/relogio/projetos'
       fullPath: '/relogio/projetos'
       preLoaderRoute: typeof RelogioProjetosRouteImport
-      parentRoute: typeof RelogioRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relogio/tipos-projeto': {
       id: '/relogio/tipos-projeto'
-      path: '/tipos-projeto'
+      path: '/relogio/tipos-projeto'
       fullPath: '/relogio/tipos-projeto'
       preLoaderRoute: typeof RelogioTiposProjetoRouteImport
-      parentRoute: typeof RelogioRoute
+      parentRoute: typeof rootRouteImport
     }
     '/relogio/visualizacao': {
       id: '/relogio/visualizacao'
-      path: '/visualizacao'
+      path: '/relogio/visualizacao'
       fullPath: '/relogio/visualizacao'
       preLoaderRoute: typeof RelogioVisualizacaoRouteImport
-      parentRoute: typeof RelogioRoute
+      parentRoute: typeof rootRouteImport
     }
     '/vendas/contratos': {
       id: '/vendas/contratos'
@@ -1524,80 +1548,11 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface RelatoriosRouteChildren {
-  RelatoriosAnaliseDreRoute: typeof RelatoriosAnaliseDreRoute
-  RelatoriosAniversariantesRoute: typeof RelatoriosAniversariantesRoute
-  RelatoriosAntecipacoesRoute: typeof RelatoriosAntecipacoesRoute
-  RelatoriosClassificacaoAbcRoute: typeof RelatoriosClassificacaoAbcRoute
-  RelatoriosContasAPagarRoute: typeof RelatoriosContasAPagarRoute
-  RelatoriosContasAReceberRoute: typeof RelatoriosContasAReceberRoute
-  RelatoriosFavorecidoRoute: typeof RelatoriosFavorecidoRoute
-  RelatoriosFinanceiroRoute: typeof RelatoriosFinanceiroRoute
-  RelatoriosFotosRoute: typeof RelatoriosFotosRoute
-  RelatoriosLogsRoute: typeof RelatoriosLogsRoute
-  RelatoriosNotasFiscaisRoute: typeof RelatoriosNotasFiscaisRoute
-  RelatoriosNotasFiscaisRecebidasRoute: typeof RelatoriosNotasFiscaisRecebidasRoute
-  RelatoriosProjetosRoute: typeof RelatoriosProjetosRoute
-  RelatoriosRazaoContabilRoute: typeof RelatoriosRazaoContabilRoute
-  RelatoriosTempoRoute: typeof RelatoriosTempoRoute
-  RelatoriosVendasRoute: typeof RelatoriosVendasRoute
-}
-
-const RelatoriosRouteChildren: RelatoriosRouteChildren = {
-  RelatoriosAnaliseDreRoute: RelatoriosAnaliseDreRoute,
-  RelatoriosAniversariantesRoute: RelatoriosAniversariantesRoute,
-  RelatoriosAntecipacoesRoute: RelatoriosAntecipacoesRoute,
-  RelatoriosClassificacaoAbcRoute: RelatoriosClassificacaoAbcRoute,
-  RelatoriosContasAPagarRoute: RelatoriosContasAPagarRoute,
-  RelatoriosContasAReceberRoute: RelatoriosContasAReceberRoute,
-  RelatoriosFavorecidoRoute: RelatoriosFavorecidoRoute,
-  RelatoriosFinanceiroRoute: RelatoriosFinanceiroRoute,
-  RelatoriosFotosRoute: RelatoriosFotosRoute,
-  RelatoriosLogsRoute: RelatoriosLogsRoute,
-  RelatoriosNotasFiscaisRoute: RelatoriosNotasFiscaisRoute,
-  RelatoriosNotasFiscaisRecebidasRoute: RelatoriosNotasFiscaisRecebidasRoute,
-  RelatoriosProjetosRoute: RelatoriosProjetosRoute,
-  RelatoriosRazaoContabilRoute: RelatoriosRazaoContabilRoute,
-  RelatoriosTempoRoute: RelatoriosTempoRoute,
-  RelatoriosVendasRoute: RelatoriosVendasRoute,
-}
-
-const RelatoriosRouteWithChildren = RelatoriosRoute._addFileChildren(
-  RelatoriosRouteChildren,
-)
-
-interface RelogioRouteChildren {
-  RelogioApontamentoRoute: typeof RelogioApontamentoRoute
-  RelogioHorasPorProjetoRoute: typeof RelogioHorasPorProjetoRoute
-  RelogioPainelProjetosRoute: typeof RelogioPainelProjetosRoute
-  RelogioPainelTempoRoute: typeof RelogioPainelTempoRoute
-  RelogioPlanilhaFotosRoute: typeof RelogioPlanilhaFotosRoute
-  RelogioProjetosRoute: typeof RelogioProjetosRoute
-  RelogioTiposProjetoRoute: typeof RelogioTiposProjetoRoute
-  RelogioVisualizacaoRoute: typeof RelogioVisualizacaoRoute
-}
-
-const RelogioRouteChildren: RelogioRouteChildren = {
-  RelogioApontamentoRoute: RelogioApontamentoRoute,
-  RelogioHorasPorProjetoRoute: RelogioHorasPorProjetoRoute,
-  RelogioPainelProjetosRoute: RelogioPainelProjetosRoute,
-  RelogioPainelTempoRoute: RelogioPainelTempoRoute,
-  RelogioPlanilhaFotosRoute: RelogioPlanilhaFotosRoute,
-  RelogioProjetosRoute: RelogioProjetosRoute,
-  RelogioTiposProjetoRoute: RelogioTiposProjetoRoute,
-  RelogioVisualizacaoRoute: RelogioVisualizacaoRoute,
-}
-
-const RelogioRouteWithChildren =
-  RelogioRoute._addFileChildren(RelogioRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BackupRoute: BackupRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
-  RelatoriosRoute: RelatoriosRouteWithChildren,
-  RelogioRoute: RelogioRouteWithChildren,
   StyleGuideRoute: StyleGuideRoute,
   AdminEmpresasRoute: AdminEmpresasRoute,
   AdminFechamentoMensalRoute: AdminFechamentoMensalRoute,
@@ -1634,6 +1589,30 @@ const rootRouteChildren: RootRouteChildren = {
   FinanceiroIncluirMovimentacaoRoute: FinanceiroIncluirMovimentacaoRoute,
   FinanceiroMovimentacaoRoute: FinanceiroMovimentacaoRoute,
   FinanceiroPainelFinanceiroRoute: FinanceiroPainelFinanceiroRoute,
+  RelatoriosAnaliseDreRoute: RelatoriosAnaliseDreRoute,
+  RelatoriosAniversariantesRoute: RelatoriosAniversariantesRoute,
+  RelatoriosAntecipacoesRoute: RelatoriosAntecipacoesRoute,
+  RelatoriosClassificacaoAbcRoute: RelatoriosClassificacaoAbcRoute,
+  RelatoriosContasAPagarRoute: RelatoriosContasAPagarRoute,
+  RelatoriosContasAReceberRoute: RelatoriosContasAReceberRoute,
+  RelatoriosFavorecidoRoute: RelatoriosFavorecidoRoute,
+  RelatoriosFinanceiroRoute: RelatoriosFinanceiroRoute,
+  RelatoriosFotosRoute: RelatoriosFotosRoute,
+  RelatoriosLogsRoute: RelatoriosLogsRoute,
+  RelatoriosNotasFiscaisRoute: RelatoriosNotasFiscaisRoute,
+  RelatoriosNotasFiscaisRecebidasRoute: RelatoriosNotasFiscaisRecebidasRoute,
+  RelatoriosProjetosRoute: RelatoriosProjetosRoute,
+  RelatoriosRazaoContabilRoute: RelatoriosRazaoContabilRoute,
+  RelatoriosTempoRoute: RelatoriosTempoRoute,
+  RelatoriosVendasRoute: RelatoriosVendasRoute,
+  RelogioApontamentoRoute: RelogioApontamentoRoute,
+  RelogioHorasPorProjetoRoute: RelogioHorasPorProjetoRoute,
+  RelogioPainelProjetosRoute: RelogioPainelProjetosRoute,
+  RelogioPainelTempoRoute: RelogioPainelTempoRoute,
+  RelogioPlanilhaFotosRoute: RelogioPlanilhaFotosRoute,
+  RelogioProjetosRoute: RelogioProjetosRoute,
+  RelogioTiposProjetoRoute: RelogioTiposProjetoRoute,
+  RelogioVisualizacaoRoute: RelogioVisualizacaoRoute,
   VendasContratosRoute: VendasContratosRoute,
   VendasFaturamentoRoute: VendasFaturamentoRoute,
   VendasOrcamentoRoute: VendasOrcamentoRoute,
@@ -1641,6 +1620,8 @@ const rootRouteChildren: RootRouteChildren = {
   VendasProdutosRoute: VendasProdutosRoute,
   VendasServicosRoute: VendasServicosRoute,
   VendasTabelaPrecosRoute: VendasTabelaPrecosRoute,
+  RelatoriosIndexRoute: RelatoriosIndexRoute,
+  RelogioIndexRoute: RelogioIndexRoute,
   OauthGoogleCalendarReturnRoute: OauthGoogleCalendarReturnRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
