@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronLeft, ChevronRight, EllipsisVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, EllipsisVertical, Pencil, PlusCircle, Repeat, Trash2 } from "lucide-react";
 import {
   AgendaTarefa, TRIADE_INFO, Triade, fmtData, fmtHora,
   useAgendaMetas, useAgendaPapeis, useAgendaTarefas,
@@ -28,6 +28,7 @@ export default function PlanejamentoPessoalPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editando, setEditando] = useState<AgendaTarefa | undefined>();
   const [dataPadrao, setDataPadrao] = useState<string | undefined>();
+  const [repetir, setRepetir] = useState(false);
 
   const papelMap = useMemo(() => new Map(papeis.map((p) => [p.id, p])), [papeis]);
   const hoje = format(new Date(), "yyyy-MM-dd");
@@ -48,6 +49,7 @@ export default function PlanejamentoPessoalPage() {
   }, [tarefas]);
 
   const abrirNova = (data?: string) => {
+    setRepetir(false);
     setEditando(undefined);
     setDataPadrao(data ?? hoje);
     setModalOpen(true);
@@ -132,8 +134,11 @@ export default function PlanejamentoPessoalPage() {
                             <Button variant="ghost" size="icon" className="h-6 w-6"><EllipsisVertical className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => { setEditando(t); setModalOpen(true); }}>
+                            <DropdownMenuItem onClick={() => { setRepetir(false); setEditando(t); setModalOpen(true); }}>
                               <Pencil className="mr-2 h-4 w-4" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setRepetir(true); setEditando(t); setModalOpen(true); }}>
+                              <Repeat className="mr-2 h-4 w-4" /> Repetir
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-red-600" onClick={() => excluir(t.id)}>
                               <Trash2 className="mr-2 h-4 w-4" /> Excluir
@@ -158,6 +163,7 @@ export default function PlanejamentoPessoalPage() {
         papeis={papeis}
         metas={metas}
         onSave={salvar}
+        repetir={repetir}
       />
     </div>
   );
