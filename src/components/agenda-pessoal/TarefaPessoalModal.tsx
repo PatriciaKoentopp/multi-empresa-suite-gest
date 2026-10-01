@@ -18,11 +18,12 @@ interface Props {
   papeis: AgendaPapel[];
   metas: AgendaMeta[];
   onSave: (t: Partial<AgendaTarefa>, id?: string) => Promise<boolean>;
+  repetir?: boolean;
 }
 
 const NENHUM = "nenhum";
 
-export function TarefaPessoalModal({ open, onOpenChange, tarefa, dataPadrao, papeis, metas, onSave }: Props) {
+export function TarefaPessoalModal({ open, onOpenChange, tarefa, dataPadrao, papeis, metas, onSave, repetir }: Props) {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [data, setData] = useState("");
@@ -37,13 +38,13 @@ export function TarefaPessoalModal({ open, onOpenChange, tarefa, dataPadrao, pap
     if (!open) return;
     setTitulo(tarefa?.titulo ?? "");
     setDescricao(tarefa?.descricao ?? "");
-    setData(tarefa?.data ?? dataPadrao ?? "");
-    setHoraInicio(fmtHora(tarefa?.hora_inicio));
-    setHoraFim(fmtHora(tarefa?.hora_fim));
+    setData(repetir ? "" : tarefa?.data ?? dataPadrao ?? "");
+    setHoraInicio(repetir ? "" : fmtHora(tarefa?.hora_inicio));
+    setHoraFim(repetir ? "" : fmtHora(tarefa?.hora_fim));
     setTriade(tarefa?.triade ?? "importante");
     setPapelId(tarefa?.papel_id ?? NENHUM);
     setMetaId(tarefa?.meta_id ?? NENHUM);
-  }, [open, tarefa, dataPadrao]);
+  }, [open, tarefa, dataPadrao, repetir]);
 
   const handleSalvar = async () => {
     if (!titulo.trim()) return toast.error("Informe o título");
@@ -63,7 +64,7 @@ export function TarefaPessoalModal({ open, onOpenChange, tarefa, dataPadrao, pap
         papel_id: papelId === NENHUM ? null : papelId,
         meta_id: metaId === NENHUM ? null : metaId,
       },
-      tarefa?.id,
+      repetir ? undefined : tarefa?.id,
     );
     setSalvando(false);
     if (ok) onOpenChange(false);
@@ -75,7 +76,7 @@ export function TarefaPessoalModal({ open, onOpenChange, tarefa, dataPadrao, pap
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>{tarefa ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
+          <DialogTitle>{repetir ? "Repetir Tarefa" : tarefa ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
