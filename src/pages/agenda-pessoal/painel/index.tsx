@@ -1,25 +1,46 @@
 import { useMemo, useState } from "react";
-import { addMonths, differenceInCalendarDays, endOfMonth, format, startOfMonth } from "date-fns";
+import { addDays, addMonths, addWeeks, differenceInCalendarDays, endOfMonth, format, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TRIADE_INFO, Triade, useAgendaMetas, useAgendaPapeis, useAgendaTarefas } from "@/hooks/useAgendaPessoal";
+import { parseDateString } from "@/lib/utils";
 
 const TRIADES = Object.keys(TRIADE_INFO) as Triade[];
 
+type TipoPeriodo = "dia" | "semana" | "mes";
+
 export default function PainelTriadePage() {
-  const [mes, setMes] = useState(() => new Date());
-  const inicio = format(startOfMonth(mes), "yyyy-MM-dd");
-  const fim = format(endOfMonth(mes), "yyyy-MM-dd");
+  const [tipo, setTipo] = useState<TipoPeriodo>("mes");
+  const [ref, setRef] = useState(() => new Date());
+
+  const inicioDate = tipo === "dia" ? ref : tipo === "semana" ? startOfWeek(ref, { weekStartsOn: 0 }) : startOfMonth(ref);
+  const fimBase = tipo === "dia" ? ref : tipo === "semana" ? addDays(inicioDate, 6) : endOfMonth(ref);
+  // No mês, considera apenas os dias transcorridos quando for o mês corrente
+  const fimDate = tipo === "mes" && isSameMonth(ref, new Date()) ? new Date() : fimBase;
+  const inicio = format(inicioDate, "yyyy-MM-dd");
+  const fim = format(fimDate, "yyyy-MM-dd");
+
+  const mover = (d: number) =>
+    setRef((r) => (tipo === "dia" ? addDays(r, d) : tipo === "semana" ? addWeeks(r, d) : addMonths(r, d)));
+
+  const periodoLabel =
+    tipo === "dia"
+      ? format(ref, "dd/MM/yyyy")
+      : tipo === "semana"
+        ? `${format(inicioDate, "dd/MM")} – ${format(fimDate, "dd/MM/yyyy")}`
+        : format(ref, "MMMM 'de' yyyy", { locale: ptBR });
+
   const { tarefas } = useAgendaTarefas(inicio, fim);
   const { papeis } = useAgendaPapeis();
   const { metas } = useAgendaMetas();
 
   const dados = useMemo(() => {
     const validas = tarefas.filter((t) => t.status !== "cancelada");
-    const totalMinutosPeriodo = (differenceInCalendarDays(endOfMonth(mes), startOfMonth(mes)) + 1) * 24 * 60;
+    const diasPeriodo = differenceInCalendarDays(parseDateString(fim)!, parseDateString(inicio)!) + 1;
+    const totalMinutosPeriodo = Math.max(1, diasPeriodo) * 24 * 60;
     const minutosPorPapel = new Map<string | null, number>();
     validas.forEach((t) => {
       const id = papeis.some((p) => p.id === t.papel_id) ? t.papel_id : null;
