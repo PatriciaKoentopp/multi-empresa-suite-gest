@@ -1,25 +1,46 @@
 import { useMemo, useState } from "react";
-import { addMonths, differenceInCalendarDays, endOfMonth, format, startOfMonth } from "date-fns";
+import { addDays, addMonths, addWeeks, differenceInCalendarDays, endOfMonth, format, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TRIADE_INFO, Triade, useAgendaMetas, useAgendaPapeis, useAgendaTarefas } from "@/hooks/useAgendaPessoal";
+import { parseDateString } from "@/lib/utils";
 
 const TRIADES = Object.keys(TRIADE_INFO) as Triade[];
 
+type TipoPeriodo = "dia" | "semana" | "mes";
+
 export default function PainelTriadePage() {
-  const [mes, setMes] = useState(() => new Date());
-  const inicio = format(startOfMonth(mes), "yyyy-MM-dd");
-  const fim = format(endOfMonth(mes), "yyyy-MM-dd");
+  const [tipo, setTipo] = useState<TipoPeriodo>("mes");
+  const [ref, setRef] = useState(() => new Date());
+
+  const inicioDate = tipo === "dia" ? ref : tipo === "semana" ? startOfWeek(ref, { weekStartsOn: 0 }) : startOfMonth(ref);
+  const fimBase = tipo === "dia" ? ref : tipo === "semana" ? addDays(inicioDate, 6) : endOfMonth(ref);
+  // No mês, considera apenas os dias transcorridos quando for o mês corrente
+  const fimDate = tipo === "mes" && isSameMonth(ref, new Date()) ? new Date() : fimBase;
+  const inicio = format(inicioDate, "yyyy-MM-dd");
+  const fim = format(fimDate, "yyyy-MM-dd");
+
+  const mover = (d: number) =>
+    setRef((r) => (tipo === "dia" ? addDays(r, d) : tipo === "semana" ? addWeeks(r, d) : addMonths(r, d)));
+
+  const periodoLabel =
+    tipo === "dia"
+      ? format(ref, "dd/MM/yyyy")
+      : tipo === "semana"
+        ? `${format(inicioDate, "dd/MM")} – ${format(fimDate, "dd/MM/yyyy")}`
+        : format(ref, "MMMM 'de' yyyy", { locale: ptBR });
+
   const { tarefas } = useAgendaTarefas(inicio, fim);
   const { papeis } = useAgendaPapeis();
   const { metas } = useAgendaMetas();
 
   const dados = useMemo(() => {
     const validas = tarefas.filter((t) => t.status !== "cancelada");
-    const totalMinutosPeriodo = (differenceInCalendarDays(endOfMonth(mes), startOfMonth(mes)) + 1) * 24 * 60;
+    const diasPeriodo = differenceInCalendarDays(parseDateString(fim)!, parseDateString(inicio)!) + 1;
+    const totalMinutosPeriodo = Math.max(1, diasPeriodo) * 24 * 60;
     const minutosPorPapel = new Map<string | null, number>();
     validas.forEach((t) => {
       const id = papeis.some((p) => p.id === t.papel_id) ? t.papel_id : null;
@@ -59,7 +80,7 @@ export default function PainelTriadePage() {
       pizza,
       porPapel,
     };
-  }, [tarefas, papeis, mes]);
+  }, [tarefas, papeis, inicio, fim]);
 
   const metasAndamento = metas.filter((m) => m.status === "em_andamento");
   const taxa = dados.total ? (dados.concluidas / dados.total) * 100 : 0;
@@ -69,15 +90,20 @@ export default function PainelTriadePage() {
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-2xl font-bold">Painel da Tríade</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => setMes((d) => addMonths(d, -1))}><ChevronLeft className="h-4 w-4" /></Button>
-          <span className="text-sm font-medium min-w-[150px] text-center capitalize">{format(mes, "MMMM 'de' yyyy", { locale: ptBR })}</span>
-          <Button variant="outline" size="icon" onClick={() => setMes((d) => addMonths(d, 1))}><ChevronRight className="h-4 w-4" /></Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {(["dia", "semana", "mes"] as const).map((t) => (
+            <Button key={t} size="sm" variant={tipo === t ? "default" : "outline"} onClick={() => setTipo(t)}>
+              {t === "dia" ? "Dia" : t === "semana" ? "Semana" : "Mês"}
+            </Button>
+          ))}
+          <Button variant="outline" size="icon" onClick={() => mover(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+          <span className="text-sm font-medium min-w-[150px] text-center capitalize">{periodoLabel}</span>
+          <Button variant="outline" size="icon" onClick={() => mover(1)}><ChevronRight className="h-4 w-4" /></Button>
         </div>
       </div>
 
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Tarefas no mês</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{dados.total}</div></CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Tarefas no período</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{dados.total}</div></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Concluídas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{taxa.toFixed(0)}%</div><p className="text-xs text-muted-foreground">{dados.concluidas} de {dados.total}</p></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Horas planejadas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{dados.horas.toFixed(1).replace(".", ",")}h</div></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Metas em andamento</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{metasAndamento.length}</div></CardContent></Card>
@@ -105,7 +131,7 @@ export default function PainelTriadePage() {
               ))}
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Horas sem tarefa registrada = horas do mês menos a duração planejada das tarefas não canceladas.</p>
+          <p className="text-xs text-muted-foreground">Horas sem tarefa registrada = horas do período menos a duração planejada das tarefas não canceladas.</p>
         </CardContent>
       </Card>
 
