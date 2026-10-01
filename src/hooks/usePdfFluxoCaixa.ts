@@ -42,8 +42,9 @@ export const usePdfFluxoCaixa = () => {
       const pageHeight = doc.internal.pageSize.getHeight();
 
       // Função para formatar data DD/MM/YYYY
-      const formatDateBR = (dateStr: string) => {
-        const [yyyy, mm, dd] = dateStr.split("-");
+      const formatDateBR = (dateStr?: string | null) => {
+        if (!dateStr) return "-";
+        const [yyyy, mm, dd] = String(dateStr).slice(0, 10).split("-");
         return `${dd}/${mm}/${yyyy}`;
       };
 
@@ -200,7 +201,7 @@ export const usePdfFluxoCaixa = () => {
           0: { cellWidth: 18, halign: 'center', overflow: 'ellipsize' }, // Data (reduzida)
           1: { cellWidth: 35, halign: 'center', overflow: 'ellipsize' }, // Título/Parcela (aumentada)
           2: { cellWidth: 70, halign: 'left', overflow: 'ellipsize' },   // Favorecido
-          3: { cellWidth: 90, halign: 'left', overflow: 'ellipsize' },   // Descrição
+          3: { cellWidth: 89, halign: 'left', overflow: 'ellipsize' },   // Descrição
           4: { cellWidth: 30, halign: 'right', overflow: 'ellipsize' },  // Valor
           5: { cellWidth: 25, halign: 'right', overflow: 'ellipsize' }   // Saldo (reduzida)
         },
