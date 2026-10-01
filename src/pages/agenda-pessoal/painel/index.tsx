@@ -80,7 +80,7 @@ export default function PainelTriadePage() {
       pizza,
       porPapel,
     };
-  }, [tarefas, papeis, mes]);
+  }, [tarefas, papeis, inicio, fim]);
 
   const metasAndamento = metas.filter((m) => m.status === "em_andamento");
   const taxa = dados.total ? (dados.concluidas / dados.total) * 100 : 0;
@@ -90,15 +90,20 @@ export default function PainelTriadePage() {
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-2xl font-bold">Painel da Tríade</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => setMes((d) => addMonths(d, -1))}><ChevronLeft className="h-4 w-4" /></Button>
-          <span className="text-sm font-medium min-w-[150px] text-center capitalize">{format(mes, "MMMM 'de' yyyy", { locale: ptBR })}</span>
-          <Button variant="outline" size="icon" onClick={() => setMes((d) => addMonths(d, 1))}><ChevronRight className="h-4 w-4" /></Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {(["dia", "semana", "mes"] as const).map((t) => (
+            <Button key={t} size="sm" variant={tipo === t ? "default" : "outline"} onClick={() => setTipo(t)}>
+              {t === "dia" ? "Dia" : t === "semana" ? "Semana" : "Mês"}
+            </Button>
+          ))}
+          <Button variant="outline" size="icon" onClick={() => mover(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+          <span className="text-sm font-medium min-w-[150px] text-center capitalize">{periodoLabel}</span>
+          <Button variant="outline" size="icon" onClick={() => mover(1)}><ChevronRight className="h-4 w-4" /></Button>
         </div>
       </div>
 
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Tarefas no mês</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{dados.total}</div></CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Tarefas no período</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{dados.total}</div></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Concluídas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{taxa.toFixed(0)}%</div><p className="text-xs text-muted-foreground">{dados.concluidas} de {dados.total}</p></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Horas planejadas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{dados.horas.toFixed(1).replace(".", ",")}h</div></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Metas em andamento</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{metasAndamento.length}</div></CardContent></Card>
@@ -126,7 +131,7 @@ export default function PainelTriadePage() {
               ))}
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Horas sem tarefa registrada = horas do mês menos a duração planejada das tarefas não canceladas.</p>
+          <p className="text-xs text-muted-foreground">Horas sem tarefa registrada = horas do período menos a duração planejada das tarefas não canceladas.</p>
         </CardContent>
       </Card>
 
