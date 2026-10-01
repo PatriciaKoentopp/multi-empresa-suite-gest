@@ -11,7 +11,7 @@ import { useFavorecidos } from "@/hooks/useFavorecidos";
 import { formatCurrency } from "@/lib/utils";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable from "@/lib/autotable";
 import { toast } from "sonner";
 
 interface NotaRecebida {
