@@ -110,8 +110,8 @@ export default function TarefasRealizadasPage() {
                   <TableCell className="whitespace-nowrap">{fmtData(t.data)}</TableCell>
                   <TableCell className="whitespace-nowrap">{horario(t)}</TableCell>
                   <TableCell className="font-medium">{t.titulo}</TableCell>
+                  <TableCell className="max-w-[320px] whitespace-pre-line break-words text-sm text-muted-foreground">{t.descricao || "-"}</TableCell>
                   <TableCell>{papel ? <span className="text-sm px-1 rounded" style={{ background: papel.cor + "22", color: papel.cor }}>{papel.nome}</span> : "-"}</TableCell>
-                  <TableCell><Badge variant="outline" className={`text-[10px] ${TRIADE_INFO[t.triade].chip}`}>{TRIADE_INFO[t.triade].label}</Badge></TableCell>
                   <TableCell className="whitespace-nowrap">{t.duracao_min > 0 ? fmtMinutos(t.duracao_min) : "-"}</TableCell>
                   <TableCell>{meta ? meta.titulo : "-"}</TableCell>
                 </TableRow>
