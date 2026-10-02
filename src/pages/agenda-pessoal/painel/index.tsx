@@ -178,12 +178,27 @@ export default function PainelTriadePage() {
         <CardHeader><CardTitle className="text-base">Progresso das Metas</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           {metasAndamento.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma meta em andamento.</p>}
-          {metasAndamento.map((m) => (
-            <div key={m.id}>
-              <div className="flex justify-between text-sm"><span>{m.titulo}</span><span>{m.progresso}%</span></div>
-              <div className="h-2 rounded bg-muted overflow-hidden mt-1"><div className="h-full bg-blue-500" style={{ width: `${m.progresso}%` }} /></div>
-            </div>
-          ))}
+          {metasAndamento.map((m) => {
+            const pct = m.percentual ?? m.progresso;
+            const detalhe =
+              m.tipo_medicao === "quantidade"
+                ? `${m.realizado ?? 0} / ${m.valor_alvo ?? 0}${m.unidade ? ` ${m.unidade}` : ""}`
+                : m.tipo_medicao === "tempo"
+                  ? `${fmtMinutos(m.realizado ?? 0)} / ${fmtMinutos(Number(m.valor_alvo || 0) * 60)}`
+                  : `${pct}%`;
+            return (
+              <div key={m.id}>
+                <div className="flex justify-between text-sm">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="truncate">{m.titulo}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{TIPO_LABEL[m.tipo_medicao ?? "manual"]}</span>
+                  </span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">{detalhe} · {pct}%</span>
+                </div>
+                <div className="h-2 rounded bg-muted overflow-hidden mt-1"><div className="h-full bg-blue-500" style={{ width: `${pct}%` }} /></div>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
     </div>
