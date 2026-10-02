@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckCircle2 } from "lucide-react";
 import {
-  AgendaTarefa, TRIADE_INFO, fmtData, fmtHora, fmtMinutos,
+  AgendaTarefa, fmtData, fmtHora, fmtMinutos,
   useAgendaMetas, useAgendaPapeis, useAgendaTarefas,
 } from "@/hooks/useAgendaPessoal";
 
