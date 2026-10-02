@@ -19,6 +19,8 @@ interface InteracoesTabProps {
     descricao: string;
     data: Date;
     responsavelId: string;
+    horaInicio?: string;
+    horaFim?: string;
   };
   handleInteracaoChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   handleInteracaoSelectChange: (name: string, value: string) => void;
