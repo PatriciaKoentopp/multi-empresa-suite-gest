@@ -405,6 +405,7 @@ export function LeadFormModal({
                 duracao_min: dur,
                 triade: "importante",
                 status: "pendente",
+                lead_interacao_id: data?.[0]?.id ?? null,
               })
               .select("id")
               .single();

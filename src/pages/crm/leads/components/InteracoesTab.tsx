@@ -111,6 +111,23 @@ export function InteracoesTab({
       }
       
       try {
+        // Reunião: exclui a tarefa ligada na Agenda Pessoal (e no Google Agenda)
+        const { data: tarefas } = await (supabase as any)
+          .from('agenda_tarefas')
+          .select('id, google_event_id')
+          .eq('lead_interacao_id', String(interacaoParaExcluir.id));
+        for (const t of tarefas ?? []) {
+          if (t.google_event_id) {
+            try {
+              const { removerEventoGoogle } = await import("@/lib/google-agenda.functions");
+              await removerEventoGoogle({ data: { googleEventId: t.google_event_id } });
+            } catch (e: any) {
+              toast.error("Não foi possível remover do Google Agenda", { description: e?.message });
+            }
+          }
+          await (supabase as any).from('agenda_tarefas').delete().eq('id', t.id);
+        }
+
         // Fazer a exclusão no banco de dados
         const { error } = await supabase
           .from('leads_interacoes')
