@@ -23,6 +23,7 @@ import { Route as AgendaPessoalGoogleAgendaRouteImport } from './routes/agenda-p
 import { Route as AgendaPessoalMetasRouteImport } from './routes/agenda-pessoal/metas'
 import { Route as AgendaPessoalPainelRouteImport } from './routes/agenda-pessoal/painel'
 import { Route as AgendaPessoalPlanejamentoRouteImport } from './routes/agenda-pessoal/planejamento'
+import { Route as AgendaPessoalTarefasRealizadasRouteImport } from './routes/agenda-pessoal/tarefas-realizadas'
 import { Route as CadastrosContaCorrenteRouteImport } from './routes/cadastros/conta-corrente'
 import { Route as CadastrosFavorecidosRouteImport } from './routes/cadastros/favorecidos'
 import { Route as CadastrosGrupoFavorecidosRouteImport } from './routes/cadastros/grupo-favorecidos'
@@ -156,6 +157,12 @@ const AgendaPessoalPlanejamentoRoute =
   AgendaPessoalPlanejamentoRouteImport.update({
     id: '/agenda-pessoal/planejamento',
     path: '/agenda-pessoal/planejamento',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AgendaPessoalTarefasRealizadasRoute =
+  AgendaPessoalTarefasRealizadasRouteImport.update({
+    id: '/agenda-pessoal/tarefas-realizadas',
+    path: '/agenda-pessoal/tarefas-realizadas',
     getParentRoute: () => rootRouteImport,
   } as any)
 const CadastrosContaCorrenteRoute = CadastrosContaCorrenteRouteImport.update({
@@ -489,6 +496,7 @@ export interface FileRoutesByFullPath {
   '/agenda-pessoal/metas': typeof AgendaPessoalMetasRoute
   '/agenda-pessoal/painel': typeof AgendaPessoalPainelRoute
   '/agenda-pessoal/planejamento': typeof AgendaPessoalPlanejamentoRoute
+  '/agenda-pessoal/tarefas-realizadas': typeof AgendaPessoalTarefasRealizadasRoute
   '/cadastros/conta-corrente': typeof CadastrosContaCorrenteRoute
   '/cadastros/favorecidos': typeof CadastrosFavorecidosRoute
   '/cadastros/grupo-favorecidos': typeof CadastrosGrupoFavorecidosRoute
@@ -566,6 +574,7 @@ export interface FileRoutesByTo {
   '/agenda-pessoal/metas': typeof AgendaPessoalMetasRoute
   '/agenda-pessoal/painel': typeof AgendaPessoalPainelRoute
   '/agenda-pessoal/planejamento': typeof AgendaPessoalPlanejamentoRoute
+  '/agenda-pessoal/tarefas-realizadas': typeof AgendaPessoalTarefasRealizadasRoute
   '/cadastros/conta-corrente': typeof CadastrosContaCorrenteRoute
   '/cadastros/favorecidos': typeof CadastrosFavorecidosRoute
   '/cadastros/grupo-favorecidos': typeof CadastrosGrupoFavorecidosRoute
@@ -644,6 +653,7 @@ export interface FileRoutesById {
   '/agenda-pessoal/metas': typeof AgendaPessoalMetasRoute
   '/agenda-pessoal/painel': typeof AgendaPessoalPainelRoute
   '/agenda-pessoal/planejamento': typeof AgendaPessoalPlanejamentoRoute
+  '/agenda-pessoal/tarefas-realizadas': typeof AgendaPessoalTarefasRealizadasRoute
   '/cadastros/conta-corrente': typeof CadastrosContaCorrenteRoute
   '/cadastros/favorecidos': typeof CadastrosFavorecidosRoute
   '/cadastros/grupo-favorecidos': typeof CadastrosGrupoFavorecidosRoute
@@ -723,6 +733,7 @@ export interface FileRouteTypes {
     | '/agenda-pessoal/metas'
     | '/agenda-pessoal/painel'
     | '/agenda-pessoal/planejamento'
+    | '/agenda-pessoal/tarefas-realizadas'
     | '/cadastros/conta-corrente'
     | '/cadastros/favorecidos'
     | '/cadastros/grupo-favorecidos'
@@ -800,6 +811,7 @@ export interface FileRouteTypes {
     | '/agenda-pessoal/metas'
     | '/agenda-pessoal/painel'
     | '/agenda-pessoal/planejamento'
+    | '/agenda-pessoal/tarefas-realizadas'
     | '/cadastros/conta-corrente'
     | '/cadastros/favorecidos'
     | '/cadastros/grupo-favorecidos'
@@ -877,6 +889,7 @@ export interface FileRouteTypes {
     | '/agenda-pessoal/metas'
     | '/agenda-pessoal/painel'
     | '/agenda-pessoal/planejamento'
+    | '/agenda-pessoal/tarefas-realizadas'
     | '/cadastros/conta-corrente'
     | '/cadastros/favorecidos'
     | '/cadastros/grupo-favorecidos'
@@ -955,6 +968,7 @@ export interface RootRouteChildren {
   AgendaPessoalMetasRoute: typeof AgendaPessoalMetasRoute
   AgendaPessoalPainelRoute: typeof AgendaPessoalPainelRoute
   AgendaPessoalPlanejamentoRoute: typeof AgendaPessoalPlanejamentoRoute
+  AgendaPessoalTarefasRealizadasRoute: typeof AgendaPessoalTarefasRealizadasRoute
   CadastrosContaCorrenteRoute: typeof CadastrosContaCorrenteRoute
   CadastrosFavorecidosRoute: typeof CadastrosFavorecidosRoute
   CadastrosGrupoFavorecidosRoute: typeof CadastrosGrupoFavorecidosRoute
@@ -1116,6 +1130,13 @@ declare module '@tanstack/react-router' {
       path: '/agenda-pessoal/planejamento'
       fullPath: '/agenda-pessoal/planejamento'
       preLoaderRoute: typeof AgendaPessoalPlanejamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agenda-pessoal/tarefas-realizadas': {
+      id: '/agenda-pessoal/tarefas-realizadas'
+      path: '/agenda-pessoal/tarefas-realizadas'
+      fullPath: '/agenda-pessoal/tarefas-realizadas'
+      preLoaderRoute: typeof AgendaPessoalTarefasRealizadasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cadastros/conta-corrente': {
@@ -1563,6 +1584,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgendaPessoalMetasRoute: AgendaPessoalMetasRoute,
   AgendaPessoalPainelRoute: AgendaPessoalPainelRoute,
   AgendaPessoalPlanejamentoRoute: AgendaPessoalPlanejamentoRoute,
+  AgendaPessoalTarefasRealizadasRoute: AgendaPessoalTarefasRealizadasRoute,
   CadastrosContaCorrenteRoute: CadastrosContaCorrenteRoute,
   CadastrosFavorecidosRoute: CadastrosFavorecidosRoute,
   CadastrosGrupoFavorecidosRoute: CadastrosGrupoFavorecidosRoute,
