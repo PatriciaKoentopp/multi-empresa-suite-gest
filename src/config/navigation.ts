@@ -242,6 +242,7 @@ export const navigationConfig: ModuleNavItem[] = [
       { title: "Planejamento", href: "/agenda-pessoal/planejamento" },
       { title: "Papéis e Metas", href: "/agenda-pessoal/metas" },
       { title: "Painel da Tríade", href: "/agenda-pessoal/painel" },
+      { title: "Tarefas Realizadas", href: "/agenda-pessoal/tarefas-realizadas" },
       { title: "Implantação Google Agenda", href: "/agenda-pessoal/google-agenda" },
     ],
   },
