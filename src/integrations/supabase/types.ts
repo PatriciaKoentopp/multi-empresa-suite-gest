@@ -142,6 +142,7 @@ export type Database = {
           hora_fim: string | null
           hora_inicio: string | null
           id: string
+          lead_interacao_id: string | null
           meta_id: string | null
           papel_id: string | null
           status: string
@@ -161,6 +162,7 @@ export type Database = {
           hora_fim?: string | null
           hora_inicio?: string | null
           id?: string
+          lead_interacao_id?: string | null
           meta_id?: string | null
           papel_id?: string | null
           status?: string
@@ -180,6 +182,7 @@ export type Database = {
           hora_fim?: string | null
           hora_inicio?: string | null
           id?: string
+          lead_interacao_id?: string | null
           meta_id?: string | null
           papel_id?: string | null
           status?: string
@@ -189,6 +192,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "agenda_tarefas_lead_interacao_id_fkey"
+            columns: ["lead_interacao_id"]
+            isOneToOne: false
+            referencedRelation: "leads_interacoes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "agenda_tarefas_meta_id_fkey"
             columns: ["meta_id"]

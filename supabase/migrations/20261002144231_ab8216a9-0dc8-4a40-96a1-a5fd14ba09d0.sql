@@ -1,0 +1,2 @@
+ALTER TABLE public.agenda_tarefas ADD COLUMN IF NOT EXISTS lead_interacao_id uuid REFERENCES public.leads_interacoes(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_agenda_tarefas_lead_interacao ON public.agenda_tarefas(lead_interacao_id);
