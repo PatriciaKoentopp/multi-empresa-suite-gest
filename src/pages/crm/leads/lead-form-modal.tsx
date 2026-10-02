@@ -73,6 +73,8 @@ export function LeadFormModal({
     descricao: "",
     data: new Date(),
     responsavelId: "",
+    horaInicio: "",
+    horaFim: "",
   });
 
   const enviarWhats = useServerFn(enviarWhatsappLead);
@@ -328,7 +330,7 @@ export function LeadFormModal({
       try {
         await enviarWhats({ data: { leadId: lead.id, texto: novaInteracao.descricao.trim() } });
         toast.success("Mensagem enviada pelo WhatsApp");
-        setNovaInteracao({ tipo: "mensagem", descricao: "", data: new Date(), responsavelId: novaInteracao.responsavelId });
+        setNovaInteracao({ tipo: "mensagem", descricao: "", data: new Date(), responsavelId: novaInteracao.responsavelId, horaInicio: "", horaFim: "" });
         buscarInteracoes(lead.id);
       } catch (e: any) {
         toast.error("Não foi possível enviar", { description: String(e?.message ?? e).slice(0, 300) });
@@ -378,13 +380,58 @@ export function LeadFormModal({
         setInteracoes(prev => [novaInteracaoCompleta, ...prev]);
       }
 
+      // Reunião: cria tarefa na Agenda Pessoal (e envia ao Google Agenda)
+      if ((novaInteracao.tipo as string) === "reuniao") {
+        try {
+          const { data: auth } = await supabase.auth.getUser();
+          if (auth?.user) {
+            const hi = novaInteracao.horaInicio || null;
+            const hf = novaInteracao.horaFim || null;
+            let dur = 0;
+            if (hi && hf) {
+              const [h1, m1] = hi.split(":").map(Number);
+              const [h2, m2] = hf.split(":").map(Number);
+              dur = Math.max(0, (h2! * 60 + m2!) - (h1! * 60 + m1!));
+            } else if (hi) dur = 60;
+            const { data: tarefa, error: errT } = await (supabase as any)
+              .from("agenda_tarefas")
+              .insert({
+                user_id: auth.user.id,
+                titulo: `Reunião - ${lead.nome ?? ""}`.trim(),
+                descricao: novaInteracao.descricao,
+                data: dataFormatada,
+                hora_inicio: hi,
+                hora_fim: hf,
+                duracao_min: dur,
+                triade: "importante",
+                status: "pendente",
+              })
+              .select("id")
+              .single();
+            if (errT) throw errT;
+            toast.success("Reunião incluída na Agenda Pessoal");
+            try {
+              const { enviarTarefaGoogle } = await import("@/lib/google-agenda.functions");
+              await enviarTarefaGoogle({ data: { tarefaId: tarefa.id } });
+            } catch (eg: any) {
+              toast.warning("Reunião não enviada ao Google Agenda", { description: String(eg?.message ?? eg).slice(0, 200) });
+            }
+          }
+        } catch (et: any) {
+          console.error("Erro ao criar tarefa da reunião:", et);
+          toast.error("Interação salva, mas não foi possível incluir na Agenda Pessoal");
+        }
+      }
+
 
       // Limpar o formulário
       setNovaInteracao({
         tipo: "mensagem",
         descricao: "",
         data: new Date(),
-        responsavelId: novaInteracao.responsavelId
+        responsavelId: novaInteracao.responsavelId,
+        horaInicio: "",
+        horaFim: "",
       });
 
     } catch (error) {

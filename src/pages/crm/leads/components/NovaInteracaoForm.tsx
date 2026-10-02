@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Send } from "lucide-react";
@@ -14,6 +15,8 @@ interface NovaInteracaoFormProps {
     descricao: string;
     data: Date;
     responsavelId: string;
+    horaInicio?: string;
+    horaFim?: string;
   };
   handleInteracaoChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   handleInteracaoSelectChange: (name: string, value: string) => void;
@@ -93,6 +96,19 @@ export function NovaInteracaoForm({
             onChange={(date) => date && handleInteracaoDataChange(date)}
           />
         </div>
+
+        {novaInteracao.tipo === "reuniao" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="horaInicio">Hora início</Label>
+              <Input id="horaInicio" name="horaInicio" type="time" className="bg-white" value={novaInteracao.horaInicio ?? ""} onChange={handleInteracaoChange} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="horaFim">Hora fim</Label>
+              <Input id="horaFim" name="horaFim" type="time" className="bg-white" value={novaInteracao.horaFim ?? ""} onChange={handleInteracaoChange} />
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="interacaoDescricao">Descrição</Label>
