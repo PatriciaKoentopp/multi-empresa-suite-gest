@@ -91,8 +91,8 @@ export default function TarefasRealizadasPage() {
               <TableHead>Data</TableHead>
               <TableHead>Horário</TableHead>
               <TableHead>Tarefa</TableHead>
+              <TableHead>Descrição</TableHead>
               <TableHead>Papel</TableHead>
-              <TableHead>Tríade</TableHead>
               <TableHead>Duração</TableHead>
               <TableHead>Meta</TableHead>
             </TableRow>
