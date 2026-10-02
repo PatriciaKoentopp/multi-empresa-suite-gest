@@ -3012,6 +3012,7 @@ export type Database = {
         Returns: Json
       }
       ia_listar_schema: { Args: never; Returns: Json }
+      is_company_admin: { Args: never; Returns: boolean }
       is_periodo_fechado: {
         Args: { p_data: string; p_empresa_id: string }
         Returns: boolean
