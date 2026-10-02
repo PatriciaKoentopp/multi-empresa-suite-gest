@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { TRIADE_INFO, Triade, useAgendaMetas, useAgendaPapeis, useAgendaTarefas } from "@/hooks/useAgendaPessoal";
+import { TRIADE_INFO, Triade, TipoMedicao, useAgendaMetas, useAgendaPapeis, useAgendaTarefas, fmtMinutos } from "@/hooks/useAgendaPessoal";
 import { parseDateString } from "@/lib/utils";
 
 const TRIADES = Object.keys(TRIADE_INFO) as Triade[];
+
+const TIPO_LABEL: Record<TipoMedicao, string> = { quantidade: "Quantidade", tempo: "Tempo", manual: "Manual" };
 
 type TipoPeriodo = "dia" | "semana" | "mes";
 
