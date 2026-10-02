@@ -26,6 +26,8 @@ export interface AgendaPapel {
   ativo: boolean;
 }
 
+export type TipoMedicao = "manual" | "quantidade" | "tempo";
+
 export interface AgendaMeta {
   id: string;
   papel_id: string | null;
@@ -34,6 +36,12 @@ export interface AgendaMeta {
   data_alvo: string | null;
   progresso: number;
   status: "em_andamento" | "concluida" | "cancelada";
+  tipo_medicao: TipoMedicao;
+  valor_alvo: number | null;
+  unidade: string | null;
+  // calculados
+  realizado?: number; // quantidade ou minutos
+  percentual?: number;
 }
 
 export interface AgendaTarefa {
@@ -99,7 +107,29 @@ export function useAgendaMetas() {
     setIsLoading(true);
     const { data, error } = await db.from("agenda_metas").select("*").order("data_alvo", { ascending: true, nullsFirst: false });
     if (error) toast.error("Erro ao carregar metas");
-    setMetas(data || []);
+    const lista: AgendaMeta[] = data || [];
+    const ids = lista.filter((m) => m.tipo_medicao && m.tipo_medicao !== "manual").map((m) => m.id);
+    const acum: Record<string, { qtd: number; min: number }> = {};
+    for (let i = 0; i < ids.length; i += 50) {
+      const { data: ts } = await db
+        .from("agenda_tarefas")
+        .select("meta_id, duracao_min")
+        .eq("status", "concluida")
+        .in("meta_id", ids.slice(i, i + 50));
+      (ts || []).forEach((t: any) => {
+        const a = (acum[t.meta_id] ??= { qtd: 0, min: 0 });
+        a.qtd += 1;
+        a.min += Number(t.duracao_min) || 0;
+      });
+    }
+    setMetas(lista.map((m) => {
+      if (!m.tipo_medicao || m.tipo_medicao === "manual") return { ...m, percentual: m.progresso };
+      const a = acum[m.id] ?? { qtd: 0, min: 0 };
+      const realizado = m.tipo_medicao === "tempo" ? a.min : a.qtd;
+      const alvo = m.tipo_medicao === "tempo" ? Number(m.valor_alvo || 0) * 60 : Number(m.valor_alvo || 0);
+      const percentual = alvo > 0 ? Math.min(100, Math.round((realizado / alvo) * 100)) : 0;
+      return { ...m, realizado, percentual };
+    }));
     setIsLoading(false);
   }, []);
 
@@ -192,6 +222,13 @@ export const fmtData = (s?: string | null) => {
 };
 
 export const fmtHora = (s?: string | null) => (s ? s.slice(0, 5) : "");
+
+// minutos -> "18h30"
+export const fmtMinutos = (min: number) => {
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return m ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`;
+};
 
 export const calcDuracao = (ini?: string | null, fim?: string | null) => {
   if (!ini || !fim) return 0;

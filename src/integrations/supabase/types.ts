@@ -50,9 +50,12 @@ export type Database = {
           papel_id: string | null
           progresso: number
           status: string
+          tipo_medicao: string
           titulo: string
+          unidade: string | null
           updated_at: string
           user_id: string
+          valor_alvo: number | null
         }
         Insert: {
           created_at?: string
@@ -62,9 +65,12 @@ export type Database = {
           papel_id?: string | null
           progresso?: number
           status?: string
+          tipo_medicao?: string
           titulo: string
+          unidade?: string | null
           updated_at?: string
           user_id?: string
+          valor_alvo?: number | null
         }
         Update: {
           created_at?: string
@@ -74,9 +80,12 @@ export type Database = {
           papel_id?: string | null
           progresso?: number
           status?: string
+          tipo_medicao?: string
           titulo?: string
+          unidade?: string | null
           updated_at?: string
           user_id?: string
+          valor_alvo?: number | null
         }
         Relationships: [
           {
