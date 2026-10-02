@@ -4,12 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckCircle2 } from "lucide-react";
 import {
-  AgendaTarefa, TRIADE_INFO, fmtData, fmtHora, fmtMinutos,
+  AgendaTarefa, fmtData, fmtHora, fmtMinutos,
   useAgendaMetas, useAgendaPapeis, useAgendaTarefas,
 } from "@/hooks/useAgendaPessoal";
 
@@ -91,8 +90,8 @@ export default function TarefasRealizadasPage() {
               <TableHead>Data</TableHead>
               <TableHead>Horário</TableHead>
               <TableHead>Tarefa</TableHead>
+              <TableHead>Descrição</TableHead>
               <TableHead>Papel</TableHead>
-              <TableHead>Tríade</TableHead>
               <TableHead>Duração</TableHead>
               <TableHead>Meta</TableHead>
             </TableRow>
@@ -110,8 +109,8 @@ export default function TarefasRealizadasPage() {
                   <TableCell className="whitespace-nowrap">{fmtData(t.data)}</TableCell>
                   <TableCell className="whitespace-nowrap">{horario(t)}</TableCell>
                   <TableCell className="font-medium">{t.titulo}</TableCell>
+                  <TableCell className="max-w-[320px] whitespace-pre-line break-words text-sm text-muted-foreground">{t.descricao || "-"}</TableCell>
                   <TableCell>{papel ? <span className="text-sm px-1 rounded" style={{ background: papel.cor + "22", color: papel.cor }}>{papel.nome}</span> : "-"}</TableCell>
-                  <TableCell><Badge variant="outline" className={`text-[10px] ${TRIADE_INFO[t.triade].chip}`}>{TRIADE_INFO[t.triade].label}</Badge></TableCell>
                   <TableCell className="whitespace-nowrap">{t.duracao_min > 0 ? fmtMinutos(t.duracao_min) : "-"}</TableCell>
                   <TableCell>{meta ? meta.titulo : "-"}</TableCell>
                 </TableRow>
