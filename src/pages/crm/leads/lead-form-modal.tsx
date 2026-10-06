@@ -79,6 +79,20 @@ export function LeadFormModal({
 
   const enviarWhats = useServerFn(enviarWhatsappLead);
 
+  // Identifica o usuário logado na lista de usuários (pelo e-mail) para usar como responsável padrão
+  const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
+
+  useEffect(() => {
+    const identificarUsuarioLogado = async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const email = auth.user?.email?.toLowerCase();
+      if (!email) return;
+      const encontrado = usuarios.find(u => u.email?.toLowerCase() === email && u.status === "ativo");
+      setUsuarioLogadoId(encontrado?.id || "");
+    };
+    identificarUsuarioLogado();
+  }, [usuarios]);
+
   // Estado para armazenar interações do lead atual
   const [interacoes, setInteracoes] = useState<LeadInteracao[]>([]);
   const [carregandoInteracoes, setCarregandoInteracoes] = useState(false);
@@ -240,11 +254,11 @@ export function LeadFormModal({
         responsavelId: lead.responsavelId || "",
       });
       
-      // Inicializa a nova interação com o responsável atual do lead
+      // Inicializa a nova interação com o usuário logado como responsável padrão
       setNovaInteracao(prev => ({
         ...prev,
         data: new Date(),
-        responsavelId: lead.responsavelId || ""
+        responsavelId: usuarioLogadoId || lead.responsavelId || ""
       }));
     } else {
       // Encontrar o primeiro usuário vendedor ativo, se existir
@@ -271,20 +285,20 @@ export function LeadFormModal({
         origemId: primeiraOrigem,
         dataCriacao: new Date().toLocaleDateString("pt-BR"),
         ultimoContato: new Date().toLocaleDateString("pt-BR"),
-        responsavelId: primeiroVendedor,
+        responsavelId: usuarioLogadoId || primeiroVendedor,
       });
-      
-      // Inicializa a nova interação com o primeiro vendedor
+
+      // Inicializa a nova interação com o usuário logado como responsável padrão
       setNovaInteracao(prev => ({
         ...prev,
         data: new Date(),
-        responsavelId: primeiroVendedor
+        responsavelId: usuarioLogadoId || primeiroVendedor
       }));
 
       // Reset do fechamento para null quando criamos um novo lead
       setFechamento(null);
     }
-  }, [lead, etapas, origens, usuarios, open]);
+  }, [lead, etapas, origens, usuarios, open, usuarioLogadoId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
