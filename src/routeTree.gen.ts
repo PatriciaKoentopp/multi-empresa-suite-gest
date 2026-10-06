@@ -40,6 +40,7 @@ import { Route as ContabilPlanoContasRouteImport } from './routes/contabil/plano
 import { Route as CrmAgendaRouteImport } from './routes/crm/agenda'
 import { Route as CrmFunilConfiguracaoRouteImport } from './routes/crm/funil-configuracao'
 import { Route as CrmLeadsRouteImport } from './routes/crm/leads'
+import { Route as CrmMetaImplantacaoRouteImport } from './routes/crm/meta-implantacao'
 import { Route as CrmPainelRouteImport } from './routes/crm/painel'
 import { Route as CrmWhatsappRouteImport } from './routes/crm/whatsapp'
 import { Route as CrmWhatsappImplantacaoRouteImport } from './routes/crm/whatsapp-implantacao'
@@ -84,6 +85,7 @@ import { Route as VendasProdutosRouteImport } from './routes/vendas/produtos'
 import { Route as VendasServicosRouteImport } from './routes/vendas/servicos'
 import { Route as VendasTabelaPrecosRouteImport } from './routes/vendas/tabela-precos'
 import { Route as OauthGoogleCalendarReturnRouteImport } from './routes/oauth/google-calendar/return'
+import { Route as ApiPublicMetaWebhookRouteImport } from './routes/api/public/meta/webhook'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -245,6 +247,11 @@ const CrmFunilConfiguracaoRoute = CrmFunilConfiguracaoRouteImport.update({
 const CrmLeadsRoute = CrmLeadsRouteImport.update({
   id: '/crm/leads',
   path: '/crm/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmMetaImplantacaoRoute = CrmMetaImplantacaoRouteImport.update({
+  id: '/crm/meta-implantacao',
+  path: '/crm/meta-implantacao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CrmPainelRoute = CrmPainelRouteImport.update({
@@ -474,6 +481,11 @@ const OauthGoogleCalendarReturnRoute =
     path: '/oauth/google-calendar/return',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMetaWebhookRoute = ApiPublicMetaWebhookRouteImport.update({
+  id: '/api/public/meta/webhook',
+  path: '/api/public/meta/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
@@ -513,6 +525,7 @@ export interface FileRoutesByFullPath {
   '/crm/agenda': typeof CrmAgendaRoute
   '/crm/funil-configuracao': typeof CrmFunilConfiguracaoRoute
   '/crm/leads': typeof CrmLeadsRoute
+  '/crm/meta-implantacao': typeof CrmMetaImplantacaoRoute
   '/crm/painel': typeof CrmPainelRoute
   '/crm/whatsapp': typeof CrmWhatsappRoute
   '/crm/whatsapp-implantacao': typeof CrmWhatsappImplantacaoRoute
@@ -557,6 +570,7 @@ export interface FileRoutesByFullPath {
   '/relatorios/': typeof RelatoriosIndexRoute
   '/relogio/': typeof RelogioIndexRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
+  '/api/public/meta/webhook': typeof ApiPublicMetaWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -591,6 +605,7 @@ export interface FileRoutesByTo {
   '/crm/agenda': typeof CrmAgendaRoute
   '/crm/funil-configuracao': typeof CrmFunilConfiguracaoRoute
   '/crm/leads': typeof CrmLeadsRoute
+  '/crm/meta-implantacao': typeof CrmMetaImplantacaoRoute
   '/crm/painel': typeof CrmPainelRoute
   '/crm/whatsapp': typeof CrmWhatsappRoute
   '/crm/whatsapp-implantacao': typeof CrmWhatsappImplantacaoRoute
@@ -635,6 +650,7 @@ export interface FileRoutesByTo {
   '/relatorios': typeof RelatoriosIndexRoute
   '/relogio': typeof RelogioIndexRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
+  '/api/public/meta/webhook': typeof ApiPublicMetaWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesById {
@@ -670,6 +686,7 @@ export interface FileRoutesById {
   '/crm/agenda': typeof CrmAgendaRoute
   '/crm/funil-configuracao': typeof CrmFunilConfiguracaoRoute
   '/crm/leads': typeof CrmLeadsRoute
+  '/crm/meta-implantacao': typeof CrmMetaImplantacaoRoute
   '/crm/painel': typeof CrmPainelRoute
   '/crm/whatsapp': typeof CrmWhatsappRoute
   '/crm/whatsapp-implantacao': typeof CrmWhatsappImplantacaoRoute
@@ -714,6 +731,7 @@ export interface FileRoutesById {
   '/relatorios/': typeof RelatoriosIndexRoute
   '/relogio/': typeof RelogioIndexRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
+  '/api/public/meta/webhook': typeof ApiPublicMetaWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRouteTypes {
@@ -750,6 +768,7 @@ export interface FileRouteTypes {
     | '/crm/agenda'
     | '/crm/funil-configuracao'
     | '/crm/leads'
+    | '/crm/meta-implantacao'
     | '/crm/painel'
     | '/crm/whatsapp'
     | '/crm/whatsapp-implantacao'
@@ -794,6 +813,7 @@ export interface FileRouteTypes {
     | '/relatorios/'
     | '/relogio/'
     | '/oauth/google-calendar/return'
+    | '/api/public/meta/webhook'
     | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -828,6 +848,7 @@ export interface FileRouteTypes {
     | '/crm/agenda'
     | '/crm/funil-configuracao'
     | '/crm/leads'
+    | '/crm/meta-implantacao'
     | '/crm/painel'
     | '/crm/whatsapp'
     | '/crm/whatsapp-implantacao'
@@ -872,6 +893,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/relogio'
     | '/oauth/google-calendar/return'
+    | '/api/public/meta/webhook'
     | '/api/public/whatsapp/webhook'
   id:
     | '__root__'
@@ -906,6 +928,7 @@ export interface FileRouteTypes {
     | '/crm/agenda'
     | '/crm/funil-configuracao'
     | '/crm/leads'
+    | '/crm/meta-implantacao'
     | '/crm/painel'
     | '/crm/whatsapp'
     | '/crm/whatsapp-implantacao'
@@ -950,6 +973,7 @@ export interface FileRouteTypes {
     | '/relatorios/'
     | '/relogio/'
     | '/oauth/google-calendar/return'
+    | '/api/public/meta/webhook'
     | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -985,6 +1009,7 @@ export interface RootRouteChildren {
   CrmAgendaRoute: typeof CrmAgendaRoute
   CrmFunilConfiguracaoRoute: typeof CrmFunilConfiguracaoRoute
   CrmLeadsRoute: typeof CrmLeadsRoute
+  CrmMetaImplantacaoRoute: typeof CrmMetaImplantacaoRoute
   CrmPainelRoute: typeof CrmPainelRoute
   CrmWhatsappRoute: typeof CrmWhatsappRoute
   CrmWhatsappImplantacaoRoute: typeof CrmWhatsappImplantacaoRoute
@@ -1029,6 +1054,7 @@ export interface RootRouteChildren {
   RelatoriosIndexRoute: typeof RelatoriosIndexRoute
   RelogioIndexRoute: typeof RelogioIndexRoute
   OauthGoogleCalendarReturnRoute: typeof OauthGoogleCalendarReturnRoute
+  ApiPublicMetaWebhookRoute: typeof ApiPublicMetaWebhookRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
@@ -1249,6 +1275,13 @@ declare module '@tanstack/react-router' {
       path: '/crm/leads'
       fullPath: '/crm/leads'
       preLoaderRoute: typeof CrmLeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/meta-implantacao': {
+      id: '/crm/meta-implantacao'
+      path: '/crm/meta-implantacao'
+      fullPath: '/crm/meta-implantacao'
+      preLoaderRoute: typeof CrmMetaImplantacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/crm/painel': {
@@ -1559,6 +1592,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthGoogleCalendarReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/meta/webhook': {
+      id: '/api/public/meta/webhook'
+      path: '/api/public/meta/webhook'
+      fullPath: '/api/public/meta/webhook'
+      preLoaderRoute: typeof ApiPublicMetaWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/whatsapp/webhook': {
       id: '/api/public/whatsapp/webhook'
       path: '/api/public/whatsapp/webhook'
@@ -1601,6 +1641,7 @@ const rootRouteChildren: RootRouteChildren = {
   CrmAgendaRoute: CrmAgendaRoute,
   CrmFunilConfiguracaoRoute: CrmFunilConfiguracaoRoute,
   CrmLeadsRoute: CrmLeadsRoute,
+  CrmMetaImplantacaoRoute: CrmMetaImplantacaoRoute,
   CrmPainelRoute: CrmPainelRoute,
   CrmWhatsappRoute: CrmWhatsappRoute,
   CrmWhatsappImplantacaoRoute: CrmWhatsappImplantacaoRoute,
@@ -1645,6 +1686,7 @@ const rootRouteChildren: RootRouteChildren = {
   RelatoriosIndexRoute: RelatoriosIndexRoute,
   RelogioIndexRoute: RelogioIndexRoute,
   OauthGoogleCalendarReturnRoute: OauthGoogleCalendarReturnRoute,
+  ApiPublicMetaWebhookRoute: ApiPublicMetaWebhookRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport

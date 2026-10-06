@@ -20,6 +20,7 @@ import { LeadDadosTab } from "./LeadDadosTab";
 import { LeadFechamentoTab } from "./LeadFechamentoTab";
 import { InteracoesTab } from "./components/InteracoesTab";
 import { WhatsappTab } from "./components/WhatsappTab";
+import { MetaTab } from "./components/MetaTab";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "./utils/leadUtils";
 import { toast } from "sonner";
@@ -697,6 +698,7 @@ export function LeadFormModal({
                 {lead?.id && (
                   <TabsContent value="whatsapp" className="mt-0">
                     <WhatsappTab leadId={lead.id} />
+                    <MetaTab leadId={lead.id} />
                   </TabsContent>
                 )}
 

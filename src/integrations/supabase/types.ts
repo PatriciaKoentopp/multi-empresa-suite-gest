@@ -1480,6 +1480,188 @@ export type Database = {
           },
         ]
       }
+      meta_contas: {
+        Row: {
+          ativo: boolean
+          canal: string
+          created_at: string
+          empresa_id: string
+          etapa_id: string | null
+          funil_id: string | null
+          id: string
+          nome: string
+          page_id: string
+          secret_name: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          canal: string
+          created_at?: string
+          empresa_id: string
+          etapa_id?: string | null
+          funil_id?: string | null
+          id?: string
+          nome?: string
+          page_id: string
+          secret_name?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          canal?: string
+          created_at?: string
+          empresa_id?: string
+          etapa_id?: string | null
+          funil_id?: string | null
+          id?: string
+          nome?: string
+          page_id?: string
+          secret_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_contas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meta_contas_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "funil_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meta_contas_funil_id_fkey"
+            columns: ["funil_id"]
+            isOneToOne: false
+            referencedRelation: "funis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meta_contatos: {
+        Row: {
+          conta_id: string
+          created_at: string
+          empresa_id: string
+          id: string
+          lead_id: string | null
+          nao_lidas: number
+          nome: string | null
+          sender_id: string
+          ultima_mensagem_em: string | null
+          updated_at: string
+        }
+        Insert: {
+          conta_id: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          lead_id?: string | null
+          nao_lidas?: number
+          nome?: string | null
+          sender_id: string
+          ultima_mensagem_em?: string | null
+          updated_at?: string
+        }
+        Update: {
+          conta_id?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          lead_id?: string | null
+          nao_lidas?: number
+          nome?: string | null
+          sender_id?: string
+          ultima_mensagem_em?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_contatos_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "meta_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meta_contatos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meta_contatos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meta_mensagens: {
+        Row: {
+          contato_id: string
+          conteudo: string | null
+          created_at: string
+          direcao: string
+          empresa_id: string
+          enviado_por: string | null
+          erro: string | null
+          id: string
+          mid: string | null
+          provider_timestamp: string | null
+          status: string
+        }
+        Insert: {
+          contato_id: string
+          conteudo?: string | null
+          created_at?: string
+          direcao: string
+          empresa_id: string
+          enviado_por?: string | null
+          erro?: string | null
+          id?: string
+          mid?: string | null
+          provider_timestamp?: string | null
+          status?: string
+        }
+        Update: {
+          contato_id?: string
+          conteudo?: string | null
+          created_at?: string
+          direcao?: string
+          empresa_id?: string
+          enviado_por?: string | null
+          erro?: string | null
+          id?: string
+          mid?: string | null
+          provider_timestamp?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_mensagens_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "meta_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meta_mensagens_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modulos_parametros: {
         Row: {
           ativo: boolean
