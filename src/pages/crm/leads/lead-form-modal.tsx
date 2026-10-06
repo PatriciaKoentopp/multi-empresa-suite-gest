@@ -79,6 +79,20 @@ export function LeadFormModal({
 
   const enviarWhats = useServerFn(enviarWhatsappLead);
 
+  // Identifica o usuário logado na lista de usuários (pelo e-mail) para usar como responsável padrão
+  const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
+
+  useEffect(() => {
+    const identificarUsuarioLogado = async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const email = auth.user?.email?.toLowerCase();
+      if (!email) return;
+      const encontrado = usuarios.find(u => u.email?.toLowerCase() === email && u.status === "ativo");
+      setUsuarioLogadoId(encontrado?.id || "");
+    };
+    identificarUsuarioLogado();
+  }, [usuarios]);
+
   // Estado para armazenar interações do lead atual
   const [interacoes, setInteracoes] = useState<LeadInteracao[]>([]);
   const [carregandoInteracoes, setCarregandoInteracoes] = useState(false);
