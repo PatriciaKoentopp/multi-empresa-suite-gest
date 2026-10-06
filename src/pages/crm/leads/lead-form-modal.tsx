@@ -298,7 +298,7 @@ export function LeadFormModal({
       // Reset do fechamento para null quando criamos um novo lead
       setFechamento(null);
     }
-  }, [lead, etapas, origens, usuarios, open]);
+  }, [lead, etapas, origens, usuarios, open, usuarioLogadoId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
