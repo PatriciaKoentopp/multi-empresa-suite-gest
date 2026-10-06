@@ -195,7 +195,7 @@ export function LeadFechamentoTab({
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="sucesso" id="sucesso" className="border-2" />
             <Label htmlFor="sucesso" className="cursor-pointer text-base">
-              <span className="text-green-600 font-medium">Venda Realizada</span>
+              <span className="text-green-600 font-medium">Sucesso</span>
             </Label>
           </div>
           <div className="flex items-center space-x-2">
