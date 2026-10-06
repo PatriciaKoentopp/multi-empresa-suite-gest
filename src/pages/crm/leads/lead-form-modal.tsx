@@ -254,11 +254,11 @@ export function LeadFormModal({
         responsavelId: lead.responsavelId || "",
       });
       
-      // Inicializa a nova interação com o responsável atual do lead
+      // Inicializa a nova interação com o usuário logado como responsável padrão
       setNovaInteracao(prev => ({
         ...prev,
         data: new Date(),
-        responsavelId: lead.responsavelId || ""
+        responsavelId: usuarioLogadoId || lead.responsavelId || ""
       }));
     } else {
       // Encontrar o primeiro usuário vendedor ativo, se existir
@@ -285,14 +285,14 @@ export function LeadFormModal({
         origemId: primeiraOrigem,
         dataCriacao: new Date().toLocaleDateString("pt-BR"),
         ultimoContato: new Date().toLocaleDateString("pt-BR"),
-        responsavelId: primeiroVendedor,
+        responsavelId: usuarioLogadoId || primeiroVendedor,
       });
-      
-      // Inicializa a nova interação com o primeiro vendedor
+
+      // Inicializa a nova interação com o usuário logado como responsável padrão
       setNovaInteracao(prev => ({
         ...prev,
         data: new Date(),
-        responsavelId: primeiroVendedor
+        responsavelId: usuarioLogadoId || primeiroVendedor
       }));
 
       // Reset do fechamento para null quando criamos um novo lead
