@@ -24,7 +24,8 @@ O CRM usa o token da **página do Facebook**. Por isso, use o Instagram **pelo M
 5. **Para clientes reais**: Messenger → passo 3 "Faça a análise do app" → **Pedir permissão** para `pages_messaging` e `instagram_manage_messages` (acesso avançado). Exige verificação da empresa; a Meta leva alguns dias.
 
 ## O que eu faço no app
-- Conferir o ID cadastrado (2145329802406998): se for o ID da conta do Instagram e não o da página, o recebimento já aceita os dois (ajuste feito na mudança anterior; precisa **Publicar → Atualizar**).
+- **Token novo da página:** abrir o formulário seguro para substituir o META_PAGE_TOKEN pelo token gerado agora em "Configurações da API do Messenger". O token foi colado no chat; por segurança, cole-o de novo **só no formulário**. Depois de tudo funcionar, gere um token novo na Meta e salve-o pelo formulário.
+- Usar o token para conferir se o ID cadastrado (2145329802406998) é o da página ou o da conta do Instagram, e corrigir o cadastro se for preciso. O recebimento já aceita os dois (ajuste feito antes; precisa **Publicar → Atualizar**).
 - Acompanhar o registro do servidor durante o teste do passo 4 e corrigir o que aparecer.
 - Nenhuma outra alteração de código é necessária neste momento.
 
