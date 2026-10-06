@@ -40,6 +40,7 @@ import { Route as ContabilPlanoContasRouteImport } from './routes/contabil/plano
 import { Route as CrmAgendaRouteImport } from './routes/crm/agenda'
 import { Route as CrmFunilConfiguracaoRouteImport } from './routes/crm/funil-configuracao'
 import { Route as CrmLeadsRouteImport } from './routes/crm/leads'
+import { Route as CrmMetaImplantacaoRouteImport } from './routes/crm/meta-implantacao'
 import { Route as CrmPainelRouteImport } from './routes/crm/painel'
 import { Route as CrmWhatsappRouteImport } from './routes/crm/whatsapp'
 import { Route as CrmWhatsappImplantacaoRouteImport } from './routes/crm/whatsapp-implantacao'
@@ -246,6 +247,11 @@ const CrmFunilConfiguracaoRoute = CrmFunilConfiguracaoRouteImport.update({
 const CrmLeadsRoute = CrmLeadsRouteImport.update({
   id: '/crm/leads',
   path: '/crm/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmMetaImplantacaoRoute = CrmMetaImplantacaoRouteImport.update({
+  id: '/crm/meta-implantacao',
+  path: '/crm/meta-implantacao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CrmPainelRoute = CrmPainelRouteImport.update({
@@ -519,6 +525,7 @@ export interface FileRoutesByFullPath {
   '/crm/agenda': typeof CrmAgendaRoute
   '/crm/funil-configuracao': typeof CrmFunilConfiguracaoRoute
   '/crm/leads': typeof CrmLeadsRoute
+  '/crm/meta-implantacao': typeof CrmMetaImplantacaoRoute
   '/crm/painel': typeof CrmPainelRoute
   '/crm/whatsapp': typeof CrmWhatsappRoute
   '/crm/whatsapp-implantacao': typeof CrmWhatsappImplantacaoRoute
@@ -598,6 +605,7 @@ export interface FileRoutesByTo {
   '/crm/agenda': typeof CrmAgendaRoute
   '/crm/funil-configuracao': typeof CrmFunilConfiguracaoRoute
   '/crm/leads': typeof CrmLeadsRoute
+  '/crm/meta-implantacao': typeof CrmMetaImplantacaoRoute
   '/crm/painel': typeof CrmPainelRoute
   '/crm/whatsapp': typeof CrmWhatsappRoute
   '/crm/whatsapp-implantacao': typeof CrmWhatsappImplantacaoRoute
@@ -678,6 +686,7 @@ export interface FileRoutesById {
   '/crm/agenda': typeof CrmAgendaRoute
   '/crm/funil-configuracao': typeof CrmFunilConfiguracaoRoute
   '/crm/leads': typeof CrmLeadsRoute
+  '/crm/meta-implantacao': typeof CrmMetaImplantacaoRoute
   '/crm/painel': typeof CrmPainelRoute
   '/crm/whatsapp': typeof CrmWhatsappRoute
   '/crm/whatsapp-implantacao': typeof CrmWhatsappImplantacaoRoute
@@ -759,6 +768,7 @@ export interface FileRouteTypes {
     | '/crm/agenda'
     | '/crm/funil-configuracao'
     | '/crm/leads'
+    | '/crm/meta-implantacao'
     | '/crm/painel'
     | '/crm/whatsapp'
     | '/crm/whatsapp-implantacao'
@@ -838,6 +848,7 @@ export interface FileRouteTypes {
     | '/crm/agenda'
     | '/crm/funil-configuracao'
     | '/crm/leads'
+    | '/crm/meta-implantacao'
     | '/crm/painel'
     | '/crm/whatsapp'
     | '/crm/whatsapp-implantacao'
@@ -917,6 +928,7 @@ export interface FileRouteTypes {
     | '/crm/agenda'
     | '/crm/funil-configuracao'
     | '/crm/leads'
+    | '/crm/meta-implantacao'
     | '/crm/painel'
     | '/crm/whatsapp'
     | '/crm/whatsapp-implantacao'
@@ -997,6 +1009,7 @@ export interface RootRouteChildren {
   CrmAgendaRoute: typeof CrmAgendaRoute
   CrmFunilConfiguracaoRoute: typeof CrmFunilConfiguracaoRoute
   CrmLeadsRoute: typeof CrmLeadsRoute
+  CrmMetaImplantacaoRoute: typeof CrmMetaImplantacaoRoute
   CrmPainelRoute: typeof CrmPainelRoute
   CrmWhatsappRoute: typeof CrmWhatsappRoute
   CrmWhatsappImplantacaoRoute: typeof CrmWhatsappImplantacaoRoute
@@ -1262,6 +1275,13 @@ declare module '@tanstack/react-router' {
       path: '/crm/leads'
       fullPath: '/crm/leads'
       preLoaderRoute: typeof CrmLeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/meta-implantacao': {
+      id: '/crm/meta-implantacao'
+      path: '/crm/meta-implantacao'
+      fullPath: '/crm/meta-implantacao'
+      preLoaderRoute: typeof CrmMetaImplantacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/crm/painel': {
@@ -1621,6 +1641,7 @@ const rootRouteChildren: RootRouteChildren = {
   CrmAgendaRoute: CrmAgendaRoute,
   CrmFunilConfiguracaoRoute: CrmFunilConfiguracaoRoute,
   CrmLeadsRoute: CrmLeadsRoute,
+  CrmMetaImplantacaoRoute: CrmMetaImplantacaoRoute,
   CrmPainelRoute: CrmPainelRoute,
   CrmWhatsappRoute: CrmWhatsappRoute,
   CrmWhatsappImplantacaoRoute: CrmWhatsappImplantacaoRoute,
