@@ -80,8 +80,12 @@ async function buscarNome(conta: any, senderId: string): Promise<string | null> 
 export async function processarPayloadMeta(admin: SupabaseClient<any>, payload: any) {
   for (const entry of payload?.entry ?? []) {
     const pageId = String(entry.id ?? "");
-    const { data: conta } = await admin.from("meta_contas").select("*").eq("page_id", pageId).maybeSingle();
-    if (!conta || !conta.ativo) continue;
+    const recipientId = String(entry.messaging?.[0]?.recipient?.id ?? "");
+    console.log(`Meta evento recebido: entry.id=${pageId} recipient.id=${recipientId}`);
+    const ids = [pageId, recipientId].filter(Boolean);
+    const { data: contas } = await admin.from("meta_contas").select("*").in("page_id", ids).limit(1);
+    const conta = contas?.[0];
+    if (!conta || !conta.ativo) { console.warn(`Meta: nenhuma conta ativa para ${ids.join(",")}`); continue; }
 
     for (const ev of entry.messaging ?? []) {
       const m = ev.message;
