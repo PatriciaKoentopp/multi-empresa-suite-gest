@@ -85,7 +85,6 @@ import { Route as VendasProdutosRouteImport } from './routes/vendas/produtos'
 import { Route as VendasServicosRouteImport } from './routes/vendas/servicos'
 import { Route as VendasTabelaPrecosRouteImport } from './routes/vendas/tabela-precos'
 import { Route as OauthGoogleCalendarReturnRouteImport } from './routes/oauth/google-calendar/return'
-import { Route as ApiPublicMetaIgLookupRouteImport } from './routes/api/public/meta/ig-lookup'
 import { Route as ApiPublicMetaWebhookRouteImport } from './routes/api/public/meta/webhook'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 
@@ -482,11 +481,6 @@ const OauthGoogleCalendarReturnRoute =
     path: '/oauth/google-calendar/return',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicMetaIgLookupRoute = ApiPublicMetaIgLookupRouteImport.update({
-  id: '/api/public/meta/ig-lookup',
-  path: '/api/public/meta/ig-lookup',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicMetaWebhookRoute = ApiPublicMetaWebhookRouteImport.update({
   id: '/api/public/meta/webhook',
   path: '/api/public/meta/webhook',
@@ -576,7 +570,6 @@ export interface FileRoutesByFullPath {
   '/relatorios/': typeof RelatoriosIndexRoute
   '/relogio/': typeof RelogioIndexRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
-  '/api/public/meta/ig-lookup': typeof ApiPublicMetaIgLookupRoute
   '/api/public/meta/webhook': typeof ApiPublicMetaWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
@@ -657,7 +650,6 @@ export interface FileRoutesByTo {
   '/relatorios': typeof RelatoriosIndexRoute
   '/relogio': typeof RelogioIndexRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
-  '/api/public/meta/ig-lookup': typeof ApiPublicMetaIgLookupRoute
   '/api/public/meta/webhook': typeof ApiPublicMetaWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
@@ -739,7 +731,6 @@ export interface FileRoutesById {
   '/relatorios/': typeof RelatoriosIndexRoute
   '/relogio/': typeof RelogioIndexRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
-  '/api/public/meta/ig-lookup': typeof ApiPublicMetaIgLookupRoute
   '/api/public/meta/webhook': typeof ApiPublicMetaWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
@@ -822,7 +813,6 @@ export interface FileRouteTypes {
     | '/relatorios/'
     | '/relogio/'
     | '/oauth/google-calendar/return'
-    | '/api/public/meta/ig-lookup'
     | '/api/public/meta/webhook'
     | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -903,7 +893,6 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/relogio'
     | '/oauth/google-calendar/return'
-    | '/api/public/meta/ig-lookup'
     | '/api/public/meta/webhook'
     | '/api/public/whatsapp/webhook'
   id:
@@ -984,7 +973,6 @@ export interface FileRouteTypes {
     | '/relatorios/'
     | '/relogio/'
     | '/oauth/google-calendar/return'
-    | '/api/public/meta/ig-lookup'
     | '/api/public/meta/webhook'
     | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
@@ -1066,7 +1054,6 @@ export interface RootRouteChildren {
   RelatoriosIndexRoute: typeof RelatoriosIndexRoute
   RelogioIndexRoute: typeof RelogioIndexRoute
   OauthGoogleCalendarReturnRoute: typeof OauthGoogleCalendarReturnRoute
-  ApiPublicMetaIgLookupRoute: typeof ApiPublicMetaIgLookupRoute
   ApiPublicMetaWebhookRoute: typeof ApiPublicMetaWebhookRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
@@ -1605,13 +1592,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthGoogleCalendarReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/meta/ig-lookup': {
-      id: '/api/public/meta/ig-lookup'
-      path: '/api/public/meta/ig-lookup'
-      fullPath: '/api/public/meta/ig-lookup'
-      preLoaderRoute: typeof ApiPublicMetaIgLookupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/meta/webhook': {
       id: '/api/public/meta/webhook'
       path: '/api/public/meta/webhook'
@@ -1706,7 +1686,6 @@ const rootRouteChildren: RootRouteChildren = {
   RelatoriosIndexRoute: RelatoriosIndexRoute,
   RelogioIndexRoute: RelogioIndexRoute,
   OauthGoogleCalendarReturnRoute: OauthGoogleCalendarReturnRoute,
-  ApiPublicMetaIgLookupRoute: ApiPublicMetaIgLookupRoute,
   ApiPublicMetaWebhookRoute: ApiPublicMetaWebhookRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
