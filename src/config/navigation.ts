@@ -191,6 +191,10 @@ export const navigationConfig: ModuleNavItem[] = [
         href: "/crm/whatsapp-implantacao",
       },
       {
+        title: "Implantação Instagram/Facebook",
+        href: "/crm/meta-implantacao",
+      },
+      {
         title: "Marketing",
         href: "/crm/marketing",
       },
