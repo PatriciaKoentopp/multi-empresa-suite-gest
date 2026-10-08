@@ -196,6 +196,52 @@ async function processarMensagens(admin: SupabaseClient<any>, value: any) {
   }
 }
 
+/** Mensagens enviadas pelo celular (app WhatsApp Business) */
+async function processarEcos(admin: SupabaseClient<any>, value: any) {
+  const phoneNumberId = value?.metadata?.phone_number_id;
+  if (!phoneNumberId) return;
+  const { data: numero, error: nErr } = await admin.from("whatsapp_numeros").select("*").eq("phone_number_id", phoneNumberId).maybeSingle();
+  if (nErr) throw nErr;
+  if (!numero || !numero.ativo) return;
+
+  for (const m of value.message_echoes ?? []) {
+    const to: string = m.to ?? "";
+    if (!to || m.group_id || to.includes("-") || to.includes("@g.us")) continue;
+    let { data: contato, error } = await admin.from("whatsapp_contatos").select("*").eq("numero_id", numero.id).eq("wa_id", to).maybeSingle();
+    if (error) throw error;
+    if (!contato) {
+      const ins = await admin.from("whatsapp_contatos")
+        .upsert({ empresa_id: numero.empresa_id, numero_id: numero.id, wa_id: to, status: "crm" }, { onConflict: "numero_id,wa_id", ignoreDuplicates: false })
+        .select("*").single();
+      if (ins.error) throw ins.error;
+      contato = ins.data;
+    }
+    const { tipo, conteudo } = textoMensagem(m);
+    const quando = tsFromUnix(m.timestamp) ?? new Date().toISOString();
+    const msgIns = await admin.from("whatsapp_mensagens")
+      .upsert({
+        empresa_id: numero.empresa_id,
+        numero_id: numero.id,
+        contato_id: contato.id,
+        direcao: "saida",
+        wa_message_id: m.id,
+        tipo,
+        conteudo,
+        status: "sent",
+        provider_timestamp: quando,
+      }, { onConflict: "wa_message_id", ignoreDuplicates: true })
+      .select("id");
+    if (msgIns.error) throw msgIns.error;
+    if ((msgIns.data?.length ?? 0) > 0) {
+      if (!contato.ultima_mensagem_em || contato.ultima_mensagem_em < quando) {
+        const up = await admin.from("whatsapp_contatos").update({ ultima_mensagem_em: quando }).eq("id", contato.id);
+        if (up.error) throw up.error;
+      }
+      if (contato.status === "crm" && contato.lead_id) await registrarInteracaoLead(admin, contato.lead_id, "saida", conteudo, quando);
+    }
+  }
+}
+
 async function processarStatus(admin: SupabaseClient<any>, value: any) {
   for (const s of value.statuses ?? []) {
     const { data: msg, error } = await admin.from("whatsapp_mensagens").select("id,status,status_timestamps,erro").eq("wa_message_id", s.id).maybeSingle();
