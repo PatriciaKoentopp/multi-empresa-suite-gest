@@ -6,6 +6,12 @@ import { Navigate } from "@/lib/router-compat";
 import { useCompany } from "@/contexts/company-context";
 import { useEffect } from "react";
 import { AssistenteIaButton } from "@/components/ia/AssistenteIaButton";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { statusGoogleAgenda } from "@/lib/google-agenda.functions";
+import { useNavigate } from "@/lib/router-compat";
+
+const usuariosComGoogleAgendaVerificado = new Set<string>();
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -14,6 +20,30 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const { isAuthenticated, isLoading: authLoading, userData } = useAuth();
   const { currentCompany, loading: companyLoading, fetchCompanyById } = useCompany();
+  const consultarGoogleAgenda = useServerFn(statusGoogleAgenda);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated || !userData?.id || usuariosComGoogleAgendaVerificado.has(userData.id)) return;
+
+    usuariosComGoogleAgendaVerificado.add(userData.id);
+    consultarGoogleAgenda()
+      .then((status) => {
+        if (!status.reconectar) return;
+
+        toast.warning("Google Agenda precisa ser reconectado", {
+          description: "Reconecte sua conta para continuar sincronizando suas tarefas.",
+          duration: Infinity,
+          action: {
+            label: "Reconectar",
+            onClick: () => navigate("/agenda-pessoal/google-agenda"),
+          },
+        });
+      })
+      .catch((error) => {
+        console.error("[MainLayout] Erro ao verificar conexão do Google Agenda:", error);
+      });
+  }, [consultarGoogleAgenda, isAuthenticated, navigate, userData?.id]);
   
   // Verificar e carregar a empresa do usuário, se necessário
   useEffect(() => {
