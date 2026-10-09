@@ -18,7 +18,7 @@ export default function PainelTriadePage() {
   const [tipo, setTipo] = useState<TipoPeriodo>("mes");
   const [ref, setRef] = useState(() => new Date());
 
-  const inicioDate = tipo === "dia" ? ref : tipo === "semana" ? startOfWeek(ref, { weekStartsOn: 0 }) : startOfMonth(ref);
+  const inicioDate = tipo === "dia" ? ref : tipo === "semana" ? startOfWeek(ref, { weekStartsOn: 1 }) : startOfMonth(ref);
   const fimBase = tipo === "dia" ? ref : tipo === "semana" ? addDays(inicioDate, 6) : endOfMonth(ref);
   // No mês, considera apenas os dias transcorridos quando for o mês corrente
   const fimDate = tipo === "mes" && isSameMonth(ref, new Date()) ? new Date() : fimBase;
@@ -40,7 +40,7 @@ export default function PainelTriadePage() {
   const { metas } = useAgendaMetas();
 
   const dados = useMemo(() => {
-    const validas = tarefas.filter((t) => t.status !== "cancelada");
+    const validas = tarefas.filter((t) => t.status === "concluida");
     const diasPeriodo = differenceInCalendarDays(parseDateString(fim)!, parseDateString(inicio)!) + 1;
     const totalMinutosPeriodo = Math.max(1, diasPeriodo) * 24 * 60;
     const minutosPorPapel = new Map<string | null, number>();
