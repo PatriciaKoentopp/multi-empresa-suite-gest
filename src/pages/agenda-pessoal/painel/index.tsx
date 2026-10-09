@@ -107,7 +107,7 @@ export default function PainelTriadePage() {
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Tarefas no período</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{dados.total}</div></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Concluídas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{taxa.toFixed(0)}%</div><p className="text-xs text-muted-foreground">{dados.concluidas} de {dados.total}</p></CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Horas planejadas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{dados.horas.toFixed(1).replace(".", ",")}h</div></CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Horas realizadas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{dados.horas.toFixed(1).replace(".", ",")}h</div></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Metas em andamento</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{metasAndamento.length}</div></CardContent></Card>
       </div>
 
@@ -133,7 +133,7 @@ export default function PainelTriadePage() {
               ))}
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Horas sem tarefa registrada = horas do período menos a duração planejada das tarefas não canceladas.</p>
+          <p className="text-xs text-muted-foreground">Horas sem tarefa registrada = horas do período menos a duração das tarefas realizadas.</p>
         </CardContent>
       </Card>
 
