@@ -2,8 +2,11 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Filter, X, ChevronDown, ChevronUp, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "@/lib/autotable";
 import { toast } from "sonner";
+import { formatDate, formatCurrency } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -421,6 +424,143 @@ export default function AntecipacoesPage() {
     inputBuscaRef.current?.focus();
   }
 
+  const getStatusLabel = (status: Antecipacao["status"]) => {
+    switch (status) {
+      case "ativa": return "Ativa";
+      case "utilizada": return "Utilizada";
+      case "devolvida": return "Devolvida";
+      default: return status;
+    }
+  };
+
+  const getTipoLabel = (tipo: Antecipacao["tipoOperacao"]) => {
+    return tipo === "receber" ? "Recebimento" : "Pagamento";
+  };
+
+  const exportarPDF = () => {
+    if (filteredAntecipacoes.length === 0) {
+      toast.error("Nenhum dado para gerar o PDF");
+      return;
+    }
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Antecipações", 14, 15);
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(currentCompany?.razao_social || "", 14, 21);
+
+    const statusLabelFiltro =
+      statusFilter === "todas" ? "Todos Status" : getStatusLabel(statusFilter);
+    const tipoLabelFiltro =
+      tipoFilter === "todas" ? "Todos Tipos" : getTipoLabel(tipoFilter);
+    let y = 26;
+    doc.text(`Status: ${statusLabelFiltro}`, 14, y);
+    doc.text(`Tipo: ${tipoLabelFiltro}`, 70, y);
+
+    if (searchTerm) {
+      y += 5;
+      doc.text(`Busca: ${searchTerm}`, 14, y);
+    }
+    if (dataInicio || dataFim) {
+      y += 5;
+      const ini = dataInicio ? formatDate(criarDataSemTimezone(dataInicio)!) : "-";
+      const fim = dataFim ? formatDate(criarDataSemTimezone(dataFim)!) : "-";
+      doc.text(`Data da Antecipação: ${ini} a ${fim}`, 14, y);
+    }
+
+    const dataEmissao = new Date();
+    const dd = String(dataEmissao.getDate()).padStart(2, "0");
+    const mm = String(dataEmissao.getMonth() + 1).padStart(2, "0");
+    const yyyy = dataEmissao.getFullYear();
+    const hh = String(dataEmissao.getHours()).padStart(2, "0");
+    const mi = String(dataEmissao.getMinutes()).padStart(2, "0");
+    doc.text(`Emitido em ${dd}/${mm}/${yyyy} ${hh}:${mi}`, pageWidth - 14, 15, { align: "right" });
+
+    const totalValorTotal = filteredAntecipacoes.reduce((soma, ant) => soma + ant.valorTotal, 0);
+    const totalValorUtilizado = filteredAntecipacoes.reduce((soma, ant) => soma + ant.valorUtilizado, 0);
+    const totalValorDisponivel = filteredAntecipacoes.reduce((soma, ant) => soma + ant.valorDisponivel, 0);
+
+    // Resumo
+    y += 7;
+    doc.setFont("helvetica", "bold");
+    doc.text(`Antecipações: ${filteredAntecipacoes.length}`, 14, y);
+    doc.text(`Valor Total: ${formatCurrency(totalValorTotal)}`, 70, y);
+    doc.text(`Valor Utilizado: ${formatCurrency(totalValorUtilizado)}`, 140, y);
+    doc.text(`Valor Disponível: ${formatCurrency(totalValorDisponivel)}`, 215, y);
+
+    const head = ["Data", "Favorecido", "Tipo", "Nº Documento", "Descrição", "Valor Total", "Valor Utilizado", "Valor Disponível", "Status"];
+
+    const body = filteredAntecipacoes.map((ant) => [
+      formatDate(ant.dataAntecipacao),
+      ant.favorecido,
+      getTipoLabel(ant.tipoOperacao),
+      ant.numeroDocumento || "-",
+      ant.descricao || "-",
+      formatCurrency(ant.valorTotal),
+      formatCurrency(ant.valorUtilizado),
+      formatCurrency(ant.valorDisponivel),
+      getStatusLabel(ant.status),
+    ]);
+
+    // Linha de total
+    body.push([
+      "",
+      "",
+      "",
+      "",
+      `Total (${filteredAntecipacoes.length} antecipação(ões))`,
+      formatCurrency(totalValorTotal),
+      formatCurrency(totalValorUtilizado),
+      formatCurrency(totalValorDisponivel),
+      "",
+    ]);
+
+    autoTable(doc, {
+      head: [head],
+      body,
+      startY: y + 4,
+      styles: { fontSize: 8, cellPadding: 1.5, lineColor: [200, 200, 200], lineWidth: 0.1 },
+      headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold" },
+      columnStyles: {
+        0: { halign: "left", cellWidth: 22 },
+        1: { halign: "left", cellWidth: 50 },
+        2: { halign: "left", cellWidth: 24 },
+        3: { halign: "left", cellWidth: 28 },
+        4: { halign: "left" },
+        5: { halign: "right", cellWidth: 28 },
+        6: { halign: "right", cellWidth: 28 },
+        7: { halign: "right", cellWidth: 28 },
+        8: { halign: "left", cellWidth: 20 },
+      },
+      didParseCell: (data) => {
+        // Destaca a linha de total
+        if (data.section === "body" && data.row.index === body.length - 1) {
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.fillColor = [241, 245, 249];
+        }
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.pages.length - 1;
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.text(
+          `Página ${data.pageNumber} de ${pageCount}`,
+          pageWidth - 14,
+          doc.internal.pageSize.getHeight() - 8,
+          { align: "right" }
+        );
+      },
+    });
+
+    doc.save(`antecipacoes-${dd}-${mm}-${yyyy}.pdf`);
+    toast.success("PDF gerado com sucesso!");
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -450,12 +590,22 @@ export default function AntecipacoesPage() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Antecipações</h1>
-        <Button
-          variant="blue"
-          onClick={handleNovaAntecipacao}
-        >
-          Nova Antecipação
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={exportarPDF}
+            disabled={filteredAntecipacoes.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Gerar PDF
+          </Button>
+          <Button
+            variant="blue"
+            onClick={handleNovaAntecipacao}
+          >
+            Nova Antecipação
+          </Button>
+        </div>
       </div>
       
       <Card>
