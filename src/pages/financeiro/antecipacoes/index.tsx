@@ -590,12 +590,22 @@ export default function AntecipacoesPage() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Antecipações</h1>
-        <Button
-          variant="blue"
-          onClick={handleNovaAntecipacao}
-        >
-          Nova Antecipação
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={exportarPDF}
+            disabled={filteredAntecipacoes.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Gerar PDF
+          </Button>
+          <Button
+            variant="blue"
+            onClick={handleNovaAntecipacao}
+          >
+            Nova Antecipação
+          </Button>
+        </div>
       </div>
       
       <Card>
