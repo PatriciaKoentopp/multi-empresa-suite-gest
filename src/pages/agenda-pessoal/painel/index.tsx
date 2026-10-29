@@ -41,6 +41,7 @@ export default function PainelTriadePage() {
 
   const dados = useMemo(() => {
     const validas = tarefas.filter((t) => t.status === "concluida");
+    const planeadas = tarefas.filter((t) => t.status !== "cancelada");
     const diasPeriodo = differenceInCalendarDays(parseDateString(fim)!, parseDateString(inicio)!) + 1;
     const totalMinutosPeriodo = Math.max(1, diasPeriodo) * 24 * 60;
     const minutosPorPapel = new Map<string | null, number>();
@@ -74,6 +75,7 @@ export default function PainelTriadePage() {
     }).filter((x) => x.qtd > 0).map((x) => x.row);
     return {
       usarDuracao,
+      planeadas: planeadas.length,
       total: validas.length,
       concluidas: validas.filter((t) => t.status === "concluida").length,
       horas: validas.reduce((s, t) => s + t.duracao_min, 0) / 60,
@@ -85,7 +87,7 @@ export default function PainelTriadePage() {
   }, [tarefas, papeis, inicio, fim]);
 
   const metasAndamento = metas.filter((m) => m.status === "em_andamento");
-  const taxa = dados.total ? (dados.concluidas / dados.total) * 100 : 0;
+  const taxa = dados.planeadas ? (dados.concluidas / dados.planeadas) * 100 : 0;
   const unidade = dados.usarDuracao ? "min" : "tarefas";
 
   return (
