@@ -19,6 +19,7 @@ export const useTicketMedioProjeto = () => {
         .eq('tipo', 'venda')
         .eq('status', 'ativo')
         .not('data_venda', 'is', null)
+        .gte('data_venda', '1900-01-01')
         .order('data_venda', { ascending: true })
         .limit(1);
 
