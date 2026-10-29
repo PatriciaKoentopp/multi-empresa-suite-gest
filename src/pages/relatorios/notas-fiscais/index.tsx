@@ -105,7 +105,7 @@ export default function RelatorioNotasFiscais() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Relatório de Notas Fiscais</h1>
         <p className="text-muted-foreground">
-          Notas fiscais emitidas por data e número no período selecionado
+          Notas fiscais emitidas em orçamentos ativos, por data e número no período selecionado
         </p>
       </div>
 
