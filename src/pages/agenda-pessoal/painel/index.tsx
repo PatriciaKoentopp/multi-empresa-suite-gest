@@ -41,6 +41,7 @@ export default function PainelTriadePage() {
 
   const dados = useMemo(() => {
     const validas = tarefas.filter((t) => t.status === "concluida");
+    const planeadas = tarefas.filter((t) => t.status !== "cancelada");
     const diasPeriodo = differenceInCalendarDays(parseDateString(fim)!, parseDateString(inicio)!) + 1;
     const totalMinutosPeriodo = Math.max(1, diasPeriodo) * 24 * 60;
     const minutosPorPapel = new Map<string | null, number>();
@@ -74,6 +75,7 @@ export default function PainelTriadePage() {
     }).filter((x) => x.qtd > 0).map((x) => x.row);
     return {
       usarDuracao,
+      planeadas: planeadas.length,
       total: validas.length,
       concluidas: validas.filter((t) => t.status === "concluida").length,
       horas: validas.reduce((s, t) => s + t.duracao_min, 0) / 60,
@@ -85,7 +87,7 @@ export default function PainelTriadePage() {
   }, [tarefas, papeis, inicio, fim]);
 
   const metasAndamento = metas.filter((m) => m.status === "em_andamento");
-  const taxa = dados.total ? (dados.concluidas / dados.total) * 100 : 0;
+  const taxa = dados.planeadas ? (dados.concluidas / dados.planeadas) * 100 : 0;
   const unidade = dados.usarDuracao ? "min" : "tarefas";
 
   return (
@@ -106,7 +108,7 @@ export default function PainelTriadePage() {
 
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Tarefas no período</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{dados.total}</div></CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Concluídas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{taxa.toFixed(0)}%</div><p className="text-xs text-muted-foreground">{dados.concluidas} de {dados.total}</p></CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Concluídas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{taxa.toFixed(0)}%</div><p className="text-xs text-muted-foreground">{dados.concluidas} de {dados.planeadas}</p></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Horas realizadas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{dados.horas.toFixed(1).replace(".", ",")}h</div></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Metas em andamento</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{metasAndamento.length}</div></CardContent></Card>
       </div>
