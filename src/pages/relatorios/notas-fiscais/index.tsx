@@ -50,6 +50,7 @@ export default function RelatorioNotasFiscais() {
             "id, codigo, data_nota_fiscal, numero_nota_fiscal, data_venda, codigo_projeto, favorecidos(nome), orcamentos_itens(valor)"
           )
           .eq("empresa_id", currentCompany.id)
+          .eq("status", "ativo")
           .not("numero_nota_fiscal", "is", null)
           .not("data_nota_fiscal", "is", null)
           .gte("data_nota_fiscal", toISO(dataInicial))
