@@ -50,6 +50,7 @@ export default function RelatorioNotasFiscais() {
             "id, codigo, data_nota_fiscal, numero_nota_fiscal, data_venda, codigo_projeto, favorecidos(nome), orcamentos_itens(valor)"
           )
           .eq("empresa_id", currentCompany.id)
+          .eq("status", "ativo")
           .not("numero_nota_fiscal", "is", null)
           .not("data_nota_fiscal", "is", null)
           .gte("data_nota_fiscal", toISO(dataInicial))
@@ -104,7 +105,7 @@ export default function RelatorioNotasFiscais() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Relatório de Notas Fiscais</h1>
         <p className="text-muted-foreground">
-          Notas fiscais emitidas por data e número no período selecionado
+          Notas fiscais emitidas em orçamentos ativos, por data e número no período selecionado
         </p>
       </div>
 
