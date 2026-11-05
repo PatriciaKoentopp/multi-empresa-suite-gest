@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { format, parseISO } from "date-fns";
@@ -28,6 +28,7 @@ export interface ResumoAntecipacoes {
 export function useRelatorioAntecipacoes() {
   const { currentCompany } = useCompany();
   const [isLoading, setIsLoading] = useState(false);
+  const [tiposTitulos, setTiposTitulos] = useState<{ id: string; nome: string }[]>([]);
   const [antecipacoes, setAntecipacoes] = useState<AntecipacaoRelatorio[]>([]);
   const [resumo, setResumo] = useState<ResumoAntecipacoes>({
     totalAntecipacoes: 0,
