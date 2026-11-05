@@ -17,6 +17,7 @@ import { toast } from "sonner";
 interface NotaRecebida {
   id: string;
   data_emissao: string;
+  data_ref: string;
   numero_documento: string;
   favorecido_nome: string;
   descricao: string;
@@ -46,6 +47,9 @@ export default function RelatorioNotasFiscaisRecebidas() {
   const [dataInicial, setDataInicial] = useState<Date>(startOfMonth(new Date()));
   const [dataFinal, setDataFinal] = useState<Date>(endOfMonth(new Date()));
   const [favorecidoId, setFavorecidoId] = useState<string>("todos");
+  const [tipoData, setTipoData] = useState<"emissao" | "lancamento">("emissao");
+  const campoData = tipoData === "emissao" ? "data_emissao" : "data_lancamento";
+  const rotuloData = tipoData === "emissao" ? "Data Emissão" : "Data Lançamento";
 
   useEffect(() => {
     const fetchNotas = async () => {
@@ -55,13 +59,13 @@ export default function RelatorioNotasFiscaisRecebidas() {
         let query = supabase
           .from("movimentacoes")
           .select(
-            "id, data_emissao, numero_documento, descricao, mes_referencia, valor, documento_pdf, favorecidos(nome)"
+            "id, data_emissao, data_lancamento, numero_documento, descricao, mes_referencia, valor, documento_pdf, favorecidos(nome)"
           )
           .eq("empresa_id", currentCompany.id)
           .eq("tipo_operacao", "pagar")
           .not("data_emissao", "is", null)
-          .gte("data_emissao", toISO(dataInicial))
-          .lte("data_emissao", toISO(dataFinal));
+          .gte(campoData, toISO(dataInicial))
+          .lte(campoData, toISO(dataFinal));
 
         if (favorecidoId !== "todos") {
           query = query.eq("favorecido_id", favorecidoId);
@@ -73,6 +77,7 @@ export default function RelatorioNotasFiscaisRecebidas() {
         const mapped: NotaRecebida[] = (data || []).map((m: any) => ({
           id: m.id,
           data_emissao: m.data_emissao,
+          data_ref: String((tipoData === "emissao" ? m.data_emissao : m.data_lancamento) || "").slice(0, 10),
           numero_documento: m.numero_documento || "-",
           descricao: m.descricao || "-",
           mes_referencia: m.mes_referencia,
@@ -82,8 +87,8 @@ export default function RelatorioNotasFiscaisRecebidas() {
         }));
 
         mapped.sort((a, b) => {
-          if (a.data_emissao !== b.data_emissao) {
-            return a.data_emissao.localeCompare(b.data_emissao);
+          if (a.data_ref !== b.data_ref) {
+            return a.data_ref.localeCompare(b.data_ref);
           }
           return String(a.numero_documento).localeCompare(String(b.numero_documento), undefined, {
             numeric: true,
@@ -99,7 +104,7 @@ export default function RelatorioNotasFiscaisRecebidas() {
     };
 
     fetchNotas();
-  }, [currentCompany?.id, dataInicial, dataFinal, favorecidoId]);
+  }, [currentCompany?.id, dataInicial, dataFinal, favorecidoId, tipoData]);
 
   const totalValor = useMemo(() => notas.reduce((sum, n) => sum + n.valor, 0), [notas]);
   const ticketMedio = notas.length > 0 ? totalValor / notas.length : 0;
@@ -130,7 +135,7 @@ export default function RelatorioNotasFiscaisRecebidas() {
       favorecidoId === "todos"
         ? "Todos"
         : favorecidos.find((f) => f.id === favorecidoId)?.nome || "Todos";
-    doc.text(`Favorecido: ${favorecidoNome}`, 14, 31);
+    doc.text(`Favorecido: ${favorecidoNome}   |   Filtrado por: ${rotuloData}`, 14, 31);
 
     const dataEmissao = new Date();
     const dd = String(dataEmissao.getDate()).padStart(2, "0");
@@ -146,10 +151,10 @@ export default function RelatorioNotasFiscaisRecebidas() {
     doc.text(`Valor Total: ${formatCurrency(totalValor)}`, 80, 38);
     doc.text(`Valor Médio: ${formatCurrency(ticketMedio)}`, 160, 38);
 
-    const head = ["Data", "Número", "Fornecedor", "Descrição", "Referência", "Valor"];
+    const head = [rotuloData, "Número", "Fornecedor", "Descrição", "Referência", "Valor"];
 
     const body = notas.map((nota) => [
-      formatDate(nota.data_emissao),
+      formatDate(nota.data_ref),
       nota.numero_documento,
       nota.favorecido_nome,
       nota.descricao,
@@ -221,6 +226,18 @@ export default function RelatorioNotasFiscaisRecebidas() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
+        <div className="w-full sm:w-48">
+          <label className="text-sm font-medium mb-2 block">Filtrar por</label>
+          <Select value={tipoData} onValueChange={(v) => setTipoData(v as "emissao" | "lancamento")}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="emissao">Data de Emissão</SelectItem>
+              <SelectItem value="lancamento">Data de Lançamento</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="w-full sm:w-48">
           <label className="text-sm font-medium mb-2 block">Data Inicial</label>
           <DateInput
@@ -306,7 +323,7 @@ export default function RelatorioNotasFiscaisRecebidas() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[120px]">Data</TableHead>
+                    <TableHead className="w-[120px]">{rotuloData}</TableHead>
                     <TableHead className="w-[130px]">Número</TableHead>
                     <TableHead>Fornecedor</TableHead>
                     <TableHead>Descrição</TableHead>
@@ -318,7 +335,7 @@ export default function RelatorioNotasFiscaisRecebidas() {
                 <TableBody>
                   {notas.map((nota) => (
                     <TableRow key={nota.id}>
-                      <TableCell>{formatDate(nota.data_emissao)}</TableCell>
+                      <TableCell>{formatDate(nota.data_ref)}</TableCell>
                       <TableCell className="font-medium">{nota.numero_documento}</TableCell>
                       <TableCell>{nota.favorecido_nome}</TableCell>
                       <TableCell>{nota.descricao}</TableCell>
