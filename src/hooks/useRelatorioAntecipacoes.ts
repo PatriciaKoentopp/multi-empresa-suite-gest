@@ -39,7 +39,33 @@ export function useRelatorioAntecipacoes() {
     valorPagamento: 0,
   });
 
-  const gerarRelatorio = async (dataReferencia: Date) => {
+  // Carregar tipos de títulos ativos da empresa para o filtro
+  useEffect(() => {
+    if (!currentCompany?.id) return;
+
+    let ativo = true;
+
+    const carregarTiposTitulos = async () => {
+      const { data, error } = await supabase
+        .from('tipos_titulos')
+        .select('id, nome')
+        .eq('empresa_id', currentCompany.id)
+        .eq('status', 'ativo')
+        .order('nome', { ascending: true });
+
+      if (!error && ativo) {
+        setTiposTitulos(data ?? []);
+      }
+    };
+
+    carregarTiposTitulos();
+
+    return () => {
+      ativo = false;
+    };
+  }, [currentCompany?.id]);
+
+  const gerarRelatorio = async (dataReferencia: Date, tipoTituloId?: string) => {
     if (!currentCompany?.id) return;
 
     setIsLoading(true);
