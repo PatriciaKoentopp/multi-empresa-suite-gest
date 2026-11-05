@@ -110,7 +110,8 @@ export default function ContaCorrentePage() {
         .select('*')
         .eq('empresa_id', currentCompany.id)
         .eq('status', 'ativo')
-        .in('tipo', ['ativo', 'passivo']); // Modificado para incluir tipo "passivo"
+        .in('tipo', ['ativo', 'passivo']) // Modificado para incluir tipo "passivo"
+        .order('codigo', { ascending: true }); // Ordenação pelo código da conta contábil
         
       if (error) {
         throw error;
