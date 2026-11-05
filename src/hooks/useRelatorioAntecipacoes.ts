@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
 import { format, parseISO } from "date-fns";
@@ -28,6 +28,7 @@ export interface ResumoAntecipacoes {
 export function useRelatorioAntecipacoes() {
   const { currentCompany } = useCompany();
   const [isLoading, setIsLoading] = useState(false);
+  const [tiposTitulos, setTiposTitulos] = useState<{ id: string; nome: string }[]>([]);
   const [antecipacoes, setAntecipacoes] = useState<AntecipacaoRelatorio[]>([]);
   const [resumo, setResumo] = useState<ResumoAntecipacoes>({
     totalAntecipacoes: 0,
@@ -38,7 +39,33 @@ export function useRelatorioAntecipacoes() {
     valorPagamento: 0,
   });
 
-  const gerarRelatorio = async (dataReferencia: Date) => {
+  // Carregar tipos de títulos ativos da empresa para o filtro
+  useEffect(() => {
+    if (!currentCompany?.id) return;
+
+    let ativo = true;
+
+    const carregarTiposTitulos = async () => {
+      const { data, error } = await supabase
+        .from('tipos_titulos')
+        .select('id, nome')
+        .eq('empresa_id', currentCompany.id)
+        .eq('status', 'ativo')
+        .order('nome', { ascending: true });
+
+      if (!error && ativo) {
+        setTiposTitulos(data ?? []);
+      }
+    };
+
+    carregarTiposTitulos();
+
+    return () => {
+      ativo = false;
+    };
+  }, [currentCompany?.id]);
+
+  const gerarRelatorio = async (dataReferencia: Date, tipoTituloId?: string) => {
     if (!currentCompany?.id) return;
 
     setIsLoading(true);
@@ -57,7 +84,8 @@ export function useRelatorioAntecipacoes() {
           descricao,
           numero_documento,
           status,
-          favorecido_id
+          favorecido_id,
+          tipo_titulo_id
         `)
         .eq('empresa_id', currentCompany.id)
         .lte('data_lancamento', dataReferenciaStr)
@@ -87,6 +115,11 @@ export function useRelatorioAntecipacoes() {
       const antecipacoesEmAberto: AntecipacaoRelatorio[] = [];
 
       antecipacoesData?.forEach((ant) => {
+        // Aplicar filtro por tipo de título
+        if (tipoTituloId && tipoTituloId !== 'todos' && ant.tipo_titulo_id !== tipoTituloId) {
+          return;
+        }
+
         const valorDisponivel = Number(ant.valor_total) - Number(ant.valor_utilizado);
         
         if (valorDisponivel > 0) {
@@ -133,6 +166,7 @@ export function useRelatorioAntecipacoes() {
     isLoading,
     antecipacoes,
     resumo,
+    tiposTitulos,
     gerarRelatorio,
   };
 }

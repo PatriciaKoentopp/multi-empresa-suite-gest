@@ -5,6 +5,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, CalendarIcon, FileSpreadsheet, FileText, Wallet, ArrowDownCircle, ArrowUpCircle, DollarSign } from "lucide-react";
 import { useNavigate } from "@/lib/router-compat";
 import { format } from "date-fns";
@@ -16,10 +17,11 @@ import * as XLSX from "xlsx";
 export default function RelatorioAntecipacoes() {
   const navigate = useNavigate();
   const [dataReferencia, setDataReferencia] = useState<Date>(new Date());
-  const { isLoading, antecipacoes, resumo, gerarRelatorio } = useRelatorioAntecipacoes();
+  const [tipoTituloId, setTipoTituloId] = useState<string>("todos");
+  const { isLoading, antecipacoes, resumo, tiposTitulos, gerarRelatorio } = useRelatorioAntecipacoes();
 
   const handleGerarRelatorio = () => {
-    gerarRelatorio(dataReferencia);
+    gerarRelatorio(dataReferencia, tipoTituloId);
   };
 
   const exportarExcel = () => {
@@ -112,6 +114,22 @@ export default function RelatorioAntecipacoes() {
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tipo de Título</label>
+              <Select value={tipoTituloId} onValueChange={setTipoTituloId}>
+                <SelectTrigger className="w-[240px]">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  {tiposTitulos.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.id}>
+                      {tipo.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Button onClick={handleGerarRelatorio} disabled={isLoading}>
               {isLoading ? "Gerando..." : "Gerar Relatório"}
