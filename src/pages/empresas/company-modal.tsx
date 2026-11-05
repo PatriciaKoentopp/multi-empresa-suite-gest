@@ -137,7 +137,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
     }
   }, [company, form]);
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
     // Prepara objeto Company com endereço corretamente montado
     const companyObj: Partial<Company> = {
       id: company?.id ?? crypto.randomUUID(),
