@@ -121,6 +121,7 @@ export function useMovimentacaoDados() {
     categorias,
     contasCorrente,
     tiposTitulos,
-    impostosRetidos
+    impostosRetidos,
+    recarregarDados: carregarDados
   };
 }
