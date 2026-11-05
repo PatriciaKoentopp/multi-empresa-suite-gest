@@ -45,7 +45,7 @@ const formSchema = z.object({
   complemento: z.string().optional(),
   bairro: z.string().min(1, "Bairro é obrigatório"),
   cidade: z.string().min(1, "Cidade é obrigatória"),
-  estado: z.string().min(1, "Estado é obrigatório"),
+  estado: z.string().trim().length(2, "Informe a sigla do estado (ex.: SC)"),
   pais: z.string().min(1, "País é obrigatório"),
   regimeTributacao: z.enum(["simples", "lucro_presumido", "lucro_real", "mei"]).optional(),
   logo: z.string().url("URL inválida").optional().or(z.literal("")),
@@ -176,17 +176,11 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
     };
 
     if (company) {
-      updateCompany(company.id, companyObj);
-      toast({
-        title: "Empresa atualizada",
-        description: "As informações da empresa foram atualizadas com sucesso.",
-      });
+      const ok = await updateCompany(company.id, companyObj);
+      if (!ok) return;
     } else {
-      createCompany(companyObj);
-      toast({
-        title: "Empresa cadastrada",
-        description: "A empresa foi cadastrada com sucesso.",
-      });
+      const ok = await createCompany(companyObj);
+      if (!ok) return;
     }
     onClose();
   };
@@ -481,7 +475,7 @@ export function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                       <FormItem>
                         <FormLabel>Estado</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} maxLength={2} placeholder="SC" onChange={(e) => field.onChange(e.target.value.toUpperCase())} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

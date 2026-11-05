@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Company } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { toUF } from "@/lib/uf";
 
 interface CompanyContextType {
   companies: Company[];
@@ -10,8 +11,8 @@ interface CompanyContextType {
   setCurrentCompany: (company: Company) => void;
   fetchCompanies: () => Promise<void>;
   fetchCompanyById: (companyId: string) => Promise<void>;
-  createCompany: (company: Partial<Company>) => Promise<void>;
-  updateCompany: (id: string, company: Partial<Company>) => Promise<void>;
+  createCompany: (company: Partial<Company>) => Promise<boolean>;
+  updateCompany: (id: string, company: Partial<Company>) => Promise<boolean>;
   loading: boolean;
 }
 
@@ -21,8 +22,8 @@ const CompanyContext = createContext<CompanyContextType>({
   setCurrentCompany: () => {},
   fetchCompanies: async () => {},
   fetchCompanyById: async () => {},
-  createCompany: async () => {},
-  updateCompany: async () => {},
+  createCompany: async () => false,
+  updateCompany: async () => false,
   loading: false,
 });
 
@@ -244,7 +245,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           complemento: company.complemento || (company.endereco ? company.endereco.complemento : null),
           bairro: company.bairro || (company.endereco ? company.endereco.bairro : ""),
           cidade: company.cidade || (company.endereco ? company.endereco.cidade : ""),
-          estado: company.estado || (company.endereco ? company.endereco.estado : ""),
+          estado: toUF(company.estado || (company.endereco ? company.endereco.estado : "")),
           pais: company.pais || (company.endereco ? company.endereco.pais : "Brasil"),
       };
 
@@ -262,15 +263,17 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error("Erro ao criar empresa:", error);
-        toast.error("Erro ao criar empresa");
-        return;
+        toast.error("Erro ao criar empresa", { description: error.message });
+        return false;
       }
 
       toast.success("Empresa criada com sucesso!");
       await fetchCompanies();
+      return true;
     } catch (error) {
       console.error("Erro ao criar empresa:", error);
       toast.error("Erro ao criar empresa");
+      return false;
     } finally {
       setLoading(false);
     }
@@ -300,15 +303,15 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           complemento: company.complemento || (company.endereco ? company.endereco.complemento : null),
           bairro: company.bairro || (company.endereco ? company.endereco.bairro : ""),
           cidade: company.cidade || (company.endereco ? company.endereco.cidade : ""),
-          estado: company.estado || (company.endereco ? company.endereco.estado : ""),
+          estado: toUF(company.estado || (company.endereco ? company.endereco.estado : "")),
           pais: company.pais || (company.endereco ? company.endereco.pais : "Brasil"),
         })
         .eq("id", id);
 
       if (error) {
         console.error("Erro ao atualizar empresa:", error);
-        toast.error("Erro ao atualizar empresa");
-        return;
+        toast.error("Erro ao atualizar empresa", { description: error.message });
+        return false;
       }
 
       toast.success("Empresa atualizada com sucesso!");
@@ -321,9 +324,11 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           setCurrentCompany(updatedCompany);
         }
       }
+      return true;
     } catch (error) {
       console.error("Erro ao atualizar empresa:", error);
       toast.error("Erro ao atualizar empresa");
+      return false;
     } finally {
       setLoading(false);
     }
