@@ -421,7 +421,7 @@ export default function AntecipacoesPage() {
         .includes(searchTerm.toLowerCase());
       const statusOk = statusFilter === "todas" || antecipacao.status === statusFilter;
       const tipoOk = tipoFilter === "todas" || antecipacao.tipoOperacao === tipoFilter;
-      const tipoTituloOk = tipoTituloFilter === "todas" || antecipacao.tipoTituloId === tipoTituloFilter;
+      const tipoTituloOk = tipoTituloFilter === "todos" || antecipacao.tipoTituloId === tipoTituloFilter;
       
       // Aplicar filtros de data
       let dataDentroRange = true;
