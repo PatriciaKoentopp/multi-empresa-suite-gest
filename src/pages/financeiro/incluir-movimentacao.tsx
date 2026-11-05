@@ -14,6 +14,8 @@ import { RecebimentoForm } from "@/components/movimentacao/RecebimentoForm";
 import { DateInput } from "@/components/movimentacao/DateInput";
 import { useNavigate, useLocation } from "@/lib/router-compat";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/contexts/company-context";
 import { FileText } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -98,7 +100,8 @@ export default function IncluirMovimentacaoPage() {
     atualizarDataImpostoRetido
   } = useMovimentacaoForm(movimentacaoParaEditar);
 
-  const { favorecidos, categorias, contasCorrente, tiposTitulos, impostosRetidos } = useMovimentacaoDados();
+  const { favorecidos, categorias, contasCorrente, tiposTitulos, impostosRetidos, recarregarDados } = useMovimentacaoDados();
+  const { currentCompany } = useCompany();
   
   // Filtrar tipos de títulos baseado na operação
   const tiposTitulosFiltrados = tiposTitulos.filter(tipo => {
@@ -130,10 +133,30 @@ export default function IncluirMovimentacaoPage() {
     toast.success("Novo favorecido cadastrado com sucesso!");
   };
   
-  const handleSalvarNovaCategoria = () => {
-    // Implementação do salvamento da nova categoria
+  const handleSalvarNovaCategoria = async (dados: any) => {
+    if (!currentCompany?.id) return;
+    const { data, error } = await supabase
+      .from("plano_contas")
+      .insert([{ ...dados, empresa_id: currentCompany.id }])
+      .select("id")
+      .single();
+    if (error) {
+      console.error("Erro ao criar categoria:", error);
+      toast.error("Erro ao cadastrar categoria: " + error.message);
+      return;
+    }
     setIsModalNovaCategoria(false);
-    toast.success("Nova categoria cadastrada com sucesso!");
+    await recarregarDados();
+    const visivel =
+      dados.status === "ativo" &&
+      dados.categoria === "movimentação" &&
+      ["receita", "despesa", "patrimonio"].includes(dados.tipo);
+    if (visivel && data?.id) {
+      setCategoria(data.id);
+      toast.success("Nova categoria cadastrada com sucesso!");
+    } else {
+      toast.warning("Categoria cadastrada, mas só aparece na lista se for ativa, de movimentação e do tipo Receita, Despesa ou Patrimônio.");
+    }
   };
 
   // Função para formatar o mês de referência
