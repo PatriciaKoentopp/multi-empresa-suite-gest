@@ -166,6 +166,7 @@ export function useRelatorioAntecipacoes() {
     isLoading,
     antecipacoes,
     resumo,
+    tiposTitulos,
     gerarRelatorio,
   };
 }
