@@ -47,6 +47,8 @@ export default function AntecipacoesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todas" | "ativa" | "utilizada" | "devolvida">("ativa");
   const [tipoFilter, setTipoFilter] = useState<"todas" | "receber" | "pagar">("todas");
+  const [tipoTituloFilter, setTipoTituloFilter] = useState<string>("todos");
+  const [tiposTitulos, setTiposTitulos] = useState<{ id: string; nome: string }[]>([]);
   const [dataInicio, setDataInicio] = useState<string>("");
   const [dataFim, setDataFim] = useState<string>("");
   const [isFiltroAvancadoOpen, setIsFiltroAvancadoOpen] = useState(false);
@@ -190,6 +192,20 @@ export default function AntecipacoesPage() {
         }
       }
 
+      // Buscar tipos de títulos ativos da empresa (para o filtro)
+      const { data: tiposTitulosAtivos, error: tiposTitulosAtivosError } = await supabase
+        .from("tipos_titulos")
+        .select("id, nome")
+        .eq("empresa_id", currentCompany.id)
+        .eq("status", "ativo")
+        .order("nome", { ascending: true });
+
+      if (tiposTitulosAtivosError) {
+        console.error("Erro ao carregar tipos de títulos para filtro:", tiposTitulosAtivosError);
+      } else {
+        setTiposTitulos(tiposTitulosAtivos || []);
+      }
+
       // Buscar tipos de títulos
       const tiposTitulosIds = antecipacoesData
         ?.filter((item): item is typeof item & { tipo_titulo_id: string } => Boolean(item.tipo_titulo_id))
@@ -271,7 +287,8 @@ export default function AntecipacoesPage() {
           descricao: item.descricao || "",
           status,
           numeroDocumento: item.numero_documento || "",
-          conciliada: conciliacaoMap[item.id] || false
+          conciliada: conciliacaoMap[item.id] || false,
+          tipoTituloId: item.tipo_titulo_id || undefined
         };
       });
 
@@ -391,6 +408,7 @@ export default function AntecipacoesPage() {
     setSearchTerm("");
     setStatusFilter("ativa");
     setTipoFilter("todas");
+    setTipoTituloFilter("todos");
     setDataInicio("");
     setDataFim("");
     setIsFiltroAvancadoOpen(false);
@@ -403,6 +421,7 @@ export default function AntecipacoesPage() {
         .includes(searchTerm.toLowerCase());
       const statusOk = statusFilter === "todas" || antecipacao.status === statusFilter;
       const tipoOk = tipoFilter === "todas" || antecipacao.tipoOperacao === tipoFilter;
+      const tipoTituloOk = tipoTituloFilter === "todas" || antecipacao.tipoTituloId === tipoTituloFilter;
       
       // Aplicar filtros de data
       let dataDentroRange = true;
@@ -416,9 +435,9 @@ export default function AntecipacoesPage() {
         dataDentroRange = dataDentroRange && antecipacao.dataAntecipacao <= dataFimDate;
       }
 
-      return textoBusca && statusOk && tipoOk && dataDentroRange;
+      return textoBusca && statusOk && tipoOk && tipoTituloOk && dataDentroRange;
     });
-  }, [antecipacoes, searchTerm, statusFilter, tipoFilter, dataInicio, dataFim]);
+  }, [antecipacoes, searchTerm, statusFilter, tipoFilter, tipoTituloFilter, dataInicio, dataFim]);
 
   function handleLupaClick() {
     inputBuscaRef.current?.focus();

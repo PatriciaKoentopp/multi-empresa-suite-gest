@@ -23,6 +23,7 @@ export interface Antecipacao {
   status: "ativa" | "utilizada" | "devolvida";
   numeroDocumento?: string;
   conciliada?: boolean;
+  tipoTituloId?: string;
 }
 
 interface AntecipacaoTableProps {
