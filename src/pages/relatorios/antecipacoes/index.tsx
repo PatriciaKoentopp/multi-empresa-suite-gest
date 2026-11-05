@@ -13,6 +13,8 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useRelatorioAntecipacoes } from "@/hooks/useRelatorioAntecipacoes";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "@/lib/autotable";
 
 export default function RelatorioAntecipacoes() {
   const navigate = useNavigate();
@@ -54,6 +56,43 @@ export default function RelatorioAntecipacoes() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Antecipações");
     XLSX.writeFile(wb, `antecipacoes-${format(dataReferencia, "yyyy-MM-dd")}.xlsx`);
+  };
+
+  const exportarPdf = () => {
+    if (antecipacoes.length === 0) return;
+    const doc = new jsPDF({ orientation: "landscape" });
+    const tipoNome =
+      tipoTituloId === "todos" ? "Todos" : tiposTitulos.find((t) => t.id === tipoTituloId)?.nome || "-";
+    doc.setFontSize(14);
+    doc.text("Relatório de Antecipações", 14, 15);
+    doc.setFontSize(9);
+    doc.text(
+      `Data de Referência: ${format(dataReferencia, "dd/MM/yyyy")} - Tipo de Título: ${tipoNome} - Emitido em: ${format(new Date(), "dd/MM/yyyy")}`,
+      14,
+      22
+    );
+    const totalValor = antecipacoes.reduce((s, a) => s + a.valorTotal, 0);
+    const totalUtil = antecipacoes.reduce((s, a) => s + a.valorUtilizado, 0);
+    autoTable(doc, {
+      startY: 27,
+      head: [["Data", "Tipo", "Favorecido", "Descrição", "Valor Total", "Valor Utilizado", "Valor Disponível", "Status"]],
+      body: antecipacoes.map((ant) => [
+        format(ant.dataLancamento, "dd/MM/yyyy"),
+        ant.tipoOperacao === "receber" ? "Recebimento" : "Pagamento",
+        ant.favorecido || "",
+        ant.descricao || "",
+        formatCurrency(ant.valorTotal),
+        formatCurrency(ant.valorUtilizado),
+        formatCurrency(ant.valorDisponivel),
+        ant.status === "ativa" ? "Ativa" : "Utilizada",
+      ]),
+      foot: [["", "", "", "TOTAL", formatCurrency(totalValor), formatCurrency(totalUtil), formatCurrency(resumo.valorTotalDisponivel), ""]],
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [41, 128, 185] },
+      footStyles: { fillColor: [230, 230, 230], textColor: 20, fontStyle: "bold" },
+      columnStyles: { 4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" } },
+    });
+    doc.save(`antecipacoes-${format(dataReferencia, "yyyy-MM-dd")}.pdf`);
   };
 
   const formatCurrency = (value: number) => {
@@ -138,6 +177,12 @@ export default function RelatorioAntecipacoes() {
               <Button variant="outline" onClick={exportarExcel}>
                 <FileSpreadsheet className="mr-2 h-4 w-4" />
                 Exportar Excel
+              </Button>
+            )}
+            {antecipacoes.length > 0 && (
+              <Button variant="outline" onClick={exportarPdf}>
+                <FileText className="mr-2 h-4 w-4" />
+                Gerar PDF
               </Button>
             )}
           </div>
