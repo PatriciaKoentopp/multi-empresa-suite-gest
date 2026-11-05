@@ -3148,6 +3148,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      criar_empresa_inicial: {
+        Args: { dados: Json }
+        Returns: {
+          bairro: string
+          cep: string
+          cidade: string
+          cnae: string | null
+          cnpj: string
+          complemento: string | null
+          created_at: string | null
+          email: string | null
+          estado: string
+          id: string
+          inscricao_estadual: string | null
+          inscricao_municipal: string | null
+          logo: string | null
+          logradouro: string
+          nome_fantasia: string
+          numero: string
+          pais: string
+          razao_social: string
+          regime_tributacao: string | null
+          site: string | null
+          telefone: string | null
+          updated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "empresas"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       gerar_parcelas_contrato: {
         Args: { contrato_id_param: string }
         Returns: undefined
