@@ -481,6 +481,13 @@ export default function AntecipacoesPage() {
     doc.text(`Status: ${statusLabelFiltro}`, 14, y);
     doc.text(`Tipo: ${tipoLabelFiltro}`, 70, y);
 
+    if (tipoTituloFilter !== "todos") {
+      y += 5;
+      const nomeTipoTitulo =
+        tiposTitulos.find((t) => t.id === tipoTituloFilter)?.nome || "-";
+      doc.text(`Tipo de Título: ${nomeTipoTitulo}`, 14, y);
+    }
+
     if (searchTerm) {
       y += 5;
       doc.text(`Busca: ${searchTerm}`, 14, y);
@@ -715,6 +722,25 @@ export default function AntecipacoesPage() {
                 >
                   <X className="h-4 w-4" />
                 </Button>
+              </div>
+
+              <div className="min-w-[160px]">
+                <Select
+                  value={tipoTituloFilter}
+                  onValueChange={(v) => setTipoTituloFilter(v)}
+                >
+                  <SelectTrigger className="w-full bg-white dark:bg-gray-900">
+                    <SelectValue placeholder="Tipo de Título" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-200">
+                    <SelectItem value="todos">Todos os Tipos de Título</SelectItem>
+                    {tiposTitulos.map((tipo) => (
+                      <SelectItem key={tipo.id} value={tipo.id}>
+                        {tipo.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             
