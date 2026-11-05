@@ -49,9 +49,7 @@ const formSchema = z.object({
   cidade: z.string().min(2, {
     message: "Cidade é obrigatória"
   }),
-  estado: z.string().min(2, {
-    message: "Estado é obrigatório"
-  }),
+  estado: z.string().trim().length(2, "Informe a sigla do estado (ex.: SC)"),
   pais: z.string().optional(),
   regimeTributacao: z.enum(["simples", "lucro_presumido", "lucro_real", "mei"]).optional(),
   logo: z.string().url({
@@ -174,7 +172,7 @@ export default function EmpresasPage() {
     }
   }, [currentCompany, form]);
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
     if (!user) return;
     const empresaObject = {
       id: currentCompany?.id || crypto.randomUUID(),
@@ -203,18 +201,10 @@ export default function EmpresasPage() {
       updatedAt: new Date()
     };
     if (criandoEmpresa || !currentCompany) {
-      createCompany(empresaObject as unknown as Partial<Company>);
-      toast({
-        title: "Empresa cadastrada",
-        description: "A empresa foi cadastrada com sucesso."
-      });
+      await createCompany(empresaObject as unknown as Partial<Company>);
     } else {
-      updateCompany(currentCompany.id, empresaObject);
-      toast({
-        title: "Empresa atualizada",
-        description: "Os dados da empresa foram atualizados com sucesso."
-      });
-      setIsEditing(false);
+      const ok = await updateCompany(currentCompany.id, empresaObject);
+      if (ok) setIsEditing(false);
     }
   };
 
@@ -473,7 +463,7 @@ export default function EmpresasPage() {
                   }) => <FormItem>
                           <FormLabel>Estado</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={!isEditing} />
+                            <Input {...field} disabled={!isEditing} maxLength={2} placeholder="SC" onChange={(e) => field.onChange(e.target.value.toUpperCase())} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>} />
