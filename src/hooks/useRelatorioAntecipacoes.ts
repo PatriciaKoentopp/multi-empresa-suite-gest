@@ -84,7 +84,8 @@ export function useRelatorioAntecipacoes() {
           descricao,
           numero_documento,
           status,
-          favorecido_id
+          favorecido_id,
+          tipo_titulo_id
         `)
         .eq('empresa_id', currentCompany.id)
         .lte('data_lancamento', dataReferenciaStr)
@@ -114,6 +115,11 @@ export function useRelatorioAntecipacoes() {
       const antecipacoesEmAberto: AntecipacaoRelatorio[] = [];
 
       antecipacoesData?.forEach((ant) => {
+        // Aplicar filtro por tipo de título
+        if (tipoTituloId && tipoTituloId !== 'todos' && ant.tipo_titulo_id !== tipoTituloId) {
+          return;
+        }
+
         const valorDisponivel = Number(ant.valor_total) - Number(ant.valor_utilizado);
         
         if (valorDisponivel > 0) {
