@@ -219,8 +219,14 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       // Mapear os dados da aplicação para o formato do banco
-      const { data, error } = await supabase.from("empresas").insert([
-        {
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData.user?.id;
+      let semEmpresa = false;
+      if (uid) {
+        const { data: usr } = await supabase.from("usuarios").select("empresa_id").eq("id", uid).maybeSingle();
+        semEmpresa = !!usr && !usr.empresa_id;
+      }
+      const payload = {
           razao_social: company.razao_social || company.razaoSocial || "",
           nome_fantasia: company.nome_fantasia || company.nomeFantasia || "",
           cnpj: company.cnpj || "",
@@ -240,8 +246,19 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           cidade: company.cidade || (company.endereco ? company.endereco.cidade : ""),
           estado: company.estado || (company.endereco ? company.endereco.estado : ""),
           pais: company.pais || (company.endereco ? company.endereco.pais : "Brasil"),
-        },
-      ]);
+      };
+
+      let error: any = null;
+      if (semEmpresa) {
+        const res = await (supabase.rpc as any)("criar_empresa_inicial", { dados: payload });
+        error = res.error;
+        if (!error && res.data?.id) {
+          localStorage.setItem("userCompanyId", res.data.id);
+        }
+      } else {
+        const res = await supabase.from("empresas").insert([payload as any]);
+        error = res.error;
+      }
 
       if (error) {
         console.error("Erro ao criar empresa:", error);
