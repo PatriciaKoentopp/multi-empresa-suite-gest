@@ -174,6 +174,7 @@ export const usePainelFinanceiro = () => {
         `)
         .gte('data_movimentacao', dataInicioStr)
         .lte('data_movimentacao', dataFimStr)
+        .neq('origem', 'implantacao_dre')
         .order('data_movimentacao', { ascending: true });
       
       // Adicionar filtro por conta corrente se especificado

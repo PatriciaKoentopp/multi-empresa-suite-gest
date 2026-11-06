@@ -153,6 +153,7 @@ export default function MovimentacaoPage() {
           .eq('empresa_id', currentCompany.id)
           .gte('data_lancamento', toISODate(dataInicial))
           .lte('data_lancamento', toISODate(dataFinal))
+          .or('numero_documento.is.null,numero_documento.neq.IMPLANTACAO-DRE')
           .order('data_lancamento', { ascending: false })
           .limit(5000);
 

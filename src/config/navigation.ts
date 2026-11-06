@@ -123,6 +123,10 @@ export const navigationConfig: ModuleNavItem[] = [
         href: "/contabil/dre",
       },
       {
+        title: "Implantação de Saldos DRE",
+        href: "/contabil/implantacao-saldos",
+      },
+      {
         title: "Balanço",
         href: "/contabil/balanco",
       },
