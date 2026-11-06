@@ -1,0 +1,2 @@
+ALTER TABLE public.fluxo_caixa DROP CONSTRAINT fluxo_caixa_origem_check;
+ALTER TABLE public.fluxo_caixa ADD CONSTRAINT fluxo_caixa_origem_check CHECK (origem::text = ANY (ARRAY['movimentacao','contas_pagar','contas_receber','antecipacao','transferencia','antecipacao_baixa','implantacao_dre']::text[]));
