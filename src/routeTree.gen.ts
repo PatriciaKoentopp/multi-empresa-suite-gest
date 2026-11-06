@@ -35,6 +35,7 @@ import { Route as CadastrosProfissoesRouteImport } from './routes/cadastros/prof
 import { Route as CadastrosTiposTitulosRouteImport } from './routes/cadastros/tipos-titulos'
 import { Route as ContabilBalancoRouteImport } from './routes/contabil/balanco'
 import { Route as ContabilDreRouteImport } from './routes/contabil/dre'
+import { Route as ContabilImplantacaoSaldosRouteImport } from './routes/contabil/implantacao-saldos'
 import { Route as ContabilLancamentosRouteImport } from './routes/contabil/lancamentos'
 import { Route as ContabilPlanoContasRouteImport } from './routes/contabil/plano-contas'
 import { Route as CrmAgendaRouteImport } from './routes/crm/agenda'
@@ -224,6 +225,12 @@ const ContabilDreRoute = ContabilDreRouteImport.update({
   path: '/contabil/dre',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContabilImplantacaoSaldosRoute =
+  ContabilImplantacaoSaldosRouteImport.update({
+    id: '/contabil/implantacao-saldos',
+    path: '/contabil/implantacao-saldos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ContabilLancamentosRoute = ContabilLancamentosRouteImport.update({
   id: '/contabil/lancamentos',
   path: '/contabil/lancamentos',
@@ -520,6 +527,7 @@ export interface FileRoutesByFullPath {
   '/cadastros/tipos-titulos': typeof CadastrosTiposTitulosRoute
   '/contabil/balanco': typeof ContabilBalancoRoute
   '/contabil/dre': typeof ContabilDreRoute
+  '/contabil/implantacao-saldos': typeof ContabilImplantacaoSaldosRoute
   '/contabil/lancamentos': typeof ContabilLancamentosRoute
   '/contabil/plano-contas': typeof ContabilPlanoContasRoute
   '/crm/agenda': typeof CrmAgendaRoute
@@ -600,6 +608,7 @@ export interface FileRoutesByTo {
   '/cadastros/tipos-titulos': typeof CadastrosTiposTitulosRoute
   '/contabil/balanco': typeof ContabilBalancoRoute
   '/contabil/dre': typeof ContabilDreRoute
+  '/contabil/implantacao-saldos': typeof ContabilImplantacaoSaldosRoute
   '/contabil/lancamentos': typeof ContabilLancamentosRoute
   '/contabil/plano-contas': typeof ContabilPlanoContasRoute
   '/crm/agenda': typeof CrmAgendaRoute
@@ -681,6 +690,7 @@ export interface FileRoutesById {
   '/cadastros/tipos-titulos': typeof CadastrosTiposTitulosRoute
   '/contabil/balanco': typeof ContabilBalancoRoute
   '/contabil/dre': typeof ContabilDreRoute
+  '/contabil/implantacao-saldos': typeof ContabilImplantacaoSaldosRoute
   '/contabil/lancamentos': typeof ContabilLancamentosRoute
   '/contabil/plano-contas': typeof ContabilPlanoContasRoute
   '/crm/agenda': typeof CrmAgendaRoute
@@ -763,6 +773,7 @@ export interface FileRouteTypes {
     | '/cadastros/tipos-titulos'
     | '/contabil/balanco'
     | '/contabil/dre'
+    | '/contabil/implantacao-saldos'
     | '/contabil/lancamentos'
     | '/contabil/plano-contas'
     | '/crm/agenda'
@@ -843,6 +854,7 @@ export interface FileRouteTypes {
     | '/cadastros/tipos-titulos'
     | '/contabil/balanco'
     | '/contabil/dre'
+    | '/contabil/implantacao-saldos'
     | '/contabil/lancamentos'
     | '/contabil/plano-contas'
     | '/crm/agenda'
@@ -923,6 +935,7 @@ export interface FileRouteTypes {
     | '/cadastros/tipos-titulos'
     | '/contabil/balanco'
     | '/contabil/dre'
+    | '/contabil/implantacao-saldos'
     | '/contabil/lancamentos'
     | '/contabil/plano-contas'
     | '/crm/agenda'
@@ -1004,6 +1017,7 @@ export interface RootRouteChildren {
   CadastrosTiposTitulosRoute: typeof CadastrosTiposTitulosRoute
   ContabilBalancoRoute: typeof ContabilBalancoRoute
   ContabilDreRoute: typeof ContabilDreRoute
+  ContabilImplantacaoSaldosRoute: typeof ContabilImplantacaoSaldosRoute
   ContabilLancamentosRoute: typeof ContabilLancamentosRoute
   ContabilPlanoContasRoute: typeof ContabilPlanoContasRoute
   CrmAgendaRoute: typeof CrmAgendaRoute
@@ -1240,6 +1254,13 @@ declare module '@tanstack/react-router' {
       path: '/contabil/dre'
       fullPath: '/contabil/dre'
       preLoaderRoute: typeof ContabilDreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contabil/implantacao-saldos': {
+      id: '/contabil/implantacao-saldos'
+      path: '/contabil/implantacao-saldos'
+      fullPath: '/contabil/implantacao-saldos'
+      preLoaderRoute: typeof ContabilImplantacaoSaldosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contabil/lancamentos': {
@@ -1636,6 +1657,7 @@ const rootRouteChildren: RootRouteChildren = {
   CadastrosTiposTitulosRoute: CadastrosTiposTitulosRoute,
   ContabilBalancoRoute: ContabilBalancoRoute,
   ContabilDreRoute: ContabilDreRoute,
+  ContabilImplantacaoSaldosRoute: ContabilImplantacaoSaldosRoute,
   ContabilLancamentosRoute: ContabilLancamentosRoute,
   ContabilPlanoContasRoute: ContabilPlanoContasRoute,
   CrmAgendaRoute: CrmAgendaRoute,
