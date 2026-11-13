@@ -92,7 +92,10 @@ export default function ContasAReceberPage() {
       setIsLoading(true);
       
       // Buscar somente movimentações parcelas (contas a receber) ordenadas por data de vencimento
-      const { data: movimentacoesParcelas, error: errorMovimentacoes } = await supabase
+      const movimentacoesParcelas: any[] = [];
+      let errorMovimentacoes: any = null;
+      for (let inicio = 0; ; inicio += 1000) {
+      const { data: lote, error: erroLote } = await supabase
         .from('movimentacoes_parcelas')
         .select(`
           id,
@@ -106,7 +109,7 @@ export default function ContasAReceberPage() {
           movimentacao_id,
           conta_corrente_id,
           forma_pagamento,
-          movimentacao:movimentacoes (
+          movimentacao:movimentacoes!inner (
             id,
             descricao,
             tipo_operacao,
@@ -119,7 +122,13 @@ export default function ContasAReceberPage() {
         `)
         .eq('movimentacao.empresa_id', currentCompany?.id ?? '')
         .eq('movimentacao.tipo_operacao', 'receber')
-        .order('data_vencimento', { ascending: true });
+        .order('data_vencimento', { ascending: true })
+        .order('id', { ascending: true })
+        .range(inicio, inicio + 999);
+      if (erroLote) { errorMovimentacoes = erroLote; break; }
+      movimentacoesParcelas.push(...(lote || []));
+      if (!lote || lote.length < 1000) break;
+      }
       
       if (errorMovimentacoes) throw errorMovimentacoes;
 
