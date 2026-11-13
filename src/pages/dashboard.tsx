@@ -202,7 +202,7 @@ export function Dashboard() {
             id,
             valor,
             data_vencimento,
-            movimentacao:movimentacao_id(
+            movimentacao:movimentacao_id!inner(
               tipo_operacao,
               favorecido_id,
               empresa_id,
@@ -232,7 +232,7 @@ export function Dashboard() {
             id,
             valor,
             data_vencimento,
-            movimentacao:movimentacao_id(
+            movimentacao:movimentacao_id!inner(
               tipo_operacao,
               favorecido_id,
               empresa_id,

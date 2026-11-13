@@ -166,7 +166,7 @@ export const usePainelFinanceiro = () => {
             nome,
             considerar_saldo
           ),
-          movimentacoes:movimentacao_id (
+          movimentacoes:movimentacao_id!inner (
             favorecidos:favorecido_id (
               nome
             )
@@ -353,7 +353,7 @@ export const usePainelFinanceiro = () => {
           valor,
           data_vencimento,
           data_pagamento,
-          movimentacoes:movimentacao_id (
+          movimentacoes:movimentacao_id!inner (
             tipo_operacao
           )
         `)
@@ -370,7 +370,7 @@ export const usePainelFinanceiro = () => {
           valor,
           data_vencimento,
           data_pagamento,
-          movimentacoes:movimentacao_id (
+          movimentacoes:movimentacao_id!inner (
             tipo_operacao
           )
         `)
@@ -387,7 +387,7 @@ export const usePainelFinanceiro = () => {
           id,
           valor,
           data_pagamento,
-          movimentacoes:movimentacao_id (
+          movimentacoes:movimentacao_id!inner (
             tipo_operacao
           )
         `)
