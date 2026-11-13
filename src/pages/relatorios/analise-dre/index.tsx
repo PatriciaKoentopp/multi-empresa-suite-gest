@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetch-all";
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -151,7 +152,7 @@ export default function AnaliseDrePage() {
         });
         
         // Buscar movimentações para o período atual
-        const { data: movAtual, error: errorAtual } = await supabase
+        const { data: movAtual, error: errorAtual } = await fetchAll(() => supabase
           .from('fluxo_caixa')
           .select(`
             *,
@@ -164,12 +165,12 @@ export default function AnaliseDrePage() {
           `)
           .eq('empresa_id', currentCompany.id)
           .gte('data_movimentacao', dataAtualInicioStr)
-          .lte('data_movimentacao', dataAtualFimStr);
+          .lte('data_movimentacao', dataAtualFimStr));
 
         if (errorAtual) throw errorAtual;
         
         // Buscar movimentações para o período de comparação
-        const { data: movComp, error: errorComp } = await supabase
+        const { data: movComp, error: errorComp } = await fetchAll(() => supabase
           .from('fluxo_caixa')
           .select(`
             *,
@@ -182,7 +183,7 @@ export default function AnaliseDrePage() {
           `)
           .eq('empresa_id', currentCompany.id)
           .gte('data_movimentacao', dataCompInicioStr)
-          .lte('data_movimentacao', dataCompFimStr);
+          .lte('data_movimentacao', dataCompFimStr));
 
         if (errorComp) throw errorComp;
         
@@ -233,7 +234,7 @@ export default function AnaliseDrePage() {
     const dataFimStr = format(dataFim, 'yyyy-MM-dd');
     
     // Buscar todas as movimentações do período de 13 meses
-    const { data: movimentacoes, error } = await supabase
+    const { data: movimentacoes, error } = await fetchAll(() => supabase
       .from('fluxo_caixa')
       .select(`
         *,
@@ -246,7 +247,7 @@ export default function AnaliseDrePage() {
       `)
       .eq('empresa_id', empresaId)
       .gte('data_movimentacao', dataInicioStr)
-      .lte('data_movimentacao', dataFimStr);
+      .lte('data_movimentacao', dataFimStr));
       
     if (error) {
       console.error('Erro ao buscar dados mensais:', error);
@@ -375,7 +376,7 @@ export default function AnaliseDrePage() {
       const dataCompFimStr = format(dataCompFim, 'yyyy-MM-dd');
       
       // Buscar todas as movimentações da conta específica
-      const { data: movimentacoes, error } = await supabase
+      const { data: movimentacoes, error } = await fetchAll(() => supabase
         .from('fluxo_caixa')
         .select(`
           *,
@@ -388,7 +389,7 @@ export default function AnaliseDrePage() {
         `)
         .eq('empresa_id', currentCompany.id)
         .gte('data_movimentacao', dataCompInicioStr)
-        .lte('data_movimentacao', dataCompFimStr);
+        .lte('data_movimentacao', dataCompFimStr));
         
       if (error) throw error;
       

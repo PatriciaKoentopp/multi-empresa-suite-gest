@@ -1,4 +1,5 @@
 
+import { fetchAll } from "@/lib/fetch-all";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
@@ -122,7 +123,7 @@ export function useRelatorioFinanceiro() {
       const dataFimAnteriorStr = format(dataFimAnterior, "yyyy-MM-dd");
 
       // Buscar parcelas pagas com join nas movimentações e plano_contas (regime de caixa)
-      const { data: parcelas, error } = await supabase
+      const { data: parcelas, error } = await fetchAll(() => supabase
         .from("movimentacoes_parcelas")
         .select(`
           id,
@@ -145,10 +146,10 @@ export function useRelatorioFinanceiro() {
         `)
         .not("data_pagamento", "is", null)
         .gte("data_pagamento", dataInicioStr)
-        .lte("data_pagamento", dataFimStr);
+        .lte("data_pagamento", dataFimStr));
 
       // Buscar parcelas do período anterior
-      const { data: parcelasAnterior, error: errorAnterior } = await supabase
+      const { data: parcelasAnterior, error: errorAnterior } = await fetchAll(() => supabase
         .from("movimentacoes_parcelas")
         .select(`
           id,
@@ -165,7 +166,7 @@ export function useRelatorioFinanceiro() {
         `)
         .not("data_pagamento", "is", null)
         .gte("data_pagamento", dataInicioAnteriorStr)
-        .lte("data_pagamento", dataFimAnteriorStr);
+        .lte("data_pagamento", dataFimAnteriorStr));
 
       if (error) {
         console.error("Erro ao buscar parcelas:", error);

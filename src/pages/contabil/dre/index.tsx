@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetch-all";
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -128,7 +129,7 @@ export default function DrePage() {
           const {
             data: movimentacoes,
             error
-          } = await supabase.from('fluxo_caixa').select(`
+          } = await fetchAll(() => supabase.from('fluxo_caixa').select(`
               *,
               movimentacoes!movimentacao_id (
                 categoria_id,
@@ -136,7 +137,7 @@ export default function DrePage() {
                 considerar_dre,
                 plano_contas:categoria_id(id, tipo, descricao, classificacao_dre, considerar_dre)
               )
-            `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate);
+            `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate));
           if (error) throw error;
           dadosAgrupados = processarMovimentacoes(movimentacoes || []);
         } else if (visualizacao === "mensal" && mes === "todos") {
@@ -145,7 +146,7 @@ export default function DrePage() {
           const {
             data: movimentacoes,
             error
-          } = await supabase.from('fluxo_caixa').select(`
+          } = await fetchAll(() => supabase.from('fluxo_caixa').select(`
               *,
               movimentacoes!movimentacao_id (
                 categoria_id,
@@ -153,7 +154,7 @@ export default function DrePage() {
                 considerar_dre,
                 plano_contas:categoria_id(id, tipo, descricao, classificacao_dre, considerar_dre)
               )
-            `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate);
+            `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate));
           if (error) throw error;
 
           // Obter movimentações por mês sem considerar timezone nas datas
@@ -190,7 +191,7 @@ export default function DrePage() {
             const {
               data: movimentacoes,
               error
-            } = await supabase.from('fluxo_caixa').select(`
+            } = await fetchAll(() => supabase.from('fluxo_caixa').select(`
                 *,
                 movimentacoes!movimentacao_id (
                   categoria_id,
@@ -198,7 +199,7 @@ export default function DrePage() {
                   considerar_dre,
                   plano_contas:categoria_id(id, tipo, descricao, classificacao_dre, considerar_dre)
                 )
-              `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate);
+              `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate));
             if (error) throw error;
             dadosPorAno[anoSelecionado] = processarMovimentacoes(movimentacoes || []);
           }
@@ -209,7 +210,7 @@ export default function DrePage() {
           const {
             data: movimentacoes,
             error
-          } = await supabase.from('fluxo_caixa').select(`
+          } = await fetchAll(() => supabase.from('fluxo_caixa').select(`
               *,
               movimentacoes!movimentacao_id (
                 categoria_id,
@@ -217,7 +218,7 @@ export default function DrePage() {
                 considerar_dre,
                 plano_contas:categoria_id(id, tipo, descricao, classificacao_dre, considerar_dre)
               )
-            `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate);
+            `).eq('empresa_id', currentCompany.id).gte('data_movimentacao', startDate).lte('data_movimentacao', endDate));
           if (error) throw error;
           dadosAgrupados = processarMovimentacoes(movimentacoes || []);
         }

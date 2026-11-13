@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetch-all";
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/company-context";
@@ -132,12 +133,12 @@ export function Dashboard() {
         if (contasCorrentes && contasCorrentes.length > 0) {
           // Para cada conta, buscar TODAS as movimentações ordenadas por data
           for (const conta of contasCorrentes) {
-            const { data: movimentacoes, error: erroMovimentacoes } = await supabase
+            const { data: movimentacoes, error: erroMovimentacoes } = await fetchAll(() => supabase
               .from('fluxo_caixa')
               .select('*')
               .eq('conta_corrente_id', conta.id)
               .eq('empresa_id', currentCompany.id)
-              .order('data_movimentacao', { ascending: true });
+              .order('data_movimentacao', { ascending: true }));
 
             if (erroMovimentacoes) throw erroMovimentacoes;
 
@@ -198,7 +199,7 @@ export function Dashboard() {
         const {
           data: contasReceber,
           error: erroContasReceber
-        } = await supabase.from('movimentacoes_parcelas').select(`
+        } = await fetchAll(() => supabase.from('movimentacoes_parcelas').select(`
             id,
             valor,
             data_vencimento,
@@ -209,7 +210,7 @@ export function Dashboard() {
               descricao,
               numero_documento
             )
-          `).is('data_pagamento', null).eq('movimentacao.tipo_operacao', 'receber').eq('movimentacao.empresa_id', currentCompany.id);
+          `).is('data_pagamento', null).eq('movimentacao.tipo_operacao', 'receber').eq('movimentacao.empresa_id', currentCompany.id));
         if (erroContasReceber) throw erroContasReceber;
         
         // Corrigido: Verificar explicitamente o tipo_operacao antes de somar
@@ -228,7 +229,7 @@ export function Dashboard() {
         const {
           data: contasPagar,
           error: erroContasPagar
-        } = await supabase.from('movimentacoes_parcelas').select(`
+        } = await fetchAll(() => supabase.from('movimentacoes_parcelas').select(`
             id,
             valor,
             data_vencimento,
@@ -239,7 +240,7 @@ export function Dashboard() {
               descricao,
               numero_documento
             )
-          `).is('data_pagamento', null).eq('movimentacao.tipo_operacao', 'pagar').eq('movimentacao.empresa_id', currentCompany.id);
+          `).is('data_pagamento', null).eq('movimentacao.tipo_operacao', 'pagar').eq('movimentacao.empresa_id', currentCompany.id));
         if (erroContasPagar) throw erroContasPagar;
 
         // Calculando corretamente o total das contas a pagar
