@@ -1,0 +1,4 @@
+ALTER TABLE public.movimentacoes_parcelas ADD COLUMN IF NOT EXISTS comprovante_path text;
+CREATE POLICY "comprovantes_select_empresa" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'comprovantes' AND (storage.foldername(name))[1] = public.get_user_company_id()::text);
+CREATE POLICY "comprovantes_insert_empresa" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'comprovantes' AND (storage.foldername(name))[1] = public.get_user_company_id()::text);
+CREATE POLICY "comprovantes_update_empresa" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'comprovantes' AND (storage.foldername(name))[1] = public.get_user_company_id()::text);

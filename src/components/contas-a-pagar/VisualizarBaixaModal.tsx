@@ -6,6 +6,9 @@ import { ContaPagar } from "./contas-a-pagar-table";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { toast } from "sonner";
 
 interface VisualizarBaixaModalProps {
   conta?: ContaPagar | null;
@@ -110,6 +113,31 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
     enabled: !!conta.id && open,
   });
 
+  const { data: comprovantePath } = useQuery({
+    queryKey: ["comprovante-baixa", conta.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("movimentacoes_parcelas")
+        .select("comprovante_path")
+        .eq("id", conta.id)
+        .maybeSingle();
+      return (data as any)?.comprovante_path as string | null;
+    },
+    enabled: !!conta.id && open,
+  });
+
+  const baixarComprovante = async () => {
+    if (!comprovantePath) return;
+    const { data, error } = await supabase.storage
+      .from("comprovantes")
+      .createSignedUrl(comprovantePath, 60, { download: `comprovante-${conta.id}.pdf` });
+    if (error || !data?.signedUrl) {
+      toast.error("Erro ao baixar o comprovante.");
+      return;
+    }
+    window.location.href = data.signedUrl;
+  };
+
   // Função para formatar a forma de pagamento
   const formatFormaPagamento = (forma?: string) => {
     if (!forma) return "-";
@@ -175,6 +203,18 @@ export function VisualizarBaixaModal({ conta, open, onClose, contaCorrenteNome }
             <p className="text-base">{formatFormaPagamento(conta.formaPagamento)}</p>
           </div>
           
+          <div>
+            <p className="text-sm font-medium text-gray-500">Comprovante de Pagamento</p>
+            {comprovantePath ? (
+              <Button type="button" variant="blue" size="sm" className="mt-1" onClick={baixarComprovante}>
+                <Download className="h-4 w-4 mr-2" />
+                Baixar Comprovante
+              </Button>
+            ) : (
+              <p className="text-base">Nenhum comprovante anexado</p>
+            )}
+          </div>
+
           {/* Seção de Antecipações Utilizadas */}
           {antecipacoesUtilizadas.length > 0 && (
             <div>

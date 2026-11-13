@@ -1887,6 +1887,7 @@ export type Database = {
       movimentacoes_parcelas: {
         Row: {
           antecipacao_id: string | null
+          comprovante_path: string | null
           conta_corrente_id: string | null
           created_at: string
           data_pagamento: string | null
@@ -1904,6 +1905,7 @@ export type Database = {
         }
         Insert: {
           antecipacao_id?: string | null
+          comprovante_path?: string | null
           conta_corrente_id?: string | null
           created_at?: string
           data_pagamento?: string | null
@@ -1921,6 +1923,7 @@ export type Database = {
         }
         Update: {
           antecipacao_id?: string | null
+          comprovante_path?: string | null
           conta_corrente_id?: string | null
           created_at?: string
           data_pagamento?: string | null
