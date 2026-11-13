@@ -54,6 +54,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
   const [multa, setMulta] = useState<number>(0);
   const [juros, setJuros] = useState<number>(0);
   const [desconto, setDesconto] = useState<number>(0);
+  const [comprovante, setComprovante] = useState<File | null>(null);
   
   // Estados para múltiplas antecipações
   const [usarAntecipacao, setUsarAntecipacao] = useState<boolean>(false);
@@ -245,6 +246,18 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
         desconto,
         forma_pagamento: formaPagamento
       };
+
+      if (comprovante) {
+        const path = `${currentCompany?.id}/${conta?.id}/${Date.now()}.pdf`;
+        const { error: upErr } = await supabase.storage
+          .from("comprovantes")
+          .upload(path, comprovante, { contentType: "application/pdf", upsert: true });
+        if (upErr) {
+          toast.error("Erro ao enviar o comprovante. A baixa não foi realizada.");
+          return;
+        }
+        updateData.comprovante_path = path;
+      }
 
       // Incluir conta corrente apenas se houver valor a pagar
       if (valorAPagar > 0 && contaCorrenteId) {
@@ -555,6 +568,25 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
                 placeholder="0.00"
               />
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="comprovante-pdf">Comprovante de Pagamento (PDF)</Label>
+            <Input
+              id="comprovante-pdf"
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                if (f && (f.type !== "application/pdf" || f.size > 10 * 1024 * 1024)) {
+                  toast.error("Selecione um arquivo PDF de até 10 MB.");
+                  e.target.value = "";
+                  setComprovante(null);
+                  return;
+                }
+                setComprovante(f);
+              }}
+            />
           </div>
 
           {/* Resumo dos valores */}
