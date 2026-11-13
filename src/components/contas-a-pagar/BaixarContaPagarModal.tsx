@@ -141,6 +141,7 @@ export function BaixarContaPagarModal({ conta, open, onClose, onBaixar }: Baixar
       setMulta(0);
       setJuros(0);
       setDesconto(0);
+      setComprovante(null);
       setUsarAntecipacao(false);
       setAntecipacoesSelecionadas([]);
     }
