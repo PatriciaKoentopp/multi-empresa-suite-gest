@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetch-all";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/company-context";
@@ -44,7 +45,7 @@ export function useRelatorioContasPagar() {
       const dataReferenciaStr = format(dataReferencia, 'yyyy-MM-dd');
 
       // Buscar movimentações de pagar lançadas até a data de referência
-      const { data: movimentacoes, error } = await supabase
+      const { data: movimentacoes, error } = await fetchAll(() => supabase
         .from('movimentacoes')
         .select(`
           id,
@@ -62,7 +63,7 @@ export function useRelatorioContasPagar() {
         `)
         .eq('tipo_operacao', 'pagar')
         .eq('empresa_id', currentCompany.id)
-        .lte('data_lancamento', dataReferenciaStr);
+        .lte('data_lancamento', dataReferenciaStr));
 
       if (error) throw error;
 
@@ -72,7 +73,7 @@ export function useRelatorioContasPagar() {
       movimentacoes?.forEach((mov) => {
         const favorecidoNome = mov.favorecido?.nome || 'Não informado';
         
-        mov.movimentacoes_parcelas?.forEach((parcela) => {
+        mov.movimentacoes_parcelas?.forEach((parcela: any) => {
           // Parcela está em aberto se:
           // 1. Nunca foi paga (data_pagamento IS NULL)
           // 2. OU foi paga depois da data de referência

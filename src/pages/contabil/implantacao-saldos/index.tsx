@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetch-all";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -61,13 +62,13 @@ export default function ImplantacaoSaldosPage() {
       if (error) throw error;
       setContas((pc || []) as Conta[]);
 
-      const { data: fc, error: e2 } = await supabase
+      const { data: fc, error: e2 } = await fetchAll(() => supabase
         .from("fluxo_caixa")
         .select("id, valor, data_movimentacao, movimentacao_id, movimentacoes:movimentacao_id(categoria_id)")
         .eq("empresa_id", currentCompany.id)
         .eq("origem", ORIGEM)
         .gte("data_movimentacao", `${ano}-01-01`)
-        .lte("data_movimentacao", `${ano}-12-31`);
+        .lte("data_movimentacao", `${ano}-12-31`));
       if (e2) throw e2;
       const ex: Record<string, Existente> = {};
       const vals: Record<string, string> = {};

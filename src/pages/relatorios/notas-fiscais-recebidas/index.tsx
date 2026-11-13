@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetch-all";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +57,7 @@ export default function RelatorioNotasFiscaisRecebidas() {
       if (!currentCompany?.id) return;
       setIsLoading(true);
       try {
+        const buildQuery = () => {
         let query = supabase
           .from("movimentacoes")
           .select(
@@ -71,7 +73,9 @@ export default function RelatorioNotasFiscaisRecebidas() {
           query = query.eq("favorecido_id", favorecidoId);
         }
 
-        const { data, error } = await query;
+        return query;
+        };
+        const { data, error } = await fetchAll(() => buildQuery());
         if (error) throw error;
 
         const mapped: NotaRecebida[] = (data || []).map((m: any) => ({

@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetch-all";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +52,7 @@ export const usePainelFinanceiro = () => {
       const dataInicioStr = filtro.dataInicio.toISOString().split('T')[0];
       
       // Criar a query base para buscar movimentações anteriores ao período do filtro
+      const buildQuery = () => {
       let query = supabase
         .from('fluxo_caixa')
         .select(`
@@ -65,7 +67,9 @@ export const usePainelFinanceiro = () => {
         query = query.eq('conta_corrente_id', filtro.contaId);
       }
       
-      const { data: movimentacoesAnteriores, error } = await query;
+      return query;
+      };
+      const { data: movimentacoesAnteriores, error } = await fetchAll(() => buildQuery());
       
       if (error) throw error;
       
@@ -149,6 +153,7 @@ export const usePainelFinanceiro = () => {
       setSaldoInicialPeriodo(saldoInicial);
       
       // Criar a query base incluindo dados das antecipações
+      const buildQuery = () => {
       let query = supabase
         .from('fluxo_caixa')
         .select(`
@@ -187,7 +192,9 @@ export const usePainelFinanceiro = () => {
         query = query.eq('situacao', filtro.situacao);
       }
       
-      const { data: fluxoCaixaData, error } = await query;
+      return query;
+      };
+      const { data: fluxoCaixaData, error } = await fetchAll(() => buildQuery());
       
       if (error) throw error;
       
@@ -296,11 +303,11 @@ export const usePainelFinanceiro = () => {
       if (contasCorrentes && contasCorrentes.length > 0) {
         // Para cada conta, buscar TODAS as movimentações ordenadas por data
         for (const conta of contasCorrentes) {
-          const { data: movimentacoes, error: erroMovimentacoes } = await supabase
+          const { data: movimentacoes, error: erroMovimentacoes } = await fetchAll(() => supabase
             .from('fluxo_caixa')
             .select('*')
             .eq('conta_corrente_id', conta.id)
-            .order('data_movimentacao', { ascending: true });
+            .order('data_movimentacao', { ascending: true }));
 
           if (erroMovimentacoes) throw erroMovimentacoes;
 
@@ -346,52 +353,52 @@ export const usePainelFinanceiro = () => {
       const fluxoCaixa = await fetchFluxoCaixa(filtroFluxoCaixa);
       
       // Busca dados das parcelas a receber
-      const { data: parcelasReceber, error: errorReceber } = await supabase
+      const { data: parcelasReceber, error: errorReceber } = await fetchAll(() => supabase
         .from('movimentacoes_parcelas')
         .select(`
           id,
           valor,
           data_vencimento,
           data_pagamento,
-          movimentacoes:movimentacao_id (
+          movimentacoes:movimentacao_id!inner (
             tipo_operacao
           )
         `)
         .eq('movimentacoes.tipo_operacao', 'receber')
-        .is('data_pagamento', null);
+        .is('data_pagamento', null));
       
       if (errorReceber) throw errorReceber;
 
       // Busca dados das parcelas a pagar
-      const { data: parcelasPagar, error: errorPagar } = await supabase
+      const { data: parcelasPagar, error: errorPagar } = await fetchAll(() => supabase
         .from('movimentacoes_parcelas')
         .select(`
           id,
           valor,
           data_vencimento,
           data_pagamento,
-          movimentacoes:movimentacao_id (
+          movimentacoes:movimentacao_id!inner (
             tipo_operacao
           )
         `)
         .eq('movimentacoes.tipo_operacao', 'pagar')
-        .is('data_pagamento', null);
+        .is('data_pagamento', null));
       
       if (errorPagar) throw errorPagar;
       
       // Busca fluxo financeiro de todos os períodos (sem limitar aos últimos 12 meses)
       // Buscar dados de movimentações pagas/recebidas agrupadas por mês de TODAS as contas
-      const { data: fluxoMensal, error: errorFluxoMensal } = await supabase
+      const { data: fluxoMensal, error: errorFluxoMensal } = await fetchAll(() => supabase
         .from('movimentacoes_parcelas')
         .select(`
           id,
           valor,
           data_pagamento,
-          movimentacoes:movimentacao_id (
+          movimentacoes:movimentacao_id!inner (
             tipo_operacao
           )
         `)
-        .not('data_pagamento', 'is', null);
+        .not('data_pagamento', 'is', null));
       
       if (errorFluxoMensal) throw errorFluxoMensal;
 

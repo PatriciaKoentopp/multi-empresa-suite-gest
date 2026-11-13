@@ -1,4 +1,5 @@
 
+import { fetchAll } from "@/lib/fetch-all";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "@/lib/router-compat";
 import { Card, CardContent } from "@/components/ui/card";
@@ -561,7 +562,7 @@ export default function ContasAPagarPage() {
   const carregarContasAPagar = async () => {
     try {
       // Buscar movimentações ordenadas por data de vencimento das parcelas
-      const { data: movimentacoes, error } = await supabase
+      const { data: movimentacoes, error } = await fetchAll(() => supabase
         .from('movimentacoes')
         .select(`
           *,
@@ -580,7 +581,7 @@ export default function ContasAPagarPage() {
           )
         `)
         .eq('tipo_operacao', 'pagar')
-        .eq('empresa_id', currentCompany?.id ?? '');
+        .eq('empresa_id', currentCompany?.id ?? ''));
 
       if (error) throw error;
 

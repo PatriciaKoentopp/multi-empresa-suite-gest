@@ -1,4 +1,5 @@
 
+import { fetchAll } from "@/lib/fetch-all";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "@/lib/router-compat";
 import { Card, CardContent } from "@/components/ui/card";
@@ -206,6 +207,7 @@ export default function FluxoCaixaPage() {
     queryFn: async () => {
       if (!contaCorrenteId) return [];
 
+      const buildQuery = () => {
       let query = supabase
         .from("fluxo_caixa")
         .select(`
@@ -243,7 +245,9 @@ export default function FluxoCaixaPage() {
         query = query.eq("situacao", situacao);
       }
 
-      const { data, error } = await query.order("data_movimentacao", { ascending: false });
+      return query;
+      };
+      const { data, error } = await fetchAll(() => buildQuery().order("data_movimentacao", { ascending: false }));
 
       if (error) {
         toast.error("Erro ao carregar movimentações do período");
