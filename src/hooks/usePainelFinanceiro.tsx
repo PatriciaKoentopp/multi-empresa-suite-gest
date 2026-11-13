@@ -52,6 +52,7 @@ export const usePainelFinanceiro = () => {
       const dataInicioStr = filtro.dataInicio.toISOString().split('T')[0];
       
       // Criar a query base para buscar movimentações anteriores ao período do filtro
+      const buildQuery = () => {
       let query = supabase
         .from('fluxo_caixa')
         .select(`
@@ -66,7 +67,9 @@ export const usePainelFinanceiro = () => {
         query = query.eq('conta_corrente_id', filtro.contaId);
       }
       
-      const { data: movimentacoesAnteriores, error } = await query;
+      return query;
+      };
+      const { data: movimentacoesAnteriores, error } = await fetchAll(() => buildQuery());
       
       if (error) throw error;
       
@@ -150,6 +153,7 @@ export const usePainelFinanceiro = () => {
       setSaldoInicialPeriodo(saldoInicial);
       
       // Criar a query base incluindo dados das antecipações
+      const buildQuery = () => {
       let query = supabase
         .from('fluxo_caixa')
         .select(`
@@ -188,7 +192,9 @@ export const usePainelFinanceiro = () => {
         query = query.eq('situacao', filtro.situacao);
       }
       
-      const { data: fluxoCaixaData, error } = await query;
+      return query;
+      };
+      const { data: fluxoCaixaData, error } = await fetchAll(() => buildQuery());
       
       if (error) throw error;
       
