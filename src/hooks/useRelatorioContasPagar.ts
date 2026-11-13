@@ -73,7 +73,7 @@ export function useRelatorioContasPagar() {
       movimentacoes?.forEach((mov) => {
         const favorecidoNome = mov.favorecido?.nome || 'Não informado';
         
-        mov.movimentacoes_parcelas?.forEach((parcela) => {
+        mov.movimentacoes_parcelas?.forEach((parcela: any) => {
           // Parcela está em aberto se:
           // 1. Nunca foi paga (data_pagamento IS NULL)
           // 2. OU foi paga depois da data de referência
