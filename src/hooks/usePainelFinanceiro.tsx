@@ -166,7 +166,7 @@ export const usePainelFinanceiro = () => {
             nome,
             considerar_saldo
           ),
-          movimentacoes:movimentacao_id!inner (
+          movimentacoes:movimentacao_id (
             favorecidos:favorecido_id (
               nome
             )
