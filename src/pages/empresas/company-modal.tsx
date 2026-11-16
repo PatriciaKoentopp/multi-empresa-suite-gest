@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
+import * as z from "zod/v3";
 import { useCompany } from "@/contexts/company-context";
 import { Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
