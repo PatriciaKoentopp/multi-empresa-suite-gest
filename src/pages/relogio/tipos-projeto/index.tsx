@@ -43,7 +43,9 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import { useTiposProjetoRelogio } from "@/hooks/useTiposProjetoRelogio";
+import { useTiposProjetoRelogio, type TipoProjetoPayload } from "@/hooks/useTiposProjetoRelogio";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { TipoProjetoFormModal } from "@/components/relogio/TipoProjetoFormModal";
 import { TarefaFormModal } from "@/components/relogio/TarefaFormModal";
 import type { RelogioTipoProjeto, RelogioTarefa } from "@/types/relogio";
@@ -64,6 +66,13 @@ export default function TiposProjetoRelogioPage() {
     excluirTarefa,
   } = useTiposProjetoRelogio();
 
+  const { data: papeis = [] } = useQuery({
+    queryKey: ["agenda-papeis-tipos-projeto"],
+    queryFn: async () => {
+      const { data } = await supabase.from("agenda_papeis").select("id, nome").order("nome");
+      return (data || []) as { id: string; nome: string }[];
+    },
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -101,7 +110,7 @@ export default function TiposProjetoRelogioPage() {
   const toggleExpand = (id: string) =>
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  const handleSaveTipo = async (data: { nome: string; status: "ativo" | "inativo" }) => {
+  const handleSaveTipo = async (data: TipoProjetoPayload) => {
     try {
       if (editingTipo) await atualizarTipoProjeto(editingTipo.id, data);
       else await criarTipoProjeto(data);
@@ -208,6 +217,7 @@ export default function TiposProjetoRelogioPage() {
                 <TableRow>
                   <TableHead className="w-[40px]"></TableHead>
                   <TableHead>Nome</TableHead>
+                  <TableHead className="w-[180px]">Papel</TableHead>
                   <TableHead className="w-[140px] text-right">Qtde. Tarefas</TableHead>
                   <TableHead className="w-[160px] text-right">% Total Estimado</TableHead>
                   <TableHead className="w-[120px]">Status</TableHead>
@@ -217,13 +227,13 @@ export default function TiposProjetoRelogioPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : filteredTipos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                       Nenhum resultado encontrado
                     </TableCell>
                   </TableRow>
@@ -256,6 +266,7 @@ export default function TiposProjetoRelogioPage() {
                             </Button>
                           </TableCell>
                           <TableCell className="font-medium">{tipo.nome}</TableCell>
+                          <TableCell>{papeis.find((p) => p.id === tipo.papel_id)?.nome ?? "-"}</TableCell>
                           <TableCell className="text-right">{tarefasDoTipo.length}</TableCell>
                           <TableCell className={`text-right font-medium ${pctClass}`}>
                             {totalPct.toFixed(2)}%
@@ -308,7 +319,7 @@ export default function TiposProjetoRelogioPage() {
                         {isExpanded && (
                           <TableRow key={tipo.id + "-tarefas"} className="bg-muted/20">
                             <TableCell></TableCell>
-                            <TableCell colSpan={5} className="py-4">
+                            <TableCell colSpan={6} className="py-4">
                               <div className="flex items-center justify-between mb-3">
                                 <h3 className="text-sm font-semibold">Tarefas</h3>
                                 <Button

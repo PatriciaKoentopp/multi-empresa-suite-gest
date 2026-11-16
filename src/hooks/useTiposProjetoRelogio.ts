@@ -4,6 +4,8 @@ import { useCompany } from "@/contexts/company-context";
 import { toast } from "sonner";
 import type { RelogioTipoProjeto, RelogioTarefa } from "@/types/relogio";
 
+export type TipoProjetoPayload = { nome: string; status: "ativo" | "inativo"; papel_id: string | null };
+
 export function useTiposProjetoRelogio() {
   const { currentCompany } = useCompany();
   const [tiposProjeto, setTiposProjeto] = useState<RelogioTipoProjeto[]>([]);
@@ -59,7 +61,7 @@ export function useTiposProjetoRelogio() {
   }, [fetchData]);
 
   // Tipos de Projeto
-  const criarTipoProjeto = async (payload: { nome: string; status: "ativo" | "inativo" }) => {
+  const criarTipoProjeto = async (payload: TipoProjetoPayload) => {
     if (!currentCompany?.id) return;
     const { error } = await supabase
       .from("relogio_tipos_projeto")
@@ -71,7 +73,7 @@ export function useTiposProjetoRelogio() {
 
   const atualizarTipoProjeto = async (
     id: string,
-    payload: { nome: string; status: "ativo" | "inativo" }
+    payload: TipoProjetoPayload
   ) => {
     const { error } = await supabase
       .from("relogio_tipos_projeto")
