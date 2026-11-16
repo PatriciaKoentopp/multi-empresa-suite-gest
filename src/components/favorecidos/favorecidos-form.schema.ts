@@ -1,5 +1,5 @@
 
-import * as z from "zod";
+import * as z from "zod/v3";
 
 export const formSchema = z.object({
   tipo: z.enum(["fisica", "juridica", "publico", "funcionario"], {
