@@ -57,6 +57,7 @@ export interface AgendaTarefa {
   triade: Triade;
   status: "pendente" | "concluida" | "cancelada";
   concluida_em: string | null;
+  relogio_apontamento_id?: string | null;
 }
 
 export const TRIADE_INFO: Record<Triade, { label: string; cor: string; chip: string }> = {

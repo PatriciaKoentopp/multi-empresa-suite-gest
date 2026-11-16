@@ -145,6 +145,7 @@ export type Database = {
           lead_interacao_id: string | null
           meta_id: string | null
           papel_id: string | null
+          relogio_apontamento_id: string | null
           status: string
           titulo: string
           triade: string
@@ -165,6 +166,7 @@ export type Database = {
           lead_interacao_id?: string | null
           meta_id?: string | null
           papel_id?: string | null
+          relogio_apontamento_id?: string | null
           status?: string
           titulo: string
           triade?: string
@@ -185,6 +187,7 @@ export type Database = {
           lead_interacao_id?: string | null
           meta_id?: string | null
           papel_id?: string | null
+          relogio_apontamento_id?: string | null
           status?: string
           titulo?: string
           triade?: string
@@ -211,6 +214,13 @@ export type Database = {
             columns: ["papel_id"]
             isOneToOne: false
             referencedRelation: "agenda_papeis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_tarefas_relogio_apontamento_id_fkey"
+            columns: ["relogio_apontamento_id"]
+            isOneToOne: true
+            referencedRelation: "relogio_apontamentos"
             referencedColumns: ["id"]
           },
         ]
@@ -2385,6 +2395,7 @@ export type Database = {
           status: string
           tarefa_id: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -2400,6 +2411,7 @@ export type Database = {
           status?: string
           tarefa_id?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -2415,6 +2427,7 @@ export type Database = {
           status?: string
           tarefa_id?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2533,6 +2546,7 @@ export type Database = {
           empresa_id: string
           id: string
           nome: string
+          papel_id: string | null
           status: string
           updated_at: string
         }
@@ -2541,6 +2555,7 @@ export type Database = {
           empresa_id: string
           id?: string
           nome: string
+          papel_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -2549,10 +2564,19 @@ export type Database = {
           empresa_id?: string
           id?: string
           nome?: string
+          papel_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "relogio_tipos_projeto_papel_id_fkey"
+            columns: ["papel_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_papeis"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       servicos: {
         Row: {
