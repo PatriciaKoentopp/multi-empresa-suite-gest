@@ -120,7 +120,7 @@ export default function PlanejamentoPessoalPage() {
                     const papel = t.papel_id ? papelMap.get(t.papel_id) : undefined;
                     return (
                       <div key={t.id} className={`flex items-start gap-2 rounded-md border p-2 ${t.status === "concluida" ? "opacity-60" : ""}`}>
-                        <Checkbox checked={t.status === "concluida"} onCheckedChange={() => alternarConcluida(t)} className="mt-0.5" />
+                        <Checkbox checked={t.status === "concluida"} disabled={!!t.relogio_apontamento_id} onCheckedChange={() => alternarConcluida(t)} className="mt-0.5" />
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm font-medium truncate ${t.status === "concluida" ? "line-through" : ""}`}>{t.titulo}</p>
                           <div className="flex flex-wrap items-center gap-1 mt-1">
@@ -129,6 +129,7 @@ export default function PlanejamentoPessoalPage() {
                             {papel && <span className="text-[11px] px-1 rounded" style={{ background: papel.cor + "22", color: papel.cor }}>{papel.nome}</span>}
                           </div>
                         </div>
+                        {!t.relogio_apontamento_id && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-6 w-6"><EllipsisVertical className="h-4 w-4" /></Button>
@@ -145,6 +146,7 @@ export default function PlanejamentoPessoalPage() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
+                        )}
                       </div>
                     );
                   })}

@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
 import { sincronizarGoogleAgenda } from "@/lib/google-agenda.functions";
 import {
@@ -68,6 +69,10 @@ export default function AgendaPessoalPage() {
   const hoje = format(new Date(), "yyyy-MM-dd");
 
   const abrirItem = (it: ItemAgenda) => {
+    if (it.tarefa.relogio_apontamento_id) {
+      toast.info("Horas apontadas no Relógio: edite pelo Relógio > Apontamento.");
+      return;
+    }
     setDiaSel(null);
     setEditando(it.tarefa);
     setModalOpen(true);
@@ -81,6 +86,7 @@ export default function AgendaPessoalPage() {
     >
       <Checkbox
         checked={it.concluido}
+        disabled={!!it.tarefa.relogio_apontamento_id}
         onCheckedChange={() => alternarConcluida(it.tarefa)}
         onClick={(e) => e.stopPropagation()}
         className="h-3 w-3 shrink-0"
@@ -142,7 +148,7 @@ export default function AgendaPessoalPage() {
             {itensDia.length === 0 && <p className="text-sm text-muted-foreground">Nenhum compromisso neste dia.</p>}
             {itensDia.map((it) => (
               <div key={it.id} className="flex items-start gap-2 rounded-md border p-2">
-                <Checkbox className="mt-1" checked={it.concluido} onCheckedChange={() => alternarConcluida(it.tarefa)} />
+                <Checkbox className="mt-1" checked={it.concluido} disabled={!!it.tarefa.relogio_apontamento_id} onCheckedChange={() => alternarConcluida(it.tarefa)} />
                 <div className="flex-1 cursor-pointer" onClick={() => abrirItem(it)}>
                   <p className={`text-sm font-medium ${it.concluido ? "line-through text-muted-foreground" : ""}`}>
                     <User className="inline h-4 w-4 mr-1 text-blue-600" />
