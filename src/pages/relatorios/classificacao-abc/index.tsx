@@ -199,8 +199,12 @@ export default function ClassificacaoABC() {
       "Meses Sem Compra"
     ].join(";");
 
+    const safeCsv = (v: string) => {
+      const t = /^[=+\-@\t\r]/.test(v || "") ? `'${v}` : (v || "");
+      return /[;"\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+    };
     const rows = filteredClientes.map(cliente => [
-      cliente.nome_fantasia,
+      safeCsv(cliente.nome_fantasia),
       cliente.classificacao,
       cliente.totalVendas.toFixed(2).replace(".", ","),
       cliente.quantidadeCompras,

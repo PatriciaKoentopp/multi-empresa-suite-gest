@@ -286,7 +286,8 @@ export default function PainelProjetosRelogioPage() {
       p.status === "ativo" ? "Ativo" : "Arquivado",
     ]);
 
-    const escapeCsv = (value: string) => {
+    const escapeCsv = (raw: string) => {
+      const value = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
       if (value.includes(",") || value.includes('"') || value.includes("\n") || value.includes("\r")) {
         return `"${value.replace(/"/g, '""')}"`;
       }

@@ -18,7 +18,7 @@ async function enviarParaContato(sb: any, userId: string, contatoId: string, tex
   if (!contato) throw new Error("Contato não encontrado");
   if (!contato.numero?.ativo) throw new Error("O número de WhatsApp desta empresa está inativo");
 
-  const { enviarTextoGateway, processarPendentes, registrarInteracaoLead } = await import("./whatsapp.server");
+  const { enviarTextoGateway, registrarInteracaoLead } = await import("./whatsapp.server");
   const r = await enviarTextoGateway(contato.numero.secret_name, contato.wa_id, texto);
 
   const agora = new Date().toISOString();
@@ -39,9 +39,6 @@ async function enviarParaContato(sb: any, userId: string, contatoId: string, tex
 
   if (!r.ok) throw new Error(`Falha no envio: ${r.erro}`);
   await registrarInteracaoLead(sb, contato.lead_id, "saida", texto, agora, userId);
-  // Aplica status que chegaram antes do registro da mensagem
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  await processarPendentes(supabaseAdmin as any, 5);
   return { ok: true };
 }
 
