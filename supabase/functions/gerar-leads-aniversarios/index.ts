@@ -17,9 +17,26 @@ serve(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    // Receber user_id do body da requisição
-    const { user_id } = await req.json().catch(() => ({}));
-    console.log("User ID recebido:", user_id);
+    // Autenticação: aceita o usuário logado (escopo da empresa dele) ou a chave de serviço (rotina agendada)
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    if (!token) {
+      return new Response(JSON.stringify({ success: false, error: "Não autenticado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    let empresaEscopo: string | null = null;
+    let user_id: string | null = null;
+    if (token !== SERVICE_ROLE_KEY) {
+      const { data: { user }, error: uErr } = await supabase.auth.getUser(token);
+      if (uErr || !user) {
+        return new Response(JSON.stringify({ success: false, error: "Não autenticado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { data: u } = await supabase.from("usuarios").select("empresa_id").eq("id", user.id).maybeSingle();
+      if (!u?.empresa_id) {
+        return new Response(JSON.stringify({ success: false, error: "Empresa não identificada" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      empresaEscopo = u.empresa_id;
+      user_id = user.id;
+    }
 
     const hoje = new Date();
     const dia = hoje.getDate();
@@ -30,11 +47,13 @@ serve(async (req: Request) => {
     console.log(`Gerando leads de ${dia}/${mes}/${anoAtual} até 31/12/${anoAtual}`);
 
     // 1. Buscar todos os funis "Aniversários" ativos
-    const { data: funis, error: funisError } = await supabase
+    let funisQuery = supabase
       .from("funis")
       .select("id, empresa_id, nome")
       .ilike("nome", "%aniversário%")
       .eq("ativo", true);
+    if (empresaEscopo) funisQuery = funisQuery.eq("empresa_id", empresaEscopo);
+    const { data: funis, error: funisError } = await funisQuery;
 
     if (funisError) {
       console.error("Erro ao buscar funis:", funisError);
@@ -142,12 +161,12 @@ serve(async (req: Request) => {
           .lte("data_criacao", `${anoAtual}-12-31`);
 
         if (leadsError) {
-          console.error(`Erro ao verificar leads existentes para ${fav.nome}:`, leadsError);
+          console.error(`Erro ao verificar leads existentes para favorecido ${fav.id}:`, leadsError);
           continue;
         }
 
         if (leadsExistentes && leadsExistentes.length > 0) {
-          console.log(`Lead já existe para ${fav.nome} no ano ${anoAtual}`);
+          console.log(`Lead já existe para favorecido ${fav.id} no ano ${anoAtual}`);
           continue;
         }
 
@@ -179,11 +198,11 @@ serve(async (req: Request) => {
           .single();
 
         if (insertError) {
-          console.error(`Erro ao criar lead para ${fav.nome}:`, insertError);
+          console.error(`Erro ao criar lead para favorecido ${fav.id}:`, insertError);
           continue;
         }
 
-        console.log(`Lead criado com sucesso para ${fav.nome} (aniversário: ${dataAniversarioAnoAtual})`);
+        console.log(`Lead criado com sucesso para favorecido ${fav.id}`);
 
         // 8. Criar interação automática para o lead
         if (novoLead) {
@@ -199,9 +218,9 @@ serve(async (req: Request) => {
             });
 
           if (interacaoError) {
-            console.error(`Erro ao criar interação para ${fav.nome}:`, interacaoError);
+            console.error(`Erro ao criar interação para favorecido ${fav.id}:`, interacaoError);
           } else {
-            console.log(`Interação criada para ${fav.nome} na data ${dataAniversarioAnoAtual}`);
+            console.log(`Interação criada para favorecido ${fav.id}`);
           }
         }
         leadsGeradosNesteFunil++;

@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     const { data: usuario } = await admin.from("usuarios").select("empresa_id").eq("id", userResult.user.id).maybeSingle();
 
     const body = await req.json();
-    const empresaId = (usuario?.empresa_id as string | undefined) ?? (body?.empresaId || undefined);
+    const empresaId = usuario?.empresa_id as string | undefined;
     if (!empresaId) return json({ error: "Empresa não identificada." }, 400);
 
     const pdfBase64 = body?.pdfBase64 as string | undefined;

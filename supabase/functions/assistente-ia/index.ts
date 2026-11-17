@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
             sql: z.string().describe("Comando SELECT completo, sem ponto e vírgula final."),
           }),
           execute: async ({ sql }) => {
-            const { data, error } = await admin.rpc("ia_executar_consulta", {
+            const { data, error } = await authClient.rpc("ia_executar_consulta", {
               p_empresa_id: empresaId,
               p_sql: sql,
             });

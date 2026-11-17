@@ -24,8 +24,33 @@ serve(async (req: Request) => {
     });
   }
 
-  // Lê body da requisição
-  const { email, nome, senha, tipo, status, vendedor, empresa_id } = await req.json();
+  // Exige usuário logado, administrador de uma empresa
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const token = authHeader.replace(/^Bearer\s+/i, "");
+  if (!token) {
+    return new Response(JSON.stringify({ error: "Não autenticado" }), { status: 401, headers: corsHeaders });
+  }
+  const meResp = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { "apikey": SERVICE_ROLE_KEY, "Authorization": `Bearer ${token}` },
+  });
+  if (!meResp.ok) {
+    return new Response(JSON.stringify({ error: "Não autenticado" }), { status: 401, headers: corsHeaders });
+  }
+  const me = await meResp.json();
+  const perfilResp = await fetch(`${SUPABASE_URL}/rest/v1/usuarios?id=eq.${encodeURIComponent(me?.id ?? "")}&select=tipo,empresa_id`, {
+    headers: { "apikey": SERVICE_ROLE_KEY, "Authorization": `Bearer ${SERVICE_ROLE_KEY}` },
+  });
+  const perfil = perfilResp.ok ? (await perfilResp.json())?.[0] : null;
+  if (!perfil || perfil.tipo !== "Administrador" || !perfil.empresa_id) {
+    return new Response(JSON.stringify({ error: "Apenas administradores podem cadastrar usuários" }), { status: 403, headers: corsHeaders });
+  }
+
+  // Lê body da requisição (a empresa é sempre a do administrador)
+  const { email, nome, senha, tipo, status, vendedor } = await req.json();
+  const empresa_id = perfil.empresa_id as string;
+  if (tipo && tipo !== "Administrador" && tipo !== "Usuário") {
+    return new Response(JSON.stringify({ error: "Tipo inválido" }), { status: 400, headers: corsHeaders });
+  }
   if (!email || !nome || !senha) {
     return new Response(JSON.stringify({ error: "Dados obrigatórios ausentes" }), {
       status: 400,

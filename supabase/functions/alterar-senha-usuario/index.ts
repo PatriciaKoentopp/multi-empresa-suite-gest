@@ -24,8 +24,10 @@ Deno.serve(async (req) => {
 
     const admin = createClient(url, service);
     if (userId !== user.id) {
-      const { data: me } = await admin.from("usuarios").select("tipo").eq("id", user.id).maybeSingle();
-      if (me?.tipo !== "Administrador") return json({ error: "Apenas administradores podem alterar a senha de outros usuários" }, 403);
+      const { data: me } = await admin.from("usuarios").select("tipo, empresa_id").eq("id", user.id).maybeSingle();
+      if (me?.tipo !== "Administrador" || !me?.empresa_id) return json({ error: "Apenas administradores podem alterar a senha de outros usuários" }, 403);
+      const { data: alvo } = await admin.from("usuarios").select("empresa_id").eq("id", userId).maybeSingle();
+      if (!alvo || alvo.empresa_id !== me.empresa_id) return json({ error: "Usuário não pertence à sua empresa" }, 403);
     }
 
     const { error } = await admin.auth.admin.updateUserById(userId, { password: senha });

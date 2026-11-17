@@ -506,12 +506,15 @@ export default function LeadsPage() {
     setGerandoLeadsAniversarios(true);
     
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token ?? "";
       const response = await fetch(
         "https://vbbfmmjohdmocnaxgmmd.supabase.co/functions/v1/gerar-leads-aniversarios",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
             user_id: userData?.id
