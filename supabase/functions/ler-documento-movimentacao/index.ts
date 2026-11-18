@@ -74,6 +74,8 @@ Deno.serve(async (req) => {
       cnpj_cpf_destinatario: z.string().nullable(),
       nome_destinatario: z.string().nullable(),
       valor_total: z.number().nullable(),
+      data_emissao: z.string().nullable(),
+      data_vencimento: z.string().nullable(),
     });
 
     let extraido: z.infer<typeof schema>;
@@ -88,7 +90,7 @@ Deno.serve(async (req) => {
               {
                 type: "text",
                 text:
-                  "Leia este documento brasileiro. Primeiro classifique tipo_documento: 'guia_imposto' para guias de arrecadação (DARF, DAS, GPS, DARE, GNRE, guias de ISS/IPTU municipais) ou 'nota_fiscal' para notas fiscais e demais documentos. Extraia: número do documento exatamente como aparece (em guias, o campo 'Número do Documento', mantendo pontos e traço; em notas, apenas o número da nota), CNPJ/CPF e nome do emitente (prestador/fornecedor), CNPJ/CPF e nome do destinatário (tomador/cliente) e o valor total do documento em reais (número decimal; em guias, o 'Valor Total do Documento'). Em guias de imposto, o CNPJ exibido é do contribuinte que paga: preencha orgao_arrecadador com o órgão que recebe a guia (ex.: 'Receita Federal' para DARF/DAS/GPS, 'Secretaria da Fazenda' para DARE/GNRE, 'Prefeitura de <cidade>' para guias municipais). Em guias, preencha cnpj_cpf_destinatario e nome_destinatario com o CNPJ/CPF e nome do contribuinte. Em notas fiscais, orgao_arrecadador = null. Use null quando não encontrar.\n\n" +
+                  "Leia este documento brasileiro. Primeiro classifique tipo_documento: 'guia_imposto' para guias de arrecadação (DARF, DAS, GPS, DARE, GNRE, guias de ISS/IPTU municipais) ou 'nota_fiscal' para notas fiscais e demais documentos. Extraia: número do documento exatamente como aparece (em guias, o campo 'Número do Documento', mantendo pontos e traço; em notas, apenas o número da nota), CNPJ/CPF e nome do emitente (prestador/fornecedor), CNPJ/CPF e nome do destinatário (tomador/cliente) e o valor total do documento em reais (número decimal; em guias, o 'Valor Total do Documento'). Em guias de imposto, o CNPJ exibido é do contribuinte que paga: preencha orgao_arrecadador com o órgão que recebe a guia (ex.: 'Receita Federal' para DARF/DAS/GPS, 'Secretaria da Fazenda' para DARE/GNRE, 'Prefeitura de <cidade>' para guias municipais). Em guias, preencha cnpj_cpf_destinatario e nome_destinatario com o CNPJ/CPF e nome do contribuinte. Em notas fiscais, orgao_arrecadador = null. Use null quando não encontrar. Extraia também data_emissao (data de emissão da nota; em guias, a data de emissão/apuração) e data_vencimento (em notas, o vencimento da primeira parcela/duplicata/fatura, se houver; em guias, o campo 'Pagar até'/'Data de Vencimento'), ambas no formato YYYY-MM-DD, ou null.\n\n" +
                   "Em guias de imposto, preencha codigo_receita (ex.: '2172') e denominacao_imposto (ex.: 'COFINS') a partir da composição do documento, e escolha em tipo_titulo_sugerido o nome EXATO de um dos tipos de título abaixo que corresponda ao imposto, distinguindo imposto próprio de imposto retido (ex.: 5952 = CSLL/PIS/COFINS retidos; 1708 e 0561 = IRRF; 2172 = COFINS; 8109 = PIS; 2089 = IRPJ; 2372 = CSLL; GPS = INSS). Se nenhum servir, use 'nenhum'. Em notas fiscais, codigo_receita, denominacao_imposto e tipo_titulo_sugerido = null.\n\nTipos de título disponíveis:\n" +
                   (tiposTitulos.map((t: any) => `- ${t.nome}`).join("\n") || "(nenhum cadastrado)"),
               },
@@ -209,7 +211,15 @@ Deno.serve(async (req) => {
       categoria_id = ultima?.categoria_id ?? null;
     }
 
+    const validaData = (v: string | null | undefined) => {
+      const m = String(v || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!m || Number(m[1]) < 1900 || Number(m[2]) < 1 || Number(m[2]) > 12 || Number(m[3]) < 1 || Number(m[3]) > 31) return null;
+      return `${m[1]}-${m[2]}-${m[3]}`;
+    };
+
     return json({
+      data_emissao: validaData(extraido.data_emissao),
+      data_vencimento: validaData(extraido.data_vencimento),
       numero_documento: extraido.numero_documento,
       valor_total: extraido.valor_total,
       favorecido_id: favorecido?.id ?? null,

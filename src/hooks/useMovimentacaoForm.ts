@@ -235,6 +235,8 @@ export const useMovimentacaoForm = (movimentacaoEditando?: any) => {
 
 
       const preenchidos: string[] = [];
+      if (data.data_emissao) { setDataEmissao(parseDateString(data.data_emissao) || new Date()); preenchidos.push("data de emissão"); }
+      if (data.data_vencimento) { setDataPrimeiroVenc(parseDateString(data.data_vencimento) || new Date()); preenchidos.push("data do primeiro vencimento"); }
       if (data.numero_documento) { setNumDoc(String(data.numero_documento)); preenchidos.push("número do documento"); }
       if (typeof data.valor_total === "number" && data.valor_total > 0) {
         setValor(data.valor_total.toFixed(2).replace(".", ","));
